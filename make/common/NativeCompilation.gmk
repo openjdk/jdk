@@ -129,12 +129,11 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
-  # Setup variables for the rest of the function to work with
-  $$(eval $$(call SetupBasicVariables1,$1))
-  $$(eval $$(call SetupDebugSymbols,$1))
-  $$(eval $$(call SetupBasicVariables2,$1))
   $$(eval $$(call VerifyArguments,$1))
-  $$(eval $$(call SetupBasicVariables3,$1))
+
+  # Setup variables for the rest of the function to work with
+  $$(eval $$(call SetupBasicVariables,$1))
+  $$(eval $$(call SetupDebugSymbols,$1))
 
   # Need to make sure TARGET is first on list
   $1 := $$($1_TARGET)
@@ -200,8 +199,30 @@ define SetupNativeCompilationBody
 endef
 
 ################################################################################
-# Setup basic variables, part 1
-define SetupBasicVariables1
+# Verify that user passed arguments are valid
+define VerifyArguments
+  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
+    $$(error NAME must not contain any directory path in $1)
+  endif
+  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
+  endif
+  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
+  endif
+  ifeq ($$($1_OUTPUT_DIR), )
+    $$(error OUTPUT_DIR is missing in $1)
+  endif
+  ifneq ($$($1_MANIFEST), )
+    ifeq ($$($1_MANIFEST_VERSION), )
+      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
+    endif
+  endif
+endef
+
+################################################################################
+# Setup basic variables
+define SetupBasicVariables
   # If type is unspecified, default to LIBRARY
   ifeq ($$($1_TYPE), )
     $1_TYPE := LIBRARY
@@ -214,11 +235,7 @@ define SetupBasicVariables1
       $1_TYPE := STATIC_LIBRARY
     endif
   endif
-endef
 
-################################################################################
-# Setup basic variables, part 2
-define SetupBasicVariables2
   # STATIC_LIBS is set from Main.gmk when building static versions of certain
   # native libraries.
   ifeq ($(STATIC_LIBS), true)
@@ -247,33 +264,7 @@ define SetupBasicVariables2
       endif
     endif
   endif
-endef
 
-################################################################################
-# Verify that user passed arguments are valid
-define VerifyArguments
-  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
-    $$(error NAME must not contain any directory path in $1)
-  endif
-  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
-  endif
-  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
-  endif
-  ifeq ($$($1_OUTPUT_DIR), )
-    $$(error OUTPUT_DIR is missing in $1)
-  endif
-  ifneq ($$($1_MANIFEST), )
-    ifeq ($$($1_MANIFEST_VERSION), )
-      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
-    endif
-  endif
-endef
-
-################################################################################
-# Setup basic variables, part 3
-define SetupBasicVariables3
   $1_BASENAME := $$($1_PREFIX)$$($1_NAME)$$($1_SUFFIX)
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
