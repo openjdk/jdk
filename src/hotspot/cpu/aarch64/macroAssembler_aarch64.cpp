@@ -1462,11 +1462,7 @@ void argh(Klass *sub_klass, Klass *super_klass) {
 }
 
 bool trueReturner() {
-  return true;
-}
-
-void piddle() {
-  asm("nop");
+  return UseNewSecondaryAlgorithm;
 }
 
 void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
@@ -1495,14 +1491,16 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 
   BLOCK_COMMENT("check_klass_subtype_slow_path {");
 
-  ldr(rscratch1, Address(sub_klass, Klass::bitmap_offset()));
-  ldr(rscratch2, Address(super_klass, Klass::hash_offset()));
-  lsr(rscratch2, rscratch2, 64 - 6);
-  lsrv(rscratch1, rscratch1, rscratch2);
-  andr(rscratch1, rscratch1, (u1)1);
-  cmp(rscratch1, (u1)1);
-  mov(r5, 1);
-  br(Assembler::NE, *L_failure);
+  if (UseNewSecondaryAlgorithm) {
+    ldr(rscratch1, Address(sub_klass, Klass::bitmap_offset()));
+    ldr(rscratch2, Address(super_klass, Klass::hash_offset()));
+    lsr(rscratch2, rscratch2, 64 - 6);
+    lsrv(rscratch1, rscratch1, rscratch2);
+    andr(rscratch1, rscratch1, (u1)1);
+    cmp(rscratch1, (u1)1);
+    mov(r5, 1);
+    br(Assembler::NE, *L_failure);
+  }
 
 #ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
   stp(rscratch1, rscratch1, Address(pre(sp, -2 * wordSize)));
@@ -1570,12 +1568,14 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   br(Assembler::NE, *L_failure);
 
   // Success. Try to cache the super we found and proceed in triumph.
-  {
+  if (UseNewSecondaryAlgorithm) {
     Label dont;
     ldr(rscratch1, super_cache_addr);
     cbnz(rscratch1, dont);
-    // str(super_klass, super_cache_addr);
+    str(super_klass, super_cache_addr);
     bind(dont);
+  } else {
+    str(super_klass, super_cache_addr);
   }
   if (L_success != &L_fallthrough) {
     b(*L_success);
@@ -1589,43 +1589,60 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
-void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
+#define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
+do {                                                                    \
+  assert(r_super_klass == r0 && r_array_base == r1 &&                   \
+         r_array_length == r2 && r_array_index == r3 &&                 \
+         r_sub_klass == r4 && result == r5, "registers must match aarch64.ad"); \
+} while(0)
+
+
+void piddle() {
+  asm("nop");
+}
+
+void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp,
                                                    Register temp2,
                                                    Register temp3,
+                                                   Register temp4,
                                                    FloatRegister vtemp,
                                                    Register result) {
-  assert_different_registers(sub_klass, temp, temp2, temp3, rscratch1, rscratch2);
+  assert_different_registers(r_sub_klass, temp, temp2, temp3, temp4, rscratch1, rscratch2);
 
   Label L_fallthrough, L_success, L_failure;
 
-  // a couple of useful fields in sub_klass:
+  // a couple of useful fields in r_sub_klass:
   int ss_offset = in_bytes(Klass::secondary_supers_offset());
   int sc_offset = in_bytes(Klass::secondary_super_cache_offset());
-  Address secondary_supers_addr(sub_klass, ss_offset);
-  Address super_cache_addr(     sub_klass, sc_offset);
+  Address secondary_supers_addr(r_sub_klass, ss_offset);
+  Address super_cache_addr(     r_sub_klass, sc_offset);
 
-  BLOCK_COMMENT("check_klass_subtype_slow_path {");
+  BLOCK_COMMENT("new check_klass_subtype_slow_path {");
 
   const Register
-    r_array_index = rscratch2,
-    r_bitmap = rscratch1,
+    r_bitmap = rscratch2,
     r_array_length = temp,
     r_super_klass = temp2,
-    r_array_base = temp3;
+    r_array_base = temp3,
+    r_array_index = temp4;
 
-  ldr(r_bitmap, Address(sub_klass, Klass::bitmap_offset()));
+  CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
+
+  // We're going to need the bitmap in a vector reg and in a core reg,
+  // so do both now.
+  ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
   if (super_klass->hash() != 0) {
-    ldrd(vtemp, Address(sub_klass, Klass::bitmap_offset()));
+    ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
   }
   u1 bit = checked_cast<u1> (super_klass->hash() >> (64 - 6));
   tbz(r_bitmap, bit, L_failure);
 
-  mov(lr, CAST_FROM_FN_PTR(address, &piddle));
-  blr(lr);
+  // mov(lr, CAST_FROM_FN_PTR(address, &piddle));
+  // blr(lr);
 
-  // Get the first array index that can contain super_klass into vtemp
+  // Get the first array index that can contain super_klass into r_array_index.
   if (super_klass->hash() != 0) {
     if (bit < 63)   shld(vtemp, vtemp, 63 - bit);
     cnt(vtemp, T8B, vtemp);
@@ -1635,55 +1652,76 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
     mov(r_array_index, (u1)1);
   }
 
-// #ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
-//   stp(rscratch1, rscratch1, Address(pre(sp, -2 * wordSize)));
-// #endif
-
-// #ifndef PRODUCT
-//   mov(rscratch2, (address)&SharedRuntime::_partial_subtype_ctr);
-//   Address pst_counter_addr(rscratch2);
-//   ldr(rscratch1, pst_counter_addr);
-//   add(rscratch1, rscratch1, 1);
-//   str(rscratch1, pst_counter_addr);
-// #endif //PRODUCT
-
-  ror(r_bitmap, r_bitmap, bit);
   mov_metadata(r_super_klass, super_klass);
 
   // We will consult the secondary-super array.
   // mov_metadata(r_array_base, (Metadata*)super_klass->secondary_supers());
-  ldr(r_array_base, Address(sub_klass, in_bytes(Klass::secondary_supers_offset())));
-  // Load the array length.
-  ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+  ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
-  // Skip to start of data.
-  // add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
+  // The value i in r_array_index is 1 <= i <= 64, so even though
+  // r_array_base points to the length, we don't need to adjust it to
+  // point to the data.
+  assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
 
-  {
-    // Linear probe
-    Label LOOPY;
-    bind(LOOPY);
-    ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-    cmp(result, r_super_klass);
-    br(EQ, L_success);
-    tbz(r_bitmap, 1, L_failure); // End of run
-    ror(r_bitmap, r_bitmap, 1);
-    add(r_array_index, r_array_base, 1);
-    cmp(r_array_index, r_array_length);
-    csel(r_array_index, zr, r_array_index, EQ);
-    b(LOOPY);
-  }
+  ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
+  cmp(result, r_super_klass);
+  br(EQ, L_success);
+  tbz(r_bitmap, (bit+1) & 63, L_failure);
+
+  // Linear probe.
+  if (bit > 0)   ror(r_bitmap, r_bitmap, bit);
+  adr(result, L_success);
+  trampoline_call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
 
   bind(L_failure);
-  mov(result, (u1)0);
+  mov(result, (u1)1);
   b(L_fallthrough);
 
   bind(L_success);
-  mov(result, (u1)1);
+  mov(result, (u1)0);
 
-  BLOCK_COMMENT("} check_klass_subtype_slow_path");
+  BLOCK_COMMENT("} new check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
+}
+
+void MacroAssembler::klass_subtype_fallback() {
+  const Register
+    r_super_klass = r0,
+    r_array_base = r1,
+    r_array_length = r2,
+    r_array_index = r3,
+    r_sub_klass = r4,
+    result = r5,
+    bitmap = rscratch2;
+
+  CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
+
+  // Load the array length.
+  ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+  // And adjust the array base to point to the data.
+  add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
+
+  // Linear probe
+  Label LOOPY, L_failure, L_success;
+
+  bind(LOOPY);
+  tbz(bitmap, 1, L_failure); // End of run
+  ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
+  cmp(rscratch1, r_super_klass);
+  br(EQ, L_success);
+
+  ror(bitmap, bitmap, 1);
+  add(r_array_index, r_array_index, 1);
+  cmp(r_array_index, r_array_length);
+  csel(r_array_index, zr, r_array_index, GE);
+  b(LOOPY);
+
+  bind(L_failure);
+  ret(lr);
+
+  bind(L_success);
+  br(result);
 }
 
 void MacroAssembler::clinit_barrier(Register klass, Register scratch, Label* L_fast_path, Label* L_slow_path) {

@@ -190,6 +190,7 @@ JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 address StubRoutines::_upcall_stub_exception_handler = nullptr;
+address StubRoutines::_klass_subtype_fallback_stub = nullptr;
 
 // Initialization
 //

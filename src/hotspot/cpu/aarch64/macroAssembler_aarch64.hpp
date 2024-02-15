@@ -1000,11 +1000,13 @@ public:
 
   void check_klass_subtype_slow_path(Register sub_klass,
                                      Klass *super_klass,
-                                     Register temp,
+                                     Register temp1,
                                      Register temp2,
                                      Register temp3,
+                                     Register temp4,
                                      FloatRegister vtemp,
                                      Register result);
+  void klass_subtype_fallback();
 
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
@@ -1220,6 +1222,7 @@ public:
   // - relocInfo::virtual_call_type
   //
   // Return: the call PC or null if CodeCache is full.
+  // Clobbers: rscratch1
   address trampoline_call(Address entry);
 
   static bool far_branches() {

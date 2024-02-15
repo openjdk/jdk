@@ -2020,6 +2020,13 @@ const int ObjectAlignmentInBytes = 8;
                 "Unconditionally record nmethod dependencies on class "     \
                 "rewriting/transformation independently of the JVMTI "      \
                 "can_{retransform/redefine}_classes capabilities.")         \
+                                                                            \
+  product(bool, UseNewSecondaryAlgorithm,  true, EXPERIMENTAL,              \
+                "Use new algorithm to scan secondary supers.")              \
+                                                                            \
+  product(bool, UseSecondarySuperCache, true, EXPERIMENTAL,                 \
+          "Use secondary super cache during subtype checks")                \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 

@@ -272,6 +272,7 @@ class StubRoutines: AllStatic {
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
 
   static address _upcall_stub_exception_handler;
+  static address _klass_subtype_fallback_stub;
 
  public:
   // Initialization/Testing

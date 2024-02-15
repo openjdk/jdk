@@ -93,6 +93,8 @@ void Klass::set_name(Symbol* n) {
     hash += (u1)s[i];
   }
   _hash = hash * 11400714819323198485llu; // (2 / (1 + sqrt(5.0))) * 0x1.0p64
+  // TESTING
+  // _hash = _hash & (uint64_t(15) << (64-6));
 }
 
 bool Klass::is_subclass_of(const Klass* k) const {
@@ -246,22 +248,28 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
+extern "C" {
+  static int compare_secondary_supers(const void* void_a, const void* void_b) {
+    const Klass** a = (const Klass**)void_a;
+    const Klass** b = (const Klass**)void_b;
+    return (*a)->hash() > (*b)->hash() ? 1
+      : (*a)->hash() < (*b)->hash() ? -1
+      : 0;
+  }
+}
+
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   ResourceMark rm;
   uint64_t bitmap = 0;
-  GrowableArray<Klass*>* hashed_secondaries = new GrowableArray<Klass*>(64);
-
   if (! secondaries) {
     _bitmap = 0;
     _secondary_supers = nullptr;
     return;
   }
 
-  for (int i = 0; i < 64; i++)   hashed_secondaries->push(nullptr);
+  GrowableArray<Klass*>* hashed_secondaries = new GrowableArray<Klass*>(64);
 
-  if (secondaries->length() > 6) {
-    asm("nop");
-  }
+  for (int i = 0; i < 64; i++)   hashed_secondaries->push(nullptr);
 
   for (int j = 0; j < secondaries->length(); j++) {
     Klass *k = secondaries->at(j);
@@ -292,6 +300,10 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 
   _bitmap = bitmap;
   _secondary_supers = secondaries;
+
+  if (secondaries->length() > 16) {
+    asm("nop");
+  }
 }
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
@@ -409,6 +421,8 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     }
   #endif
 
+    qsort(s2->adr_at(0), s2->length(), sizeof s2->at(0),
+          compare_secondary_supers);
     set_secondary_supers(s2);
   }
 }
