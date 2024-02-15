@@ -29,7 +29,6 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
-import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import jdk.test.lib.Platform;
@@ -49,10 +48,8 @@ public class DisposeInActionEventTest {
 
     public static void main(String[] args) throws Exception {
         String instructions;
-        traySupported = SystemTray.isSupported();
-        if (!traySupported) {
-            instructions = "The test cannot be run because SystemTray is not supported.\n" +
-                           "Simply press PASS button.";
+        if (!SystemTray.isSupported()) {
+            throw new jtreg.SkippedException("The test cannot be run because SystemTray is not supported.");
         } else {
             String clickInstruction;
             if (Platform.isOSX()) {
@@ -61,7 +58,7 @@ public class DisposeInActionEventTest {
                 clickInstruction = "left";
             }
 
-            instructions = "When the test starts, it adds the icon to the tray aread. If you\n" +
+            instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
                            "  don't see a tray icon, please, make sure that the tray area\n" +
                            "  (also called Taskbar Status Area on MS Windows, Notification\n" +
                            "  Area on Gnome or System Tray on KDE) is visible.\n" +
