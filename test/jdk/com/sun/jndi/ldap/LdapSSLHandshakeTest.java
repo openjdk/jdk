@@ -44,41 +44,46 @@ import jdk.test.lib.net.URIBuilder;
 
 /*
  * @test
- * @bug 8314063
+ * @bug 8314063 8325579
  * @library /test/lib
- * @summary For LDAP connections, if the value of com.sun.jndi.ldap.connect.timeout is
- * set too small or not an optimal value for the system, after the socket is created and
- * connected to the server, but the handshake between the client and server fails due to
- * socket time out, the opened socket is not closed properly. In this test case, the server
- * is forced to sleep five seconds and connection time out for client is one second. This
- * will allow the socket to be opened and connected, and give the chance for the handshake to
- * time out. The socket should be closed.
+ * @summary Several scenarios for LDAP connection handshaking are tested here.
+ * We test different combinations of com.sun.jndi.ldap.connect.timeout values
+ * and server behavior, e.g. a server that replies immediately vs a server that
+ * delays the initial answer. We also try to check whether the underlying Socket
+ * object will be closed correctly.
+ * We expect exceptions when using a custom SocketFactory that does not supply
+ * SSL Sockets. In that case we instrument the supplied Socket object and check
+ * if it was properly closed after the handshake failure.
+ * When the value of com.sun.jndi.ldap.connect.timeout is set lower than the
+ * server delay, we also expect an exception.
+ * In all other cases a valid Context object shall be returned and we check
+ * whether the socket is closed after closing the Context.
  *
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest
+ *      LdapSSLHandshakeTest
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest true
+ *      LdapSSLHandshakeTest true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 0
+ *      LdapSSLHandshakeTest 0
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 0 true
+ *      LdapSSLHandshakeTest 0 true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 2000
+ *      LdapSSLHandshakeTest 2000
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 2000 true
+ *      LdapSSLHandshakeTest 2000 true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest -1000
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected true
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000 true
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true
- * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000 true
+ *      LdapSSLHandshakeTest -1000
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected 1000
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected true
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected 1000 true
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory 1000
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory true
+ * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory 1000 true
  */
 
-public class LdapSSLHandshakeFailureTest {
+public class LdapSSLHandshakeTest {
     private static int SERVER_SLEEPING_TIME = 4000;
     private static String progArgs[];
     private static int curArg;
@@ -101,7 +106,7 @@ public class LdapSSLHandshakeFailureTest {
         if (arg == null)
             return;
 
-        if (arg.startsWith("LdapSSLHandshakeFailureTest$CustomSocketFactory")) {
+        if (arg.startsWith("LdapSSLHandshakeTest$CustomSocketFactory")) {
             customSocketFactory = arg;
             arg = popArg();
             if (arg == null)
