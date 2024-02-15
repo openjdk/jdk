@@ -149,7 +149,6 @@ define SetupNativeCompilationBody
   $$(eval $$(call SetupOutputFiles,$1))
 
   # Setup CFLAGS/CXXFLAGS based on warnings, optimizations, extra flags etc.
-  $$(eval $$(call SetupDebugSymbols,$1))
   $$(eval $$(call SetupCompilerFlags,$1))
 
   # Machinery needed for the build to function properly
