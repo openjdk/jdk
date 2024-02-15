@@ -328,7 +328,7 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     // Used to explicitly define the segment mode while applying a pattern
-    enum Segment {
+    private enum Segment {
         LIMIT(new StringBuilder()),
         FORMAT(new StringBuilder());
 
