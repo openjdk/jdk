@@ -72,6 +72,14 @@ endef
 ################################################################################
 define CreateLinkedResult
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $$(eval $$(call CreateStaticLibrary,$1))
+  else
+    $$(eval $$(call CreateDynamicLibraryOrExecutable,$1))
+  endif
+endef
+
+################################################################################
+define CreateStaticLibrary
     # Include partial linking when building the static library with clang on linux.
     ifeq ($(call isTargetOs, linux), true)
       ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
@@ -150,7 +158,10 @@ define CreateLinkedResult
 	    fi
           endif
         endif
-  else
+endef
+
+################################################################################
+define CreateDynamicLibraryOrExecutable
     # A shared dynamic library or an executable binary has been specified
     ifeq ($$($1_TYPE), LIBRARY)
       # Generating a dynamic library.
@@ -248,5 +259,4 @@ define CreateLinkedResult
 		  $(CODESIGN) --remove-signature $$@
 		  $(CODESIGN) -f -s - --entitlements $$(call GetEntitlementsFile, $$@) $$@
                 endif
-  endif
 endef
