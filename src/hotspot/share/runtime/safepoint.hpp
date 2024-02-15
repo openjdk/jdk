@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,6 +202,8 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
 
   ThreadSafepointState*           _next;
 
+  volatile jlong                  _time_exceeded;
+
   void account_safe_thread();
 
  public:
@@ -223,6 +225,10 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
   uint64_t get_safepoint_id() const;
   void     reset_safepoint_id();
   void     set_safepoint_id(uint64_t sid);
+
+  jlong get_time_exceeded() const             { return _time_exceeded; }
+  void reset_time_exceeded()                  { _time_exceeded = -1; }
+  void set_time_exceeded(jlong time_exceeded) { _time_exceeded = time_exceeded; assert(time_exceeded != 1, "sanity"); }
 
   // Support for safepoint timeout (debugging)
   bool is_at_poll_safepoint()           { return _at_poll_safepoint; }

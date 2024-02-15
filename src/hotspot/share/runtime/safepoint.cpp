@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,16 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
     event.set_initialThreadCount(initial_number_of_threads);
     event.set_runningThreadCount(threads_waiting_to_block);
     event.set_iterations(checked_cast<u4>(iterations));
+    event.commit();
+  }
+}
+
+static void post_safepoint_timeout_event(EventSafepointTimeout& event,
+                                         uint64_t safepoint_id,
+                                         jlong time_exceeded) {
+  if (event.should_commit()) {
+    event.set_safepointId(safepoint_id);
+    event.set_timeExceeded(static_cast<julong>(time_exceeded));
     event.commit();
   }
 }
@@ -254,10 +264,21 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   int iterations = 1; // The first iteration is above.
   int64_t start_time = os::javaTimeNanos();
 
+  bool should_sent_timeout_event = EventSafepointTimeout::is_enabled();
+
   do {
+    jlong time_exceeded = -1;
+
     // Check if this has taken too long:
-    if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
-      print_safepoint_timeout();
+    if (SafepointTimeout) {
+      jlong delta = os::javaTimeNanos() - safepoint_limit_time;
+      if (delta > 0) {
+        print_safepoint_timeout();
+
+        if (should_sent_timeout_event) {
+          time_exceeded = delta;
+        }
+      }
     }
 
     p_prev = &tss_head;
@@ -270,6 +291,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
+        tmp->set_time_exceeded(time_exceeded);
       } else {
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
@@ -741,6 +763,15 @@ void SafepointSynchronize::block(JavaThread *thread) {
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
+  jlong time_exceeded = thread->safepoint_state()->get_time_exceeded();
+  if (time_exceeded != -1) {
+    assert(time_exceeded > 0, "sanity check");
+    thread->safepoint_state()->reset_time_exceeded();
+
+    EventSafepointTimeout event;
+    post_safepoint_timeout_event(event, safepoint_id, time_exceeded);
+  }
+
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
@@ -816,7 +847,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
 
 ThreadSafepointState::ThreadSafepointState(JavaThread *thread)
   : _at_poll_safepoint(false), _thread(thread), _safepoint_safe(false),
-    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr) {
+    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr), _time_exceeded(-1) {
 }
 
 void ThreadSafepointState::create(JavaThread *thread) {

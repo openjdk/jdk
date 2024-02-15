@@ -931,6 +931,9 @@
       <setting name="level">forRemoval</setting>
     </event>
 
+    <event name="jdk.SafepointTimeout">
+      <setting name="enabled">true</setting>
+    </event>
 
 
 
