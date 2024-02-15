@@ -27,44 +27,12 @@
 # This file contains functionality related to linking a native binary;
 # creating either a dynamic library, a static library or an executable.
 
-################################################################################
-# Create exported symbols file for static libraries
-################################################################################
-
-# get the exported symbols from mapfiles and if there
-# is no mapfile, get them from the archive
-define GetSymbols
-  $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
-  if [ ! -z $$($1_MAPFILE) -a -e $$($1_MAPFILE) ]; then \
-    $(ECHO) "Getting symbols from mapfile $$($1_MAPFILE)"; \
-    $(AWK) '/global:/','/local:/' $$($1_MAPFILE) | \
-        $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
-        $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
-        $$(@D)/$$(basename $$(@F)).symbols || true; \
-    $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
-        $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
-        $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
-  else \
-    $(ECHO) "Getting symbols from nm"; \
-    $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
-        $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
-        $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
-  fi
-endef
 
 ################################################################################
 # GetEntitlementsFile
 # Find entitlements file for executable when signing on macosx. If no
 # specialized file is found, returns the default file.
 # $1 Executable to find entitlements file for.
-ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
-ifeq ($(MACOSX_CODESIGN_MODE), debug)
-  CODESIGN_PLIST_SUFFIX := -debug
-else
-  CODESIGN_PLIST_SUFFIX :=
-endif
-DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
-
 GetEntitlementsFile = \
     $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
       $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
@@ -91,6 +59,14 @@ define SetupLinking
       $1_STRIP_CMD := $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET)
     endif
   endif
+
+  ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+  ifeq ($(MACOSX_CODESIGN_MODE), debug)
+    CODESIGN_PLIST_SUFFIX := -debug
+  else
+    CODESIGN_PLIST_SUFFIX :=
+  endif
+  DEFAULT_ENTITLEMENTS_FILE := $$(ENTITLEMENTS_DIR)/default$$(CODESIGN_PLIST_SUFFIX).plist
 endef
 
 ################################################################################
@@ -154,7 +130,24 @@ define CreateLinkedResult
           ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
 	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
           else
-	    $(GetSymbols)
+            # get the exported symbols from mapfiles and if there
+            # is no mapfile, get them from the archive
+	    $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
+	    if [ ! -z $$($1_MAPFILE) -a -e $$($1_MAPFILE) ]; then \
+	      $(ECHO) "Getting symbols from mapfile $$($1_MAPFILE)"; \
+	      $(AWK) '/global:/','/local:/' $$($1_MAPFILE) | \
+		  $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
+		  $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
+		  $$(@D)/$$(basename $$(@F)).symbols || true; \
+	      $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
+		  $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
+		  $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
+	    else \
+	      $(ECHO) "Getting symbols from nm"; \
+	      $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+		  $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
+		  $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
+	    fi
           endif
         endif
   else
