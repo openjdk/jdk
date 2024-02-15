@@ -32,7 +32,7 @@
 #include "nsk_tools.h"
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 
 extern "C" {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ static jint jcmd(AttachOperation* op, outputStream* out) {
 //   arg0: Name of the dump file
 //   arg1: "-live" or "-all"
 //   arg2: Compress level
-jint dump_heap(AttachOperation* op, outputStream* out) {
+static jint dump_heap(AttachOperation* op, outputStream* out) {
   const char* path = op->arg(0);
   if (path == nullptr || path[0] == '\0') {
     out->print_cr("No dump file specified");

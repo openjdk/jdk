@@ -1358,7 +1358,6 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
-// elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
 // comparisons (for hw supporting unaligned access: including the final one,
 // which may overlap) are performed 8 bytes at a time.
@@ -1367,13 +1366,12 @@ void C2_MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 // halfword, then a short, and then a byte.
 
 void C2_MacroAssembler::string_equals(Register a1, Register a2,
-                                      Register result, Register cnt1, int elem_size)
+                                      Register result, Register cnt1)
 {
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = t0;
   Register tmp2 = t1;
 
-  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, tmp1, tmp2);
 
   BLOCK_COMMENT("string_equals {");
@@ -1439,15 +1437,13 @@ void C2_MacroAssembler::string_equals(Register a1, Register a2,
   }
 
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing 1-byte elements
-    // 0-1 bytes left.
-    test_bit(tmp1, cnt1, 0);
-    beqz(tmp1, SAME);
-    {
-      lbu(tmp1, Address(a1, 0));
-      lbu(tmp2, Address(a2, 0));
-      bne(tmp1, tmp2, DONE);
-    }
+  // 0-1 bytes left.
+  test_bit(tmp1, cnt1, 0);
+  beqz(tmp1, SAME);
+  {
+    lbu(tmp1, Address(a1, 0));
+    lbu(tmp2, Address(a2, 0));
+    bne(tmp1, tmp2, DONE);
   }
 
   // Arrays are equal.
@@ -1985,7 +1981,7 @@ void C2_MacroAssembler::element_compare(Register a1, Register a2, Register resul
   mv(result, true);
 }
 
-void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt, int elem_size) {
+void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register result, Register cnt) {
   Label DONE;
   Register tmp1 = t0;
   Register tmp2 = t1;
@@ -1994,11 +1990,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 
   mv(result, false);
 
-  if (elem_size == 2) {
-    srli(cnt, cnt, 1);
-  }
-
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, true, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");

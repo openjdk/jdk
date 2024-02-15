@@ -51,11 +51,6 @@ static char *skipNonWhitespace(char *p) {
 #if defined(_AIX)
   /* AIX does not understand '/proc/self' - it requires the real process ID */
   #define FD_DIR aix_fd_dir
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
 #elif defined(_ALLBSD_SOURCE)
   #define FD_DIR "/dev/fd"
 #else

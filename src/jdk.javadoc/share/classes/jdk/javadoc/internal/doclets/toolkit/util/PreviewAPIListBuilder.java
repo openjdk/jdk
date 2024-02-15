@@ -41,8 +41,8 @@ import java.util.TreeSet;
  */
 public class PreviewAPIListBuilder extends SummaryAPIListBuilder {
 
-    final private Map<Element, JEP> elementJeps = new HashMap<>();
-    final private Map<String, JEP> jeps = new HashMap<>();
+    private final Map<Element, JEP> elementJeps = new HashMap<>();
+    private final Map<String, JEP> jeps = new HashMap<>();
 
     /**
      * The JEP for a preview feature in this release.
