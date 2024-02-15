@@ -41,7 +41,9 @@ package java.text;
 import java.io.InvalidObjectException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * {@code ChoiceFormat} is a concrete subclass of {@code NumberFormat} that
@@ -249,86 +251,109 @@ public class ChoiceFormat extends NumberFormat {
      * further understanding of certain special characters: "#", "<", "\u2264", "|".
      */
     private void applyPatternImpl(String newPattern) {
-        StringBuilder[] segments = new StringBuilder[2];
-        for (int i = 0; i < segments.length; ++i) {
-            segments[i] = new StringBuilder();
-        }
-        double[] newChoiceLimits = new double[30];
-        String[] newChoiceFormats = new String[30];
-        int count = 0;
-        int part = 0; // 0 denotes limit, 1 denotes format
-        double startValue = 0;
-        double oldStartValue = Double.NaN;
+        Objects.requireNonNull(newPattern, "newPattern must not be null");
+
+        // Set up components
+        ArrayList<Double> limits = new ArrayList<>();
+        ArrayList<String> formats = new ArrayList<>();
+        Segment seg = Segment.LIMIT;
+        Segment.LIMIT.bldr.setLength(0);
+        Segment.FORMAT.bldr.setLength(0);
+        double limit = 0;
         boolean inQuote = false;
+
+        // Parse the string, swapping between the LIMIT and FORMAT enum mode values
         for (int i = 0; i < newPattern.length(); ++i) {
             char ch = newPattern.charAt(i);
-            if (ch=='\'') {
-                // Check for "''" indicating a literal quote
-                if ((i+1)<newPattern.length() && newPattern.charAt(i+1)==ch) {
-                    segments[part].append(ch);
-                    ++i;
-                } else {
-                    inQuote = !inQuote;
-                }
-            } else if (inQuote) {
-                segments[part].append(ch);
-            } else if (part == 0 && (ch == '<' || ch == '#' || ch == '\u2264')) {
-                // Only consider relational symbols if parsing the limit segment (part == 0).
-                // Don't treat a relational symbol as syntactically significant
-                // when parsing Format segment (part == 1)
-                if (segments[0].length() == 0) {
-                    throw new IllegalArgumentException("Each interval must"
-                            + " contain a number before a format");
-                }
-
-                String tempBuffer = segments[0].toString();
-                if (tempBuffer.equals("\u221E")) {
-                    startValue = Double.POSITIVE_INFINITY;
-                } else if (tempBuffer.equals("-\u221E")) {
-                    startValue = Double.NEGATIVE_INFINITY;
-                } else {
-                    startValue = Double.parseDouble(tempBuffer);
-                }
-
-                if (ch == '<' && startValue != Double.POSITIVE_INFINITY &&
-                        startValue != Double.NEGATIVE_INFINITY) {
-                    startValue = nextDouble(startValue);
-                }
-                if (startValue <= oldStartValue) {
-                    throw new IllegalArgumentException("Incorrect order of"
-                            + " intervals, must be in ascending order");
-                }
-                segments[0].setLength(0);
-                part = 1;
-            } else if (ch == '|') {
-                if (count == newChoiceLimits.length) {
-                    newChoiceLimits = doubleArraySize(newChoiceLimits);
-                    newChoiceFormats = doubleArraySize(newChoiceFormats);
-                }
-                newChoiceLimits[count] = startValue;
-                newChoiceFormats[count] = segments[1].toString();
-                ++count;
-                oldStartValue = startValue;
-                segments[1].setLength(0);
-                part = 0;
-            } else {
-                segments[part].append(ch);
+            switch(ch) {
+                case '\'':
+                    // Check for "''" indicating a literal quote
+                    if ((i + 1) < newPattern.length() && newPattern.charAt(i + 1) == ch) {
+                        seg.bldr.append(ch);
+                        ++i;
+                    } else {
+                        inQuote = !inQuote;
+                    }
+                    break;
+                case '<', '#', '\u2264':
+                    if (inQuote || seg == Segment.FORMAT) {
+                        seg.bldr.append(ch);
+                    } else {
+                        // Build the numerical value of the limit
+                        // and switch to parsing format
+                        if (Segment.LIMIT.bldr.isEmpty()) {
+                            throw new IllegalArgumentException("Each interval must" +
+                                    " contain a number before a format");
+                        }
+                        limit = stringToNum(Segment.LIMIT.bldr.toString());
+                        if (ch == '<' && Double.isFinite(limit)) {
+                            limit = nextDouble(limit);
+                        }
+                        if (!limits.isEmpty() && limit <= limits.getLast()) {
+                            throw new IllegalArgumentException("Incorrect order " +
+                                    "of intervals, must be in ascending order");
+                        }
+                        Segment.LIMIT.bldr.setLength(0);
+                        seg = Segment.FORMAT;
+                    }
+                    break;
+                case '|':
+                    if (inQuote) {
+                        seg.bldr.append(ch);
+                    } else {
+                        if (seg != Segment.FORMAT) {
+                            // Discard incorrect portion and finish building cFmt
+                            break;
+                        }
+                        // Insert an entry into the format and limit arrays
+                        // and switch to parsing limit
+                        limits.add(limit);
+                        formats.add(Segment.FORMAT.bldr.toString());
+                        Segment.FORMAT.bldr.setLength(0);
+                        seg = Segment.LIMIT;
+                    }
+                    break;
+                default:
+                    seg.bldr.append(ch);
             }
         }
-        // clean up last one
-        if (part == 1) {
-            if (count == newChoiceLimits.length) {
-                newChoiceLimits = doubleArraySize(newChoiceLimits);
-                newChoiceFormats = doubleArraySize(newChoiceFormats);
-            }
-            newChoiceLimits[count] = startValue;
-            newChoiceFormats[count] = segments[1].toString();
-            ++count;
+
+        // clean up last one (SubPattern without trailing '|')
+        if (seg == Segment.FORMAT) {
+            limits.add(limit);
+            formats.add(Segment.FORMAT.bldr.toString());
         }
-        choiceLimits = new double[count];
-        System.arraycopy(newChoiceLimits, 0, choiceLimits, 0, count);
-        choiceFormats = new String[count];
-        System.arraycopy(newChoiceFormats, 0, choiceFormats, 0, count);
+        choiceLimits = limits.stream().mapToDouble(d -> d).toArray();
+        choiceFormats = formats.toArray(new String[0]);
+    }
+
+    // Used to explicitly define the segment mode while applying a pattern
+    enum Segment {
+        LIMIT(new StringBuilder()),
+        FORMAT(new StringBuilder());
+
+        private final StringBuilder bldr;
+
+        Segment(StringBuilder bldr) {
+            this.bldr = bldr;
+        }
+    }
+
+    /**
+     * Converts a string value to its double representation; this is used
+     * to create the limit segment while applying a pattern.
+     * Handles "\u221E", as specified by the pattern syntax.
+     */
+    private static double stringToNum(String str) {
+        double num;
+        if (str.equals("\u221E")) {
+            num = Double.POSITIVE_INFINITY;
+        } else if (str.equals("-\u221E")) {
+            num = Double.NEGATIVE_INFINITY;
+        } else {
+            num = Double.parseDouble(str);
+        }
+        return num;
     }
 
     /**
@@ -570,8 +595,26 @@ public class ChoiceFormat extends NumberFormat {
      * @return the least double value greater than {@code d}
      * @see #previousDouble
      */
-    public static final double nextDouble (double d) {
+    public static double nextDouble (double d) {
         return Math.nextUp(d);
+    }
+
+    /**
+     * Finds the least double greater than {@code d} (if {@code positive} is
+     * {@code true}), or the greatest double less than {@code d} (if
+     * {@code positive} is {@code false}).
+     * If {@code NaN}, returns same value.
+     *
+     * @implNote This is equivalent to calling
+     * {@code positive ? Math.nextUp(d) : Math.nextDown(d)}
+     *
+     * @param d        the reference value
+     * @param positive {@code true} if the least double is desired;
+     *                 {@code false} otherwise
+     * @return the least or greater double value
+     */
+    public static double nextDouble (double d, boolean positive) {
+        return positive ? Math.nextUp(d) : Math.nextDown(d);
     }
 
     /**
@@ -585,7 +628,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the greatest double value less than {@code d}
      * @see #nextDouble
      */
-    public static final double previousDouble (double d) {
+    public static double previousDouble (double d) {
         return Math.nextDown(d);
     }
 
@@ -593,8 +636,7 @@ public class ChoiceFormat extends NumberFormat {
      * Overrides Cloneable
      */
     @Override
-    public Object clone()
-    {
+    public Object clone() {
         ChoiceFormat other = (ChoiceFormat) super.clone();
         // for primitives or immutables, shallow clone is enough
         other.choiceLimits = choiceLimits.clone();
@@ -685,37 +727,4 @@ public class ChoiceFormat extends NumberFormat {
      * @serial
      */
     private String[] choiceFormats;
-
-    /**
-     * Finds the least double greater than {@code d} (if {@code positive} is
-     * {@code true}), or the greatest double less than {@code d} (if
-     * {@code positive} is {@code false}).
-     * If {@code NaN}, returns same value.
-     *
-     * @implNote This is equivalent to calling
-     * {@code positive ? Math.nextUp(d) : Math.nextDown(d)}
-     *
-     * @param d        the reference value
-     * @param positive {@code true} if the least double is desired;
-     *                 {@code false} otherwise
-     * @return the least or greater double value
-     */
-    public static double nextDouble (double d, boolean positive) {
-        return positive ? Math.nextUp(d) : Math.nextDown(d);
-    }
-
-    private static double[] doubleArraySize(double[] array) {
-        int oldSize = array.length;
-        double[] newArray = new double[oldSize * 2];
-        System.arraycopy(array, 0, newArray, 0, oldSize);
-        return newArray;
-    }
-
-    private String[] doubleArraySize(String[] array) {
-        int oldSize = array.length;
-        String[] newArray = new String[oldSize * 2];
-        System.arraycopy(array, 0, newArray, 0, oldSize);
-        return newArray;
-    }
-
 }
