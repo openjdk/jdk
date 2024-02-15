@@ -1031,14 +1031,102 @@ address StubGenerator::generate_poly1305_processBlocks() {
   return start;
 }
 
+/*
+  The AVX2 implementation below is directly based on the AVX2 Poly1305 hash computation as
+  implemented in Intel(R) Multi-Buffer Crypto for IPsec Library.
+  (url: https://github.com/intel/intel-ipsec-mb/blob/main/lib/avx2_t3/poly_fma_avx2.asm)
+
+  Additional references:
+  [1] Goll M, Gueron S., "Vectorization of Poly1305 message authentication code",
+      12th International Conference on Information Technology-New Generations,
+      2015 Apr 13 (pp. 145-150). IEEE.
+  [2] Bhattacharyya S, Sarkar P., "Improved SIMD implementation of Poly1305",
+      IET Information Security. 2020 Sep;14(5):521-30.
+  Note: a compact summary of the Goll-Gueron AVX2 algorithm developed in [1] is presented in [2].
+  [3] Wikipedia, "Parallel evaluation of Horner's method",
+      (url: https://en.wikipedia.org/wiki/Horner%27s_method)
+ -----------------------------------------------------------------------------------------------
+
+  Poly1305 AVX2 algorithm:
+
+  Let R be the 16-byte secret key used for polynomial evaluation.
+  Let K be the 16-byte secret AES key.
+  Let Z_P be prime field over which the polynomial is evaluated. Let P = 2^130 - 5 be the prime.
+  Let M be the message which can be represented as a concatenation (||) of 'l' 16-byte blocks M[i].
+  i.e., M = M[0] || M[1] || ... || M[i] || ... || M[l-2] || M[l-1]
+  To create the coefficients C[i] for polynomial evaluation over Z_P, each 16-byte (i.e., 128-bit)
+  message block M[i] is concatenated with bits '10' to make a 130-bit block.
+  The last block (<= 16-byte length) is concatenated with 1 followed by 0s to make a 130-bit block.
+  Therefore, we define
+  C[i]   = M[i] || 10 for 0 <= i <= l-2 ;
+  C[l-1] = M[i] || 10^(128-r), r = length(M[l-1]) in bits.
+
+  Let * indicate multiplication (i.e., c = a * b);
+  Let × indicate multiplication and reduction modulo P (i.e., c = a × b = {(a * b) mod P})
+
+  POLY1305_MAC = (POLY1305_EVAL_POLYNOMIAL(C, R, P) + K) mod 2^128; where,
+
+  POLY1305_EVAL_POLYNOMIAL(C, R, P) = {C[0] * R^l + C[1] * R^(l-1) + ... + C[l-2] * R^2 + C[l-1] * R} mod P
+    = R × {C[0] × R^(l-1) + C[1] × R^(l-2) + ... + C[l-2] × R + C[l-1]}
+    = R × Polynomial(R; C[0], C[1], ... ,C[l-2], C[l-1]
+  Where,
+  Polynomial(R; C[0], C[1], ... ,C[l-2], C[l-1]) = Σ{C[i] × R^(l-i-1)} for i ∈ [0, l)
+  -----------------------------------------------------------------------------------------------
+
+  Parallel evaluation of POLY1305_EVAL_POLYNOMIAL(C, R, P):
+  Let the number of message blocks l = 4*l' + ρ where ρ = l mod 4.
+  Using k-way parallel Horner's evaluation [3], for k = 4, we define SUM below:
+
+  SUM = R^4 × Polynomial(R^4; C[0], C[4], C[8]  ... , C[4l'-4]) +
+        R^3 × Polynomial(R^4; C[1], C[5], C[9]  ... , C[4l'-3]) +
+        R^2 × Polynomial(R^4; C[2], C[6], C[10] ... , C[4l'-2]) +
+        R^1 × Polynomial(R^4; C[3], C[7], C[11] ... , C[4l'-1]) +
+
+  Then,
+  POLY1305_EVAL_POLYNOMIAL(C, R, P) = SUM if ρ = 0 (i.e., l is multiple of 4)
+                        = R × Polynomial(R; SUM + C[l-ρ], C[l-ρ+1], ... , C[l-1]) if ρ > 0
+  -----------------------------------------------------------------------------------------------
+
+  Gall-Gueron[1] 4-way SIMD Algorithm[2] for POLY1305_EVAL_POLYNOMIAL(C, R, P):
+
+  Define mathematical vectors as below:
+  R4321   = [R^4, R^3, R^2, R^1];
+  R4444   = [R^4, R^4, R^4, R^4];
+  Ci      = [C[4i], C[4i+1], C[4i+2], C[4i+3]] for i ∈ [0, l')
+  Ex: C0  = [C0, C1, C2, C3]
+  Ex: C1  = [C4, C5, C6, C7]
+  T       = [T0, T1, T2, T3] be a temporary vector
+  ACC     = [acc, 0, 0, 0]; acc has hash from previous computations (if any)
+  ⊗ indicates component-wise multiplication followed by modulo reduction
+  ⊕ indicates component-wise addition
+
+  POLY1305_EVAL_POLYNOMIAL(C, R, P) {
+    T ← ACC
+    T ← T ⊕ C0;
+    Compute R4321, R4444;
+    # SIMD loop
+    l' = floor(l/4)
+    for (i = 1 to l'-1):
+      T ← (R4444 ⊗ T) ⊕ Ci;
+    T ← R4321 ⊗ T;
+    SUM ← T0 + T1 + T2 + T3;
+
+    # Scalar tail processing
+    if (ρ > 0):
+      SUM ← R × Polynomial(R; SUM + C[l-ρ], C[l-ρ+1], ... , C[l-1]);
+    return SUM;
+  }
+
+  Each 130-bit block is represented using three 44-bit limbs (most significant limb is only 42-bit).
+  (The Goll-Gueron implementation[1] uses five 26-bit limbs instead)
+
+*/
+
 void StubGenerator::poly1305_process_blocks_avx2(
     const Register input, const Register length,
     const Register a0, const Register a1, const Register a2,
     const Register r0, const Register r1, const Register c1)
 {
-  //This implementation is based on the AVX2 Poly1305 hash computation as implemented in
-  // Intel(R) Multi-Buffer Crypto for IPsec Library.
-  // url: https://github.com/intel/intel-ipsec-mb/blob/main/lib/avx2_t3/poly_fma_avx2.asm
   Label L_process256Loop, L_process256LoopDone;
   const Register t0 = r13;
   const Register t1 = r14;
@@ -1068,7 +1156,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
   const XMMRegister YMM_R1 = YTMP12;
   const XMMRegister YMM_R2 = YTMP13;
 
-  // XWORD of YMM registers
+  // XWORD aliases of YMM registers (for convenience)
   const XMMRegister XTMP1 = YTMP1;
   const XMMRegister XTMP2 = YTMP2;
   const XMMRegister XTMP3 = YTMP3;
@@ -1077,11 +1165,17 @@ void StubGenerator::poly1305_process_blocks_avx2(
   // Save rbp and rsp
   __ push(rbp);
   __ movq(rbp, rsp);
-  // Align stack
+  // Align stack and reserve space
   __ andq(rsp, -32);
   __ subptr(rsp, 32*8);
 
+  /* Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
+    T ← ACC
+    T ← T ⊕ C0;
+  */
+
   // Spread accumulator into 44-bit limbs in quadwords
+  // Accumulator limbs to be stored in YTMP1,YTMP2,YTMP3
   // First limb (Acc[43:0])
   __ movq(t0, a0);
   __ andq(t0, ExternalAddress(poly1305_mask44()), t1 /*rscratch*/);
@@ -1095,14 +1189,14 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ shrdq(a1, a2, 24);
   __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/);
   __ movq(XTMP3, a1);
+  // --- end of spread accumulator
 
   // To add accumulator, we must unroll first loop iteration
-
-  // Load first block of data (64 bytes)and pad
+  // Load first four 16-byte message blocks of data (64 bytes)
   __ vmovdqu(YTMP4, Address(input, 0));
   __ vmovdqu(YTMP5, Address(input, 32));
 
-  // Interleave the data to form 44-bit limbs
+  // Interleave the input message data to form 44-bit limbs
   // YMM_ACC0 to have bits 0-43 of all 4 blocks in 4 qwords
   // YMM_ACC1 to have bits 87-44 of all 4 blocks in 4 qwords
   // YMM_ACC2 to have bits 127-88 of all 4 blocks in 4 qwords
@@ -1124,11 +1218,19 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Add 2^128 to all 4 final qwords for the message
   __ vpor(YMM_ACC2, YMM_ACC2, ExternalAddress(poly1305_pad_msg()), Assembler::AVX_256bit, t1);
+  // --- end of input interleaving and message padding
 
   // Add accumulator to the fist message block
+  // Accumulator limbs in YTMP1,YTMP2,YTMP3
   __ vpaddq(YMM_ACC0, YMM_ACC0, YTMP1, Assembler::AVX_256bit);
   __ vpaddq(YMM_ACC1, YMM_ACC1, YTMP2, Assembler::AVX_256bit);
   __ vpaddq(YMM_ACC2, YMM_ACC2, YTMP3, Assembler::AVX_256bit);
+
+  /* Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
+    Compute R4321, R4444;
+    R4321   = [R^4, R^3, R^2, R^1];
+    R4444   = [R^4, R^4, R^4, R^4];
+  */
 
   // Compute the powers of R^1..R^4 and form 44-bit limbs of each
   // YTMP5 to have bits 0-127 for R^1 and R^2
@@ -1136,44 +1238,47 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ movq(XTMP1, r0);
   __ vpinsrq(XTMP1, XTMP1, r1, 1);
   __ vinserti128(YTMP5, YTMP5, XTMP1, 1);
-
+  // clear registers
   __ vpxor(YTMP10, YTMP10, YTMP10, Assembler::AVX_256bit);
   __ vpxor(YTMP6, YTMP6, YTMP6, Assembler::AVX_256bit);
 
   // Calculate R^2
   __ movq(t0, c1); // c1 = R1 + (R1 >> 2)
+  // a ← R
   __ movq(a0, r0);
   __ movq(a1, r1);
-
+  // a ← a * R = R^2
   poly1305_multiply_scalar(a0, a1, a2,
                            r0, r1, c1, true,
                            t0, t1, t2, mulql, mulqh);
+  // Store R^2 in YTMP5, YTM6
   __ movq(XTMP1, a0);
   __ vpinsrq(XTMP1, XTMP1, a1, 1);
   __ vinserti128(YTMP5, YTMP5, XTMP1, 0);
-
   __ movq(XTMP1, a2);
   __ vinserti128(YTMP6, YTMP6, XTMP1, 0);
 
   // Calculate R^3
+  // a ← a * R = R^3
   poly1305_multiply_scalar(a0, a1, a2,
                            r0, r1, c1, false,
                            t0, t1, t2, mulql, mulqh);
+  // Store R^3 in YTMP7, YTM2
   __ movq(XTMP1, a0);
   __ vpinsrq(XTMP1, XTMP1, a1, 1);
   __ vinserti128(YTMP7, YTMP7, XTMP1, 1);
-
   __ movq(XTMP1, a2);
   __ vinserti128(YTMP2, YTMP2, XTMP1, 1);
 
   // Calculate R^4
+  // a ← a * R = R^4
   poly1305_multiply_scalar(a0, a1, a2,
                            r0, r1, c1, false,
                            t0, t1, t2, mulql, mulqh);
+  // Store R^4 in YTMP7, YTM2
   __ movq(XTMP1, a0);
   __ vpinsrq(XTMP1, XTMP1, a1, 1);
   __ vinserti128(YTMP7, YTMP7, XTMP1, 0);
-
   __ movq(XTMP1, a2);
   __ vinserti128(YTMP2, YTMP2, XTMP1, 0);
 
@@ -1201,8 +1306,9 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpsrlq(YMM_R2, YMM_R2, 24, Assembler::AVX_256bit);
 
   __ vpor(YMM_R2, YMM_R2, YTMP6, Assembler::AVX_256bit);
+  // YMM_R0, YMM_R1, YMM_R2 have the limbs of R^1, R^2, R^3, R^4
 
-  // Store R^4-R for later use
+  // Store R^4-R on stack for later use
   int _r4_r1_save = 0;
   __ vmovdqu(Address(rsp, _r4_r1_save + 0), YMM_R0);
   __ vmovdqu(Address(rsp, _r4_r1_save + 32), YMM_R1);
@@ -1224,8 +1330,10 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ andq(a1, ExternalAddress(poly1305_mask42()), t1 /*rscratch*/); // Third limb (R^4[129:88])
   __ movq(YMM_R2, a1);
   __ vpermq(YMM_R2, YMM_R2, 0x0, Assembler::AVX_256bit);
+  // YMM_R0, YMM_R1, YMM_R2 have the limbs of R^4, R^4, R^4, R^4
 
   // Generate 4*5*R^4
+  // 4*R^4
   __ vpsllq(YTMP1, YMM_R1, 2, Assembler::AVX_256bit);
   __ vpsllq(YTMP2, YMM_R2, 2, Assembler::AVX_256bit);
   // 5*R^4
@@ -1235,7 +1343,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpsllq(YTMP1, YTMP1, 2, Assembler::AVX_256bit);
   __ vpsllq(YTMP2, YTMP2, 2, Assembler::AVX_256bit);
 
-  //Store R^4-R for later use
+  //Store broadcasted R^4 and 4*5*R^4 on stack for later use
   int _r4_save = 32*3;
   int _r4p_save = 32*6;
   __ vmovdqu(Address(rsp, _r4_save + 0), YMM_R0);
@@ -1244,7 +1352,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vmovdqu(Address(rsp, _r4p_save), YTMP1);
   __ vmovdqu(Address(rsp, _r4p_save + 32), YTMP2);
 
-  // Get the number of multiples of 64 bytes for vectorization
+  // Get the number of multiples of 4 message blocks (64 bytes) for vectorization
   __ movq(t0, length);
   __ mov64(t1, 0xffffffffffffffc0);
   __ andq(t0, t1);
@@ -1254,7 +1362,16 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ cmpl(t0, 16*4); //64 bytes (4 blocks at a time)
   __ jcc(Assembler::belowEqual, L_process256LoopDone);
 
-  // Perform multiply and reduce while loading the next block in interleaved manner
+  /*
+    Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
+    l' = floor(l/4)
+    for (i = 1 to l'-1):
+      T ← (R4444 ⊗ T) ⊕ Ci;
+  */
+
+  // Perform multiply and reduce while loading the next block and adding it in interleaved manner
+  // The logic to advance the SIMD loop counter (i.e. length -= 64) is inside the function below.
+  // The function below also includes the logic to load the next 4 blocks of data for efficient port utilization.
   poly1305_msg_mul_reduce_vec4_avx2(YMM_ACC0, YMM_ACC1, YMM_ACC2,
                           Address(rsp, _r4_save + 0), Address(rsp, _r4_save + 32), Address(rsp, _r4_save + 32*2),
                           Address(rsp, _r4p_save), Address(rsp, _r4p_save + 32),
@@ -1264,6 +1381,11 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ jmp(L_process256Loop);
   // end of vector loop
   __ bind(L_process256LoopDone);
+
+  /*
+    Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
+    T ← R4321 ⊗ T;
+  */
 
   // Need to multiply by R^4, R^3, R^2, R
   //Read R^4-R;
@@ -1287,6 +1409,11 @@ void StubGenerator::poly1305_process_blocks_avx2(
                           YMM_R0, YMM_R1, YMM_R2, YTMP1, YTMP2,
                           YTMP3, YTMP4, YTMP5, YTMP6,
                           YTMP7, YTMP8, YTMP9, t1);
+  /*
+    Compute the following steps of POLY1305_EVAL_POLYNOMIAL algorithm
+    SUM ← T0 + T1 + T2 + T3;
+  */
+
   // 4 -> 2 blocks
   __ vextracti128(YTMP1, YMM_ACC0, 1);
   __ vextracti128(YTMP2, YMM_ACC1, 1);
@@ -1356,7 +1483,20 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
 }
 
-
+// Compute component-wise product for 4 16-byte message  blocks,
+// i.e. For each block, compute [a2 a1 a0] = [a2 a1 a0] x [r2 r1 r0]
+//
+// Each block/number is represented by 3 44-bit limb digits, start with multiplication
+//
+//      a2       a1       a0
+// x    r2       r1       r0
+// ----------------------------------
+//     a2xr0    a1xr0    a0xr0
+// +   a1xr1    a0xr1  5xa2xr1'     (r1' = r1<<2)
+// +   a0xr2  5xa2xr2' 5xa1xr2'     (r2' = r2<<2)
+// ----------------------------------
+//        p2       p1       p0
+//
 void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
   const XMMRegister R0, const XMMRegister R1, const XMMRegister R2,
@@ -1377,7 +1517,7 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   // Calculate partial products
   // p0 = a2xr1'
   // p1 = a2xr2'
-  // p2 = a2xr0
+  // p0 += a0xr0
   __ vpmadd52luq(P0L, A2, R1P, Assembler::AVX_256bit);
   __ vpmadd52huq(P0H, A2, R1P, Assembler::AVX_256bit);
 
@@ -1388,6 +1528,9 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   __ vpmadd52huq(P0H, A0, R0, Assembler::AVX_256bit);
 
   // p2 = a2xr0
+  // p1 += a0xr1
+  // p0 += a1xr2'
+  // p2 += a0Xr2
   __ vpmadd52luq(P2L, A2, R0, Assembler::AVX_256bit);
   __ vpmadd52huq(P2H, A2, R0, Assembler::AVX_256bit);
 
@@ -1435,6 +1578,21 @@ void StubGenerator::poly1305_mul_reduce_vec4_avx2(
   __ vpaddq(A1, A1, YTMP1, Assembler::AVX_256bit);
 }
 
+// Compute component-wise product for 4 16-byte message  blocks and adds the next 4 blocks
+// i.e. For each block, compute [a2 a1 a0] = [a2 a1 a0] x [r2 r1 r0],
+// followed by [a2 a1 a0] += [n2 n1 n0], where n contains the next 4 blocks of the message.
+//
+// Each block/number is represented by 3 44-bit limb digits, start with multiplication
+//
+//      a2       a1       a0
+// x    r2       r1       r0
+// ----------------------------------
+//     a2xr0    a1xr0    a0xr0
+// +   a1xr1    a0xr1  5xa2xr1'     (r1' = r1<<2)
+// +   a0xr2  5xa2xr2' 5xa1xr2'     (r2' = r2<<2)
+// ----------------------------------
+//        p2       p1       p0
+//
 void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
   const XMMRegister A0, const XMMRegister A1, const XMMRegister A2,
   const Address R0, const Address R1, const Address R2,
@@ -1515,8 +1673,8 @@ void StubGenerator::poly1305_msg_mul_reduce_vec4_avx2(
 
   __ vpaddq(P2L, P2L, P1H, Assembler::AVX_256bit);
   __ vpaddq(P2L, P2L, YTMP5, Assembler::AVX_256bit);
-  __ vpand(A2, P2L, ExternalAddress(poly1305_mask42()), Assembler::AVX_256bit, rscratch); // Clear top 20 bits
-  __ vpaddq(A2, A2, YTMP6, Assembler::AVX_256bit);
+  __ vpand(A2, P2L, ExternalAddress(poly1305_mask42()), Assembler::AVX_256bit, rscratch); // Clear top 22 bits
+  __ vpaddq(A2, A2, YTMP6, Assembler::AVX_256bit); // Add highest bits from new blocks to accumulator
   __ vpsrlq(YTMP5, P2L, 42, Assembler::AVX_256bit);
   __ vpsllq(P2H, P2H, 10, Assembler::AVX_256bit);
   __ vpaddq(P2H, P2H, YTMP5, Assembler::AVX_256bit);
