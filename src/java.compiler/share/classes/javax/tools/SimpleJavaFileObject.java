@@ -103,7 +103,8 @@ public class SimpleJavaFileObject implements JavaFileObject {
     /**
      * {@inheritDoc FileObject}
      * @implSpec
-     * This implementation wraps the result of {@linkplain #getCharContent} in a Reader.
+     * This implementation wraps the result of {@linkplain
+     * #getCharContent} in a {@link Reader}.
      *
      * @param  ignoreEncodingErrors {@inheritDoc}
      * @return a Reader wrapping the result of getCharContent
@@ -136,7 +137,8 @@ public class SimpleJavaFileObject implements JavaFileObject {
     /**
      * {@inheritDoc FileObject}
      * @implSpec
-     * This implementation wraps the result of openOutputStream in a Writer.
+     * This implementation wraps the result of {@link
+     * openOutputStream} in a {@link Writer}.
      *
      * @return a Writer wrapping the result of openOutputStream
      * @throws IllegalStateException {@inheritDoc}
