@@ -120,7 +120,7 @@ define CreateCompiledNativeFileBody
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
 
-    $$(eval $$(call SetupCompileFileFlags,$1))
+    $$(eval $$(call SetupCompileFileFlags,$1,$$($1_BASE)))
 
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
