@@ -1340,30 +1340,15 @@ public class CLDRConverter {
                     String rule = null;
                     String format = null;
                     boolean inVanguard = false;
-                    boolean inRearguard = false;
                     for (var line : Files.readAllLines(p)) {
-                        // Interpret the line in rearguard mode so that STD/DST
-                        // correctly handles negative DST cases, such as "GMT/IST"
-                        // vs. "IST/GMT" case for Europe/Dublin
-                        if (inVanguard) {
-                            if (line.startsWith("# Rearguard")) {
-                                inVanguard = false;
-                                inRearguard = true;
-                            }
-                            continue;
-                        } else if (line.startsWith("# Vanguard")) {
+                        // check for Vanguard lines
+                        if (line.startsWith("# Vanguard section")) {
                             inVanguard = true;
                             continue;
                         }
-                        if (inRearguard) {
-                            if (line.startsWith("# End of rearguard")) {
-                                inRearguard = false;
-                                continue;
-                            } else {
-                                if (line.startsWith("#\t")) {
-                                    line = line.substring(1); // omit #
-                                }
-                            }
+                        if (inVanguard && line.startsWith("# Rearguard section")) {
+                            inVanguard = false;
+                            continue;
                         }
                         if (line.isBlank() || line.matches("^[ \t]*#.*")) {
                             // ignore blank/comment lines
@@ -1380,7 +1365,7 @@ public class CLDRConverter {
                             var zl = line.split("[ \t]+", -1);
                             zone = zl[1];
                             rule = zl[3];
-                            format = zl[4];
+                            format = flipIfNeeded(inVanguard, zl[4]);
                         } else {
                             if (zone != null) {
                                 if (line.startsWith("Rule") ||
@@ -1392,7 +1377,7 @@ public class CLDRConverter {
                                 } else {
                                     var s = line.split("[ \t]+", -1);
                                     rule = s[2];
-                                    format = s[3];
+                                    format = flipIfNeeded(inVanguard, s[3]);
                                 }
                             }
                         }
@@ -1419,6 +1404,19 @@ public class CLDRConverter {
                     throw new UncheckedIOException(ioe);
                 }
             });
+    }
+
+    // Reverse the std/dst FORMAT in Vanguard so that it
+    // correctly handles negative DST cases, such as "GMT/IST"
+    // vs. "IST/GMT" case for Europe/Dublin
+    private static String flipIfNeeded(boolean inVanguard, String format) {
+        if (inVanguard) {
+            var stddst = format.split("/");
+            if (stddst.length == 2) {
+                return stddst[1] + "/" + stddst[0];
+            }
+        }
+        return format;
     }
 
     /*
