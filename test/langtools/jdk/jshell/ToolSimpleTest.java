@@ -970,4 +970,11 @@ public class ToolSimpleTest extends ReplToolTesting {
                 (a) -> assertCommandOutputContains(a, "var a = a;", "cannot use 'var' on self-referencing variable")
         );
     }
+
+    @Test
+    public void testStringTemplateNotProcessor() {
+        test(false, new String[]{"--enable-preview"},
+                a -> assertCommandOutputContains(a, "new Object().\"\"", "not a processor type")
+        );
+    }
 }
