@@ -145,7 +145,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         document.getChangedEvent().addListener(g -> documentChanged());
-        loadWorkspace();
+
+        String workspacePath = getWorkspaceGraphsPath();
+        if (!workspacePath.isEmpty()) {
+            loadWorkspace(workspacePath);
+        }
     }
 
     private void onChangeWorkspaceClicked(ActionEvent event) {
@@ -155,8 +159,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         fileChooser.setAcceptAllFileFilterUsed(false);
 
         if (fileChooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-            File currentWorkspace = fileChooser.getSelectedFile();
-            changeWorkspaceButton.setText(currentWorkspace.getAbsolutePath());
+            File newWorkspace = fileChooser.getSelectedFile();
+            String workspacePath = newWorkspace.getAbsolutePath();
+            if (!workspacePath.isEmpty()) {
+                loadWorkspace(workspacePath);
+            }
         }
     }
 
@@ -309,13 +316,11 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
-    private void loadWorkspace() {
+    private void loadWorkspace(String graphsPath) {
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
-        String graphsPath = getWorkspaceGraphsPath();
-        if (graphsPath.isEmpty()) {
-            return;
-        }
+        changeWorkspaceButton.setText(graphsPath);
+
         try {
             loadGraphDocument(graphsPath);
         } catch (IOException ex) {
