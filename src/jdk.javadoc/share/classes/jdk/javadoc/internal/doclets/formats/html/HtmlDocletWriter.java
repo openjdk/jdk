@@ -220,7 +220,7 @@ public abstract class HtmlDocletWriter {
      *
      * @param configuration the configuration for this doclet
      * @param path the file to be generated.
-     * @param generating whether to write a "Geneterating ..." message to the console
+     * @param generating whether to write a "Generating ..." message to the console
      */
     protected HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
