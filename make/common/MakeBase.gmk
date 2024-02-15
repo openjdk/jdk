@@ -24,9 +24,10 @@
 #
 
 ################################################################
-#
-# Setup common utility functions.
-#
+# MakeBase provides the core functionality needed and used by all makefiles. It
+# should be included by all makefiles. MakeBase provides essential
+# functionality for named parameter functions, variable dependency, tool
+# execution, logging and fixpath functionality.
 ################################################################
 
 ifndef _MAKEBASE_GMK
@@ -74,7 +75,6 @@ ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   CORRECT_FUNCTION_IN_RECIPE_EVALUATION := true
   RWILDCARD_WORKS := true
 endif
-
 
 # For convenience, MakeBase.gmk continues to include these separate files, at
 # least for now.
