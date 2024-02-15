@@ -23,7 +23,7 @@
 
 #include <jni.h>
 #include <stdlib.h>
-#include "jnihelper.h"
+#include "jnihelper.hpp"
 
 /*
   basic routine: provide critical sections and calculations
