@@ -41,6 +41,7 @@
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class MemAllocator::Allocation: StackObj {
   friend class MemAllocator;
@@ -408,10 +409,27 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
+    mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
 }
+
+#ifndef PRODUCT
+void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
+  const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t size_in_bytes = _word_size * BytesPerWord;
+
+  const address obj_end = reinterpret_cast<address>(mem) + size_in_bytes;
+
+  const size_t padding_in_bytes = size_in_bytes - base_offset_in_bytes - length_in_bytes;
+  if (padding_in_bytes != 0) {
+    Copy::fill_to_bytes(obj_end - padding_in_bytes, padding_in_bytes, heapPaddingByte);
+  }
+}
+#endif
 
 oop ClassAllocator::initialize(HeapWord* mem) const {
   // Set oop_size field before setting the _klass field because a

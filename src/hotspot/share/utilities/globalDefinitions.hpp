@@ -1035,6 +1035,7 @@ const int      badResourceValue = 0xAB;                     // value used to zap
 const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
 const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
 const juint    uninitMetaWordVal= 0xf7f7f7f7;               // value used to zap newly allocated metachunk
+const jubyte   heapPaddingByte  = 0xBD;                     // value used to zap object padding in the heap
 const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
 const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation

@@ -98,6 +98,8 @@ protected:
   const int  _length;
   const bool _do_zero;
 
+  void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
+
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
                     Thread* thread = Thread::current())

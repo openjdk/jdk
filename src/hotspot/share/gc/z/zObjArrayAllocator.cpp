@@ -132,6 +132,8 @@ oop ZObjArrayAllocator::initialize(HeapWord* mem) const {
     assert(result, "Array initialization should always succeed the second time");
   }
 
+  mem_zap_end_padding(mem);
+
   ZThreadLocalData::clear_invisible_root(_thread);
 
   // Signal to the ZIterator that this is no longer an invisible root
