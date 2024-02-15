@@ -35,7 +35,7 @@ import jtreg.SkippedException;
 
 /**
  * @test
- * @bug 8240989
+ * @bug 8176520
  * @summary Test that heap dumpers (VM and SA) report correct instance size in HPROF_GC_CLASS_DUMP records
  * @requires vm.jvmti
  * @requires vm.hasSA
