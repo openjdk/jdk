@@ -109,19 +109,6 @@ define RecordEndTime
 	    > $(BUILDTIMESDIR)/build_time_diff_$(strip $1)
 endef
 
-# Hook to be called when starting to execute a top-level target
-define TargetEnter
-	$(PRINTF) "## Starting $(patsubst %-only,%,$@)\n"
-	$(call RecordStartTime,$(patsubst %-only,%,$@))
-endef
-
-# Hook to be called when finish executing a top-level target
-define TargetExit
-	$(call RecordEndTime,$(patsubst %-only,%,$@))
-	$(PRINTF) "## Finished $(patsubst %-only,%,$@) (build time %s)\n\n" \
-	    "`$(CAT) $(BUILDTIMESDIR)/build_time_diff_$(patsubst %-only,%,$@) | $(CUT) -f 1 -d ' '`"
-endef
-
 ################################################################################
 
 # A file containing a way to uniquely identify the source code revision that
