@@ -95,27 +95,30 @@ public class HeapSummary extends Tool {
 
       if (heap instanceof SerialHeap) {
          SerialHeap sh = (SerialHeap) heap;
-         for (int n = 0; n < sh.nGens(); n++) {
-            Generation gen = sh.getGen(n);
-            if (gen instanceof DefNewGeneration) {
-               System.out.println("New Generation (Eden + 1 Survivor Space):");
-               printGen(gen);
+         {
+           // youngGen
+           DefNewGeneration youngGen = sh.youngGen();
 
-               ContiguousSpace eden = ((DefNewGeneration)gen).eden();
-               System.out.println("Eden Space:");
-               printSpace(eden);
+           System.out.println("New Generation (Eden + 1 Survivor Space):");
+           printGen(youngGen);
 
-               ContiguousSpace from = ((DefNewGeneration)gen).from();
-               System.out.println("From Space:");
-               printSpace(from);
+           ContiguousSpace eden = youngGen.eden();
+           System.out.println("Eden Space:");
+           printSpace(eden);
 
-               ContiguousSpace to = ((DefNewGeneration)gen).to();
-               System.out.println("To Space:");
-               printSpace(to);
-            } else {
-               System.out.println(gen.name() + ":");
-               printGen(gen);
-            }
+           ContiguousSpace from = youngGen.from();
+           System.out.println("From Space:");
+           printSpace(from);
+
+           ContiguousSpace to = youngGen.to();
+           System.out.println("To Space:");
+           printSpace(to);
+         }
+         {
+           // oldGen
+           TenuredGeneration oldGen = sh.oldGen();
+           System.out.println(oldGen.name() + ":");
+           printGen(oldGen);
          }
       } else if (heap instanceof G1CollectedHeap) {
           printG1HeapSummary((G1CollectedHeap)heap);

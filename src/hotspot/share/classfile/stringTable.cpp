@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ volatile bool _alt_hash = false;
 static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
-unsigned int hash_string(const jchar* s, int len, bool useAlt) {
+static unsigned int hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
     AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);

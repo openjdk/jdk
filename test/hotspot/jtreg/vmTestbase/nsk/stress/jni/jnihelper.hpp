@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-package sun.jvm.hotspot.gc.shared;
+#include <stdlib.h>
 
-import sun.jvm.hotspot.debugger.*;
-
-/** Should only be used once */
-
-class GenerationIsInClosure implements SpaceClosure {
-  private Address p;
-  private Space sp;
-
-  GenerationIsInClosure(Address p) {
-    this.p = p;
-  }
-
-  public void doSpace(Space s) {
-    if (s.contains(p)) {
-      sp = s;
-    }
-  }
-
-  Space space() {
-    return sp;
-  }
+// checked malloc to trap OOM conditions
+static void* c_malloc(JNIEnv* env, size_t size) {
+  void* ret = malloc(size);
+  if (ret == nullptr)
+    env->FatalError("malloc failed");
+  return ret;
 }
+
+// Asserts every exception as fatal one
+#define CE {\
+    if (env->ExceptionOccurred())\
+    {\
+        puts("Unexpected JNI exception. TEST FAIL.");\
+        env->ExceptionDescribe();\
+        env->ExceptionClear();\
+        env->FatalError("Unexpected JNI Exception. TEST FAIL.");\
+    }\
+}
+
+// Checks return code for JNI calls that don't raise exceptions
+// and generate fatal error
+#define CHECK(jniCall) do { \
+  if ((jniCall) != 0) { \
+    env->FatalError("Error invoking JNI method: " #jniCall); \
+  } \
+} while (0)

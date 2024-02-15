@@ -27,7 +27,6 @@
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/g1/g1Allocator.inline.hpp"
 #include "gc/g1/g1Arguments.hpp"
@@ -2198,8 +2197,6 @@ void G1CollectedHeap::trace_heap(GCWhen::Type when, const GCTracer* gc_tracer) {
 }
 
 void G1CollectedHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Update common counters.
   increment_total_collections(full /* full gc */);
   if (full || collector_state()->in_concurrent_start_gc()) {
