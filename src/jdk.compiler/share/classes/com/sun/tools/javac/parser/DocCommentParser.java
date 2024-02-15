@@ -1427,14 +1427,14 @@ public class DocCommentParser {
         CODE_FENCE(Pattern.compile("(`{3,}[^`]*+)|(~{3,}.*+)")),
 
         /**
-         * Bullet list item: * + - followed by a space
+         * Bullet list item: * + - followed by at least one space or tab
          * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
          */
         BULLETED_LIST_ITEM(Pattern.compile("[-+*][ \t].*")),
 
         /**
          * Ordered list item: a sequence of 1-9 arabic digits (0-9), followed by
-         * either a . character or a )
+         * either a . character or a ), followed by at least one space or tab
          * @see <a href="https://spec.commonmark.org/0.30/#list-items">List items</a>
          */
         ORDERED_LIST_ITEM(Pattern.compile("[0-9]{1,9}[.)][ \t].*")),
