@@ -777,11 +777,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<layout>
 		<orientation>
 			<characterOrder>right-to-left</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u07EB \u07EC \u07ED \u07EE \u07EF \u07F0 \u07F1 \u07F2 \u07F3 ߊ ߋ ߌ ߍ ߎ ߏ ߐ ߑ ߒ ߓ ߔ ߕ ߖ ߗ ߘ ߙ ߚ ߛ ߜ ߝ ߞ ߟ ߠ ߡ ߢ ߣ ߤ ߥ ߦ ߧ ߴ ߵ]</exemplarCharacters>
+		<exemplarCharacters>[߫ ߬ ߭ ߮ ߯ ߰ ߱ ߲ ߳ ߊ ߋ ߌ ߍ ߎ ߏ ߐ ߑ ߒ ߓ ߔ ߕ ߖ ߗ ߘ ߙ ߚ ߛ ߜ ߝ ߞ ߟ ߠ ߡ ߢ ߣ ߤ ߥ ߦ ߧ ߴ ߵ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[ߨ ߩ ߪ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ ، . % ‰ + ߀ ߁ ߂ ߃ ߄ ߅ ߆ ߇ ߈ ߉]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[߸ ߹ ߷]</exemplarCharacters>
@@ -805,20 +804,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ߣߍߣ</month>
 							<month type="12">ߞߏߟ</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ߓ</month>
-							<month type="2">ߞ</month>
-							<month type="3">ߕ</month>
-							<month type="4">ߞ</month>
-							<month type="5">ߘ</month>
-							<month type="6">ߥ</month>
-							<month type="7">ߞ</month>
-							<month type="8">ߘ</month>
-							<month type="9">ߕ</month>
-							<month type="10">ߞ</month>
-							<month type="11">ߣ</month>
-							<month type="12">ߞ</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ߓߌ߲ߠߊߥߎߟߋ߲</month>
 							<month type="2">ߞߏ߲ߞߏߜߍ</month>
@@ -835,20 +820,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">ߓߌ߲ߠ</month>
-							<month type="2">ߞߏ߲ߞ</month>
-							<month type="3">ߕߙߊ</month>
-							<month type="4">ߞߏ߲ߘ</month>
-							<month type="5">ߘߓߊ߬ߕ</month>
-							<month type="6">ߥߊ߬ߛ</month>
-							<month type="7">ߞߊ߬ߙ</month>
-							<month type="8">ߘߓߊ߬ߓ</month>
-							<month type="9">ߕߎߟߊߝߌ߲</month>
-							<month type="10">ߞߏ߲ߓ</month>
-							<month type="11">ߣߍߣ</month>
-							<month type="12">ߞߏߟ</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ߓ</month>
 							<month type="2">ߞ</month>
@@ -863,20 +834,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">ߣ</month>
 							<month type="12">ߞ</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">ߓߌ߲ߠߊߥߎߟߋ߲</month>
-							<month type="2">ߞߏ߲ߞߏߜߍ</month>
-							<month type="3">ߕߙߊߓߊ</month>
-							<month type="4">ߞߏ߲ߞߏߘߌ߬ߓߌ</month>
-							<month type="5">ߘߓߊ߬ߕߊ</month>
-							<month type="6">ߥߊ߬ߛߌ߬ߥߙߊ</month>
-							<month type="7">ߞߊ߬ߙߌߝߐ߭</month>
-							<month type="8">ߘߓߊ߬ߓߌߟߊ</month>
-							<month type="9">ߕߎߟߊߝߌ߲</month>
-							<month type="10">ߞߏ߲ߓߌߕߌ߮</month>
-							<month type="11">ߣߍߣߍߓߊ</month>
-							<month type="12">ߞߏߟߌ߲ߞߏߟߌ߲</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -889,15 +846,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">ߓߌߟ</day>
 							<day type="fri">ߛߌ߬ߣ</day>
 							<day type="sat">ߞߍ߲ߘ</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">ߞ</day>
-							<day type="mon">ߞ</day>
-							<day type="tue">ߞ</day>
-							<day type="wed">ߞ</day>
-							<day type="thu">ߓ</day>
-							<day type="fri">ߛ</day>
-							<day type="sat">ߞ</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">ߞߊ߯</day>
@@ -946,15 +894,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">ߛߌ߬</day>
 							<day type="sat">ߞߍ߲</day>
 						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">ߞߊ߯ߙߌߟߏ߲</day>
-							<day type="mon">ߞߐ߬ߓߊ߬ߟߏ߲</day>
-							<day type="tue">ߞߐ߬ߟߏ߲</day>
-							<day type="wed">ߞߎߣߎ߲ߟߏ߲</day>
-							<day type="thu">ߓߌߟߏ߲</day>
-							<day type="fri">ߛߌ߬ߣߌ߲߬ߟߏ߲</day>
-							<day type="sat">ߞߍ߲ߘߍߟߏ߲</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
@@ -965,12 +904,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">ߞߛ߃</quarter>
 							<quarter type="4">ߞߛ߄</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">߁</quarter>
-							<quarter type="2">߂</quarter>
-							<quarter type="3">߃</quarter>
-							<quarter type="4">߄</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">ߞߊߙߏߛߓߊ߫ ߁߭</quarter>
 							<quarter type="2">ߞߊߙߏߛߓߊ߫ ߂߲</quarter>
@@ -979,51 +912,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">ߞߛ߁</quarter>
-							<quarter type="2">ߞߛ߂</quarter>
-							<quarter type="3">ߞߛ߃</quarter>
-							<quarter type="4">ߞߛ߄</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">߁</quarter>
 							<quarter type="2">߂</quarter>
 							<quarter type="3">߃</quarter>
 							<quarter type="4">߄</quarter>
 						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">ߞߊߙߏߛߓߊ߫ ߁߭</quarter>
-							<quarter type="2">ߞߊߙߏߛߓߊ߫ ߂߲</quarter>
-							<quarter type="3">ߞߊߙߏߛߓߊ߫ ߃߲</quarter>
-							<quarter type="4">ߞߊߙߏߛߓߊ߫ ߄߲</quarter>
-						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ߛ</dayPeriod>
-							<dayPeriod type="pm">ߥ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ߛ</dayPeriod>
-							<dayPeriod type="pm">ߥ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">ߛ</dayPeriod>
-							<dayPeriod type="pm">ߥ</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">ߛ</dayPeriod>
-							<dayPeriod type="pm">ߥ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">ߛ</dayPeriod>
-							<dayPeriod type="pm">ߥ</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">ߛ</dayPeriod>
 							<dayPeriod type="pm">ߥ</dayPeriod>
 						</dayPeriodWidth>
@@ -1316,68 +1215,55 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<currencies>
 			<currency type="AOA">
 				<displayName>ߊ߲ߜ߭ߏߟߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ</displayName>
-				<displayName count="other">ߊ߲ߜ߭ߏߟߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ</displayName>
 				<symbol draft="contributed">ߊ߲ߜ߭ߎ</symbol>
 				<symbol alt="narrow" draft="contributed">ߞߖ߭</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ ( ߁߉߇߇–߁߉߉߀ )</displayName>
-				<displayName count="other">ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊ߲ߖ߭ߊ ( ߁߉߇߇–߁߉߉߀ )</displayName>
 			</currency>
 			<currency type="AON">
 				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ߫ ߞߎߘߊ ( ߁߉߉߀–߂߀߀߀ )</displayName>
-				<displayName count="other">ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ߫ ߞߎߘߊ ( ߁߉߉߀–߂߀߀߀ )</displayName>
 				<symbol draft="contributed">ߊߜ߭ߞ</symbol>
 			</currency>
 			<currency type="AOR">
 				<displayName>ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ ߝߊ߲߬ߞߊߘߏ߲߬ߣߍ߲ ( ߁߉߉߅–߁߉߉߉ )</displayName>
-				<displayName count="other">ߊ߲ߜ߭ߏߟߊ߫ ߞߎߥߊߖ߭ߊ ߝߊ߲߬ߞߊߘߏ߲߬ߣߍ߲ ( ߁߉߉߅–߁߉߉߉ )</displayName>
 				<symbol draft="contributed">ߊߜ߭ߝ</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>ߓߎߙߎ߲ߘߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߓߎߙߎ߲ߘߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߓߙߝ</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>ߓߐߛߎߥߣߊߞߊ ߟߎ߬ ߟߊ߫ ߔߎߟߊ</displayName>
-				<displayName count="other">ߓߐߛߎߥߣߊߞߊ ߟߎ߬ ߟߊ߫ ߔߎߟߊ</displayName>
 				<symbol draft="contributed">ߓߥߔ</symbol>
 				<symbol alt="narrow" draft="contributed">ߔ</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>ߞߏ߲߬ߜ߭ߏ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߞߏ߲߬ߜ߭ߏ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߞߝ</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>ߜߙߋߞߎ߲߫ ߝߙߌߛߌߞߊ ߟߎ߬ ߍߛߑߞߎߘߐߛ</displayName>
-				<displayName count="other">ߜߙߋߞߎ߲߫ ߝߙߌߛߌߞߊ ߟߎ߬ ߍߛߑߞߎߘߐߛ</displayName>
 				<symbol draft="contributed">ߍߛߞ</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>ߖߌߓߎߕߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߖߌߓߎߕߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߖߓߝ</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>ߊߟߌߖ߭ߋߙߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙߌ</displayName>
-				<displayName count="other">ߊߟߌߖ߭ߋߙߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙߌ</displayName>
 				<symbol draft="contributed">ߊߟߘ</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>ߡߌߛߌߙߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
-				<displayName count="other">ߡߌߛߌߙߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߡߛߔ</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>ߋߙߌߕߙߋߞߊ ߟߎ߬ ߟߊ߫ ߣߊߝߑߞߊ</displayName>
-				<displayName count="other">ߋߙߌߕߙߋߞߊ ߟߎ߬ ߟߊ߫ ߣߊߝߑߞߊ</displayName>
 				<symbol draft="contributed">ߋߙߝ</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>ߋߗߏߔߌߞߊ ߟߎ߬ ߟߊ߫ ߓߌߙߑߛ</displayName>
-				<displayName count="other">ߋߗߏߔߌߞߊ ߟߎ߬ ߟߊ߫ ߓߌߙߑߛ</displayName>
 				<symbol draft="contributed">ߋߗߓ</symbol>
 			</currency>
 			<currency type="GHC">
@@ -1391,54 +1277,44 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="GMD">
 				<displayName>ߜ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߟߊߛߌ߫</displayName>
-				<displayName count="other">ߜ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߟߊߛߌ߫</displayName>
 				<symbol draft="contributed">ߜ߭ߓߘ</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">߿</symbol>
 				<symbol alt="narrow" draft="contributed">߿</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߛߟߌ</displayName>
-				<displayName count="other">ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߛߟߌ</displayName>
 				<symbol draft="contributed">ߖߛ߾</symbol>
 			</currency>
 			<currency type="GQE">
 				<displayName>ߕߍߡߊߓߊ߲߮ ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߋߞߥߋߟߋ</displayName>
-				<displayName count="other">ߕߍߡߊߓߊ߲߮ ߖߌ߬ߣߍ߬ߞߊ ߟߎ߬ ߟߊ߫ ߋߞߥߋߟߋ</displayName>
 				<symbol draft="contributed">ߕߖߋ</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߐߛ</displayName>
-				<displayName count="other">ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߐߛ</displayName>
 				<symbol draft="contributed">ߖߓߍ</symbol>
 			</currency>
 			<currency type="GWP">
 				<displayName>ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߔߋߖ߭ߏ</displayName>
-				<displayName count="other">ߖߌߣߍ߫ ߓߌߛߊߥߏߞߊ ߟߎ߬ ߟߊ߫ ߔߋߖ߭ߏ</displayName>
 				<symbol draft="contributed">ߖߓߔ</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>ߝߋߣߌߦߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
-				<displayName count="other">ߝߋߣߌߦߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߞߋߛ</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>ߞߐߡ߲߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߞߐߡ߲߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߞߡߝ</symbol>
 				<symbol alt="narrow" draft="contributed">ߝߛ</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>ߟߌߓߋߙߌߦߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊߙ</displayName>
-				<displayName count="other">ߟߌߓߋߙߌߦߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊߙ</displayName>
 				<symbol draft="contributed">ߟ߾</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>ߟߋߛߕߏߞߊ ߟߎ߬ ߟߊ߫ ߟߏߕߌ</displayName>
-				<displayName count="other">ߟߋߛߕߏߞߊ ߟߎ߬ ߟߊ߫ ߟߏߕߌ</displayName>
 				<symbol draft="contributed">ߟߛߟ</symbol>
 			</currency>
 			<currency type="LYD">
@@ -1453,225 +1329,182 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="MAF">
 				<displayName>ߡߊ߬ߙߐ߬ߞߎߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߡߊ߬ߙߐ߬ߞߎߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߙߝ</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>ߡߘߊߜ߭ߊߛߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߊߙߌߦߊߙߌ</displayName>
-				<displayName count="other">ߡߘߊߜ߭ߊߛߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߊߙߌߦߊߙߌ</displayName>
 				<symbol draft="contributed">ߡߘߙ</symbol>
 				<symbol alt="narrow" draft="contributed">ߊߙ</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>ߡߘߊߜ߭ߊߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߡߘߊߜ߭ߊߑߞߊ߯ߙߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߘߝ</symbol>
 			</currency>
 			<currency type="MLF">
 				<displayName>ߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߡߝ</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ ( ߁߉߇߃–߂߀߁߇ )</displayName>
-				<displayName count="other">ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ ( ߁߉߇߃–߂߀߁߇ )</displayName>
 				<symbol draft="contributed">ߡߙߏ</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ</displayName>
-				<displayName count="other">ߡߏߙߌߕߊߣߌߞߊ ߟߎ߬ ߟߊ߫ ߎ߬ߜ߭ߌߦߊ</displayName>
 				<symbol draft="contributed">ߡߎߜ߭</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>ߡߏߙߛߌߞߊ ߟߎ߬ ߟߊ߫ ߙߔߎ</displayName>
-				<displayName count="other">ߡߏߙߛߌߞߊ ߟߎ߬ ߟߊ߫ ߙߔߎ</displayName>
 				<symbol draft="contributed">ߡߙߔ</symbol>
 				<symbol alt="narrow" draft="contributed">ߙߛ</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>ߡߟߊߥߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
-				<displayName count="other">ߡߟߊߥߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
 				<symbol draft="contributed">ߡߟߞ</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߏߛ</displayName>
-				<displayName count="other">ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߍߛߑߞߎߘߏߛ</displayName>
 				<symbol draft="contributed">ߡߖ߭ߋ</symbol>
 			</currency>
 			<currency type="MZM">
 				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞ ( ߁߉߈߀–߂߀߀߆ )</displayName>
-				<displayName count="other">ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞ ( ߁߉߈߀–߂߀߀߆ )</displayName>
 				<symbol draft="contributed">ߡߖߡ</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞߊߟ</displayName>
-				<displayName count="other">ߡߏߖ߭ߊ߲ߓߞߌߞߊ ߟߎ߬ ߟߊ߫ ߡߋߕߌߞߊߟ</displayName>
 				<symbol draft="contributed">ߡߖ߭ߡ</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>ߣߊߡߌ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
-				<displayName count="other">ߣߊߡߌ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
 				<symbol draft="contributed">ߣߡߘ</symbol>
 				<symbol alt="narrow" draft="contributed">ߛ</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>ߖߋ߬ߟߌ߬ߓߊ߬ߞߊ ߟߎ߬ ߟߊ߫ ߣߍߙߊ</displayName>
-				<displayName count="other">ߖߋ߬ߟߌ߬ߓߊ߬ߞߊ ߟߎ߬ ߟߊ߫ ߣߍߙߊ</displayName>
 				<symbol draft="contributed">ߖߣ</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
-				<displayName count="other">ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ</displayName>
 				<symbol draft="contributed">ߖ߭ߓߘ</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ߙߎߥߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
-				<displayName count="other">ߙߎߥߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߝߊߙߊ߲</displayName>
 				<symbol draft="contributed">ߙߥߝ</symbol>
 				<symbol alt="narrow" draft="contributed">ߝߙ</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>ߛߋߦߌߛߍߟߌߞߊ ߟߎ߬ ߟߊ߫ ߙߎߔߌ</displayName>
-				<displayName count="other">ߛߋߦߌߛߍߟߌߞߊ ߟߎ߬ ߟߊ߫ ߙߎߔߌ</displayName>
 				<symbol draft="contributed">ߛߛߥ</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߘߌ߬ߣߊ߯ߙ ( ߁߉߉߂–߂߀߀߇ )</displayName>
-				<displayName count="other">ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߘߌ߬ߣߊ߯ߙ ( ߁߉߉߂–߂߀߀߇ )</displayName>
 				<symbol draft="contributed">ߛߘߘ</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>ߛߎߘߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
-				<displayName count="other">ߛߎߘߊ߲ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߛߘߜ߭</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>ߛߎ߬ߘ߲ߊ߬ߞߊ ߟߊ߫ ߔߐߣߌ߬ ( ߁߉߅߆–߂߀߀߇ )</displayName>
-				<displayName count="other">ߛߎ߬ߘ߲ߊ߬ߞߊ ߟߊ߫ ߔߐߣߌ߬ ( ߁߉߅߆–߂߀߀߇ )</displayName>
 				<symbol draft="contributed">ߛߘߔ</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>ߛߍ߲ߕ ߤߌߟߋߣߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
-				<displayName count="other">ߛߍ߲ߕ ߤߌߟߋߣߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߛߤߔ</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
-				<displayName count="other">ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߛߙߔ</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>ߛߙߊ߬ߟߏ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬ - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>ߛߏߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
-				<displayName count="other">ߛߏߡߊߟߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߛߡߛ</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
-				<displayName count="other">ߛߎ߬ߘߊ߲߬ߞߊ ߟߎ߬ ߟߊ߫ ߔߐߣߌ߬</displayName>
 				<symbol draft="contributed">ߛߛߔ</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ ( ߁߉߇߇– ߂߀߁߇ )</displayName>
-				<displayName count="other">ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ ( ߁߉߇߇– ߂߀߁߇ )</displayName>
 				<symbol draft="contributed">ߛߕߘ</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ</displayName>
-				<displayName count="other">ߛߊߏߕߏߡߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߓߙߊߛ</displayName>
 				<symbol draft="contributed">ߛߔߘ</symbol>
 				<symbol alt="narrow" draft="contributed">ߛߓ</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>ߛߑߥߊߕߣߞߊ ߟߎ߬ ߟߌߟߊ߲ߖ߭ߋߣߌߛ</displayName>
-				<displayName count="other">ߛߑߥߊߕߣߞߊ ߟߎ߬ ߟߌߟߊ߲ߖ߭ߋߣߌߛ</displayName>
 				<symbol draft="contributed">ߛߖ߭ߟ</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>ߕߎߣߛߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
-				<displayName count="other">ߕߎߣߛߌߞߊ ߟߎ߬ ߟߊ߫ ߘߌ߬ߣߊ߯ߙ</displayName>
 				<symbol draft="contributed">ߕߣߘ</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>ߕߊ߲ߖ߭ߊ߯ߣߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
-				<displayName count="other">ߕߊ߲ߖ߭ߊ߯ߣߌߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߕߖ߭ߛ</symbol>
 			</currency>
 			<currency type="UGS">
 				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭ ( ߁߉߆߆–߁߉߈߇ )</displayName>
-				<displayName count="other">ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭ ( ߁߉߆߆–߁߉߈߇ )</displayName>
 				<symbol draft="contributed">ߎߜ߭ߥ</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
-				<displayName count="other">ߎߜ߭ߊ߲ߘߞߊ ߟߎ߬ ߟߊ߫ ߛߌߟߌ߲ߜ߭</displayName>
 				<symbol draft="contributed">ߎߜ߭ߛ</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߠߎ߬ ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
-				<displayName count="other">ߝߘߊ߬ߝߌ߲߬ߠߊ߫ ߕߊ߲ߓߊ߲ ߠߎ߬ ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
 				<symbol draft="contributed">ߝߛߝ</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
-				<displayName count="other">ߝߊߙߊ߲߫ ߛߍߝߊ</displayName>
 				<symbol draft="contributed">߾</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>ߥߙߏ߬ߘߎ߮ ߝߘߊ߬ߝߌ߲߬ߠߞߊ ߟߎ߬ ߟߊ߫ ߙߊ߲ߘ</displayName>
-				<displayName count="other">ߥߙߏ߬ߘߎ߮ ߝߘߊ߬ߝߌ߲߬ߠߞߊ ߟߎ߬ ߟߊ߫ ߙߊ߲ߘ</displayName>
 				<symbol draft="contributed">ߥߝߙ</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ ( ߁߉߆߈–߂߀߁߂ )</displayName>
-				<displayName count="other">ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ ( ߁߉߆߈–߂߀߁߂ )</displayName>
 				<symbol draft="contributed">ߖ߭ߓߞ</symbol>
 			</currency>
 			<currency type="ZMW">
 				<displayName>ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
-				<displayName count="other">ߖ߭ߊ߲ߓߌߞߊ ߟߎ߬ ߟߊ߫ ߞߎߥߛߊ</displayName>
 				<symbol draft="contributed">ߖ߭ߓߥ</symbol>
 				<symbol alt="narrow" draft="contributed">ߖ߭ߞ</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>ߖ߭ߊ߬ߦߌ߬ߞߊ ߟߎ߬ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߉߃–߁߉߉߈ )</displayName>
-				<displayName count="other">ߖ߭ߊ߬ߦߌ߬ߞߊ ߟߎ߬ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߉߃–߁߉߉߈ )</displayName>
 				<symbol draft="contributed">ߖ߭ߙ</symbol>
 			</currency>
 			<currency type="ZRZ">
 				<displayName>ߖ߭ߊߦߙߌߞߊ ߟߎ߫ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߇߁–߁߉߉߃ )</displayName>
-				<displayName count="other">ߖ߭ߊߦߙߌߞߊ ߟߎ߫ ߟߊ߫ ߖ߭ߊ߬ߦߌߙ ( ߁߉߇߁–߁߉߉߃ )</displayName>
 				<symbol draft="contributed">ߖ߭ߙߖ߭</symbol>
 			</currency>
 			<currency type="ZWD">
 				<displayName>ߖߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ (߁߉߈߀–߂߀߀߈ )</displayName>
-				<displayName count="other">ߖߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ (߁߉߈߀–߂߀߀߈ )</displayName>
 				<symbol draft="contributed">ߖ߭ߥߘ</symbol>
 			</currency>
 			<currency type="ZWL">
 				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߉ )</displayName>
-				<displayName count="other">ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߉ )</displayName>
 				<symbol draft="contributed">ߖ߭ߥߟ</symbol>
 			</currency>
 			<currency type="ZWR">
 				<displayName>ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߈ )</displayName>
-				<displayName count="other">ߖ߭ߌ߲ߓߊߓߏߦߋߞߊ ߟߎ߬ ߟߊ߫ ߘߏߟߊ߯ߙ ( ߂߀߀߈ )</displayName>
 				<symbol draft="contributed">ߖ߭ߥߙ</symbol>
 			</currency>
 		</currencies>
 	</numbers>
 	<units>
 		<unitLength type="long">
-			<unit type="duration-century">
-				<displayName>ߝߊ߯ߘߐߞߍ</displayName>
-				<unitPattern count="other">ߝߊ߯ߘߐߞߍ {0}</unitPattern>
-			</unit>
 			<unit type="duration-decade">
 				<displayName>ߦߟߍ߬ߘߐ߬ߞߍ</displayName>
 				<unitPattern count="other">ߦߟߍ߬ߘߐ߬ߞߍ {0}</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>ߛߊ߲߭</displayName>
-				<unitPattern count="other">ߛߊ߲߭ {0}</unitPattern>
 				<perUnitPattern>ߛߊ߲߭ ߠߊ߫ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
@@ -1690,7 +1523,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>ߟߏ߲ ߠߊ߫ {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>ߕߎ߬ߡߊ߬ߙߋ߲</displayName>
 				<unitPattern count="other">ߕߎ߬ߡߊ߬ߙߋ߲ {0}</unitPattern>
 				<perUnitPattern>ߕߎ߬ߡߊ߬ߙߋ߲ ߞߘߐ߫ {0}</perUnitPattern>
 			</unit>
@@ -1774,7 +1606,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</unitLength>
 		<unitLength type="narrow">
 			<unit type="duration-century">
-				<displayName>ߝߊ߯ߘߐߞߍ</displayName>
 				<unitPattern count="other">ߝߊ߯ߘߞ{0}</unitPattern>
 			</unit>
 			<unit type="duration-decade">
@@ -1782,46 +1613,29 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">ߦߟߍ߬ߘߞ{0}</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>ߛߊ߲߭</displayName>
 				<unitPattern count="other">ߛߊ߲߭{0}</unitPattern>
-				<perUnitPattern>{0}/ߛߊ߲߭</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>ߞߊߙߏ</displayName>
 				<unitPattern count="other">ߞ.{0}</unitPattern>
-				<perUnitPattern>{0}/ߞ.</perUnitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName>ߞߎ߲߬ߢ</displayName>
-				<unitPattern count="other">ߞߎ߲߬ߢ{0}</unitPattern>
-				<perUnitPattern>{0}/ߞߎ߲߬ߢ</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>ߟߏ߲</displayName>
 				<unitPattern count="other">ߟ{0}</unitPattern>
-				<perUnitPattern>{0}/ߟ</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>ߕߎ߬ߡߊ߬ߙߋ߲</displayName>
 				<unitPattern count="other">ߕ{0}</unitPattern>
-				<perUnitPattern>{0}/ߕ</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName>ߡߌ߬ߛ</displayName>
 				<unitPattern count="other">ߡߌ߬ߛ{0}</unitPattern>
-				<perUnitPattern>{0}/ߡߌ߬ߛ</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>ߝ</displayName>
 				<unitPattern count="other">ߝ{0}</unitPattern>
-				<perUnitPattern>{0}/ߝ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>ߝߥ</displayName>
 				<unitPattern count="other">ߝߥ{0}</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName>ߝߢ</displayName>
 				<unitPattern count="other">ߝߢ{0}</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">

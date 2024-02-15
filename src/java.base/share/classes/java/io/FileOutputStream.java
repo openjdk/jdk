@@ -208,6 +208,7 @@ public class FileOutputStream extends OutputStream
      * @see        java.lang.SecurityManager#checkWrite(java.lang.String)
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public FileOutputStream(File file, boolean append)
         throws FileNotFoundException
     {
@@ -254,6 +255,7 @@ public class FileOutputStream extends OutputStream
      *               write access to the file descriptor
      * @see        java.lang.SecurityManager#checkWrite(java.io.FileDescriptor)
      */
+    @SuppressWarnings("this-escape")
     public FileOutputStream(FileDescriptor fdObj) {
         @SuppressWarnings("removal")
         SecurityManager security = System.getSecurityManager();

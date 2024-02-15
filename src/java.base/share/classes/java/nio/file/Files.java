@@ -80,6 +80,7 @@ import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.cs.UTF_8;
+import sun.nio.fs.AbstractFileSystemProvider;
 
 /**
  * This class consists exclusively of static methods that operate on files,
@@ -1358,6 +1359,9 @@ public final class Files {
      *     associated with a different provider to this object. </td>
      * </tbody>
      * </table>
+     * If the {@code ATOMIC_MOVE} option is not specified, then the check
+     * whether the target file exists and the actual move might not be atomic
+     * with respect to other filesystem activities.
      *
      * <p> An implementation of this interface may support additional
      * implementation specific options.
@@ -1403,8 +1407,11 @@ public final class Files {
      *          if the array contains a copy option that is not supported
      * @throws  FileAlreadyExistsException
      *          if the target file exists but cannot be replaced because the
-     *          {@code REPLACE_EXISTING} option is not specified <i>(optional
-     *          specific exception)</i>
+     *          {@code REPLACE_EXISTING} option is <i>not</i> specified.
+     *          It may also be thrown when the {@code REPLACE_EXISTING} option
+     *          <i>is</i> specified, the move is not atomic, and the target
+     *          file is created by some other entity at around the same time
+     *          that this method is called
      * @throws  DirectoryNotEmptyException
      *          the {@code REPLACE_EXISTING} option is specified but the file
      *          cannot be replaced because it is a non-empty directory, or the
@@ -2609,7 +2616,11 @@ public final class Files {
      *          is invoked to check read access to the file.
      */
     public static boolean isReadable(Path path) {
-        return isAccessible(path, AccessMode.READ);
+        FileSystemProvider provider = provider(path);
+        if (provider instanceof AbstractFileSystemProvider afsp)
+            return afsp.isReadable(path);
+        else
+            return isAccessible(path, AccessMode.READ);
     }
 
     /**
@@ -2640,7 +2651,11 @@ public final class Files {
      *          is invoked to check write access to the file.
      */
     public static boolean isWritable(Path path) {
-        return isAccessible(path, AccessMode.WRITE);
+        FileSystemProvider provider = provider(path);
+        if (provider instanceof AbstractFileSystemProvider afsp)
+            return afsp.isWritable(path);
+        else
+            return isAccessible(path, AccessMode.WRITE);
     }
 
     /**
@@ -2675,7 +2690,11 @@ public final class Files {
      *          checkExec} is invoked to check execute access to the file.
      */
     public static boolean isExecutable(Path path) {
-        return isAccessible(path, AccessMode.EXECUTE);
+        FileSystemProvider provider = provider(path);
+        if (provider instanceof AbstractFileSystemProvider afsp)
+            return afsp.isExecutable(path);
+        else
+            return isAccessible(path, AccessMode.EXECUTE);
     }
 
     // -- Recursive operations --

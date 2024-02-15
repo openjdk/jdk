@@ -260,9 +260,6 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 #endif
   __ movptr(subkeyHtbl, subkeyH_mem);
   __ movptr(counter, counter_mem);
-// Save rbp and rsp
-  __ push(rbp);
-  __ movq(rbp, rsp);
 // Align stack
   __ andq(rsp, -64);
   __ subptr(rsp, 96 * longSize); // Create space on the stack for htbl entries
@@ -272,12 +269,12 @@ address StubGenerator::generate_galoisCounterMode_AESCrypt() {
 
   __ vzeroupper();
 
-  __ movq(rsp, rbp);
-  __ pop(rbp);
-
   // Restore state before leaving routine
 #ifdef _WIN64
+  __ lea(rsp, Address(rbp, -6 * wordSize));
   __ pop(rsi);
+#else
+  __ lea(rsp, Address(rbp, -5 * wordSize));
 #endif
   __ pop(rbx);
   __ pop(r15);

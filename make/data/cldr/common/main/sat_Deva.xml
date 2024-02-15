@@ -12,11 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Deva"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="sat" draft="contributed">सानताड़ी</language>
 		</languages>
@@ -26,9 +21,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</scripts>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u093C \u0902 अ आ ई उ ए ओ क ग च ज ञ ट ड ण त द न प ब म य र ल व स ह ा ी \u0941 \u0947 ो]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[़ ं अ आ ई उ ए ओ क ग च ज ञ ट ड ण त द न प ब म य र ल व स ह ा ी ु े ो]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[\- ‑ , ; \: ! ? . ‘ ’ “ ” ( ) \[ \] \{ \} ॰]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[\- ‑ , ; \: ! ? . ‘’ “” ( ) \[ \] \{ \} ॰]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -37,19 +32,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, d MMMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">

@@ -113,7 +113,7 @@ public class CallOverheadHelper extends CLayouts {
             MethodType mt = MethodType.methodType(void.class);
             FunctionDescriptor fd = FunctionDescriptor.ofVoid();
             func_v = abi.downcallHandle(fd);
-            func_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
+            func_critical_v = abi.downcallHandle(fd, Linker.Option.critical(false));
             func = insertArguments(func_v, 0, func_addr);
             func_critical = insertArguments(func_critical_v, 0, func_addr);
         }
@@ -121,7 +121,7 @@ public class CallOverheadHelper extends CLayouts {
             identity_addr = loaderLibs.find("identity").orElseThrow();
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT);
             identity_v = abi.downcallHandle(fd);
-            identity_critical_v = abi.downcallHandle(fd, Linker.Option.critical());
+            identity_critical_v = abi.downcallHandle(fd, Linker.Option.critical(false));
             identity = insertArguments(identity_v, 0, identity_addr);
             identity_critical = insertArguments(identity_critical_v, 0, identity_addr);
         }

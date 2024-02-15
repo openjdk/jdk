@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -231,7 +231,6 @@ import java.util.Objects;
  * <p>
  * The first example uses the static method {@code MessageFormat.format},
  * which internally creates a {@code MessageFormat} for one-time use:
- * <blockquote>
  * {@snippet lang=java :
  * int planet = 7;
  * String event = "a disturbance in the Force";
@@ -240,7 +239,6 @@ import java.util.Objects;
  *     "At {1,time} on {1,date}, there was {2} on planet {0,number,integer}.",
  *     planet, new Date(), event);
  * }
- * </blockquote>
  * The output is:
  * <blockquote><pre>
  * At 12:30 PM on Jul 3, 2053, there was a disturbance in the Force on planet 7.
@@ -249,7 +247,6 @@ import java.util.Objects;
  * <p>
  * The following example creates a {@code MessageFormat} instance that
  * can be used repeatedly:
- * <blockquote>
  * {@snippet lang=java :
  * int fileCount = 1273;
  * String diskName = "MyDisk";
@@ -260,7 +257,6 @@ import java.util.Objects;
  *
  * System.out.println(form.format(testArgs));
  * }
- * </blockquote>
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains 0 file(s).
@@ -269,23 +265,17 @@ import java.util.Objects;
  * </pre></blockquote>
  *
  * <p>
- * For more sophisticated patterns, you can use a {@code ChoiceFormat}
- * to produce correct forms for singular and plural:
- * <blockquote>
+ * For more sophisticated patterns, {@link ChoiceFormat} can be used with
+ * {@code MessageFormat} to produce accurate forms for singular and plural:
  * {@snippet lang=java :
- * MessageFormat form = new MessageFormat("The disk \"{1}\" contains {0}.");
- * double[] filelimits = {0,1,2};
- * String[] filepart = {"no files","one file","{0,number} files"};
- * ChoiceFormat fileform = new ChoiceFormat(filelimits, filepart);
- * form.setFormatByArgumentIndex(0, fileform);
- *
- * int fileCount = 1273;
- * String diskName = "MyDisk";
- * Object[] testArgs = {Long.valueOf(fileCount), diskName};
- *
- * System.out.println(form.format(testArgs));
+ * MessageFormat msgFmt = new MessageFormat("The disk \"{0}\" contains {1}.");
+ * double[] fileLimits = {0,1,2};
+ * String[] filePart = {"no files","one file","{1,number} files"};
+ * ChoiceFormat fileChoices = new ChoiceFormat(fileLimits, filePart);
+ * msgFmt.setFormatByArgumentIndex(1, fileChoices);
+ * Object[] args = {"MyDisk", 1273};
+ * System.out.println(msgFmt.format(args));
  * }
- * </blockquote>
  * The output with different values for {@code fileCount}:
  * <blockquote><pre>
  * The disk "MyDisk" contains no files.
@@ -297,24 +287,26 @@ import java.util.Objects;
  * You can create the {@code ChoiceFormat} programmatically, as in the
  * above example, or by using a pattern. See {@link ChoiceFormat}
  * for more information.
- * <blockquote>
  * {@snippet lang=java :
- * form.applyPattern(
- *    "There {0,choice,0#are no files|1#is one file|1<are {0,number,integer} files}.");
+ * msgFmt.applyPattern(
+ *    "There {0,choice,0#are no files|1#is one file|1<are {1,number,integer} files}.");
  * }
- * </blockquote>
  *
  * <p>
- * <strong>Note:</strong> As we see above, the string produced
- * by a {@code ChoiceFormat} in {@code MessageFormat} is treated as special;
- * occurrences of '{' are used to indicate subformats, and cause recursion.
+ * <strong id="pattern_caveats">Notes:</strong> As seen in the previous snippet,
+ * the string produced by a {@code ChoiceFormat} in {@code MessageFormat} is
+ * treated as special; occurrences of '{' are used to indicate subformats, and
+ * cause recursion. If a {@code FormatElement} is defined in the {@code ChoiceFormat}
+ * pattern, it will only be formatted according to the {@code FormatType} and
+ * {@code FormatStyle} pattern provided. The associated subformats of the
+ * top level {@code MessageFormat} will not be applied to the {@code FormatElement}
+ * defined in the {@code ChoiceFormat} pattern.
  * If you create both a {@code MessageFormat} and {@code ChoiceFormat}
  * programmatically (instead of using the string patterns), then be careful not to
  * produce a format that recurses on itself, which will cause an infinite loop.
  * <p>
  * When a single argument is parsed more than once in the string, the last match
  * will be the final result of the parsing.  For example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0,number,#.##}, {0,number,#.#}");
  * Object[] objs = {Double.valueOf(3.1415)};
@@ -323,20 +315,17 @@ import java.util.Objects;
  * objs = mf.parse(result, new ParsePosition(0));
  * // objs now equals {Double.valueOf(3.1)}
  * }
- * </blockquote>
  *
  * <p>
  * Likewise, parsing with a {@code MessageFormat} object using patterns containing
  * multiple occurrences of the same argument would return the last match.  For
  * example,
- * <blockquote>
  * {@snippet lang=java :
  * MessageFormat mf = new MessageFormat("{0}, {0}, {0}");
  * String forParsing = "x, y, z";
  * Object[] objs = mf.parse(forParsing, new ParsePosition(0));
  * // objs now equals {new String("z")}
  * }
- * </blockquote>
  *
  * <h3><a id="synchronization">Synchronization</a></h3>
  *
@@ -564,6 +553,11 @@ public class MessageFormat extends Format {
      * The string is constructed from internal information and therefore
      * does not necessarily equal the previously applied pattern.
      *
+     * @implSpec The implementation in {@link MessageFormat} returns a
+     * string that, when passed to a {@code MessageFormat()} constructor
+     * or {@link #applyPattern applyPattern()}, produces an instance that
+     * is semantically equivalent to this instance.
+     *
      * @return a pattern representing the current state of the message format
      */
     public String toPattern() {
@@ -575,6 +569,7 @@ public class MessageFormat extends Format {
             lastOffset = offsets[i];
             result.append('{').append(argumentNumbers[i]);
             Format fmt = formats[i];
+            String subformatPattern = null;
             if (fmt == null) {
                 // do nothing, string format
             } else if (fmt instanceof NumberFormat) {
@@ -587,10 +582,12 @@ public class MessageFormat extends Format {
                 } else if (fmt.equals(NumberFormat.getIntegerInstance(locale))) {
                     result.append(",number,integer");
                 } else {
-                    if (fmt instanceof DecimalFormat) {
-                        result.append(",number,").append(((DecimalFormat)fmt).toPattern());
-                    } else if (fmt instanceof ChoiceFormat) {
-                        result.append(",choice,").append(((ChoiceFormat)fmt).toPattern());
+                    if (fmt instanceof DecimalFormat dfmt) {
+                        result.append(",number");
+                        subformatPattern = dfmt.toPattern();
+                    } else if (fmt instanceof ChoiceFormat cfmt) {
+                        result.append(",choice");
+                        subformatPattern = cfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -612,8 +609,9 @@ public class MessageFormat extends Format {
                     }
                 }
                 if (index >= DATE_TIME_MODIFIERS.length) {
-                    if (fmt instanceof SimpleDateFormat) {
-                        result.append(",date,").append(((SimpleDateFormat)fmt).toPattern());
+                    if (fmt instanceof SimpleDateFormat sdfmt) {
+                        result.append(",date");
+                        subformatPattern = sdfmt.toPattern();
                     } else {
                         // UNKNOWN
                     }
@@ -622,6 +620,14 @@ public class MessageFormat extends Format {
                 }
             } else {
                 //result.append(", unknown");
+            }
+            if (subformatPattern != null) {
+                result.append(',');
+
+                // The subformat pattern comes already quoted, but only for those characters that are
+                // special to the subformat. Therefore, we may need to quote additional characters.
+                // The ones we care about at the MessageFormat level are '{' and '}'.
+                copyAndQuoteBraces(subformatPattern, result);
             }
             result.append('}');
         }
@@ -1195,6 +1201,17 @@ public class MessageFormat extends Format {
         return pattern.hashCode(); // enough for reasonable distribution
     }
 
+    /**
+     * {@return a string identifying this {@code MessageFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            MessageFormat [locale: %s, pattern: "%s"]
+            """.formatted(locale == null ? null : '"' + locale.getDisplayName() + '"', toPattern());
+    }
+
 
     /**
      * Defines constants that are used as attribute keys in the
@@ -1645,6 +1662,53 @@ public class MessageFormat extends Format {
                 }
                 target.append(ch);
             }
+        }
+        if (quoted) {
+            target.append('\'');
+        }
+    }
+
+    // Copy the text, but add quotes around any quotables that aren't already quoted
+    private static void copyAndQuoteBraces(String source, StringBuilder target) {
+
+        // Analyze existing string for already quoted and newly quotable characters
+        record Qchar(char ch, boolean quoted) { };
+        ArrayList<Qchar> qchars = new ArrayList<>();
+        boolean quoted = false;
+        boolean anyChangeNeeded = false;
+        for (int i = 0; i < source.length(); i++) {
+            char ch = source.charAt(i);
+            if (ch == '\'') {
+                if (i + 1 < source.length() && source.charAt(i + 1) == '\'') {
+                    qchars.add(new Qchar('\'', quoted));
+                    i++;
+                } else {
+                    quoted = !quoted;
+                }
+            } else {
+                boolean quotable = ch == '{' || ch == '}';
+                anyChangeNeeded |= quotable && !quoted;
+                qchars.add(new Qchar(ch, quoted || quotable));
+            }
+        }
+
+        // Was any change needed?
+        if (!anyChangeNeeded) {
+            target.append(source);
+            return;
+        }
+
+        // Build new string, automatically consolidating adjacent runs of quoted chars
+        quoted = false;
+        for (Qchar qchar : qchars) {
+            char ch = qchar.ch;
+            if (ch == '\'') {
+                target.append(ch);          // doubling works whether quoted or not
+            } else if (qchar.quoted() != quoted) {
+                target.append('\'');
+                quoted = qchar.quoted();
+            }
+            target.append(ch);
         }
         if (quoted) {
             target.append('\'');

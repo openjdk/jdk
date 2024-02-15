@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/cdsProtectionDomain.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
@@ -118,7 +119,7 @@ Handle CDSProtectionDomain::get_package_name(Symbol* class_name, TRAPS) {
 
 PackageEntry* CDSProtectionDomain::get_package_entry_from_class(InstanceKlass* ik, Handle class_loader) {
   PackageEntry* pkg_entry = ik->package();
-  if (MetaspaceShared::use_full_module_graph() && ik->is_shared() && pkg_entry != nullptr) {
+  if (CDSConfig::is_loading_full_module_graph() && ik->is_shared() && pkg_entry != nullptr) {
     assert(MetaspaceShared::is_in_shared_metaspace(pkg_entry), "must be");
     assert(!ik->is_shared_unregistered_class(), "unexpected archived package entry for an unregistered class");
     assert(ik->module()->is_named(), "unexpected archived package entry for a class in an unnamed module");

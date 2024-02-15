@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,8 @@ ClassPathEntry* ClassLoader::_last_module_path_entry = nullptr;
 #endif
 
 // helper routines
-bool string_starts_with(const char* str, const char* str_to_find) {
+#if INCLUDE_CDS
+static bool string_starts_with(const char* str, const char* str_to_find) {
   size_t str_len = strlen(str);
   size_t str_to_find_len = strlen(str_to_find);
   if (str_to_find_len > str_len) {
@@ -142,6 +143,7 @@ bool string_starts_with(const char* str, const char* str_to_find) {
   }
   return (strncmp(str, str_to_find, str_to_find_len) == 0);
 }
+#endif
 
 static const char* get_jimage_version_string() {
   static char version_string[10] = "";
@@ -1009,8 +1011,8 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
   return file_name;
 }
 
-ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
-                                      const GrowableArray<ModuleClassPathList*>* const module_list) {
+static ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
+                                             const GrowableArray<ModuleClassPathList*>* const module_list) {
   int num_of_entries = module_list->length();
   const Symbol* class_module_name = mod_entry->name();
 
@@ -1126,10 +1128,10 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // check will determine if a shared class is visible based on the runtime
     // environment, including the runtime --patch-module setting.
     //
-    // DynamicDumpSharedSpaces requires UseSharedSpaces to be enabled. Since --patch-module
-    // is not supported with UseSharedSpaces, it is not supported with DynamicDumpSharedSpaces.
-    assert(!DynamicDumpSharedSpaces, "sanity");
-    if (!DumpSharedSpaces) {
+    // Dynamic dumping requires UseSharedSpaces to be enabled. Since --patch-module
+    // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
+    assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
+    if (!CDSConfig::is_dumping_static_archive()) {
       stream = search_module_entries(THREAD, _patch_mod_entries, class_name, file_name);
     }
   }
@@ -1355,7 +1357,7 @@ void ClassLoader::initialize(TRAPS) {
   setup_bootstrap_search_path(THREAD);
 }
 
-char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
+static char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", jimage_version, path, &size);
   if (location == 0)
@@ -1490,8 +1492,7 @@ void ClassLoader::classLoader_init2(JavaThread* current) {
   // As more modules are defined during module system initialization, more
   // entries will be added to the exploded build array.
   if (!has_jrt_entry()) {
-    assert(!DumpSharedSpaces, "DumpSharedSpaces not supported with exploded module builds");
-    assert(!DynamicDumpSharedSpaces, "DynamicDumpSharedSpaces not supported with exploded module builds");
+    assert(!CDSConfig::is_dumping_archive(), "not supported with exploded module builds");
     assert(!UseSharedSpaces, "UsedSharedSpaces not supported with exploded module builds");
     // Set up the boot loader's _exploded_entries list.  Note that this gets
     // done before loading any classes, by the same thread that will

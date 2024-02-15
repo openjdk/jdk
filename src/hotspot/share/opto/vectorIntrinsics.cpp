@@ -74,8 +74,7 @@ bool LibraryCallKit::arch_supports_vector_rotate(int opc, int num_elem, BasicTyp
   // has_scalar_args flag is true only for non-constant scalar shift count,
   // since in this case shift needs to be broadcasted.
   if (!Matcher::match_rule_supported_vector(opc, num_elem, elem_bt) ||
-       (has_scalar_args &&
-         !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+       (has_scalar_args && !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed))) {
     is_supported = false;
   }
 
@@ -625,7 +624,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
       !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
       !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
-      !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
+      !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
 
@@ -869,7 +868,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   bool is_mask = is_vector_mask(vbox_klass);
   int  bcast_mode = mode->get_con();
   VectorMaskUseType checkFlags = (VectorMaskUseType)(is_mask ? VecMaskUseAll : VecMaskNotUsed);
-  int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : VectorNode::replicate_opcode(elem_bt);
+  int opc = bcast_mode == VectorSupport::MODE_BITS_COERCED_LONG_TO_MASK ? Op_VectorLongToMask : Op_Replicate;
 
   if (!arch_supports_vector(opc, num_elem, elem_bt, checkFlags, true /*has_scalar_args*/)) {
     if (C->print_intrinsics()) {
@@ -929,7 +928,7 @@ bool LibraryCallKit::inline_vector_frombits_coerced() {
   return true;
 }
 
-static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_type) {
+static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_type, bool mismatched_ms) {
   assert(arr_type != nullptr, "unexpected");
   BasicType arr_elem_bt = arr_type->elem()->array_element_basic_type();
   if (elem_bt == arr_elem_bt) {
@@ -941,41 +940,44 @@ static bool elem_consistent_with_arr(BasicType elem_bt, const TypeAryPtr* arr_ty
     // Load/store of byte vector from/to boolean[] is supported
     return true;
   } else {
-    return false;
+    return mismatched_ms;
   }
 }
 
-// public static
-// <C,
-//  VM,
-//  E,
-//  S extends VectorSpecies<E>>
-// VM load(Class<? extends VM> vmClass, Class<E> elementType, int length,
-//         Object base, long offset,    // Unsafe addressing
-//         C container, long index, S s,     // Arguments for default implementation
-//         LoadOperation<C, VM, E, S> defaultImpl)
-//
-// public static
-// <C,
-//  V extends Vector<?>>
-// void store(Class<?> vectorClass, Class<?> elementType, int length,
-//            Object base, long offset,    // Unsafe addressing
-//            V v,
-//            C container, long index,      // Arguments for default implementation
-//            StoreVectorOperation<C, V> defaultImpl)
-
+//  public static
+//  <C,
+//   VM extends VectorPayload,
+//   E,
+//   S extends VectorSpecies<E>>
+//  VM load(Class<? extends VM> vmClass, Class<E> eClass,
+//          int length,
+//          Object base, long offset,            // Unsafe addressing
+//          boolean fromSegment,
+//          C container, long index, S s,        // Arguments for default implementation
+//          LoadOperation<C, VM, S> defaultImpl) {
+//  public static
+//  <C,
+//   V extends VectorPayload>
+//  void store(Class<?> vClass, Class<?> eClass,
+//             int length,
+//             Object base, long offset,        // Unsafe addressing
+//             boolean fromSegment,
+//             V v, C container, long index,    // Arguments for default implementation
+//             StoreVectorOperation<C, V> defaultImpl) {
 bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(2))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(6))->isa_int();
 
-  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
+  if (vector_klass == nullptr || elem_klass == nullptr || vlen == nullptr || !from_ms->is_con() ||
       vector_klass->const_oop() == nullptr || elem_klass->const_oop() == nullptr || !vlen->is_con()) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s",
+      tty->print_cr("  ** missing constant: vclass=%s etype=%s vlen=%s from_ms=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
-                    NodeClassNames[argument(2)->Opcode()]);
+                    NodeClassNames[argument(2)->Opcode()],
+                    NodeClassNames[argument(6)->Opcode()]);
     }
     return false; // not enough info for intrinsification
   }
@@ -1034,11 +1036,10 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
   const bool needs_cpu_membar = is_mixed_access || is_mismatched_access;
 
-  // Now handle special case where load/store happens from/to byte array but element type is not byte.
-  bool using_byte_array = arr_type != nullptr && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
-  // Handle loading masks.
-  // If there is no consistency between array and vector element types, it must be special byte array case or loading masks
-  if (arr_type != nullptr && !using_byte_array && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type)) {
+  bool mismatched_ms = from_ms->get_con() && !is_mask && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
+  BasicType mem_elem_bt = mismatched_ms ? arr_type->elem()->array_element_basic_type() : elem_bt;
+  int mem_num_elem = mismatched_ms ? (num_elem * type2aelembytes(elem_bt)) / type2aelembytes(mem_elem_bt) : num_elem;
+  if (arr_type != nullptr && !is_mask && !elem_consistent_with_arr(elem_bt, arr_type, mismatched_ms)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_store, is_store ? "store" : "load",
@@ -1048,19 +1049,33 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
     set_sp(old_sp);
     return false;
   }
-  // Since we are using byte array, we need to double check that the byte operations are supported by backend.
-  if (using_byte_array) {
-    int byte_num_elem = num_elem * type2aelembytes(elem_bt);
-    if (!arch_supports_vector(is_store ? Op_StoreVector : Op_LoadVector, byte_num_elem, T_BYTE, VecMaskNotUsed)
-        || !arch_supports_vector(Op_VectorReinterpret, byte_num_elem, T_BYTE, VecMaskNotUsed)) {
-      if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
-                      is_store, is_store ? "store" : "load",
-                      byte_num_elem, type2name(elem_bt));
+
+  // In case of mismatched memory segment accesses, we need to double check that the source type memory operations are supported by backend.
+  if (mismatched_ms) {
+    if (is_store) {
+      if (!arch_supports_vector(Op_StoreVector, num_elem, elem_bt, VecMaskNotUsed)
+          || !arch_supports_vector(Op_VectorReinterpret, mem_num_elem, mem_elem_bt, VecMaskNotUsed)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
+                        is_store, "store",
+                        num_elem, type2name(elem_bt));
+        }
+        set_map(old_map);
+        set_sp(old_sp);
+        return false; // not supported
       }
-      set_map(old_map);
-      set_sp(old_sp);
-      return false; // not supported
+    } else {
+      if (!arch_supports_vector(Op_LoadVector, mem_num_elem, mem_elem_bt, VecMaskNotUsed)
+          || !arch_supports_vector(Op_VectorReinterpret, num_elem, elem_bt, VecMaskNotUsed)) {
+        if (C->print_intrinsics()) {
+          tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d*8 etype=%s/8 ismask=no",
+                        is_store, "load",
+                        mem_num_elem, type2name(mem_elem_bt));
+        }
+        set_map(old_map);
+        set_sp(old_sp);
+        return false; // not supported
+      }
     }
   }
   if (is_mask) {
@@ -1086,7 +1101,7 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(6), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       set_map(old_map);
       set_sp(old_sp);
@@ -1096,9 +1111,9 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
 
     // In case the store needs to happen to byte array, reinterpret the incoming vector to byte vector.
     int store_num_elem = num_elem;
-    if (using_byte_array) {
-      store_num_elem = num_elem * type2aelembytes(elem_bt);
-      const TypeVect* to_vect_type = TypeVect::make(T_BYTE, store_num_elem);
+    if (mismatched_ms) {
+      store_num_elem = mem_num_elem;
+      const TypeVect* to_vect_type = TypeVect::make(mem_elem_bt, store_num_elem);
       val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->is_vect(), to_vect_type));
     }
     if (is_mask) {
@@ -1109,9 +1124,8 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   } else {
     // When using byte array, we need to load as byte then reinterpret the value. Otherwise, do a simple vector load.
     Node* vload = nullptr;
-    if (using_byte_array) {
-      int load_num_elem = num_elem * type2aelembytes(elem_bt);
-      vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, load_num_elem, T_BYTE));
+    if (mismatched_ms) {
+      vload = gvn().transform(LoadVectorNode::make(0, control(), memory(addr), addr, addr_type, mem_num_elem, mem_elem_bt));
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
       vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
     } else {
@@ -1137,43 +1151,47 @@ bool LibraryCallKit::inline_vector_mem_operation(bool is_store) {
   return true;
 }
 
-// public static
-// <C,
-//  V extends Vector<?>,
-//  E,
-//  S extends VectorSpecies<E>,
-//  M extends VectorMask<E>>
-// V loadMasked(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//              int length, Object base, long offset, M m, int offsetInRange,
-//              C container, long index, S s,  // Arguments for default implementation
-//              LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
-//
-// public static
-// <C,
-//  V extends Vector<E>,
-//  M extends VectorMask<E>,
-//  E>
-// void storeMasked(Class<? extends V> vectorClass, Class<M> maskClass, Class<E> elementType,
-//                  int length, Object base, long offset,
-//                  V v, M m,
-//                  C container, long index,  // Arguments for default implementation
-//                  StoreVectorMaskedOperation<C, V, M, E> defaultImpl) {
-//
+//  public static
+//  <C,
+//   V extends Vector<?>,
+//   E,
+//   S extends VectorSpecies<E>,
+//   M extends VectorMask<E>>
+//  V loadMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+//               int length, Object base, long offset,          // Unsafe addressing
+//               boolean fromSegment,
+//               M m, int offsetInRange,
+//               C container, long index, S s,                  // Arguments for default implementation
+//               LoadVectorMaskedOperation<C, V, S, M> defaultImpl) {
+//  public static
+//  <C,
+//   V extends Vector<E>,
+//   M extends VectorMask<E>,
+//   E>
+//  void storeMasked(Class<? extends V> vClass, Class<M> mClass, Class<E> eClass,
+//                   int length,
+//                   Object base, long offset,                  // Unsafe addressing
+//                   boolean fromSegment,
+//                   V v, M m, C container, long index,         // Arguments for default implementation
+//                   StoreVectorMaskedOperation<C, V, M> defaultImpl) {
+
 bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vector_klass = gvn().type(argument(0))->isa_instptr();
   const TypeInstPtr* mask_klass   = gvn().type(argument(1))->isa_instptr();
   const TypeInstPtr* elem_klass   = gvn().type(argument(2))->isa_instptr();
   const TypeInt*     vlen         = gvn().type(argument(3))->isa_int();
+  const TypeInt*     from_ms      = gvn().type(argument(7))->isa_int();
 
   if (vector_klass == nullptr || mask_klass == nullptr || elem_klass == nullptr || vlen == nullptr ||
-      vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr ||
-      elem_klass->const_oop() == nullptr || !vlen->is_con()) {
+      vector_klass->const_oop() == nullptr || mask_klass->const_oop() == nullptr || from_ms == nullptr ||
+      elem_klass->const_oop() == nullptr || !vlen->is_con() || !from_ms->is_con()) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s",
+      tty->print_cr("  ** missing constant: vclass=%s mclass=%s etype=%s vlen=%s from_ms=%s",
                     NodeClassNames[argument(0)->Opcode()],
                     NodeClassNames[argument(1)->Opcode()],
                     NodeClassNames[argument(2)->Opcode()],
-                    NodeClassNames[argument(3)->Opcode()]);
+                    NodeClassNames[argument(3)->Opcode()],
+                    NodeClassNames[argument(7)->Opcode()]);
     }
     return false; // not enough info for intrinsification
   }
@@ -1213,10 +1231,10 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypePtr *addr_type = gvn().type(addr)->isa_ptr();
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
-  // Now handle special case where load/store happens from/to byte array but element type is not byte.
-  bool using_byte_array = arr_type != nullptr && arr_type->elem()->array_element_basic_type() == T_BYTE && elem_bt != T_BYTE;
+  bool mismatched_ms = from_ms->get_con() && arr_type != nullptr && arr_type->elem()->array_element_basic_type() != elem_bt;
+  BIG_ENDIAN_ONLY(if (mismatched_ms) return false;)
   // If there is no consistency between array and vector element types, it must be special byte array case
-  if (arr_type != nullptr && !using_byte_array && !elem_consistent_with_arr(elem_bt, arr_type)) {
+  if (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, mismatched_ms)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s",
                     is_store, is_store ? "storeMasked" : "loadMasked",
@@ -1227,8 +1245,8 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     return false;
   }
 
-  int mem_num_elem = using_byte_array ? num_elem * type2aelembytes(elem_bt) : num_elem;
-  BasicType mem_elem_bt = using_byte_array ? T_BYTE : elem_bt;
+  int mem_num_elem = mismatched_ms ? num_elem * type2aelembytes(elem_bt) : num_elem;
+  BasicType mem_elem_bt = mismatched_ms ? T_BYTE : elem_bt;
   bool supports_predicate = arch_supports_vector(is_store ? Op_StoreVectorMasked : Op_LoadVectorMasked,
                                                 mem_num_elem, mem_elem_bt, VecMaskUseLoad);
 
@@ -1241,7 +1259,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       needs_predicate = true;
     } else {
       // Masked vector load with IOOBE always uses the predicated load.
-      const TypeInt* offset_in_range = gvn().type(argument(8))->isa_int();
+      const TypeInt* offset_in_range = gvn().type(argument(9))->isa_int();
       if (!offset_in_range->is_con()) {
         if (C->print_intrinsics()) {
           tty->print_cr("  ** missing constant: offsetInRange=%s",
@@ -1256,9 +1274,9 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
     if (needs_predicate) {
       if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: op=%s vlen=%d etype=%s using_byte_array=%d",
+        tty->print_cr("  ** not supported: op=%s vlen=%d etype=%s mismatched_ms=%d",
                       is_store ? "storeMasked" : "loadMasked",
-                      num_elem, type2name(elem_bt), using_byte_array ? 1 : 0);
+                      num_elem, type2name(elem_bt), mismatched_ms ? 1 : 0);
       }
       set_map(old_map);
       set_sp(old_sp);
@@ -1271,8 +1289,8 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   if (!supports_predicate && (!arch_supports_vector(Op_LoadVector, mem_num_elem, mem_elem_bt, VecMaskNotUsed) ||
       !arch_supports_vector(Op_VectorBlend, mem_num_elem, mem_elem_bt, VecMaskUseLoad))) {
     if (C->print_intrinsics()) {
-      tty->print_cr("  ** not supported: op=loadMasked vlen=%d etype=%s using_byte_array=%d",
-                    num_elem, type2name(elem_bt), using_byte_array ? 1 : 0);
+      tty->print_cr("  ** not supported: op=loadMasked vlen=%d etype=%s mismatched_ms=%d",
+                    num_elem, type2name(elem_bt), mismatched_ms ? 1 : 0);
     }
     set_map(old_map);
     set_sp(old_sp);
@@ -1281,10 +1299,10 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
 
   // Since we are using byte array, we need to double check that the vector reinterpret operation
   // with byte type is supported by backend.
-  if (using_byte_array) {
+  if (mismatched_ms) {
     if (!arch_supports_vector(Op_VectorReinterpret, mem_num_elem, T_BYTE, VecMaskNotUsed)) {
       if (C->print_intrinsics()) {
-        tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s using_byte_array=1",
+        tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s mismatched_ms=1",
                       is_store, is_store ? "storeMasked" : "loadMasked",
                       num_elem, type2name(elem_bt));
       }
@@ -1319,12 +1337,12 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   const TypeInstPtr* vbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, vbox_klass);
   const TypeInstPtr* mbox_type = TypeInstPtr::make_exact(TypePtr::NotNull, mbox_klass);
 
-  Node* mask = unbox_vector(is_store ? argument(8) : argument(7), mbox_type, elem_bt, num_elem);
+  Node* mask = unbox_vector(is_store ? argument(9) : argument(8), mbox_type, elem_bt, num_elem);
   if (mask == nullptr) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** unbox failed mask=%s",
-                    is_store ? NodeClassNames[argument(8)->Opcode()]
-                             : NodeClassNames[argument(7)->Opcode()]);
+                    is_store ? NodeClassNames[argument(9)->Opcode()]
+                             : NodeClassNames[argument(8)->Opcode()]);
     }
     set_map(old_map);
     set_sp(old_sp);
@@ -1332,11 +1350,11 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   }
 
   if (is_store) {
-    Node* val = unbox_vector(argument(7), vbox_type, elem_bt, num_elem);
+    Node* val = unbox_vector(argument(8), vbox_type, elem_bt, num_elem);
     if (val == nullptr) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** unbox failed vector=%s",
-                      NodeClassNames[argument(7)->Opcode()]);
+                      NodeClassNames[argument(8)->Opcode()]);
       }
       set_map(old_map);
       set_sp(old_sp);
@@ -1344,7 +1362,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
     }
     set_all_memory(reset_memory());
 
-    if (using_byte_array) {
+    if (mismatched_ms) {
       // Reinterpret the incoming vector to byte vector.
       const TypeVect* to_vect_type = TypeVect::make(mem_elem_bt, mem_num_elem);
       val = gvn().transform(new VectorReinterpretNode(val, val->bottom_type()->is_vect(), to_vect_type));
@@ -1358,7 +1376,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
   } else {
     Node* vload = nullptr;
 
-    if (using_byte_array) {
+    if (mismatched_ms) {
       // Reinterpret the vector mask to byte type.
       const TypeVect* from_mask_type = TypeVect::makemask(elem_bt, num_elem);
       const TypeVect* to_mask_type = TypeVect::makemask(mem_elem_bt, mem_num_elem);
@@ -1377,7 +1395,7 @@ bool LibraryCallKit::inline_vector_mem_masked_operation(bool is_store) {
       vload = gvn().transform(new VectorBlendNode(zero, vload, mask));
     }
 
-    if (using_byte_array) {
+    if (mismatched_ms) {
       const TypeVect* to_vect_type = TypeVect::make(elem_bt, num_elem);
       vload = gvn().transform(new VectorReinterpretNode(vload, vload->bottom_type()->is_vect(), to_vect_type));
     }
@@ -1526,7 +1544,7 @@ bool LibraryCallKit::inline_vector_gather_scatter(bool is_scatter) {
   const TypeAryPtr* arr_type = addr_type->isa_aryptr();
 
   // The array must be consistent with vector type
-  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type))) {
+  if (arr_type == nullptr || (arr_type != nullptr && !elem_consistent_with_arr(elem_bt, arr_type, false))) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** not supported: arity=%d op=%s vlen=%d etype=%s atype=%s ismask=no",
                     is_scatter, is_scatter ? "scatter" : "gather",
@@ -2100,7 +2118,7 @@ bool LibraryCallKit::inline_vector_rearrange() {
     if(!is_masked_op ||
        (!arch_supports_vector(Op_VectorRearrange, num_elem, elem_bt, VecMaskNotUsed) ||
         !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)     ||
-        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed))) {
+        !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed))) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: arity=2 op=shuffle/rearrange vlen=%d etype=%s ismask=no",
                       num_elem, type2name(elem_bt));
@@ -3107,7 +3125,7 @@ bool LibraryCallKit::inline_index_partially_in_upper_range() {
   bool supports_mask_gen = arch_supports_vector(Op_VectorMaskGen, num_elem, elem_bt, VecMaskUseStore);
   if (!supports_mask_gen) {
     if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
-        !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed) ||
+        !arch_supports_vector(Op_Replicate, num_elem, elem_bt, VecMaskNotUsed) ||
         !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUseStore)) {
       if (C->print_intrinsics()) {
         tty->print_cr("  ** not supported: vlen=%d etype=%s", num_elem, type2name(elem_bt));

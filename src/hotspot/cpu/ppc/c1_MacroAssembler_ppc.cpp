@@ -40,29 +40,6 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  const Register temp_reg = R12_scratch2;
-  Label Lmiss;
-
-  verify_oop(receiver, FILE_AND_LINE);
-  load_klass_check_null(temp_reg, receiver, &Lmiss);
-
-  if (TrapBasedICMissChecks && TrapBasedNullChecks) {
-    trap_ic_miss_check(temp_reg, iCache);
-  } else {
-    Label Lok;
-    cmpd(CCR0, temp_reg, iCache);
-    beq(CCR0, Lok);
-    bind(Lmiss);
-    //load_const_optimized(temp_reg, SharedRuntime::get_ic_miss_stub(), R0);
-    calculate_address_from_global_toc(temp_reg, SharedRuntime::get_ic_miss_stub(), true, true, false);
-    mtctr(temp_reg);
-    bctr();
-    align(32, 12);
-    bind(Lok);
-  }
-}
-
 
 void C1_MacroAssembler::explicit_null_check(Register base) {
   Unimplemented();

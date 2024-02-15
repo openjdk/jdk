@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ class os: AllStatic {
   static PageSizes          _page_sizes;
 
   // The default value for os::vm_min_address() unless the platform knows better. This value
-  // is chosen to give us reasonable protection against NULL pointer dereferences while being
+  // is chosen to give us reasonable protection against null pointer dereferences while being
   // low enough to leave most of the valuable low-4gb address space open.
   static constexpr size_t _vm_min_address_default = 16 * M;
 
@@ -223,6 +223,10 @@ class os: AllStatic {
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
+
+  // Returns 0 if pretouch is done via platform dependent method, or otherwise
+  // returns page_size that should be used for the common method.
+  static size_t pd_pretouch_memory(void* first, void* last, size_t page_size);
 
   static char*  pd_reserve_memory_special(size_t size, size_t alignment, size_t page_size,
 
@@ -323,6 +327,9 @@ class os: AllStatic {
   // aggressively (e.g. clear caches) so that it becomes available.
   static julong available_memory();
   static julong free_memory();
+
+  static jlong total_swap_space();
+  static jlong free_swap_space();
 
   static julong physical_memory();
   static bool has_allocatable_memory_limit(size_t* limit);
@@ -438,7 +445,7 @@ class os: AllStatic {
 
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
-  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+  static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false, MEMFLAGS flag = mtNone);
 
   // Given an address range [min, max), attempts to reserve memory within this area, with the given alignment.
   // If randomize is true, the location will be randomized.
@@ -490,10 +497,10 @@ class os: AllStatic {
   static int create_file_for_heap(const char* dir);
   // Map memory to the file referred by fd. This function is slightly different from map_memory()
   // and is added to be used for implementation of -XX:AllocateHeapAt
-  static char* map_memory_to_file(size_t size, int fd);
-  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd);
+  static char* map_memory_to_file(size_t size, int fd, MEMFLAGS flag = mtNone);
+  static char* map_memory_to_file_aligned(size_t size, size_t alignment, int fd, MEMFLAGS flag = mtNone);
   static char* map_memory_to_file(char* base, size_t size, int fd);
-  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd);
+  static char* attempt_map_memory_to_file_at(char* base, size_t size, int fd, MEMFLAGS flag = mtNone);
   // Replace existing reserved memory with file mapping
   static char* replace_existing_mapping_with_file_mapping(char* base, size_t size, int fd);
 
@@ -523,8 +530,6 @@ class os: AllStatic {
     size_t size;
     int lgrp_id;
   };
-  static char*  scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found);
-
   static char*  non_memory_address_word();
   // reserve, commit and pin the entire memory region
   static char*  reserve_memory_special(size_t size, size_t alignment, size_t page_size,
@@ -533,7 +538,6 @@ class os: AllStatic {
   static void   large_page_init();
   static size_t large_page_size();
   static bool   can_commit_large_page_memory();
-  static bool   can_execute_large_page_memory();
 
   // Check if pointer points to readable memory (by 4-byte read access)
   static bool    is_readable_pointer(const void* p);
@@ -673,6 +677,8 @@ class os: AllStatic {
   static const char*    get_temp_directory();
   static const char*    get_current_directory(char *buf, size_t buflen);
 
+  static void           prepare_native_symbols();
+
   // Builds the platform-specific name of a library.
   // Returns false if the buffer is too small.
   static bool           dll_build_name(char* buffer, size_t size,
@@ -790,6 +796,7 @@ class os: AllStatic {
   static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
+  static void print_elapsed_time(outputStream* st, double time);
 
   static void print_user_info(outputStream* st);
   static void print_active_locale(outputStream* st);
@@ -1063,6 +1070,7 @@ class os: AllStatic {
                                 char pathSep);
   static bool set_boot_path(char fileSep, char pathSep);
 
+  static bool pd_dll_unload(void* libhandle, char* ebuf, int ebuflen);
 };
 
 // Note that "PAUSE" is almost always used with synchronization

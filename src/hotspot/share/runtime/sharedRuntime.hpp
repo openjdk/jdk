@@ -46,9 +46,6 @@ class SharedRuntime: AllStatic {
   friend class VMStructs;
 
  private:
-  static bool resolve_sub_helper_internal(methodHandle callee_method, const frame& caller_frame,
-                                          CompiledMethod* caller_nm, bool is_virtual, bool is_optimized,
-                                          Handle receiver, CallInfo& call_info, Bytecodes::Code invoke_code, TRAPS);
   static methodHandle resolve_sub_helper(bool is_virtual, bool is_optimized, TRAPS);
 
   // Shared stub locations
@@ -387,8 +384,7 @@ class SharedRuntime: AllStatic {
   // to be filled by the c_calling_convention method. On other architectures,
   // null is being passed as the second VMRegPair array, so arguments are either
   // passed in a register OR in a stack slot.
-  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, VMRegPair *regs2,
-                                  int total_args_passed);
+  static int c_calling_convention(const BasicType *sig_bt, VMRegPair *regs, int total_args_passed);
 
   static int vector_calling_convention(VMRegPair *regs,
                                        uint num_bits,

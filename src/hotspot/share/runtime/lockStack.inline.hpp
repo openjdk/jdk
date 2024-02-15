@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +27,20 @@
 #ifndef SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 #define SHARE_RUNTIME_LOCKSTACK_INLINE_HPP
 
+#include "runtime/lockStack.hpp"
+
 #include "memory/iterator.hpp"
 #include "runtime/javaThread.hpp"
-#include "runtime/lockStack.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
+#include "utilities/align.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 inline int LockStack::to_index(uint32_t offset) {
+  assert(is_aligned(offset, oopSize), "Bad alignment: %u", offset);
+  assert((offset <= end_offset()), "lockstack overflow: offset %d end_offset %d", offset, end_offset());
+  assert((offset >= start_offset()), "lockstack underflow: offset %d start_offset %d", offset, start_offset());
   return (offset - lock_stack_base_offset) / oopSize;
 }
 
@@ -42,8 +49,8 @@ JavaThread* LockStack::get_thread() const {
   return reinterpret_cast<JavaThread*>(addr - lock_stack_offset);
 }
 
-inline bool LockStack::can_push() const {
-  return to_index(_top) < CAPACITY;
+inline bool LockStack::is_full() const {
+  return to_index(_top) == CAPACITY;
 }
 
 inline bool LockStack::is_owning_thread() const {
@@ -61,59 +68,140 @@ inline void LockStack::push(oop o) {
   verify("pre-push");
   assert(oopDesc::is_oop(o), "must be");
   assert(!contains(o), "entries must be unique");
-  assert(can_push(), "must have room");
+  assert(!is_full(), "must have room");
   assert(_base[to_index(_top)] == nullptr, "expect zapped entry");
   _base[to_index(_top)] = o;
   _top += oopSize;
   verify("post-push");
 }
 
-inline oop LockStack::pop() {
-  verify("pre-pop");
-  assert(to_index(_top) > 0, "underflow, probably unbalanced push/pop");
-  _top -= oopSize;
-  oop o = _base[to_index(_top)];
-#ifdef ASSERT
-  _base[to_index(_top)] = nullptr;
-#endif
-  assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
-  verify("post-pop");
-  return o;
+inline oop LockStack::bottom() const {
+  assert(to_index(_top) > 0, "must contain an oop");
+  return _base[0];
 }
 
-inline void LockStack::remove(oop o) {
-  verify("pre-remove");
-  assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));
+inline bool LockStack::is_empty() const {
+  return to_index(_top) == 0;
+}
+
+inline bool LockStack::is_recursive(oop o) const {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+  verify("pre-is_recursive");
+
+  // This will succeed iff there is a consecutive run of oops on the
+  // lock-stack with a length of at least 2.
+
+  assert(contains(o), "at least one entry must exist");
   int end = to_index(_top);
-  for (int i = 0; i < end; i++) {
+  // Start iterating from the top because the runtime code is more
+  // interested in the balanced locking case when the top oop on the
+  // lock-stack matches o. This will cause the for loop to break out
+  // in the first loop iteration if it is non-recursive.
+  for (int i = end - 1; i > 0; i--) {
+    if (_base[i - 1] == o && _base[i] == o) {
+      verify("post-is_recursive");
+      return true;
+    }
     if (_base[i] == o) {
-      int last = end - 1;
-      for (; i < last; i++) {
-        _base[i] = _base[i + 1];
-      }
-      _top -= oopSize;
-#ifdef ASSERT
-      _base[to_index(_top)] = nullptr;
-#endif
+      // o can only occur in one consecutive run on the lock-stack.
+      // Only one of the two oops checked matched o, so this run
+      // must be of length 1 and thus not be recursive. Stop the search.
       break;
     }
   }
-  assert(!contains(o), "entries must be unique: " PTR_FORMAT, p2i(o));
+
+  verify("post-is_recursive");
+  return false;
+}
+
+inline bool LockStack::try_recursive_enter(oop o) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+  verify("pre-try_recursive_enter");
+
+  // This will succeed iff the top oop on the stack matches o.
+  // When successful o will be pushed to the lock-stack creating
+  // a consecutive run at least 2 oops that matches o on top of
+  // the lock-stack.
+
+  assert(!is_full(), "precond");
+
+  int end = to_index(_top);
+  if (end == 0 || _base[end - 1] != o) {
+    // Topmost oop does not match o.
+    verify("post-try_recursive_enter");
+    return false;
+  }
+
+  _base[end] = o;
+  _top += oopSize;
+  verify("post-try_recursive_enter");
+  return true;
+}
+
+inline bool LockStack::try_recursive_exit(oop o) {
+  if (!VM_Version::supports_recursive_lightweight_locking()) {
+    return false;
+  }
+  verify("pre-try_recursive_exit");
+
+  // This will succeed iff the top two oops on the stack matches o.
+  // When successful the top oop will be popped of the lock-stack.
+  // When unsuccessful the lock may still be recursive, in which
+  // case the locking is unbalanced. This case is handled externally.
+
+  assert(contains(o), "entries must exist");
+
+  int end = to_index(_top);
+  if (end <= 1 || _base[end - 1] != o || _base[end - 2] != o) {
+    // The two topmost oops do not match o.
+    verify("post-try_recursive_exit");
+    return false;
+  }
+
+  _top -= oopSize;
+  DEBUG_ONLY(_base[to_index(_top)] = nullptr;)
+  verify("post-try_recursive_exit");
+  return true;
+}
+
+inline size_t LockStack::remove(oop o) {
+  verify("pre-remove");
+  assert(contains(o), "entry must be present: " PTR_FORMAT, p2i(o));
+
+  int end = to_index(_top);
+  int inserted = 0;
+  for (int i = 0; i < end; i++) {
+    if (_base[i] != o) {
+      if (inserted != i) {
+        _base[inserted] = _base[i];
+      }
+      inserted++;
+    }
+  }
+
+#ifdef ASSERT
+  for (int i = inserted; i < end; i++) {
+    _base[i] = nullptr;
+  }
+#endif
+
+  uint32_t removed = end - inserted;
+  _top -= removed * oopSize;
+  assert(!contains(o), "entry must have been removed: " PTR_FORMAT, p2i(o));
   verify("post-remove");
+  return removed;
 }
 
 inline bool LockStack::contains(oop o) const {
   verify("pre-contains");
-  if (!SafepointSynchronize::is_at_safepoint() && !is_owning_thread()) {
-    // When a foreign thread inspects this thread's lock-stack, it may see
-    // bad references here when a concurrent collector has not gotten
-    // to processing the lock-stack, yet. Call StackWaterMark::start_processing()
-    // to ensure that all references are valid.
-    StackWatermark* watermark = StackWatermarkSet::get(get_thread(), StackWatermarkKind::gc);
-    if (watermark != nullptr) {
-      watermark->start_processing();
-    }
-  }
+
+  // Can't poke around in thread oops without having started stack watermark processing.
+  assert(StackWatermarkSet::processing_started(get_thread()), "Processing must have started!");
+
   int end = to_index(_top);
   for (int i = end - 1; i >= 0; i--) {
     if (_base[i] == o) {

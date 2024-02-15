@@ -58,25 +58,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -118,10 +114,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">soodo</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">hawwaro</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="unconfirmed">soodo</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">hawwaro</dayPeriod>
 						</dayPeriodWidth>

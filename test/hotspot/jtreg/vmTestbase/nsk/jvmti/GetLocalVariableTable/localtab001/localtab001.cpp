@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,47 +42,47 @@ static jvmtiEnv *jvmti;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jvmtiLocalVariableEntry m1[] = {
-    { 0, 21, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 0 },
-    { 4, 17, (char*) "l",    (char*) "J", NULL, 1 },
-    { 7, 14, (char*) "f",    (char*) "F", NULL, 2 },
-    { 12, 9, (char*) "d",    (char*) "D", NULL, 3 }
+    { 0, 21, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 0 },
+    { 4, 17, (char*) "l",    (char*) "J", nullptr, 1 },
+    { 7, 14, (char*) "f",    (char*) "F", nullptr, 2 },
+    { 12, 9, (char*) "d",    (char*) "D", nullptr, 3 }
 };
 static jvmtiLocalVariableEntry m2[] = {
-    { 0, 32, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 0 },
-    { 0, 32, (char*) "step", (char*) "I", NULL, 1 },
-    { 2, 29, (char*) "i2",   (char*) "S", NULL, 2 },
-    { 4, 27, (char*) "i3",   (char*) "C", NULL, 3 },
-    { 7, 24, (char*) "i4",   (char*) "B", NULL, 4 },
-    { 10,21, (char*) "i5",   (char*) "Z", NULL, 5 },
-    { 13,18, (char*) "i1",   (char*) "I", NULL, 6 }
+    { 0, 32, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 0 },
+    { 0, 32, (char*) "step", (char*) "I", nullptr, 1 },
+    { 2, 29, (char*) "i2",   (char*) "S", nullptr, 2 },
+    { 4, 27, (char*) "i3",   (char*) "C", nullptr, 3 },
+    { 7, 24, (char*) "i4",   (char*) "B", nullptr, 4 },
+    { 10,21, (char*) "i5",   (char*) "Z", nullptr, 5 },
+    { 13,18, (char*) "i1",   (char*) "I", nullptr, 6 }
 };
 static jvmtiLocalVariableEntry m3[] = {
-    { 0, 70, (char*) "ob",  (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 0 },
-    { 2, 67, (char*) "ob1", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 1 },
-    { 56,13, (char*) "ob2", (char*) "[I", NULL, 2 },
-    { 61, 0, (char*) "i",   (char*) "I", NULL, 3 },
-    { 64, 5, (char*) "e",   (char*) "Ljava/lang/IndexOutOfBoundsException;", NULL, 4 }
+    { 0, 70, (char*) "ob",  (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 0 },
+    { 2, 67, (char*) "ob1", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 1 },
+    { 56,13, (char*) "ob2", (char*) "[I", nullptr, 2 },
+    { 61, 0, (char*) "i",   (char*) "I", nullptr, 3 },
+    { 64, 5, (char*) "e",   (char*) "Ljava/lang/IndexOutOfBoundsException;", nullptr, 4 }
 };
 static jvmtiLocalVariableEntry m4[] = {
-    { 0, 33, (char*) "i1", (char*) "I", NULL, 0 },
-    { 0, 33, (char*) "l",  (char*) "J", NULL, 1 },
-    { 0, 33, (char*) "i2", (char*) "S", NULL, 2 },
-    { 0, 33, (char*) "d",  (char*) "D", NULL, 3 },
-    { 0, 33, (char*) "i3", (char*) "C", NULL, 4 },
-    { 0, 33, (char*) "f",  (char*) "F", NULL, 5 },
-    { 0, 33, (char*) "i4", (char*) "B", NULL, 6 },
-    { 0, 33, (char*) "b",  (char*) "Z", NULL, 7 }
+    { 0, 33, (char*) "i1", (char*) "I", nullptr, 0 },
+    { 0, 33, (char*) "l",  (char*) "J", nullptr, 1 },
+    { 0, 33, (char*) "i2", (char*) "S", nullptr, 2 },
+    { 0, 33, (char*) "d",  (char*) "D", nullptr, 3 },
+    { 0, 33, (char*) "i3", (char*) "C", nullptr, 4 },
+    { 0, 33, (char*) "f",  (char*) "F", nullptr, 5 },
+    { 0, 33, (char*) "i4", (char*) "B", nullptr, 6 },
+    { 0, 33, (char*) "b",  (char*) "Z", nullptr, 7 }
 };
 static jvmtiLocalVariableEntry m5[] = {
-    { 0, 6, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 0 },
-    { 0, 6, (char*) "i",    (char*) "I", NULL, 1 },
-    { 2, 4, (char*) "i12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", (char*) "I", NULL, 2 }
+    { 0, 6, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 0 },
+    { 0, 6, (char*) "i",    (char*) "I", nullptr, 1 },
+    { 2, 4, (char*) "i12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678", (char*) "I", nullptr, 2 }
 };
 static jvmtiLocalVariableEntry m6[] = {
-    { 0, 5, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", NULL, 0 },
+    { 0, 5, (char*) "this", (char*) "Lnsk/jvmti/GetLocalVariableTable/localtab001;", nullptr, 0 },
 };
 static info meth_tab[] = {
-    { 0, NULL },
+    { 0, nullptr },
     { 4, m1 },
     { 7, m2 },
     { 5, m3 },
@@ -106,8 +106,8 @@ void checkMeth(JNIEnv *env, jclass cl, const char *name, const char *sig,
     } else {
         mid = env->GetMethodID(cl, name, sig);
     }
-    if (mid == NULL) {
-        printf("Name = %s, sig = %s: mid = NULL\n", name, sig);
+    if (mid == nullptr) {
+        printf("Name = %s, sig = %s: mid = null\n", name, sig);
         result = STATUS_FAILED;
         return;
     }
@@ -194,7 +194,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }

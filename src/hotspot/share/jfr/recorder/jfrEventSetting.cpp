@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,11 +35,10 @@ bool JfrEventSetting::set_threshold(jlong id, jlong threshold_ticks) {
   return true;
 }
 
-bool JfrEventSetting::set_cutoff(jlong id, jlong cutoff_ticks) {
+void JfrEventSetting::set_miscellaneous(jlong id, jlong level) {
   JfrEventId event_id = (JfrEventId)id;
   assert(bounds_check_event(event_id), "invariant");
-  setting(event_id).cutoff_ticks = cutoff_ticks;
-  return true;
+  setting(event_id).miscellaneous = level;
 }
 
 void JfrEventSetting::set_stacktrace(jlong id, bool enabled) {
