@@ -4286,7 +4286,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, La
 
   // Check for recursion.
   subi(t, top, oopSize);
-  ldx(t, t, R16_thread);
+  ldx(t, R16_thread, t);
   cmpd(CCR0, obj, t);
   beq(CCR0, push);
 
