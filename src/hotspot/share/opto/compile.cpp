@@ -4868,10 +4868,21 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
   if (length > 0) {
     // Have to keep this list until locks elimination during Macro nodes elimination.
     Lock_List* locks_list = new (comp_arena()) Lock_List(comp_arena(), length);
+#ifdef ASSERT
+    AbstractLockNode* alock = locks.at(0);
+    BoxLockNode* box = alock->box_node()->as_BoxLock();
+#endif
     for (int i = 0; i < length; i++) {
       AbstractLockNode* lock = locks.at(i);
       assert(lock->is_coarsened(), "expecting only coarsened AbstractLock nodes, but got '%s'[%d] node", lock->Name(), lock->_idx);
       locks_list->push(lock);
+#ifdef ASSERT
+      BoxLockNode* this_box = lock->box_node()->as_BoxLock();
+      if (this_box != box) {
+        this_box->mark_unbalanced();
+        box->mark_unbalanced();
+      }
+#endif
     }
     _coarsened_locks.append(locks_list);
   }
@@ -4974,8 +4985,10 @@ void Compile::mark_unbalanced_boxes() {
           if (box != this_box) {
             box->set_unbalanced();
             this_box->set_unbalanced();
+            assert(this_box->is_marked_unbalanced(),"inconsistency");
           }
         }
+        assert(box->is_unbalanced() == box->is_marked_unbalanced(),"inconsistency");
       }
     }
   }

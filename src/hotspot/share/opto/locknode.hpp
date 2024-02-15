@@ -42,6 +42,9 @@ class BoxLockNode : public Node {
     Eliminated         // All lock/unlock in region were eliminated
   } _kind;
 
+  // In debug VM verify correctness of unbalanced marking
+  DEBUG_ONLY(bool _marked_unbalanced;)
+
 public:
   BoxLockNode( int lock );
   virtual int Opcode() const;
@@ -66,6 +69,11 @@ public:
   bool is_unbalanced() const { return _kind == Unbalanced; }
   void set_eliminated()      { _kind = Eliminated; }
   void set_unbalanced()      { _kind = Unbalanced; }
+
+#ifdef ASSERT
+  void mark_unbalanced()            { _marked_unbalanced = true; }
+  bool is_marked_unbalanced() const { return _marked_unbalanced; }
+#endif
 
   // Is BoxLock node used for one simple lock region?
   bool is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock);

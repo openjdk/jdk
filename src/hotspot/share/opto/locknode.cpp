@@ -41,6 +41,7 @@ uint BoxLockNode::size_of() const { return sizeof(*this); }
 
 BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
                                        _slot(slot), _kind(BoxLockNode::Regular) {
+  DEBUG_ONLY(_marked_unbalanced = false);
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
   OptoReg::Name reg = OptoReg::stack2reg(_slot);
