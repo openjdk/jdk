@@ -36,12 +36,14 @@
 // Loop Unswitching is a loop optimization to move an invariant, non-loop-exiting test in the loop body before the loop.
 // Such a test is either always true or always false in all loop iterations and could therefore only be executed once.
 // To achieve that, we duplicate the loop and change the original and cloned loop as follows:
-// - Original loop -> true-path-loop: The true-path of the invariant, non-loop-exiting test in the original loop
-//                                    is kept while the false-path is killed. We call this unswitched loop version
-//                                    the true-path-loop.
-// - Cloned loop -> False-path-loop:  The false-path of the invariant, non-loop-exiting test in the cloned loop
-//                                    is kept while the true-path is killed. We call this unswitched loop version
-//                                    the false-path loop.
+// - Original loop -> true-path-loop:
+//        The true-path of the invariant, non-loop-exiting test in the original loop
+//        is kept while the false-path is killed. We call this unswitched loop version
+//        the true-path-loop.
+// - Cloned loop -> false-path-loop:
+//        The false-path of the invariant, non-loop-exiting test in the cloned loop
+//        is kept while the true-path is killed. We call this unswitched loop version
+//        the false-path loop.
 //
 // The invariant, non-loop-exiting test can now be moved before both loops (to only execute it once) and turned into a
 // loop selector If node to select at runtime which unswitched loop version should be executed.
@@ -51,23 +53,39 @@
 // Note that even though an invariant test that exits the loop could also be optimized with Loop Unswitching, it is more
 // efficient to simply peel the loop which achieves the same result in a simpler manner (also see policy_peeling()).
 //
-// The following graph summarizes the Loop Unswitching optimization:
+// The following graphs summarizes the Loop Unswitching optimization.
+// We start with the original loop:
 //
-//                                                                    [Initialized Assertion Predicates]
-//                                                                                    |
-//    [Predicates]                                                         loop selector If (invariant-test)
-//         |                                                                  /                   \
-//    Original Loop                                                       true?                  false?
-//      stmt1                                                             /                         \
-//      if (invariant-test)           UNSWITCHED              [Cloned Parse Predicates]         [Cloned Parse Predicates]
-//        if-path                     =========>              [Cloned Template                  [Cloned Template
-//      else                                                   Assertion Predicates]             Assertion Predicates]
-//        [else-path]                                               |                                  |
-//      stmt2                                                 True-Path-Loop                    False-Path-Loop
-//    Endloop                                                   cloned stmt1                      cloned stmt1
-//                                                              cloned if-path                    cloned else-path
-//                                                              cloned stmt2                      cloned stmt2
-//                                                            Endloop                           Endloop
+//                       [Predicates]
+//                            |
+//                       Original Loop
+//                         stmt1
+//                         if (invariant-test)
+//                           if-path
+//                         else
+//                           else-path
+//                         stmt2
+//                       Endloop
+//
+//
+// which is unswitched into a true-path-loop and a false-path-loop together with a loop selector:
+//
+//
+//            [Initialized Assertion Predicates]
+//                            |
+//                 loop selector If (invariant-test)
+//                    /                   \
+//                true?                  false?
+//                /                         \
+//    [Cloned Parse Predicates]         [Cloned Parse Predicates]
+//    [Cloned Template                  [Cloned Template
+//     Assertion Predicates]             Assertion Predicates]
+//          |                                  |
+//    True-Path-Loop                    False-Path-Loop
+//      cloned stmt1                      cloned stmt1
+//      cloned if-path                    cloned else-path
+//      cloned stmt2                      cloned stmt2
+//    Endloop                           Endloop
 
 
 // Return true if the loop should be unswitched or false otherwise.

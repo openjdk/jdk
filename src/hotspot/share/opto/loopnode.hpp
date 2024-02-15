@@ -771,7 +771,8 @@ public:
     return _has_range_checks;
   }
 
-  // Return the strip mined loop tree if there is an outer strip mined loop. Otherwise, return this.
+  // Return the parent's IdealLoopTree for a strip mined loop which is the outer strip mined loop.
+  // In all other cases, return this.
   IdealLoopTree* skip_strip_mined() {
     return _head->as_Loop()->is_strip_mined() ? _parent : this;
   }
