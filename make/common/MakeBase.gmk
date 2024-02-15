@@ -84,10 +84,6 @@ include $(TOPDIR)/make/common/FileUtils.gmk
 include $(TOPDIR)/make/common/MakeIO.gmk
 include $(TOPDIR)/make/common/Utils.gmk
 
-# A file containing a way to uniquely identify the source code revision that
-# the build was created from
-SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
-
 ################################################################################
 
 define SetupLogging

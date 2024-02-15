@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,10 @@ include MakeBase.gmk
 # image.
 #
 ################################################################################
+
+# A file containing a way to uniquely identify the source code revision that
+# the build was created from
+SOURCE_REVISION_TRACKER := $(SUPPORT_OUTPUTDIR)/src-rev/source-revision-tracker
 
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
 
