@@ -281,7 +281,7 @@ void PSPromotionManager::process_array_chunk(PartialArrayScanTask task) {
   assert(PSChunkLargeArrays, "invariant");
 
   oop old = task.to_source_array();
-  assert(old->is_objArray(), "invariant");
+  assert(old->forward_safe_klass()->is_objArray_klass(), "invariant");
   assert(old->is_forwarded(), "invariant");
 
   TASKQUEUE_STATS_ONLY(++_array_chunks_processed);

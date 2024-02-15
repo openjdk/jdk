@@ -296,7 +296,7 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   assert(ShenandoahThreadLocalData::is_evac_allowed(thread), "must be enclosed in oom-evac scope");
 
-  size_t size = p->size();
+  size_t size = p->forward_safe_size();
 
   assert(!heap_region_containing(p)->is_humongous(), "never evacuate humongous objects");
 
@@ -331,11 +331,25 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
 
   // Copy the object:
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
+  oop copy_val = cast_to_oop(copy);
+
+  if (UseCompactObjectHeaders) {
+    // The copy above is not atomic. Make sure we have seen the proper mark
+    // and re-install it into the copy, so that Klass* is guaranteed to be correct.
+    markWord mark = copy_val->mark();
+    if (!mark.is_marked()) {
+      copy_val->set_mark(mark);
+      ContinuationGCSupport::relativize_stack_chunk(copy_val);
+    } else {
+      // If we copied a mark-word that indicates 'forwarded' state, the object
+      // installation would not succeed. We cannot access Klass* anymore either.
+      // Skip the transformation.
+    }
+  } else {
+    ContinuationGCSupport::relativize_stack_chunk(copy_val);
+  }
 
   // Try to install the new forwarding pointer.
-  oop copy_val = cast_to_oop(copy);
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
   oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
   if (result == copy_val) {
     // Successfully evacuated. Our copy is now the public one!
@@ -511,7 +525,7 @@ inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, 
     oop obj = cast_to_oop(cs);
     assert(oopDesc::is_oop(obj), "sanity");
     assert(ctx->is_marked(obj), "object expected to be marked");
-    size_t size = obj->size();
+    size_t size = obj->forward_safe_size();
     cl->do_object(obj);
     cs += size;
   }

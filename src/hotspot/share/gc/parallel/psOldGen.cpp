@@ -391,7 +391,9 @@ public:
     _start_array(start_array) { }
 
   virtual void do_object(oop obj) {
-    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + 1;
+    // With compact headers, the objects can be one-word sized.
+    size_t int_off = UseCompactObjectHeaders ? MIN2((size_t)1, obj->size() - 1) : 1;
+    HeapWord* test_addr = cast_from_oop<HeapWord*>(obj) + int_off;
     guarantee(_start_array->object_start(test_addr) == cast_from_oop<HeapWord*>(obj), "ObjectStartArray cannot find start of object");
   }
 };

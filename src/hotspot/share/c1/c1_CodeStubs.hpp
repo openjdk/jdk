@@ -581,4 +581,22 @@ class ArrayCopyStub: public CodeStub {
 #endif // PRODUCT
 };
 
+class LoadKlassStub: public CodeStub {
+private:
+  LIR_Opr          _result;
+
+public:
+  LoadKlassStub(LIR_Opr result) :
+    CodeStub(), _result(result) {};
+
+  virtual void emit_code(LIR_Assembler* e);
+  virtual void visit(LIR_OpVisitState* visitor) {
+    visitor->do_temp(_result);
+    visitor->do_output(_result);
+  }
+#ifndef PRODUCT
+  virtual void print_name(outputStream* out) const { out->print("LoadKlassStub"); }
+#endif // PRODUCT
+};
+
 #endif // SHARE_C1_C1_CODESTUBS_HPP

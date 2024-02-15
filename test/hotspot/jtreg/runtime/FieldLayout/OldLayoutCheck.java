@@ -25,20 +25,24 @@
  * @test
  * @bug 8239014
  * @summary -XX:-UseEmptySlotsInSupers sometime fails to reproduce the layout of the old code
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @requires vm.bits == "64" & vm.opt.final.UseCompressedOops == true & vm.gc != "Z"
- * @run main/othervm -XX:+UseCompressedClassPointers -XX:-UseEmptySlotsInSupers OldLayoutCheck
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseCompressedClassPointers -XX:-UseEmptySlotsInSupers OldLayoutCheck
  */
 
 /*
  * @test
  * @requires vm.bits == "32"
- * @library /test/lib
+ * @library /test/lib /
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run main/othervm -XX:-UseEmptySlotsInSupers OldLayoutCheck
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-UseEmptySlotsInSupers OldLayoutCheck
  */
 
 import java.lang.reflect.Field;
@@ -48,6 +52,7 @@ import jdk.internal.misc.Unsafe;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Platform;
+import jdk.test.whitebox.WhiteBox;
 
 public class OldLayoutCheck {
 
@@ -56,10 +61,21 @@ public class OldLayoutCheck {
         public int i;
     }
 
-    // 32-bit VMs: @0:  8 byte header,  @8: long field, @16:  int field
-    // 64-bit VMs: @0: 12 byte header, @12:  int field, @16: long field
-    static final long INT_OFFSET  = Platform.is64bit() ? 12L : 16L;
-    static final long LONG_OFFSET = Platform.is64bit() ? 16L :  8L;
+    public static final WhiteBox WB = WhiteBox.getWhiteBox();
+
+    // 32-bit VMs/compact headers: @0:  8 byte header,  @8: long field, @16:  int field
+    // 64-bit VMs:                 @0: 12 byte header, @12:  int field, @16: long field
+    static final long INT_OFFSET;
+    static final long LONG_OFFSET;
+    static {
+      if (!Platform.is64bit() || WB.getBooleanVMFlag("UseCompactObjectHeaders")) {
+        INT_OFFSET = 16L;
+        LONG_OFFSET = 8L;
+      } else {
+        INT_OFFSET = 12L;
+        LONG_OFFSET = 16L;
+      }
+    }
 
     static public void main(String[] args) {
         Unsafe unsafe = Unsafe.getUnsafe();

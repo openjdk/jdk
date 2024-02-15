@@ -1903,13 +1903,16 @@ class LIR_OpLoadKlass: public LIR_Op {
 
  private:
   LIR_Opr _obj;
+  CodeStub* _stub;
  public:
-  LIR_OpLoadKlass(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info)
+  LIR_OpLoadKlass(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info, CodeStub* stub)
     : LIR_Op(lir_load_klass, result, info)
     , _obj(obj)
+    , _stub(stub)
     {}
 
   LIR_Opr obj()        const { return _obj;  }
+  CodeStub* stub()     const { return _stub; }
 
   virtual LIR_OpLoadKlass* as_OpLoadKlass() { return this; }
   virtual void emit_code(LIR_Assembler* masm);
@@ -2375,7 +2378,7 @@ class LIR_List: public CompilationResourceObj {
   void xadd(LIR_Opr src, LIR_Opr add, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xadd, src, add, res, tmp)); }
   void xchg(LIR_Opr src, LIR_Opr set, LIR_Opr res, LIR_Opr tmp) { append(new LIR_Op2(lir_xchg, src, set, res, tmp)); }
 
-  void load_klass(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info) { append(new LIR_OpLoadKlass(obj, result, info)); }
+  void load_klass(LIR_Opr obj, LIR_Opr result, CodeEmitInfo* info, CodeStub* stub) { append(new LIR_OpLoadKlass(obj, result, info, stub)); }
 
 #ifdef ASSERT
   void lir_assert(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, const char* msg, bool halt) { append(new LIR_OpAssert(condition, opr1, opr2, msg, halt)); }
