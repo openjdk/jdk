@@ -307,6 +307,8 @@ class TemplateAssertionPredicateExpression : public StackObj {
   }
 
   Opaque4Node* clone(Node* new_ctrl, PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init(Node* new_init, Node* new_ctrl,PhaseIdealLoop* phase);
+  Opaque4Node* clone_and_replace_init_and_stride(Node* new_init, Node* new_stride, Node* new_ctrl, PhaseIdealLoop* phase);
 };
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
