@@ -86,7 +86,9 @@ class HugePageConfiguration {
         return _thpPageSize;
     }
 
-    public long getThpPageSizeFallback() {
+    // Returns the THP page size (if exposed by the kernel) or a guessed THP page size.
+    // Mimics HugePages::thp_pagesize_fallback() method in hotspot (must be kept in sync with it).
+    public long getThpPageSizeOrFallback() {
         long pageSize = getThpPageSize();
         if (pageSize != 0) {
             return pageSize;
