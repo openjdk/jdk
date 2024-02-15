@@ -2575,7 +2575,7 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 }
 
 // Binary src (Replicate con)
-bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
+static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
   if (n == nullptr || m == nullptr) {
     return false;
   }
@@ -2616,7 +2616,7 @@ bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
-bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
   if (n != nullptr && m != nullptr) {
     return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
            VectorNode::is_all_ones_vector(m);
