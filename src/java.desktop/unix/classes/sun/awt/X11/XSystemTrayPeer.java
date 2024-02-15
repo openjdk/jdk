@@ -49,15 +49,18 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     private static final XAtom _NET_SYSTEM_TRAY_OPCODE = XAtom.get("_NET_SYSTEM_TRAY_OPCODE");
     private static final XAtom _NET_WM_ICON = XAtom.get("_NET_WM_ICON");
     private static final long SYSTEM_TRAY_REQUEST_DOCK = 0;
+    private final boolean shouldDisableSystemTray;
 
     XSystemTrayPeer(SystemTray target) {
         this.target = target;
         peerInstance = this;
 
-        selection.addSelectionListener(this);
-
         UNIXToolkit tk = (UNIXToolkit)Toolkit.getDefaultToolkit();
-        if (!tk.shouldDisableSystemTray()) {
+        shouldDisableSystemTray = tk.shouldDisableSystemTray();
+
+        if (!shouldDisableSystemTray) {
+            selection.addSelectionListener(this);
+
             long selection_owner = selection.getOwner(SCREEN);
             available = (selection_owner != XConstants.None);
 
@@ -68,6 +71,10 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     }
 
     public void ownerChanged(int screen, XMSelection sel, long newOwner, long data, long timestamp) {
+        if (shouldDisableSystemTray) {
+            return;
+        }
+
         if (screen != SCREEN) {
             return;
         }
@@ -81,6 +88,10 @@ public class XSystemTrayPeer implements SystemTrayPeer, XMSelectionListener {
     }
 
     public void ownerDeath(int screen, XMSelection sel, long deadOwner) {
+        if (shouldDisableSystemTray) {
+            return;
+        }
+
         if (screen != SCREEN) {
             return;
         }
