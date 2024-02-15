@@ -65,4 +65,12 @@ public class ErrorRecoveryTest extends KullaTesting {
                    DiagCheck.DIAG_IGNORE,
                    ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
     }
+
+    public void testStringTemplateNotProcessor() {
+        assertEval("Object o = null;");
+        assertEval("o.\"\"",
+                   DiagCheck.DIAG_ERROR,
+                   DiagCheck.DIAG_IGNORE,
+                   ste(MAIN_SNIPPET, NONEXISTENT, REJECTED, false, null));
+    }
 }

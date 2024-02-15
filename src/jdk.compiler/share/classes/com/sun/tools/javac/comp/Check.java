@@ -4475,17 +4475,17 @@ public class Check {
         }
     }
 
-    public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
+    public boolean checkProcessorType(JCExpression processor) {
         Type processorType = processor.type;
         Type interfaceType = types.asSuper(processorType, syms.processorType.tsym);
 
         if (interfaceType == null)  {
             log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
                     Errors.NotAProcessorType(processorType.tsym));
-            return types.createErrorType(resultType);
+            return false;
         }
 
-        return resultType;
+        return true;
     }
 
     public void checkLeaksNotAccessible(Env<AttrContext> env, JCClassDecl check) {
