@@ -33,41 +33,30 @@
 #include "runtime/os.inline.hpp"
 
 // These are inline variants of Thread::SpinAcquire with optional blocking in VM.
-// Unfortunately, there is no good way to do a conditional RAII object in the
-// middle of the method without dealing with macros.
+
+class ShenandoahNoBlockOp : public StackObj {
+public:
+  ShenandoahNoBlockOp(JavaThread* java_thread) {
+    assert(java_thread == nullptr, "Should not pass anything");
+  }
+};
 
 void ShenandoahLock::contended_lock(bool allow_block_for_safepoint) {
   Thread* thread = Thread::current();
   if (allow_block_for_safepoint && thread->is_Java_thread()) {
-    contended_lock_or_block(JavaThread::cast(thread));
+    contended_lock_internal<ThreadBlockInVM>(JavaThread::cast(thread));
   } else {
-    contended_lock_no_block();
+    contended_lock_internal<ShenandoahNoBlockOp>(nullptr);
   }
 }
 
-void ShenandoahLock::contended_lock_no_block() {
+template<typename BlockOp>
+void ShenandoahLock::contended_lock_internal(JavaThread* java_thread) {
   int ctr = 0;
   int yields = 0;
-  while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
+  while (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
     if ((++ctr & 0xFFF) == 0) {
-      if (yields > 5) {
-        os::naked_short_sleep(1);
-      } else {
-        os::naked_yield();
-        yields++;
-      }
-    } else {
-      SpinPause();
-    }
-  }
-}
-
-void ShenandoahLock::contended_lock_or_block(JavaThread* java_thread) {
-  int ctr = 0;
-  int yields = 0;
-  while (Atomic::cmpxchg(&_state, 0, 1) != 0) {
-    if ((++ctr & 0xFFF) == 0) {
-      ThreadBlockInVM tbivm(java_thread);
+      BlockOp block(java_thread);
       if (yields > 5) {
         os::naked_short_sleep(1);
       } else {

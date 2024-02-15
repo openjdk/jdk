@@ -32,43 +32,45 @@
 
 class ShenandoahLock  {
 private:
+  enum LockState { unlocked = 0, locked = 1 };
+
   shenandoah_padding(0);
-  volatile int _state;
+  volatile LockState _state;
   shenandoah_padding(1);
   volatile Thread* _owner;
   shenandoah_padding(2);
 
-  void contended_lock_or_block(JavaThread* java_thread);
-  void contended_lock_no_block();
+  template<typename BlockOp>
+  void contended_lock_internal(JavaThread* java_thread);
 
 public:
-  ShenandoahLock() : _state(0), _owner(nullptr) {};
+  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
   void lock(bool allow_block_for_safepoint) {
-    assert(_owner != Thread::current(), "reentrant locking attempt, would deadlock");
+    assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
 
     // Try to lock fast, or dive into contended lock handling.
-    if (Atomic::cmpxchg(&_state, 0, 1) != 0) {
+    if (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
       contended_lock(allow_block_for_safepoint);
     }
 
-    assert(_state == 1, "must be locked");
-    assert(_owner == nullptr, "must not be owned");
-    DEBUG_ONLY(_owner = Thread::current();)
+    assert(Atomic::load(&_state) == locked, "must be locked");
+    assert(Atomic::load(&_owner) == nullptr, "must not be owned");
+    DEBUG_ONLY(Atomic::store(&_owner, Thread::current());)
   }
 
   void unlock() {
-    assert(_owner == Thread::current(), "sanity");
-    DEBUG_ONLY(_owner = nullptr;)
+    assert(Atomic::load(&_owner) == Thread::current(), "sanity");
+    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr);)
     OrderAccess::fence();
-    Atomic::store(&_state, 0);
+    Atomic::store(&_state, unlocked);
   }
 
   void contended_lock(bool allow_block_for_safepoint);
 
   bool owned_by_self() {
 #ifdef ASSERT
-    return _state == 1 && _owner == Thread::current();
+    return _state == locked && _owner == Thread::current();
 #else
     ShouldNotReachHere();
     return false;
