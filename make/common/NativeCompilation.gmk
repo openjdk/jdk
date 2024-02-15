@@ -177,15 +177,12 @@ define SetupNativeCompilationBody
   $$(eval $$(call CreateDependencyFile,$1))
   $$(eval $$(call ImportDependencyFile,$1))
 
-  # Prepare for linking
-  $$(eval $$(call SetupLinkerFlags,$1))
-
-  $$(eval $$(call SetupMapfile,$1))
-
   # Handle native debug symbols
   $$(eval $$(call CreateDebugSymbols,$1))
 
-  $$(eval $$(call SetupStrip,$1))
+  # Prepare for linking
+  $$(eval $$(call SetupLinkerFlags,$1))
+  $$(eval $$(call SetupLinking,$1))
 
   $$(eval $$(call SetupObjectFileList,$1))
 

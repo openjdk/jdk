@@ -71,7 +71,7 @@ GetEntitlementsFile = \
     )
 
 ################################################################################
-define SetupMapfile
+define SetupLinking
   ifneq ($(DISABLE_MAPFILES), true)
     $1_REAL_MAPFILE := $$($1_MAPFILE)
   endif
@@ -79,10 +79,7 @@ define SetupMapfile
   ifneq ($$($1_REAL_MAPFILE), )
     $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
   endif
-endef
 
-################################################################################
-define SetupStrip
   # Unless specifically set, stripping should only happen if symbols are also
   # being copied.
   $$(call SetIfEmpty, $1_STRIP_SYMBOLS, $$($1_COPY_DEBUG_SYMBOLS))
