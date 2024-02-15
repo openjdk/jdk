@@ -12186,7 +12186,7 @@ instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRe
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
-                             $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
+                             $tmp1$$Register, $tmp2$$Register);
     // If locking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.

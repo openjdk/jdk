@@ -30,7 +30,7 @@
  public:
   // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
   void fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
-                             Register tmp1, Register tmp2, Register tmp3);
+                             Register tmp1, Register tmp2);
   void fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
                                Register tmp1, Register tmp2, Register tmp3);
 

@@ -2377,7 +2377,7 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
 
 void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister flag, Register obj, Register tmp1,
                                                            Register tmp2, Register tmp3) {
-  assert_different_registers(obj, tmp1, tmp2, tmp3);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, R0);
   assert(flag == CCR0, "bad condition register");
 
   // Handle inflated monitor.
@@ -2491,7 +2491,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
 void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register obj, Register tmp1,
                                                              Register tmp2, Register tmp3) {
-  assert_different_registers(obj, tmp1, tmp2, tmp3);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, R0);
   assert(flag == CCR0, "bad condition register");
 
   // Handle inflated monitor.
