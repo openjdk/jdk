@@ -158,17 +158,11 @@ class ErrnoPreserver {
   int _e;
 
 public:
-  ErrnoPreserver() {
-    _e = errno;
-  }
+  ErrnoPreserver() { _e = errno; }
 
-  ~ErrnoPreserver() {
-    errno = _e;
-  }
+  ~ErrnoPreserver() { errno = _e; }
 
-  int saved_errno() {
-    return _e;
-  }
+  int saved_errno() { return _e; }
 };
 
 class os: AllStatic {

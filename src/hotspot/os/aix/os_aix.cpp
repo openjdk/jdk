@@ -1606,12 +1606,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
     ErrorPreserver ep;
-    log_trace(os, map)("Failed to set page size (need " UINTX_FORMAT
+    assert(false, "Failed to set page size (need " UINTX_FORMAT
                        " 64K pages) - shmctl failed. (errno=%s).",
                        size / (64 * K),
                        os::strerror(ep.saved_errno()));
-    // I want to know if this ever happens.
-    assert(false, "failed to set page size for shmat");
   }
 
   // Now attach the shared segment.
