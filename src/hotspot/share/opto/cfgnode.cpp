@@ -1793,53 +1793,49 @@ static Node* is_minmax(PhaseGVN* phase, PhiNode* phi_root, int true_path) {
     return nullptr;
   }
 
-  int false_path = 3 - true_path;
-  bool is_min = false;
   int opcode = cmp->Opcode();
-  bool is_long = opcode == Op_CmpL;
 
   // Ensure comparison is an integral type
-  if (opcode == Op_CmpI || opcode == Op_CmpL) {
-    int test = bol->_test._test;
-    // Only accept canonicalized le and lt comparisons
-    if (test != BoolTest::le && test != BoolTest::lt) {
-      return nullptr;
-    }
-  } else {
+  if (opcode != Op_CmpI && opcode != Op_CmpL) {
     return nullptr;
   }
 
+  // Only accept canonicalized le and lt comparisons
+  int test = bol->_test._test;
+  if (test != BoolTest::le && test != BoolTest::lt) {
+    return nullptr;
+  }
+
+  int false_path = 3 - true_path;
+
+  // The values being compared
   Node* cmp_true = cmp->in(true_path);
   Node* cmp_false = cmp->in(false_path);
 
-  // Identify which path would result in a minimum being created for "a < b ? a : b" and "a < b ? b : a"
-  // If neither structure is found, exit
-  int min_path;
-  if ((cmp_true == phi_root->in(true_path)) && (cmp_false == phi_root->in(false_path))) {
-    min_path = 1;
-  } else if (cmp_true == phi_root->in(false_path) && cmp_false == phi_root->in(true_path)) {
-    min_path = 2;
+  // The values being selected
+  Node* phi_true = phi_root->in(true_path);
+  Node* phi_false = phi_root->in(false_path);
+
+  // For this transformation to be valid, the values being compared must be the same as the values being selected.
+  // We accept two different forms, "a < b ? a : b", and "a < b ? b : a". For the first form, the comparison is a minimum
+  // if 'a' (true_path == 1) is selected when the comparison is true. If 'b' (true_path == 2) is selected when it is true,
+  // the comparison will be a maximum. For the second form, as the order of the selected values is swapped, the selected
+  // paths must also be swapped, so the path to choose maximum is 2 instead of 1. If neither form is found, bail out.
+
+  int max_path;
+  if (cmp_true == phi_true && cmp_false == phi_false) {
+    max_path = 2;
+  } else if (cmp_true == phi_false && cmp_false == phi_true) {
+    max_path = 1;
   } else {
     return nullptr;
   }
 
-  if (true_path == min_path) {
-    is_min = true;
-  }
-
   // Create the Min/Max node based on the type and kind
-  if (is_long) {
-    if (is_min) {
-      return new MinLNode(phase->C, cmp_true, cmp_false);
-    } else {
-      return new MaxLNode(phase->C, cmp_true, cmp_false);
-    }
+  if (opcode == Op_CmpL) {
+    return MaxNode::build_min_max_long(phase, cmp_true, cmp_false, true_path == max_path);
   } else {
-    if (is_min) {
-      return new MinINode(cmp_true, cmp_false);
-    } else {
-      return new MaxINode(cmp_true, cmp_false);
-    }
+    return MaxNode::build_min_max_int(cmp_true, cmp_false, true_path == max_path);
   }
 }
 

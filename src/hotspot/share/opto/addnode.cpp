@@ -1049,11 +1049,19 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+Node* MaxNode::build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
     return new MinINode(a, b);
+  }
+}
+
+Node* MaxNode::build_min_max_long(PhaseGVN* phase, Node* a, Node* b, bool is_max) {
+  if (is_max) {
+    return new MaxLNode(phase->C, a, b);
+  } else {
+    return new MinLNode(phase->C, a, b);
   }
 }
 
