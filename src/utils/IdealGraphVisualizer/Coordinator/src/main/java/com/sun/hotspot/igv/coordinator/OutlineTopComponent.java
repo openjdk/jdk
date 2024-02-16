@@ -93,6 +93,10 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         initListView();
         initToolbar();
         initReceivers();
+
+        String userDirectory = Places.getUserDirectory().getAbsolutePath();
+        setWorkspacePath(userDirectory);
+        loadWorkspace();
     }
 
     private void initListView() {
@@ -145,9 +149,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
 
         document.getChangedEvent().addListener(g -> documentChanged());
-
-        setWorkspacePath(Places.getUserDirectory().getAbsolutePath());
-        loadWorkspace();
     }
 
     private void onChangeWorkspaceClicked(ActionEvent event) {
