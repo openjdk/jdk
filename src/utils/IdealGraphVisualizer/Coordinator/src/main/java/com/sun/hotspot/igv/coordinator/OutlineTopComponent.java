@@ -160,6 +160,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             File newWorkspace = fileChooser.getSelectedFile();
             String workspacePath = newWorkspace.getAbsolutePath();
             if (!workspacePath.isEmpty()) {
+                saveWorkspace();
                 setWorkspacePath(workspacePath);
                 loadWorkspace();
             }
@@ -316,6 +317,7 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
     }
 
     private void loadWorkspace() {
+        clear();
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
         try {
@@ -355,9 +357,13 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         return workspacePath + "/" + WORKSPACE_XML_FILE;
     }
 
-    public void saveWorkspace() throws IOException {
-        saveGraphDocument(getDocument(), getWorkspaceGraphsPath());
-        saveStates(getWorkspaceStatesPath());
+    public void saveWorkspace() {
+        try {
+            saveGraphDocument(getDocument(), getWorkspaceGraphsPath());
+            saveStates(getWorkspaceStatesPath());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

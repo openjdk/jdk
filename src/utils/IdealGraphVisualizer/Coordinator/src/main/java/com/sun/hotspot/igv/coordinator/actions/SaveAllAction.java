@@ -40,11 +40,7 @@ public final class SaveAllAction extends CallableSystemAction {
     @Override
     public void performAction() {
         OutlineTopComponent component = OutlineTopComponent.findInstance();
-        try {
-            component.saveWorkspace();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        component.saveWorkspace();
     }
 
     @Override
