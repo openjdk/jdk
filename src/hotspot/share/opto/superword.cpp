@@ -522,6 +522,7 @@ bool SuperWord::SLP_extract() {
   combine_pairs_to_longer_packs();
 
   split_packs_longer_than_max_vector_size();
+  split_packs_into_power_of_2_sizes();
 
   // TODO split:
   // implemented (size, filter if not possible?)
@@ -1534,72 +1535,149 @@ void SuperWord::combine_pairs_to_longer_packs() {
 }
 
 
+// Split pack according to task. Return true if any change was made, else false.
+SuperWord::SplitStatus
+SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
+  int pack_size = pack->size();
+  int split_size = task.split_size();
+  assert(0 <= split_size && split_size <= pack_size, "split_size must be in range");
+  if (split_size == 0 || split_size == pack_size) {
+    return SplitStatus::make_no_change(pack);
+  }
+
+  // Split the size
+  int new_size = split_size;
+  int old_size = pack_size - new_size;
+
+  // Are both sizes too small to be a pack?
+  if (old_size < 2 && new_size < 2) {
+    assert(old_size == 1 && new_size == 1, "implied");
+    for (int i = 0; i < pack_size; i++) {
+      Node* n = pack->at(i);
+      set_my_pack(n, nullptr);
+    }
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed size 2 pack, cannot be split: %s:", task.message());
+        print_pack(pack);
+      }
+#endif
+    return SplitStatus::make_changed(nullptr, nullptr);
+  }
+
+  // Just pop off a single node?
+  if (new_size < 2) {
+    assert(new_size == 1 && old_size >= 2, "implied");
+    Node* n = pack->pop();
+    set_my_pack(n, nullptr);
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
+        n->dump();
+      }
+#endif
+    return SplitStatus::make_changed(pack, nullptr);
+  }
+
+  // Just remove a single node at front?
+  if (old_size < 2) {
+    assert(old_size == 1 && new_size >= 2, "implied");
+    Node* n = pack->at(0);
+    pack->remove(0);
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
+        n->dump();
+      }
+#endif
+    return SplitStatus::make_changed(pack, nullptr);
+  }
+
+  // We must will have two packs
+  assert(old_size >= 2 && new_size >= 2, "implied");
+  Node_List* new_pack = new Node_List(new_size);
+
+  for (int i = 0; i < new_size; i++) {
+    new_pack->push(pack->at(old_size + i));
+  }
+
+  for (int i = 0; i < new_size; i++) {
+    pack->pop();
+  }
+
+  return SplitStatus::make_changed(pack, new_pack);
+}
+
 template <typename SplitStrategy>
 void SuperWord::split_packs(const char* split_name,
                             SplitStrategy strategy) {
-  // TODO
-  // idea:
-  // iterate over all packs
-  // call strategy on it: must tell how many nodes to split away from end
-  //                      from end: so we don't have to create too many or move
-  // if 0 or all: no-op
-  // else:
-  // split, but don't make 1-size packs (rejection!)
-  // repeat until stabilizes
+  assert(!_packset.is_empty(), "packset not empty");
+
+  bool changed;
+  do {
+    changed = false;
+    int new_packset_length = 0;
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* pack = _packset.at(i);
+      assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
+      SplitTask task = strategy(pack);
+      SplitStatus status = split_pack(split_name, pack, task);
+      changed |= status.is_changed();
+      Node_List* old_pack = status.old_pack();
+      Node_List* new_pack = status.new_pack();
+      _packset.at_put(i, nullptr); // take out pack
+      if (old_pack != nullptr) {
+        assert(i >= new_packset_length, "only move packs down");
+        _packset.at_put(new_packset_length++, old_pack);
+      }
+      if (new_pack != nullptr) {
+        _packset.append(new_pack);
+      }
+    }
+    _packset.trunc_to(new_packset_length);
+  } while (changed);
+
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
+    tty->print_cr("\nAfter %s", split_name);
+    print_packset();
+  }
+#endif
 }
 
 void SuperWord::split_packs_longer_than_max_vector_size() {
   assert(!_packset.is_empty(), "packset not empty");
   DEBUG_ONLY( int old_packset_length = _packset.length(); )
 
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    assert(pack != nullptr, "no nullptr in packset");
-    uint max_vlen = max_vector_size_in_def_use_chain(pack->at(0));
-    assert(is_power_of_2(max_vlen), "sanity");
-    uint pack_size = pack->size();
-    if (pack_size <= max_vlen) {
-      continue;
-    }
-    // Split off the "upper" nodes into new packs
-    Node_List* new_pack = new Node_List();
-    for (uint j = max_vlen; j < pack_size; j++) {
-      Node* n = pack->at(j);
-      // is new_pack full?
-      if (new_pack->size() >= max_vlen) {
-        assert(is_power_of_2(new_pack->size()), "sanity %d", new_pack->size());
-        _packset.append(new_pack);
-        new_pack = new Node_List();
-      }
-      new_pack->push(n);
-    }
-    // remaining new_pack
-    if (new_pack->size() > 1) {
-      _packset.append(new_pack);
-    } else {
-#ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
-        tty->cr();
-        tty->print_cr("WARNING: Node dropped out of odd size pack:");
-        new_pack->at(0)->dump();
-        print_pack(pack);
-      }
-#endif
-    }
-    // truncate
-    while (pack->size() > max_vlen) {
-      pack->pop();
-    }
-  }
+  split_packs("SuperWord::split_packs_longer_than_max_vector_size",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 uint max_vlen = max_vector_size_in_def_use_chain(pack->at(0));
+                 assert(is_power_of_2(max_vlen), "sanity");
+                 if (pack_size > max_vlen) {
+                   return SplitTask(max_vlen, "longer than max_vector_size");
+                 }
+                 return SplitTask::make_no_split();
+               });
 
   assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
+}
 
-#ifndef PRODUCT
-  if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::split_packs_longer_than_max_vector_size");
-    print_packset();
-  }
-#endif
+void SuperWord::split_packs_into_power_of_2_sizes() {
+  assert(!_packset.is_empty(), "packset not empty");
+
+  split_packs("SuperWord::split_packs_into_power_of_2_sizes",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 uint new_size = round_down_power_of_2(pack_size);
+                 if (new_size <= pack_size) {
+                   return SplitTask(new_size, "was not power of 2 size");
+                 }
+                 return SplitTask::make_no_split();
+               });
 }
 
 template <typename FilterPredicate>

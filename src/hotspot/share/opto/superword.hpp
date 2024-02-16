@@ -488,7 +488,54 @@ private:
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
+  class SplitTask {
+  private:
+    const int _split_size;
+    const char* _message;
+
+  public:
+    SplitTask(int split_size, const char* message) : _split_size(split_size), _message(message) {
+      assert(0 <= split_size && message != nullptr, "arguments must be valid");
+    }
+
+    static SplitTask make_no_split() { return SplitTask(0, "no split"); }
+    int split_size() const { return _split_size; }
+    const char* message() const { return _message; }
+  };
+
+  class SplitStatus {
+  private:
+    Node_List* _old_pack; // old pack, possibly modified - or nullptr
+    Node_List* _new_pack; // new pack                    - or nullptr
+    bool _changed;
+
+    SplitStatus(Node_List* old_pack, Node_List* new_pack, bool changed) :
+      _old_pack(old_pack), _new_pack(new_pack), _changed(changed)
+    {
+      assert(_new_pack == nullptr || _changed, "second pack implies is_changed");
+      assert(_new_pack == nullptr || _old_pack != nullptr, "second pack implies first pack");
+    }
+
+  public:
+    static SplitStatus make_no_change(Node_List* old_pack) {
+      return SplitStatus(old_pack, nullptr, false);
+    }
+
+    static SplitStatus make_changed(Node_List* old_pack, Node_List* new_pack) {
+      return SplitStatus(old_pack, new_pack, true);
+    }
+
+    bool is_changed() const { return _changed; }
+    Node_List* old_pack() const { return _old_pack; }
+    Node_List* new_pack() const { return _new_pack; }
+  };
+
+  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+  template <typename SplitStrategy>
+  void split_packs(const char* split_name, SplitStrategy strategy);
+
   void split_packs_longer_than_max_vector_size();
+  void split_packs_into_power_of_2_sizes();
 
   // Filter out packs with various filter predicates
   template <typename FilterPredicate>
