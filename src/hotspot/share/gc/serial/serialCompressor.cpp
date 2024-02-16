@@ -61,26 +61,25 @@ public:
     }
   }
 
-  bool insert_deadspace(HeapWord* dead_start, HeapWord* dead_end) {
+  bool insert_deadspace(size_t dead_length) {
     if (!_active) {
       return false;
     }
-
-    size_t dead_length = pointer_delta(dead_end, dead_start);
     if (_allowed_deadspace_words >= dead_length) {
-      _allowed_deadspace_words -= dead_length;
-      CollectedHeap::fill_with_object(dead_start, dead_length);
-      oop obj = cast_to_oop(dead_start);
-
-      assert(dead_length == obj->size(), "bad filler object size");
-      log_develop_trace(gc, compaction)("Inserting object to dead space: " PTR_FORMAT ", " PTR_FORMAT ", " SIZE_FORMAT "b",
-                                        p2i(dead_start), p2i(dead_end), dead_length * HeapWordSize);
-
+      if (dead_length > 0) {
+        _allowed_deadspace_words -= dead_length;
+        log_develop_trace(gc, compaction)("Inserting dead space: " SIZE_FORMAT "b",
+                                          dead_length * HeapWordSize);
+      }
       return true;
     } else {
       _active = false;
       return false;
     }
+  }
+
+  inline bool is_active() const {
+    return _active;
   }
 };
 
@@ -222,6 +221,16 @@ class SCCompacter {
     // Scan all live blocks in the space.
     HeapWord* first_obj_this_block = _mark_bitmap.get_next_marked_addr(current, top);
     current = align_down(first_obj_this_block, bytes_per_block());
+
+    // Handle leading dead space.
+    SCDeadSpacer dead_spacer(space);
+    if (dead_spacer.is_active()) {
+      size_t dead = pointer_delta(first_obj_this_block, bottom);
+      if (dead_spacer.insert_deadspace(dead)) {
+        // Note: Nothing is moving as long as we insert dead space.
+        compact_top += dead;
+      }
+    }
     while (first_obj_this_block < top) {
       assert(is_aligned(current, bytes_per_block()), "iterate at block granularity");
 
@@ -230,7 +239,20 @@ class SCCompacter {
       // live words up to that object. This is how many words we
       // must fit into the current compaction space.
       HeapWord* first_obj_after_block = first_object_in_block(current + words_per_block(), first_obj_this_block, top);
-      size_t live_in_block = _mark_bitmap.count_marked_words(first_obj_this_block, first_obj_after_block);
+      // Handle dead space.
+      size_t live_preceding_first_obj;
+      size_t live_in_block;
+      if (dead_spacer.is_active() &&
+          dead_spacer.insert_deadspace(pointer_delta(first_obj_after_block, first_obj_this_block) - live_in_block)) {
+        // Note: Nothing is moving as long as we insert dead space. This means that
+        // we only have to fill-up the compact-top with dead words up to next object
+        // boundary.
+        live_in_block = pointer_delta(first_obj_after_block, first_obj_this_block);
+        live_preceding_first_obj = pointer_delta(first_obj_this_block, current);
+      } else {
+        live_in_block = _mark_bitmap.count_marked_words(first_obj_this_block, first_obj_after_block);
+        live_preceding_first_obj = _mark_bitmap.count_marked_words_in_block(current, first_obj_this_block);
+      }
       while (live_in_block > pointer_delta(_spaces[_index]._space->end(),
                                            compact_top)) {
         // out-of-memory in this space
@@ -241,7 +263,7 @@ class SCCompacter {
       }
 
       // Record address of the first live word of this block.
-      _bot[addr_to_block_idx(current)] = compact_top - _mark_bitmap.count_marked_words_in_block(current, first_obj_this_block);
+      _bot[addr_to_block_idx(current)] = compact_top - live_preceding_first_obj;
       compact_top += live_in_block;
       // Continue to scan at next block that has an object header.
       first_obj_this_block = first_obj_after_block;
