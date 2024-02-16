@@ -232,9 +232,12 @@ public class ChoiceFormat extends NumberFormat {
      * limits} are not in ascending order.
      *
      * @implNote Given an incorrect pattern, this implementation may either
-     * throw an exception or succeed and discard the incorrect
-     * portion. Discarding the incorrect portion may result in a ChoiceFormat
-     * with empty {@code limits} and {@code choices}.
+     * throw an exception or succeed and discard the incorrect portion. A {@code
+     * NumberFormatException} is thrown if a {@code limit} can not be
+     * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
+     * if there are not ascending intervals, or missing {@code SubPatterns}.
+     * Discarding the incorrect portion may result in a ChoiceFormat with
+     * empty {@code limits} and {@code formats}.
      *
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
@@ -401,9 +404,12 @@ public class ChoiceFormat extends NumberFormat {
      * ##patterns Patterns} section.
      *
      * @implNote Given an incorrect pattern, this implementation may either
-     * throw an exception or succeed and discard the incorrect
-     * portion. Discarding the incorrect portion may result in a ChoiceFormat
-     * with empty {@code limits} and {@code choices}.
+     * throw an exception or succeed and discard the incorrect portion. A {@code
+     * NumberFormatException} is thrown if a {@code limit} can not be
+     * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
+     * if there are not ascending intervals, or missing {@code SubPatterns}.
+     * Discarding the incorrect portion may result in a ChoiceFormat with
+     * empty {@code limits} and {@code formats}.
      *
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
