@@ -197,7 +197,7 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
   if (pointer_delta(end(), obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+    assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
     return obj;
   } else {
     return nullptr;
@@ -215,7 +215,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
       if (result == obj) {
-        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         return obj;
       }
     } else {

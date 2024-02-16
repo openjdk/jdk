@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
@@ -1039,8 +1038,6 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
 }
 
 void SerialHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 

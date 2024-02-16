@@ -95,8 +95,7 @@ void ShenandoahControlThread::run_service() {
 
     GCCause::Cause cause = Atomic::xchg(&_requested_gc_cause, GCCause::_no_gc);
 
-    const bool explicit_gc_requested = is_explicit_gc(cause);
-    const bool implicit_gc_requested = is_implicit_gc(cause);
+    const bool is_gc_requested = ShenandoahCollectorPolicy::is_requested_gc(cause);
 
     // This control loop iteration has seen this much allocation.
     const size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
@@ -148,36 +147,17 @@ void ShenandoahControlThread::run_service() {
         generation = select_global_generation();
         set_gc_mode(stw_full);
       }
-    } else if (explicit_gc_requested) {
+    } else if (is_gc_requested) {
       generation = select_global_generation();
-      log_info(gc)("Trigger: Explicit GC request (%s)", GCCause::to_string(cause));
-
+      log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
       global_heuristics->record_requested_gc();
 
-      if (ExplicitGCInvokesConcurrent) {
-        policy->record_explicit_to_concurrent();
+      if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
+        set_gc_mode(stw_full);
+      } else {
         set_gc_mode(default_mode);
         // Unload and clean up everything
         heap->set_unload_classes(global_heuristics->can_unload_classes());
-      } else {
-        policy->record_explicit_to_full();
-        set_gc_mode(stw_full);
-      }
-    } else if (implicit_gc_requested) {
-      generation = select_global_generation();
-      log_info(gc)("Trigger: Implicit GC request (%s)", GCCause::to_string(cause));
-
-      global_heuristics->record_requested_gc();
-
-      if (ShenandoahImplicitGCInvokesConcurrent) {
-        policy->record_implicit_to_concurrent();
-        set_gc_mode(default_mode);
-
-        // Unload and clean up everything
-        heap->set_unload_classes(global_heuristics->can_unload_classes());
-      } else {
-        policy->record_implicit_to_full();
-        set_gc_mode(stw_full);
       }
     } else {
       // We should only be here if the regulator requested a cycle or if
@@ -226,7 +206,7 @@ void ShenandoahControlThread::run_service() {
     if (gc_requested) {
       // Blow away all soft references on this cycle, if handling allocation failure,
       // either implicit or explicit GC request, or we are requested to do so unconditionally.
-      if (generation == select_global_generation() && (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs)) {
+      if (generation == select_global_generation() && (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs)) {
         heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
       }
 
@@ -288,7 +268,7 @@ void ShenandoahControlThread::run_service() {
       }
 
       // If this was the requested GC cycle, notify waiters about it
-      if (explicit_gc_requested || implicit_gc_requested) {
+      if (is_gc_requested) {
         notify_gc_waiters();
       }
 
@@ -341,14 +321,14 @@ void ShenandoahControlThread::run_service() {
       }
     }
 
-    double current = os::elapsedTime();
+    const double current = os::elapsedTime();
 
-    if (ShenandoahUncommit && (explicit_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
+    if (ShenandoahUncommit && (is_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
       // Periodic uncommit tries to uncommit suitable regions down to min capacity.
 
-      double shrink_before = (explicit_gc_requested || soft_max_changed) ?
+      double shrink_before = (is_gc_requested || soft_max_changed) ?
                              current :
                              current - (ShenandoahUncommitDelay / 1000.0);
 
@@ -755,35 +735,8 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   }
 }
 
-bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
-  return GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause);
-}
-
-bool ShenandoahControlThread::is_implicit_gc(GCCause::Cause cause) const {
-  return !is_explicit_gc(cause)
-      && cause != GCCause::_shenandoah_concurrent_gc
-      && cause != GCCause::_no_gc;
-}
-
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
-  assert(GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause) ||
-         cause == GCCause::_metadata_GC_clear_soft_refs ||
-         cause == GCCause::_codecache_GC_aggressive ||
-         cause == GCCause::_codecache_GC_threshold ||
-         cause == GCCause::_full_gc_alot ||
-         cause == GCCause::_wb_young_gc ||
-         cause == GCCause::_wb_full_gc ||
-         cause == GCCause::_wb_breakpoint ||
-         cause == GCCause::_scavenge_alot,
-         "only requested GCs here: %s", GCCause::to_string(cause));
-
-  if (is_explicit_gc(cause)) {
-    if (!DisableExplicitGC) {
-      handle_requested_gc(cause);
-    }
-  } else {
+  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
 }
