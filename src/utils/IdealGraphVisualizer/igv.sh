@@ -23,7 +23,7 @@
 DEFAULT_WORKSPACE="$(pwd)/workspace"
 DEFAULT_WORKSPACE=${IGV_WORKSPACE:-$DEFAULT_WORKSPACE}
 WORKSPACE=${1:-$DEFAULT_WORKSPACE}
-echo "The IGV workspace in which the imported graphs are saved saved can be set as follows :"
+echo "The IGV workspace in which the imported graphs are saved can be set as follows:"
 echo "  1) export IGV_WORKSPACE=path/to/workspace"
 echo "  2) ./igv.sh path/to/workspace"
 echo "  3) default is ./workspace"
