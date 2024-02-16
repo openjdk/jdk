@@ -92,29 +92,38 @@ int g_nMonitorCounter;
 int g_nMonitorLimit;
 HMONITOR* g_hmpMonitors;
 
-// Callback for CountMonitors below
-BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+// Only monitors where CreateDC does not fail are valid
+static BOOL IsValidMonitor(HMONITOR hMon)
 {
-    // Ignore monitors where CreateDC fails
     MONITORINFOEX mieInfo;
     memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
     mieInfo.cbSize = sizeof(MONITORINFOEX);
-    if (TRUE == ::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
-        HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
-        if (NULL != hDC) {
-            ::DeleteDC(hDC);
-            g_nMonitorCounter++;
-        } else {
-            J2dTraceLn2(J2D_TRACE_INFO, "Devices::CountMonitors CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
-        }
-    } else {
-        J2dTraceLn1(J2D_TRACE_INFO, "Devices::CountMonitors: GetMonitorInfo failed for monitor with handle %p", hMon);
+    if (!::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
+        J2dTraceLn1(J2D_TRACE_INFO, "Devices::IsValidMonitor: GetMonitorInfo failed for monitor with handle %p", hMon);
+        return FALSE;
+    }
+
+    HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
+    if (NULL == hDC) {
+        J2dTraceLn2(J2D_TRACE_INFO, "Devices::IsValidMonitor: CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
+        return FALSE;
+    }
+
+    ::DeleteDC(hDC);
+    return TRUE;
+}
+
+// Callback for CountMonitors below
+static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+{
+    if (IsValidMonitor(hMon)) {
+        g_nMonitorCounter++;
     }
 
     return TRUE;
 }
 
-int WINAPI CountMonitors(void)
+static int WINAPI CountMonitors(void)
 {
     g_nMonitorCounter = 0;
     ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, 0L);
@@ -122,31 +131,19 @@ int WINAPI CountMonitors(void)
 }
 
 // Callback for CollectMonitors below
-BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
     if (g_nMonitorCounter < g_nMonitorLimit) {
-        // Ignore monitors where CreateDC fails
-        MONITORINFOEX mieInfo;
-        memset((void*)(&mieInfo), 0, sizeof(MONITORINFOEX));
-        mieInfo.cbSize = sizeof(MONITORINFOEX);
-        if (TRUE == ::GetMonitorInfo(hMon, (LPMONITORINFOEX)(&mieInfo))) {
-            HDC hDC = CreateDC(mieInfo.szDevice, NULL, NULL, NULL);
-            if (NULL != hDC) {
-                ::DeleteDC(hDC);
-                g_hmpMonitors[g_nMonitorCounter] = hMon;
-                g_nMonitorCounter++;
-            } else {
-                J2dTraceLn2(J2D_TRACE_INFO, "Devices::CollectMonitors CreateDC failed for monitor with handle %p, device: %S", hMon, mieInfo.szDevice);
-            }
-        } else {
-            J2dTraceLn1(J2D_TRACE_INFO, "Devices::CollectMonitors: GetMonitorInfo failed for monitor with handle %p", hMon);
+        if (IsValidMonitor(hMon)) {
+            g_hmpMonitors[g_nMonitorCounter] = hMon;
+            g_nMonitorCounter++;
         }
     }
 
     return TRUE;
 }
 
-int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
+static int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
 {
     g_nMonitorCounter = 0;
     g_hmpMonitors = hmpMonitors;

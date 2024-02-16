@@ -180,15 +180,22 @@ void AwtWin32GraphicsDevice::Initialize()
     gpBitmapInfo->bmiHeader.biBitCount = 0;
     HDC hBMDC = this->GetDC();
     VERIFY(hBMDC != NULL);
-    if (hBMDC == NULL)
+    if (hBMDC == NULL) {
         return;
+    }
     HBITMAP hBM = ::CreateCompatibleBitmap(hBMDC, 1, 1);
     VERIFY(hBM != NULL);
     if (hBM == NULL) {
         VERIFY(::DeleteDC(hBMDC));
         return;
     }
-    VERIFY(::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS));
+    int getDiBitsRC = ::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS);
+    VERIFY(getDiBitsRC);
+    if (getDiBitsRC == 0) {
+        VERIFY(::DeleteObject(hBM));
+        VERIFY(::DeleteDC(hBMDC));
+        return;
+    }
 
     if (colorData->bitsperpixel > 8) {
         if (MONITORINFOF_PRIMARY & pMonitorInfo->dwFlags) {
