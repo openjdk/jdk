@@ -32,8 +32,6 @@ void CHeapStringHolder::set(const char* string) {
     _string = NEW_C_HEAP_ARRAY(char, len + 1, _memflags);
     ::memcpy(_string, string, len);
     _string[len] = 0; // terminating null
-    // Make sure it is written before the pointer is used again
-    OrderAccess::storestore();
   }
 }
 
