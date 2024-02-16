@@ -1626,11 +1626,17 @@ void SuperWord::split_packs(const char* split_name,
       Node_List* old_pack = status.old_pack();
       Node_List* new_pack = status.new_pack();
       _packset.at_put(i, nullptr); // take out pack
+      // If we have two packs, we want to append the one that requires more changes at the end
+      if (old_pack != nullptr && new_pack != nullptr) {
+        swap(old_pack, new_pack);
+      }
       if (old_pack != nullptr) {
+        // The first pack can be put at the current position
         assert(i >= new_packset_length, "only move packs down");
         _packset.at_put(new_packset_length++, old_pack);
       }
       if (new_pack != nullptr) {
+        // The second node has to be appended at the end
         _packset.append(new_pack);
       }
     }
@@ -1646,7 +1652,21 @@ void SuperWord::split_packs(const char* split_name,
 }
 
 void SuperWord::split_packs_to_match_use_and_def_packs() {
-  // TODO
+  split_packs("SuperWord::split_packs_to_match_use_and_def_packs",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 // TODO
+                 //uint implemented_size = max_implemented_size(pack);
+                 //if (implemented_size == 0) {
+                 //  // No size is implemented. Leave it for the filter.
+                 //  return SplitTask::make_no_split();
+                 //}
+                 //assert(is_power_of_2(implemented_size), "sanity %d", implemented_size);
+                 //if (pack_size > implemented_size) {
+                 //  return SplitTask(implemented_size, "only implemented at smaller size");
+                 //}
+                 return SplitTask::make_no_split();
+               });
 }
 
 void SuperWord::split_packs_only_implemented_with_smaller_size() {
@@ -1667,7 +1687,17 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
 }
 
 void SuperWord::split_packs_to_break_mutual_dependence() {
-  // TODO
+  split_packs("SuperWord::split_packs_to_break_mutual_dependence",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
+                 if (!is_marked_reduction(pack->at(0)) &&
+                     !mutually_independent(pack)) {
+                   // Split in half.
+                   return SplitTask(pack_size >> 1, "was not mutually independent");
+                 }
+                 return SplitTask::make_no_split();
+               });
 }
 
 template <typename FilterPredicate>
