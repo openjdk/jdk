@@ -534,7 +534,10 @@ private:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
 
-  void split_packs_longer_than_max_vector_size();
+  void split_packs_to_match_use_and_def_packs();
+  void split_packs_longer_than_max_vector_size(); // TODO remove?
+  void split_packs_only_implemented_with_smaller_size();
+  void split_packs_to_break_mutual_dependence();
   void split_packs_into_power_of_2_sizes();
 
   // Filter out packs with various filter predicates

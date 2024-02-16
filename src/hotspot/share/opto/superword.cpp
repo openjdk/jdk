@@ -521,8 +521,12 @@ bool SuperWord::SLP_extract() {
 
   combine_pairs_to_longer_packs();
 
-  split_packs_longer_than_max_vector_size();
+  split_packs_to_match_use_and_def_packs();  // a first time: create natural borders
+  split_packs_longer_than_max_vector_size(); // TODO remove?
+  split_packs_only_implemented_with_smaller_size();
+  split_packs_to_break_mutual_dependence();
   split_packs_into_power_of_2_sizes();
+  split_packs_to_match_use_and_def_packs();  // again: propagate split of other packs
 
   // TODO split:
   // implemented (size, filter if not possible?)
@@ -1648,6 +1652,10 @@ void SuperWord::split_packs(const char* split_name,
 #endif
 }
 
+void SuperWord::split_packs_to_match_use_and_def_packs() {
+  // TODO
+}
+
 void SuperWord::split_packs_longer_than_max_vector_size() {
   assert(!_packset.is_empty(), "packset not empty");
   DEBUG_ONLY( int old_packset_length = _packset.length(); )
@@ -1664,6 +1672,14 @@ void SuperWord::split_packs_longer_than_max_vector_size() {
                });
 
   assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
+}
+
+void SuperWord::split_packs_only_implemented_with_smaller_size() {
+  // TODO
+}
+
+void SuperWord::split_packs_to_break_mutual_dependence() {
+  // TODO
 }
 
 void SuperWord::split_packs_into_power_of_2_sizes() {
