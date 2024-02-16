@@ -925,11 +925,11 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
         assert(array_cache_load_offset_from_second_addp->Opcode() == Op_LShiftX &&
                array_cache_load_offset_from_second_addp->in(2)->find_int_con(-1) == shift_for_cache_array_load,
                "Not an array access?");
-        array_cache_load_offset_from_second_addp = array_cache_load_offset_from_second_addp->in(1);
-#ifdef _LP64
-        assert(array_cache_load_offset_from_second_addp->Opcode() == Op_ConvI2L,
-               "unexpected address calculation shape");
         Node* array_cache_load_index_from_second_addp = array_cache_load_offset_from_second_addp->in(1);
+#ifdef _LP64
+        assert(array_cache_load_index_from_second_addp->Opcode() == Op_ConvI2L,
+               "unexpected address calculation shape");
+        array_cache_load_index_from_second_addp = array_cache_load_index_from_second_addp->in(1);
         assert(!(array_cache_load_index_from_second_addp->Opcode() == Op_CastII &&
                  array_cache_load_index_from_second_addp->in(0)->is_Proj() &&
                  array_cache_load_index_from_second_addp->in(0)->in(0) == _cache_not_null_iff),
