@@ -102,7 +102,7 @@ public class AcceptInheritHandle {
         commands.add(ssp.name());
 
         System.out.println("Executing: "+ commands);
-        ProcessBuilder pb =  ProcessTools.createTestJavaProcessBuilder(commands);
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(commands);
         pb.redirectError(ProcessBuilder.Redirect.INHERIT);
         Process serverProcess = pb.start();
         DataInputStream dis = new DataInputStream(serverProcess.getInputStream());
