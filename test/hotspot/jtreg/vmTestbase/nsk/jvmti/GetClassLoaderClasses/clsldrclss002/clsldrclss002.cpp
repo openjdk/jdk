@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,9 +35,9 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jobject testedClassLoader = NULL;
-static jclass testedClass = NULL;
-static jfieldID testedFieldID = NULL;
+static jobject testedClassLoader = nullptr;
+static jclass testedClass = nullptr;
+static jfieldID testedFieldID = nullptr;
 
 static const char* CLASS_SIG =
     "Lnsk/jvmti/GetClassLoaderClasses/clsldrclss002;";
@@ -58,15 +58,15 @@ static int prepare(JNIEnv* jni) {
     NSK_DISPLAY0("Obtain tested object from a static field of debugee class\n");
 
     NSK_DISPLAY1("Find class: %s\n", CLASS_NAME);
-    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = jni->FindClass(CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass) jni->NewGlobalRef(testedClass)) != nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY2("Find field: %s:%s\n", FIELD_NAME, FIELD_SIGNATURE);
     if (!NSK_JNI_VERIFY(jni, (testedFieldID =
-            jni->GetStaticFieldID(testedClass, FIELD_NAME, FIELD_SIGNATURE)) != NULL))
+            jni->GetStaticFieldID(testedClass, FIELD_NAME, FIELD_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -82,15 +82,15 @@ static int lookup(jvmtiEnv* jvmti,
         if (!NSK_JVMTI_VERIFY(jvmti->GetClassSignature(classes[i], &signature, &generic)))
             break;
 
-        if (signature != NULL && strcmp(signature, exp_sig) == 0) {
+        if (signature != nullptr && strcmp(signature, exp_sig) == 0) {
             NSK_DISPLAY1("Expected class found: %s\n", exp_sig);
             found = NSK_TRUE;
         }
 
-        if (signature != NULL)
+        if (signature != nullptr)
             jvmti->Deallocate((unsigned char*)signature);
 
-        if (generic != NULL)
+        if (generic != nullptr)
             jvmti->Deallocate((unsigned char*)generic);
     }
 
@@ -115,7 +115,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #1: check on default classloader\n");
     if (!NSK_JNI_VERIFY(jni, (testedClassLoader =
-            jni->GetStaticObjectField(testedClass, testedFieldID)) != NULL)) {
+            jni->GetStaticObjectField(testedClass, testedFieldID)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -127,7 +127,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_VERIFY(classes != NULL)) {
+    if (!NSK_VERIFY(classes != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -136,7 +136,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (classes != NULL)
+    if (classes != nullptr)
         jvmti->Deallocate((unsigned char*)classes);
 
     if (!nsk_jvmti_resumeSync())
@@ -146,7 +146,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY0("Testcase #2: check on custom classloader\n");
     if (!NSK_JNI_VERIFY(jni, (testedClassLoader =
-            jni->GetStaticObjectField(testedClass, testedFieldID)) != NULL)) {
+            jni->GetStaticObjectField(testedClass, testedFieldID)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -158,7 +158,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         nsk_jvmti_setFailStatus();
         return;
     }
-    if (!NSK_VERIFY(classes != NULL)) {
+    if (!NSK_VERIFY(classes != nullptr)) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -174,7 +174,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         NSK_COMPLAIN1("Cannot find class in the list: %s\n", CLASS_SIG_E);
         nsk_jvmti_setFailStatus();
     }
-    if (classes != NULL)
+    if (classes != nullptr)
         jvmti->Deallocate((unsigned char*)classes);
 
     NSK_TRACE(jni->DeleteGlobalRef(testedClass));
@@ -198,7 +198,7 @@ JNIEXPORT jint JNI_OnLoad_clsldrclss002(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     NSK_DISPLAY0("Agent_OnLoad\n");
 
@@ -208,10 +208,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

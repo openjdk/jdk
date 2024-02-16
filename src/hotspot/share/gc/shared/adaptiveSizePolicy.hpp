@@ -48,12 +48,6 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
   virtual GCPolicyKind kind() const { return _gc_adaptive_size_policy; }
 
   enum SizePolicyTrueValues {
-    decrease_old_gen_for_throughput_true = -7,
-    decrease_young_gen_for_througput_true = -6,
-
-    increase_young_gen_for_min_pauses_true = -2,
-    increase_old_gen_for_maj_pauses_true = -1,
-
     decrease_young_gen_for_min_pauses_true = 1,
     decrease_old_gen_for_maj_pauses_true = 2,
 
@@ -263,12 +257,12 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     // to use minor_collection_end() in its current form.
   }
 
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_eden, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden);
+  size_t eden_increment(size_t cur_eden, uint percent_change);
+  size_t eden_decrement(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden);
+  size_t promo_increment(size_t cur_eden, uint percent_change);
+  size_t promo_decrement(size_t cur_eden);
 
   virtual void clear_generation_free_space_flags();
 

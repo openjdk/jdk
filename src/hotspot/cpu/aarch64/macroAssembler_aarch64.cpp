@@ -29,6 +29,7 @@
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
@@ -965,7 +966,7 @@ int MacroAssembler::max_trampoline_stub_size() {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  // CompiledDirectStaticCall::set_to_interpreted knows the
+  // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
   isb();
@@ -995,8 +996,49 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
   // uintptr_t offset;
   // ldr_constant(rscratch2, const_ptr);
-  movptr(rscratch2, (uintptr_t)Universe::non_oop_word());
+  movptr(rscratch2, (intptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  if (target_needs_far_branch(CAST_FROM_FN_PTR(address, SharedRuntime::get_ic_miss_stub()))) {
+    return NativeInstruction::instruction_size * 7;
+  } else {
+    return NativeInstruction::instruction_size * 5;
+  }
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register data = rscratch2;
+  Register tmp1 = rscratch1;
+  Register tmp2 = r10;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmpw(tmp1, tmp2);
+  } else {
+    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmp(tmp1, tmp2);
+  }
+
+  Label dont;
+  br(Assembler::EQ, dont);
+  far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  bind(dont);
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 // Implementation of call_VM versions
@@ -1100,7 +1142,14 @@ void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thr
 }
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) nop();
+  align(modulus, offset());
+}
+
+// Ensure that the code at target bytes offset from the current offset() is aligned
+// according to modulus.
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
 }
 
 void MacroAssembler::post_call_nop() {
@@ -1197,7 +1246,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -4258,108 +4307,117 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     }
     add(table, table, table_offset);
 
+    // Registers v0..v7 are used as data registers.
+    // Registers v16..v31 are used as tmp registers.
     sub(buf, buf, 0x10);
-    ldrq(v1, Address(buf, 0x10));
-    ldrq(v2, Address(buf, 0x20));
-    ldrq(v3, Address(buf, 0x30));
-    ldrq(v4, Address(buf, 0x40));
-    ldrq(v5, Address(buf, 0x50));
-    ldrq(v6, Address(buf, 0x60));
-    ldrq(v7, Address(buf, 0x70));
-    ldrq(v8, Address(pre(buf, 0x80)));
+    ldrq(v0, Address(buf, 0x10));
+    ldrq(v1, Address(buf, 0x20));
+    ldrq(v2, Address(buf, 0x30));
+    ldrq(v3, Address(buf, 0x40));
+    ldrq(v4, Address(buf, 0x50));
+    ldrq(v5, Address(buf, 0x60));
+    ldrq(v6, Address(buf, 0x70));
+    ldrq(v7, Address(pre(buf, 0x80)));
 
-    movi(v25, T4S, 0);
-    mov(v25, S, 0, crc);
-    eor(v1, T16B, v1, v25);
+    movi(v31, T4S, 0);
+    mov(v31, S, 0, crc);
+    eor(v0, T16B, v0, v31);
 
-    ldrq(v0, Address(table));
+    // Register v16 contains constants from the crc table.
+    ldrq(v16, Address(table));
     b(CRC_by128_loop);
 
     align(OptoLoopAlignment);
   BIND(CRC_by128_loop);
-    pmull (v9,  T1Q, v1, v0, T1D);
-    pmull2(v10, T1Q, v1, v0, T2D);
-    ldrq(v1, Address(buf, 0x10));
-    eor3(v1, T16B, v9,  v10, v1);
+    pmull (v17,  T1Q, v0, v16, T1D);
+    pmull2(v18, T1Q, v0, v16, T2D);
+    ldrq(v0, Address(buf, 0x10));
+    eor3(v0, T16B, v17,  v18, v0);
 
-    pmull (v11, T1Q, v2, v0, T1D);
-    pmull2(v12, T1Q, v2, v0, T2D);
-    ldrq(v2, Address(buf, 0x20));
-    eor3(v2, T16B, v11, v12, v2);
+    pmull (v19, T1Q, v1, v16, T1D);
+    pmull2(v20, T1Q, v1, v16, T2D);
+    ldrq(v1, Address(buf, 0x20));
+    eor3(v1, T16B, v19, v20, v1);
 
-    pmull (v13, T1Q, v3, v0, T1D);
-    pmull2(v14, T1Q, v3, v0, T2D);
-    ldrq(v3, Address(buf, 0x30));
-    eor3(v3, T16B, v13, v14, v3);
+    pmull (v21, T1Q, v2, v16, T1D);
+    pmull2(v22, T1Q, v2, v16, T2D);
+    ldrq(v2, Address(buf, 0x30));
+    eor3(v2, T16B, v21, v22, v2);
 
-    pmull (v15, T1Q, v4, v0, T1D);
-    pmull2(v16, T1Q, v4, v0, T2D);
-    ldrq(v4, Address(buf, 0x40));
-    eor3(v4, T16B, v15, v16, v4);
+    pmull (v23, T1Q, v3, v16, T1D);
+    pmull2(v24, T1Q, v3, v16, T2D);
+    ldrq(v3, Address(buf, 0x40));
+    eor3(v3, T16B, v23, v24, v3);
 
-    pmull (v17, T1Q, v5, v0, T1D);
-    pmull2(v18, T1Q, v5, v0, T2D);
-    ldrq(v5, Address(buf, 0x50));
-    eor3(v5, T16B, v17, v18, v5);
+    pmull (v25, T1Q, v4, v16, T1D);
+    pmull2(v26, T1Q, v4, v16, T2D);
+    ldrq(v4, Address(buf, 0x50));
+    eor3(v4, T16B, v25, v26, v4);
 
-    pmull (v19, T1Q, v6, v0, T1D);
-    pmull2(v20, T1Q, v6, v0, T2D);
-    ldrq(v6, Address(buf, 0x60));
-    eor3(v6, T16B, v19, v20, v6);
+    pmull (v27, T1Q, v5, v16, T1D);
+    pmull2(v28, T1Q, v5, v16, T2D);
+    ldrq(v5, Address(buf, 0x60));
+    eor3(v5, T16B, v27, v28, v5);
 
-    pmull (v21, T1Q, v7, v0, T1D);
-    pmull2(v22, T1Q, v7, v0, T2D);
-    ldrq(v7, Address(buf, 0x70));
-    eor3(v7, T16B, v21, v22, v7);
+    pmull (v29, T1Q, v6, v16, T1D);
+    pmull2(v30, T1Q, v6, v16, T2D);
+    ldrq(v6, Address(buf, 0x70));
+    eor3(v6, T16B, v29, v30, v6);
 
-    pmull (v23, T1Q, v8, v0, T1D);
-    pmull2(v24, T1Q, v8, v0, T2D);
-    ldrq(v8, Address(pre(buf, 0x80)));
-    eor3(v8, T16B, v23, v24, v8);
+    // Reuse registers v23, v24.
+    // Using them won't block the first instruction of the next iteration.
+    pmull (v23, T1Q, v7, v16, T1D);
+    pmull2(v24, T1Q, v7, v16, T2D);
+    ldrq(v7, Address(pre(buf, 0x80)));
+    eor3(v7, T16B, v23, v24, v7);
 
     subs(len, len, 0x80);
     br(Assembler::GE, CRC_by128_loop);
 
     // fold into 512 bits
-    ldrq(v0, Address(table, 0x10));
+    // Use v31 for constants because v16 can be still in use.
+    ldrq(v31, Address(table, 0x10));
 
-    pmull (v10,  T1Q, v1, v0, T1D);
-    pmull2(v11, T1Q, v1, v0, T2D);
-    eor3(v1, T16B, v10, v11, v5);
+    pmull (v17,  T1Q, v0, v31, T1D);
+    pmull2(v18, T1Q, v0, v31, T2D);
+    eor3(v0, T16B, v17, v18, v4);
 
-    pmull (v12, T1Q, v2, v0, T1D);
-    pmull2(v13, T1Q, v2, v0, T2D);
-    eor3(v2, T16B, v12, v13, v6);
+    pmull (v19, T1Q, v1, v31, T1D);
+    pmull2(v20, T1Q, v1, v31, T2D);
+    eor3(v1, T16B, v19, v20, v5);
 
-    pmull (v14, T1Q, v3, v0, T1D);
-    pmull2(v15, T1Q, v3, v0, T2D);
-    eor3(v3, T16B, v14, v15, v7);
+    pmull (v21, T1Q, v2, v31, T1D);
+    pmull2(v22, T1Q, v2, v31, T2D);
+    eor3(v2, T16B, v21, v22, v6);
 
-    pmull (v16, T1Q, v4, v0, T1D);
-    pmull2(v17, T1Q, v4, v0, T2D);
-    eor3(v4, T16B, v16, v17, v8);
+    pmull (v23, T1Q, v3, v31, T1D);
+    pmull2(v24, T1Q, v3, v31, T2D);
+    eor3(v3, T16B, v23, v24, v7);
 
     // fold into 128 bits
-    ldrq(v5, Address(table, 0x20));
-    pmull (v10, T1Q, v1, v5, T1D);
-    pmull2(v11, T1Q, v1, v5, T2D);
-    eor3(v4, T16B, v4, v10, v11);
+    // Use v17 for constants because v31 can be still in use.
+    ldrq(v17, Address(table, 0x20));
+    pmull (v25, T1Q, v0, v17, T1D);
+    pmull2(v26, T1Q, v0, v17, T2D);
+    eor3(v3, T16B, v3, v25, v26);
 
-    ldrq(v6, Address(table, 0x30));
-    pmull (v12, T1Q, v2, v6, T1D);
-    pmull2(v13, T1Q, v2, v6, T2D);
-    eor3(v4, T16B, v4, v12, v13);
+    // Use v18 for constants because v17 can be still in use.
+    ldrq(v18, Address(table, 0x30));
+    pmull (v27, T1Q, v1, v18, T1D);
+    pmull2(v28, T1Q, v1, v18, T2D);
+    eor3(v3, T16B, v3, v27, v28);
 
-    ldrq(v7, Address(table, 0x40));
-    pmull (v14, T1Q, v3, v7, T1D);
-    pmull2(v15, T1Q, v3, v7, T2D);
-    eor3(v1, T16B, v4, v14, v15);
+    // Use v19 for constants because v18 can be still in use.
+    ldrq(v19, Address(table, 0x40));
+    pmull (v29, T1Q, v2, v19, T1D);
+    pmull2(v30, T1Q, v2, v19, T2D);
+    eor3(v0, T16B, v3, v29, v30);
 
     add(len, len, 0x80);
     add(buf, buf, 0x10);
 
-    mov(tmp0, v1, D, 0);
-    mov(tmp1, v1, D, 1);
+    mov(tmp0, v0, D, 0);
+    mov(tmp1, v0, D, 1);
 }
 
 SkipIfEqual::SkipIfEqual(
@@ -5339,28 +5397,25 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
-// elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
 // comparisons (including the final one, which may overlap) are
 // performed 8 bytes at a time.  For strings < 8 bytes, we compare a
 // halfword, then a short, and then a byte.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1, int elem_size)
+                                   Register result, Register cnt1)
 {
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
 
-  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
 #ifndef PRODUCT
   {
-    const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "{string_equals%c", kind);
+    snprintf(comment, sizeof comment, "{string_equalsL");
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -5408,14 +5463,12 @@ void MacroAssembler::string_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing 1-byte elements
-    tbz(cnt1, 0, SAME); // 0-1 bytes left.
+  tbz(cnt1, 0, SAME); // 0-1 bytes left.
     {
-      ldrb(tmp1, a1);
-      ldrb(tmp2, a2);
-      eorw(tmp1, tmp1, tmp2);
-      cbnzw(tmp1, DONE);
-    }
+    ldrb(tmp1, a1);
+    ldrb(tmp2, a2);
+    eorw(tmp1, tmp1, tmp2);
+    cbnzw(tmp1, DONE);
   }
   // Arrays are equal.
   bind(SAME);

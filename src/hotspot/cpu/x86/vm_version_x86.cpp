@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -809,7 +809,8 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _features = feature_flags();
+    _features = feature_flags(); // These can be changed by VM settings
+    _cpu_features = _features;   // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
     _logical_processors_per_package = logical_processor_count();
@@ -1178,7 +1179,7 @@ void VM_Version::get_processor_features() {
     UseMD5Intrinsics = true;
   }
 
-  if (supports_sha() LP64_ONLY(|| supports_avx2() && supports_bmi2())) {
+  if (supports_sha() LP64_ONLY(|| (supports_avx2() && supports_bmi2()))) {
     if (FLAG_IS_DEFAULT(UseSHA)) {
       UseSHA = true;
     }

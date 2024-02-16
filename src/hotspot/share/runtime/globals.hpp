@@ -546,10 +546,17 @@ const int ObjectAlignmentInBytes = 8;
           "thrown from JVM")                                                \
                                                                             \
   product(bool, HeapDumpBeforeFullGC, false, MANAGEABLE,                    \
-          "Dump heap to file before any major stop-the-world GC")           \
+          "Dump heap to file before any major stop-the-world GC "           \
+          "(also see FullGCHeapDumpLimit)")                                 \
                                                                             \
   product(bool, HeapDumpAfterFullGC, false, MANAGEABLE,                     \
-          "Dump heap to file after any major stop-the-world GC")            \
+          "Dump heap to file after any major stop-the-world GC "            \
+          "(also see FullGCHeapDumpLimit)")                                 \
+                                                                            \
+  product(uint, FullGCHeapDumpLimit, 0, MANAGEABLE,                         \
+          "Limit the number of heap dumps triggered by "                    \
+          "HeapDumpBeforeFullGC or HeapDumpAfterFullGC "                    \
+          "(0 means no limit)")                                             \
                                                                             \
   product(bool, HeapDumpOnOutOfMemoryError, false, MANAGEABLE,              \
           "Dump heap to file when java.lang.OutOfMemoryError is thrown "    \
@@ -873,9 +880,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, TraceInvocationCounterOverflow, false,                   \
           "Trace method invocation counter overflow")                       \
                                                                             \
-  develop(bool, TraceInlineCacheClearing, false,                            \
-          "Trace clearing of inline caches in nmethods")                    \
-                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
@@ -893,12 +897,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
-                                                                            \
-  develop(bool, TraceICBuffer, false,                                       \
-          "Trace usage of IC buffer")                                       \
-                                                                            \
-  develop(bool, TraceCompiledIC, false,                                     \
-          "Trace changes of compiled IC")                                   \
                                                                             \
   develop(bool, FLSVerifyDictionary, false,                                 \
           "Do lots of (expensive) FLS dictionary verification")             \
@@ -2002,6 +2000,11 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   product(bool, ProfileExceptionHandlers, true,                             \
           "Profile exception handlers")                                     \
+                                                                            \
+  product(bool, AlwaysRecordEvolDependencies, true, EXPERIMENTAL,           \
+                "Unconditionally record nmethod dependencies on class "     \
+                "rewriting/transformation independently of the JVMTI "      \
+                "can_{retransform/redefine}_classes capabilities.")         \
 
 // end of RUNTIME_FLAGS
 
