@@ -262,9 +262,9 @@ class OriginalLoop : public StackObj {
   }
 #endif // ASSERT
 
-// Remove the unswitch candidate If nodes in both unswitched loop versions which are now dominated by the loop selector
-// If node. Keep the true-path-path in the true-path-loop and the false-path-path in the false-path-loop by setting
-// the bool input accordingly. The unswitch candidate If nodes are folded in the next IGVN round.
+  // Remove the unswitch candidate If nodes in both unswitched loop versions which are now dominated by the loop selector
+  // If node. Keep the true-path-path in the true-path-loop and the false-path-path in the false-path-loop by setting
+  // the bool input accordingly. The unswitch candidate If nodes are folded in the next IGVN round.
   void remove_unswitch_candidate_from_loops(const UnswitchedLoopSelector& unswitched_loop_selector) {
     IfNode* unswitching_candidate = unswitched_loop_selector.unswitch_candidate();
     _phase->igvn().rehash_node_delayed(unswitching_candidate);
