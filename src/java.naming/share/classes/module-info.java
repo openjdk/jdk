@@ -50,7 +50,7 @@
  *         <br> If a custom socket factory is provided via property
  *         {@code java.naming.ldap.factory.socket} and unconnected sockets
  *         are not supported, the specified timeout is ignored
- *         and the provider behaves as in no connection timeout was set.
+ *         and the provider behaves as if no connection timeout was set.
  *     </li>
  *     <li>{@code com.sun.jndi.ldap.read.timeout}:
  *         <br>The value of this property is the string representation
