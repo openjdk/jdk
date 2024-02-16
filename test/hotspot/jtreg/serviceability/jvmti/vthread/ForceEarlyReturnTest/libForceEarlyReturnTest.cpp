@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
-static jmethodID mid_B = NULL;
-static jrawMonitorID monitor = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jmethodID mid_B = nullptr;
+static jrawMonitorID monitor = nullptr;
 static volatile bool bp_sync_reached = false;
 
 static void JNICALL
@@ -55,7 +55,7 @@ Breakpoint(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
   check_jvmti_status(jni, err, "Breakpoint: Failed in JVMTI GetLocalInt");
 
   if (force_return != 0) {
-    jobject ret_obj = NULL;
+    jobject ret_obj = nullptr;
 
     err = jvmti->ClearBreakpoint(mid_B, 0);
     check_jvmti_status(jni, err, "Breakpoint: Failed in JVMTI ClearBreakpoint");
@@ -79,7 +79,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
   LOG("Agent init\n");
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Agent init: Failed in GetEnv!\n");
     return JNI_ERR;
   }
@@ -124,17 +124,17 @@ Java_ForceEarlyReturnTest_prepareAgent(JNIEnv *jni, jclass cls, jclass task_claz
 
   LOG("Main: prepareAgent started\n");
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     fatal(jni, "prepareAgent: Failed as JVMTI client was not properly loaded!\n");
   }
   mid_B = jni->GetStaticMethodID(task_clazz, "B", "(ZLjava/lang/String;)Ljava/lang/String;");
-  if (mid_B == NULL) {
+  if (mid_B == nullptr) {
     fatal(jni, "prepareAgent: Failed to find Method ID for method: TestTask.B()\n");
   }
   err = jvmti->SetBreakpoint(mid_B, 0); // location: 0
   check_jvmti_status(jni, err, "prepareAgent: Failed in JVMTI SetBreakpoint");
 
-  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
 
   LOG("Main: prepareAgent finished\n");
 }

@@ -25,10 +25,10 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_ppc.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/klassVtable.hpp"
@@ -181,13 +181,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass_check_null(rcvr_klass, R3_ARG1);
 
   // Receiver subtype check against REFC.
-  __ ld(interface, CompiledICHolder::holder_klass_offset(), R19_method);
+  __ ld(interface, CompiledICData::itable_refc_klass_offset(), R19_method);
   __ lookup_interface_method(rcvr_klass, interface, noreg,
                              R0, tmp1, tmp2,
                              L_no_such_interface, /*return_method=*/ false);
 
   // Get Method* and entrypoint for compiler
-  __ ld(interface, CompiledICHolder::holder_metadata_offset(), R19_method);
+  __ ld(interface, CompiledICData::itable_defc_klass_offset(), R19_method);
   __ lookup_interface_method(rcvr_klass, interface, itable_index,
                              R19_method, tmp1, tmp2,
                              L_no_such_interface, /*return_method=*/ true);

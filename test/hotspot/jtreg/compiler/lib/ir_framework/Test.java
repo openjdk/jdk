@@ -71,7 +71,7 @@ import java.lang.annotation.RetentionPolicy;
  * </ul>
  *
  * <p>
- * Examples on how to write base tests can be found in {@link ir_framework.examples.BaseTestExample}
+ * Examples on how to write base tests can be found in {@link ir_framework.examples.NormalTestExample}
  * and also as part of the internal testing in the package {@link ir_framework.tests}.
  *
  * @see Arguments

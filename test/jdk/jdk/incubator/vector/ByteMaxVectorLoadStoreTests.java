@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,7 +255,8 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromArray(byte[] a, int i) {
-        return ByteVector.fromArray(SPECIES, a, i);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ByteVector) SPECIES.fromArray(a, i);
     }
 
     @DontInline
@@ -275,7 +276,8 @@ public class ByteMaxVectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @DontInline
     static ByteVector fromMemorySegment(MemorySegment a, int i, ByteOrder bo) {
-        return ByteVector.fromMemorySegment(SPECIES, a, i, bo);
+        // Tests the species method and the equivalent vector method it defers to
+        return (ByteVector) SPECIES.fromMemorySegment(a, i, bo);
     }
 
     @DontInline
