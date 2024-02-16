@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationTypeField.html", true,
                 """
-                    <li>Summary:&nbsp;</li>
-                    <li><a href="#field-summary">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-summary" tabindex="0">Field Summary</a></li>""",
                 """
-                    <li>Detail:&nbsp;</li>
-                    <li><a href="#field-detail">Field</a>&nbsp;|&nbsp;</li>""",
+                    <li><a href="#field-detail" tabindex="0">Field Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#DEFAULT_NAME" tabindex="0">DEFAULT_NAME</a></li>""",
                 "<!-- =========== FIELD SUMMARY =========== -->",
                 "<h2>Field Summary</h2>",
                 """
@@ -73,18 +73,17 @@ public class TestAnnotationTypes extends JavadocTester {
 
         checkOutput("pkg/AnnotationType.html", true,
                 """
-                    <ul class="sub-nav-list">
-                    <li>Summary:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-required-element-summary">Required</a>&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-optional-element-summary">Optional</a></li>
-                    </ul>""",
-                """
-                    <ul class="sub-nav-list">
-                    <li>Detail:&nbsp;</li>
-                    <li>Field&nbsp;|&nbsp;</li>
-                    <li><a href="#annotation-interface-element-detail">Element</a></li>
-                    </ul>""");
+                    <ol class="toc-list">
+                    <li><a href="#" tabindex="0">Description</a></li>
+                    <li><a href="#annotation-interface-required-element-summary" tabindex="0">Required Element Summary</a></li>
+                    <li><a href="#annotation-interface-optional-element-summary" tabindex="0">Optional Element Summary</a></li>
+                    <li><a href="#annotation-interface-element-detail" tabindex="0">Element Details</a>
+                    <ol class="toc-list">
+                    <li><a href="#value()" tabindex="0">value</a></li>
+                    <li><a href="#optional()" tabindex="0">optional</a></li>
+                    </ol>
+                    </li>
+                    </ol>""");
 
         checkOutput("pkg/AnnotationType.html", true,
                 """

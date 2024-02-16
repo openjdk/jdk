@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "c1/c1_MacroAssembler.hpp"
 #include "c1/c1_Runtime1.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -34,10 +35,12 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "utilities/checkedCast.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register tmp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
@@ -60,9 +63,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     jcc(Assembler::notZero, slow_case);
   }
 
-  // Load object header
-  movptr(hdr, Address(obj, hdr_offset));
-
   if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
     const Register thread = r15_thread;
@@ -73,6 +73,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     lightweight_lock(obj, hdr, thread, tmp, slow_case);
   } else  if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    movptr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     orptr(hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -134,9 +136,14 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    movptr(disp_hdr, Address(obj, hdr_offset));
-    andptr(disp_hdr, ~(int32_t)markWord::lock_mask_in_place);
-    lightweight_unlock(obj, disp_hdr, hdr, slow_case);
+#ifdef _LP64
+    lightweight_unlock(obj, disp_hdr, r15_thread, hdr, slow_case);
+#else
+    // This relies on the implementation of lightweight_unlock being able to handle
+    // that the reg_rax and thread Register parameters may alias each other.
+    get_thread(disp_hdr);
+    lightweight_unlock(obj, disp_hdr, disp_hdr, hdr, slow_case);
+#endif
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
@@ -294,30 +301,6 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   verify_oop(obj);
 }
-
-
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  verify_oop(receiver);
-  // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-  int start_offset = offset();
-
-  if (UseCompressedClassPointers) {
-    load_klass(rscratch1, receiver, rscratch2);
-    cmpptr(rscratch1, iCache);
-  } else {
-    cmpptr(iCache, Address(receiver, oopDesc::klass_offset_in_bytes()));
-  }
-  // if icache check fails, then jump to runtime routine
-  // Note: RECEIVER must still contain the receiver!
-  jump_cc(Assembler::notEqual,
-          RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  const int ic_cmp_size = LP64_ONLY(10) NOT_LP64(9);
-  assert(UseCompressedClassPointers || offset() - start_offset == ic_cmp_size, "check alignment in emit_method_entry");
-}
-
 
 void C1_MacroAssembler::build_frame(int frame_size_in_bytes, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= frame_size_in_bytes, "stack bang size incorrect");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,8 +177,6 @@ private:
   G1CardTable* _card_table;
 
   Ticks _collection_pause_end;
-
-  SoftRefPolicy      _soft_ref_policy;
 
   static size_t _humongous_object_threshold_in_words;
 
@@ -775,6 +773,10 @@ public:
 
   void retire_tlabs();
 
+  // Update all region's pin counts from the per-thread caches and resets them.
+  // Must be called before any decision based on pin counts.
+  void flush_region_pin_cache();
+
   void expand_heap_after_young_collection();
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
@@ -922,8 +924,6 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   inline bool is_collection_set_candidate(const HeapRegion* r) const;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   void initialize_serviceability() override;
   MemoryUsage memory_usage() override;

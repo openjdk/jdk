@@ -27,6 +27,7 @@
 #include "gc/g1/g1BarrierSetAssembler.hpp"
 #include "gc/g1/g1CardTable.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1SATBMarkQueueSet.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/heapRegion.hpp"
@@ -170,5 +171,9 @@ void G1BarrierSet::on_thread_detach(Thread* thread) {
     G1DirtyCardQueueSet& qset = G1BarrierSet::dirty_card_queue_set();
     qset.flush_queue(queue);
     qset.record_detached_refinement_stats(queue.refinement_stats());
+  }
+  {
+    G1RegionPinCache& cache = G1ThreadLocalData::pin_count_cache(thread);
+    cache.flush();
   }
 }

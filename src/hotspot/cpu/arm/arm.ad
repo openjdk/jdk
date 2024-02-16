@@ -195,7 +195,7 @@ void emit_call_reloc(CodeBuffer &cbuf, const MachCallNode *n, MachOper *m, Reloc
   assert(maybe_far_call(n) == !__ reachable_from_cache(target), "sanity");
   assert(cache_reachable() == __ cache_fully_reachable(), "sanity");
 
-  assert(target != NULL, "need real address");
+  assert(target != nullptr, "need real address");
 
   int ret_addr_offset = -1;
   if (rspec.type() == relocInfo::runtime_call_type) {
@@ -290,7 +290,7 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
     st->print   ("SUB    R_SP, R_SP, " SIZE_FORMAT,framesize);
   }
 
-  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
     st->print("ldr t0, [guard]\n\t");
     st->print("ldr t1, [Rthread, #thread_disarmed_guard_value_offset]\n\t");
     st->print("cmp t0, t1\n\t");
@@ -332,7 +332,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ sub_slow(SP, SP, framesize);
   }
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->nmethod_entry_barrier(&_masm);
   }
@@ -454,7 +454,7 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
     return size;            // Self copy, no move
 
 #ifdef TODO
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() != nullptr) {
   }
 #endif
 
@@ -804,16 +804,16 @@ uint MachSpillCopyNode::implementation( CodeBuffer *cbuf,
 
 #ifndef PRODUCT
 void MachSpillCopyNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
-  implementation( NULL, ra_, false, st );
+  implementation(nullptr, ra_, false, st );
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation( &cbuf, ra_, false, NULL );
+  implementation( &cbuf, ra_, false, nullptr );
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
-  return implementation( NULL, ra_, true, NULL );
+  return implementation( nullptr, ra_, true, nullptr );
 }
 
 //=============================================================================
@@ -869,12 +869,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 #define R_RTEMP "R_R12"
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
-  if (UseCompressedClassPointers) {
-    st->print_cr("\tLDR_w " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-    st->print_cr("\tdecode_klass " R_RTEMP);
-  } else {
-    st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-  }
+  st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
   st->print_cr("\tCMP   " R_RTEMP ",R_R8" );
   st->print   ("\tB.NE  SharedRuntime::handle_ic_miss_stub");
 }
@@ -882,13 +877,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
-  Register iCache  = reg_to_register_object(Matcher::inline_cache_reg_encode());
-  assert(iCache == Ricklass, "should be");
-  Register receiver = R0;
-
-  __ load_klass(Rtemp, receiver);
-  __ cmp(Rtemp, iCache);
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -903,7 +892,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -926,7 +915,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -1002,7 +991,7 @@ bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -1026,11 +1015,11 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return NULL;
+  return nullptr;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return NULL;
+  return nullptr;
 }
 
 // Vector calling convention not yet implemented.
@@ -1074,7 +1063,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return 8/type2aelembytes(bt);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -1094,7 +1083,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -1241,8 +1230,8 @@ encode %{
       emit_call_reloc(cbuf, as_MachCall(), $meth, rspec);
 
       // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
+      address stub = CompiledDirectCall::emit_to_interp_stub(cbuf);
+      if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -1987,7 +1976,7 @@ operand immNKlass()
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immN0()
 %{
   predicate(n->get_narrowcon() == 0);

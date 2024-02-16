@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
   OptoReg::Name reg = OptoReg::stack2reg(_slot);
+  if (!RegMask::can_represent(reg, Compile::current()->sync_stack_slots())) {
+    Compile::current()->record_method_not_compilable("must be able to represent all monitor slots in reg mask");
+    return;
+  }
   _inmask.Insert(reg);
 }
 

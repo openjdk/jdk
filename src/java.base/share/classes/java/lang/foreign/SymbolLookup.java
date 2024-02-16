@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,7 @@ public interface SymbolLookup {
      * @see System#loadLibrary(String)
      */
     @CallerSensitive
+    @SuppressWarnings("restricted")
     static SymbolLookup loaderLookup() {
         Class<?> caller = Reflection.getCallerClass();
         // If there's no caller class, fallback to system loader
@@ -227,7 +228,7 @@ public interface SymbolLookup {
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
-                                    .reinterpret(loaderArena, null));
+                                .reinterpret(loaderArena, null)); // restricted
         };
     }
 
@@ -300,6 +301,7 @@ public interface SymbolLookup {
         return libraryLookup(path, RawNativeLibraries::load, arena);
     }
 
+    @SuppressWarnings("restricted")
     private static <Z>
     SymbolLookup libraryLookup(Z libDesc,
                                BiFunction<RawNativeLibraries, Z, NativeLibrary> loadLibraryFunc,
@@ -327,7 +329,7 @@ public interface SymbolLookup {
             return addr == 0L ?
                     Optional.empty() :
                     Optional.of(MemorySegment.ofAddress(addr)
-                            .reinterpret(libArena, null));
+                                .reinterpret(libArena, null));  // restricted
         };
     }
 }

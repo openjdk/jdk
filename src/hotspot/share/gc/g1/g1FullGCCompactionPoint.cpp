@@ -30,10 +30,11 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/debug.hpp"
 
-G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector) :
+G1FullGCCompactionPoint::G1FullGCCompactionPoint(G1FullCollector* collector, PreservedMarks* preserved_stack) :
     _collector(collector),
     _current_region(nullptr),
-    _compaction_top(nullptr) {
+    _compaction_top(nullptr),
+    _preserved_stack(preserved_stack) {
   _compaction_regions = new (mtGC) GrowableArray<HeapRegion*>(32, mtGC);
   _compaction_region_iterator = _compaction_regions->begin();
 }
@@ -102,6 +103,9 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
 
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
+    if (!object->is_forwarded()) {
+      preserved_stack()->push_if_necessary(object, object->mark());
+    }
     object->forward_to(cast_to_oop(_compaction_top));
     assert(object->is_forwarded(), "must be forwarded");
   } else {
@@ -165,7 +169,7 @@ void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   }
 
   // Preserve the mark for the humongous object as the region was initially not compacting.
-  _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
+  preserved_stack()->push_if_necessary(obj, obj->mark());
 
   HeapRegion* dest_hr = _compaction_regions->at(range_begin);
   obj->forward_to(cast_to_oop(dest_hr->bottom()));

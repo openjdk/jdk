@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,7 +53,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -90,18 +90,18 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_GetSourceDebugExtension_srcdebugex002_getSrcDebugX(JNIEnv *env,
         jclass cls, jint t_case) {
     jvmtiError err;
-    char *srcDebugX = NULL;
+    char *srcDebugX = nullptr;
     jobject invalCls; /* used as invalid class */
 
     if (!caps.can_get_source_debug_extension) return result;
 
     switch (t_case) {
-        case 1: /* NULL pointer in test debug mode */
-            printf("\nInvoke GetSourceDebugExtension() with NULL pointer...\n");
+        case 1: /* nullptr pointer in test debug mode */
+            printf("\nInvoke GetSourceDebugExtension() with null pointer...\n");
             fflush(stdout);
             // fallthrough
-        case 0: /* NULL pointer */
-            err = jvmti->GetSourceDebugExtension(cls, NULL);
+        case 0: /* nullptr pointer */
+            err = jvmti->GetSourceDebugExtension(cls, nullptr);
             if (err != JVMTI_ERROR_NULL_POINTER) {
                 printf("TEST FAILED: the function GetSourceDebugExtension() returned the error %s (%d)\n",
                        TranslateError(err), err);

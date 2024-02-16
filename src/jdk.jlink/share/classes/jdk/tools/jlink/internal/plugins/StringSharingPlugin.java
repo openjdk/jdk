@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -306,14 +305,14 @@ public class StringSharingPlugin extends AbstractPlugin implements ResourcePrevi
         in.transformAndCopy((resource) -> {
             ResourcePoolEntry res = resource;
             if (predicate.test(resource.path()) && resource.path().endsWith(".class")) {
-                byte[] compressed = null;
+                byte[] compressed;
                 try {
                     compressed = visit.transform(resource, result, ((ResourcePoolImpl)in).getStringTable());
                 } catch (Exception ex) {
                     throw new PluginException(ex);
                 }
                 res = ResourcePoolManager.newCompressedResource(resource,
-                        ByteBuffer.wrap(compressed), getName(), null,
+                        ByteBuffer.wrap(compressed), getName(),
                         ((ResourcePoolImpl)in).getStringTable(), in.byteOrder());
             }
             return res;
