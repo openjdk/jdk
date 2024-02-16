@@ -103,8 +103,8 @@ public class SimpleJavaFileObject implements JavaFileObject {
     /**
      * {@inheritDoc FileObject}
      * @implSpec
-     * This implementation wraps the result of {@linkplain
-     * #getCharContent} in a {@link Reader}.
+     * This implementation wraps the result of {@link #getCharContent}
+     * in a {@link Reader}.
      *
      * @param  ignoreEncodingErrors {@inheritDoc}
      * @return a Reader wrapping the result of getCharContent
