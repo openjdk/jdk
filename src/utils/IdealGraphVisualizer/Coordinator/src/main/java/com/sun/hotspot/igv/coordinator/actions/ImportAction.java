@@ -87,7 +87,7 @@ public final class ImportAction extends CallableSystemAction {
     }
 
     public ImportAction() {
-        putValue(Action.SHORT_DESCRIPTION, "Open");
+        putValue(Action.SHORT_DESCRIPTION, "Import from XML...");
         // D is the Control key on most platforms, the Command (meta) key on Macintosh
         putValue(Action.ACCELERATOR_KEY, Utilities.stringToKey("D-O"));
         putValue(Action.SMALL_ICON, ImageUtilities.loadImageIcon(iconResource(), true));
