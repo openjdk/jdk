@@ -28,7 +28,6 @@
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
@@ -94,7 +93,6 @@ SerialHeap::SerialHeap() :
     _young_gen(nullptr),
     _old_gen(nullptr),
     _rem_set(nullptr),
-    _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
     _young_manager(nullptr),
@@ -120,7 +118,7 @@ void SerialHeap::initialize_serviceability() {
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
   TenuredGeneration* old = old_gen();
-  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+  _old_pool = new TenuredGenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
   _young_manager->add_pool(_survivor_pool);
@@ -145,17 +143,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
-}
-
-void SerialHeap::young_process_roots(OopClosure* root_closure,
-                                     OopIterateClosure* old_gen_closure,
-                                     CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
-
-  process_roots(SO_ScavengeCodeCache, root_closure,
-                cld_closure, cld_closure, &mark_code_closure);
-
-  old_gen()->younger_refs_iterate(old_gen_closure);
 }
 
 void SerialHeap::safepoint_synchronize_begin() {
@@ -292,11 +279,6 @@ size_t SerialHeap::capacity() const {
 
 size_t SerialHeap::used() const {
   return _young_gen->used() + _old_gen->used();
-}
-
-void SerialHeap::save_used_regions() {
-  _old_gen->save_used_region();
-  _young_gen->save_used_region();
 }
 
 size_t SerialHeap::max_capacity() const {
@@ -924,12 +906,15 @@ HeapWord* SerialHeap::block_start(const void* addr) const {
 bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   assert(is_in_reserved(addr), "block_is_obj of address outside of heap");
   assert(block_start(addr) == addr, "addr must be a block start");
+
   if (_young_gen->is_in_reserved(addr)) {
-    return _young_gen->block_is_obj(addr);
+    return _young_gen->eden()->is_in(addr)
+        || _young_gen->from()->is_in(addr)
+        || _young_gen->to()  ->is_in(addr);
   }
 
-  assert(_old_gen->is_in_reserved(addr), "Some generation should contain the address");
-  return _old_gen->block_is_obj(addr);
+  assert(_old_gen->is_in_reserved(addr), "must be in old-gen");
+  return addr < _old_gen->space()->top();
 }
 
 size_t SerialHeap::tlab_capacity(Thread* thr) const {
@@ -978,7 +963,8 @@ void SerialHeap::generation_iterate(GenClosure* cl,
 }
 
 bool SerialHeap::is_maximal_no_gc() const {
-  return _young_gen->is_maximal_no_gc() && _old_gen->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return _old_gen->is_maximal_no_gc();
 }
 
 void SerialHeap::save_marks() {
@@ -1053,8 +1039,6 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
 }
 
 void SerialHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1192,8 +1192,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg) {
       const Register thread = lock_reg;
       get_thread(thread);
 #endif
-      // Load object header, prepare for CAS from unlocked to locked.
-      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       lightweight_lock(obj_reg, swap_reg, thread, tmp_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load immediate 1 into swap_reg %rax
@@ -1311,20 +1309,13 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg) {
 
     if (LockingMode == LM_LIGHTWEIGHT) {
 #ifdef _LP64
-      const Register thread = r15_thread;
+      lightweight_unlock(obj_reg, swap_reg, r15_thread, header_reg, slow_case);
 #else
-      const Register thread = header_reg;
-      get_thread(thread);
+      // This relies on the implementation of lightweight_unlock being able to handle
+      // that the reg_rax and thread Register parameters may alias each other.
+      get_thread(swap_reg);
+      lightweight_unlock(obj_reg, swap_reg, swap_reg, header_reg, slow_case);
 #endif
-      // Handle unstructured locking.
-      Register tmp = swap_reg;
-      movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-      cmpptr(obj_reg, Address(thread, tmp, Address::times_1,  -oopSize));
-      jcc(Assembler::notEqual, slow_case);
-      // Try to swing header from locked to unlocked.
-      movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      lightweight_unlock(obj_reg, swap_reg, header_reg, slow_case);
     } else if (LockingMode == LM_LEGACY) {
       // Load the old header from BasicLock structure
       movptr(header_reg, Address(swap_reg,

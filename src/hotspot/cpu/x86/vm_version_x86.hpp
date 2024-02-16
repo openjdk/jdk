@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,7 +640,7 @@ public:
   }
 
   //
-  // Feature identification
+  // Feature identification which can be affected by VM settings
   //
   static bool supports_cpuid()        { return _features  != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
@@ -703,6 +703,11 @@ public:
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
 
+  //
+  // Feature identification not affected by VM flags
+  //
+  static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
+
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
@@ -762,6 +767,10 @@ public:
   }
 
   constexpr static bool supports_stack_watermark_barrier() {
+    return true;
+  }
+
+  constexpr static bool supports_recursive_lightweight_locking() {
     return true;
   }
 

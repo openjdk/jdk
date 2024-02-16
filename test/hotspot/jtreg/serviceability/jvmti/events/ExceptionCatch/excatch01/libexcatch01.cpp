@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ typedef struct {
   jlocation c_loc;
 } exceptionInfo;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -107,10 +107,10 @@ ExceptionCatch(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jmethodID method, jloc
 
   bool found = false;
   for (size_t i = 0; i < sizeof(exs)/sizeof(exceptionInfo); i++) {
-    if (ex.name != NULL && strcmp(ex.name, exs[i].name) == 0
-        && ex.c_cls != NULL && strcmp(ex.c_cls, exs[i].c_cls) == 0
-        && ex.c_name != NULL && strcmp(ex.c_name, exs[i].c_name) == 0
-        && ex.c_sig != NULL && strcmp(ex.c_sig, exs[i].c_sig) == 0
+    if (ex.name != nullptr && strcmp(ex.name, exs[i].name) == 0
+        && ex.c_cls != nullptr && strcmp(ex.c_cls, exs[i].c_cls) == 0
+        && ex.c_name != nullptr && strcmp(ex.c_name, exs[i].c_name) == 0
+        && ex.c_sig != nullptr && strcmp(ex.c_sig, exs[i].c_sig) == 0
         && ex.c_loc == exs[i].c_loc) {
       jboolean isVirtual = jni->IsVirtualThread(thr);
       if (isVirtualExpected != isVirtual) {
@@ -138,7 +138,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -180,28 +180,28 @@ Java_excatch01_check(JNIEnv *jni, jclass cls) {
   jmethodID mid;
   jthread thread;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
   clz = jni->FindClass("excatch01c");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find excatch01c class!\n");
     return STATUS_FAILED;
   }
   clz = jni->FindClass("excatch01b");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find excatch01b class!\n");
     return STATUS_FAILED;
   }
   clz = jni->FindClass("excatch01a");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find excatch01a class!\n");
     return STATUS_FAILED;
   }
   mid = jni->GetStaticMethodID(clz, "run", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot find method run!\n");
     return STATUS_FAILED;
   }
@@ -213,7 +213,7 @@ Java_excatch01_check(JNIEnv *jni, jclass cls) {
     return STATUS_FAILED;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr);
   if (err == JVMTI_ERROR_NONE) {
       eventsExpected = sizeof(exs)/sizeof(exceptionInfo);
   } else {
@@ -224,7 +224,7 @@ Java_excatch01_check(JNIEnv *jni, jclass cls) {
   eventsCount = 0;
   isVirtualExpected = jni->IsVirtualThread(thread);
   jni->CallStaticVoidMethod(clz, mid);
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to disable JVMTI_EVENT_EXCEPTION_CATCH: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
