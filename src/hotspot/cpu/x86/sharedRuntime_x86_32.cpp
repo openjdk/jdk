@@ -25,8 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
@@ -36,7 +36,6 @@
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/jniHandles.hpp"
@@ -944,25 +943,18 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
 
-  Register holder = rax;
+  Register data = rax;
   Register receiver = rcx;
   Register temp = rbx;
 
   {
-
-    Label missed;
-    __ movptr(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
-    __ cmpptr(temp, Address(holder, CompiledICHolder::holder_klass_offset()));
-    __ movptr(rbx, Address(holder, CompiledICHolder::holder_metadata_offset()));
-    __ jcc(Assembler::notEqual, missed);
+    __ ic_check(1 /* end_alignment */);
+    __ movptr(rbx, Address(data, CompiledICData::speculated_method_offset()));
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
     __ cmpptr(Address(rbx, in_bytes(Method::code_offset())), NULL_WORD);
     __ jcc(Assembler::equal, skip_fixup);
-
-    __ bind(missed);
-    __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
   }
 
   address c2i_entry = __ pc();
@@ -1449,23 +1441,12 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // as far as the interpreter and the compiler(s) are concerned.
 
 
-  const Register ic_reg = rax;
   const Register receiver = rcx;
-  Label hit;
   Label exception_pending;
 
   __ verify_oop(receiver);
-  __ cmpptr(ic_reg, Address(receiver, oopDesc::klass_offset_in_bytes()));
-  __ jcc(Assembler::equal, hit);
-
-  __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
   // verified entry must be aligned for code patching.
-  // and the first 5 bytes must be in the same cache line
-  // if we align at 8 then we will be sure 5 bytes are in the same line
-  __ align(8);
-
-  __ bind(hit);
+  __ ic_check(8 /* end_alignment */);
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 

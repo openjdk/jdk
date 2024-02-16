@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -720,6 +720,7 @@ public:
 
   // Alignment
   void align(int modulus);
+  void align(int modulus, int target);
 
   // nop
   void post_call_nop();
@@ -1247,6 +1248,8 @@ public:
 
   // Emit the CompiledIC call idiom
   address ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment);
 
 public:
 
@@ -1599,8 +1602,8 @@ public:
   // Code for java.lang.Thread::onSpinWait() intrinsic.
   void spin_wait();
 
-  void lightweight_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow);
+  void lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow);
 
 private:
   // Check the current thread doesn't need a cross modify fence.

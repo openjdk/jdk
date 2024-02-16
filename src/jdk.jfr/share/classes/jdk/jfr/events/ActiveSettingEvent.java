@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,6 @@ import jdk.jfr.internal.Type;
 @Name(Type.EVENT_NAME_PREFIX + "ActiveSetting")
 @Label("Recording Setting")
 @Category("Flight Recorder")
-@StackTrace(false)
 @RemoveFields({"duration", "eventThread", "stackTrace"})
 public final class ActiveSettingEvent extends AbstractJDKEvent {
 
