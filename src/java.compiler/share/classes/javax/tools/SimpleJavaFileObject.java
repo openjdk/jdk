@@ -138,7 +138,7 @@ public class SimpleJavaFileObject implements JavaFileObject {
      * {@inheritDoc FileObject}
      * @implSpec
      * This implementation wraps the result of {@link
-     * openOutputStream} in a {@link Writer}.
+     * #openOutputStream} in a {@link Writer}.
      *
      * @return a Writer wrapping the result of openOutputStream
      * @throws IllegalStateException {@inheritDoc}
