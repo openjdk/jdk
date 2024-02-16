@@ -355,7 +355,10 @@ public:
   }
 
   // Compact live objects in a space.
-  void compact_chunk(HeapWord* from, HeapWord* to) const;
+  template<bool UPDATE_BOT>
+  inline void compact_chunk(HeapWord* from, HeapWord* to, HeapWord* compact_to, TenuredSpace* tenured_space) const;
+  inline void compact_chunk(HeapWord* from, HeapWord* to, TenuredSpace* tenured_space) const;
+
   void compact_space(uint idx) const;
 
   void phase3_compact() {
@@ -417,42 +420,47 @@ static ContiguousSpace* space_containing(HeapWord* addr) {
 }
 #endif
 
-void SCCompacter::compact_chunk(HeapWord* from, HeapWord* to) const {
+template<bool UPDATE_BOT>
+inline void SCCompacter::compact_chunk(HeapWord* from, HeapWord* to, HeapWord* compact_to, TenuredSpace* tenured_space) const {
   size_t size = pointer_delta(to, from);
-  if (size == 0) return; // Nothing to do.
-
-  HeapWord* compact_to = forwardee(from);
-
-  // Scan all consecutive live objects in the current live chunk and update their references.
-  TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
-  SCUpdateRefsClosure cl(*this);
-
-  HeapWord* obj_start = from;
-  HeapWord* end = obj_start + size;
-  HeapWord* to_loc = compact_to;
-  while (obj_start < end) {
-    oop obj = cast_to_oop(obj_start);
-    // Update references of object.
-    obj->oop_iterate(&cl);
-
-    // We need to update the offset table so that the beginnings of objects can be
-    // found during scavenge.  Note that we are updating the offset table based on
-    // where the object will be once the compaction phase finishes.
-    size_t size = obj->size();
-    if (tenured_space->is_in_reserved(to_loc)) {
-      tenured_space->update_for_block(to_loc, to_loc + size);
-    }
-
-    // Advance to next object in chunk.
-    obj_start += size;
-    to_loc += size;
-  }
 
   // Copy chunk.
   if (from != compact_to) {
     Copy::aligned_conjoint_words(from, compact_to, size);
   }
 
+  // Scan all consecutive live objects in the current live chunk and update their references.
+  SCUpdateRefsClosure cl(*this);
+
+  HeapWord* obj_start = compact_to;
+  HeapWord* end = obj_start + size;
+  while (obj_start < end) {
+    oop obj = cast_to_oop(obj_start);
+    // Update references of object.
+    obj->oop_iterate(&cl);
+
+    size_t size = obj->size();
+    HeapWord* next = obj_start + size;
+    if (UPDATE_BOT) {
+      // We need to update the offset table so that the beginnings of objects can be
+      // found during scavenge.  Note that we are updating the offset table based on
+      // where the object will be once the compaction phase finishes.
+      tenured_space->update_for_block(obj_start, next);
+    }
+
+    // Advance to next object in chunk.
+    obj_start = next;
+  }
+}
+
+inline void SCCompacter::compact_chunk(HeapWord* from, HeapWord* to, TenuredSpace* tenured_space) const {
+  HeapWord* compact_to = forwardee(from);
+  bool update_bot = tenured_space->is_in_reserved(compact_to);
+  if (update_bot) {
+    compact_chunk<true>(from, to, compact_to, tenured_space);
+  } else {
+    compact_chunk<true>(from, to, compact_to, tenured_space);
+  }
 }
 
 // Compact live objects in a space.
@@ -461,6 +469,8 @@ void SCCompacter::compact_space(uint idx) const {
   HeapWord* bottom = space->bottom();
   HeapWord* top = space->top();
   HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
+
+  TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
 
   uint split_idx = 0;
   HeapWord* split = _spaces[idx].get_split(split_idx);
@@ -472,12 +482,12 @@ void SCCompacter::compact_space(uint idx) const {
     HeapWord* next_dead = _mark_bitmap.get_next_unmarked_addr(current, top);
     while (current < next_dead) {
       if (split < next_dead) {
-        compact_chunk(current, split);
+        compact_chunk(current, split, tenured_space);
         current = split;
         split_idx++;
         split = _spaces[idx].get_split(split_idx);
       } else {
-        compact_chunk(current, next_dead);
+        compact_chunk(current, next_dead, tenured_space);
         current = next_dead;
       }
     }
