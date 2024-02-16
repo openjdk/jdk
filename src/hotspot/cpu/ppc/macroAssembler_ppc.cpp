@@ -2526,7 +2526,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     // Check if recursive.
     subi(t, top, oopSize);
-    ldx(t, t, R16_thread);
+    ldx(t, R16_thread, t);
     cmpd(flag, obj, t);
     beq(flag, unlocked);
 
@@ -4352,7 +4352,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
 
   // Check if recursive.
   subi(t, top, oopSize);
-  ldx(t, t, R16_thread);
+  ldx(t, R16_thread, t);
   cmpd(CCR0, obj, t);
   beq(CCR0, unlocked);
 
