@@ -146,10 +146,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
 
         document.getChangedEvent().addListener(g -> documentChanged());
 
-        String workspacePath = getWorkspaceGraphsPath();
-        if (!workspacePath.isEmpty()) {
-            loadWorkspace(workspacePath);
-        }
+        setWorkspacePath(Places.getUserDirectory().getAbsolutePath());
+        loadWorkspace();
     }
 
     private void onChangeWorkspaceClicked(ActionEvent event) {
@@ -162,7 +160,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             File newWorkspace = fileChooser.getSelectedFile();
             String workspacePath = newWorkspace.getAbsolutePath();
             if (!workspacePath.isEmpty()) {
-                loadWorkspace(workspacePath);
+                setWorkspacePath(workspacePath);
+                loadWorkspace();
             }
         }
     }
@@ -316,25 +315,18 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         }
     }
 
-    private void loadWorkspace(String graphsPath) {
+    private void loadWorkspace() {
         ((BeanTreeView) this.treeView).setRootVisible(false);
 
-        changeWorkspaceButton.setText(graphsPath);
-
         try {
-            loadGraphDocument(graphsPath);
+            loadGraphDocument(getWorkspaceGraphsPath());
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
             return;
         }
 
-        final String statesPath = getWorkspaceStatesPath();
-        if (statesPath.isEmpty()) {
-            return;
-        }
-
         try {
-            loadStates(statesPath);
+            loadStates(getWorkspaceStatesPath());
         } catch (IOException ex) {
             Exceptions.printStackTrace(ex);
         }
@@ -345,26 +337,27 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         super.readExternal(objectInput);
     }
 
-    private String getWorkspacePath() {
-        String userDirectory = Places.getUserDirectory().getAbsolutePath();
-        assert !userDirectory.isEmpty();
-        return userDirectory;
+    private String workspacePath;
+
+    private void setWorkspacePath(String path) {
+        changeWorkspaceButton.setText(path);
+        workspacePath = path;
     }
 
+    static public String WORKSPACE_XML_FILE = "graphs.xml";
+    static public String WORKSPACE_STATE_FILE = "state.igv";
+
     private String getWorkspaceGraphsPath() {
-        String igvSettingsPath = getWorkspacePath();
-        if (!igvSettingsPath.isEmpty()) {
-            igvSettingsPath += "/graphs.xml";
-        }
-        return igvSettingsPath;
+        return workspacePath + "/" + WORKSPACE_STATE_FILE;
     }
 
     private String getWorkspaceStatesPath() {
-        String igvSettingsPath = getWorkspacePath();
-        if (!igvSettingsPath.isEmpty()) {
-            igvSettingsPath += "/state.igv";
-        }
-        return igvSettingsPath;
+        return workspacePath + "/" + WORKSPACE_XML_FILE;
+    }
+
+    public void saveWorkspace() throws IOException {
+        saveGraphDocument(getDocument(), getWorkspaceGraphsPath());
+        saveStates(getWorkspaceStatesPath());
     }
 
     @Override
@@ -392,14 +385,6 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
             return file;
         }
         return null;
-    }
-
-    public void saveWorkspace() throws IOException {
-        String graphsPath = getWorkspaceGraphsPath();
-        saveGraphDocument(getDocument(), graphsPath);
-
-        String statesPath = getWorkspaceStatesPath();
-        saveStates(statesPath);
     }
 
     private void loadStates(String path) throws IOException {
