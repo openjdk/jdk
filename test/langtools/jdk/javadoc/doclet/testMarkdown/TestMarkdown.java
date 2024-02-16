@@ -794,8 +794,6 @@ public class TestMarkdown extends JavadocTester {
     public void testHeading_TOC(Path base) throws Exception {
         Path src = base.resolve("src");
 
-        // in the following, note that the @ following the backtick
-        // is just a literal character and not part of any tag
         tb.writeJavaFiles(src,
                 """
                     package p;
