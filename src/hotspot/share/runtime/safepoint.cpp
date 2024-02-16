@@ -264,7 +264,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   int iterations = 1; // The first iteration is above.
   int64_t start_time = os::javaTimeNanos();
 
-  bool should_sent_timeout_event = EventSafepointTimeout::is_enabled();
+  bool timeout_event_enabled = EventSafepointTimeout::is_enabled();
 
   do {
     jlong time_exceeded = -1;
@@ -275,7 +275,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
       if (delta > 0) {
         print_safepoint_timeout();
 
-        if (should_sent_timeout_event) {
+        if (timeout_event_enabled) {
           time_exceeded = delta;
         }
       }

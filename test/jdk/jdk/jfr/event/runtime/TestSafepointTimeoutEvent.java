@@ -74,11 +74,12 @@ public class TestSafepointTimeoutEvent {
         List<RecordedEvent> events = Events.fromRecording(recording);
         assertTrue(events.size() > 0);
         for (RecordedEvent event : events) {
+            System.out.println("Event: " + event);
+
             assertTrue(Events.isEventType(event, EventNames.SafepointTimeout));
             Events.assertEventThread(event, thread);
             Events.assertField(event, "timeExceeded").above(0L);
             Events.assertTopFrame(event, WhiteBox.class.getName(), "waitUnsafe");
-            System.out.println("Event: " + event);
         }
     }
 }
