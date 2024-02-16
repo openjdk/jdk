@@ -133,11 +133,9 @@ static int WINAPI CountMonitors(void)
 // Callback for CollectMonitors below
 static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
 {
-    if (g_nMonitorCounter < g_nMonitorLimit) {
-        if (IsValidMonitor(hMon)) {
-            g_hmpMonitors[g_nMonitorCounter] = hMon;
-            g_nMonitorCounter++;
-        }
+    if ((g_nMonitorCounter < g_nMonitorLimit) && (IsValidMonitor(hMon))) {
+        g_hmpMonitors[g_nMonitorCounter] = hMon;
+        g_nMonitorCounter++;
     }
 
     return TRUE;
