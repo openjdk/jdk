@@ -1562,6 +1562,24 @@ public abstract class HtmlDocletWriter {
                 visitChildren(heading);
                 htmlWriter.tag('/' + htag);
                 htmlWriter.line();
+
+                if (includeHeadingInTableOfContents(htag)) {
+                    StringBuilder headingContent = new StringBuilder();
+                    new AbstractVisitor() {
+                        @Override
+                        public void visit(jdk.internal.org.commonmark.node.Code code) {
+                            headingContent.append(code.getLiteral());
+                            super.visit(code);
+                        }
+
+                        @Override
+                        public void visit(jdk.internal.org.commonmark.node.Text text) {
+                            headingContent.append(text.getLiteral());
+                            super.visit(text);
+                        }
+                    }.visit(heading);
+                    tableOfContents.addLink(id, Text.of(headingContent));
+                }
             }
 
             @Override
@@ -1884,10 +1902,16 @@ public abstract class HtmlDocletWriter {
                     new DocLink(path, id));
             configuration.indexBuilder.add(item);
         }
-        // Record second-level headings for use in table of contents
-        if (tableOfContents != null && node.getName().toString().equalsIgnoreCase("h2")) {
+        if (includeHeadingInTableOfContents(node.getName())) {
             tableOfContents.addLink(HtmlId.of(id), Text.of(headingContent));
         }
+    }
+
+    private boolean includeHeadingInTableOfContents(CharSequence tag) {
+        // Record second-level headings for use in table of contents
+        // TODO: maybe extend this to all headings up to a given level
+        return tableOfContents != null
+                && tag.toString().equalsIgnoreCase("h2");
     }
 
     /**
