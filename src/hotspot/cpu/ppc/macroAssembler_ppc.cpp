@@ -2511,7 +2511,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     // Check if obj is top of lock-stack.
     lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
     subi(top, top, oopSize);
-    ldx(t, top, R16_thread);
+    ldx(t, R16_thread, top);
     cmpd(flag, obj, t);
     // Top of lock stack was not obj. Must be monitor.
     bne(flag, inflated_load_monitor);
@@ -2574,7 +2574,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
     subi(top, top, oopSize);
     cmplwi(CCR0, top, in_bytes(JavaThread::lock_stack_base_offset()));
     blt(CCR0, check_done);
-    ldx(t, top, R16_thread);
+    ldx(t, R16_thread, top);
     cmpd(flag, obj, t);
     bne(flag, inflated);
     stop("Fast Unlock lock on stack");
@@ -4338,7 +4338,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
   // Check if obj is top of lock-stack.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
   subi(top, top, oopSize);
-  ldx(t, top, R16_thread);
+  ldx(t, R16_thread, top);
   cmpd(CCR0, obj, t);
   bne(CCR0, slow);
 
