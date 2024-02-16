@@ -148,7 +148,6 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->ref_processor();
   StringDedup::Requests requests;
 
-  mark_loop(NON_GEN, worker_id, &_terminator, rp,
-            false /* not cancellable */,
+  mark_loop(worker_id, &_terminator, rp, NON_GEN, false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }

@@ -89,34 +89,36 @@ void ShenandoahMark::mark_loop_prework(uint w, TaskTerminator *t, ShenandoahRefe
 }
 
 template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-void ShenandoahMark::mark_loop(ShenandoahGenerationType generation /* ignored */, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+                               ShenandoahGenerationType generation, StringDedup::Requests* const req) {
   mark_loop_prework<NON_GEN, CANCELLABLE, STRING_DEDUP>(worker_id, terminator, rp, req);
 }
 
-void ShenandoahMark::mark_loop(ShenandoahGenerationType generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                               bool cancellable,  StringDedupMode dedup_mode, StringDedup::Requests* const req) {
+void ShenandoahMark::mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+                               ShenandoahGenerationType generation, bool cancellable,  StringDedupMode dedup_mode,
+                               StringDedup::Requests* const req) {
   if (cancellable) {
     switch(dedup_mode) {
       case NO_DEDUP:
-        mark_loop<true, NO_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<true, NO_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
       case ENQUEUE_DEDUP:
-        mark_loop<true, ENQUEUE_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<true, ENQUEUE_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
       case ALWAYS_DEDUP:
-        mark_loop<true, ALWAYS_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<true, ALWAYS_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
     }
   } else {
     switch(dedup_mode) {
       case NO_DEDUP:
-        mark_loop<false, NO_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<false, NO_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
       case ENQUEUE_DEDUP:
-        mark_loop<false, ENQUEUE_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<false, ENQUEUE_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
       case ALWAYS_DEDUP:
-        mark_loop<false, ALWAYS_DEDUP>(generation, worker_id, terminator, rp, req);
+        mark_loop<false, ALWAYS_DEDUP>(worker_id, terminator, rp, generation, req);
         break;
     }
   }

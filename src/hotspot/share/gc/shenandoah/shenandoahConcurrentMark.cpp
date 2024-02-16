@@ -62,8 +62,7 @@ public:
     ShenandoahReferenceProcessor* rp = heap->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
-    _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   true /*cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
   }
@@ -124,8 +123,7 @@ public:
                                                ShenandoahIUBarrier ? &mark_cl : nullptr);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
-    _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   false /*not cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
