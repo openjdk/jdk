@@ -93,6 +93,10 @@ class SCCompacter {
   // compact. IOW, old and eden/from must be enough for all live objs
   static constexpr uint max_num_spaces = 4;
 
+  // Upper bound for number of splits per region. We only compact
+  // into the first N-1 regions, and therefore can only split N-2 times at maximum.
+  static constexpr uint max_num_splits = max_num_spaces - 2;
+
   // The number of heap words covered by each block as log-2 value.
   static inline constexpr uint log_words_per_block() {
     return LogBitsPerWord;
@@ -112,14 +116,20 @@ class SCCompacter {
     ContiguousSpace* _space;
     // Will be the new top after compaction is complete.
     HeapWord* _compaction_top;
-    // The first dead word in this contiguous space. It's an optimization to
-    // skip large chunk of live objects at the beginning of compaction.
-    HeapWord* _first_dead;
+
+    HeapWord* _splits[max_num_splits]{ reinterpret_cast<HeapWord*>(intptr_t(-1))};
 
     void init(ContiguousSpace* space, HeapWord** _bot) {
       _space = space;
       _compaction_top = space->bottom();
-      _first_dead = nullptr;
+    }
+    void set_split(uint idx, HeapWord* split) {
+      assert(idx < max_num_splits, "must be within upper bounds");
+      _splits[idx] = split;
+    }
+    HeapWord* get_split(uint idx) const {
+      assert(idx < max_num_splits, "must be within upper bounds");
+      return _splits[idx];
     }
   };
 
@@ -231,6 +241,7 @@ class SCCompacter {
         compact_top += dead;
       }
     }
+    uint split_idx = 0;
     while (first_obj_this_block < top) {
       assert(is_aligned(current, bytes_per_block()), "iterate at block granularity");
 
@@ -257,6 +268,8 @@ class SCCompacter {
                                            compact_top)) {
         // out-of-memory in this space
         _spaces[_index]._compaction_top = compact_top;
+        _spaces[idx].set_split(split_idx, first_obj_this_block);
+        split_idx++;
         _index++;
         assert(_index < max_num_spaces - 1, "the last space should not be used");
         compact_top = _spaces[_index]._compaction_top;
@@ -342,6 +355,7 @@ public:
   }
 
   // Compact live objects in a space.
+  void compact_chunk(HeapWord* from, HeapWord* to) const;
   void compact_space(uint idx) const;
 
   void phase3_compact() {
@@ -403,6 +417,44 @@ static ContiguousSpace* space_containing(HeapWord* addr) {
 }
 #endif
 
+void SCCompacter::compact_chunk(HeapWord* from, HeapWord* to) const {
+  size_t size = pointer_delta(to, from);
+  if (size == 0) return; // Nothing to do.
+
+  HeapWord* compact_to = forwardee(from);
+
+  // Scan all consecutive live objects in the current live chunk and update their references.
+  TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
+  SCUpdateRefsClosure cl(*this);
+
+  HeapWord* obj_start = from;
+  HeapWord* end = obj_start + size;
+  HeapWord* to_loc = compact_to;
+  while (obj_start < end) {
+    oop obj = cast_to_oop(obj_start);
+    // Update references of object.
+    obj->oop_iterate(&cl);
+
+    // We need to update the offset table so that the beginnings of objects can be
+    // found during scavenge.  Note that we are updating the offset table based on
+    // where the object will be once the compaction phase finishes.
+    size_t size = obj->size();
+    if (tenured_space->is_in_reserved(to_loc)) {
+      tenured_space->update_for_block(to_loc, to_loc + size);
+    }
+
+    // Advance to next object in chunk.
+    obj_start += size;
+    to_loc += size;
+  }
+
+  // Copy chunk.
+  if (from != compact_to) {
+    Copy::aligned_conjoint_words(from, compact_to, size);
+  }
+
+}
+
 // Compact live objects in a space.
 void SCCompacter::compact_space(uint idx) const {
   ContiguousSpace* space = get_space(idx);
@@ -410,32 +462,28 @@ void SCCompacter::compact_space(uint idx) const {
   HeapWord* top = space->top();
   HeapWord* current = _mark_bitmap.get_next_marked_addr(bottom, top);
 
-  SCUpdateRefsClosure cl(*this);
+  uint split_idx = 0;
+  HeapWord* split = _spaces[idx].get_split(split_idx);
 
-  TenuredSpace* tenured_space = SerialHeap::heap()->old_gen()->space();
-
-  // Visit all live objects in the space.
+  // Visit all live chunks in the space. Consider possible splits.
   while (current < top) {
     assert(_mark_bitmap.is_marked(current), "must be marked");
-
-    // Copy the object.
-    size_t size = cast_to_oop(current)->size();
-    HeapWord* compact_to = forwardee(current);
-    Copy::aligned_conjoint_words(current, compact_to, size);
-
-    // Update references of object.
-    oop obj = cast_to_oop(compact_to);
-    obj->oop_iterate(&cl);
-
-    // We need to update the offset table so that the beginnings of objects can be
-    // found during scavenge.  Note that we are updating the offset table based on
-    // where the object will be once the compaction phase finishes.
-    if (tenured_space->is_in_reserved(compact_to)) {
-      tenured_space->update_for_block(compact_to, compact_to + size);
+    // Copy the whole chunk or parts of it, in case of splits.
+    HeapWord* next_dead = _mark_bitmap.get_next_unmarked_addr(current, top);
+    while (current < next_dead) {
+      if (split < next_dead) {
+        compact_chunk(current, split);
+        current = split;
+        split_idx++;
+        split = _spaces[idx].get_split(split_idx);
+      } else {
+        compact_chunk(current, next_dead);
+        current = next_dead;
+      }
     }
 
-    // Advance to next live object.
-    current = _mark_bitmap.get_next_marked_addr(current + size, top);
+    // Advance to next live chunk.
+    current = _mark_bitmap.get_next_marked_addr(next_dead, top);
   }
 
   // Reset top and unused memory
