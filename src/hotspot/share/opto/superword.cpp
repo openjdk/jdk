@@ -522,17 +522,10 @@ bool SuperWord::SLP_extract() {
   combine_pairs_to_longer_packs();
 
   split_packs_to_match_use_and_def_packs();  // a first time: create natural borders
-  split_packs_longer_than_max_vector_size(); // TODO remove?
   split_packs_only_implemented_with_smaller_size();
   split_packs_to_break_mutual_dependence();
-  split_packs_into_power_of_2_sizes();
   split_packs_to_match_use_and_def_packs();  // again: propagate split of other packs
 
-  // TODO split:
-  // implemented (size, filter if not possible?)
-  // power of 2 size
-  // mutual dependence
-  // use_def size match - maybe multiple times: first create natural borders, after propagate
   // TODO idea: maybe assert instead of filter below?
 
   // Now we only remove packs:
@@ -1656,44 +1649,25 @@ void SuperWord::split_packs_to_match_use_and_def_packs() {
   // TODO
 }
 
-void SuperWord::split_packs_longer_than_max_vector_size() {
-  assert(!_packset.is_empty(), "packset not empty");
-  DEBUG_ONLY( int old_packset_length = _packset.length(); )
-
-  split_packs("SuperWord::split_packs_longer_than_max_vector_size",
+void SuperWord::split_packs_only_implemented_with_smaller_size() {
+  split_packs("SuperWord::split_packs_only_implemented_with_smaller_size",
                [&](const Node_List* pack) {
                  uint pack_size = pack->size();
-                 uint max_vlen = max_vector_size_in_def_use_chain(pack->at(0));
-                 assert(is_power_of_2(max_vlen), "sanity");
-                 if (pack_size > max_vlen) {
-                   return SplitTask(max_vlen, "longer than max_vector_size");
+                 uint implemented_size = max_implemented_size(pack);
+                 if (implemented_size == 0) {
+                   // No size is implemented. Leave it for the filter.
+                   return SplitTask::make_no_split();
+                 }
+                 assert(is_power_of_2(implemented_size), "sanity %d", implemented_size);
+                 if (pack_size > implemented_size) {
+                   return SplitTask(implemented_size, "only implemented at smaller size");
                  }
                  return SplitTask::make_no_split();
                });
-
-  assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
-}
-
-void SuperWord::split_packs_only_implemented_with_smaller_size() {
-  // TODO
 }
 
 void SuperWord::split_packs_to_break_mutual_dependence() {
   // TODO
-}
-
-void SuperWord::split_packs_into_power_of_2_sizes() {
-  assert(!_packset.is_empty(), "packset not empty");
-
-  split_packs("SuperWord::split_packs_into_power_of_2_sizes",
-               [&](const Node_List* pack) {
-                 uint pack_size = pack->size();
-                 uint new_size = round_down_power_of_2(pack_size);
-                 if (new_size <= pack_size) {
-                   return SplitTask(new_size, "was not power of 2 size");
-                 }
-                 return SplitTask::make_no_split();
-               });
 }
 
 template <typename FilterPredicate>
@@ -1900,7 +1874,7 @@ void SuperWord::filter_packs_for_implemented() {
   filter_packs("SuperWord::filter_packs_for_implemented",
                "Unimplemented",
                [&](const Node_List* pack) {
-                 return implemented(pack);
+                 return implemented(pack, pack->size());
                });
 }
 
@@ -1941,14 +1915,13 @@ void SuperWord::filter_packs_for_profitable() {
 #endif
 }
 
-//------------------------------implemented---------------------------
-// Can code be generated for pack p?
-bool SuperWord::implemented(const Node_List* p) {
+// Can code be generated for the pack, restricted to size nodes?
+bool SuperWord::implemented(const Node_List* pack, uint size) {
+  assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
   bool retValue = false;
-  Node* p0 = p->at(0);
+  Node* p0 = pack->at(0);
   if (p0 != nullptr) {
     int opc = p0->Opcode();
-    uint size = p->size();
     if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
@@ -1988,6 +1961,22 @@ bool SuperWord::implemented(const Node_List* p) {
     }
   }
   return retValue;
+}
+
+// Find the maximal implemented size smaller or equal to the packs size
+uint SuperWord::max_implemented_size(const Node_List* pack) {
+  uint size = round_down_power_of_2(pack->size());
+  if (implemented(pack, size)) {
+    return size;
+  } else {
+    // Iteratively divide size by 2, and check.
+    for (uint s = size >> 1; s >= 2; s >>= 1) {
+      if (implemented(pack, s)) {
+        return s;
+      }
+    }
+    return 0; // not implementable at all
+  }
 }
 
 bool SuperWord::requires_long_to_int_conversion(int opc) {

@@ -534,11 +534,11 @@ private:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
 
+  // TODO desc
   void split_packs_to_match_use_and_def_packs();
-  void split_packs_longer_than_max_vector_size(); // TODO remove?
+  // TODO desc: also takes care of power of 2
   void split_packs_only_implemented_with_smaller_size();
   void split_packs_to_break_mutual_dependence();
-  void split_packs_into_power_of_2_sizes();
 
   // Filter out packs with various filter predicates
   template <typename FilterPredicate>
@@ -571,8 +571,12 @@ private:
   bool output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
-  // Can code be generated for pack p?
-  bool implemented(const Node_List* p);
+
+  // Can code be generated for the pack, restricted to size nodes?
+  bool implemented(const Node_List* pack, uint size);
+  // Find the maximal implemented size smaller or equal to the packs size
+  uint max_implemented_size(const Node_List* pack);
+
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(const Node_List* p);
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
