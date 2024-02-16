@@ -29,4 +29,4 @@ echo "  2) ./igv.sh path/to/workspace"
 echo "  3) default is ./workspace"
 echo
 echo "IGV workspace : $WORKSPACE";
-mvn --batch-mode -f application/pom.xml --define netbeans.workspace=$WORKSPACE nbm:run-platform >.igv.log 2>&1
+mvn --batch-mode -f application/pom.xml --define netbeans.userdir=$WORKSPACE nbm:run-platform >.igv.log 2>&1
