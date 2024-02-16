@@ -809,7 +809,6 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_CPU_DEP],
       elif test "x$FLAGS_CPU" = xppc64le; then
         # Little endian machine uses ELFv2 ABI.
         # Use Power8, this is the first CPU to support PPC64 LE with ELFv2 ABI.
-        # After we switch to Power9+, we can use higher releases than Ubuntu 20.04 in class DockerfileConfig used for container tests
         $1_CFLAGS_CPU_JVM="${$1_CFLAGS_CPU_JVM} -DABI_ELFv2 -mcpu=power8 -mtune=power8"
       fi
     elif test "x$FLAGS_CPU" = xs390x; then
