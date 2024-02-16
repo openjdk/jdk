@@ -521,15 +521,16 @@ bool SuperWord::SLP_extract() {
 
   combine_pairs_to_longer_packs();
 
-  split_packs_to_match_use_and_def_packs();  // a first time: create natural borders
+  construct_my_pack_map();
+
+  split_packs_at_use_def_boundaries();  // a first time: create natural boundaries
   split_packs_only_implemented_with_smaller_size();
   split_packs_to_break_mutual_dependence();
-  split_packs_to_match_use_and_def_packs();  // again: propagate split of other packs
+  split_packs_at_use_def_boundaries();  // again: propagate split of other packs
 
   // TODO idea: maybe assert instead of filter below?
 
   // Now we only remove packs:
-  construct_my_pack_map();
   filter_packs_for_power_of_2_size();
   filter_packs_for_mutual_independence();
   filter_packs_for_alignment();
@@ -1535,21 +1536,21 @@ void SuperWord::combine_pairs_to_longer_packs() {
 // Split pack according to task. Return true if any change was made, else false.
 SuperWord::SplitStatus
 SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
-  int pack_size = pack->size();
-  int split_size = task.split_size();
-  assert(0 <= split_size && split_size <= pack_size, "split_size must be in range");
+  uint pack_size = pack->size();
+  uint split_size = task.split_size();
+  assert(split_size <= pack_size, "split_size must be in range");
   if (split_size == 0 || split_size == pack_size) {
     return SplitStatus::make_no_change(pack);
   }
 
   // Split the size
-  int new_size = split_size;
-  int old_size = pack_size - new_size;
+  uint new_size = split_size;
+  uint old_size = pack_size - new_size;
 
   // Are both sizes too small to be a pack?
   if (old_size < 2 && new_size < 2) {
     assert(old_size == 1 && new_size == 1, "implied");
-    for (int i = 0; i < pack_size; i++) {
+    for (uint i = 0; i < pack_size; i++) {
       Node* n = pack->at(i);
       set_my_pack(n, nullptr);
     }
@@ -1583,6 +1584,7 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
     assert(old_size == 1 && new_size >= 2, "implied");
     Node* n = pack->at(0);
     pack->remove(0);
+    set_my_pack(n, nullptr);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1597,13 +1599,17 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   assert(old_size >= 2 && new_size >= 2, "implied");
   Node_List* new_pack = new Node_List(new_size);
 
-  for (int i = 0; i < new_size; i++) {
-    new_pack->push(pack->at(old_size + i));
+  for (uint i = 0; i < new_size; i++) {
+    Node* n = pack->at(old_size + i);
+    new_pack->push(n);
+    set_my_pack(n, new_pack);
   }
 
-  for (int i = 0; i < new_size; i++) {
+  for (uint i = 0; i < new_size; i++) {
     pack->pop();
   }
+
+  // TODO trace split
 
   return SplitStatus::make_changed(pack, new_pack);
 }
@@ -1611,8 +1617,6 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
 template <typename SplitStrategy>
 void SuperWord::split_packs(const char* split_name,
                             SplitStrategy strategy) {
-  assert(!_packset.is_empty(), "packset not empty");
-
   bool changed;
   do {
     changed = false;
@@ -1651,21 +1655,13 @@ void SuperWord::split_packs(const char* split_name,
 #endif
 }
 
-void SuperWord::split_packs_to_match_use_and_def_packs() {
-  split_packs("SuperWord::split_packs_to_match_use_and_def_packs",
+void SuperWord::split_packs_at_use_def_boundaries() {
+  split_packs("SuperWord::split_packs_at_use_def_boundaries",
                [&](const Node_List* pack) {
                  uint pack_size = pack->size();
-                 // TODO
-                 //uint implemented_size = max_implemented_size(pack);
-                 //if (implemented_size == 0) {
-                 //  // No size is implemented. Leave it for the filter.
-                 //  return SplitTask::make_no_split();
-                 //}
-                 //assert(is_power_of_2(implemented_size), "sanity %d", implemented_size);
-                 //if (pack_size > implemented_size) {
-                 //  return SplitTask(implemented_size, "only implemented at smaller size");
-                 //}
-                 return SplitTask::make_no_split();
+                 uint boundary = find_use_def_boundary(pack);
+                 assert(boundary < pack_size, "valid boundary %d", boundary);
+                 return SplitTask(boundary, "found a use/def boundary");
                });
 }
 
@@ -1674,15 +1670,9 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                [&](const Node_List* pack) {
                  uint pack_size = pack->size();
                  uint implemented_size = max_implemented_size(pack);
-                 if (implemented_size == 0) {
-                   // No size is implemented. Leave it for the filter.
-                   return SplitTask::make_no_split();
-                 }
-                 assert(is_power_of_2(implemented_size), "sanity %d", implemented_size);
-                 if (pack_size > implemented_size) {
-                   return SplitTask(implemented_size, "only implemented at smaller size");
-                 }
-                 return SplitTask::make_no_split();
+                 assert(is_power_of_2(implemented_size) || implemented_size == 0,
+                        "power of 2 size or zero: %d", implemented_size);
+                 return SplitTask(implemented_size, "only implemented at smaller size");
                });
 }
 
@@ -3040,6 +3030,10 @@ void SuperWord::verify_no_extract() {
   }
 }
 #endif
+
+uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
+  return 0;
+}
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?

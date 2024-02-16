@@ -490,12 +490,12 @@ private:
 
   class SplitTask {
   private:
-    const int _split_size;
+    const uint _split_size;
     const char* _message;
 
   public:
-    SplitTask(int split_size, const char* message) : _split_size(split_size), _message(message) {
-      assert(0 <= split_size && message != nullptr, "arguments must be valid");
+    SplitTask(uint split_size, const char* message) : _split_size(split_size), _message(message) {
+      assert(message != nullptr, "must have message");
     }
 
     static SplitTask make_no_split() { return SplitTask(0, "no split"); }
@@ -581,8 +581,14 @@ private:
   bool profitable(const Node_List* p);
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
+
+  // Find a boundary in the pack, i.e. a boundary where left and right of it the use/def
+  // packs are different. This is a natural boundary to split a pack, to ensure that use
+  // and def packs match. If no boundary is found, return zero.
+  uint find_use_def_boundary(const Node_List* pack) const;
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
+
   // Construct reverse postorder list of block members
   bool construct_bb();
   // Initialize per node info
