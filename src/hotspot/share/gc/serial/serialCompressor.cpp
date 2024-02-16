@@ -299,6 +299,9 @@ class SCCompacter {
         assert(is_aligned(size_in_bytes, os::vm_page_size()), "size of table must be page-size aligned");
         const char* msg = "Not enough memory to allocate block-offset-table for Serial Full GC";
         os::commit_memory_or_exit(reinterpret_cast<char*>(addr), size_in_bytes, false /* exec */, msg);
+        if (AlwaysPreTouch) {
+          os::pretouch_memory(addr, addr + aligned_num_blocks);
+        }
       }
     }
   }
@@ -459,6 +462,9 @@ SerialCompressor::SerialCompressor(STWGCTimer* gc_timer):
   os::commit_memory_or_exit((char *)_mark_bitmap_region.start(), _mark_bitmap_region.byte_size(), false,
                             "Cannot commit bitmap memory");
   _mark_bitmap.initialize(heap->reserved_region(), _mark_bitmap_region);
+  if (AlwaysPreTouch) {
+    os::pretouch_memory(_mark_bitmap_region.start(), _mark_bitmap_region.end(), bitmap.page_size());
+  }
 }
 
 SerialCompressor::~SerialCompressor() {
