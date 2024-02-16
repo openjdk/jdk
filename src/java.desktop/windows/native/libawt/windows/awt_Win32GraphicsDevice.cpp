@@ -189,13 +189,7 @@ void AwtWin32GraphicsDevice::Initialize()
         VERIFY(::DeleteDC(hBMDC));
         return;
     }
-    int getDiBitsRC = ::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS);
-    VERIFY(getDiBitsRC);
-    if (getDiBitsRC == 0) {
-        VERIFY(::DeleteObject(hBM));
-        VERIFY(::DeleteDC(hBMDC));
-        return;
-    }
+    VERIFY(::GetDIBits(hBMDC, hBM, 0, 1, NULL, gpBitmapInfo, DIB_RGB_COLORS));
 
     if (colorData->bitsperpixel > 8) {
         if (MONITORINFOF_PRIMARY & pMonitorInfo->dwFlags) {

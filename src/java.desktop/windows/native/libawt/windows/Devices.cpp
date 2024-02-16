@@ -85,12 +85,12 @@
 #include "Trace.h"
 #include "D3DPipelineManager.h"
 
+typedef struct {
+    int monitorCounter;
+    int monitorLimit;
+    HMONITOR* hmpMonitors;
+} MonitorData;
 
-/* Some helper functions (from awt_MMStub.h/cpp) */
-
-int g_nMonitorCounter;
-int g_nMonitorLimit;
-HMONITOR* g_hmpMonitors;
 
 // Only monitors where CreateDC does not fail are valid
 static BOOL IsValidMonitor(HMONITOR hMon)
@@ -114,10 +114,10 @@ static BOOL IsValidMonitor(HMONITOR hMon)
 }
 
 // Callback for CountMonitors below
-static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lpMonitorCounter)
 {
     if (IsValidMonitor(hMon)) {
-        g_nMonitorCounter++;
+        (*((int *)lpMonitorCounter))++;
     }
 
     return TRUE;
@@ -125,17 +125,18 @@ static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPAR
 
 static int WINAPI CountMonitors(void)
 {
-    g_nMonitorCounter = 0;
-    ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, 0L);
-    return g_nMonitorCounter;
+    int monitorCounter = 0;
+    ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, (LPARAM)&monitorCounter);
+    return monitorCounter;
 }
 
 // Callback for CollectMonitors below
-static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lP)
+static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPARAM lpMonitorData)
 {
-    if ((g_nMonitorCounter < g_nMonitorLimit) && (IsValidMonitor(hMon))) {
-        g_hmpMonitors[g_nMonitorCounter] = hMon;
-        g_nMonitorCounter++;
+    MonitorData* pMonitorData = (MonitorData *)lpMonitorData;
+    if ((pMonitorData->monitorCounter < pMonitorData->monitorLimit) && (IsValidMonitor(hMon))) {
+        pMonitorData->hmpMonitors[pMonitorData->monitorCounter] = hMon;
+        pMonitorData->monitorCounter++;
     }
 
     return TRUE;
@@ -143,13 +144,16 @@ static BOOL WINAPI clb_fCollectMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LP
 
 static int WINAPI CollectMonitors(HMONITOR* hmpMonitors, int nNum)
 {
-    g_nMonitorCounter = 0;
-    g_hmpMonitors = hmpMonitors;
-    g_nMonitorLimit = nNum;
-    if (NULL != g_hmpMonitors) {
-        ::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, 0L);
+    if (NULL != hmpMonitors) {
+        MonitorData monitorData;
+        monitorData.monitorCounter = 0;
+        monitorData.monitorLimit = nNum;
+        monitorData.hmpMonitors = hmpMonitors;
+        ::EnumDisplayMonitors(NULL, NULL, clb_fCollectMonitors, (LPARAM)&monitorData);
+        return monitorData.monitorCounter;
+    } else {
+        return 0;
     }
-    return g_nMonitorCounter;
 }
 
 BOOL WINAPI MonitorBounds(HMONITOR hmMonitor, RECT* rpBounds)
