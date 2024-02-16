@@ -228,7 +228,7 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
 
   jlong get_time_exceeded() const             { return _time_exceeded; }
   void reset_time_exceeded()                  { _time_exceeded = -1; }
-  void set_time_exceeded(jlong time_exceeded) { _time_exceeded = time_exceeded; assert(time_exceeded != 1, "sanity"); }
+  void set_time_exceeded(jlong time_exceeded) { _time_exceeded = time_exceeded; }
 
   // Support for safepoint timeout (debugging)
   bool is_at_poll_safepoint()           { return _at_poll_safepoint; }
