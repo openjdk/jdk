@@ -43,7 +43,6 @@ import jdk.test.lib.Platform;
  * @run main/manual DisposeInActionEventTest
  */
 public class DisposeInActionEventTest {
-    private static boolean traySupported;
     private static JTextArea textArea;
 
     public static void main(String[] args) throws Exception {
