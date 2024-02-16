@@ -77,7 +77,7 @@ public final class SaveAsAction extends NodeAction {
 
     @Override
     protected String iconResource() {
-        return "com/sun/hotspot/igv/coordinator/images/saveas.png";
+        return "com/sun/hotspot/igv/coordinator/images/saveall.gif";
     }
 
     @Override
