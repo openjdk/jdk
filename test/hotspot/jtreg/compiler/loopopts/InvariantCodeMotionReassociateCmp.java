@@ -25,6 +25,8 @@ package compiler.c2.loopopts;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
+import java.util.Random;
 
 /*
  * @test
@@ -34,7 +36,10 @@ import jdk.test.lib.Asserts;
  * @run driver compiler.c2.loopopts.InvariantCodeMotionReassociateCmp
  */
 public class InvariantCodeMotionReassociateCmp {
+    private static final Random RANDOM = Utils.getRandomInstance();
     private static final int size = 500;
+    private int inv1;
+    private int inv2;
 
     public static void main(String[] args) {
         TestFramework.run();
@@ -43,10 +48,52 @@ public class InvariantCodeMotionReassociateCmp {
     @DontInline
     private void blackhole() {}
 
+    @Setup
+    public Object[] setupEq() {
+        inv1 = RANDOM.nextInt();
+        inv2 = inv1 + RANDOM.nextInt(size * 2);
+        return new Object[] { inv1, inv2 };
+    }
+
+    @Setup
+    public Object[] setupNe() {
+        inv1 = RANDOM.nextInt();
+        if (RANDOM.nextInt() % 7 == 0) {
+            if (inv1 == 0) {
+                inv1 = 1;
+            }
+            // Setup inputs to be equals sometimes to avoid uncommon traps
+            inv2 = inv1;
+        } else {
+            inv2 = inv1 + RANDOM.nextInt(size * 2) + 1;
+        }
+        return new Object[] { inv1, inv2 };
+    }
+    public void fail(int returnValue) {
+        throw new RuntimeException("Illegal reassociation: i=" + returnValue + ", inv1=" + inv1
+                + ", inv2=" + inv2);
+    }
+
+    public void checkEq(int returnValue) {
+        int invDiff = inv2 - inv1;
+        if ((invDiff < size && returnValue != invDiff) || (invDiff
+                    >= size && returnValue != size)) {
+            fail(returnValue);
+        }
+    }
+
+    public void checkNe(int returnValue) {
+        int invDiff = inv2 - inv1;
+        if ((invDiff != 0 && returnValue != 0) || (invDiff
+                    == 0 && returnValue != 1)) {
+            fail(returnValue);
+        }
+    }
+
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_I, "1"})
-    public int[] equalsAddInt(int inv1, int inv2) {
+    public int equalsAddInt(int inv1, int inv2) {
         int i = 0;
         for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 == i`
@@ -55,21 +102,18 @@ public class InvariantCodeMotionReassociateCmp {
                 break;
             }
         }
-        return new int[]{i, inv1, inv2};
+        return i;
     }
 
     @Check(test = "equalsAddInt")
-    public void checkEqualsAddInt(int[] returnValue) {
-        if (returnValue[0] != size && returnValue[0] + returnValue[1] != returnValue[2]) {
-            throw new RuntimeException("Illegal reassociation: i=" + returnValue[0] + ", inv1=" + returnValue[1]
-                    + ", inv2=" + returnValue[2]);
-        }
+    public void checkEqualsAddInt(int returnValue) {
+        checkEq(returnValue);
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_L, "1"})
-    public long[] equalsAddLong(long inv1, long inv2) {
+    public int equalsAddLong(long inv1, long inv2) {
         int i = 0;
         for (; i < size; ++i) {
             // Reassociate to `inv2 - inv1 == i`
@@ -78,25 +122,22 @@ public class InvariantCodeMotionReassociateCmp {
                 break;
             }
         }
-        return new long[]{i, inv1, inv2};
+        return i;
     }
 
     @Check(test = "equalsAddLong")
-    public void checkEqualsAddLong(long[] returnValue) {
-        if (returnValue[0] != size && returnValue[0] + returnValue[1] != returnValue[2]) {
-            throw new RuntimeException("Illegal reassociation: i=" + returnValue[0] + ", inv1=" + returnValue[1]
-                    + ", inv2=" + returnValue[2]);
-        }
+    public void checkEqualsAddLong(int returnValue) {
+        checkEq(returnValue);
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.DEFAULT})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_I, "1"})
     public int equalsInvariantSubVariantInt(int inv1, int inv2) {
         int i = 0;
         for (; i < size; ++i) {
             // Reassociate to `inv1 - inv2 == i`
-            if (inv1 - i == inv2) {
+            if (inv2 - i == inv1) {
                 blackhole();
                 break;
             }
@@ -106,19 +147,17 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "equalsInvariantSubVariantInt")
     public void checkEqualsInvariantSubVariantInt(int returnValue) {
-        if (returnValue != 42) {
-            throw new RuntimeException("Illegal reassociation");
-        }
+        checkEq(returnValue);
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.DEFAULT})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_L, "1"})
     public int equalsInvariantSubVariantLong(long inv1, long inv2) {
         int i = 0;
         for (; i < size; ++i) {
             // Reassociate to `inv1 - inv2 == i`
-            if (inv1 - i == inv2) {
+            if (inv2 - i == inv1) {
                 blackhole();
                 break;
             }
@@ -128,61 +167,92 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "equalsInvariantSubVariantLong")
     public void checkEqualsInvariantSubVariantLong(int returnValue) {
-        if (returnValue != 42) {
-            throw new RuntimeException("Illegal reassociation");
-        }
+        checkEq(returnValue);
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
-    @IR(counts = {IRNode.ADD_I, "2"})
-    public void equalsVariantSubInvariantInt(int inv1, int inv2) {
-        for (int i = 0; i < size; ++i) {
-            // Reassociate to `inv1 + inv2 == i`
-            if (i - inv1 == inv2) {
-                blackhole();
-            }
-        }
-    }
-
-    @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
-    @IR(counts = {IRNode.ADD_L, "1"})
-    public void equalsVariantSubInvariantLong(long inv1, long inv2) {
-        for (int i = 0; i < size; ++i) {
-            // Reassociate to `inv1 + inv2 == i`
-            if (i - inv1 == inv2) {
-                blackhole();
-            }
-        }
-    }
-
-    @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_I, "1"})
-    public void notEqualsAddInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
-            // Reassociate to `inv1 - inv2 != i`
-            if (inv1 + i != inv2) {
+    public int equalsVariantSubInvariantInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
+            // Reassociate to `inv1 + inv2 == i`
+            if (i - inv2 == -inv1) {
                 blackhole();
+                break;
             }
         }
+        return i;
+    }
+
+    @Check(test = "equalsVariantSubInvariantInt")
+    public void checkEqualsVariantSubInvariantInt(int returnValue) {
+        checkEq(returnValue);
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
+    @Arguments(setup = "setupEq")
     @IR(counts = {IRNode.SUB_L, "1"})
-    public void notEqualsAddLong(long inv1, long inv2) {
-        for (int i = 0; i < size; ++i) {
+    public int equalsVariantSubInvariantLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
+            // Reassociate to `inv1 + inv2 == i`
+            if (i - inv2 == -inv1) {
+                blackhole();
+                break;
+            }
+        }
+        return i;
+    }
+
+    @Check(test = "equalsVariantSubInvariantLong")
+    public void checkEqualsVariantSubInvariantLong(int returnValue) {
+        checkEq(returnValue);
+    }
+
+
+    @Test
+    @Arguments(setup = "setupNe")
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int notEqualsAddInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv1 - inv2 != i`
             if (inv1 + i != inv2) {
                 blackhole();
+                break;
             }
         }
+        return i;
+    }
+
+    @Check(test = "notEqualsAddInt")
+    public void checkNotEqualsAddInt(int returnValue) {
+        checkNe(returnValue);
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(setup = "setupNe")
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public int notEqualsAddLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
+            // Reassociate to `inv1 - inv2 != i`
+            if (inv1 + i != inv2) {
+                blackhole();
+                break;
+            }
+        }
+        return i;
+    }
+
+    @Check(test = "notEqualsAddLong")
+    public void checkNotEqualsAddLong(int returnValue) {
+        checkNe(returnValue);
+    }
+
+    @Test
+    @Arguments(setup = "setupNe")
     @IR(counts = {IRNode.SUB_I, "1"})
     public int notEqualsInvariantSubVariantInt(int inv1, int inv2) {
         int i = 0;
@@ -198,13 +268,11 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "notEqualsInvariantSubVariantInt")
     public void checkNotEqualsInvariantSubVariantInt(int returnValue) {
-        if (returnValue != 1) {
-            throw new RuntimeException("Illegal reassociation");
-        }
+        checkNe(returnValue);
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(setup = "setupNe")
     @IR(counts = {IRNode.SUB_L, "1"})
     public int notEqualsInvariantSubVariantLong(long inv1, long inv2) {
         int i = 0;
@@ -220,37 +288,73 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "notEqualsInvariantSubVariantLong")
     public void checkNotEqualsInvariantSubVariantLong(int returnValue) {
-        if (returnValue != 1) {
-            throw new RuntimeException("Illegal reassociation");
-        }
+        checkNe(returnValue);
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.ADD_I, "2"})
-    public void notEqualsVariantSubInvariantInt(int inv1, int inv2) {
-        for (int i = 0; i < 500; ++i) {
+    @Arguments(setup = "setupNe")
+    @IR(counts = {IRNode.SUB_I, "1"})
+    public int notEqualsVariantSubInvariantInt(int inv1, int inv2) {
+        int i = 0;
+        for (; i < 500; ++i) {
             // Reassociate to `inv1 + inv2 != i`
-            if (i - inv1 != inv2) {
+            if (i - inv2 != -inv1) {
                 blackhole();
+                break;
             }
         }
+        return i;
+    }
+
+    @Check(test = "notEqualsVariantSubInvariantInt")
+    public void checkNotEqualsVariantSubInvariantInt(int returnValue) {
+        checkNe(returnValue);
     }
 
     @Test
-    @Arguments({Argument.RANDOM_EACH, Argument.RANDOM_EACH})
-    @IR(counts = {IRNode.ADD_L, "1"})
-    public void notEqualsVariantSubInvariantLong(long inv1, long inv2) {
-        for (int i = 0; i < size; ++i) {
+    @Arguments(setup = "setupNe")
+    @IR(counts = {IRNode.SUB_L, "1"})
+    public int notEqualsVariantSubInvariantLong(long inv1, long inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
             // Reassociate to `inv1 + inv2 != i`
-            if (i - inv1 != inv2) {
+            if (i - inv2 != -inv1) {
                 blackhole();
+                break;
             }
+        }
+        return i;
+    }
+
+    @Check(test = "notEqualsVariantSubInvariantLong")
+    public void checkNotEqualsVariantSubInvariantLong(int returnValue) {
+        checkNe(returnValue);
+    }
+
+    @Test
+    @Arguments(setup = "setupEq")
+    @IR(failOn = {IRNode.SUB_I})
+    public int ltDontReassociate(int inv1, int inv2) {
+        int i = 0;
+        for (; i < size; ++i) {
+            if (inv1 + i < inv2) {
+                blackhole();
+                break;
+            }
+        }
+        return i;
+    }
+
+    @Check(test = "ltDontReassociate")
+    public void checkLtDontReassociate(int returnValue) {
+        int sum = inv1 + returnValue;
+        if ((returnValue < size && sum >= inv2) || (returnValue > size && sum < inv2)) {
+            fail(returnValue);
         }
     }
 
     @Test
-    @Arguments({Argument.NUMBER_42, Argument.NUMBER_42})
+    @Arguments(setup = "setupEq")
     @IR(failOn = {IRNode.SUB_I})
     public int leDontReassociate(int inv1, int inv2) {
         int i = 0;
@@ -265,13 +369,14 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "leDontReassociate")
     public void checkLeDontReassociate(int returnValue) {
-        if (returnValue != 0) {
-            throw new RuntimeException("Illegal reassociation");
+        int sum = inv1 + returnValue;
+        if ((returnValue < size && sum > inv2) || (returnValue > size && sum <= inv2)) {
+            fail(returnValue);
         }
     }
 
     @Test
-    @Arguments({Argument.DEFAULT, Argument.NUMBER_42})
+    @Arguments(setup = "setupEq")
     @IR(failOn = {IRNode.SUB_I})
     public int gtDontReassociate(int inv1, int inv2) {
         int i = 0;
@@ -286,13 +391,14 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "gtDontReassociate")
     public void checkGtDontReassociate(int returnValue) {
-        if (returnValue != 43) {
-            throw new RuntimeException("Illegal reassociation");
+        int sum = inv1 + returnValue;
+        if ((returnValue < size && sum <= inv2) || (returnValue > size && sum > inv2)) {
+            fail(returnValue);
         }
     }
 
     @Test
-    @Arguments({Argument.DEFAULT, Argument.NUMBER_42})
+    @Arguments(setup = "setupEq")
     @IR(failOn = {IRNode.SUB_I})
     public int geDontReassociate(int inv1, int inv2) {
         int i = 0;
@@ -307,8 +413,9 @@ public class InvariantCodeMotionReassociateCmp {
 
     @Check(test = "geDontReassociate")
     public void checkGeDontReassociate(int returnValue) {
-        if (returnValue != 42) {
-            throw new RuntimeException("Illegal reassociation");
+        int sum = inv1 + returnValue;
+        if ((returnValue < size && sum < inv2) || (returnValue > size && sum >= inv2)) {
+            fail(returnValue);
         }
     }
 }
