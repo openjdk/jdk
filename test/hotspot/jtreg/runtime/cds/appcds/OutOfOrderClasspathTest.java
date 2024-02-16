@@ -46,7 +46,7 @@ public class OutOfOrderClasspathTest {
         String appJar = null;
         String outputDir = CDSTestUtils.getOutputDir();
         System.setProperty("test.noclasspath", "true");
-        String hiJar =  outputDir + File.separator + "hi.jar";
+        String hiJar = outputDir + File.separator + "hi.jar";
         String greetJar = outputDir + File.separator + "greet.jar";
 
         TestCommon.dump(appJar,
