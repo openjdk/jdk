@@ -216,7 +216,6 @@ class ParallelScavengeHeap : public CollectedHeap {
   void do_full_collection(bool clear_all_soft_refs) override;
 
   void ensure_parsability(bool retire_tlabs) override;
-  void resize_all_tlabs() override;
 
   size_t tlab_capacity(Thread* thr) const override;
   size_t tlab_used(Thread* thr) const override;

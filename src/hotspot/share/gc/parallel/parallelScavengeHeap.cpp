@@ -526,10 +526,6 @@ HeapWord* ParallelScavengeHeap::allocate_new_tlab(size_t min_size, size_t reques
   return result;
 }
 
-void ParallelScavengeHeap::resize_all_tlabs() {
-  CollectedHeap::resize_all_tlabs();
-}
-
 void ParallelScavengeHeap::prune_scavengable_nmethods() {
   ScavengableNMethods::prune_nmethods_not_into_young();
 }
