@@ -254,7 +254,7 @@ public class Asserts {
      * @param lhs The left hand side of the comparison.
      * @param rhs The right hand side of the comparison.
      * @throws RuntimeException if the assertion is not true.
-     * @see #assertEqualsByteArray(byte[], byte[], String)
+     * @see #assertNotEqualsByteArray(byte[], byte[], String)
      */
     public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs) {
         assertNotEqualsByteArray(lhs, rhs, null);
@@ -287,9 +287,9 @@ public class Asserts {
      */
     public static void assertNotEqualsByteArray(byte[] lhs, byte[] rhs, String msg) {
         if (Arrays.equals(lhs, rhs)) {
-            msg = Objects.toString(msg, "assertEqualsByteArray")
+            msg = Objects.toString(msg, "assertNotEqualsByteArray")
                     + ": expected " + HexFormat.of().formatHex(lhs)
-                    + " to equal " + HexFormat.of().formatHex(rhs);
+                    + " to not equal " + HexFormat.of().formatHex(rhs);
             fail(msg);
         }
     }
