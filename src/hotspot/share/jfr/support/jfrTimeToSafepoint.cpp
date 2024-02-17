@@ -41,7 +41,7 @@ static GrowableArray<Entry>* _events = nullptr;
 
 void JfrTimeToSafepoint::record(JavaThread* thread, Ticks& start, Ticks& end, int iterations) {
   assert(Thread::current()->is_VM_thread(), "invariant");
-  assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert(SafepointSynchronize::is_synchronizing(), "invariant");
   assert(start.value() > 0 && end.value() > 0, "invariant");
 
   jlong duration = (end - start).value();
