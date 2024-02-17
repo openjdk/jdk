@@ -24,7 +24,7 @@
  * @test
  * @bug 8190278 8174269
  * @summary checks the Scanner.useLocale() with java.locale.providers=SPI,
- *          COMPAT. It should not throw ClassCastException if any SPI is
+ *          CLDR. It should not throw ClassCastException if any SPI is
  *          used and NumberFormat.getInstance() does not return a
  *          DecimalFormat object. Also, to test the behaviour of Scanner
  *          while scanning numbers in the format of Scanner's locale.
@@ -49,7 +49,7 @@ public class UseLocaleWithProvider {
             testScannerUseLocale("4.334,65", Locale.GERMAN, 4334.65);
         } catch (ClassCastException ex) {
             throw new RuntimeException("[FAILED: With" +
-                    " java.locale.providers=SPI,COMPAT, Scanner.useLocale()" +
+                    " java.locale.providers=SPI,CLDR, Scanner.useLocale()" +
                     " shouldn't throw ClassCastException]");
         }
     }
@@ -59,7 +59,7 @@ public class UseLocaleWithProvider {
         Scanner sc = new Scanner(number).useLocale(locale);
         if (!sc.hasNextFloat() || sc.nextFloat() != actual.floatValue()) {
             throw new RuntimeException("[FAILED: With" +
-                    " java.locale.providers=SPI,COMPAT, Scanner" +
+                    " java.locale.providers=SPI,CLDR, Scanner" +
                     ".hasNextFloat() or Scanner.nextFloat() is unable to" +
                     " scan the given number: " + number + ", in the given" +
                     " locale:" + locale + "]");
