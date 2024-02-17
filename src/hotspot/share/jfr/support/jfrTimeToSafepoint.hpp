@@ -25,7 +25,7 @@
 #define SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_HPP
 
 class JfrTimeToSafepoint : AllStatic {
- public: 
+ public:
   static void record(JavaThread* thread, Ticks& start, Ticks& end, int iterations);
 
   static void emit_events();

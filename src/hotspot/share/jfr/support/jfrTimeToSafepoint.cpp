@@ -78,7 +78,7 @@ void JfrTimeToSafepoint::emit_events() {
 
       JavaThread* jt = entry.thread;
       event.set_thread(JfrThreadLocal::thread_id(jt));
-      
+
       if (jt->has_last_Java_frame()) {
         JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
         JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
@@ -90,7 +90,7 @@ void JfrTimeToSafepoint::emit_events() {
       } else {
         event.set_stackTrace(0);
       }
-      
+
       event.commit();
     }
   }
