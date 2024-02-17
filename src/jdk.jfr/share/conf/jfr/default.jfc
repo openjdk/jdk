@@ -933,6 +933,7 @@
 
     <event name="jdk.TimeToSafepoint">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">10 s</setting>
     </event>
 

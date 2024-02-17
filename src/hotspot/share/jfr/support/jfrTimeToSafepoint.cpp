@@ -79,19 +79,24 @@ void JfrTimeToSafepoint::emit_events() {
       JavaThread* jt = entry.thread;
       event.set_thread(JfrThreadLocal::thread_id(jt));
 
-      if (jt->has_last_Java_frame()) {
-        JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
+      JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
+
+      assert(!tl->has_cached_stack_trace(), "invariant");
+
+      if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
         JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
         if (stacktrace.record(jt, jt->last_frame(), 0, -1)) {
-          event.set_stackTrace(JfrStackTraceRepository::add(stacktrace));
+          tl->set_cached_stack_trace_id(JfrStackTraceRepository::add(stacktrace));
         } else {
-          event.set_stackTrace(0);
+          tl->set_cached_stack_trace_id(0);
         }
       } else {
-        event.set_stackTrace(0);
+        tl->set_cached_stack_trace_id(0);
       }
 
       event.commit();
+
+      tl->clear_cached_stack_trace();
     }
   }
   _events->clear();
