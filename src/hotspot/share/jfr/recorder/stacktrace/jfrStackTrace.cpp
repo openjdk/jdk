@@ -290,9 +290,9 @@ bool JfrStackTrace::record_async(JavaThread* jt, const frame& frame) {
 bool JfrStackTrace::record(JavaThread* jt, const frame& frame, int skip, int64_t stack_filter_id) {
   assert(jt != nullptr, "invariant");
   assert(jt == Thread::current() ||
-         (VMThread::vm_thread() == Thread::current() && SafepointSynchronize::is_at_safepoint()), "invariant");
+         (Thread::current()->is_VM_thread() && SafepointSynchronize::is_at_safepoint()), "invariant");
   assert(jt->thread_state() != _thread_in_native ||
-         (VMThread::vm_thread() == Thread::current() && SafepointSynchronize::is_at_safepoint()), "invariant");
+         (Thread::current()->is_VM_thread() && SafepointSynchronize::is_at_safepoint()), "invariant");
   assert(!_lineno, "invariant");
   // Must use ResetNoHandleMark here to bypass if any NoHandleMark exist on stack.
   // This is because RegisterMap uses Handles to support continuations.

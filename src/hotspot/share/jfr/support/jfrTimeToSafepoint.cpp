@@ -40,7 +40,7 @@ struct Entry {
 static GrowableArray<Entry>* _events = nullptr;
 
 void JfrTimeToSafepoint::record(JavaThread* thread, Ticks& start, Ticks& end, int iterations) {
-  assert(VMThread::vm_thread() == Thread::current(), "invariant");
+  assert(Thread::current()->is_VM_thread(), "invariant");
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
   assert(start.value() > 0 && end.value() > 0, "invariant");
 
@@ -58,7 +58,7 @@ void JfrTimeToSafepoint::record(JavaThread* thread, Ticks& start, Ticks& end, in
 }
 
 void JfrTimeToSafepoint::emit_events() {
-  assert(VMThread::vm_thread() == Thread::current(), "invariant");
+  assert(Thread::current()->is_VM_thread(), "invariant");
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
   if (_events == nullptr) {
@@ -80,7 +80,6 @@ void JfrTimeToSafepoint::emit_events() {
       event.set_thread(JfrThreadLocal::thread_id(jt));
 
       JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
-
       assert(!tl->has_cached_stack_trace(), "invariant");
 
       if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
@@ -93,7 +92,6 @@ void JfrTimeToSafepoint::emit_events() {
       } else {
         tl->set_cached_stack_trace_id(0);
       }
-
       event.commit();
 
       tl->clear_cached_stack_trace();
