@@ -189,16 +189,6 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
-// If there is a virtual thread mounted then return vthread() oop.
-// Otherwise, return threadObj().
-oop JavaThread::vthread_or_thread() const {
-    oop result = vthread();
-    if (result == nullptr) {
-      result = threadObj();
-    }
-    return result;
-  }
-
 oop JavaThread::scopedValueCache() const {
   return _scopedValueCache.resolve();
 }
