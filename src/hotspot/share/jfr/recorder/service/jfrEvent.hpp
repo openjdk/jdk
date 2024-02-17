@@ -94,6 +94,10 @@ class JfrEvent {
     _start_time = time.value();
   }
 
+  jlong get_starttime() {
+    return _start_time;
+  }
+
   void set_endtime(const JfrTicks& time) {
     _end_time = time.value();
   }

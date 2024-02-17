@@ -236,6 +236,8 @@ class TimeInstant : public Rep<TimeSource> {
   friend class TimePartitionsTest;
   friend class GCTimerTest;
   friend class CompilerEvent;
+
+  friend class SafepointSynchronize;
 };
 
 #if INCLUDE_JFR

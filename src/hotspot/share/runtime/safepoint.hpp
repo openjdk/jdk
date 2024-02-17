@@ -30,6 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/ticks.hpp"
 #include "utilities/waitBarrier.hpp"
 
 //
@@ -112,7 +113,7 @@ class SafepointSynchronize : AllStatic {
 
   // Helper methods for safepoint procedure:
   static void arm_safepoint();
-  static int synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running);
+  static int synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running, Ticks& ttsp_start);
   static void disarm_safepoint();
   static void increment_jni_active_count();
   static void decrement_waiting_to_block();
@@ -202,8 +203,6 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
 
   ThreadSafepointState*           _next;
 
-  volatile jlong                  _time_exceeded;
-
   void account_safe_thread();
 
  public:
@@ -225,10 +224,6 @@ class ThreadSafepointState: public CHeapObj<mtThread> {
   uint64_t get_safepoint_id() const;
   void     reset_safepoint_id();
   void     set_safepoint_id(uint64_t sid);
-
-  jlong get_time_exceeded() const             { return _time_exceeded; }
-  void reset_time_exceeded()                  { _time_exceeded = -1; }
-  void set_time_exceeded(jlong time_exceeded) { _time_exceeded = time_exceeded; }
 
   // Support for safepoint timeout (debugging)
   bool is_at_poll_safepoint()           { return _at_poll_safepoint; }

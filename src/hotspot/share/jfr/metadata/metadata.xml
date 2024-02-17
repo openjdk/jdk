@@ -684,9 +684,11 @@
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
   </Event>
 
-  <Event name="SafepointTimeout" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Timeout" description="Synchronize timeout" startTime="false" thread="true" stackTrace="true">
+  <Event name="TimeToSafepoint" category="Java Virtual Machine, Runtime, Safepoint" label="Time To Safepoint " description="Time to safepoint" startTime="true" thread="true" >
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
-    <Field type="ulong" contentType="nanos" name="timeExceeded" label="Time Exceeded" description="The amount of time exceeding SafepointTimeoutDelay" />
+    <Field type="Thread" name="thread" label="Thread" />
+    <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
+    <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
   </Event>
 
   <Event name="SafepointCleanup" category="Java Virtual Machine, Runtime, Safepoint" label="Safepoint Cleanup" description="Safepointing begin running cleanup tasks"

@@ -71,6 +71,10 @@
 #include "utilities/macros.hpp"
 #include "utilities/systemMemoryBarrier.hpp"
 
+#if INCLUDE_JFR
+#include "jfr/support/jfrTimeToSafepoint.hpp"
+#endif
+
 static void post_safepoint_begin_event(EventSafepointBegin& event,
                                        uint64_t safepoint_id,
                                        int thread_count,
@@ -100,16 +104,6 @@ static void post_safepoint_synchronize_event(EventSafepointStateSynchronization&
     event.set_initialThreadCount(initial_number_of_threads);
     event.set_runningThreadCount(threads_waiting_to_block);
     event.set_iterations(checked_cast<u4>(iterations));
-    event.commit();
-  }
-}
-
-static void post_safepoint_timeout_event(EventSafepointTimeout& event,
-                                         uint64_t safepoint_id,
-                                         jlong time_exceeded) {
-  if (event.should_commit()) {
-    event.set_safepointId(safepoint_id);
-    event.set_timeExceeded(static_cast<julong>(time_exceeded));
     event.commit();
   }
 }
@@ -224,7 +218,7 @@ static void back_off(int64_t start_time) {
   }
 }
 
-int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running)
+int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running, Ticks& ttsp_start)
 {
   JavaThreadIteratorWithHandle jtiwh;
 
@@ -264,22 +258,22 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
   int iterations = 1; // The first iteration is above.
   int64_t start_time = os::javaTimeNanos();
 
-  bool timeout_event_enabled = EventSafepointTimeout::is_enabled();
+#if INCLUDE_JFR
+  bool ttsp_event_enabled = ttsp_start.value() > 0;
+#endif
 
   do {
-    jlong time_exceeded = -1;
-
     // Check if this has taken too long:
-    if (SafepointTimeout) {
-      jlong delta = os::javaTimeNanos() - safepoint_limit_time;
-      if (delta > 0) {
-        print_safepoint_timeout();
-
-        if (timeout_event_enabled) {
-          time_exceeded = delta;
-        }
-      }
+    if (SafepointTimeout && safepoint_limit_time < os::javaTimeNanos()) {
+      print_safepoint_timeout();
     }
+
+#if INCLUDE_JFR
+    Ticks ttsp_end = Ticks(0);
+    if (ttsp_event_enabled) {
+      ttsp_end = Ticks::now();
+    }
+#endif
 
     p_prev = &tss_head;
     ThreadSafepointState *cur_tss = tss_head;
@@ -291,7 +285,11 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
-        tmp->set_time_exceeded(time_exceeded);
+#if INCLUDE_JFR
+        if (ttsp_event_enabled) {
+          JfrTimeToSafepoint::record(tmp->thread(), ttsp_start, ttsp_end, iterations);
+        }
+#endif
       } else {
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
@@ -374,6 +372,16 @@ void SafepointSynchronize::begin() {
   assert(Thread::current()->is_VM_thread(), "Only VM thread may execute a safepoint");
 
   EventSafepointBegin begin_event;
+
+  Ticks ttsp_start = Ticks(0);
+#if INCLUDE_JFR
+  if (EventTimeToSafepoint::is_enabled()) {
+    jlong time = begin_event.get_starttime();
+    // reuse the startime of the begin event
+    ttsp_start = time == 0 ? Ticks::now() : Ticks(time);
+  }
+#endif
+
   SafepointTracing::begin(VMThread::vm_op_type());
 
   Universe::heap()->safepoint_synchronize_begin();
@@ -411,7 +419,7 @@ void SafepointSynchronize::begin() {
   arm_safepoint();
 
   // Will spin until all threads are safe.
-  int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
+  int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running, ttsp_start);
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
@@ -459,6 +467,12 @@ void SafepointSynchronize::begin() {
                                    _waiting_to_block, iterations);
 
   SafepointTracing::synchronized(nof_threads, initial_running, _nof_threads_hit_polling_page);
+
+#if INCLUDE_JFR
+  if (ttsp_start.value() > 0) {
+    JfrTimeToSafepoint::emit_events();
+  }
+#endif
 
   // We do the safepoint cleanup first since a GC related safepoint
   // needs cleanup to be completed before running the GC op.
@@ -763,15 +777,6 @@ void SafepointSynchronize::block(JavaThread *thread) {
   guarantee(thread->safepoint_state()->get_safepoint_id() == InactiveSafepointCounter,
             "The safepoint id should be set only in block path");
 
-  jlong time_exceeded = thread->safepoint_state()->get_time_exceeded();
-  if (time_exceeded != -1) {
-    assert(time_exceeded > 0, "sanity check");
-    thread->safepoint_state()->reset_time_exceeded();
-
-    EventSafepointTimeout event;
-    post_safepoint_timeout_event(event, safepoint_id, time_exceeded);
-  }
-
   // cross_modify_fence is done by SafepointMechanism::process_if_requested
   // which is the only caller here.
 }
@@ -847,7 +852,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
 
 ThreadSafepointState::ThreadSafepointState(JavaThread *thread)
   : _at_poll_safepoint(false), _thread(thread), _safepoint_safe(false),
-    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr), _time_exceeded(-1) {
+    _safepoint_id(SafepointSynchronize::InactiveSafepointCounter), _next(nullptr) {
 }
 
 void ThreadSafepointState::create(JavaThread *thread) {

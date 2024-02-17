@@ -23,8 +23,10 @@
 package jdk.jfr.event.runtime;
 
 import static jdk.test.lib.Asserts.assertTrue;
+import static jdk.test.lib.Asserts.assertEquals;
 
 import java.util.List;
+import java.time.Duration;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
@@ -35,7 +37,7 @@ import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
 
 /**
- * @test TestSafepointTimeoutEvent
+ * @test TestTimeToSafepointEvent
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
@@ -43,16 +45,16 @@ import jdk.test.whitebox.WhiteBox;
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:.
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+SafepointTimeout -XX:SafepointTimeoutDelay=200
- *                   jdk.jfr.event.runtime.TestSafepointTimeoutEvent
+ *                   jdk.jfr.event.runtime.TestTimeToSafepointEvent
  */
-public class TestSafepointTimeoutEvent {
+public class TestTimeToSafepointEvent {
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
         Recording recording = new Recording();
-        recording.enable(EventNames.SafepointTimeout);
+        recording.enable(EventNames.TimeToSafepoint)
+                 .withThreshold(Duration.ofMillis(200));
         recording.start();
 
         Thread thread = new Thread(() -> {
@@ -76,9 +78,9 @@ public class TestSafepointTimeoutEvent {
         for (RecordedEvent event : events) {
             System.out.println("Event: " + event);
 
-            assertTrue(Events.isEventType(event, EventNames.SafepointTimeout));
-            Events.assertEventThread(event, thread);
-            Events.assertField(event, "timeExceeded").above(0L);
+            assertTrue(Events.isEventType(event, EventNames.TimeToSafepoint));
+            assertEquals(event.getThread().getOSName(), "VM Thread");
+            Events.assertEventThread(event, "thread", thread);
             Events.assertTopFrame(event, WhiteBox.class.getName(), "waitUnsafe");
         }
     }
