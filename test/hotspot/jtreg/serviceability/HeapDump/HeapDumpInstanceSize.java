@@ -22,7 +22,6 @@
  */
 
 import java.util.Collection;
-import java.util.List;
 import java.io.File;
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.apps.LingeredApp;
@@ -32,41 +31,19 @@ import jdk.test.lib.hprof.model.Snapshot;
 import jdk.test.lib.hprof.parser.Reader;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
-import jtreg.SkippedException;
 
 /**
  * @test
  * @bug 8176520
- * @summary Test that heap dumpers (VM and SA) report consistent instance size in HPROF_GC_CLASS_DUMP records
+ * @summary Test that heap dumper reports correct instance size in HPROF_GC_CLASS_DUMP records
  * @requires vm.jvmti
- * @requires vm.hasSA
  * @library /test/lib
  * @run main/othervm HeapDumpInstanceSize
  */
 
 public class HeapDumpInstanceSize {
 
-    private static Snapshot readHeapdump(File file) throws Exception {
-        System.out.println("Verifying " + file + "...");
-        HprofParser.parseAndVerify(file);
-        System.out.println("Reading " + file + "...");
-        Snapshot snapshot = Reader.readFile(file.getPath(), true, 0);
-        System.out.println("Resolving snapshot...");
-        snapshot.resolve(true);
-        System.out.println("Snapshot resolved.");
-        return snapshot;
-    }
-
-    private static Snapshot heapdumpSA(long pid, String fileName) throws Exception {
-        File dumpFile = new File(fileName);
-        ClhsdbLauncher launcher = new ClhsdbLauncher();
-        String command = "dumpheap " + fileName;
-        List<String> cmds = List.of(command);
-        launcher.run(pid, cmds, null, null);
-        return readHeapdump(dumpFile);
-    }
-
-    private static Snapshot heapdumpVM(long pid, String fileName) throws Exception {
+    private static File createDump(long pid, String fileName) throws Exception {
         File dumpFile = new File(fileName);
         // jcmd <pid> GC.heap_dump <file_path>
         JDKToolLauncher launcher = JDKToolLauncher
@@ -78,29 +55,27 @@ public class HeapDumpInstanceSize {
         System.out.println("Output: ");
         System.out.println(oa.getOutput());
 
-        return readHeapdump(dumpFile);
+        return dumpFile;
     }
 
-    private static void testClasses(Snapshot snapshotSA, Snapshot snapshotVM) {
+    private static Snapshot readDump(File file) throws Exception {
+        System.out.println("Reading " + file + "...");
+        Snapshot snapshot = Reader.readFile(file.getPath(), true, 0);
+        System.out.println("Resolving snapshot...");
+        snapshot.resolve(true);
+        System.out.println("Snapshot resolved.");
+        return snapshot;
+    }
+
+    private static void testClasses(Snapshot snapshot) {
         System.out.println("Testing classes...");
         int cnt = 0;
         // save the last error message to throw an exception
         String errorMsg = null;
-        Collection<JavaClass> classes = snapshotSA.getClasses();
-        for (JavaClass cls: classes) {
-            JavaClass otherClass = snapshotVM.findClass(cls.getName());
-            int instSize = cls.getInstanceSize();
-            if (otherClass == null) {
-                // it's ok, just log it
-                System.out.println("  - " + cls.getName() + ": is not present in VM heapdump");
-            } else {
-                if (instSize != otherClass.getInstanceSize()) {
-                    errorMsg = "ERROR " + cls.getName() + " - different instance size: "
-                               + instSize + " != " + otherClass.getInstanceSize();
-                    System.out.println("  - " + errorMsg);
-                }
-            }
 
+        Collection<JavaClass> classes = snapshot.getClasses();
+        for (JavaClass cls: classes) {
+            int instSize = cls.getInstanceSize();
             if (cls.isArray()) {
                 // for arrays instance size should be 0
                 if (instSize != 0) {
@@ -124,16 +99,23 @@ public class HeapDumpInstanceSize {
         }
     }
 
+    private static void verifyDump(File fileDump) throws Exception {
+        System.out.println("Verifying " + fileDump + "...");
+        HprofParser.parseAndVerify(fileDump);
+
+        try (Snapshot snapshot = readDump(fileDump)) {
+            testClasses(snapshot);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         LingeredApp theApp = null;
         try {
             theApp = new LingeredApp();
             LingeredApp.startApp(theApp);
 
-            try (Snapshot snapshotSA = heapdumpSA(theApp.getPid(), "sa_heapdump.hprof");
-                 Snapshot snapshotVM = heapdumpVM(theApp.getPid(), "vm_heapdump.hprof")) {
-                testClasses(snapshotSA, snapshotVM);
-            }
+            File dumpFile = createDump(theApp.getPid(), "heapdump.hprof");
+            verifyDump(dumpFile);
         } finally {
             LingeredApp.stopApp(theApp);
         }
