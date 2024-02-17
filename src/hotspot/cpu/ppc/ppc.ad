@@ -2027,7 +2027,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2047,7 +2047,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
