@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 // Check for pending exception of the specified type
 // If it's present, then clear it
 #define EXCEPTION_CHECK(exceptionClass, recurDepth) \
-        if (EXCEPTION_OCCURRED != NULL) { \
+        if (EXCEPTION_OCCURRED != nullptr) { \
             jobject exception = EXCEPTION_OCCURRED; \
             if (env->IsInstanceOf(exception, exceptionClass) == JNI_TRUE) { \
                 EXCEPTION_CLEAR; \
@@ -45,22 +45,22 @@
 
 #define FIND_CLASS(_class, _className)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            env->FindClass(_className)) != NULL))\
+            env->FindClass(_className)) != nullptr))\
         exit(1)
 
 #define GET_OBJECT_CLASS(_class, _obj)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            env->GetObjectClass(_obj)) != NULL))\
+            env->GetObjectClass(_obj)) != nullptr))\
         exit(1)
 
 #define GET_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            env->GetFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+            env->GetFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
         exit(1)
 
 #define GET_STATIC_FIELD_ID(_fieldID, _class, _fieldName, _fieldSig)\
     if (!NSK_JNI_VERIFY(env, (_fieldID = \
-            env->GetStaticFieldID(_class, _fieldName, _fieldSig)) != NULL))\
+            env->GetStaticFieldID(_class, _fieldName, _fieldSig)) != nullptr))\
         exit(1)
 
 #define GET_STATIC_BOOL_FIELD(_value, _class, _fieldName)\
@@ -93,12 +93,12 @@
 
 #define GET_STATIC_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetStaticMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetStaticMethodID(_class, _methodName, _sig)) != nullptr))\
         exit(1)
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetMethodID(_class, _methodName, _sig)) != nullptr))\
         exit(1)
 
 #define CALL_STATIC_VOID_NOPARAM(_class, _methodName)\
