@@ -518,6 +518,8 @@ private:
 
   class SplitStatus {
   private:
+    // TODO: just have a first and a second - no swapping - adjust construction for that
+    //       Also move my_pack adjustments?
     Node_List* _old_pack; // old pack, possibly modified - or nullptr
     Node_List* _new_pack; // new pack                    - or nullptr
     bool _changed;
