@@ -1535,6 +1535,22 @@ void SuperWord::combine_pairs_to_longer_packs() {
 SuperWord::SplitStatus
 SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   uint pack_size = pack->size();
+
+  if (task.is_reject()) {
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed pack during split: %s:", task.message());
+        print_pack(pack);
+      }
+#endif
+    for (uint i = 0; i < pack_size; i++) {
+      Node* n = pack->at(i);
+      set_my_pack(n, nullptr);
+    }
+    return SplitStatus::make_reject();
+  }
+
   uint split_size = task.split_size();
   assert(split_size <= pack_size, "split_size must be in range");
   if (split_size == 0 || split_size == pack_size) {
@@ -1557,10 +1573,6 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   // Are both sizes too small to be a pack?
   if (old_size < 2 && new_size < 2) {
     assert(old_size == 1 && new_size == 1, "implied");
-    for (uint i = 0; i < pack_size; i++) {
-      Node* n = pack->at(i);
-      set_my_pack(n, nullptr);
-    }
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1568,7 +1580,11 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
         print_pack(pack);
       }
 #endif
-    return SplitStatus::make_changed(nullptr, nullptr);
+    for (uint i = 0; i < pack_size; i++) {
+      Node* n = pack->at(i);
+      set_my_pack(n, nullptr);
+    }
+    return SplitStatus::make_reject();
   }
 
   // Just pop off a single node?
@@ -1678,6 +1694,9 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                [&](const Node_List* pack) {
                  uint pack_size = pack->size();
                  uint implemented_size = max_implemented_size(pack);
+                 if (implemented_size == 0)  {
+                   return SplitTask::make_reject("not implemented at any smaller size");
+                 }
                  assert(is_power_of_2(implemented_size) || implemented_size == 0,
                         "power of 2 size or zero: %d", implemented_size);
                  return SplitTask(implemented_size, "only implemented at smaller size");

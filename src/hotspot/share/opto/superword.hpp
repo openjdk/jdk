@@ -491,16 +491,29 @@ private:
   class SplitTask {
   private:
     const uint _split_size;
+    const bool _reject;
     const char* _message;
 
-  public:
-    SplitTask(uint split_size, const char* message) : _split_size(split_size), _message(message) {
+    SplitTask(const uint split_size, const bool reject, const char* message) :
+        _split_size(split_size), _reject(reject), _message(message)
+    {
+      assert(!reject || split_size == 0, "only non-rejections actually split packs");
       assert(message != nullptr, "must have message");
     }
 
+  public:
+    SplitTask(const uint split_size, const char* message) :
+        SplitTask(split_size, false, message) {};
+
     static SplitTask make_no_split() { return SplitTask(0, "no split"); }
-    int split_size() const { return _split_size; }
+    static SplitTask make_reject(const char* message) { return SplitTask(0, true, message); }
     const char* message() const { return _message; }
+    bool is_reject() const { return _reject; }
+
+    int split_size() const {
+      assert(!is_reject(), "only non-rejections have a split size");
+      return _split_size;
+    }
   };
 
   class SplitStatus {
@@ -523,6 +536,10 @@ private:
 
     static SplitStatus make_changed(Node_List* old_pack, Node_List* new_pack) {
       return SplitStatus(old_pack, new_pack, true);
+    }
+
+    static SplitStatus make_reject() {
+      return SplitStatus(nullptr, nullptr, true);
     }
 
     bool is_changed() const { return _changed; }
