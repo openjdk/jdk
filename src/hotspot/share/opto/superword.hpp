@@ -365,7 +365,7 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(Node* n)           const { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
@@ -534,10 +534,12 @@ private:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
 
-  // TODO desc
-  void split_packs_to_match_use_and_def_packs();
-  // TODO desc: also takes care of power of 2
+  // Split packs at boundaries where left and right have different use or def packs.
+  void split_packs_at_use_def_boundaries();
+  // Split packs that are only implemented with a smaller pack size. Also splits packs
+  // such that they eventually have power of 2 size.
   void split_packs_only_implemented_with_smaller_size();
+  // Split packs that have mutual dependence, until all packs are mutually_independent.
   void split_packs_to_break_mutual_dependence();
 
   // Filter out packs with various filter predicates
@@ -582,9 +584,9 @@ private:
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
 
-  // Find a boundary in the pack, i.e. a boundary where left and right of it the use/def
-  // packs are different. This is a natural boundary to split a pack, to ensure that use
-  // and def packs match. If no boundary is found, return zero.
+  // Check if n_super's pack uses are a superset of n_sub's pack uses.
+  bool has_use_pack_superset(const Node* n1, const Node* n2) const;
+  // Find a boundary in the pack, where left and right have different pack uses and defs.
   uint find_use_def_boundary(const Node_List* pack) const;
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);

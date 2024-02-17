@@ -1655,16 +1655,19 @@ void SuperWord::split_packs(const char* split_name,
 #endif
 }
 
+// Split packs at boundaries where left and right have different use or def packs.
 void SuperWord::split_packs_at_use_def_boundaries() {
   split_packs("SuperWord::split_packs_at_use_def_boundaries",
                [&](const Node_List* pack) {
                  uint pack_size = pack->size();
                  uint boundary = find_use_def_boundary(pack);
                  assert(boundary < pack_size, "valid boundary %d", boundary);
-                 return SplitTask(boundary, "found a use/def boundary");
+                 return SplitTask(pack_size - boundary, "found a use/def boundary");
                });
 }
 
+// Split packs that are only implemented with a smaller pack size. Also splits packs
+// such that they eventually have power of 2 size.
 void SuperWord::split_packs_only_implemented_with_smaller_size() {
   split_packs("SuperWord::split_packs_only_implemented_with_smaller_size",
                [&](const Node_List* pack) {
@@ -1676,6 +1679,7 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                });
 }
 
+// Split packs that have mutual dependence, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
   split_packs("SuperWord::split_packs_to_break_mutual_dependence",
                [&](const Node_List* pack) {
@@ -3031,7 +3035,76 @@ void SuperWord::verify_no_extract() {
 }
 #endif
 
+// Check if n_super's pack uses are a superset of n_sub's pack uses.
+bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
+  // For all uses of n_sub that are in a pack (use_sub) ...
+  for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
+    Node* use_sub = n_sub->fast_out(j);
+    Node_List* pack_use_sub = my_pack(use_sub);
+    if (pack_use_sub == nullptr) { continue; }
+
+    // ... and all input edges: use_sub->in(i) == n_sub.
+    uint start, end;
+    VectorNode::vector_operands(use_sub, &start, &end);
+    for (uint i = start; i < end; i++) {
+      if (use_sub->in(i) != n_sub) { continue; }
+
+      // Check if n_super has any use use_super in the same pack ...
+      bool found = false;
+      for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
+        Node* use_super = n_super->fast_out(k);
+        Node_List* pack_use_super = my_pack(use_super);
+        if (pack_use_sub != pack_use_super) { continue; }
+
+        // ... and where there is an edge use_super->in(i) == n_super
+        Node* def_sub = use_super->in(i);
+        if (def_sub != n_super) { continue; }
+
+        found = true;
+        break;
+      }
+      if (!found) {
+        // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
+        // but n_super does not have any edge (use_super->in(i) == n_super) with
+        // use_super in the same packset. Hence, n_super does not have a use pack
+        // superset of n_sub.
+        return false;
+      }
+    }
+  }
+  // n_super has all edges that n_sub has.
+  return true;
+}
+
+// Find a boundary in the pack, where left and right have different pack uses and defs.
+// This is a natural boundary to split a pack, to ensure that use and def packs match.
+// If no boundary is found, return zero.
 uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
+  Node* p0 = pack->at(0);
+
+  // Inputs range
+  uint start, end;
+  VectorNode::vector_operands(p0, &start, &end);
+
+  for (int i = pack->size() - 2; i >= 0; i--) {
+    // For all neighbours
+    Node* n0 = pack->at(i + 0);
+    Node* n1 = pack->at(i + 1);
+
+    // 1. Check for matching defs
+    for (uint j = start; j < end; j++) {
+      if (my_pack(n0->in(j)) != my_pack(n1->in(j))) {
+        return i + 1;
+      }
+    }
+
+    // 2. Check for matching uses: equal if both are superset of the other
+    if (!has_use_pack_superset(n0, n1) ||
+        !has_use_pack_superset(n1, n0)) {
+      return i + 1;
+    }
+  }
+
   return 0;
 }
 
