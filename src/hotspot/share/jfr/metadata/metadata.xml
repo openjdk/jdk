@@ -684,7 +684,7 @@
     <Field type="int" name="iterations" label="Iterations" description="Number of state check iterations" />
   </Event>
 
-  <Event name="TimeToSafepoint" category="Java Virtual Machine, Runtime, Safepoint" label="Time To Safepoint " description="Time to safepoint" startTime="true" thread="true" >
+  <Event name="TimeToSafepoint" category="Java Virtual Machine, Runtime, Safepoint" label="Time To Safepoint" description="Time to safepoint" startTime="true" thread="true" >
     <Field type="ulong" name="safepointId" label="Safepoint Identifier" relation="SafepointId" />
     <Field type="Thread" name="thread" label="Thread" />
     <Field type="StackTrace" name="stackTrace" label="Stack Trace" />
