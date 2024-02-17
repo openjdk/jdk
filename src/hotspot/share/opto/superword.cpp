@@ -528,8 +528,6 @@ bool SuperWord::SLP_extract() {
   split_packs_to_break_mutual_dependence();
   split_packs_at_use_def_boundaries();  // again: propagate split of other packs
 
-  // TODO idea: maybe assert instead of filter below?
-
   // Now we only remove packs:
   filter_packs_for_power_of_2_size();
   filter_packs_for_mutual_independence();
@@ -1547,6 +1545,15 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   uint new_size = split_size;
   uint old_size = pack_size - new_size;
 
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
+    tty->cr();
+    tty->print_cr("INFO: splitting pack (sizes: %d %d): %s:",
+                  old_size, new_size, task.message());
+    print_pack(pack);
+  }
+#endif
+
   // Are both sizes too small to be a pack?
   if (old_size < 2 && new_size < 2) {
     assert(old_size == 1 && new_size == 1, "implied");
@@ -1608,8 +1615,6 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   for (uint i = 0; i < new_size; i++) {
     pack->pop();
   }
-
-  // TODO trace split
 
   return SplitStatus::make_changed(pack, new_pack);
 }
