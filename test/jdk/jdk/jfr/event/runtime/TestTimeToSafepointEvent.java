@@ -22,8 +22,9 @@
  */
 package jdk.jfr.event.runtime;
 
-import static jdk.test.lib.Asserts.assertTrue;
 import static jdk.test.lib.Asserts.assertEquals;
+import static jdk.test.lib.Asserts.assertNull;
+import static jdk.test.lib.Asserts.assertTrue;
 
 import java.util.List;
 import java.time.Duration;
@@ -52,11 +53,6 @@ public class TestTimeToSafepointEvent {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EventNames.TimeToSafepoint)
-                 .withThreshold(Duration.ofMillis(200));
-        recording.start();
-
         Thread thread = new Thread(() -> {
             while (true) {
                 WB.waitUnsafe(999);
@@ -65,23 +61,66 @@ public class TestTimeToSafepointEvent {
         thread.setDaemon(true);
         thread.start();
 
-        Thread.sleep(1000);
+        {
+            Recording recording = new Recording();
+            recording.enable(EventNames.TimeToSafepoint)
+                     .withThreshold(Duration.ofMillis(200))
+                     .withStackTrace();
 
-        for (int i = 0; i < 8; i++) {
-            WB.forceSafepoint();
+            recording.start();
+            forceSafepoints();
+            recording.stop();
+
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertTrue(events.size() > 0);
+            for (RecordedEvent event : events) {
+                System.out.println("Event: " + event);
+                assertTrue(Events.isEventType(event, EventNames.TimeToSafepoint));
+                assertEquals(event.getThread().getOSName(), "VM Thread");
+                Events.assertEventThread(event, "thread", thread);
+                Events.assertTopFrame(event, WhiteBox.class.getName(), "waitUnsafe");
+            }
         }
 
-        recording.stop();
+        // Test without stack trace
+        {
+            Recording recording = new Recording();
+            recording.enable(EventNames.TimeToSafepoint)
+                     .withThreshold(Duration.ofMillis(200))
+                     .withoutStackTrace();
 
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        assertTrue(events.size() > 0);
-        for (RecordedEvent event : events) {
-            System.out.println("Event: " + event);
+            recording.start();
+            forceSafepoints();
+            recording.stop();
 
-            assertTrue(Events.isEventType(event, EventNames.TimeToSafepoint));
-            assertEquals(event.getThread().getOSName(), "VM Thread");
-            Events.assertEventThread(event, "thread", thread);
-            Events.assertTopFrame(event, WhiteBox.class.getName(), "waitUnsafe");
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertTrue(events.size() > 0);
+            for (RecordedEvent event : events) {
+                System.out.println("Event: " + event);
+                assertNull(event.getStackTrace());
+            }
+        }
+
+        // Test with high threshold
+        {
+            Recording recording = new Recording();
+            recording.enable(EventNames.TimeToSafepoint)
+                     .withThreshold(Duration.ofSeconds(5))
+                     .withoutStackTrace();
+
+            recording.start();
+            forceSafepoints();
+            recording.stop();
+
+            List<RecordedEvent> events = Events.fromRecording(recording);
+            assertTrue(events.size() == 0);
+        }
+    }
+
+    private static void forceSafepoints() throws Exception {
+        for (int i = 0; i < 4; i++) {
+            Thread.sleep(50);
+            WB.forceSafepoint();
         }
     }
 }

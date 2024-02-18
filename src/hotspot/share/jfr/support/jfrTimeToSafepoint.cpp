@@ -61,41 +61,39 @@ void JfrTimeToSafepoint::emit_events() {
   assert(Thread::current()->is_VM_thread(), "invariant");
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
 
-  if (_events == nullptr) {
+  if (_events == nullptr || _events->length() == 0) {
     return;
   }
 
+  JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
+  assert(!tl->has_cached_stack_trace(), "invariant");
+
   for (int i = 0; i < _events->length(); i++) {
     Entry& entry = _events->at(i);
-    EventTimeToSafepoint event(UNTIMED);
 
+    EventTimeToSafepoint event(UNTIMED);
     event.set_starttime(entry.start);
     event.set_endtime(entry.end);
 
-    if (event.should_commit()) {
-      event.set_safepointId(SafepointSynchronize::safepoint_id());
-      event.set_iterations(entry.iterations);
+    event.set_safepointId(SafepointSynchronize::safepoint_id());
+    event.set_iterations(entry.iterations);
 
-      JavaThread* jt = entry.thread;
-      event.set_thread(JfrThreadLocal::thread_id(jt));
+    JavaThread* jt = entry.thread;
+    event.set_thread(JfrThreadLocal::thread_id(jt));
 
-      JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
-      assert(!tl->has_cached_stack_trace(), "invariant");
-
-      if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
-        JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
-        if (stacktrace.record(jt, jt->last_frame(), 0, -1)) {
-          tl->set_cached_stack_trace_id(JfrStackTraceRepository::add(stacktrace));
-        } else {
-          tl->set_cached_stack_trace_id(0);
-        }
+    if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
+      JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
+      if (stacktrace.record(jt, jt->last_frame(), 0, -1)) {
+        tl->set_cached_stack_trace_id(JfrStackTraceRepository::add(stacktrace));
       } else {
         tl->set_cached_stack_trace_id(0);
       }
-      event.commit();
-
-      tl->clear_cached_stack_trace();
+    } else {
+      tl->set_cached_stack_trace_id(0);
     }
+    event.commit();
   }
+
+  tl->clear_cached_stack_trace();
   _events->clear();
 }
