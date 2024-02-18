@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,13 +101,6 @@
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(Generation,                  _reserved,                                     MemRegion)                             \
-  nonstatic_field(Generation,                  _virtual_space,                                VirtualSpace)                          \
-  nonstatic_field(Generation,                  _stat_record,                                  Generation::StatRecord)                \
-                                                                                                                                     \
-  nonstatic_field(Generation::StatRecord,      invocations,                                   int)                                   \
-  nonstatic_field(Generation::StatRecord,      accumulated_time,                              elapsedTimer)                          \
-                                                                                                                                     \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
   nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
                                                                                                                                      \
@@ -142,7 +135,6 @@
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-  declare_toplevel_type(Generation)                                       \
   declare_toplevel_type(Space)                                            \
            declare_type(ContiguousSpace,             Space)               \
   declare_toplevel_type(BarrierSet)                                       \
@@ -155,7 +147,6 @@
                                                                           \
   declare_toplevel_type(AgeTable)                                         \
   declare_toplevel_type(CardTable::CardValue)                             \
-  declare_toplevel_type(Generation::StatRecord)                           \
   declare_toplevel_type(HeapWord)                                         \
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
@@ -212,15 +203,6 @@
   declare_constant(CollectedHeap::Serial)                                   \
   declare_constant(CollectedHeap::Parallel)                                 \
   declare_constant(CollectedHeap::G1)                                       \
-                                                                            \
-  /* constants from Generation::Name enum */                                \
-                                                                            \
-  declare_constant(Generation::DefNew)                                      \
-  declare_constant(Generation::MarkSweepCompact)                            \
-  declare_constant(Generation::Other)                                       \
-                                                                            \
-  declare_constant(Generation::LogOfGenGrain)                               \
-  declare_constant(Generation::GenGrain)                                    \
 
 #define VM_LONG_CONSTANTS_GC(declare_constant)                              \
   ZGC_ONLY(VM_LONG_CONSTANTS_Z_SHARED(declare_constant))

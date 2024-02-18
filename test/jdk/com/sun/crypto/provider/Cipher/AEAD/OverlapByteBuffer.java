@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,18 @@
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.ByteBuffer;
+import java.security.spec.AlgorithmParameterSpec;
 
 /*
  * @test
  * @summary This tests overlapping buffers using ByteBuffer.slice() with
  *  array-backed ByteBuffer, read only array-backed, ByteBuffer, and direct
  *  ByteBuffer.
+ * @run main OverlapByteBuffer AES/GCM/NoPadding
+ * @run main OverlapByteBuffer ChaCha20-Poly1305
  */
 
 /*
@@ -45,19 +49,38 @@ import java.nio.ByteBuffer;
 
 public class OverlapByteBuffer {
 
-    public static void main(String[] args) throws Exception {
-        byte[] baseBuf = new byte[8192];
-        ByteBuffer output, input, in;
-        // Output offset from the baseBuf
-        int outOfs;
+    byte[] baseBuf = new byte[8192];
+    ByteBuffer output, input, in;
+    int outOfs;
+    String algorithm;
+    SecretKeySpec key;
+    AlgorithmParameterSpec params;
 
+    public static void main(String[] args) throws Exception {
+        new OverlapByteBuffer(args[0]).test();
+    }
+
+    OverlapByteBuffer(String algorithm) throws Exception {
+        this.algorithm = algorithm;
+        switch (algorithm) {
+            case "AES/GCM/NoPadding" -> {
+                params = new GCMParameterSpec(128, new byte[12]);
+                key = new SecretKeySpec(new byte[16], "AES");
+            }
+            case "ChaCha20-Poly1305" -> {
+                params = new IvParameterSpec(new byte[12]);
+                key = new SecretKeySpec(new byte[32], "");
+            }
+            default -> throw new Exception("unknown algorithm: " + algorithm);
+        }
+    }
+
+    void test() throws Exception {
+        // Output offset from the baseBuf
         for (int i = 0; i < 3; i++) {
             for (outOfs = -1; outOfs <= 1; outOfs++) {
 
-                SecretKeySpec key = new SecretKeySpec(new byte[16], "AES");
-                GCMParameterSpec params =
-                    new GCMParameterSpec(128, new byte[12]);
-                Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+                Cipher cipher = Cipher.getInstance(algorithm);
                 cipher.init(Cipher.ENCRYPT_MODE, key, params);
 
                 // Offset on the particular ByteBuffer (aka position())
@@ -84,7 +107,8 @@ public class OverlapByteBuffer {
                         input = ByteBuffer.wrap(buffer, inOfsInBuf, sliceLen).
                             slice();
 
-                        System.out.println("Using read-only array-backed " + "ByteBuffer");
+                        System.out.println("Using read-only array-backed " +
+                            "ByteBuffer");
                         in = input.asReadOnlyBuffer();
                     }
                     case 2 -> {
@@ -102,9 +126,7 @@ public class OverlapByteBuffer {
 
                         in = input.duplicate();
                     }
-                    default -> {
-                        throw new Exception("Unknown index " + i);
-                    }
+                    default -> throw new Exception("Unknown index " + i);
                 }
 
                 System.out.println("inOfsInBuf  = " + inOfsInBuf);

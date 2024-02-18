@@ -51,7 +51,7 @@ public sealed interface Signature {
      * @return Java type signature
      */
     public static Signature parseFrom(String javaTypeSignature) {
-        return new SignaturesImpl().parseSignature(requireNonNull(javaTypeSignature));
+        return new SignaturesImpl(javaTypeSignature).parseSignature();
     }
 
     /**

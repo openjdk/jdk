@@ -41,6 +41,7 @@
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
 #include "opto/subtypenode.hpp"
+#include "opto/superword.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/macros.hpp"
 
@@ -287,7 +288,11 @@ bool PhaseIdealLoop::cannot_split_division(const Node* n, const Node* region) co
       return false;
   }
 
-  assert(n->in(0) == nullptr, "divisions with zero check should already have bailed out earlier in split-if");
+  if (n->in(0) != nullptr) {
+    // Cannot split through phi if Div or Mod node has a control dependency to a zero check.
+    return true;
+  }
+
   Node* divisor = n->in(2);
   return is_divisor_counted_loop_phi(divisor, region) &&
          loop_phi_backedge_type_contains_zero(divisor, zero);
@@ -4203,6 +4208,36 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   C->set_major_progress();
 
   return true;
+}
+
+// AutoVectorize the loop: replace scalar ops with vector ops.
+PhaseIdealLoop::AutoVectorizeStatus
+PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
+  // Counted loop only
+  if (!lpt->is_counted()) {
+    return AutoVectorizeStatus::Impossible;
+  }
+
+  // Main-loop only
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  if (!cl->is_main_loop()) {
+    return AutoVectorizeStatus::Impossible;
+  }
+
+  VLoop vloop(lpt, false);
+  if (!vloop.check_preconditions()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  // Ensure the shared data is cleared before each use
+  vshared.clear();
+
+  SuperWord sw(vloop, vshared);
+  if (!sw.transform_loop()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  return AutoVectorizeStatus::Success;
 }
 
 // Having ReductionNodes in the loop is expensive. They need to recursively

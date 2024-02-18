@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@ JNIEXPORT void JNICALL doRedefineInNativeThread(jvmtiEnv * jvmti,
   testClass = jni->FindClass(MAIN_CLASS);
 
   if (!NSK_JNI_VERIFY(jni, (
-    setRedefinitionFailed = jni->GetStaticMethodID(testClass, "setRedefinitionFailed", "()V")) != NULL))
+    setRedefinitionFailed = jni->GetStaticMethodID(testClass, "setRedefinitionFailed", "()V")) != nullptr))
   {
     jni->FatalError("TEST FAILED: while getting setRedefinitionFailed()\n");
   }
 
   if (!NSK_JNI_VERIFY(jni, (
-    setRedefinitionDone = jni->GetStaticMethodID(testClass, "setRedefinitionDone", "()V")) != NULL))
+    setRedefinitionDone = jni->GetStaticMethodID(testClass, "setRedefinitionDone", "()V")) != nullptr))
   {
     jni->FatalError("TEST FAILED: while getting setRedefinitionDone()\n");
   }
@@ -142,14 +142,14 @@ Java_nsk_jvmti_scenarios_hotswap_HS103_hs103t002_hs103t002_startAgentThread(JNIE
   name = jni->NewStringUTF(threadName);
   clas = jni->FindClass("java/lang/Thread");
 
-  if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(clas, "<init>", "(Ljava/lang/String;)V")) != NULL)) {
+  if (!NSK_JNI_VERIFY(jni, (method = jni->GetMethodID(clas, "<init>", "(Ljava/lang/String;)V")) != nullptr)) {
     jni->FatalError("failed to get ID for the java method\n");
   }
 
   thread = (jthread) jni->NewObject(clas,method,name);
   testAgentThread = jni->NewGlobalRef(thread);
   err = JVMTI_ERROR_NONE;
-  err = jvmti->RunAgentThread(testAgentThread, &doRedefineInNativeThread, NULL,
+  err = jvmti->RunAgentThread(testAgentThread, &doRedefineInNativeThread, nullptr,
                                  JVMTI_THREAD_NORM_PRIORITY);
   if (err == JVMTI_ERROR_INVALID_PRIORITY) {
     nsk_printf(" JVMTI_ERROR_INVALID_PRIORITY ..\n");

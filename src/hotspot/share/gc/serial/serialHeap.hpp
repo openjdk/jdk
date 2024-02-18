@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,13 @@
 #define SHARE_GC_SERIAL_SERIALHEAP_HPP
 
 #include "gc/serial/defNewGeneration.hpp"
-#include "gc/serial/tenuredGeneration.hpp"
-#include "utilities/growableArray.hpp"
-
 #include "gc/serial/generation.hpp"
+#include "gc/serial/tenuredGeneration.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preGCValues.hpp"
 #include "gc/shared/softRefPolicy.hpp"
+#include "utilities/growableArray.hpp"
 
 class CardTableRS;
 class GCPolicyCounters;
@@ -91,17 +90,12 @@ private:
   // The singleton CardTable Remembered Set.
   CardTableRS* _rem_set;
 
-  SoftRefPolicy _soft_ref_policy;
-
   GCPolicyCounters* _gc_policy_counters;
 
   // Indicates that the most recent previous incremental collection failed.
   // The flag is cleared when an action is taken that might clear the
   // condition that caused that incremental collection to fail.
   bool _incremental_collection_failed;
-
-  // In support of ExplicitGCInvokesConcurrent functionality
-  unsigned int _full_collections_completed;
 
   // Collects the given generation.
   void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
@@ -158,16 +152,11 @@ public:
   MemRegion reserved_region() const { return _reserved; }
   bool is_in_reserved(const void* addr) const { return _reserved.contains(addr); }
 
-  SoftRefPolicy* soft_ref_policy() override { return &_soft_ref_policy; }
-
   // Performance Counter support
   GCPolicyCounters* counters()     { return _gc_policy_counters; }
 
   size_t capacity() const override;
   size_t used() const override;
-
-  // Save the "used_region" for both generations.
-  void save_used_regions();
 
   size_t max_capacity() const override;
 
@@ -234,22 +223,10 @@ public:
                               size_t requested_size,
                               size_t* actual_size) override;
 
-  // Total number of full collections completed.
-  unsigned int total_full_collections_completed() {
-    assert(_full_collections_completed <= _total_full_collections,
-           "Can't complete more collections than were started");
-    return _full_collections_completed;
-  }
-
-  // Update above counter, as appropriate, at the end of a stop-world GC cycle
-  unsigned int update_full_collections_completed();
-
   // Update the gc statistics for each generation.
   void update_gc_stats(Generation* current_generation, bool full) {
     _old_gen->update_gc_stats(current_generation, full);
   }
-
-  bool no_gc_in_progress() { return !is_gc_active(); }
 
   void prepare_for_verify() override;
   void verify(VerifyOption option) override;
@@ -380,13 +357,11 @@ public:
   GrowableArray<MemoryPool*> memory_pools() override;
 
   DefNewGeneration* young_gen() const {
-    assert(_young_gen->kind() == Generation::DefNew, "Wrong generation type");
-    return static_cast<DefNewGeneration*>(_young_gen);
+    return _young_gen;
   }
 
   TenuredGeneration* old_gen() const {
-    assert(_old_gen->kind() == Generation::MarkSweepCompact, "Wrong generation type");
-    return static_cast<TenuredGeneration*>(_old_gen);
+    return _old_gen;
   }
 
   // Apply "cur->do_oop" or "older->do_oop" to all the oops in objects
@@ -396,10 +371,6 @@ public:
   template <typename OopClosureType1, typename OopClosureType2>
   void oop_since_save_marks_iterate(OopClosureType1* cur,
                                     OopClosureType2* older);
-
-  void young_process_roots(OopClosure* root_closure,
-                           OopIterateClosure* old_gen_closure,
-                           CLDClosure* cld_closure);
 
   void safepoint_synchronize_begin() override;
   void safepoint_synchronize_end() override;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6801704
+ * @bug 6285888 6801704
  * @summary Test the expected behavior for a wide range of patterns (both
  *          correct and incorrect). This test documents the behavior of incorrect
  *          ChoiceFormat patterns either throwing an exception, or discarding
@@ -101,10 +101,13 @@ public class PatternsTest {
                 arguments("0#foo|#|1#bar", ERR1), // Missing Relation in SubPattern
                 arguments("#|", ERR1), // Missing Limit
                 arguments("##|", ERR1), // Double Relations
-                arguments("0#foo1#", ERR1), // SubPattern not separated by '|'
-                arguments("0#foo#", ERR1), // Using a Relation in a format
                 arguments("0#test|#", ERR1), // SubPattern missing Limit
                 arguments("0#foo|3#bar|1#baz", ERR2), // Non-ascending Limits
+
+                // No longer throw IAE after 6285888, as relational symbols
+                // can now be used within the Format segment.
+                // arguments("0#foo1#", ERR1), // SubPattern not separated by '|'
+                // arguments("0#foo#", ERR1), // Using a Relation in a format
         };
     }
 

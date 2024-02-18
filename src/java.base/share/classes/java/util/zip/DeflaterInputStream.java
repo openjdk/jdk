@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,7 @@ public class DeflaterInputStream extends FilterInputStream {
      * @param len maximum number of compressed bytes to read into {@code b}
      * @return the actual number of bytes read, or -1 if the end of the
      * uncompressed input stream is reached
+     * @throws NullPointerException if {@code b} is null
      * @throws IndexOutOfBoundsException  if {@code len > b.length - off}
      * @throws IOException if an I/O error occurs or if this input stream is
      * already closed

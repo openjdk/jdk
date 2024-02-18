@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Testing Signatures.
- * @bug 8321540
+ * @bug 8321540 8319463
  * @run junit SignaturesTest
  */
 import java.io.IOException;
@@ -183,7 +183,7 @@ class SignaturesTest {
     void testClassSignatureClassDesc() throws IOException {
         var observerCf = ClassFile.of().parse(Path.of(System.getProperty("test.classes"), "SignaturesTest$Observer.class"));
         var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
-        var arrayListSig = (ClassTypeSig) sig.superclassSignature(); // ArrayList
+        var arrayListSig = sig.superclassSignature(); // ArrayList
         var arrayListTypeArg = (TypeArg.Bounded) arrayListSig.typeArgs().getFirst(); // Outer<String>.Inner<Long>
         assertEquals(TypeArg.Bounded.WildcardIndicator.DEFAULT, arrayListTypeArg.wildcardIndicator());
         var innerSig = (ClassTypeSig) arrayListTypeArg.boundType();
@@ -214,7 +214,35 @@ class SignaturesTest {
         LSet<+Kind<**>;>;
         LSet<?Kind<*>;>;
         ()V
+        Ljava/util/Opt<Ljava/lang/Integer;>ional;
+        Lcom/example/Outer<Ljava/lang/String;>.package/Inner<[I>;
+        LSample>;
+        LSample:Other;
+        LOuter<[JTT;>.[Inner;
+        TA:J;
+        LEmpty<>;
+        L
+        Lcom
+        Lcom/example/
+        Lcom/example/Outer<
+        Lcom/example/Outer<Ljava/
+        Lcom/example/Outer<Ljava/lang/String
+        Lcom/example/Outer<Ljava/lang/String;
+        Lcom/example/Outer<Ljava/lang/String;>
+        Lcom/example/Outer<Ljava/lang/String;>.
+        Lcom/example/Outer<Ljava/lang/String;>.Inner<[I>
         """.lines().forEach(assertThrows(Signature::parseFrom));
+    }
+
+    @Test
+    void testGoodTypeSignatures() {
+        """
+        Ljava/util/Optional<Ljava/lang/Integer;>;
+        Lcom/example/Outer<Ljava/lang/Integer;>.Inner<[I>;
+        LSample;
+        LOuter<[JTT;>.Inner;
+        LOuter.Inner;
+        """.lines().forEach(Signature::parseFrom);
     }
 
     @Test
@@ -235,6 +263,14 @@ class SignaturesTest {
         <K:LObject;>>LFoo<TK;>;
         <K:LObject;>LFoo<+>;
         ()V
+        <K:Ljava/lang/Object;>Ljava/lang/Object;TK;
+        Ljava/lang/Object;[Ljava/lang/Object;
+        [Ljava/util/Optional<[I>;
+        [I
+        <K:Ljava/lang/Object;>TK;
+        <K;Q:Ljava/lang/Object;>Ljava/lang/Object;
+        <:Ljava/lang/Object;>Ljava/lang/Object;
+        <>Ljava/lang/Object;
         """.lines().forEach(assertThrows(ClassSignature::parseFrom));
     }
 
@@ -260,6 +296,7 @@ class SignaturesTest {
         ()LSet<+Kind<**>;>;
         (LSet<?Kind<*>;>;)V
         <T::LA>()V
+        (TT;I)VI
         """.lines().forEach(assertThrows(MethodSignature::parseFrom));
     }
 

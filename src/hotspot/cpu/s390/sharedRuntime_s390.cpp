@@ -26,8 +26,8 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "gc/shared/gcLocker.hpp"
@@ -35,7 +35,6 @@
 #include "interpreter/interp_masm.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_s390.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "registerSaver_s390.hpp"
@@ -1500,17 +1499,15 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   unsigned int wrapper_FrameDone;
   unsigned int wrapper_CRegsSet;
   Label     handle_pending_exception;
-  Label     ic_miss;
 
   //---------------------------------------------------------------------
   // Unverified entry point (UEP)
   //---------------------------------------------------------------------
-  wrapper_UEPStart = __ offset();
 
   // check ic: object class <-> cached class
-  if (!method_is_static) __ nmethod_UEP(ic_miss);
-  // Fill with nops (alignment of verified entry point).
-  __ align(CodeEntryAlignment);
+  if (!method_is_static) {
+    wrapper_UEPStart = __ ic_check(CodeEntryAlignment /* end_alignment */);
+  }
 
   //---------------------------------------------------------------------
   // Verified entry point (VEP)
@@ -2026,13 +2023,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
   __ restore_return_pc();
   __ z_br(Z_R1_scratch);
 
-  //---------------------------------------------------------------------
-  // Handler for a cache miss (out-of-line)
-  //---------------------------------------------------------------------
-  __ call_ic_miss_handler(ic_miss, 0x77, 0, Z_R1_scratch);
   __ flush();
-
-
   //////////////////////////////////////////////////////////////////////
   // end of code generation
   //////////////////////////////////////////////////////////////////////
@@ -2318,9 +2309,6 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   {
     Label ic_miss;
-    const int klass_offset           = oopDesc::klass_offset_in_bytes();
-    const int holder_klass_offset    = in_bytes(CompiledICHolder::holder_klass_offset());
-    const int holder_metadata_offset = in_bytes(CompiledICHolder::holder_metadata_offset());
 
     // Out-of-line call to ic_miss handler.
     __ call_ic_miss_handler(ic_miss, 0x11, 0, Z_R1_scratch);
@@ -2329,27 +2317,11 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
     __ align(CodeEntryAlignment);
     c2i_unverified_entry = __ pc();
 
-    // Check the pointers.
-    if (!ImplicitNullChecks || MacroAssembler::needs_explicit_null_check(klass_offset)) {
-      __ z_ltgr(Z_ARG1, Z_ARG1);
-      __ z_bre(ic_miss);
-    }
-    __ verify_oop(Z_ARG1, FILE_AND_LINE);
-
-    // Check ic: object class <-> cached class
-    // Compress cached class for comparison. That's more efficient.
-    if (UseCompressedClassPointers) {
-      __ z_lg(Z_R11, holder_klass_offset, Z_method);             // Z_R11 is overwritten a few instructions down anyway.
-      __ compare_klass_ptr(Z_R11, klass_offset, Z_ARG1, false); // Cached class can't be zero.
-    } else {
-      __ z_clc(klass_offset, sizeof(void *)-1, Z_ARG1, holder_klass_offset, Z_method);
-    }
-    __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
-
+    __ ic_check(2);
+    __ z_lg(Z_method, Address(Z_inline_cache, CompiledICData::speculated_method_offset()));
     // This def MUST MATCH code in gen_c2i_adapter!
     const Register code = Z_R11;
 
-    __ z_lg(Z_method, holder_metadata_offset, Z_method);
     __ load_and_test_long(Z_R0, method_(code));
     __ z_brne(ic_miss);  // Cache miss: call runtime to handle this.
 

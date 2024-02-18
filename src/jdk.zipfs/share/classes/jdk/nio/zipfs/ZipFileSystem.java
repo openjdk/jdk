@@ -646,6 +646,8 @@ class ZipFileSystem extends FileSystem {
             }
             if (perms == null) {
                 e.posixPerms = -1;
+            } else if (e.posixPerms == -1) {
+                e.posixPerms = ZipUtils.permsToFlags(perms);
             } else {
                 e.posixPerms = ZipUtils.permsToFlags(perms) |
                         (e.posixPerms & 0xFE00); // Preserve unrelated bits
