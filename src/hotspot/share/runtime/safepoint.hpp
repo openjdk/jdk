@@ -30,7 +30,6 @@
 #include "runtime/os.hpp"
 #include "runtime/vmOperation.hpp"
 #include "utilities/ostream.hpp"
-#include "utilities/ticks.hpp"
 #include "utilities/waitBarrier.hpp"
 
 //
