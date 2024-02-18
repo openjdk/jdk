@@ -218,8 +218,13 @@ static void back_off(int64_t start_time) {
   }
 }
 
-int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running, Ticks& ttsp_start)
+int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running)
 {
+#if INCLUDE_JFR
+  bool ttsp_event_enabled = EventTimeToSafepoint::is_enabled();
+  Ticks ttsp_start = ttsp_event_enabled ? Ticks::now() : Ticks(0);
+#endif
+
   JavaThreadIteratorWithHandle jtiwh;
 
 #ifdef ASSERT
@@ -257,10 +262,6 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
 
   int iterations = 1; // The first iteration is above.
   int64_t start_time = os::javaTimeNanos();
-
-#if INCLUDE_JFR
-  bool ttsp_event_enabled = ttsp_start.value() > 0;
-#endif
 
   do {
     // Check if this has taken too long:
@@ -372,16 +373,6 @@ void SafepointSynchronize::begin() {
   assert(Thread::current()->is_VM_thread(), "Only VM thread may execute a safepoint");
 
   EventSafepointBegin begin_event;
-
-  Ticks ttsp_start = Ticks(0);
-#if INCLUDE_JFR
-  if (EventTimeToSafepoint::is_enabled()) {
-    jlong time = begin_event.get_starttime();
-    // reuse the startime of the begin event
-    ttsp_start = time == 0 ? Ticks::now() : Ticks(time);
-  }
-#endif
-
   SafepointTracing::begin(VMThread::vm_op_type());
 
   Universe::heap()->safepoint_synchronize_begin();
@@ -419,7 +410,7 @@ void SafepointSynchronize::begin() {
   arm_safepoint();
 
   // Will spin until all threads are safe.
-  int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running, ttsp_start);
+  int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
   assert(_waiting_to_block == 0, "No thread should be running");
 
 #ifndef PRODUCT
@@ -468,11 +459,7 @@ void SafepointSynchronize::begin() {
 
   SafepointTracing::synchronized(nof_threads, initial_running, _nof_threads_hit_polling_page);
 
-#if INCLUDE_JFR
-  if (ttsp_start.value() > 0) {
-    JfrTimeToSafepoint::emit_events();
-  }
-#endif
+  JFR_ONLY(JfrTimeToSafepoint::emit_events();)
 
   // We do the safepoint cleanup first since a GC related safepoint
   // needs cleanup to be completed before running the GC op.

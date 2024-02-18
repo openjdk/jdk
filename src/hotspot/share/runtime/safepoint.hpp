@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -113,7 +113,7 @@ class SafepointSynchronize : AllStatic {
 
   // Helper methods for safepoint procedure:
   static void arm_safepoint();
-  static int synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running, Ticks& ttsp_start);
+  static int synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running);
   static void disarm_safepoint();
   static void increment_jni_active_count();
   static void decrement_waiting_to_block();
