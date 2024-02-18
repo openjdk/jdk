@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -691,3 +691,15 @@ void JfrRecorderService::evaluate_chunk_size_for_rotation() {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(JavaThread::current()));
   JfrChunkRotation::evaluate(_chunkwriter);
 }
+
+void JfrRecorderService::emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(JavaThread::current()));
+  // Take the rotation lock to exclude flush() during event emits. This is because event emit
+  // also creates a number checkpoint events. Those checkpoint events require a future typeset checkpoint
+  // event for completeness, i.e. to be generated before being flushed to a segment.
+  // The upcoming flush() or rotation() after event emit completes this typeset checkpoint
+  // and serializes all event emit checkpoint events to the same segment.
+  JfrRotationLock lock;
+  LeakProfiler::emit_events(cutoff_ticks, emit_all, skip_bfs);
+}
+

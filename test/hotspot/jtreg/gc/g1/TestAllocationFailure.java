@@ -43,17 +43,16 @@ import jdk.test.lib.process.ProcessTools;
 public class TestAllocationFailure {
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseG1GC",
-                                                                             "-Xmx32M",
-                                                                             "-Xmn16M",
-                                                                             "-XX:+G1GCAllocationFailureALot",
-                                                                             "-XX:G1GCAllocationFailureALotCount=100",
-                                                                             "-XX:G1GCAllocationFailureALotInterval=1",
-                                                                             "-XX:+UnlockDiagnosticVMOptions",
-                                                                             "-Xlog:gc",
-                                                                             GCTestWithAllocationFailure.class.getName());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava("-XX:+UseG1GC",
+                                                                    "-Xmx32M",
+                                                                    "-Xmn16M",
+                                                                    "-XX:+G1GCAllocationFailureALot",
+                                                                    "-XX:G1GCAllocationFailureALotCount=100",
+                                                                    "-XX:G1GCAllocationFailureALotInterval=1",
+                                                                    "-XX:+UnlockDiagnosticVMOptions",
+                                                                    "-Xlog:gc",
+                                                                    GCTestWithAllocationFailure.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         output.shouldContain("(Evacuation Failure:");
         output.shouldHaveExitValue(0);

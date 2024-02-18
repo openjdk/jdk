@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
 #include "gc/shared/collectedHeap.hpp"
-#include "memory/resourceArea.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
@@ -189,8 +188,6 @@ void NativeCall::set_destination_mt_safe(address dest, bool assert_lock) {
          CompiledICLocker::is_safe(addr_at(0)),
          "concurrent code patching");
 
-  ResourceMark rm;
-  int code_size = NativeInstruction::instruction_size;
   address addr_call = addr_at(0);
   bool reachable = Assembler::reachable_from_branch_at(addr_call, dest);
   assert(NativeCall::is_call_at(addr_call), "unexpected code at call site");
@@ -560,18 +557,23 @@ static bool is_movk_to_zr(uint32_t insn) {
 }
 #endif
 
-void NativePostCallNop::patch(jint diff) {
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  if (((oopmap_slot & 0xff) != oopmap_slot) || ((cb_offset & 0xffffff) != cb_offset)) {
+    return false; // cannot encode
+  }
+  uint32_t data = ((uint32_t)oopmap_slot << 24) | cb_offset;
 #ifdef ASSERT
-  assert(diff != 0, "must be");
+  assert(data != 0, "must be");
   uint32_t insn1 = uint_at(4);
   uint32_t insn2 = uint_at(8);
   assert (is_movk_to_zr(insn1) && is_movk_to_zr(insn2), "must be");
 #endif
 
-  uint32_t lo = diff & 0xffff;
-  uint32_t hi = (uint32_t)diff >> 16;
+  uint32_t lo = data & 0xffff;
+  uint32_t hi = data >> 16;
   Instruction_aarch64::patch(addr_at(4), 20, 5, lo);
   Instruction_aarch64::patch(addr_at(8), 20, 5, hi);
+  return true; // successfully encoded
 }
 
 void NativeDeoptInstruction::verify() {

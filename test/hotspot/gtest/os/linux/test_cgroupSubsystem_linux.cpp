@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,12 @@
 
 
 // Utilities
-bool file_exists(const char* filename) {
+static bool file_exists(const char* filename) {
   struct stat st;
   return os::stat(filename, &st) == 0;
 }
 
-char* temp_file(const char* prefix) {
+static char* temp_file(const char* prefix) {
   const testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
   stringStream path;
   path.print_raw(os::get_temp_directory());
@@ -49,7 +49,7 @@ char* temp_file(const char* prefix) {
   return path.as_string(true);
 }
 
-void delete_file(const char* filename) {
+static void delete_file(const char* filename) {
   if (!file_exists(filename)) {
     return;
   }
@@ -66,7 +66,7 @@ public:
   };
 };
 
-void fill_file(const char* path, const char* content) {
+static void fill_file(const char* path, const char* content) {
   delete_file(path);
   FILE* fp = os::fopen(path, "w");
   if (fp == nullptr) {
