@@ -98,11 +98,10 @@ bool JfrStackTraceRepository::is_modified() const {
 }
 
 size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
+  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
   if (_entries == 0) {
     return 0;
   }
-  MutexLocker lock(JfrStacktrace_lock, Mutex::_no_safepoint_check_flag);
-  assert(_entries > 0, "invariant");
   int count = 0;
   for (u4 i = 0; i < TABLE_SIZE; ++i) {
     JfrStackTrace* stacktrace = _table[i];
@@ -121,8 +120,8 @@ size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
   if (clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
+    _last_entries = 0;
   }
-  _last_entries = _entries;
   return count;
 }
 
