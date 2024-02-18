@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,27 +24,12 @@
 /*
  * @test
  * @bug 8180892 8284333 8292275
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
+ * @enablePreview
  * @compile -parameters ParameterMappingTest.java
  * @run junit ParameterMappingTest
  * @summary Core reflection should handle parameters correctly with or without certain attributes
  */
 
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.MethodParametersAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.components.ClassRemapper;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +39,17 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.attribute.InnerClassInfo;
+import java.lang.classfile.attribute.InnerClassesAttribute;
+import java.lang.classfile.attribute.MethodParametersAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.components.ClassRemapper;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.AnnotatedArrayType;
@@ -68,7 +64,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -239,6 +235,7 @@ public class ParameterMappingTest {
     private static final Map<String, Class<?>> defined = new ConcurrentHashMap<>(6 * 4);
 
     private static Class<?> load(String name, boolean dropParams, boolean dropSigs) {
+        ClassFile cf = ClassFile.of();
         String cn = name + (dropParams ? "$DropParams" : "") + (dropSigs ? "$DropSigs" : "");
         Class<?> cr;
         if ((cr = defined.get(cn)) != null)
@@ -247,21 +244,21 @@ public class ParameterMappingTest {
         ClassModel cm;
         try (var in = ParameterMappingTest.class.getResourceAsStream("/" + name + ".class")) {
             Objects.requireNonNull(in);
-            cm = Classfile.parse(in.readAllBytes());
+            cm = cf.parse(in.readAllBytes());
         } catch (IOException ex) {
             throw new UncheckedIOException(ex);
         }
 
-        var pipedBytes = ClassRemapper.of(Map.of(cm.thisClass().asSymbol(), ClassDesc.of(cn))).remapClass(cm);
-        if (dropParams) pipedBytes = Classfile.parse(pipedBytes)
-                .transform(ClassTransform.transformingMethods(MethodTransform.dropping(me
+        var pipedBytes = ClassRemapper.of(Map.of(cm.thisClass().asSymbol(), ClassDesc.of(cn))).remapClass(cf, cm);
+        if (dropParams) pipedBytes = cf.transform(cf.parse(pipedBytes),
+                ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof MethodParametersAttribute)));
-        if (dropSigs) pipedBytes = Classfile.parse(pipedBytes)
-                .transform(ClassTransform.transformingMethods(MethodTransform.dropping(me
+        if (dropSigs) pipedBytes = cf.transform(cf.parse(pipedBytes),
+                ClassTransform.transformingMethods(MethodTransform.dropping(me
                 -> me instanceof SignatureAttribute)));
         if (!dropParams && !dropSigs) {
             // insert InnerClasses to prevent reflection glitches
-            cm = parse(pipedBytes);
+            cm = cf.parse(pipedBytes);
             var cp = ConstantPoolBuilder.of(cm);
             var innerClassOpt = cm.findAttribute(Attributes.INNER_CLASSES);
             if (innerClassOpt.isPresent()) {
@@ -276,7 +273,7 @@ public class ParameterMappingTest {
                     }
                 }
                 final var currentModel = cm;
-                pipedBytes = Classfile.build(cm.thisClass(), cp, cb -> {
+                pipedBytes = cf.build(cm.thisClass(), cp, cb -> {
                     for (var e : currentModel.elements()) {
                         if (!(e instanceof InnerClassesAttribute)) {
                             cb.with(e);

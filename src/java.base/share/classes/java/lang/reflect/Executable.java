@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -328,7 +328,7 @@ public abstract sealed class Executable extends AccessibleObject
         if (hasGenericInformation()) {
             var genericParameterTypes = getGenericInfo().getParameterTypes();
             if (genericParameterTypes.length == matchedParameterCount()) {
-                return matchParameters(genericParameterTypes, e -> e, false);
+                return matchParameters(genericParameterTypes, Function.identity());
             }
         }
 
@@ -451,15 +451,14 @@ public abstract sealed class Executable extends AccessibleObject
      * @param <T> the type of information
      * @param explicit information from explicit parameters
      * @param implicitMapper generates information for implicit parameters
-     * @param freshCopy if true, will copy explicit information on return to avoid leaks
      * @return information about all parameters
      */
-    <T> T[] matchParameters(final T[] explicit, Function<Class<?>, T> implicitMapper, boolean freshCopy) {
+    <T> T[] matchParameters(final T[] explicit, Function<Class<?>, ? extends T> implicitMapper) {
         final int matchedCount = matchedParameterCount();
         assert matchedCount == explicit.length;
         if (matchedCount == getParameterCount()) {
             // trivial case
-            return freshCopy ? explicit.clone() : explicit;
+            return explicit;
         }
 
         // perform shifting
@@ -611,7 +610,7 @@ public abstract sealed class Executable extends AccessibleObject
         Annotation[][] result = parseParameterAnnotations(parameterAnnotations);
 
         if (result.length == matchedParameterCount()) {
-            return matchParameters(result, e -> AnnotationParser.getEmptyAnnotationArray(), false);
+            return matchParameters(result, _ -> AnnotationParser.getEmptyAnnotationArray());
         }
 
         // Old routine, used for class files without MethodParameters attribute
@@ -805,7 +804,7 @@ public abstract sealed class Executable extends AccessibleObject
                     annotatedTypeBase,
                     TypeAnnotation.TypeAnnotationTarget.METHOD_FORMAL_PARAMETER);
 
-            return matchParameters(unmapped, AnnotatedTypeFactory::simple, false);
+            return matchParameters(unmapped, AnnotatedTypeFactory::simple);
         }
         return TypeAnnotationParser.buildAnnotatedTypesWithHeuristics(getTypeAnnotationBytes0(),
                 SharedSecrets.getJavaLangAccess().
@@ -818,7 +817,7 @@ public abstract sealed class Executable extends AccessibleObject
     }
 
     private static final Type[] INVALID_ANNOTATED_TYPE_BASE = new Type[0];
-    private transient @Stable Type[] annotatedParameterTypesBase;
+    private transient volatile @Stable Type[] annotatedParameterTypesBase;
 
     /**
      * Return an array of explicit-only parameter types that type annotations can build on.
