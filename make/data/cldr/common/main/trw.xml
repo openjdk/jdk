@@ -12,9 +12,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</identity>
 	<localeDisplayNames>
 		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
 			<localeSeparator draft="unconfirmed">{0}،{1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
 		</localeDisplayPattern>
 		<languages>
 			<language type="af" draft="unconfirmed">افریقی</language>
@@ -422,12 +420,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<layout>
 		<orientation>
 			<characterOrder>right-to-left</characterOrder>
-			<lineOrder>top-to-bottom</lineOrder>
 		</orientation>
 	</layout>
 	<characters>
 		<exemplarCharacters draft="unconfirmed">[ء ٶ آ أ ئ ا ب پ ت ث ٹ ج چ ڇ ح خ څ ݲ د ذ ڈ ر ز ڑ ژ ڙ س ش ݜ ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ی ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0656 \u0657 \u0658 \u0670 ٻ ٺ ټ ٽ ۃ ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F ً ٌ ٍ َ ُ ِ ّ ْ ٔ ٖ ٗ ٘ ٰ ٻ ٺ ټ ٽ ۃ ي]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ء ٶ آ أ ئ ا ب پ ت ث ٹ ج چ ڇ ح خ څ ݲ د ذ ڈ ر ز ڑ ژ ڙ س ش ݜ ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ی ے]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , ٫ ٬ . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[، ؍ ٫ ٬ ؛ \: ؟ . ۔ ( ) \[ \]]</exemplarCharacters>
@@ -440,19 +437,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE، d MMMM، y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM، y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM، y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -607,34 +601,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="gregorian">
 				<months>
 					<monthContext type="format">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">جنوری</month>
-							<month type="2" draft="unconfirmed">فروری</month>
-							<month type="3" draft="unconfirmed">مارچ</month>
-							<month type="4" draft="unconfirmed">اپریل</month>
-							<month type="5" draft="unconfirmed">مئ</month>
-							<month type="6" draft="unconfirmed">جون</month>
-							<month type="7" draft="unconfirmed">جولائی</month>
-							<month type="8" draft="unconfirmed">اگست</month>
-							<month type="9" draft="unconfirmed">ستمبر</month>
-							<month type="10" draft="unconfirmed">اکتوبر</month>
-							<month type="11" draft="unconfirmed">نومبر</month>
-							<month type="12" draft="unconfirmed">دسمبر</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">ج</month>
-							<month type="2" draft="unconfirmed">ف</month>
-							<month type="3" draft="unconfirmed">م</month>
-							<month type="4" draft="unconfirmed">ا</month>
-							<month type="5" draft="unconfirmed">م</month>
-							<month type="6" draft="unconfirmed">ج</month>
-							<month type="7" draft="unconfirmed">ج</month>
-							<month type="8" draft="unconfirmed">ا</month>
-							<month type="9" draft="unconfirmed">س</month>
-							<month type="10" draft="unconfirmed">ا</month>
-							<month type="11" draft="unconfirmed">ن</month>
-							<month type="12" draft="unconfirmed">د</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">جنوری</month>
 							<month type="2" draft="unconfirmed">فروری</month>
@@ -651,20 +617,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">جنوری</month>
-							<month type="2" draft="unconfirmed">فروری</month>
-							<month type="3" draft="unconfirmed">مارچ</month>
-							<month type="4" draft="unconfirmed">اپریل</month>
-							<month type="5" draft="unconfirmed">مئ</month>
-							<month type="6" draft="unconfirmed">جون</month>
-							<month type="7" draft="unconfirmed">جولائی</month>
-							<month type="8" draft="unconfirmed">اگست</month>
-							<month type="9" draft="unconfirmed">ستمبر</month>
-							<month type="10" draft="unconfirmed">اکتوبر</month>
-							<month type="11" draft="unconfirmed">نومبر</month>
-							<month type="12" draft="unconfirmed">دسمبر</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">ج</month>
 							<month type="2" draft="unconfirmed">ف</month>
@@ -679,51 +631,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">ن</month>
 							<month type="12" draft="unconfirmed">د</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">جنوری</month>
-							<month type="2" draft="unconfirmed">فروری</month>
-							<month type="3" draft="unconfirmed">مارچ</month>
-							<month type="4" draft="unconfirmed">اپریل</month>
-							<month type="5" draft="unconfirmed">مئ</month>
-							<month type="6" draft="unconfirmed">جون</month>
-							<month type="7" draft="unconfirmed">جولائی</month>
-							<month type="8" draft="unconfirmed">اگست</month>
-							<month type="9" draft="unconfirmed">ستمبر</month>
-							<month type="10" draft="unconfirmed">اکتوبر</month>
-							<month type="11" draft="unconfirmed">نومبر</month>
-							<month type="12" draft="unconfirmed">دسمبر</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">ایکشیمے</day>
-							<day type="mon" draft="unconfirmed">دُوشیمے</day>
-							<day type="tue" draft="unconfirmed">گھن آنگا</day>
-							<day type="wed" draft="unconfirmed">چارشیمے</day>
-							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
-							<day type="fri" draft="unconfirmed">شُوگار</day>
-							<day type="sat" draft="unconfirmed">لَو آنگا</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">ا</day>
-							<day type="mon" draft="unconfirmed">د</day>
-							<day type="tue" draft="unconfirmed">گ</day>
-							<day type="wed" draft="unconfirmed">چ</day>
-							<day type="thu" draft="unconfirmed">پ</day>
-							<day type="fri" draft="unconfirmed">ش</day>
-							<day type="sat" draft="unconfirmed">ل</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">ایکشیمے</day>
-							<day type="mon" draft="unconfirmed">دُوشیمے</day>
-							<day type="tue" draft="unconfirmed">گھن آنگا</day>
-							<day type="wed" draft="unconfirmed">چارشیمے</day>
-							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
-							<day type="fri" draft="unconfirmed">شُوگار</day>
-							<day type="sat" draft="unconfirmed">لَو آنگا</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="unconfirmed">ایکشیمے</day>
 							<day type="mon" draft="unconfirmed">دُوشیمے</day>
@@ -735,15 +646,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">ایکشیمے</day>
-							<day type="mon" draft="unconfirmed">دُوشیمے</day>
-							<day type="tue" draft="unconfirmed">گھن آنگا</day>
-							<day type="wed" draft="unconfirmed">چارشیمے</day>
-							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
-							<day type="fri" draft="unconfirmed">شُوگار</day>
-							<day type="sat" draft="unconfirmed">لَو آنگا</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">ا</day>
 							<day type="mon" draft="unconfirmed">د</day>
@@ -752,24 +654,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">پ</day>
 							<day type="fri" draft="unconfirmed">ش</day>
 							<day type="sat" draft="unconfirmed">ل</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">ایکشیمے</day>
-							<day type="mon" draft="unconfirmed">دُوشیمے</day>
-							<day type="tue" draft="unconfirmed">گھن آنگا</day>
-							<day type="wed" draft="unconfirmed">چارشیمے</day>
-							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
-							<day type="fri" draft="unconfirmed">شُوگار</day>
-							<day type="sat" draft="unconfirmed">لَو آنگا</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">ایکشیمے</day>
-							<day type="mon" draft="unconfirmed">دُوشیمے</day>
-							<day type="tue" draft="unconfirmed">گھن آنگا</day>
-							<day type="wed" draft="unconfirmed">چارشیمے</day>
-							<day type="thu" draft="unconfirmed">پَئ شیمے</day>
-							<day type="fri" draft="unconfirmed">شُوگار</day>
-							<day type="sat" draft="unconfirmed">لَو آنگا</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -781,12 +665,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3" draft="unconfirmed">ڇوی ڇامای</quarter>
 							<quarter type="4" draft="unconfirmed">چوٹھوم ڇامای</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">اول ڇامای</quarter>
 							<quarter type="2" draft="unconfirmed">دھویم ڇامای</quarter>
@@ -795,12 +673,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">اول ڇامای</quarter>
-							<quarter type="2" draft="unconfirmed">دوھیم ڇامای</quarter>
-							<quarter type="3" draft="unconfirmed">ڇوی ڇامای</quarter>
-							<quarter type="4" draft="unconfirmed">چوٹھوم ڇامای</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">اول ڇامای</quarter>
 							<quarter type="2" draft="unconfirmed">دوھیم ڇامای</quarter>
@@ -815,30 +687,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">a</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">عیسٰیؑ ما مُش</era>
-						<era type="0" alt="variant" draft="unconfirmed">ع-م</era>
 						<era type="1" draft="unconfirmed">عیسوی</era>
 						<era type="1" alt="variant" draft="unconfirmed">عام دور</era>
 					</eraNames>
@@ -852,19 +705,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE، d MMMM، y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM، y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM، y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -922,7 +772,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="EBhm" draft="unconfirmed">E h:mm B</dateFormatItem>
 						<dateFormatItem id="Gy" draft="unconfirmed">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM" draft="unconfirmed">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">d MMM، y G</dateFormatItem>
@@ -1005,9 +854,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d" draft="unconfirmed">E، d MMM – E، d MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E، d MMM – E، d MMM</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M" draft="unconfirmed">M/y – M/y</greatestDifference>
 							<greatestDifference id="y" draft="unconfirmed">M/y – M/y</greatestDifference>
@@ -1048,37 +894,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="unconfirmed">دور</displayName>
 			</field>
-			<field type="era-short">
-				<displayName draft="unconfirmed">دور</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName draft="unconfirmed">دور</displayName>
-			</field>
 			<field type="year">
-				<displayName draft="unconfirmed">کال</displayName>
-				<relative type="-1" draft="unconfirmed">پیوک کال</relative>
-				<relative type="0" draft="unconfirmed">ایݜ</relative>
-				<relative type="1" draft="unconfirmed">کال گے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} کالا میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} کالا موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-short">
-				<displayName draft="unconfirmed">کال</displayName>
-				<relative type="-1" draft="unconfirmed">پیوک کال</relative>
-				<relative type="0" draft="unconfirmed">ایݜ</relative>
-				<relative type="1" draft="unconfirmed">کال گے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} کالا میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} کالا موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
 				<displayName draft="unconfirmed">کال</displayName>
 				<relative type="-1" draft="unconfirmed">پیوک کال</relative>
 				<relative type="0" draft="unconfirmed">ایݜ</relative>
@@ -1093,37 +909,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="quarter">
 				<displayName draft="unconfirmed">ڇا مای</displayName>
 			</field>
-			<field type="quarter-short">
-				<displayName draft="unconfirmed">ڇا مای</displayName>
-			</field>
-			<field type="quarter-narrow">
-				<displayName draft="unconfirmed">ڇا مای</displayName>
-			</field>
 			<field type="month">
-				<displayName draft="unconfirmed">ما</displayName>
-				<relative type="-1" draft="unconfirmed">مُشُم ما</relative>
-				<relative type="0" draft="unconfirmed">میں ما</relative>
-				<relative type="1" draft="unconfirmed">دُوئی ما</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ما میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} مائے موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName draft="unconfirmed">ما</displayName>
-				<relative type="-1" draft="unconfirmed">مُشُم ما</relative>
-				<relative type="0" draft="unconfirmed">میں ما</relative>
-				<relative type="1" draft="unconfirmed">دُوئی ما</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ما میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} مائے موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
 				<displayName draft="unconfirmed">ما</displayName>
 				<relative type="-1" draft="unconfirmed">مُشُم ما</relative>
 				<relative type="0" draft="unconfirmed">میں ما</relative>
@@ -1148,39 +934,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 				<relativePeriod draft="unconfirmed">{0} سی ہفتہ</relativePeriod>
 			</field>
-			<field type="week-short">
-				<displayName draft="unconfirmed">ہفتہ</displayName>
-				<relative type="-1" draft="unconfirmed">مُشُم ہفتہ</relative>
-				<relative type="0" draft="unconfirmed">میں ہفتہ</relative>
-				<relative type="1" draft="unconfirmed">دُوئی ہفتہ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتہ میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتائے موش</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod draft="unconfirmed">{0} سی ہفتہ</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName draft="unconfirmed">ہفتہ</displayName>
-				<relative type="-1" draft="unconfirmed">مُشُم ہفتہ</relative>
-				<relative type="0" draft="unconfirmed">میں ہفتہ</relative>
-				<relative type="1" draft="unconfirmed">دُوئی ہفتہ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتہ میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} ہفتائے موش</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod draft="unconfirmed">{0} سی ہفتہ</relativePeriod>
-			</field>
 			<field type="weekOfMonth">
-				<displayName draft="unconfirmed">ما سی ہفتہ</displayName>
-			</field>
-			<field type="weekOfMonth-short">
-				<displayName draft="unconfirmed">ما سی ہفتہ</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName draft="unconfirmed">ما سی ہفتہ</displayName>
 			</field>
 			<field type="day">
@@ -1195,71 +949,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">{0} دیےموش</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">دی</displayName>
-				<relative type="-1" draft="unconfirmed">بأل</relative>
-				<relative type="0" draft="unconfirmed">آش</relative>
-				<relative type="1" draft="unconfirmed">بول</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} دیا میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} دیےموش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName draft="unconfirmed">دی</displayName>
-				<relative type="-1" draft="unconfirmed">بأل</relative>
-				<relative type="0" draft="unconfirmed">آش</relative>
-				<relative type="1" draft="unconfirmed">بول</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} دیا میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} دیےموش</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayOfYear">
-				<displayName draft="unconfirmed">کال سی دی</displayName>
-			</field>
-			<field type="dayOfYear-short">
-				<displayName draft="unconfirmed">کال سی دی</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName draft="unconfirmed">کال سی دی</displayName>
 			</field>
 			<field type="weekday">
 				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
 			</field>
-			<field type="weekday-short">
-				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
-			</field>
-			<field type="weekday-narrow">
-				<displayName draft="unconfirmed">ہفتہ سی دی</displayName>
-			</field>
 			<field type="sun">
-				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی ایکشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} ایکشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} ایکشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-short">
-				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی ایکشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} ایکشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} ایکشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1" draft="unconfirmed">موشوم ایکشیمے</relative>
 				<relative type="0" draft="unconfirmed">مے ایکشیمے</relative>
 				<relative type="1" draft="unconfirmed">دوی ایکشیمے</relative>
@@ -1281,51 +977,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} دوشیمے</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-short">
-				<relative type="-1" draft="unconfirmed">موشوم دوشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے دوشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی دوشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} دوشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} دوشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1" draft="unconfirmed">موشوم دوشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے دوشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی دوشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} دوشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} دوشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
-				<relative type="-1" draft="unconfirmed">موشوم گھن آنگا</relative>
-				<relative type="0" draft="unconfirmed">مے گھن آنگا</relative>
-				<relative type="1" draft="unconfirmed">دوی گھن آنگا</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} گھن آنگا</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} گھن آنگا</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-short">
-				<relative type="-1" draft="unconfirmed">موشوم گھن آنگا</relative>
-				<relative type="0" draft="unconfirmed">مے گھن آنگا</relative>
-				<relative type="1" draft="unconfirmed">دوی گھن آنگا</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} گھن آنگا</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} گھن آنگا</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1" draft="unconfirmed">موشوم گھن آنگا</relative>
 				<relative type="0" draft="unconfirmed">مے گھن آنگا</relative>
 				<relative type="1" draft="unconfirmed">دوی گھن آنگا</relative>
@@ -1347,51 +999,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} چارشیمے</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-short">
-				<relative type="-1" draft="unconfirmed">موشوم چارشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے چارشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی چارشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} چارشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} چارشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1" draft="unconfirmed">موشوم چارشیمے</relative>
-				<relative type="0" draft="unconfirmed">مے چارشیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی چارشیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} چارشیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} چارشیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu">
-				<relative type="-1" draft="unconfirmed">موشوم پئی شیمے</relative>
-				<relative type="0" draft="unconfirmed">مے پئی شیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی پئی شیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} پئی شیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} پئی شیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-short">
-				<relative type="-1" draft="unconfirmed">موشوم پئی شیمے</relative>
-				<relative type="0" draft="unconfirmed">مے پئی شیمے</relative>
-				<relative type="1" draft="unconfirmed">دوی پئی شیمے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} پئی شیمے</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} پئی شیمے</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1" draft="unconfirmed">موشوم پئی شیمے</relative>
 				<relative type="0" draft="unconfirmed">مے پئی شیمے</relative>
 				<relative type="1" draft="unconfirmed">دوی پئی شیمے</relative>
@@ -1413,28 +1021,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} شُوگار</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relative type="-1" draft="unconfirmed">موشوم شُوگار</relative>
-				<relative type="0" draft="unconfirmed">مے شُوگار</relative>
-				<relative type="1" draft="unconfirmed">دوی شُوگار</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} شُوگار</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} شُوگار</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1" draft="unconfirmed">موشوم شُوگار</relative>
-				<relative type="0" draft="unconfirmed">مے شُوگار</relative>
-				<relative type="1" draft="unconfirmed">دوی شُوگار</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} شُوگار</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} شُوگار</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1" draft="unconfirmed">موشوم لَو آنگا</relative>
 				<relative type="0" draft="unconfirmed">مے لَو آنگا</relative>
@@ -1446,58 +1032,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-short">
-				<relative type="-1" draft="unconfirmed">موشوم لَو آنگا</relative>
-				<relative type="0" draft="unconfirmed">مے لَو آنگا</relative>
-				<relative type="1" draft="unconfirmed">دوی لَو آنگا</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} لَو آنگا</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1" draft="unconfirmed">موشوم لَو آنگا</relative>
-				<relative type="0" draft="unconfirmed">مے لَو آنگا</relative>
-				<relative type="1" draft="unconfirmed">دوی لَو آنگا</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} لَو آنگا</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} لَو آنگا</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
-			</field>
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
 			</field>
-			<field type="dayperiod-narrow">
-				<displayName draft="unconfirmed">پیشیا موش/پیشیا پأش</displayName>
-			</field>
 			<field type="hour">
-				<displayName draft="unconfirmed">گینٹہ</displayName>
-				<relative type="0" draft="unconfirmed">میں گینٹہ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹہ میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹائے موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName draft="unconfirmed">گینٹہ</displayName>
-				<relative type="0" draft="unconfirmed">میں گینٹہ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹہ میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} گینٹائے موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
 				<displayName draft="unconfirmed">گینٹہ</displayName>
 				<relative type="0" draft="unconfirmed">میں گینٹہ</relative>
 				<relativeTime type="future">
@@ -1517,19 +1055,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">-{0} میلڑے موش</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-short">
-				<displayName draft="unconfirmed">میلٹ</displayName>
-				<relative type="0" draft="unconfirmed">میں میلٹ</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} میلڑا میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} میلڑے موش</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="minute-narrow">
-				<displayName draft="unconfirmed">میلٹ</displayName>
-				<relative type="0" draft="unconfirmed">میں میلٹ</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} میلٹ میں</relativeTimePattern>
 				</relativeTime>
@@ -1548,18 +1074,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName draft="unconfirmed">سیکنڈ</displayName>
-				<relative type="0" draft="unconfirmed">مھیرے</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">+{0} سیکنڈ میں</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">-{0} سیکنڈ موش</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<displayName draft="unconfirmed">سیکنڈ</displayName>
-				<relative type="0" draft="unconfirmed">مھیرے</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">+{0} سیکنڈ میں</relativeTimePattern>
 				</relativeTime>
@@ -1568,12 +1082,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="zone">
-				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
-			</field>
-			<field type="zone-short">
-				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
-			</field>
-			<field type="zone-narrow">
 				<displayName draft="unconfirmed">منطقۂ وَخ</displayName>
 			</field>
 		</fields>
@@ -3763,158 +3271,116 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<native draft="unconfirmed">arabext</native>
 		</otherNumberingSystems>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="accounting">
-					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="AED">
 				<displayName draft="unconfirmed">متحدہ عرب اماراتی درہم</displayName>
-				<displayName count="other" draft="unconfirmed">متحدہ عرب اماراتی درہم</displayName>
 			</currency>
 			<currency type="AFN">
 				<displayName draft="unconfirmed">افغان افغانی</displayName>
-				<displayName count="other" draft="unconfirmed">افغان افغانی</displayName>
 			</currency>
 			<currency type="ALL">
 				<displayName draft="unconfirmed">البانیا سی لیک</displayName>
-				<displayName count="other" draft="unconfirmed">البانیا سی لیک</displayName>
 			</currency>
 			<currency type="AMD">
 				<displayName draft="unconfirmed">آرمینیائی ڈرم</displayName>
-				<displayName count="other" draft="unconfirmed">آرمینیائی ڈرم</displayName>
 			</currency>
 			<currency type="ANG">
 				<displayName draft="unconfirmed">نیدر لینڈز انٹیلیئن گلڈر</displayName>
-				<displayName count="other" draft="unconfirmed">نیدر لینڈز انٹیلیئن گلڈر</displayName>
 			</currency>
 			<currency type="AOA">
 				<displayName draft="unconfirmed">انگولا سی کوانزا</displayName>
-				<displayName count="other" draft="unconfirmed">انگولا سی کوانزا</displayName>
 			</currency>
 			<currency type="ARS">
 				<displayName draft="unconfirmed">ارجنٹائن پیسہ</displayName>
-				<displayName count="other" draft="unconfirmed">ارجنٹائن پیسہ</displayName>
 			</currency>
 			<currency type="AUD">
 				<displayName draft="unconfirmed">آسٹریلین ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">آسٹریلین ڈالر</displayName>
 			</currency>
 			<currency type="AWG">
 				<displayName draft="unconfirmed">اروبن فلورِن</displayName>
-				<displayName count="other" draft="unconfirmed">اروبن فلورِن</displayName>
 			</currency>
 			<currency type="AZN">
 				<displayName draft="unconfirmed">آذربائجانی منات</displayName>
-				<displayName count="other" draft="unconfirmed">آذربائجانی منات</displayName>
 			</currency>
 			<currency type="BAM">
 				<displayName draft="unconfirmed">بوسنیا ہرزیگووینا کا قابل منتقلی نشان</displayName>
-				<displayName count="other" draft="unconfirmed">بوسنیا ہرزیگووینا کا قابل منتقلی نشان</displayName>
 			</currency>
 			<currency type="BBD">
 				<displayName draft="unconfirmed">باربیڈین ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">باربیڈین ڈالر</displayName>
 			</currency>
 			<currency type="BDT">
 				<displayName draft="unconfirmed">بنگلہ دیشی ٹکا</displayName>
-				<displayName count="other" draft="unconfirmed">بنگلہ دیشی ٹکا</displayName>
 			</currency>
 			<currency type="BGN">
 				<displayName draft="unconfirmed">بلغارین لیو</displayName>
-				<displayName count="other" draft="unconfirmed">بلغارین لیو</displayName>
 			</currency>
 			<currency type="BHD">
 				<displayName draft="unconfirmed">بحرینی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">بحرینی دینار</displayName>
 			</currency>
 			<currency type="BIF">
 				<displayName draft="unconfirmed">برونڈیئن فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">برونڈیئن فرانک</displayName>
 			</currency>
 			<currency type="BMD">
 				<displayName draft="unconfirmed">برموڈا ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">برموڈا ڈالر</displayName>
 			</currency>
 			<currency type="BND">
 				<displayName draft="unconfirmed">برونئی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">برونئی ڈالر</displayName>
 			</currency>
 			<currency type="BOB">
 				<displayName draft="unconfirmed">بولیوین بولیویانو</displayName>
-				<displayName count="other" draft="unconfirmed">بولیوین بولیویانو</displayName>
 			</currency>
 			<currency type="BRL">
 				<displayName draft="unconfirmed">برازیلی ریئل</displayName>
-				<displayName count="other" draft="unconfirmed">برازیلی ریئل</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName draft="unconfirmed">بہامانی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">بہامانی ڈالر</displayName>
 			</currency>
 			<currency type="BTN">
 				<displayName draft="unconfirmed">بھوٹانی گُلٹرم</displayName>
-				<displayName count="other" draft="unconfirmed">بھوٹانی گُلٹرم</displayName>
 			</currency>
 			<currency type="BWP">
 				<displayName draft="unconfirmed">بوتسوانا سی پولا</displayName>
-				<displayName count="other" draft="unconfirmed">بوتسوانا سی پولا</displayName>
 			</currency>
 			<currency type="BYN">
 				<displayName draft="unconfirmed">بیلاروسی روبل</displayName>
-				<displayName count="other" draft="unconfirmed">بیلاروسی روبل</displayName>
-				<symbol alt="narrow" draft="unconfirmed">BYN</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName draft="unconfirmed">بیلیز ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">بیلیز ڈالر</displayName>
 			</currency>
 			<currency type="CAD">
 				<displayName draft="unconfirmed">کنیڈین ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">کنیڈین ڈالر</displayName>
-				<symbol draft="unconfirmed">CA$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName draft="unconfirmed">کانگولیز فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">کانگولیز فرانک</displayName>
 			</currency>
 			<currency type="CHF">
 				<displayName draft="unconfirmed">سوئس فرانکس</displayName>
-				<displayName count="other" draft="unconfirmed">سوئس فرانکس</displayName>
 			</currency>
 			<currency type="CLP">
 				<displayName draft="unconfirmed">چلّین پیسہ</displayName>
-				<displayName count="other" draft="unconfirmed">چلّین پیسہ</displayName>
 			</currency>
 			<currency type="CNH">
 				<displayName draft="unconfirmed">چینی یوآن (آف شور)</displayName>
-				<displayName count="other" draft="unconfirmed">چینی یوآن (آف شور)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName draft="unconfirmed">چینی یوآن</displayName>
-				<displayName count="other" draft="unconfirmed">چینی یوآن</displayName>
 			</currency>
 			<currency type="COP">
 				<displayName draft="unconfirmed">کولمبین پیسہ</displayName>
-				<displayName count="other" draft="unconfirmed">کولمبین پیسہ</displayName>
 			</currency>
 			<currency type="CRC">
 				<displayName draft="unconfirmed">کوسٹا ریکا کا کولن</displayName>
-				<displayName count="other" draft="unconfirmed">کوسٹا ریکا کا کولن</displayName>
 			</currency>
 			<currency type="CUC">
 				<displayName draft="unconfirmed">کیوبا کا قابل منتقلی پیسو</displayName>
-				<displayName count="other" draft="unconfirmed">کیوبا کا قابل منتقلی پیسو</displayName>
 			</currency>
 			<currency type="CUP">
 				<displayName draft="unconfirmed">کیوبا سی پیسو</displayName>
-				<displayName count="other" draft="unconfirmed">کیوبا سی پیسو</displayName>
 			</currency>
 			<currency type="CVE">
 				<displayName draft="unconfirmed">کیپ ورڈی سی اسکیوڈو</displayName>
-				<displayName count="other" draft="unconfirmed">کیپ ورڈی سی اسکیوڈو</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName draft="unconfirmed">چیک کرونا</displayName>
@@ -3922,183 +3388,138 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="DJF">
 				<displayName draft="unconfirmed">جبوتی فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">جبوتی فرانک</displayName>
 			</currency>
 			<currency type="DKK">
 				<displayName draft="unconfirmed">ڈنمارک کرون</displayName>
-				<displayName count="other" draft="unconfirmed">ڈنمارک کرون</displayName>
 			</currency>
 			<currency type="DOP">
 				<displayName draft="unconfirmed">ڈومنیکن پیسو</displayName>
-				<displayName count="other" draft="unconfirmed">ڈومنیکن پیسو</displayName>
 			</currency>
 			<currency type="DZD">
 				<displayName draft="unconfirmed">الجیریائی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">الجیریائی دینار</displayName>
 			</currency>
 			<currency type="EGP">
 				<displayName draft="unconfirmed">مصری پاؤنڈ</displayName>
-				<displayName count="other" draft="unconfirmed">مصری پاؤنڈ</displayName>
 			</currency>
 			<currency type="ERN">
 				<displayName draft="unconfirmed">اریٹیریا سی نافکا</displayName>
-				<displayName count="other" draft="unconfirmed">اریٹیریا سی نافکا</displayName>
 			</currency>
 			<currency type="ETB">
 				<displayName draft="unconfirmed">ایتھوپیائی بِرّ</displayName>
-				<displayName count="other" draft="unconfirmed">ایتھوپیائی بِرّ</displayName>
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">یورو</displayName>
-				<displayName count="other" draft="unconfirmed">یورو</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName draft="unconfirmed">فجی سی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">فجی سی ڈالر</displayName>
 			</currency>
 			<currency type="FKP">
 				<displayName draft="unconfirmed">فاکلینڈ آئلینڈز پونڈ</displayName>
-				<displayName count="other" draft="unconfirmed">فاکلینڈ آئلینڈز پونڈ</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="unconfirmed">برطانوی پاؤنڈ</displayName>
-				<displayName count="other" draft="unconfirmed">برطانوی پاؤنڈ</displayName>
 			</currency>
 			<currency type="GEL">
 				<displayName draft="unconfirmed">جارجیائی لاری</displayName>
-				<displayName count="other" draft="unconfirmed">جارجیائی لاری</displayName>
 			</currency>
 			<currency type="GHS">
 				<displayName draft="unconfirmed">گھانا سی سیڈی</displayName>
-				<displayName count="other" draft="unconfirmed">گھانا سی سیڈی</displayName>
 			</currency>
 			<currency type="GIP">
 				<displayName draft="unconfirmed">جبل الطارق پونڈ</displayName>
-				<displayName count="other" draft="unconfirmed">جبل الطارق پونڈ</displayName>
 			</currency>
 			<currency type="GMD">
 				<displayName draft="unconfirmed">گامبیا سی ڈلاسی</displayName>
-				<displayName count="other" draft="unconfirmed">گامبیا سی ڈلاسی</displayName>
 			</currency>
 			<currency type="GNF">
 				<displayName draft="unconfirmed">گنی فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">گنی فرانک</displayName>
 			</currency>
 			<currency type="GTQ">
 				<displayName draft="unconfirmed">گواٹے مالا کا کوئٹزل</displayName>
-				<displayName count="other" draft="unconfirmed">گواٹے مالا کا کوئٹزل</displayName>
 			</currency>
 			<currency type="GYD">
 				<displayName draft="unconfirmed">گویانیز ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">گویانیز ڈالر</displayName>
 			</currency>
 			<currency type="HKD">
 				<displayName draft="unconfirmed">ھانگ کانگ ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">ھانگ کانگ ڈالر</displayName>
 			</currency>
 			<currency type="HNL">
 				<displayName draft="unconfirmed">ہونڈوران لیمپیرا</displayName>
-				<displayName count="other" draft="unconfirmed">ہونڈوران لیمپیرا</displayName>
 			</currency>
 			<currency type="HRK">
 				<displayName draft="unconfirmed">کروشین کونا</displayName>
-				<displayName count="other" draft="unconfirmed">کروشین کونا</displayName>
 			</currency>
 			<currency type="HTG">
 				<displayName draft="unconfirmed">ہیتی کا گؤرڈی</displayName>
-				<displayName count="other" draft="unconfirmed">ہیتی کا گؤرڈی</displayName>
 			</currency>
 			<currency type="HUF">
 				<displayName draft="unconfirmed">ہنگرین فورنٹ</displayName>
-				<displayName count="other" draft="unconfirmed">ہنگرین فورنٹ</displayName>
 			</currency>
 			<currency type="IDR">
 				<displayName draft="unconfirmed">انڈونیشین روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">انڈونیشین روپیہ</displayName>
 			</currency>
 			<currency type="ILS">
 				<displayName draft="unconfirmed">اسرائیلی نم شیکل</displayName>
-				<displayName count="other" draft="unconfirmed">اسرائیلی نم شیکل</displayName>
 			</currency>
 			<currency type="INR">
 				<displayName draft="unconfirmed">بھارتی روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">بھارتی روپیہ</displayName>
 			</currency>
 			<currency type="IQD">
 				<displayName draft="unconfirmed">عراقی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">عراقی دینار</displayName>
 			</currency>
 			<currency type="IRR">
 				<displayName draft="unconfirmed">ایرانی ریال</displayName>
-				<displayName count="other" draft="unconfirmed">ایرانی ریال</displayName>
 			</currency>
 			<currency type="ISK">
 				<displayName draft="unconfirmed">آئس لينڈی کرونا</displayName>
-				<displayName count="other" draft="unconfirmed">آئس لينڈی کرونا</displayName>
 			</currency>
 			<currency type="JMD">
 				<displayName draft="unconfirmed">جمائیکن ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">جمائیکن ڈالر</displayName>
 			</currency>
 			<currency type="JOD">
 				<displayName draft="unconfirmed">اردنی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">اردنی دینار</displayName>
 			</currency>
 			<currency type="JPY">
 				<displayName draft="unconfirmed">جاپانی ین</displayName>
-				<displayName count="other" draft="unconfirmed">جاپانی ین</displayName>
 			</currency>
 			<currency type="KES">
 				<displayName draft="unconfirmed">کینیائی شلنگ</displayName>
-				<displayName count="other" draft="unconfirmed">کینیائی شلنگ</displayName>
 			</currency>
 			<currency type="KGS">
 				<displayName draft="unconfirmed">کرغستانی سوم</displayName>
-				<displayName count="other" draft="unconfirmed">کرغستانی سوم</displayName>
 			</currency>
 			<currency type="KHR">
 				<displayName draft="unconfirmed">کمبوڈیائی ریئل</displayName>
-				<displayName count="other" draft="unconfirmed">کمبوڈیائی ریئل</displayName>
 			</currency>
 			<currency type="KMF">
 				<displayName draft="unconfirmed">کوموریئن فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">کوموریئن فرانک</displayName>
 			</currency>
 			<currency type="KPW">
 				<displayName draft="unconfirmed">شمالی کوریائی وون</displayName>
-				<displayName count="other" draft="unconfirmed">شمالی کوریائی وون</displayName>
 			</currency>
 			<currency type="KRW">
 				<displayName draft="unconfirmed">جنوبی کوریائی وون</displayName>
-				<displayName count="other" draft="unconfirmed">جنوبی کوریائی وون</displayName>
 			</currency>
 			<currency type="KWD">
 				<displayName draft="unconfirmed">کویتی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">کویتی دینار</displayName>
 			</currency>
 			<currency type="KYD">
 				<displayName draft="unconfirmed">کیمین آئلینڈز ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">کیمین آئلینڈز ڈالر</displayName>
 			</currency>
 			<currency type="KZT">
 				<displayName draft="unconfirmed">قزاخستانی ٹینگ</displayName>
-				<displayName count="other" draft="unconfirmed">قزاخستانی ٹینگ</displayName>
 			</currency>
 			<currency type="LAK">
 				<displayName draft="unconfirmed">لاؤشیائی کِپ</displayName>
-				<displayName count="other" draft="unconfirmed">لاؤشیائی کِپ</displayName>
 			</currency>
 			<currency type="LBP">
 				<displayName draft="unconfirmed">لبنانی پونڈ</displayName>
-				<displayName count="other" draft="unconfirmed">لبنانی پونڈ</displayName>
 			</currency>
 			<currency type="LKR">
 				<displayName draft="unconfirmed">سری لنکائی روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">سری لنکائی روپیہ</displayName>
 			</currency>
 			<currency type="LRD">
 				<displayName draft="unconfirmed">لائبریائی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">لائبریائی ڈالر</displayName>
 			</currency>
 			<currency type="LSL">
 				<displayName draft="unconfirmed">لیسوتو لوٹی</displayName>
@@ -4106,300 +3527,229 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="LYD">
 				<displayName draft="unconfirmed">لیبیائی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">لیبیائی دینار</displayName>
 			</currency>
 			<currency type="MAD">
 				<displayName draft="unconfirmed">مراکشی درہم</displayName>
-				<displayName count="other" draft="unconfirmed">مراکشی درہم</displayName>
 			</currency>
 			<currency type="MDL">
 				<displayName draft="unconfirmed">مالدووی لیو</displayName>
-				<displayName count="other" draft="unconfirmed">مالدووی لیو</displayName>
 			</currency>
 			<currency type="MGA">
 				<displayName draft="unconfirmed">ملاگاسی اریاری</displayName>
-				<displayName count="other" draft="unconfirmed">ملاگاسی اریاری</displayName>
 			</currency>
 			<currency type="MKD">
 				<displayName draft="unconfirmed">مقدونیائی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">مقدونیائی دینار</displayName>
 			</currency>
 			<currency type="MMK">
 				<displayName draft="unconfirmed">میانمار کیاٹ</displayName>
-				<displayName count="other" draft="unconfirmed">میانمار کیاٹ</displayName>
 			</currency>
 			<currency type="MNT">
 				<displayName draft="unconfirmed">منگولیائی ٹگرِ</displayName>
-				<displayName count="other" draft="unconfirmed">منگولیائی ٹگرِ</displayName>
 			</currency>
 			<currency type="MOP">
 				<displayName draft="unconfirmed">میکانیز پٹاکا</displayName>
-				<displayName count="other" draft="unconfirmed">میکانیز پٹاکا</displayName>
 			</currency>
 			<currency type="MRU">
 				<displayName draft="unconfirmed">موریطانیائی اوگوئیا</displayName>
-				<displayName count="other" draft="unconfirmed">موریطانیائی اوگوئیا</displayName>
 			</currency>
 			<currency type="MUR">
 				<displayName draft="unconfirmed">ماریشس کا روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">ماریشس کا روپیہ</displayName>
 			</currency>
 			<currency type="MVR">
 				<displayName draft="unconfirmed">مالدیپ سی روفیہ</displayName>
-				<displayName count="other" draft="unconfirmed">مالدیپ سی روفیہ</displayName>
 			</currency>
 			<currency type="MWK">
 				<displayName draft="unconfirmed">ملاوی کواچا</displayName>
-				<displayName count="other" draft="unconfirmed">ملاوی کواچا</displayName>
 			</currency>
 			<currency type="MXN">
 				<displayName draft="unconfirmed">میکسیکی پیسہ</displayName>
-				<displayName count="other" draft="unconfirmed">میکسیکی پیسہ</displayName>
 			</currency>
 			<currency type="MYR">
 				<displayName draft="unconfirmed">ملیشیائی رنگِٹ</displayName>
-				<displayName count="other" draft="unconfirmed">ملیشیائی رنگِٹ</displayName>
 			</currency>
 			<currency type="MZN">
 				<displayName draft="unconfirmed">موزامبیقی میٹیکل</displayName>
-				<displayName count="other" draft="unconfirmed">موزامبیقی میٹیکل</displayName>
 			</currency>
 			<currency type="NAD">
 				<displayName draft="unconfirmed">نامیبیائی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">نامیبیائی ڈالر</displayName>
 			</currency>
 			<currency type="NGN">
 				<displayName draft="unconfirmed">نائیجیریائی نائرا</displayName>
-				<displayName count="other" draft="unconfirmed">نائیجیریائی نائرا</displayName>
 			</currency>
 			<currency type="NIO">
 				<displayName draft="unconfirmed">نکارا گوا کا کورڈوبا</displayName>
-				<displayName count="other" draft="unconfirmed">نکارا گوا کا کورڈوبا</displayName>
 			</currency>
 			<currency type="NOK">
 				<displayName draft="unconfirmed">ناروے کرون</displayName>
-				<displayName count="other" draft="unconfirmed">ناروے کرون</displayName>
 			</currency>
 			<currency type="NPR">
 				<displayName draft="unconfirmed">نیپالی روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">نیپالی روپیہ</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName draft="unconfirmed">نیوزی لینڈ ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">نیوزی لینڈ ڈالر</displayName>
 			</currency>
 			<currency type="OMR">
 				<displayName draft="unconfirmed">عمانی ریال</displayName>
-				<displayName count="other" draft="unconfirmed">عمانی ریال</displayName>
 			</currency>
 			<currency type="PAB">
 				<displayName draft="unconfirmed">پنامہ کا بالبوآ</displayName>
-				<displayName count="other" draft="unconfirmed">پنامہ کا بالبوآ</displayName>
 			</currency>
 			<currency type="PEN">
 				<displayName draft="unconfirmed">پیروویئن سول</displayName>
-				<displayName count="other" draft="unconfirmed">پیروویئن سول</displayName>
 			</currency>
 			<currency type="PGK">
 				<displayName draft="unconfirmed">پاپوآ نم گنی سی کینا</displayName>
-				<displayName count="other" draft="unconfirmed">پاپوآ نم گنی سی کینا</displayName>
 			</currency>
 			<currency type="PHP">
 				<displayName draft="unconfirmed">فلپائینی پیسہ</displayName>
-				<displayName count="other" draft="unconfirmed">فلپائینی پیسہ</displayName>
 			</currency>
 			<currency type="PKR">
 				<displayName draft="unconfirmed">پاکستانی روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">پاکستانی روپیہ</displayName>
 			</currency>
 			<currency type="PLN">
 				<displayName draft="unconfirmed">پولش زلوٹی</displayName>
-				<displayName count="other" draft="unconfirmed">پولش زلوٹی</displayName>
 			</currency>
 			<currency type="PYG">
 				<displayName draft="unconfirmed">پیراگوئے سی گوآرنی</displayName>
-				<displayName count="other" draft="unconfirmed">پیراگوئے سی گوآرنی</displayName>
 			</currency>
 			<currency type="QAR">
 				<displayName draft="unconfirmed">قطری ریال</displayName>
-				<displayName count="other" draft="unconfirmed">قطری ریال</displayName>
 			</currency>
 			<currency type="RON">
 				<displayName draft="unconfirmed">رومانیائی لیو</displayName>
-				<displayName count="other" draft="unconfirmed">رومانیائی لیو</displayName>
 			</currency>
 			<currency type="RSD">
 				<displayName draft="unconfirmed">سربین دینار</displayName>
-				<displayName count="other" draft="unconfirmed">سربین دینار</displayName>
 			</currency>
 			<currency type="RUB">
 				<displayName draft="unconfirmed">روسی روبل</displayName>
-				<displayName count="other" draft="unconfirmed">روسی روبل</displayName>
 			</currency>
 			<currency type="RWF">
 				<displayName draft="unconfirmed">روانڈا سی فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">روانڈا سی فرانک</displayName>
 			</currency>
 			<currency type="SAR">
 				<displayName draft="unconfirmed">سعودی ریال</displayName>
-				<displayName count="other" draft="unconfirmed">سعودی ریال</displayName>
 			</currency>
 			<currency type="SBD">
 				<displayName draft="unconfirmed">سولومن آئلینڈز ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">سولومن آئلینڈز ڈالر</displayName>
 			</currency>
 			<currency type="SCR">
 				<displayName draft="unconfirmed">سشلی کا روپیہ</displayName>
-				<displayName count="other" draft="unconfirmed">سشلی کا روپیہ</displayName>
 			</currency>
 			<currency type="SDG">
 				<displayName draft="unconfirmed">سوڈانی پاؤنڈ</displayName>
-				<displayName count="other" draft="unconfirmed">سوڈانی پاؤنڈ</displayName>
 			</currency>
 			<currency type="SEK">
 				<displayName draft="unconfirmed">سویڈن کرونا</displayName>
-				<displayName count="other" draft="unconfirmed">سویڈن کرونا</displayName>
 			</currency>
 			<currency type="SGD">
 				<displayName draft="unconfirmed">سنگا پور ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">سنگا پور ڈالر</displayName>
 			</currency>
 			<currency type="SHP">
 				<displayName draft="unconfirmed">سینٹ ہیلینا پاؤنڈ</displayName>
-				<displayName count="other" draft="unconfirmed">سینٹ ہیلینا پاؤنڈ</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName draft="unconfirmed">سیئرا لیون لیون</displayName>
 			</currency>
 			<currency type="SLL">
-				<displayName draft="unconfirmed">سیئرا لیون لیون</displayName>
-				<displayName count="other" draft="unconfirmed">سیئرا لیون لیون</displayName>
+				<displayName draft="unconfirmed">سیئرا لیون لیون - 1964-2022</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName draft="unconfirmed">صومالی شلنگ</displayName>
-				<displayName count="other" draft="unconfirmed">صومالی شلنگ</displayName>
 			</currency>
 			<currency type="SRD">
 				<displayName draft="unconfirmed">سورینامی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">سورینامی ڈالر</displayName>
 			</currency>
 			<currency type="SSP">
 				<displayName draft="unconfirmed">جنوبی سوڈانی پاؤنڈ</displayName>
-				<displayName count="other" draft="unconfirmed">جنوبی سوڈانی پاؤنڈ</displayName>
 			</currency>
 			<currency type="STN">
 				<displayName draft="unconfirmed">ساؤ ٹومے آں پرنسپے ڈوبرا</displayName>
-				<displayName count="other" draft="unconfirmed">ساؤ ٹومے آں پرنسپے ڈوبرا</displayName>
 			</currency>
 			<currency type="SYP">
 				<displayName draft="unconfirmed">شامی پونڈ</displayName>
-				<displayName count="other" draft="unconfirmed">شامی پونڈ</displayName>
 			</currency>
 			<currency type="SZL">
 				<displayName draft="unconfirmed">سوازی لیلانجینی</displayName>
-				<displayName count="other" draft="unconfirmed">سوازی لیلانجینی</displayName>
 			</currency>
 			<currency type="THB">
 				<displayName draft="unconfirmed">تھائی باہت</displayName>
-				<displayName count="other" draft="unconfirmed">تھائی باہت</displayName>
 			</currency>
 			<currency type="TJS">
 				<displayName draft="unconfirmed">تاجکستانی سومونی</displayName>
-				<displayName count="other" draft="unconfirmed">تاجکستانی سومونی</displayName>
 			</currency>
 			<currency type="TMT">
 				<displayName draft="unconfirmed">ترکمانستانی منات</displayName>
-				<displayName count="other" draft="unconfirmed">ترکمانستانی منات</displayName>
 			</currency>
 			<currency type="TND">
 				<displayName draft="unconfirmed">تیونیسیائی دینار</displayName>
-				<displayName count="other" draft="unconfirmed">تیونیسیائی دینار</displayName>
 			</currency>
 			<currency type="TOP">
 				<displayName draft="unconfirmed">ٹونگن پانگا</displayName>
-				<displayName count="other" draft="unconfirmed">ٹونگن پانگا</displayName>
 			</currency>
 			<currency type="TRY">
 				<displayName draft="unconfirmed">ترکی لیرا</displayName>
-				<displayName count="other" draft="unconfirmed">ترکی لیرا</displayName>
 			</currency>
 			<currency type="TTD">
 				<displayName draft="unconfirmed">ترینیداد آں ٹوباگو سی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">ترینیداد آں ٹوباگو سی ڈالر</displayName>
 			</currency>
 			<currency type="TWD">
 				<displayName draft="unconfirmed">نیو تائیوان ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">نیو تائیوان ڈالر</displayName>
 			</currency>
 			<currency type="TZS">
 				<displayName draft="unconfirmed">تنزانیائی شلنگ</displayName>
-				<displayName count="other" draft="unconfirmed">تنزانیائی شلنگ</displayName>
 			</currency>
 			<currency type="UAH">
 				<displayName draft="unconfirmed">یوکرینیائی ہریونیا</displayName>
-				<displayName count="other" draft="unconfirmed">یوکرینیائی ہریونیا</displayName>
 			</currency>
 			<currency type="UGX">
 				<displayName draft="unconfirmed">یوگانڈا شلنگ</displayName>
-				<displayName count="other" draft="unconfirmed">یوگانڈا شلنگ</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName draft="unconfirmed">امریکی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">امریکی ڈالر</displayName>
 				<symbol draft="unconfirmed">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName draft="unconfirmed">یوروگویان پیسو</displayName>
-				<displayName count="other" draft="unconfirmed">یوروگویان پیسو</displayName>
 			</currency>
 			<currency type="UZS">
 				<displayName draft="unconfirmed">ازبکستانی سوم</displayName>
-				<displayName count="other" draft="unconfirmed">ازبکستانی سوم</displayName>
 			</currency>
 			<currency type="VES">
 				<displayName draft="unconfirmed">وینزویلا بولیور</displayName>
-				<displayName count="other" draft="unconfirmed">وینزویلا بولیور</displayName>
 			</currency>
 			<currency type="VND">
 				<displayName draft="unconfirmed">ویتنامی ڈانگ</displayName>
-				<displayName count="other" draft="unconfirmed">ویتنامی ڈانگ</displayName>
 			</currency>
 			<currency type="VUV">
 				<displayName draft="unconfirmed">وینوواتو واتو</displayName>
-				<displayName count="other" draft="unconfirmed">وینوواتو واتو</displayName>
 			</currency>
 			<currency type="WST">
 				<displayName draft="unconfirmed">ساموآ سی ٹالا</displayName>
-				<displayName count="other" draft="unconfirmed">ساموآ سی ٹالا</displayName>
 			</currency>
 			<currency type="XAF">
 				<displayName draft="unconfirmed">وسطی افریقی [CFA] فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">وسطی افریقی [CFA] فرانک</displayName>
 			</currency>
 			<currency type="XCD">
 				<displayName draft="unconfirmed">مشرقی کریبیا سی ڈالر</displayName>
-				<displayName count="other" draft="unconfirmed">مشرقی کریبیا سی ڈالر</displayName>
 			</currency>
 			<currency type="XOF">
 				<displayName draft="unconfirmed">مغربی افریقی [CFA] فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">مغربی افریقی [CFA] فرانک</displayName>
 			</currency>
 			<currency type="XPF">
 				<displayName draft="unconfirmed">CFP فرانک</displayName>
-				<displayName count="other" draft="unconfirmed">CFP فرانک</displayName>
 			</currency>
 			<currency type="XXX">
 				<displayName draft="unconfirmed">نامعلوم پیس</displayName>
-				<displayName count="other" draft="unconfirmed">نامعلوم پیس</displayName>
 			</currency>
 			<currency type="YER">
 				<displayName draft="unconfirmed">یمنی ریال</displayName>
-				<displayName count="other" draft="unconfirmed">یمنی ریال</displayName>
 			</currency>
 			<currency type="ZAR">
 				<displayName draft="unconfirmed">جنوبی افریقی رانڈ</displayName>
-				<displayName count="other" draft="unconfirmed">جنوبی افریقی رانڈ</displayName>
 			</currency>
 			<currency type="ZMW">
 				<displayName draft="unconfirmed">زامبیائی کواچا</displayName>
-				<displayName count="other" draft="unconfirmed">زامبیائی کواچا</displayName>
 			</currency>
 		</currencies>
 		<minimalPairs>
@@ -4435,9 +3785,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p-21">
 				<unitPrefixPattern draft="unconfirmed">زپٹو{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern draft="unconfirmed">یوکٹو{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern draft="unconfirmed">ڈیکا{0}</unitPrefixPattern>
@@ -4502,11 +3849,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="other" draft="unconfirmed">کیوبک {0}</compoundUnitPattern1>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName draft="unconfirmed">جی-فورس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} جی-فورس</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
@@ -4515,35 +3858,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="angle-revolution">
 				<displayName draft="unconfirmed">گردش</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName draft="unconfirmed">ریڈینس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ریڈین</unitPattern>
-			</unit>
-			<unit type="angle-degree">
-				<displayName draft="unconfirmed">ڈگری</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ڈگری</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<displayName draft="unconfirmed">آرک منٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} آرک منٹ</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<displayName draft="unconfirmed">آرک سیکنڈ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} آرک سیکنڈ</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<displayName draft="unconfirmed">مربع کلو میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع کلو میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی مربع کلو میٹر</perUnitPattern>
 			</unit>
-			<unit type="area-hectare">
-				<displayName draft="unconfirmed">ہیکٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ہیکٹر</unitPattern>
-			</unit>
 			<unit type="area-square-meter">
-				<displayName draft="unconfirmed">مربع میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی مربع میٹر</perUnitPattern>
 			</unit>
@@ -4553,33 +3878,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} فی مربع سینٹی میٹر</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName draft="unconfirmed">مربع میل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع میل</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی مربع میل</perUnitPattern>
 			</unit>
-			<unit type="area-acre">
-				<displayName draft="unconfirmed">ایکڑ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ایکڑ</unitPattern>
-			</unit>
 			<unit type="area-square-yard">
-				<displayName draft="unconfirmed">مربع گز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع گز</unitPattern>
 			</unit>
-			<unit type="area-square-foot">
-				<displayName draft="unconfirmed">مربع فٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} مربع فٹ</unitPattern>
-			</unit>
 			<unit type="area-square-inch">
-				<displayName draft="unconfirmed">مربع انچا</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} مربع انچا</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی مربع انچا</perUnitPattern>
 			</unit>
-			<unit type="area-dunam">
-				<displayName draft="unconfirmed">دُنامز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دُنام</unitPattern>
-			</unit>
 			<unit type="concentr-karat">
-				<displayName draft="unconfirmed">قیراط</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} قیراط</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
@@ -4595,20 +3904,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} فی ملین حصے</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">فیصد</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} فیصد</unitPattern>
 			</unit>
-			<unit type="concentr-permille">
-				<displayName draft="unconfirmed">فی ملی</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فی ملی</unitPattern>
-			</unit>
 			<unit type="concentr-permyriad">
-				<displayName draft="unconfirmed">پرمرئیڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پرمرئیڈ</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName draft="unconfirmed">مولز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} مول</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="unconfirmed">لیٹر فی کلومیٹر</displayName>
@@ -4663,67 +3965,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} کلوبٹ</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="unconfirmed">بائٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بائٹ</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName draft="unconfirmed">بٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بٹ</unitPattern>
 			</unit>
-			<unit type="duration-century">
-				<displayName draft="unconfirmed">قرن</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} قرن</unitPattern>
-			</unit>
 			<unit type="duration-decade">
 				<displayName draft="unconfirmed">دہائیاں</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دہائی</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">کال</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کال</unitPattern>
 				<perUnitPattern draft="unconfirmed">فی کال {0}</perUnitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName draft="unconfirmed">ما</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ما</unitPattern>
-				<perUnitPattern draft="unconfirmed">فی ما {0}</perUnitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName draft="unconfirmed">ہفتہ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ہفتہ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی ہفتہ</perUnitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="unconfirmed">دی</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دی</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی دی</perUnitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName draft="unconfirmed">گینٹہ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} گینٹہ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی گینٹہ</perUnitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="unconfirmed">میلٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میلٹ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی میلٹ</perUnitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="unconfirmed">سیکنڈ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} سیکنڈ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی سیکنڈ</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName draft="unconfirmed">ملی سیکنڈز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ملی سیکنڈ</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName draft="unconfirmed">مائیکرو سیکنڈز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} مائیکرو سیکنڈ</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName draft="unconfirmed">نینو سیکنڈز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} نینو سیکنڈ</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName draft="unconfirmed">ایمپیئر</displayName>
@@ -4734,11 +3992,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} ملی ایمپیئر</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName draft="unconfirmed">اوہم</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} اوہم</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName draft="unconfirmed">وولٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} وولٹ</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
@@ -4803,14 +4059,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-em">
 				<displayName draft="unconfirmed">ٹائپوگرافک em</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName draft="unconfirmed">پکسلز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پکسل</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName draft="unconfirmed">میگا پکسلز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میگا پکسل</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
@@ -4829,22 +4082,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ڈاٹس فی انچا</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈاٹ فی انچا</unitPattern>
 			</unit>
-			<unit type="graphics-dot">
-				<displayName draft="unconfirmed">ڈاٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ڈاٹ</unitPattern>
-			</unit>
 			<unit type="length-earth-radius">
 				<displayName draft="unconfirmed">زمین کا رداس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} زمین رداس</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">کلو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کلو میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی کلومیٹر</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName draft="unconfirmed">میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -4852,12 +4097,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} ڈیسی میٹر</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">سینٹی میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} سینٹی میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی سینٹی میٹر</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">ملی میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ملیمیٹر</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
@@ -4868,66 +4110,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">نینو میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} نینو میٹر</unitPattern>
 			</unit>
-			<unit type="length-picometer">
-				<displayName draft="unconfirmed">پیکو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پیکو میٹر</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<displayName draft="unconfirmed">میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میل</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName draft="unconfirmed">گز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} گز</unitPattern>
-			</unit>
 			<unit type="length-foot">
-				<displayName draft="unconfirmed">فٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فٹ</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی فٹ</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="unconfirmed">انچا</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} انچا</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی انچا</perUnitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<displayName draft="unconfirmed">پارسیک</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پارسیک</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<displayName draft="unconfirmed">نوری کال</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} نوری کال</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName draft="unconfirmed">ایسٹرونومیکل یونٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ایسٹرونومیکل یونٹ</unitPattern>
 			</unit>
-			<unit type="length-furlong">
-				<displayName draft="unconfirmed">فرلانگ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فرلانگ</unitPattern>
-			</unit>
-			<unit type="length-fathom">
-				<displayName draft="unconfirmed">فیتھامز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فیتھامز</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<displayName draft="unconfirmed">بحری میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} بحری میل</unitPattern>
-			</unit>
 			<unit type="length-mile-scandinavian">
 				<displayName draft="unconfirmed">اسکینڈی نیویائی میل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} اسکینڈی نیویائی میل</unitPattern>
 			</unit>
-			<unit type="length-point">
-				<displayName draft="unconfirmed">پوائنٹس</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پوائنٹس</unitPattern>
-			</unit>
-			<unit type="length-solar-radius">
-				<displayName draft="unconfirmed">شمسی رداس</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} شمسی رداس</unitPattern>
-			</unit>
 			<unit type="light-lux">
-				<displayName draft="unconfirmed">lux</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} lux</unitPattern>
 			</unit>
 			<unit type="light-candela">
@@ -4952,7 +4149,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} فی کلو</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName draft="unconfirmed">گرام</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} گرام</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی گرام</perUnitPattern>
 			</unit>
@@ -4965,7 +4161,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} مائکرو گرام</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName draft="unconfirmed">ٹن</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ٹن</unitPattern>
 			</unit>
 			<unit type="mass-stone">
@@ -4973,7 +4168,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} اسٹون</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="unconfirmed">پاؤنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پاؤنڈ</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی پاؤنڈ</perUnitPattern>
 			</unit>
@@ -4987,24 +4181,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} ٹرائے اونس</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="unconfirmed">قیراط</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} قیراط</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="unconfirmed">ڈالٹنز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈالٹن</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="unconfirmed">زمینی کمیتیں</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} زمینی کمیت</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="unconfirmed">شمسی کمیتیں</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} شمسی کمیت</unitPattern>
-			</unit>
-			<unit type="mass-grain">
-				<displayName draft="unconfirmed">گرین</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} گرین</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<displayName draft="unconfirmed">گیگا واٹ</displayName>
@@ -5016,11 +4202,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="power-kilowatt">
 				<displayName draft="unconfirmed">کلو واٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کلو واٹ</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<displayName draft="unconfirmed">واٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} واٹ</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
 				<displayName draft="unconfirmed">ملی واٹ</displayName>
@@ -5075,27 +4256,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} کلومیٹر فی گینٹہ</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
-				<displayName draft="unconfirmed">میٹر فی سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میٹر فی سیکنڈ</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
-				<displayName draft="unconfirmed">میل فی گینٹہ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میل فی گینٹہ</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName draft="unconfirmed">ناٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ناٹ</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName draft="unconfirmed">°</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">ڈگری سیلسیس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈگری سیلسیس</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName draft="unconfirmed">ڈگری فارن ہائیٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈگری فارن ہائیٹ</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
@@ -5120,24 +4293,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} فی کیوبک میٹر</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<displayName draft="unconfirmed">کیوبک سینٹی میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} کیوبک سینٹی میٹر</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} فی کیوبک سینٹی میٹر</perUnitPattern>
 			</unit>
-			<unit type="volume-cubic-mile">
-				<displayName draft="unconfirmed">کیوبک میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کیوبک میل</unitPattern>
-			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName draft="unconfirmed">کیوبک گز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} کیوبک گز</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<displayName draft="unconfirmed">کیوبک فٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} کیوبک فٹ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<displayName draft="unconfirmed">کیوبک انچا</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} کیوبک انچا</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
@@ -5148,17 +4313,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">ہیکٹو لیٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ہیکٹو لیٹر</unitPattern>
 			</unit>
-			<unit type="volume-liter">
-				<displayName draft="unconfirmed">لیٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} لیٹر</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی لیٹر</perUnitPattern>
-			</unit>
 			<unit type="volume-deciliter">
-				<displayName draft="unconfirmed">ڈیسی لیٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈیسی لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
-				<displayName draft="unconfirmed">سینٹی لیٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} سینٹی لیٹر</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
@@ -5174,11 +4332,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} میٹرک کپ</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
-				<displayName draft="unconfirmed">ایکڑ فٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ایکڑ فٹ</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName draft="unconfirmed">بوشیل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بوشیل</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
@@ -5200,7 +4356,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} پائنٹ</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName draft="unconfirmed">کپ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} کپ</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
@@ -5222,34 +4377,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="volume-barrel">
 				<displayName draft="unconfirmed">بیرلز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بیرل</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon">
-				<displayName draft="unconfirmed">dstspn</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dstspn</unitPattern>
-			</unit>
-			<unit type="volume-dessert-spoon-imperial">
-				<displayName draft="unconfirmed">dstspn Imp</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dstspn Imp</unitPattern>
-			</unit>
-			<unit type="volume-drop">
-				<displayName draft="unconfirmed">ٹیگیل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ٹیگیل</unitPattern>
-			</unit>
-			<unit type="volume-dram">
-				<displayName draft="unconfirmed">dram fluid</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dram fl</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName draft="unconfirmed">jigger</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} jigger</unitPattern>
-			</unit>
-			<unit type="volume-pinch">
-				<displayName draft="unconfirmed">پینچ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پینچ</unitPattern>
-			</unit>
-			<unit type="volume-quart-imperial">
-				<displayName draft="unconfirmed">qt Imp</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} qt Imp.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">کارڈینل ڈائریکشن</displayName>
@@ -5317,9 +4444,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="10p24">
 				<unitPrefixPattern draft="unconfirmed">یو{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">جی-فورس</displayName>
 			</unit>
@@ -5335,29 +4459,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">آرک سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} آرک سیکنڈ</unitPattern>
 			</unit>
-			<unit type="area-square-kilometer">
-				<displayName draft="unconfirmed">km²</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} km²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/km²</perUnitPattern>
-			</unit>
 			<unit type="area-hectare">
 				<displayName draft="unconfirmed">ہیکٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ہیکٹر</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName draft="unconfirmed">مربع میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} m²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<displayName draft="unconfirmed">cm²</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName draft="unconfirmed">مربع میل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} sq mi</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName draft="unconfirmed">ایکڑ</displayName>
@@ -5365,7 +4476,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-square-yard">
 				<displayName draft="unconfirmed">مربع گز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName draft="unconfirmed">مربع فٹ</displayName>
@@ -5373,8 +4483,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="area-square-inch">
 				<displayName draft="unconfirmed">مربع انچا</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} in²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/in²</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName draft="unconfirmed">دُنامز</displayName>
@@ -5382,7 +4490,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-karat">
 				<displayName draft="unconfirmed">قیراط</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} kt</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName draft="unconfirmed">ملی مول/لیٹر</displayName>
@@ -5399,7 +4506,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName draft="unconfirmed">پرمرئیڈ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName draft="unconfirmed">مول</displayName>
@@ -5407,7 +4513,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName draft="unconfirmed">لیٹر/100 کلو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} L/100km</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName draft="unconfirmed">mpg</displayName>
@@ -5415,7 +4520,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName draft="unconfirmed">miles/gal Imp.</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} mpg Imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName draft="unconfirmed">پی بائٹ</displayName>
@@ -5438,7 +4542,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="digital-byte">
 				<displayName draft="unconfirmed">بائٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} byte</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName draft="unconfirmed">قرن</displayName>
@@ -5500,10 +4603,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="electric-volt">
 				<displayName draft="unconfirmed">وولٹ</displayName>
 			</unit>
-			<unit type="energy-foodcalorie">
-				<displayName draft="unconfirmed">kcal</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} kcal</unitPattern>
-			</unit>
 			<unit type="energy-electronvolt">
 				<displayName draft="unconfirmed">الیکٹرون وولٹ</displayName>
 			</unit>
@@ -5523,14 +4622,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="graphics-megapixel">
 				<displayName draft="unconfirmed">میگا پکسلز</displayName>
 			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="unconfirmed">ppcm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName draft="unconfirmed">ppi</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ppi</unitPattern>
-			</unit>
 			<unit type="graphics-dot">
 				<displayName draft="unconfirmed">ڈاٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ڈاٹ</unitPattern>
@@ -5543,11 +4634,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-meter">
 				<displayName draft="unconfirmed">میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} میٹر</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m</perUnitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<displayName draft="unconfirmed">dm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dm</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="unconfirmed">سینٹی میٹر</displayName>
@@ -5557,14 +4643,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="length-millimeter">
 				<displayName draft="unconfirmed">ملی میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ملی میٹر</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<displayName draft="unconfirmed">μm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<displayName draft="unconfirmed">nm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} nm</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName draft="unconfirmed">پیکو میٹر</displayName>
@@ -5596,10 +4674,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">نوری کال</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} نوری کال</unitPattern>
 			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName draft="unconfirmed">au</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} au</unitPattern>
-			</unit>
 			<unit type="length-furlong">
 				<displayName draft="unconfirmed">فرلانگ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} فرلانگ</unitPattern>
@@ -5612,10 +4686,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">بحری میل</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بحری میل</unitPattern>
 			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName draft="unconfirmed">smi</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} smi</unitPattern>
-			</unit>
 			<unit type="length-point">
 				<displayName draft="unconfirmed">پوائنٹس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} پوائنٹس</unitPattern>
@@ -5626,11 +4696,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-lux">
 				<displayName draft="unconfirmed">lux</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} lx</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">گرام</displayName>
-				<perUnitPattern draft="unconfirmed">{0}/g</perUnitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="unconfirmed">ٹن</displayName>
@@ -5661,13 +4729,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">واٹ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} واٹ</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="unconfirmed">mm Hg</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} mm Hg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<unitPattern count="other" draft="unconfirmed">{0} psi</unitPattern>
-			</unit>
 			<unit type="pressure-bar">
 				<displayName draft="unconfirmed">بار</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} بارز</unitPattern>
@@ -5690,19 +4751,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-fahrenheit">
 				<displayName draft="unconfirmed">ڈگری فارن ہائیٹ</displayName>
 			</unit>
-			<unit type="volume-cubic-kilometer">
-				<displayName draft="unconfirmed">km³</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<displayName draft="unconfirmed">m³</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} m³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m³</perUnitPattern>
-			</unit>
 			<unit type="volume-cubic-centimeter">
 				<displayName draft="unconfirmed">کیوبک سینٹی میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} cm³</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName draft="unconfirmed">کیوبک میل</displayName>
@@ -5710,19 +4760,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName draft="unconfirmed">کیوبک گز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName draft="unconfirmed">کیوبک فٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName draft="unconfirmed">کیوبک انچا</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} in³</unitPattern>
-			</unit>
-			<unit type="volume-megaliter">
-				<displayName draft="unconfirmed">ML</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ML</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">لیٹر</displayName>
@@ -5746,12 +4789,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} gal</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/gal</perUnitPattern>
 			</unit>
-			<unit type="volume-gallon-imperial">
-				<displayName draft="unconfirmed">Imp. gal</displayName>
-			</unit>
 			<unit type="volume-quart">
 				<displayName draft="unconfirmed">qts</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName draft="unconfirmed">کپ</displayName>
@@ -5773,8 +4812,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">ڈائریکشن</displayName>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
@@ -5786,9 +4823,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p-3">
 				<unitPrefixPattern draft="unconfirmed">ملی {0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-6">
-				<unitPrefixPattern draft="unconfirmed">μ{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p-9">
 				<unitPrefixPattern draft="unconfirmed">نینو {0}</unitPrefixPattern>
@@ -5804,9 +4838,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</compoundUnit>
 			<compoundUnit type="10p-21">
 				<unitPrefixPattern draft="unconfirmed">زپٹو{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern draft="unconfirmed">یوکٹو{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern draft="unconfirmed">ڈیکا{0}</unitPrefixPattern>
@@ -5841,243 +4872,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern draft="unconfirmed">کیبی{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern draft="unconfirmed">Mi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern draft="unconfirmed">Gi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern draft="unconfirmed">Ti{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern draft="unconfirmed">Pi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern draft="unconfirmed">Ei{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern draft="unconfirmed">Zi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern draft="unconfirmed">Yi{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="other" draft="unconfirmed">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="area-hectare">
-				<displayName draft="unconfirmed">ہیکٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ہیکٹر</unitPattern>
-			</unit>
-			<unit type="area-square-meter">
-				<displayName draft="unconfirmed">مربع میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} m²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/m²</perUnitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<displayName draft="unconfirmed">cm²</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} cm²</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cm²</perUnitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<displayName draft="unconfirmed">مربع میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} sq mi</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/mi²</perUnitPattern>
-			</unit>
-			<unit type="area-acre">
-				<displayName draft="unconfirmed">ایکڑ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ایکڑ</unitPattern>
-			</unit>
-			<unit type="area-square-yard">
-				<displayName draft="unconfirmed">مربع گز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} yd²</unitPattern>
-			</unit>
-			<unit type="area-square-foot">
-				<displayName draft="unconfirmed">مربع فٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} مربع فٹ</unitPattern>
-			</unit>
-			<unit type="area-square-inch">
-				<displayName draft="unconfirmed">مربع انچا</displayName>
-			</unit>
-			<unit type="area-dunam">
-				<displayName draft="unconfirmed">دُنامز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دُنام</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">فیصد</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName draft="unconfirmed">لیٹر/100 کلو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} L/100km</unitPattern>
-			</unit>
-			<unit type="duration-century">
-				<displayName draft="unconfirmed">قرن</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} قرن</unitPattern>
-			</unit>
-			<unit type="duration-decade">
-				<displayName draft="unconfirmed">دہائی</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دہائی</unitPattern>
-			</unit>
-			<unit type="duration-year">
-				<displayName draft="unconfirmed">کال</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کال</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName draft="unconfirmed">ما</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ما</unitPattern>
-				<perUnitPattern draft="unconfirmed">فی ما {0}</perUnitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName draft="unconfirmed">ہفتہ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ہفتہ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی ہفتہ</perUnitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="unconfirmed">دی</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} دی</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName draft="unconfirmed">گینٹہ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} گینٹہ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی گینٹہ</perUnitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName draft="unconfirmed">میلٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میلٹ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی میلٹ</perUnitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="unconfirmed">سیکنڈ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} سیکنڈ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی سیکنڈ</perUnitPattern>
-			</unit>
 			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">ملی سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ملی س</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
-				<displayName draft="unconfirmed">مائیکرو سیکنڈ</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} م س</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="unconfirmed">نینو سیکنڈز</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ن س</unitPattern>
 			</unit>
-			<unit type="graphics-pixel">
-				<displayName draft="unconfirmed">پکسلز</displayName>
-			</unit>
-			<unit type="graphics-megapixel">
-				<displayName draft="unconfirmed">میگا پکسلز</displayName>
-			</unit>
-			<unit type="graphics-dot">
-				<displayName draft="unconfirmed">ڈاٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ڈاٹ</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">کلو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} کلو میٹر</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0} فی کلو میٹر</perUnitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName draft="unconfirmed">میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میٹر</unitPattern>
-			</unit>
 			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">سینٹی میٹر</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}cm</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/سینٹی میٹر</perUnitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">ملی میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ملی میٹر</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<displayName draft="unconfirmed">پیکو میٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پیکو میٹر</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<displayName draft="unconfirmed">میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} میل</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName draft="unconfirmed">گز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} گز</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<displayName draft="unconfirmed">فٹ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فٹ</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/فٹ</perUnitPattern>
-			</unit>
-			<unit type="length-inch">
-				<displayName draft="unconfirmed">انچا</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} انچا</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/انچا</perUnitPattern>
-			</unit>
-			<unit type="length-parsec">
-				<displayName draft="unconfirmed">پارسیک</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پارسیک</unitPattern>
-			</unit>
-			<unit type="length-light-year">
-				<displayName draft="unconfirmed">نوری کال</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} نوری کال</unitPattern>
-			</unit>
-			<unit type="length-furlong">
-				<displayName draft="unconfirmed">فرلانگ</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فرلانگ</unitPattern>
-			</unit>
-			<unit type="length-fathom">
-				<displayName draft="unconfirmed">فیتھامز</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} فیتھامز</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<displayName draft="unconfirmed">بحری میل</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} بحری میل</unitPattern>
-			</unit>
-			<unit type="length-point">
-				<displayName draft="unconfirmed">پوائنٹس</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} پوائنٹس</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="unconfirmed">شمسی رداس</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} شمسی ر</unitPattern>
 			</unit>
-			<unit type="mass-kilogram">
-				<displayName draft="unconfirmed">kg</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
-			</unit>
 			<unit type="mass-gram">
-				<displayName draft="unconfirmed">گرام</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} گرام</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="unconfirmed">km/hr</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}kph</unitPattern>
 			</unit>
-			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">ڈگری سیلسیس</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}‎°C</unitPattern>
-			</unit>
-			<unit type="volume-liter">
-				<displayName draft="unconfirmed">لیٹر</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} لیٹر</unitPattern>
-			</unit>
-			<coordinateUnit>
-				<displayName draft="unconfirmed">ڈائریکشن</displayName>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
 	</units>
 	<listPatterns>
@@ -6093,47 +4909,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0}، یا {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} یا {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}،{1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0}،{1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}،{1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} ،آں {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} آں {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

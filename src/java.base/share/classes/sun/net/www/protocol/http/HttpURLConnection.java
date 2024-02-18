@@ -162,15 +162,15 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
 
     /* Should we enable buffering of error streams? */
-    private static boolean enableESBuffer = false;
+    private static final boolean enableESBuffer;
 
     /* timeout waiting for read for buffered error stream;
      */
-    private static int timeout4ESBuffer = 0;
+    private static final int timeout4ESBuffer;
 
     /* buffer size for buffered error stream;
      */
-    private static int bufSize4ES = 0;
+    private static final int bufSize4ES;
 
     /*
      * Restrict setting of request headers through the public api
@@ -264,24 +264,26 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
         enableESBuffer = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.errorstream.enableBuffering"));
-        timeout4ESBuffer = GetIntegerAction.privilegedGetProperty(
+        int esBufferTimeout = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.timeout", 300);
-        if (timeout4ESBuffer <= 0) {
-            timeout4ESBuffer = 300; // use the default
+        if (esBufferTimeout <= 0) {
+            esBufferTimeout = 300; // use the default
         }
+        timeout4ESBuffer = esBufferTimeout;
 
-        bufSize4ES = GetIntegerAction.privilegedGetProperty(
+        int esBufSize = GetIntegerAction.privilegedGetProperty(
                 "sun.net.http.errorstream.bufferSize", 4096);
-        if (bufSize4ES <= 0) {
-            bufSize4ES = 4096; // use the default
+        if (esBufSize <= 0) {
+            esBufSize = 4096; // use the default
         }
+        bufSize4ES = esBufSize;
 
         allowRestrictedHeaders = Boolean.parseBoolean(
                 props.getProperty("sun.net.http.allowRestrictedHeaders"));
         if (!allowRestrictedHeaders) {
             restrictedHeaderSet = HashSet.newHashSet(restrictedHeaders.length);
             for (int i=0; i < restrictedHeaders.length; i++) {
-                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase());
+                restrictedHeaderSet.add(restrictedHeaders[i].toLowerCase(Locale.ROOT));
             }
         } else {
             restrictedHeaderSet = null;
@@ -349,7 +351,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
 
     /* The headers actually set by the user are recorded here also
      */
-    private MessageHeader userHeaders;
+    private final MessageHeader userHeaders;
 
     /* Headers and request method cannot be changed
      * once this flag is set in :-
@@ -401,6 +403,10 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     /* Remembered Exception, we will throw it again if somebody
        calls getInputStream after disconnect */
     private Exception rememberedException = null;
+
+    /* Remembered Exception, we will throw it again if somebody
+       calls getOutputStream after disconnect  or error */
+    private Exception rememberedExceptionOut = null;
 
     /* If we decide we want to reuse a client, we put it here */
     private HttpClient reuseClient = null;
@@ -485,7 +491,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             return false;
         }
 
-        key = key.toLowerCase();
+        key = key.toLowerCase(Locale.ROOT);
         if (restrictedHeaderSet.contains(key)) {
             /*
              * Exceptions to restricted headers:
@@ -1429,6 +1435,14 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                                + " if doOutput=false - call setDoOutput(true)");
             }
 
+            if (rememberedExceptionOut != null) {
+                if (rememberedExceptionOut instanceof RuntimeException) {
+                    throw new RuntimeException(rememberedExceptionOut);
+                } else {
+                    throw getChainedException((IOException) rememberedExceptionOut);
+                }
+            }
+
             if (method.equals("GET")) {
                 method = "POST"; // Backward compatibility
             }
@@ -1488,9 +1502,11 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             int i = responseCode;
             disconnectInternal();
             responseCode = i;
+            rememberedExceptionOut = e;
             throw e;
         } catch (RuntimeException | IOException e) {
             disconnectInternal();
+            rememberedExceptionOut = e;
             throw e;
         }
     }

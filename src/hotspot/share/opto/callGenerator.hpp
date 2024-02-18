@@ -171,22 +171,28 @@ class CallGenerator : public ArenaObj {
                                                  CallGenerator* cg);
   virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
-  virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
+  virtual void print_inlining_late(InliningResult result, const char* msg) { ShouldNotReachHere(); }
 
   static void print_inlining(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    if (C->print_inlining()) {
-      C->print_inlining(callee, inline_level, bci, msg);
-    }
+    print_inlining_impl(C, callee, inline_level, bci, InliningResult::SUCCESS, msg);
   }
 
   static void print_inlining_failure(Compile* C, ciMethod* callee, int inline_level, int bci, const char* msg) {
-    print_inlining(C, callee, inline_level, bci, msg);
+    print_inlining_impl(C, callee, inline_level, bci, InliningResult::FAILURE, msg);
     C->log_inline_failure(msg);
   }
 
   static bool is_inlined_method_handle_intrinsic(JVMState* jvms, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* caller, int bci, ciMethod* m);
   static bool is_inlined_method_handle_intrinsic(ciMethod* symbolic_info, ciMethod* m);
+
+private:
+  static void print_inlining_impl(Compile* C, ciMethod* callee, int inline_level, int bci,
+                                  InliningResult result, const char* msg) {
+    if (C->print_inlining()) {
+      C->print_inlining(callee, inline_level, bci, result, msg);
+    }
+  }
 };
 
 

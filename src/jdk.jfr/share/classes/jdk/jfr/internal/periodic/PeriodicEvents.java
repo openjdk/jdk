@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jdk.jfr.Event;
+import jdk.internal.event.Event;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.LogLevel;
 import jdk.jfr.internal.LogTag;
@@ -96,16 +96,8 @@ public final class PeriodicEvents {
 
     // Only to be called from periodic task thread
     public static long doPeriodic() {
-        try {
-            return runPeriodic(JVM.counterTime());
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
-        }
-    }
-
-    // Code copied from prior native implementation
-    private static long runPeriodic(long eventTimestamp) {
+        long eventTimestamp = JVM.counterTime();
+        // Code copied from prior native implementation
         long last = lastTimeMillis;
         // The interval for periodic events is typically at least 1 s, so
         // System.currentTimeMillis() is sufficient. JVM.counterTime() lacks

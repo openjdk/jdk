@@ -33,15 +33,15 @@ import java.lang.module.ModuleDescriptor.Version;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleHashInfo;
-import jdk.internal.classfile.attribute.ModuleHashesAttribute;
-import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
-import jdk.internal.classfile.attribute.ModulePackagesAttribute;
-import jdk.internal.classfile.attribute.ModuleResolutionAttribute;
-import jdk.internal.classfile.attribute.ModuleTargetAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.attribute.ModuleAttribute;
+import java.lang.classfile.attribute.ModuleHashInfo;
+import java.lang.classfile.attribute.ModuleHashesAttribute;
+import java.lang.classfile.attribute.ModuleMainClassAttribute;
+import java.lang.classfile.attribute.ModulePackagesAttribute;
+import java.lang.classfile.attribute.ModuleResolutionAttribute;
+import java.lang.classfile.attribute.ModuleTargetAttribute;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 
@@ -150,9 +150,10 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public byte[] toByteArray() throws IOException {
-        var cm = Classfile.parse(in.readAllBytes());
+        var cc = ClassFile.of();
+        var cm = cc.parse(in.readAllBytes());
         Version v = ModuleInfoExtender.this.version;
-        return cm.transform(ClassTransform.endHandler(clb -> {
+        return cc.transform(cm, ClassTransform.endHandler(clb -> {
             // ModuleMainClass attribute
             if (mainClass != null) {
                 clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mainClass)));

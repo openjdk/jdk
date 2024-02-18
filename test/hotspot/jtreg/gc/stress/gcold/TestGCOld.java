@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -369,14 +369,14 @@ public class TestGCOld {
 
     System.err.println("Initialization complete...");
 
-    long start = System.currentTimeMillis();
+    long startNanos = System.nanoTime();
 
     for (int step = 0; step < steps; step++) {
       doStep(MEG);
     }
 
-    long end = System.currentTimeMillis();
-    float secs = ((float)(end-start))/1000.0F;
+    long endNanos = System.nanoTime();
+    float secs = (endNanos - startNanos) / 1_000_000_000F;
 
 //  checkTrees();
 

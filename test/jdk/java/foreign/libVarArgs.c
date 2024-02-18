@@ -41,7 +41,6 @@ typedef struct {
 
 enum NativeType {
     T_INT,
-    T_FLOAT,
     T_DOUBLE,
     T_POINTER,
     T_S_I,
@@ -141,7 +140,6 @@ EXPORT void varargs(call_info* info, int num, ...) {
         int id = info->argids[i];
         switch (id) {
             CASE(T_INT, int)
-            CASE(T_FLOAT, double) // vararg float is promoted to double per C spec
             CASE(T_DOUBLE, double)
             CASE(T_POINTER, void*)
             CASE(T_S_I,   struct S_I)

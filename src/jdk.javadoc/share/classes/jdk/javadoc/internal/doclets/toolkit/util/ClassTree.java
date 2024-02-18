@@ -185,7 +185,7 @@ public class ClassTree {
         Messages messages = configuration.getMessages();
         messages.notice("doclet.Building_Tree");
 
-        Comparator<Element> comparator = utils.comparators.makeClassUseComparator();
+        Comparator<Element> comparator = utils.comparators.classUseComparator();
 
         hierarchies = new EnumMap<>(HierarchyKind.class);
         for (var hk : HierarchyKind.values()) {
@@ -206,7 +206,7 @@ public class ClassTree {
         this.configuration = configuration;
         this.utils = configuration.utils;
 
-        Comparator<Element> comparator = utils.comparators.makeClassUseComparator();
+        Comparator<Element> comparator = utils.comparators.classUseComparator();
 
         hierarchies = new EnumMap<>(HierarchyKind.class);
         for (var hk : HierarchyKind.values()) {

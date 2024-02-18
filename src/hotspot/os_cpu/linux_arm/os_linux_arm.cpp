@@ -25,7 +25,6 @@
 // no precompiled headers
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -483,7 +482,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, Assembler::InstructionSize);
+  print_instructions(st, pc);
   st->cr();
 }
 

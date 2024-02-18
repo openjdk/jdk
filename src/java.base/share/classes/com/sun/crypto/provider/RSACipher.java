@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,7 @@ public final class RSACipher extends CipherSpi {
 
     // cipher parameter for OAEP padding and TLS RSA premaster secret
     private AlgorithmParameterSpec spec = null;
+    private boolean forTlsPremasterSecret = false;
 
     // buffer for the data
     private byte[] buffer;
@@ -286,6 +287,7 @@ public final class RSACipher extends CipherSpi {
                 }
 
                 spec = params;
+                forTlsPremasterSecret = true;
                 this.random = random;   // for TLS RSA premaster secret
             }
             int blockType = (mode <= MODE_DECRYPT) ? RSAPadding.PAD_BLOCKTYPE_2
@@ -349,21 +351,38 @@ public final class RSACipher extends CipherSpi {
             switch (mode) {
             case MODE_SIGN:
                 paddingCopy = padding.pad(buffer, 0, bufOfs);
-                result = RSACore.rsa(paddingCopy, privateKey, true);
+                if (paddingCopy != null) {
+                    result = RSACore.rsa(paddingCopy, privateKey, true);
+                } else {
+                    throw new BadPaddingException("Padding error in signing");
+                }
                 break;
             case MODE_VERIFY:
                 byte[] verifyBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(verifyBuffer, publicKey);
                 result = padding.unpad(paddingCopy);
+                if (result == null) {
+                    throw new BadPaddingException
+                            ("Padding error in verification");
+                }
                 break;
             case MODE_ENCRYPT:
                 paddingCopy = padding.pad(buffer, 0, bufOfs);
-                result = RSACore.rsa(paddingCopy, publicKey);
+                if (paddingCopy != null) {
+                    result = RSACore.rsa(paddingCopy, publicKey);
+                } else {
+                    throw new BadPaddingException
+                            ("Padding error in encryption");
+                }
                 break;
             case MODE_DECRYPT:
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
                 result = padding.unpad(paddingCopy);
+                if (result == null && !forTlsPremasterSecret) {
+                    throw new BadPaddingException
+                            ("Padding error in decryption");
+                }
                 break;
             default:
                 throw new AssertionError("Internal error");
@@ -372,9 +391,9 @@ public final class RSACipher extends CipherSpi {
         } finally {
             Arrays.fill(buffer, 0, bufOfs, (byte)0);
             bufOfs = 0;
-            if (paddingCopy != null             // will not happen
+            if (paddingCopy != null
                     && paddingCopy != buffer    // already cleaned
-                    && paddingCopy != result) { // DO NOT CLEAN, THIS IS RESULT!
+                    && paddingCopy != result) { // DO NOT CLEAN, THIS IS RESULT
                 Arrays.fill(paddingCopy, (byte)0);
             }
         }
@@ -449,26 +468,22 @@ public final class RSACipher extends CipherSpi {
 
         boolean isTlsRsaPremasterSecret =
                 algorithm.equals("TlsRsaPremasterSecret");
-        Exception failover = null;
         byte[] encoded = null;
 
         update(wrappedKey, 0, wrappedKey.length);
         try {
             encoded = doFinal();
-        } catch (BadPaddingException e) {
-            if (isTlsRsaPremasterSecret) {
-                failover = e;
-            } else {
-                throw new InvalidKeyException("Unwrapping failed", e);
-            }
-        } catch (IllegalBlockSizeException e) {
-            // should not occur, handled with length check above
+        } catch (BadPaddingException | IllegalBlockSizeException e) {
+            // BadPaddingException cannot happen for TLS RSA unwrap.
+            // In that case, padding error is indicated by returning null.
+            // IllegalBlockSizeException cannot happen in any case,
+            // because of the length check above.
             throw new InvalidKeyException("Unwrapping failed", e);
         }
 
         try {
             if (isTlsRsaPremasterSecret) {
-                if (!(spec instanceof TlsRsaPremasterSecretParameterSpec)) {
+                if (!forTlsPremasterSecret) {
                     throw new IllegalStateException(
                             "No TlsRsaPremasterSecretParameterSpec specified");
                 }
@@ -477,7 +492,7 @@ public final class RSACipher extends CipherSpi {
                 encoded = KeyUtil.checkTlsPreMasterSecretKey(
                         ((TlsRsaPremasterSecretParameterSpec) spec).getClientVersion(),
                         ((TlsRsaPremasterSecretParameterSpec) spec).getServerVersion(),
-                        random, encoded, (failover != null));
+                        random, encoded, encoded == null);
             }
 
             return ConstructKeys.constructKey(encoded, algorithm, type);

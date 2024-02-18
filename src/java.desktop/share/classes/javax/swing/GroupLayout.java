@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3521,7 +3521,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
 
-    // LinkInfo contains the set of ComponentInfosthat are linked along a
+    // LinkInfo contains the set of ComponentInfos that are linked along a
     // particular axis.
     private static class LinkInfo {
         private final int axis;

@@ -167,25 +167,27 @@ static u1 boolean_method_code_attribute[] = {
   0x0, // attributes_count
 };
 
-// annotation processing support
+/*
+  Annotation layout.
 
-enum {  // initial annotation layout
-  atype_off = 0,      // utf8 such as 'Ljava/lang/annotation/Retention;'
-  count_off = 2,      // u2   such as 1 (one value)
-  member_off = 4,     // utf8 such as 'value'
-  tag_off = 6,        // u1   such as 'c' (type) or 'e' (enum)
-  e_tag_val = 'e',
-  e_type_off = 7,   // utf8 such as 'Ljava/lang/annotation/RetentionPolicy;'
-  e_con_off = 9,    // utf8 payload, such as 'SOURCE', 'CLASS', 'RUNTIME'
-  e_size = 11,     // end of 'e' annotation
-  c_tag_val = 'c',    // payload is type
-  c_con_off = 7,    // utf8 payload, such as 'I'
-  c_size = 9,       // end of 'c' annotation
-  s_tag_val = 's',    // payload is String
-  s_con_off = 7,    // utf8 payload, such as 'Ljava/lang/String;'
-  s_size = 9,
-  min_size = 6        // smallest possible size (zero members)
-};
+  enum {  // initial annotation layout
+    atype_off = 0,      // utf8 such as 'Ljava/lang/annotation/Retention;'
+    count_off = 2,      // u2   such as 1 (one value)
+    member_off = 4,     // utf8 such as 'value'
+    tag_off = 6,        // u1   such as 'c' (type) or 'e' (enum)
+    e_tag_val = 'e',
+    e_type_off = 7,   // utf8 such as 'Ljava/lang/annotation/RetentionPolicy;'
+    e_con_off = 9,    // utf8 payload, such as 'SOURCE', 'CLASS', 'RUNTIME'
+    e_size = 11,     // end of 'e' annotation
+    c_tag_val = 'c',    // payload is type
+    c_con_off = 7,    // utf8 payload, such as 'I'
+    c_size = 9,       // end of 'c' annotation
+    s_tag_val = 's',    // payload is String
+    s_con_off = 7,    // utf8 payload, such as 'Ljava/lang/String;'
+    s_size = 9,
+    min_size = 6        // smallest possible size (zero members)
+  };
+*/
 
 static int skip_annotation_value(const address, int, int); // fwd decl
 
@@ -196,7 +198,7 @@ static int next_annotation_index(const address buffer, int limit, int index) {
   if ((index += 2) >= limit) {
     return limit;
   }
-  int nof_members = JfrBigEndian::read<u2>(buffer + index - 2);
+  int nof_members = JfrBigEndian::read<int, u2>(buffer + index - 2);
   while (--nof_members >= 0 && index < limit) {
     index += 2; // skip member
     index = skip_annotation_value(buffer, limit, index);
@@ -240,7 +242,7 @@ static int skip_annotation_value(const address buffer, int limit, int index) {
         if ((index += 2) >= limit) {
           return limit;
         }
-        int nof_values = JfrBigEndian::read<u2>(buffer + index - 2);
+        int nof_values = JfrBigEndian::read<int, u2>(buffer + index - 2);
         while (--nof_values >= 0 && index < limit) {
           index = skip_annotation_value(buffer, limit, index);
         }
@@ -255,11 +257,11 @@ static int skip_annotation_value(const address buffer, int limit, int index) {
   return index;
 }
 
-static const u2 number_of_elements_offset = (u2)2;
-static const u2 element_name_offset = (u2)(number_of_elements_offset + 2);
-static const u2 element_name_size = (u2)2;
-static const u2 value_type_relative_offset = (u2)2;
-static const u2 value_relative_offset = (u2)(value_type_relative_offset + 1);
+static constexpr const int number_of_elements_offset = 2;
+static constexpr const int element_name_offset = number_of_elements_offset + 2;
+static constexpr const int element_name_size = 2;
+static constexpr const int value_type_relative_offset = 2;
+static constexpr const int value_relative_offset = value_type_relative_offset + 1;
 
 // see JVMS - 4.7.16. The RuntimeVisibleAnnotations Attribute
 
@@ -267,19 +269,20 @@ class AnnotationElementIterator : public StackObj {
  private:
   const InstanceKlass* _ik;
   const address _buffer;
-  const u2 _limit; // length of annotation
-  mutable u2 _current; // element
-  mutable u2 _next; // element
-  u2 value_index() const {
-    return JfrBigEndian::read<u2>(_buffer + _current + value_relative_offset);
+  const int _limit; // length of annotation
+  mutable int _current; // element
+  mutable int _next; // element
+
+  int value_index() const {
+    return JfrBigEndian::read<int, u2>(_buffer + _current + value_relative_offset);
   }
 
  public:
-  AnnotationElementIterator(const InstanceKlass* ik, address buffer, u2 limit) : _ik(ik),
-                                                                                 _buffer(buffer),
-                                                                                 _limit(limit),
-                                                                                 _current(element_name_offset),
-                                                                                 _next(element_name_offset) {
+  AnnotationElementIterator(const InstanceKlass* ik, address buffer, int limit) : _ik(ik),
+                                                                                  _buffer(buffer),
+                                                                                  _limit(limit),
+                                                                                  _current(element_name_offset),
+                                                                                  _next(element_name_offset) {
     assert(_buffer != nullptr, "invariant");
     assert(_next == element_name_offset, "invariant");
     assert(_current == element_name_offset, "invariant");
@@ -299,17 +302,17 @@ class AnnotationElementIterator : public StackObj {
     assert(_current <= _limit, "invariant");
   }
 
-  u2 number_of_elements() const {
-    return JfrBigEndian::read<u2>(_buffer + number_of_elements_offset);
+  int number_of_elements() const {
+    return JfrBigEndian::read<int, u2>(_buffer + number_of_elements_offset);
   }
 
   const Symbol* name() const {
     assert(_current < _next, "invariant");
-    return _ik->constants()->symbol_at(JfrBigEndian::read<u2>(_buffer + _current));
+    return _ik->constants()->symbol_at(JfrBigEndian::read<int, u2>(_buffer + _current));
   }
 
   char value_type() const {
-    return JfrBigEndian::read<u1>(_buffer + _current + value_type_relative_offset);
+    return JfrBigEndian::read<char, u1>(_buffer + _current + value_type_relative_offset);
   }
 
   jint read_int() const {
@@ -325,10 +328,10 @@ class AnnotationIterator : public StackObj {
  private:
   const InstanceKlass* _ik;
   // ensure _limit field is declared before _buffer
-  u2 _limit; // length of annotations array
+  int _limit; // length of annotations array
   const address _buffer;
-  mutable u2 _current; // annotation
-  mutable u2 _next; // annotation
+  mutable int _current; // annotation
+  mutable int _next; // annotation
 
  public:
   AnnotationIterator(const InstanceKlass* ik, AnnotationArray* ar) : _ik(ik),
@@ -353,14 +356,16 @@ class AnnotationIterator : public StackObj {
     assert(_next <= _limit, "invariant");
     assert(_current <= _limit, "invariant");
   }
+
   const AnnotationElementIterator elements() const {
     assert(_current < _next, "invariant");
     return AnnotationElementIterator(_ik, _buffer + _current, _next - _current);
   }
+
   const Symbol* type() const {
     assert(_buffer != nullptr, "invariant");
     assert(_current < _limit, "invariant");
-    return _ik->constants()->symbol_at(JfrBigEndian::read<u2>(_buffer + _current));
+    return _ik->constants()->symbol_at(JfrBigEndian::read<int, u2>(_buffer + _current));
   }
 };
 
@@ -476,13 +481,13 @@ static u2 utf8_info_index(const InstanceKlass* ik, const Symbol* const target, T
   assert(target != nullptr, "invariant");
   const ConstantPool* cp = ik->constants();
   const int cp_len = cp->length();
-  for (u2 index = 1; index < cp_len; ++index) {
+  for (int index = 1; index < cp_len; ++index) {
     const constantTag tag = cp->tag_at(index);
     if (tag.is_utf8()) {
       const Symbol* const utf8_sym = cp->symbol_at(index);
       assert(utf8_sym != nullptr, "invariant");
       if (utf8_sym == target) {
-        return index;
+        return static_cast<u2>(index);
       }
     }
   }
@@ -680,7 +685,7 @@ static u2 position_stream_after_cp(const ClassFileStream* stream) {
         continue;
       }
       case JVM_CONSTANT_Utf8: {
-        u2 utf8_length = stream->get_u2_fast();
+        int utf8_length = static_cast<int>(stream->get_u2_fast());
         stream->skip_u1_fast(utf8_length); // skip 2 + len bytes
         continue;
       }
@@ -725,8 +730,7 @@ static u2 position_stream_after_fields(const ClassFileStream* stream) {
     const u2 attrib_info_len = stream->get_u2_fast();
     for (u2 j = 0; j < attrib_info_len; ++j) {
       stream->skip_u2_fast(1);
-      const u4 attrib_len = stream->get_u4_fast();
-      stream->skip_u1_fast(attrib_len);
+      stream->skip_u1_fast(static_cast<int>(stream->get_u4_fast()));
     }
   }
   return orig_fields_len;
@@ -754,7 +758,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
   const u2 orig_methods_len = stream->get_u2_fast();
   // Move copy position past original method_count
   // in order to not copy the original count
-  orig_method_len_offset += sizeof(u2);
+  orig_method_len_offset += 2;
   for (u2 i = 0; i < orig_methods_len; ++i) {
     const u4 method_offset = stream->current_offset();
     stream->skip_u2_fast(1); // Access Flags
@@ -763,8 +767,7 @@ static u2 position_stream_after_methods(JfrBigEndianWriter& writer,
     const u2 attributes_count = stream->get_u2_fast();
     for (u2 j = 0; j < attributes_count; ++j) {
       stream->skip_u2_fast(1);
-      const u4 attrib_len = stream->get_u4_fast();
-      stream->skip_u1_fast(attrib_len);
+      stream->skip_u1_fast(static_cast<int>(stream->get_u4_fast()));
     }
     if (clinit_method != nullptr && name_index == clinit_method->name_index()) {
       // The method just parsed is an existing <clinit> method.
@@ -853,7 +856,7 @@ static void adjust_exception_table(JfrBigEndianWriter& writer, u2 bci_adjustment
   }
 }
 
-enum StackMapFrameTypes {
+enum StackMapFrameTypes : u1 {
   SAME_FRAME_BEGIN = 0,
   SAME_FRAME_END = 63,
   SAME_LOCALS_1_STACK_ITEM_FRAME_BEGIN = 64,
@@ -895,7 +898,8 @@ static void adjust_stack_map(JfrBigEndianWriter& writer,
   } else if (frame_type >= SAME_LOCALS_1_STACK_ITEM_FRAME_BEGIN &&
              frame_type <= SAME_LOCALS_1_STACK_ITEM_FRAME_END) {
     writer.write<u1>(SAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED);
-    writer.write<u2>((frame_type - SAME_LOCALS_1_STACK_ITEM_FRAME_BEGIN) + bci_adjustment_offset);
+    const u2 value = frame_type - SAME_LOCALS_1_STACK_ITEM_FRAME_BEGIN;
+    writer.write<u2>(value + bci_adjustment_offset);
   } else if (frame_type >= SAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED) {
       // SAME_LOCALS_1_STACK_ITEM_FRAME_EXTENDED to FULL_FRAME
       // has a u2 offset_delta field
@@ -909,9 +913,9 @@ static void adjust_stack_map(JfrBigEndianWriter& writer,
     writer.write<u1>(stream.get_u1(THREAD));
   }
 
-  u4 stack_map_attrib_len = writer.current_offset() - stack_map_attrib_len_offset;
+  u4 stack_map_attrib_len = static_cast<u4>(writer.current_offset() - stack_map_attrib_len_offset);
   // the stack_map_table_attributes_length value is exclusive
-  stack_map_attrib_len -= sizeof(u4);
+  stack_map_attrib_len -= 4;
   writer.write_at_offset(stack_map_attrib_len, stack_map_attrib_len_offset);
 }
 
@@ -938,9 +942,9 @@ static void adjust_line_number_table(JfrBigEndianWriter& writer,
     writer.write<u2>((u2)lnt_stream.line());
   }
   writer.write_at_offset(line_number_table_entries, lnt_attributes_entries_offset);
-  u4 lnt_table_attributes_len = writer.current_offset() - lnt_attributes_length_offset;
+  u4 lnt_table_attributes_len = static_cast<u4>(writer.current_offset() - lnt_attributes_length_offset);
   // the line_number_table_attributes_length value is exclusive
-  lnt_table_attributes_len -= sizeof(u4);
+  lnt_table_attributes_len -= 4;
   writer.write_at_offset(lnt_table_attributes_len, lnt_attributes_length_offset);
 }
 
@@ -971,9 +975,9 @@ static u2 adjust_local_variable_table(JfrBigEndianWriter& writer,
       ++num_lvtt_entries;
     }
   }
-  u4 lvt_table_attributes_len = writer.current_offset() - lvt_attributes_length_offset;
+  u4 lvt_table_attributes_len = static_cast<u4>(writer.current_offset() - lvt_attributes_length_offset);
   // the lvt_table_attributes_length value is exclusive
-  lvt_table_attributes_len -= sizeof(u4);
+  lvt_table_attributes_len -= 4;
   writer.write_at_offset(lvt_table_attributes_len, lvt_attributes_length_offset);
   return num_lvtt_entries;
 }
@@ -1001,9 +1005,9 @@ static void adjust_local_variable_type_table(JfrBigEndianWriter& writer,
       writer.write<u2>(table[i].slot);
     }
   }
-  u4 lvtt_table_attributes_len = writer.current_offset() - lvtt_attributes_length_offset;
+  u4 lvtt_table_attributes_len = static_cast<u4>(writer.current_offset() - lvtt_attributes_length_offset);
   // the lvtt_table_attributes_length value is exclusive
-  lvtt_table_attributes_len -= sizeof(u4);
+  lvtt_table_attributes_len -= 4;
   writer.write_at_offset(lvtt_table_attributes_len, lvtt_attributes_length_offset);
 }
 
@@ -1061,8 +1065,8 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   const u2 name_index = utf8_indexes[UTF8_OPT_clinit];
   assert(name_index != invalid_cp_index, "invariant");
   const u2 desc_index = utf8_indexes[UTF8_REQ_EMPTY_VOID_METHOD_DESC];
-  const u2 max_stack = MAX2(clinit_method != nullptr ? clinit_method->verifier_max_stack() : 1, 1);
-  const u2 max_locals = MAX2(clinit_method != nullptr ? clinit_method->max_locals() : 0, 0);
+  const u2 max_stack = MAX2<u2>(clinit_method != nullptr ? clinit_method->verifier_max_stack() : 1, 1);
+  const u2 max_locals = MAX2<u2>(clinit_method != nullptr ? clinit_method->max_locals() : 0, 0);
   const u2 orig_bytecodes_length = clinit_method != nullptr ? (u2)clinit_method->code_size() : 0;
   const address orig_bytecodes = clinit_method != nullptr ? clinit_method->code_base() : nullptr;
   const u2 new_code_length = injected_code_length + orig_bytecodes_length;
@@ -1111,9 +1115,9 @@ static jlong insert_clinit_method(const InstanceKlass* ik,
   assert(writer.is_valid(), "invariant");
   adjust_code_attributes(writer, utf8_indexes, injected_code_length, clinit_method, THREAD);
   assert(writer.is_valid(), "invariant");
-  u4 code_attribute_len = writer.current_offset() - code_attribute_length_offset;
+  u4 code_attribute_len = static_cast<u4>(writer.current_offset() - code_attribute_length_offset);
   // the code_attribute_length value is exclusive
-  code_attribute_len -= sizeof(u4);
+  code_attribute_len -= 4;
   writer.write_at_offset(code_attribute_len, code_attribute_length_offset);
   return writer.current_offset();
 }
@@ -1212,7 +1216,7 @@ static u2 find_or_add_utf8_info(JfrBigEndianWriter& writer,
   assert(utf8_constant != nullptr, "invariant");
   TempNewSymbol utf8_sym = SymbolTable::new_symbol(utf8_constant);
   // lookup existing
-  const int utf8_orig_idx = utf8_info_index(ik, utf8_sym, THREAD);
+  const u2 utf8_orig_idx = utf8_info_index(ik, utf8_sym, THREAD);
   if (utf8_orig_idx != invalid_cp_index) {
     // existing constant pool entry found
     return utf8_orig_idx;
@@ -1405,8 +1409,10 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   //
   if (register_klass) {
     insert_clinit_method(ik, parser, writer, orig_cp_len, utf8_indexes, flr_register_method_ref_index, clinit_method, THREAD);
+    if (clinit_method == nullptr) {
+      ++number_of_new_methods;
+    }
   }
-  number_of_new_methods += clinit_method != nullptr ? 0 : register_klass ? 1 : 0;
   // Update classfile methods_count
   writer.write_at_offset<u2>(orig_methods_len + number_of_new_methods, new_method_len_offset);
   assert(writer.is_valid(), "invariant");

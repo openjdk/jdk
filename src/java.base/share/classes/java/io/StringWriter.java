@@ -128,8 +128,9 @@ public class StringWriter extends Writer {
      * <p> An invocation of this method of the form {@code out.append(csq)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(csq.toString()) </pre>
+     * {@snippet lang=java :
+     *     out.write(csq.toString())
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -159,9 +160,9 @@ public class StringWriter extends Writer {
      * is not {@code null}, behaves in
      * exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.subSequence(start, end).toString())
-     * }</pre>
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -196,8 +197,9 @@ public class StringWriter extends Writer {
      * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     out.write(c) </pre>
+     * {@snippet lang=java :
+     *     out.write(c)
+     * }
      *
      * @param  c
      *         The 16-bit character to append

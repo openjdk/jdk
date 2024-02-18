@@ -71,6 +71,15 @@ void AgeTable::clear() {
   }
 }
 
+#ifndef PRODUCT
+bool AgeTable::is_clear() const {
+  for (const size_t* p = sizes; p < sizes + table_size; ++p) {
+    if (*p != 0) return false;
+  }
+  return true;
+}
+#endif // !PRODUCT
+
 void AgeTable::merge(const AgeTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
@@ -82,7 +91,7 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markWord::max_age + 1,
-           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is " UINTX_FORMAT, MaxTenuringThreshold);
+           "MaxTenuringThreshold should be 0 or markWord::max_age + 1, but is %u", MaxTenuringThreshold);
     result = MaxTenuringThreshold;
   } else {
     size_t total = 0;
@@ -99,7 +108,7 @@ uint AgeTable::compute_tenuring_threshold(size_t desired_survivor_size) {
   }
 
 
-  log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold " UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
+  log_debug(gc, age)("Desired survivor size %zu bytes, new threshold " UINTX_FORMAT " (max threshold %u)",
                      desired_survivor_size * oopSize, (uintx) result, MaxTenuringThreshold);
 
   return result;
@@ -114,7 +123,7 @@ void AgeTable::print_age_table(uint tenuring_threshold) {
 }
 
 void AgeTable::print_on(outputStream* st, uint tenuring_threshold) {
-  st->print_cr("Age table with threshold %u (max threshold " UINTX_FORMAT ")",
+  st->print_cr("Age table with threshold %u (max threshold %u)",
                tenuring_threshold, MaxTenuringThreshold);
 
   size_t total = 0;

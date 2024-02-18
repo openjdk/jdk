@@ -37,9 +37,6 @@
 // Global offset instead of address for an oop within a java object.
 enum class narrowOop : uint32_t { null = 0 };
 
-// If compressed klass pointers then use narrowKlass.
-typedef juint  narrowKlass;
-
 typedef void* OopOrNarrowOopStar;
 
 #ifndef CHECK_UNHANDLED_OOPS
@@ -182,9 +179,6 @@ class   MethodData;
 //      class Metadata
 class   Method;
 class   ConstantPool;
-//      class CHeapObj
-class   CompiledICHolder;
-
 
 // The klass hierarchy is separate from the oop hierarchy.
 

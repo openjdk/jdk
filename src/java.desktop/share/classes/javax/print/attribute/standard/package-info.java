@@ -77,7 +77,7 @@
  * based on the Internet Printing Protocol (IPP) attributes as defined in the
  * Internet RFC document, <i>RFC 2911 Internet Printing Protocol/1.1: Model and
  * Semantics</i> dated September 2000. See
- * <a href="http://www.ietf.org/rfc/rfc2911.txt">RFC 2911</a> for more
+ * <a href="https://www.rfc-editor.org/info/rfc2911">RFC 2911</a> for more
  * information. The descriptive text for each attribute class was taken largely
  * from the above documents. The above authors' contribution to the API is
  * gratefully acknowledged.
@@ -590,6 +590,8 @@
  * later time. {@code IllegalArgumentException} and {@code NullPointerException}
  * are examples of typical and acceptable run time exceptions for such cases.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2911
+ *      RFC 2911: Internet Printing Protocol/1.1: Model and Semantics
  * @since 1.4
  */
 package javax.print.attribute.standard;

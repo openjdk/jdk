@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
+import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.PrivilegedAction;
@@ -159,47 +161,87 @@ public class SecuritySupport {
     public static String getJAXPSystemProperty(String propName) {
         String value = getSystemProperty(propName);
         if (value == null) {
-            value = readJAXPProperty(propName);
+            value = readConfig(propName);
         }
         return value;
     }
 
     /**
-     * Reads the specified property from $java.home/conf/jaxp.properties
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the System Property "java.xml.config.file" for a custom
+     * configuration file, if doesn't exist, falls back to the JDK default that
+     * is typically located at $java.home/conf/jaxp.properties.
      *
-     * @param propName the name of the property
-     * @return the value of the property
+     * @param propName the specified property
+     * @return the value of the specified property, null if the property is not
+     * found
      */
-    public static String readJAXPProperty(String propName) {
-        String value = null;
-        InputStream is = null;
-        try {
-            if (firstTime) {
-                synchronized (cacheProps) {
-                    if (firstTime) {
-                        String configFile = getSystemProperty("java.home") + File.separator
-                                + "conf" + File.separator + "jaxp.properties";
-                        File f = new File(configFile);
-                        if (isFileExists(f)) {
-                            is = getFileInputStream(f);
-                            cacheProps.load(is);
-                        }
-                        firstTime = false;
-                    }
-                }
-            }
-            value = cacheProps.getProperty(propName);
+    public static String readConfig(String propName) {
+        return readConfig(propName, false);
+    }
 
-        } catch (IOException ex) {
-        } finally {
-            if (is != null) {
-                try {
-                    is.close();
-                } catch (IOException ex) {}
+    /**
+     * Returns the value of the specified property from the Configuration file.
+     * The method reads the JDK default configuration that is typically located
+     * at $java.home/conf/jaxp.properties. On top of the default, if the System
+     * Property "java.xml.config.file" exists, the configuration file it points
+     * to will also be read. Any settings in it will then override those in the
+     * default.
+     *
+     * @param propName the specified property
+     * @param stax a flag indicating whether to read stax.properties
+     * @return the value of the specified property, null if the property is not
+     * found
+     */
+    public static String readConfig(String propName, boolean stax) {
+        // always load the default configuration file
+        if (firstTime) {
+            synchronized (cacheProps) {
+                if (firstTime) {
+                    boolean found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                "conf", "jaxp.properties")
+                                .toAbsolutePath().normalize().toString());
+
+                    // attempts to find stax.properties only if jaxp.properties is not available
+                    if (stax && !found) {
+                        found = loadProperties(
+                            Paths.get(SecuritySupport.getSystemProperty("java.home"),
+                                    "conf", "stax.properties")
+                                    .toAbsolutePath().normalize().toString()
+                        );
+                    }
+
+                    // load the custom configure on top of the default if any
+                    String configFile = SecuritySupport.getSystemProperty(JdkConstants.CONFIG_FILE_PROPNAME);
+                    if (configFile != null) {
+                        loadProperties(configFile);
+                    }
+
+                    firstTime = false;
+                }
             }
         }
 
-        return value;
+        return cacheProps.getProperty(propName);
+    }
+
+    /**
+     * Loads the properties from the specified file into the cache.
+     * @param file the specified file
+     * @return true if success, false otherwise
+     */
+    private static boolean loadProperties(String file) {
+        File f = new File(file);
+        if (SecuritySupport.doesFileExist(f)) {
+            try (final InputStream in = SecuritySupport.getFileInputStream(f)) {
+                cacheProps.load(in);
+                return true;
+            } catch (IOException e) {
+                // shouldn't happen, but required by method getFileInputStream
+            }
+        }
+        return false;
     }
 
     /**
@@ -226,6 +268,18 @@ public class SecuritySupport {
     }
 
     /**
+     * Tests whether the input is file.
+     *
+     * @param f the file to be tested
+     * @return true if the input is file, false otherwise
+     */
+    @SuppressWarnings("removal")
+    public static boolean isFile(final File f) {
+        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+                -> f.isFile()));
+    }
+
+    /**
      * Creates and returns a new FileInputStream from a file.
      * @param file the specified file
      * @return the FileInputStream
@@ -243,6 +297,23 @@ public class SecuritySupport {
     }
 
     /**
+     * Returns an InputStream from a URLConnection.
+     * @param uc the URLConnection
+     * @return the InputStream
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    @SuppressWarnings("removal")
+    public static InputStream getInputStream(final URLConnection uc)
+            throws IOException {
+        try {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<InputStream>) ()
+                    -> uc.getInputStream());
+        } catch (PrivilegedActionException e) {
+            throw (IOException) e.getException();
+        }
+    }
+
+    /**
      * Returns the resource as a stream.
      * @param name the resource name
      * @return the resource stream
@@ -251,6 +322,17 @@ public class SecuritySupport {
     public static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () ->
                 SecuritySupport.class.getResourceAsStream("/"+name));
+    }
+
+    /**
+     * Returns the resource by the name.
+     * @param name the resource name
+     * @return the resource
+     */
+    @SuppressWarnings("removal")
+    public static URL getResource(final String name) {
+        return AccessController.doPrivileged((PrivilegedAction<URL>) () ->
+                SecuritySupport.class.getResource(name));
     }
 
     /**

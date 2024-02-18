@@ -63,11 +63,7 @@ public class TestRTMSpinLoopCount {
 
     protected void runTestCases() throws Throwable {
 
-        if (Platform.isPPC()) {
-            SPIN_LOOP_COUNTS = new int[] { 0, 10, 100, 1_000, 10_000 };
-        } else {
-            SPIN_LOOP_COUNTS = new int[] { 0, 100, 1_000, 10_000, 100_000 };
-        }
+        SPIN_LOOP_COUNTS = new int[] { 0, 100, 1_000, 10_000, 100_000 };
 
         long[] aborts = new long[TestRTMSpinLoopCount.SPIN_LOOP_COUNTS.length];
 

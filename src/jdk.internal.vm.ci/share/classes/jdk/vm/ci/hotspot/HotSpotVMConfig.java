@@ -28,6 +28,7 @@ import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.services.Services;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Architecture;
 
 /**
  * Used to access native configuration details.
@@ -43,8 +44,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
         return runtime().getConfig();
     }
 
-    private final String osArch = getHostArchitectureName();
-
     HotSpotVMConfig(HotSpotVMConfigStore store) {
         super(store);
 
@@ -57,13 +56,10 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
      * {@linkplain HotSpotJVMCIBackendFactory backend}.
      */
     String getHostArchitectureName() {
-        String arch = Services.getSavedProperty("os.arch");
+        Architecture arch = Architecture.current();
         switch (arch) {
-            case "x86_64":
-                return "amd64";
-
-            default:
-                return arch;
+            case X64: return "amd64";
+            default:  return arch.name().toLowerCase();
         }
     }
 
@@ -134,7 +130,7 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int jvmMiscFlagsDeclaresDefaultMethods = getConstant("InstanceKlassFlags::_misc_declares_nonstatic_concrete_methods", Integer.class);
 
     // This is only valid on AMD64.
-    final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, osArch.equals("amd64") ? null : 0);
+    final int runtimeCallStackSize = getConstant("frame::arg_reg_save_area_bytes", Integer.class, Architecture.isX64() ? null : 0);
 
     private final int markWordNoHashInPlace = getConstant("markWord::no_hash_in_place", Integer.class);
     private final int markWordNoLockInPlace = getConstant("markWord::no_lock_in_place", Integer.class);
@@ -223,7 +219,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int constantPoolLengthOffset = getFieldOffset("ConstantPool::_length", Integer.class, "int");
     final int constantPoolFlagsOffset = getFieldOffset("ConstantPool::_flags", Integer.class, "u2");
 
-    final int constantPoolCpCacheIndexTag = getConstant("ConstantPool::CPCACHE_INDEX_TAG", Integer.class);
     final int constantPoolHasDynamicConstant = getConstant("ConstantPool::_has_dynamic_constant", Integer.class);
     final int constantPoolSourceFileNameIndexOffset = getFieldOffset("ConstantPool::_source_file_name_index", Integer.class, "u2");
 
@@ -380,7 +375,6 @@ class HotSpotVMConfig extends HotSpotVMConfigAccess {
     final int methodDataCountOffset = getConstant("CounterData::count_off", Integer.class);
     final int jumpDataTakenOffset = getConstant("JumpData::taken_off_set", Integer.class);
     final int jumpDataDisplacementOffset = getConstant("JumpData::displacement_off_set", Integer.class);
-    final int receiverTypeDataNonprofiledCountOffset = getConstant("ReceiverTypeData::nonprofiled_count_off_set", Integer.class);
     final int receiverTypeDataReceiverTypeRowCellCount = getConstant("ReceiverTypeData::receiver_type_row_cell_count", Integer.class);
     final int receiverTypeDataReceiver0Offset = getConstant("ReceiverTypeData::receiver0_offset", Integer.class);
     final int receiverTypeDataCount0Offset = getConstant("ReceiverTypeData::count0_offset", Integer.class);

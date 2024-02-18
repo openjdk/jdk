@@ -61,13 +61,13 @@ public class TestAtExit {
 
         String jlp = "-Djava.library.path=" + Utils.TEST_NATIVE_PATH;
         // First run will terminate via DestroyJavaVM
-        OutputAnalyzer output = ProcessTools.executeTestJvm(jlp, main);
+        OutputAnalyzer output = ProcessTools.executeTestJava(jlp, main);
         output.shouldNotContain("Unexpected");
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();
 
         // Second run will terminate via System.exit()
-        output = ProcessTools.executeTestJvm(jlp, main, "doExit");
+        output = ProcessTools.executeTestJava(jlp, main, "doExit");
         output.shouldNotContain("Unexpected");
         output.shouldHaveExitValue(0);
         output.reportDiagnosticSummary();

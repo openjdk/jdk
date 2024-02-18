@@ -32,6 +32,7 @@ import jdk.internal.javac.PreviewFeature;
 /**
  * A tree node for a string template expression.
  *
+ * @since 21
  */
 @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES, reflective=true)
 public interface StringTemplateTree extends ExpressionTree {

@@ -60,10 +60,10 @@ class LIR_Assembler: public CompilationResourceObj {
 
   // non-safepoint debug info management
   void flush_debug_info(int before_pc_offset) {
-    if (_pending_non_safepoint != NULL) {
+    if (_pending_non_safepoint != nullptr) {
       if (_pending_non_safepoint_offset < before_pc_offset)
         record_non_safepoint_debug_info();
-      _pending_non_safepoint = NULL;
+      _pending_non_safepoint = nullptr;
     }
   }
   void process_debug_info(LIR_Op* op);
@@ -239,7 +239,7 @@ class LIR_Assembler: public CompilationResourceObj {
   void align_call(LIR_Code code);
 
   void negate(LIR_Opr left, LIR_Opr dest, LIR_Opr tmp = LIR_OprFact::illegalOpr);
-  void leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = NULL);
+  void leal(LIR_Opr src, LIR_Opr dest, LIR_PatchCode patch_code = lir_patch_none, CodeEmitInfo* info = nullptr);
 
   void rt_call(LIR_Opr result, address dest, const LIR_OprList* args, LIR_Opr tmp, CodeEmitInfo* info);
 

@@ -176,16 +176,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="MX">Spayóla Makȟóčhe</territory>
 			<territory type="US">Mílahaŋska Tȟamákȟočhe</territory>
 		</territories>
-		<measurementSystemNames>
-			<measurementSystemName type="US">US</measurementSystemName>
-		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á {aŋ} b č {čh} {čʼ} e é g ǧ h ȟ i í {iŋ} k {kh} {kȟ} {kʼ} l m n ŋ o ó p {ph} {pȟ} {pʼ} s š t {th} {tȟ} {tʼ} u ú {uŋ} w y z ž ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aá {aŋ} b č {čh} {čʼ} eé g ǧ h ȟ ií {iŋ} k {kh} {kȟ} {kʼ} l m n ŋ oó p {ph} {pȟ} {pʼ} s š t {th} {tȟ} {tʼ} uú {uŋ} w y z ž ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c d f {ȟʼ} j q r {sʼ} {šʼ} v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Č E G Ǧ H Ȟ I K L M N Ŋ O P S Š T U W Y Z Ž]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . &quot; “ ” ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . &quot;“” ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -194,19 +190,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, MMMM d, y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMMM d, y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">MMM d, y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -262,19 +255,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="contributed">EEEE, MMMM d, y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="contributed">MMMM d, y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="contributed">MMM d, y</pattern>
-							<datetimeSkeleton draft="contributed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -429,36 +419,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</fields>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal draft="unconfirmed">.</decimal>
-			<group draft="unconfirmed">,</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<exponential draft="unconfirmed">E</exponential>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-		</symbols>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="USD">
 				<symbol>$</symbol>
@@ -466,52 +426,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</currencies>
 	</numbers>
 	<units>
-		<unitLength type="long">
-			<unit type="duration-year">
-				<displayName draft="provisional">ómakȟa</displayName>
-				<unitPattern count="other">ómakȟa {0}</unitPattern>
-			</unit>
-			<unit type="duration-month">
-				<displayName draft="provisional">Wíyawapi</displayName>
-				<unitPattern count="other">Wíyawapi {0}</unitPattern>
-			</unit>
-			<unit type="duration-week">
-				<displayName draft="provisional">okó</displayName>
-				<unitPattern count="other">okó {0}</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<displayName draft="provisional">-čháŋ</displayName>
-				<unitPattern count="other">{0}-čháŋ</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<displayName draft="provisional">Owápȟe</displayName>
-				<unitPattern count="other">Owápȟe {0}</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="provisional">Okpí</displayName>
-				<unitPattern count="other">Okpí {0}</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<displayName draft="provisional">makhíyutȟapi</displayName>
-				<unitPattern count="other">makhíyutȟapi {0}</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName draft="provisional">čhaéglepi</displayName>
-				<unitPattern count="other">čhaéglepi {0}</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<displayName draft="provisional">siíyutȟapi</displayName>
-				<unitPattern count="other">siíyutȟapi {0}</unitPattern>
-			</unit>
-			<unit type="length-inch">
-				<displayName draft="provisional">oíyutȟe čísčila</displayName>
-				<unitPattern count="other">oíyutȟe čísčila {0}</unitPattern>
-			</unit>
-			<unit type="mass-pound">
-				<displayName draft="provisional">tkeíyutȟapi</displayName>
-				<unitPattern count="other">tkeíyutȟapi {0}</unitPattern>
-			</unit>
-		</unitLength>
 		<unitLength type="short">
 			<unit type="duration-year">
 				<displayName draft="provisional">ómakȟa</displayName>
@@ -559,41 +473,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 		</unitLength>
 		<unitLength type="narrow">
-			<unit type="duration-year">
-				<unitPattern count="other">ómakȟa {0}</unitPattern>
-			</unit>
 			<unit type="duration-month">
 				<unitPattern count="other">Wí {0}</unitPattern>
 			</unit>
-			<unit type="duration-week">
-				<unitPattern count="other">okó {0}</unitPattern>
-			</unit>
-			<unit type="duration-day">
-				<unitPattern count="other">{0}-čháŋ</unitPattern>
-			</unit>
-			<unit type="duration-hour">
-				<unitPattern count="other">Owápȟe {0}</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<unitPattern count="other">Okpí {0}</unitPattern>
-			</unit>
 			<unit type="length-mile">
 				<unitPattern count="other">{0} makh</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<unitPattern count="other">čhaéglepi {0}</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<unitPattern count="other">siíyutȟapi {0}</unitPattern>
 			</unit>
 			<unit type="length-inch">
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<unitPattern count="other">{0}#</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<unitPattern count="other">{0}°</unitPattern>

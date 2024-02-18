@@ -96,7 +96,7 @@ void AbstractICache::invalidate_range(address start, int nbytes) {
   }
   // Align start address to an icache line boundary and transform
   // nbytes to an icache line count.
-  const uint line_offset = mask_address_bits(start, ICache::line_size-1);
+  const uint line_offset = uintptr_t(start) & (ICache::line_size-1);
   if (line_offset != 0) {
     start -= line_offset;
     nbytes += line_offset;

@@ -308,9 +308,8 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     Label skip_barrier;
     __ beq(t0, t1, skip_barrier);
 
-    int32_t offset = 0;
-    __ movptr(t0, StubRoutines::riscv::method_entry_barrier(), offset);
-    __ jalr(ra, t0, offset);
+    __ rt_call(StubRoutines::method_entry_barrier());
+
     __ j(skip_barrier);
 
     __ bind(local_guard);
@@ -371,5 +370,5 @@ void BarrierSetAssembler::check_oop(MacroAssembler* masm, Register obj, Register
 
   // Make sure klass is 'reasonable', which is not zero.
   __ load_klass(obj, obj, tmp1); // get klass
-  __ beqz(obj, error);           // if klass is NULL it is broken
+  __ beqz(obj, error);           // if klass is null it is broken
 }

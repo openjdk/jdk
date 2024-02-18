@@ -37,17 +37,17 @@ public abstract class BytecodeGetPut extends BytecodeWithCPIndex {
   // returns the name of the accessed field
   public Symbol name() {
     ConstantPool cp = method().getConstants();
-    return cp.getNameRefAt(index());
+    return cp.getNameRefAt(index(), javaCode());
   }
 
   // returns the signature of the accessed field
   public Symbol signature() {
     ConstantPool cp = method().getConstants();
-    return cp.getSignatureRefAt(index());
+    return cp.getSignatureRefAt(index(), javaCode());
   }
 
   public Field getField() {
-    return method().getConstants().getFieldRefAt(index());
+    return method().getConstants().getFieldRefAt(index(), javaCode());
   }
 
   public String toString() {

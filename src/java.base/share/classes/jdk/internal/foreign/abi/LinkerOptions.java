@@ -63,7 +63,11 @@ public class LinkerOptions {
             optionMap.put(option.getClass(), opImpl);
         }
 
-        return new LinkerOptions(optionMap);
+        LinkerOptions linkerOptions = new LinkerOptions(optionMap);
+        if (linkerOptions.hasCapturedCallState() && linkerOptions.isCritical()) {
+            throw new IllegalArgumentException("Incompatible linker options: captureCallState, critical");
+        }
+        return linkerOptions;
     }
 
     public static LinkerOptions empty() {
@@ -93,9 +97,18 @@ public class LinkerOptions {
         return fva != null;
     }
 
-    public boolean isTrivial() {
-        IsTrivial it = getOption(IsTrivial.class);
-        return it != null;
+    public int firstVariadicArgIndex() {
+        return getOption(FirstVariadicArg.class).index();
+    }
+
+    public boolean isCritical() {
+        Critical c = getOption(Critical.class);
+        return c != null;
+    }
+
+    public boolean allowsHeapAccess() {
+        Critical c = getOption(Critical.class);
+        return c != null && c.allowHeapAccess();
     }
 
     @Override
@@ -111,7 +124,7 @@ public class LinkerOptions {
     }
 
     public sealed interface LinkerOptionImpl extends Linker.Option
-            permits CaptureCallState, FirstVariadicArg, IsTrivial {
+            permits CaptureCallState, FirstVariadicArg, Critical {
         default void validateForDowncall(FunctionDescriptor descriptor) {
             throw new IllegalArgumentException("Not supported for downcall: " + this);
         }
@@ -137,8 +150,9 @@ public class LinkerOptions {
         }
     }
 
-    public record IsTrivial() implements LinkerOptionImpl {
-        public static IsTrivial INSTANCE = new IsTrivial();
+    public record Critical(boolean allowHeapAccess) implements LinkerOptionImpl {
+        public static Critical ALLOW_HEAP = new Critical(true);
+        public static Critical DONT_ALLOW_HEAP = new Critical(false);
 
         @Override
         public void validateForDowncall(FunctionDescriptor descriptor) {

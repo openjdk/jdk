@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,7 +114,6 @@ import jdk.internal.reflect.Reflection;
  * @see ClassLoader#definePackage(String, String, String, String, String, String, String, URL)
  *
  * @since 1.2
- * @revised 9
  */
 public class Package extends NamedPackage implements java.lang.reflect.AnnotatedElement {
     /**
@@ -211,8 +210,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * is returned if it is not known.
      * @return the vendor that implemented this package, {@code null}
      * is returned if it is not known.
-     *
-     * @revised 9
      */
     public String getImplementationVendor() {
         return versionInfo.implVendor;
@@ -355,8 +352,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      * a {@code Package} for the specified class loader.
      *
      * @see ClassLoader#getDefinedPackage
-     *
-     * @revised 9
      */
     @CallerSensitive
     @Deprecated(since="9")
@@ -379,8 +374,6 @@ public class Package extends NamedPackage implements java.lang.reflect.Annotated
      *          class loader and its ancestors
      *
      * @see ClassLoader#getDefinedPackages
-     *
-     * @revised 9
      */
     @CallerSensitive
     public static Package[] getPackages() {

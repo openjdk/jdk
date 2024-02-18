@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,12 +23,12 @@
 
 /*
  * @test
- * @summary Testing Classfile complex basic blocks affecting SM generator.
+ * @summary Testing ClassFile complex basic blocks affecting SM generator.
  * @run junit BasicBlockTest
  */
 import java.io.InputStream;
 import java.io.IOException;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 import org.junit.jupiter.api.Test;
 
 class BasicBlockTest {
@@ -57,8 +55,9 @@ class BasicBlockTest {
     @Test
     void testPatternsCausingBasicBlockTroubles() throws IOException {
         try (InputStream in = BasicBlockTest.class.getResourceAsStream("BasicBlockTest.class")) {
-            var classModel = Classfile.parse(in.readAllBytes());
-            Classfile.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));
+            var cc = ClassFile.of();
+            var classModel = cc.parse(in.readAllBytes());
+            cc.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
 * Copyright (c) 2020, Datadog, Inc. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
@@ -222,7 +222,7 @@ JfrSamplerWindow* JfrAdaptiveSampler::set_rate(const JfrSamplerParams& params, c
     next->_projected_population_size = 0;
     return next;
   }
-  next->_sampling_interval = derive_sampling_interval(sample_size, expired);
+  next->_sampling_interval = derive_sampling_interval(static_cast<double>(sample_size), expired);
   assert(next->_sampling_interval >= 1, "invariant");
   next->_projected_population_size = sample_size * next->_sampling_interval;
   return next;
@@ -310,12 +310,12 @@ inline size_t next_geometric(double p, double u) {
     u = 0.99;
   }
   // Inverse CDF for the geometric distribution.
-  return ceil(log(1.0 - u) / log(1.0 - p));
+  return static_cast<size_t>(ceil(log(1.0 - u) / log(1.0 - p)));
 }
 
 size_t JfrAdaptiveSampler::derive_sampling_interval(double sample_size, const JfrSamplerWindow* expired) {
   assert(sample_size > 0, "invariant");
-  const size_t population_size = project_population_size(expired);
+  const double population_size = project_population_size(expired);
   if (population_size <= sample_size) {
     return 1;
   }
@@ -325,9 +325,9 @@ size_t JfrAdaptiveSampler::derive_sampling_interval(double sample_size, const Jf
 }
 
 // The projected population size is an exponentially weighted moving average, a function of the window_lookback_count.
-inline size_t JfrAdaptiveSampler::project_population_size(const JfrSamplerWindow* expired) {
+inline double JfrAdaptiveSampler::project_population_size(const JfrSamplerWindow* expired) {
   assert(expired != nullptr, "invariant");
-  _avg_population_size = exponentially_weighted_moving_average(expired->population_size(), _ewma_population_size_alpha, _avg_population_size);
+  _avg_population_size = exponentially_weighted_moving_average(static_cast<double>(expired->population_size()), _ewma_population_size_alpha, _avg_population_size);
   return _avg_population_size;
 }
 
@@ -362,7 +362,7 @@ bool JfrGTestFixedRateSampler::initialize() {
 static void log(const JfrSamplerWindow* expired, double* sample_size_ewma) {
   assert(sample_size_ewma != nullptr, "invariant");
   if (log_is_enabled(Debug, jfr, system, throttle)) {
-    *sample_size_ewma = exponentially_weighted_moving_average(expired->sample_size(), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
+    *sample_size_ewma = exponentially_weighted_moving_average(static_cast<double>(expired->sample_size()), compute_ewma_alpha_coefficient(expired->params().window_lookback_count), *sample_size_ewma);
     log_debug(jfr, system, throttle)("JfrGTestFixedRateSampler: avg.sample size: %0.4f, window set point: %zu, sample size: %zu, population size: %zu, ratio: %.4f, window duration: %zu ms\n",
       *sample_size_ewma, expired->params().sample_points_per_window, expired->sample_size(), expired->population_size(),
       expired->population_size() == 0 ? 0 : (double)expired->sample_size() / (double)expired->population_size(),

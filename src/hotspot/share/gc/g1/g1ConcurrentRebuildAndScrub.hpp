@@ -39,4 +39,3 @@ public:
 
 
 #endif /* SHARE_GC_G1_G1CONCURRENTREBUILDANDSCRUB_HPP */
-

@@ -44,11 +44,6 @@ static int alsa_inited = 0;
 static int alsa_enumerate_pcm_subdevices = FALSE; // default: no
 static int alsa_enumerate_midi_subdevices = FALSE; // default: no
 
-/*
- * Declare library specific JNI_Onload entry if static build
- */
-DEF_STATIC_JNI_OnLoad
-
 void initAlsaSupport() {
     char* enumerate;
     if (!alsa_inited) {

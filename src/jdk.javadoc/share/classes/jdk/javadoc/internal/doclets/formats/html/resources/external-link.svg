@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+ Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+ Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+-->
+
+<!--
+ A minified version of this file is used as inline SVG icon in the stylesheet.
+ This file serves only for future editing and is not used by javadoc.
+
+ Note that the '#' character in the value of the fill attribute needs to be
+ URL-encoded when inlined in the CSS file.
+-->
+
+<svg version="1.1" viewBox="0 0 768 768" xmlns="http://www.w3.org/2000/svg">
+<path
+  d="M 584,664 H 104 V 184 H 320 V 80 H 0 V 768 H 688 V 448 H 584 Z M 384,0 516,132 276,372 396,492 636,252 768,384 V 0 Z"
+  fill="#4a6782"/>
+</svg>

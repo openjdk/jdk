@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,13 +22,13 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.instruction.LoadInstruction;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.LoadInstruction;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -99,9 +97,10 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsCountLoads(Blackhole bh) {
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int[] count = new int[1];
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             cm.forEachElement(ce -> {
                 if (ce instanceof MethodModel mm) {
                     mm.forEachElement(me -> {
@@ -122,14 +121,15 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsDeepIterate(Blackhole bh) {
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             bh.consume(iterateAll(cm));
         }
     }
 
-    private static ClassfileElement iterateAll(CompoundElement<?> model) {
-        ClassfileElement last = null;
+    private static ClassFileElement iterateAll(CompoundElement<?> model) {
+        ClassFileElement last = null;
         for (var e : model) {
             if (e instanceof CompoundElement<?> cm) {
                 last = iterateAll(cm);

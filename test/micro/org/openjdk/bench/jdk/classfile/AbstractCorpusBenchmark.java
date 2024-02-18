@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -45,7 +43,11 @@ import org.openjdk.jmh.annotations.Warmup;
  */
 @Warmup(iterations = 2)
 @Measurement(iterations = 4)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {
+        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
+        "--enable-preview",
+        "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 @State(Scope.Benchmark)
 public class AbstractCorpusBenchmark {
     protected byte[][] classes;

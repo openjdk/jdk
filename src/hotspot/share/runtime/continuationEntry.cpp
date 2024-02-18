@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "oops/method.inline.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/continuationEntry.inline.hpp"
+#include "runtime/continuationHelper.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
@@ -134,7 +135,8 @@ bool ContinuationEntry::assert_entry_frame_laid_out(JavaThread* thread) {
 
   assert(sp != nullptr, "");
   assert(sp <= entry->entry_sp(), "");
-  address pc = *(address*)(sp - frame::sender_sp_ret_address_offset());
+  address pc = ContinuationHelper::return_address_at(
+                 sp - frame::sender_sp_ret_address_offset());
 
   if (pc != StubRoutines::cont_returnBarrier()) {
     CodeBlob* cb = pc != nullptr ? CodeCache::find_blob(pc) : nullptr;

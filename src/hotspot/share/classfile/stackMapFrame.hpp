@@ -53,8 +53,8 @@ class StackMapFrame : public ResourceObj {
                          // instruction modification, to allow rewinding
                          // when/if an error occurs.
 
-  int32_t _max_locals;
-  int32_t _max_stack;
+  u2 _max_locals;
+  u2 _max_stack;
 
   u1 _flags;
   VerificationType* _locals; // local variable type array
@@ -100,8 +100,8 @@ class StackMapFrame : public ResourceObj {
   // which have _locals_size and _stack_size array elements in _locals and _stack.
   StackMapFrame(int32_t offset,
                 u1 flags,
-                u2 locals_size,
-                u2 stack_size,
+                int32_t locals_size,
+                int32_t stack_size,
                 u2 max_locals,
                 u2 max_stack,
                 VerificationType* locals,
@@ -122,8 +122,8 @@ class StackMapFrame : public ResourceObj {
   inline void set_offset(int32_t offset)      { _offset = offset; }
   inline void set_verifier(ClassVerifier* v)  { _verifier = v; }
   inline void set_flags(u1 flags)             { _flags = flags; }
-  inline void set_locals_size(u2 locals_size) { _locals_size = locals_size; }
-  inline void set_stack_size(u2 stack_size)   { _stack_size = _stack_mark = stack_size; }
+  inline void set_locals_size(int32_t locals_size) { _locals_size = locals_size; }
+  inline void set_stack_size(int32_t stack_size)   { _stack_size = _stack_mark = stack_size; }
   inline void clear_stack()                   { _stack_size = 0; }
   inline int32_t offset()   const             { return _offset; }
   inline ClassVerifier* verifier() const      { return _verifier; }
@@ -132,8 +132,8 @@ class StackMapFrame : public ResourceObj {
   inline VerificationType* locals() const     { return _locals; }
   inline int32_t stack_size() const           { return _stack_size; }
   inline VerificationType* stack() const      { return _stack; }
-  inline int32_t max_locals() const           { return _max_locals; }
-  inline int32_t max_stack() const            { return _max_stack; }
+  inline u2 max_locals() const                { return _max_locals; }
+  inline u2 max_stack() const                 { return _max_stack; }
   inline bool flag_this_uninit() const        { return _flags & FLAG_THIS_UNINIT; }
 
   // Set locals and stack types to bogus

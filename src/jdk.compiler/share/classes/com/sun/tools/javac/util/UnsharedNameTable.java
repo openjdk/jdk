@@ -37,8 +37,8 @@ import java.lang.ref.WeakReference;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class UnsharedNameTable extends Name.Table {
-    public static Name.Table create(Names names) {
+public class UnsharedNameTable extends Utf8NameTable {
+    public static UnsharedNameTable create(Names names) {
         return new UnsharedNameTable(names);
     }
 
@@ -61,13 +61,18 @@ public class UnsharedNameTable extends Name.Table {
      */
     public int index;
 
+// Constructors
+
     /** Allocator
      *  @param names The main name table
      *  @param hashSize the (constant) size to be used for the hash table
      *                  needs to be a power of two.
+     *  @throws IllegalArgumentException if {@code hashSize} is not a power of two
      */
     public UnsharedNameTable(Names names, int hashSize) {
         super(names);
+        if (Integer.bitCount(hashSize) != 1)
+            throw new IllegalArgumentException();   // hashSize is not a power of two
         hashMask = hashSize - 1;
         hashes = new HashEntry[hashSize];
     }
@@ -76,6 +81,7 @@ public class UnsharedNameTable extends Name.Table {
         this(names, 0x8000);
     }
 
+// Name.Table
 
     @Override
     public Name fromChars(char[] cs, int start, int len) {
@@ -145,41 +151,41 @@ public class UnsharedNameTable extends Name.Table {
         hashes = null;
     }
 
-    static class NameImpl extends Name {
+// NameImpl
+
+    static final class NameImpl extends Utf8NameTable.NameImpl {
+
+        final byte[] bytes;
+        final int index;
+
+    // Constructor
+
         NameImpl(UnsharedNameTable table, byte[] bytes, int index) {
             super(table);
             this.bytes = bytes;
             this.index = index;
         }
 
-        final byte[] bytes;
-        final int index;
+    // Utf8NameTable.NameImpl
 
         @Override
-        public int getIndex() {
-            return index;
-        }
-
-        @Override
-        public int getByteLength() {
-            return bytes.length;
-        }
-
-        @Override
-        public byte getByteAt(int i) {
-            return bytes[i];
-        }
-
-        @Override
-        public byte[] getByteArray() {
+        protected byte[] getByteData() {
             return bytes;
         }
 
         @Override
-        public int getByteOffset() {
+        protected int getByteOffset() {
             return 0;
         }
 
-    }
+        @Override
+        protected int getByteLength() {
+            return bytes.length;
+        }
 
+        @Override
+        protected int getNameIndex() {
+            return index;
+        }
+    }
 }

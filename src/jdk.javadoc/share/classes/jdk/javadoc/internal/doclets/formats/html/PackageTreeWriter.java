@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,16 +28,18 @@ package jdk.javadoc.internal.doclets.formats.html;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.PackageElement;
 
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 /**
@@ -56,12 +58,12 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     /**
      * Constructor.
      * @param configuration the configuration
-     * @param path the docpath to generate files into
      * @param packageElement the current package
      */
-    public PackageTreeWriter(HtmlConfiguration configuration, DocPath path, PackageElement packageElement) {
-        super(configuration, path,
-              new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
+    public PackageTreeWriter(HtmlConfiguration configuration, PackageElement packageElement) {
+        super(configuration,
+                configuration.docPaths.forPackage(packageElement).resolve(DocPaths.PACKAGE_TREE),
+                new ClassTree(configuration.typeElementCatalog.allClasses(packageElement), configuration));
         this.packageElement = packageElement;
     }
 
@@ -78,9 +80,10 @@ public class PackageTreeWriter extends AbstractTreeWriter {
     public static void generate(HtmlConfiguration configuration,
                                 PackageElement pkg, boolean noDeprecated)
             throws DocFileIOException {
-        DocPath path = configuration.docPaths.forPackage(pkg).resolve(DocPaths.PACKAGE_TREE);
-        PackageTreeWriter packgen = new PackageTreeWriter(configuration, path, pkg);
-        packgen.generatePackageTreeFile();
+        if (!(noDeprecated && configuration.utils.isDeprecated(pkg))) {
+            var packgen = new PackageTreeWriter(configuration, pkg);
+            packgen.buildPage();
+        }
     }
 
     /**
@@ -88,7 +91,8 @@ public class PackageTreeWriter extends AbstractTreeWriter {
      *
      * @throws DocFileIOException if there is a problem generating the package tree file
      */
-    protected void generatePackageTreeFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getPackageTreeHeader();
         Content mainContent = new ContentBuilder();
         Content headContent = packageElement.isUnnamed()
@@ -128,10 +132,14 @@ public class PackageTreeWriter extends AbstractTreeWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(packageElement),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            var mdle = utils.elementUtils.getModuleOf(packageElement);
+            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+        }
+        subnavLinks.add(links.createLink(pathString(packageElement, DocPaths.PACKAGE_SUMMARY),
+                getLocalizedPackageName(packageElement), HtmlStyle.currentSelection, ""));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 
     /**

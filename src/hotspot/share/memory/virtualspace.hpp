@@ -107,6 +107,10 @@ class ReservedSpace {
   bool contains(const void* p) const {
     return (base() <= ((char*)p)) && (((char*)p) < (base() + size()));
   }
+
+  // Put a ReservedSpace over an existing range
+  static ReservedSpace space_for_range(char* base, size_t size, size_t alignment,
+                                       size_t page_size, bool special, bool executable);
 };
 
 ReservedSpace

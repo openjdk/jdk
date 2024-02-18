@@ -296,7 +296,10 @@ public final class Security {
      * Adds a new provider, at a specified position. The position is
      * the preference order in which providers are searched for
      * requested algorithms.  The position is 1-based, that is,
-     * 1 is most preferred, followed by 2, and so on.
+     * 1 is most preferred, followed by 2, and so on.  If the position
+     * is less than 1 or greater than n, where n is the number of installed
+     * providers, the provider (if not already installed) is inserted at
+     * the end of the list, or at the n + 1 position.
      *
      * <p>If the given provider is installed at the requested position,
      * the provider that used to be at that position, and all providers

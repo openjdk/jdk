@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -79,7 +78,7 @@
 # include <pthread_np.h>
 #endif
 
-// needed by current_stack_region() workaround for Mavericks
+// needed by current_stack_base_and_size() workaround for Mavericks
 #if defined(__APPLE__)
 # include <errno.h>
 # include <sys/types.h>
@@ -351,7 +350,7 @@ frame os::get_sender_for_C_frame(frame* fr) {
   return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
 }
 
-intptr_t* _get_previous_fp() {
+static intptr_t* _get_previous_fp() {
 #if defined(__clang__) || defined(__llvm__)
   intptr_t **ebp;
   __asm__("mov %%" SPELL_REG_FP ", %0":"=r"(ebp));
@@ -709,13 +708,15 @@ size_t os::Posix::default_stack_size(os::ThreadType thr_type) {
 //    |                        |/
 // P2 +------------------------+ Thread::stack_base()
 //
-// ** P1 (aka bottom) and size ( P2 = P1 - size) are the address and stack size returned from
-//    pthread_attr_getstack()
+// ** P1 (aka bottom) and size are the address and stack size
+//    returned from pthread_attr_getstack().
+// ** P2 (aka stack top or base) = P1 + size
 
-static void current_stack_region(address * bottom, size_t * size) {
+void os::current_stack_base_and_size(address* base, size_t* size) {
+  address bottom;
 #ifdef __APPLE__
   pthread_t self = pthread_self();
-  void *stacktop = pthread_get_stackaddr_np(self);
+  *base = (address) pthread_get_stackaddr_np(self);
   *size = pthread_get_stacksize_np(self);
   // workaround for OS X 10.9.0 (Mavericks)
   // pthread_get_stacksize_np returns 128 pages even though the actual size is 2048 pages
@@ -738,7 +739,7 @@ static void current_stack_region(address * bottom, size_t * size) {
       }
     }
   }
-  *bottom = (address) stacktop - *size;
+  bottom = *base - *size;
 #elif defined(__OpenBSD__)
   stack_t ss;
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
@@ -746,8 +747,9 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_stackseg_np failed with error = %d", rslt);
 
-  *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
-  *size   = ss.ss_size;
+  *base = (address) ss.ss_sp;
+  *size = ss.ss_size;
+  bottom = *base - *size;
 #else
   pthread_attr_t attr;
 
@@ -762,30 +764,17 @@ static void current_stack_region(address * bottom, size_t * size) {
   if (rslt != 0)
     fatal("pthread_attr_get_np failed with error = %d", rslt);
 
-  if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
-    pthread_attr_getstacksize(&attr, size) != 0) {
+  if (pthread_attr_getstackaddr(&attr, (void **)&bottom) != 0 ||
+      pthread_attr_getstacksize(&attr, size) != 0) {
     fatal("Can not locate current stack attributes!");
   }
 
+  *base = bottom + *size;
+
   pthread_attr_destroy(&attr);
 #endif
-  assert(os::current_stack_pointer() >= *bottom &&
-         os::current_stack_pointer() < *bottom + *size, "just checking");
-}
-
-address os::current_stack_base() {
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return (bottom + size);
-}
-
-size_t os::current_stack_size() {
-  // stack size includes normal stack and HotSpot guard pages
-  address bottom;
-  size_t size;
-  current_stack_region(&bottom, &size);
-  return size;
+  assert(os::current_stack_pointer() >= bottom &&
+         os::current_stack_pointer() < *base, "just checking");
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -854,7 +843,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, sizeof(char));
+  print_instructions(st, pc);
   st->cr();
 }
 

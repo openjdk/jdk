@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,13 +36,14 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
 
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -52,14 +53,14 @@ import jdk.internal.net.http.common.Utils;
  */
 class PlainHttpConnection extends HttpConnection {
 
-    private final Object reading = new Object();
     protected final SocketChannel chan;
     private final SocketTube tube; // need SocketTube to call signalClosed().
-    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher(reading);
+    private final PlainHttpPublisher writePublisher = new PlainHttpPublisher();
     private volatile boolean connected;
-    private boolean closed;
+    private volatile boolean closed;
     private volatile ConnectTimerEvent connectTimerEvent;  // may be null
     private volatile int unsuccessfulAttempts;
+    private final ReentrantLock stateLock = new ReentrantLock();
 
     // Indicates whether a connection attempt has succeeded or should be retried.
     // If the attempt failed, and shouldn't be retried, there will be an exception
@@ -241,11 +242,17 @@ class PlainHttpConnection extends HttpConnection {
     boolean connectionOpened() {
         boolean closed = this.closed;
         if (closed) return false;
-        synchronized (this) {
+        stateLock.lock();
+        try {
             closed = this.closed;
             if (!closed) {
                 client().connectionOpened(this);
             }
+            // connectionOpened might call close() if the client
+            // is shutting down.
+            closed = this.closed;
+        } finally {
+            stateLock.unlock();
         }
         return !closed;
     }
@@ -283,7 +290,7 @@ class PlainHttpConnection extends HttpConnection {
         if (unsuccessfulAttempts > 0) return false;
         ConnectTimerEvent timer = connectTimerEvent;
         if (timer == null) return true;
-        return timer.deadline().isAfter(Instant.now());
+        return timer.deadline().isAfter(TimeSource.now());
     }
 
     @Override
@@ -394,21 +401,23 @@ class PlainHttpConnection extends HttpConnection {
         return "PlainHttpConnection: " + super.toString();
     }
 
-    /**
-     * Closes this connection
-     */
     @Override
     public void close() {
-        synchronized (this) {
-            if (closed) {
-                return;
-            }
-            closed = true;
-        }
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
+        var closed = this.closed;
+        if (closed) return;
+        stateLock.lock();
         try {
+            if (closed = this.closed) return;
+            closed = this.closed = true;
             Log.logTrace("Closing: " + toString());
             if (debug.on())
                 debug.log("Closing channel: " + client().debugInterestOps(chan));
+            var connectTimerEvent = this.connectTimerEvent;
             if (connectTimerEvent != null)
                 client().cancelTimer(connectTimerEvent);
             if (Log.channel()) {
@@ -416,12 +425,15 @@ class PlainHttpConnection extends HttpConnection {
             }
             try {
                 chan.close();
-                tube.signalClosed();
+                tube.signalClosed(cause);
             } finally {
                 client().connectionClosed(this);
             }
         } catch (IOException e) {
+            debug.log("Closing resulted in " + e);
             Log.logTrace("Closing resulted in " + e);
+        } finally {
+            stateLock.unlock();
         }
     }
 
@@ -432,7 +444,7 @@ class PlainHttpConnection extends HttpConnection {
     }
 
     @Override
-    synchronized boolean connected() {
+    boolean connected() {
         return connected;
     }
 

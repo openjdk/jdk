@@ -616,32 +616,6 @@ public:
   void check()    PRODUCT_RETURN;
 };
 
-// Helper class to allocate arrays that may become large.
-// Uses the OS malloc for allocations smaller than ArrayAllocatorMallocLimit
-// and uses mapped memory for larger allocations.
-// Most OS mallocs do something similar but Solaris malloc does not revert
-// to mapped memory for large allocations. By default ArrayAllocatorMallocLimit
-// is set so that we always use malloc except for Solaris where we set the
-// limit to get mapped memory.
-template <class E>
-class ArrayAllocator : public AllStatic {
- private:
-  static bool should_use_malloc(size_t length);
-
-  static E* allocate_malloc(size_t length, MEMFLAGS flags);
-  static E* allocate_mmap(size_t length, MEMFLAGS flags);
-
-  static E* reallocate_malloc(E* addr, size_t new_length, MEMFLAGS flags);
-
-  static void free_malloc(E* addr, size_t length);
-  static void free_mmap(E* addr, size_t length);
-
- public:
-  static E* allocate(size_t length, MEMFLAGS flags);
-  static E* reallocate(E* old_addr, size_t old_length, size_t new_length, MEMFLAGS flags);
-  static void free(E* addr, size_t length);
-};
-
 // Uses mmapped memory for all allocations. All allocations are initially
 // zero-filled. No pre-touching.
 template <class E>

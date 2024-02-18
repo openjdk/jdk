@@ -25,7 +25,7 @@
 #ifndef SHARE_CLASSFILE_STRINGTABLE_HPP
 #define SHARE_CLASSFILE_STRINGTABLE_HPP
 
-#include "memory/allocation.hpp"
+#include "memory/allStatic.hpp"
 #include "memory/padded.hpp"
 #include "oops/oop.hpp"
 #include "oops/oopHandle.hpp"
@@ -37,15 +37,11 @@ class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
-class StringTable;
 class StringTableConfig;
-class StringTableCreateEntry;
 
-class StringTable : public CHeapObj<mtSymbol>{
+class StringTable : AllStatic {
   friend class VMStructs;
-  friend class Symbol;
   friend class StringTableConfig;
-  friend class StringTableCreateEntry;
 
   static volatile bool _has_work;
 
@@ -66,7 +62,7 @@ class StringTable : public CHeapObj<mtSymbol>{
   static void gc_notification(size_t num_dead);
   static void trigger_concurrent_work();
 
-  static size_t item_added();
+  static void item_added();
   static void item_removed();
 
   static oop intern(Handle string_or_null_h, const jchar* name, int len, TRAPS);
@@ -147,7 +143,7 @@ private:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(NULL);
+  static oop init_shared_table(const DumpedInternedStrings* dumped_interned_strings) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;
   static void serialize_shared_table_header(SerializeClosure* soc) NOT_CDS_JAVA_HEAP_RETURN;
 

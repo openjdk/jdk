@@ -32,6 +32,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.reflect.ConstantPool;
 import jdk.internal.reflect.ConstantPool.Tag;
+import jdk.vm.ci.hotspot.HotSpotConstantPool.Bytecodes;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -83,20 +84,47 @@ public class ConstantPoolTestsHelper {
                     }
                 }
             }
-            int cacheLength = WB.getConstantPoolCacheLength(this.klass);
-            int indexTag = WB.getConstantPoolCacheIndexTag();
-            for (int cpci = indexTag; cpci < cacheLength + indexTag; cpci++) {
-                if (WB.remapInstructionOperandFromCPCache(this.klass, cpci) == cpi) {
-                    if (constantPoolSS.getTagAt(cpi).equals(Tag.INVOKEDYNAMIC)) {
-                        return WB.encodeConstantPoolIndyIndex(cpci) + indexTag;
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.FIELDREF)) {
+                for (int field_index = 0; field_index < WB.getFieldEntriesLength(this.klass); field_index++) {
+                    if (WB.getFieldCPIndex(this.klass, field_index) == cpi) {
+                        return field_index;
                     }
-                    return cpci;
+                }
+            }
+            if (constantPoolSS.getTagAt(cpi).equals(Tag.METHODREF) || constantPoolSS.getTagAt(cpi).equals(Tag.INTERFACEMETHODREF)) {
+                for (int method_index = 0; method_index < WB.getMethodEntriesLength(this.klass); method_index++) {
+                    if (WB.getMethodCPIndex(this.klass, method_index) == cpi) {
+                        return method_index;
+                    }
                 }
             }
             return NO_CP_CACHE_PRESENT;
         }
     }
 
+    /**
+     *
+     * @param cpType Constant type from the Constant pool
+     * @return a bytecode that's suitable for passing to the following functions for the given cpType:
+     *     - CompilerToVMHelper.lookupNameAndTypeRefIndexInPool()
+     *     - CompilerToVMHelper.lookupNameInPool()
+     *     - CompilerToVMHelper.lookupSignatureInPool()
+     *     - CompilerToVMHelper.lookupKlassRefIndexInPool()
+     */
+    public static int getDummyOpcode(ConstantTypes cpType) {
+        switch (cpType) {
+            case CONSTANT_FIELDREF:
+              return Bytecodes.GETFIELD;
+          case CONSTANT_METHODREF:
+              return Bytecodes.INVOKEVIRTUAL;
+          case CONSTANT_INTERFACEMETHODREF:
+              return Bytecodes.INVOKEINTERFACE;
+          case CONSTANT_INVOKEDYNAMIC:
+              return Bytecodes.INVOKEDYNAMIC;
+          default:
+              throw new IllegalArgumentException("Unexpected constant pool entry type");
+        }
+    }
     /**
      * Obtain a resolved Java method declared by a given type.
      *

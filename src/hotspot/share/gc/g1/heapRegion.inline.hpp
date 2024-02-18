@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,11 +109,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) c
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
-inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
-  return !HeapRegion::obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
+inline bool HeapRegion::is_in_parsable_area(const void* const addr) const {
+  return is_in_parsable_area(addr, parsable_bottom());
 }
 
-inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) {
+inline bool HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
   return addr >= pb;
 }
 
@@ -125,7 +125,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
 
-  if (obj_in_parsable_area(p, pb)) {
+  if (is_in_parsable_area(p, pb)) {
     return true;
   }
 
@@ -138,19 +138,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   // From Remark until the region has been completely scrubbed obj_is_parsable will return false
   // and we have to use the bitmap to know if a block is a valid object.
   return is_marked_in_bitmap(cast_to_oop(p));
-}
-
-inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
-  assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-
-  // From Remark until a region has been concurrently scrubbed, parts of the
-  // region is not guaranteed to be parsable. Use the bitmap for liveness.
-  if (obj_in_unparsable_area(obj, pb)) {
-    return !is_marked_in_bitmap(obj);
-  }
-
-  // This object is in the parsable part of the heap, live unless scrubbed.
-  return G1CollectedHeap::is_obj_filler(obj);
 }
 
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
@@ -180,6 +167,13 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
   return cast_to_oop(p)->size();
 }
 
+inline void HeapRegion::prepare_for_full_gc() {
+  // After marking and class unloading the heap temporarily contains dead objects
+  // with unloaded klasses. Moving parsable_bottom makes some (debug) code correctly
+  // skip dead objects.
+  _parsable_bottom = top();
+}
+
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
   // After a compaction the mark bitmap in a movable region is invalid.
@@ -201,7 +195,7 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 
 inline void HeapRegion::reset_after_full_gc_common() {
   // Everything above bottom() is parsable and live.
-  _parsable_bottom = bottom();
+  reset_parsable_bottom();
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -294,8 +288,8 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
-  if (is_old_or_humongous()) {
+  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
+  if (is_old_or_humongous() && !is_collection_set_candidate()) {
     set_top_at_mark_start(top());
   }
 }
@@ -450,7 +444,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   //   safepoints.
   //
   HeapWord* cur = block_start(start, pb);
-  if (!obj_in_parsable_area(start, pb)) {
+  if (!is_in_parsable_area(start, pb)) {
     // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
     // is slower than blindly iterating the objects.
     MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));
@@ -514,14 +508,14 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   return oops_on_memregion_iterate<Closure, in_gc_pause>(mr, cl);
 }
 
-inline int HeapRegion::age_in_surv_rate_group() const {
+inline uint HeapRegion::age_in_surv_rate_group() const {
   assert(has_surv_rate_group(), "pre-condition");
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   return _surv_rate_group->age_in_group(_age_index);
 }
 
 inline bool HeapRegion::has_valid_age_in_surv_rate() const {
-  return G1SurvRateGroup::is_valid_age_index(_age_index);
+  return _surv_rate_group->is_valid_age_index(_age_index);
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
@@ -550,15 +544,19 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     _surv_rate_group = nullptr;
     _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
-    assert(!has_valid_age_in_surv_rate(), "pre-condition");
+    assert(_age_index == G1SurvRateGroup::InvalidAgeIndex, "inv");
   }
 }
 
 inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
-  assert(has_surv_rate_group(), "pre-condition");
-  assert(has_valid_age_in_surv_rate(), "pre-condition");
-  int age_in_group = age_in_surv_rate_group();
-  _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+  uint age = age_in_surv_rate_group();
+  _surv_rate_group->record_surviving_words(age, words_survived);
+}
+
+inline void HeapRegion::add_pinned_object_count(size_t value) {
+  assert(value != 0, "wasted effort");
+  assert(!is_free(), "trying to pin free region %u, adding %zu", hrm_index(), value);
+  Atomic::add(&_pinned_object_count, value, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

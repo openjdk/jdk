@@ -614,7 +614,7 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
   }
 
   uint removed = 0;
-  uint cur = _allocated_heapregions_length - 1;
+  uint cur = _allocated_heapregions_length;
   uint idx_last_found = 0;
   uint num_last_found = 0;
 
@@ -646,29 +646,34 @@ void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
 }
 
 uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {
-  guarantee(start_idx < _allocated_heapregions_length, "checking");
+  guarantee(start_idx <= _allocated_heapregions_length, "checking");
   guarantee(res_idx != nullptr, "checking");
 
-  uint num_regions_found = 0;
+  auto is_available_and_empty = [&] (uint index) {
+    return is_available(index) && at(index)->is_empty();
+  };
 
-  jlong cur = start_idx;
-  while (cur != -1 && !(is_available(cur) && at(cur)->is_empty())) {
-    cur--;
+  uint i = start_idx;
+  while (i > 0 && !is_available_and_empty(i-1)) {
+    i--;
   }
-  if (cur == -1) {
-    return num_regions_found;
+  if (i == 0) {
+    // Found nothing
+    return 0;
   }
-  jlong old_cur = cur;
-  // cur indexes the first empty region
-  while (cur != -1 && is_available(cur) && at(cur)->is_empty()) {
-    cur--;
+  uint end = i;
+
+  while (i > 0 && is_available_and_empty(i-1)) {
+    i--;
   }
-  *res_idx = cur + 1;
-  num_regions_found = old_cur - cur;
+  uint start = i;
+
+  uint num_regions_found = end - start;
+  *res_idx = start;
 
 #ifdef ASSERT
-  for (uint i = *res_idx; i < (*res_idx + num_regions_found); i++) {
-    assert(at(i)->is_empty(), "just checking");
+  for (uint j = *res_idx; j < (*res_idx + num_regions_found); j++) {
+    assert(at(j)->is_empty(), "just checking");
   }
 #endif
   return num_regions_found;

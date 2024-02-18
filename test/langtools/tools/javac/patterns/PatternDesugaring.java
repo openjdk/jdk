@@ -25,7 +25,6 @@
  * @test
  * @bug 8291769 8300195
  * @summary Verify the compiled code does not have unwanted constructs.
- * @enablePreview
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -55,8 +54,6 @@ import toolbox.Task;
 import toolbox.ToolBox;
 
 public class PatternDesugaring extends TestRunner {
-
-    private static final String JAVA_VERSION = System.getProperty("java.specification.version");
 
     ToolBox tb;
 
@@ -165,8 +162,6 @@ public class PatternDesugaring extends TestRunner {
             }
 
             new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION)
                     .outdir(libClasses)
                     .files(tb.findJavaFiles(libSrc))
                     .run();
@@ -181,9 +176,7 @@ public class PatternDesugaring extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
+                    .options("-XDrawDiagnostics",
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW")
@@ -261,8 +254,6 @@ public class PatternDesugaring extends TestRunner {
             }
 
             new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION)
                     .outdir(libClasses)
                     .files(tb.findJavaFiles(libSrc))
                     .run();
@@ -277,9 +268,7 @@ public class PatternDesugaring extends TestRunner {
 
         var log =
                 new JavacTask(tb)
-                    .options("--enable-preview",
-                             "-source", JAVA_VERSION,
-                             "-XDrawDiagnostics",
+                    .options("-XDrawDiagnostics",
                              "-Xlint:-preview",
                              "--class-path", libClasses.toString(),
                              "-XDshould-stop.at=FLOW")

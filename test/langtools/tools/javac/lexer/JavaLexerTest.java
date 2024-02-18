@@ -83,7 +83,6 @@ public class JavaLexerTest {
 
     static final TestTuple[] FAILING_TESTS = {
             new TestTuple(LONGLITERAL,   "0bL"),
-            new TestTuple(LONGLITERAL,   "0b20L"),
             new TestTuple(LONGLITERAL,   "0xL"),
             new TestTuple(INTLITERAL,    "0xG000L", "0x"),
 
@@ -102,7 +101,8 @@ public class JavaLexerTest {
             new TestTuple(EOF,           "\\u", ""),
 
             new TestTuple(ERROR,         "\'\'"),
-            new TestTuple(ERROR,         "\'\\q\'", "\'\\"),
+            new TestTuple(ERROR,         "\'\\q\'", "\'\\q\'"),
+            new TestTuple(ERROR,         "\'\\{1+2}\'", "\'\\{1+2}\'"),
     };
 
     static class TestTuple {

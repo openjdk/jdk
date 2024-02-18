@@ -31,20 +31,21 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.WritableElement;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CustomAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.FieldBuilder;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.FieldTransform;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.WritableElement;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class DirectClassBuilder
         extends AbstractDirectBuilder<ClassModel>
@@ -61,19 +62,24 @@ public final class DirectClassBuilder
     private int sizeHint;
 
     public DirectClassBuilder(SplitConstantPool constantPool,
+                              ClassFileImpl context,
                               ClassEntry thisClass) {
-        super(constantPool);
+        super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
-        this.flags = Classfile.DEFAULT_CLASS_FLAGS;
+        this.flags = ClassFile.DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
-        this.majorVersion = Classfile.LATEST_MAJOR_VERSION;
-        this.minorVersion = Classfile.LATEST_MINOR_VERSION;
+        this.majorVersion = ClassFile.latestMajorVersion();
+        this.minorVersion = ClassFile.latestMinorVersion();
     }
 
     @Override
     public ClassBuilder with(ClassElement element) {
-        ((AbstractElement) element).writeTo(this);
+        if (element instanceof AbstractElement ae) {
+            ae.writeTo(this);
+        } else {
+            writeAttribute((CustomAttribute)element);
+        }
         return this;
     }
 
@@ -81,13 +87,13 @@ public final class DirectClassBuilder
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
-        DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, field.fieldName(),
+        DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
                                                             field.fieldType(), field);
         builder.transform(field, transform);
         return withField(builder);
@@ -98,13 +104,13 @@ public final class DirectClassBuilder
                                    Utf8Entry descriptor,
                                    int flags,
                                    Consumer<? super MethodBuilder> handler) {
-        return withMethod(new DirectMethodBuilder(constantPool, name, descriptor, flags, null)
+        return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
     }
 
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
-        DirectMethodBuilder builder = new DirectMethodBuilder(constantPool, method.methodName(),
+        DirectMethodBuilder builder = new DirectMethodBuilder(constantPool, context, method.methodName(),
                                                               method.methodType(),
                                                               method.flags().flagsMask(),
                                                               method);
@@ -141,7 +147,7 @@ public final class DirectClassBuilder
         this.flags = flags;
     }
 
-    void setSizeHint(int sizeHint) {
+    public void setSizeHint(int sizeHint) {
         this.sizeHint = sizeHint;
     }
 
@@ -158,7 +164,7 @@ public final class DirectClassBuilder
         ClassEntry superclass = superclassEntry;
         if (superclass != null)
             superclass = AbstractPoolEntry.maybeClone(constantPool, superclass);
-        else if ((flags & Classfile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
+        else if ((flags & ClassFile.ACC_MODULE) == 0 && !"java/lang/Object".equals(thisClassEntry.asInternalName()))
             superclass = constantPool.classEntry(ConstantDescs.CD_Object);
         List<ClassEntry> ies = new ArrayList<>(interfaceEntries.size());
         for (ClassEntry ce : interfaceEntries)
@@ -166,8 +172,8 @@ public final class DirectClassBuilder
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
-        BufWriter head = new BufWriterImpl(constantPool, size);
-        BufWriterImpl tail = new BufWriterImpl(constantPool, size, thisClassEntry, majorVersion);
+        BufWriter head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation
@@ -184,7 +190,7 @@ public final class DirectClassBuilder
         }
 
         // Now we can make the head
-        head.writeInt(Classfile.MAGIC_NUMBER);
+        head.writeInt(ClassFile.MAGIC_NUMBER);
         head.writeU2(minorVersion);
         head.writeU2(majorVersion);
         constantPool.writeTo(head);

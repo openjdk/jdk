@@ -157,7 +157,7 @@ class BitMap {
   void set_word  (idx_t word)            { set_word(word, ~(bm_word_t)0); }
   void clear_word(idx_t word)            { _map[word] = 0; }
 
-  static inline const bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
+  static inline bm_word_t load_word_ordered(const volatile bm_word_t* const addr, atomic_memory_order memory_order);
 
   // Utilities for ranges of bits.  Ranges are half-open [beg, end).
 
@@ -635,7 +635,7 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
+  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(), _flags(flags) {}
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();
 

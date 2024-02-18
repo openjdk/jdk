@@ -34,7 +34,6 @@
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "interpreter/interpreter.hpp"
 #include "nativeInst_ppc.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "register_ppc.hpp"
@@ -551,6 +550,12 @@ OopMapSet* Runtime1::generate_code_for(StubID id, StubAssembler* sasm) {
                        Rexception_pc = R4 /*LIRGenerator::exceptionPcOpr()*/,
                        Rexception_save = R31, Rcaller_sp = R30;
         __ set_info("unwind_exception", dont_gc_arguments);
+
+        if (AbortVMOnException) {
+          save_live_registers(sasm);
+          __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), Rexception);
+          restore_live_registers(sasm, noreg, noreg);
+        }
 
         __ ld(Rcaller_sp, 0, R1_SP);
         __ push_frame_reg_args(0, R0); // dummy frame for C call

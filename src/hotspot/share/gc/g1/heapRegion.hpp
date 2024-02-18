@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,6 +174,7 @@ public:
 
   void update_bot_for_block(HeapWord* start, HeapWord* end);
 
+  void prepare_for_full_gc();
   // Update heap region that has been compacted to be consistent after Full GC.
   void reset_compacted_after_full_gc(HeapWord* new_top);
   // Update skip-compacting heap region to be consistent after Full GC.
@@ -181,10 +182,6 @@ public:
 
   // All allocated blocks are occupied by objects in a HeapRegion.
   bool block_is_obj(const HeapWord* p, HeapWord* pb) const;
-
-  // Returns whether the given object is dead based on the given parsable_bottom (pb).
-  // For an object to be considered dead it must be below pb and scrubbed.
-  bool is_obj_dead(oop obj, HeapWord* pb) const;
 
   // Returns the object size for all valid block starts. If parsable_bottom (pb)
   // is given, calculates the block size based on that parsable_bottom, not the
@@ -233,11 +230,17 @@ private:
   HeapWord* volatile _top_at_mark_start;
 
   // The area above this limit is fully parsable. This limit
-  // is equal to bottom except from Remark and until the region has been
-  // scrubbed concurrently. The scrubbing ensures that all dead objects (with
-  // possibly unloaded classes) have beenreplaced with filler objects that
-  // are parsable. Below this limit the marking bitmap must be used to
-  // determine size and liveness.
+  // is equal to bottom except
+  //
+  // * from Remark and until the region has been scrubbed concurrently. The
+  //   scrubbing ensures that all dead objects (with possibly unloaded classes)
+  //   have been replaced with filler objects that are parsable.
+  // * after the marking phase in the Full GC pause until the objects have been
+  //   moved. Some (debug) code iterates over the heap after marking but before
+  //   compaction.
+  //
+  // Below this limit the marking bitmap must be used to determine size and
+  // liveness.
   HeapWord* volatile _parsable_bottom;
 
   // Amount of dead data in the region.
@@ -248,10 +251,13 @@ private:
   // Data for young region survivor prediction.
   uint  _young_index_in_cset;
   G1SurvRateGroup* _surv_rate_group;
-  int  _age_index;
+  uint  _age_index;
 
   // NUMA node.
   uint _node_index;
+
+  // Number of objects in this region that are currently pinned.
+  volatile size_t _pinned_object_count;
 
   void report_region_type_change(G1HeapRegionTraceType::Type to);
 
@@ -293,16 +299,19 @@ public:
   // there's clearing to be done ourselves. We also always mangle the space.
   void initialize(bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
-  static int    LogOfHRGrainBytes;
-  static int    LogCardsPerRegion;
+  static uint   LogOfHRGrainBytes;
+  static uint   LogCardsPerRegion;
+
+  // Atomically adjust the pinned object count by the given value. Value must not
+  // be zero.
+  inline void add_pinned_object_count(size_t value);
 
   static size_t GrainBytes;
   static size_t GrainWords;
   static size_t CardsPerRegion;
 
   static size_t align_up_to_region_byte_size(size_t sz) {
-    return (sz + (size_t) GrainBytes - 1) &
-                                      ~((1 << (size_t) LogOfHRGrainBytes) - 1);
+    return align_up(sz, GrainBytes);
   }
 
   // Returns whether a field is in the same region as the obj it points to.
@@ -400,6 +409,9 @@ public:
 
   bool is_old_or_humongous() const { return _type.is_old_or_humongous(); }
 
+  size_t pinned_count() const { return Atomic::load(&_pinned_object_count); }
+  bool has_pinned_objects() const { return pinned_count() > 0; }
+
   void set_free();
 
   void set_eden();
@@ -487,7 +499,7 @@ public:
 
   // Notify the region that an evacuation failure occurred for an object within this
   // region.
-  void note_evacuation_failure(bool during_concurrent_start);
+  void note_evacuation_failure();
 
   // Notify the region that we have partially finished processing self-forwarded
   // objects during evacuation failure handling.
@@ -512,7 +524,7 @@ public:
     _young_index_in_cset = index;
   }
 
-  int age_in_surv_rate_group() const;
+  uint age_in_surv_rate_group() const;
   bool has_valid_age_in_surv_rate() const;
 
   bool has_surv_rate_group() const;
@@ -524,16 +536,16 @@ public:
 
   void record_surv_words_in_group(size_t words_survived);
 
-  // Determine if an object is in the parsable or the to-be-scrubbed area.
-  inline static bool obj_in_parsable_area(const HeapWord* addr, HeapWord* pb);
-  inline static bool obj_in_unparsable_area(oop obj, HeapWord* pb);
+  // Determine if an address is in the parsable or the to-be-scrubbed area.
+  inline        bool is_in_parsable_area(const void* const addr) const;
+  inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
   bool obj_allocated_since_marking_start(oop obj) const {
     return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
   }
 
   // Update the region state after a failed evacuation.
-  void handle_evacuation_failure();
+  void handle_evacuation_failure(bool retain);
 
   // Iterate over the objects overlapping the given memory region, applying cl
   // to all references in the region.  This is a helper for
@@ -549,7 +561,6 @@ public:
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_code_root(nmethod* nm);
-  void add_code_root_locked(nmethod* nm);
   void remove_code_root(nmethod* nm);
 
   // Applies blk->do_code_blob() to each of the entries in

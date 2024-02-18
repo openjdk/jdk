@@ -29,13 +29,16 @@
 #include <dlfcn.h>
 #include <string.h>
 #include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
 
 
 dynamicOdm::dynamicOdm() {
-  const char *libodmname = "/usr/lib/libodm.a(shr_64.o)";
-  _libhandle = dlopen(libodmname, RTLD_MEMBER | RTLD_NOW);
+  const char* libodmname = "/usr/lib/libodm.a(shr_64.o)";
+  char ebuf[512];
+  _libhandle = os::dll_load(libodmname, ebuf, sizeof(ebuf));
+
   if (!_libhandle) {
-    trcVerbose("Couldn't open %s", libodmname);
+    trcVerbose("Cannot load %s (error %s)", libodmname, ebuf);
     return;
   }
   _odm_initialize  = (fun_odm_initialize )dlsym(_libhandle, "odm_initialize" );
@@ -45,14 +48,14 @@ dynamicOdm::dynamicOdm() {
   _odm_terminate   = (fun_odm_terminate  )dlsym(_libhandle, "odm_terminate"  );
   if (!_odm_initialize || !_odm_set_path || !_odm_mount_class || !_odm_get_obj || !_odm_terminate) {
     trcVerbose("Couldn't find all required odm symbols from %s", libodmname);
-    dlclose(_libhandle);
+    os::dll_unload(_libhandle);
     _libhandle = nullptr;
     return;
   }
 }
 
 dynamicOdm::~dynamicOdm() {
-  if (_libhandle) { dlclose(_libhandle); }
+  if (_libhandle) { os::dll_unload(_libhandle); }
 }
 
 

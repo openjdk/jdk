@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,12 +23,11 @@
  *
  */
 
-#include <sys/types.h>
-
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compileTask.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
@@ -45,6 +44,7 @@
 #include "memory/universe.hpp"
 #include "nativeInst_aarch64.hpp"
 #include "oops/accessDecorators.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "runtime/continuation.hpp"
@@ -54,6 +54,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER1
 #include "c1/c1_LIRAssembler.hpp"
@@ -64,6 +65,8 @@
 #include "opto/node.hpp"
 #include "opto/output.hpp"
 #endif
+
+#include <sys/types.h>
 
 #ifdef PRODUCT
 #define BLOCK_COMMENT(str) /* nothing */
@@ -964,7 +967,7 @@ int MacroAssembler::max_trampoline_stub_size() {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  // CompiledDirectStaticCall::set_to_interpreted knows the
+  // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
   isb();
@@ -994,8 +997,49 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
   // uintptr_t offset;
   // ldr_constant(rscratch2, const_ptr);
-  movptr(rscratch2, (uintptr_t)Universe::non_oop_word());
+  movptr(rscratch2, (intptr_t)Universe::non_oop_word());
   return trampoline_call(Address(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  if (target_needs_far_branch(CAST_FROM_FN_PTR(address, SharedRuntime::get_ic_miss_stub()))) {
+    return NativeInstruction::instruction_size * 7;
+  } else {
+    return NativeInstruction::instruction_size * 5;
+  }
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register data = rscratch2;
+  Register tmp1 = rscratch1;
+  Register tmp2 = r10;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    ldrw(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldrw(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmpw(tmp1, tmp2);
+  } else {
+    ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ldr(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+    cmp(tmp1, tmp2);
+  }
+
+  Label dont;
+  br(Assembler::EQ, dont);
+  far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  bind(dont);
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 // Implementation of call_VM versions
@@ -1019,7 +1063,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_1,
                              Register arg_2,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM_helper(oop_result, entry_point, 2, check_exceptions);
@@ -1031,11 +1075,10 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              Register arg_3,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
 
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
 
   pass_arg1(this, arg_1);
@@ -1066,7 +1109,7 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              bool check_exceptions) {
 
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM(oop_result, last_java_sp, entry_point, 2, check_exceptions);
@@ -1079,10 +1122,9 @@ void MacroAssembler::call_VM(Register oop_result,
                              Register arg_2,
                              Register arg_3,
                              bool check_exceptions) {
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
   pass_arg1(this, arg_1);
   call_VM(oop_result, last_java_sp, entry_point, 3, check_exceptions);
@@ -1101,7 +1143,14 @@ void MacroAssembler::get_vm_result_2(Register metadata_result, Register java_thr
 }
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) nop();
+  align(modulus, offset());
+}
+
+// Ensure that the code at target bytes offset from the current offset() is aligned
+// according to modulus.
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
 }
 
 void MacroAssembler::post_call_nop() {
@@ -1143,7 +1192,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   int vtable_base = in_bytes(Klass::vtable_start_offset());
-  int itentry_off = itableMethodEntry::method_offset_in_bytes();
+  int itentry_off = in_bytes(itableMethodEntry::method_offset());
   int scan_step   = itableOffsetEntry::size() * wordSize;
   int vte_size    = vtableEntry::size_in_bytes();
   assert(vte_size == wordSize, "else adjust times_vte_scale");
@@ -1171,7 +1220,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // }
   Label search, found_method;
 
-  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+  ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   cmp(intf_klass, method_result);
   br(Assembler::EQ, found_method);
   bind(search);
@@ -1179,9 +1228,9 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
   // the receiver class doesn't implement the interface, and wasn't the
   // same as when the caller was compiled.
   cbz(method_result, L_no_such_interface);
-  if (itableOffsetEntry::interface_offset_in_bytes() != 0) {
+  if (itableOffsetEntry::interface_offset() != 0) {
     add(scan_temp, scan_temp, scan_step);
-    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset_in_bytes()));
+    ldr(method_result, Address(scan_temp, itableOffsetEntry::interface_offset()));
   } else {
     ldr(method_result, Address(pre(scan_temp, scan_step)));
   }
@@ -1192,19 +1241,122 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 
   // Got a hit.
   if (return_method) {
-    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset_in_bytes()));
+    ldrw(scan_temp, Address(scan_temp, itableOffsetEntry::offset_offset()));
     ldr(method_result, Address(recv_klass, scan_temp, Address::uxtw(0)));
   }
+}
+
+// Look up the method for a megamorphic invokeinterface call in a single pass over itable:
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
+// - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
+// The target method is determined by <holder_klass, itable_index>.
+// The receiver klass is in recv_klass.
+// On success, the result will be in method_result, and execution falls through.
+// On failure, execution transfers to the given label.
+void MacroAssembler::lookup_interface_method_stub(Register recv_klass,
+                                                  Register holder_klass,
+                                                  Register resolved_klass,
+                                                  Register method_result,
+                                                  Register temp_itbl_klass,
+                                                  Register scan_temp,
+                                                  int itable_index,
+                                                  Label& L_no_such_interface) {
+  // 'method_result' is only used as output register at the very end of this method.
+  // Until then we can reuse it as 'holder_offset'.
+  Register holder_offset = method_result;
+  assert_different_registers(resolved_klass, recv_klass, holder_klass, temp_itbl_klass, scan_temp, holder_offset);
+
+  int vtable_start_offset = in_bytes(Klass::vtable_start_offset());
+  int itable_offset_entry_size = itableOffsetEntry::size() * wordSize;
+  int ioffset = in_bytes(itableOffsetEntry::interface_offset());
+  int ooffset = in_bytes(itableOffsetEntry::offset_offset());
+
+  Label L_loop_search_resolved_entry, L_resolved_found, L_holder_found;
+
+  ldrw(scan_temp, Address(recv_klass, Klass::vtable_length_offset()));
+  add(recv_klass, recv_klass, vtable_start_offset + ioffset);
+  // itableOffsetEntry[] itable = recv_klass + Klass::vtable_start_offset() + sizeof(vtableEntry) * recv_klass->_vtable_len;
+  // temp_itbl_klass = itable[0]._interface;
+  int vtblEntrySize = vtableEntry::size_in_bytes();
+  assert(vtblEntrySize == wordSize, "ldr lsl shift amount must be 3");
+  ldr(temp_itbl_klass, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
+  mov(holder_offset, zr);
+  // scan_temp = &(itable[0]._interface)
+  lea(scan_temp, Address(recv_klass, scan_temp, Address::lsl(exact_log2(vtblEntrySize))));
+
+  // Initial checks:
+  //   - if (holder_klass != resolved_klass), go to "scan for resolved"
+  //   - if (itable[0] == holder_klass), shortcut to "holder found"
+  //   - if (itable[0] == 0), no such interface
+  cmp(resolved_klass, holder_klass);
+  br(Assembler::NE, L_loop_search_resolved_entry);
+  cmp(holder_klass, temp_itbl_klass);
+  br(Assembler::EQ, L_holder_found);
+  cbz(temp_itbl_klass, L_no_such_interface);
+
+  // Loop: Look for holder_klass record in itable
+  //   do {
+  //     temp_itbl_klass = *(scan_temp += itable_offset_entry_size);
+  //     if (temp_itbl_klass == holder_klass) {
+  //       goto L_holder_found; // Found!
+  //     }
+  //   } while (temp_itbl_klass != 0);
+  //   goto L_no_such_interface // Not found.
+  Label L_search_holder;
+  bind(L_search_holder);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, itable_offset_entry_size)));
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_holder_found);
+    cbnz(temp_itbl_klass, L_search_holder);
+
+  b(L_no_such_interface);
+
+  // Loop: Look for resolved_class record in itable
+  //   while (true) {
+  //     temp_itbl_klass = *(scan_temp += itable_offset_entry_size);
+  //     if (temp_itbl_klass == 0) {
+  //       goto L_no_such_interface;
+  //     }
+  //     if (temp_itbl_klass == resolved_klass) {
+  //        goto L_resolved_found;  // Found!
+  //     }
+  //     if (temp_itbl_klass == holder_klass) {
+  //        holder_offset = scan_temp;
+  //     }
+  //   }
+  //
+  Label L_loop_search_resolved;
+  bind(L_loop_search_resolved);
+    ldr(temp_itbl_klass, Address(pre(scan_temp, itable_offset_entry_size)));
+  bind(L_loop_search_resolved_entry);
+    cbz(temp_itbl_klass, L_no_such_interface);
+    cmp(resolved_klass, temp_itbl_klass);
+    br(Assembler::EQ, L_resolved_found);
+    cmp(holder_klass, temp_itbl_klass);
+    br(Assembler::NE, L_loop_search_resolved);
+    mov(holder_offset, scan_temp);
+    b(L_loop_search_resolved);
+
+  // See if we already have a holder klass. If not, go and scan for it.
+  bind(L_resolved_found);
+  cbz(holder_offset, L_search_holder);
+  mov(scan_temp, holder_offset);
+
+  // Finally, scan_temp contains holder_klass vtable offset
+  bind(L_holder_found);
+  ldrw(method_result, Address(scan_temp, ooffset - ioffset));
+  add(recv_klass, recv_klass, itable_index * wordSize + in_bytes(itableMethodEntry::method_offset())
+    - vtable_start_offset - ioffset); // substract offsets to restore the original value of recv_klass
+  ldr(method_result, Address(recv_klass, method_result, Address::uxtw(0)));
 }
 
 // virtual method calling
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            RegisterOrConstant vtable_index,
                                            Register method_result) {
-  const int base = in_bytes(Klass::vtable_start_offset());
   assert(vtableEntry::size() * wordSize == 8,
          "adjust the scaling in the code below");
-  int vtable_offset_in_bytes = base + vtableEntry::method_offset_in_bytes();
+  int64_t vtable_offset_in_bytes = in_bytes(Klass::vtable_start_offset() + vtableEntry::method_offset());
 
   if (vtable_index.is_register()) {
     lea(method_result, Address(recv_klass,
@@ -1587,6 +1739,7 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register arg_1) {
+  assert_different_registers(arg_1, c_rarg0);
   pass_arg0(this, arg_0);
   pass_arg1(this, arg_1);
   call_VM_leaf_base(entry_point, 2);
@@ -1594,6 +1747,8 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0, Register 
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_0,
                                   Register arg_1, Register arg_2) {
+  assert_different_registers(arg_1, c_rarg0);
+  assert_different_registers(arg_2, c_rarg0, c_rarg1);
   pass_arg0(this, arg_0);
   pass_arg1(this, arg_1);
   pass_arg2(this, arg_2);
@@ -1607,31 +1762,27 @@ void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0) {
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1) {
 
-  assert(arg_0 != c_rarg1, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1);
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 2);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2) {
-  assert(arg_0 != c_rarg2, "smashed arg");
-  assert(arg_1 != c_rarg2, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1, c_rarg2);
+  assert_different_registers(arg_1, c_rarg2);
   pass_arg2(this, arg_2);
-  assert(arg_0 != c_rarg1, "smashed arg");
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 3);
 }
 
 void MacroAssembler::super_call_VM_leaf(address entry_point, Register arg_0, Register arg_1, Register arg_2, Register arg_3) {
-  assert(arg_0 != c_rarg3, "smashed arg");
-  assert(arg_1 != c_rarg3, "smashed arg");
-  assert(arg_2 != c_rarg3, "smashed arg");
+  assert_different_registers(arg_0, c_rarg1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_1, c_rarg2, c_rarg3);
+  assert_different_registers(arg_2, c_rarg3);
   pass_arg3(this, arg_3);
-  assert(arg_0 != c_rarg2, "smashed arg");
-  assert(arg_1 != c_rarg2, "smashed arg");
   pass_arg2(this, arg_2);
-  assert(arg_0 != c_rarg1, "smashed arg");
   pass_arg1(this, arg_1);
   pass_arg0(this, arg_0);
   MacroAssembler::call_VM_leaf_base(entry_point, 4);
@@ -2738,6 +2889,10 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
     mov(result, expected);
     lse_cas(result, new_val, addr, size, acquire, release, /*not_pair*/ true);
     compare_eq(result, expected, size);
+#ifdef ASSERT
+    // Poison rscratch1 which is written on !UseLSE branch
+    mov(rscratch1, 0x1f1f1f1f1f1f1f1f);
+#endif
   } else {
     Label retry_load, done;
     prfm(Address(addr), PSTL1STRM);
@@ -4153,108 +4308,117 @@ void MacroAssembler::kernel_crc32_common_fold_using_crypto_pmull(Register crc, R
     }
     add(table, table, table_offset);
 
+    // Registers v0..v7 are used as data registers.
+    // Registers v16..v31 are used as tmp registers.
     sub(buf, buf, 0x10);
-    ldrq(v1, Address(buf, 0x10));
-    ldrq(v2, Address(buf, 0x20));
-    ldrq(v3, Address(buf, 0x30));
-    ldrq(v4, Address(buf, 0x40));
-    ldrq(v5, Address(buf, 0x50));
-    ldrq(v6, Address(buf, 0x60));
-    ldrq(v7, Address(buf, 0x70));
-    ldrq(v8, Address(pre(buf, 0x80)));
+    ldrq(v0, Address(buf, 0x10));
+    ldrq(v1, Address(buf, 0x20));
+    ldrq(v2, Address(buf, 0x30));
+    ldrq(v3, Address(buf, 0x40));
+    ldrq(v4, Address(buf, 0x50));
+    ldrq(v5, Address(buf, 0x60));
+    ldrq(v6, Address(buf, 0x70));
+    ldrq(v7, Address(pre(buf, 0x80)));
 
-    movi(v25, T4S, 0);
-    mov(v25, S, 0, crc);
-    eor(v1, T16B, v1, v25);
+    movi(v31, T4S, 0);
+    mov(v31, S, 0, crc);
+    eor(v0, T16B, v0, v31);
 
-    ldrq(v0, Address(table));
+    // Register v16 contains constants from the crc table.
+    ldrq(v16, Address(table));
     b(CRC_by128_loop);
 
     align(OptoLoopAlignment);
   BIND(CRC_by128_loop);
-    pmull (v9,  T1Q, v1, v0, T1D);
-    pmull2(v10, T1Q, v1, v0, T2D);
-    ldrq(v1, Address(buf, 0x10));
-    eor3(v1, T16B, v9,  v10, v1);
+    pmull (v17,  T1Q, v0, v16, T1D);
+    pmull2(v18, T1Q, v0, v16, T2D);
+    ldrq(v0, Address(buf, 0x10));
+    eor3(v0, T16B, v17,  v18, v0);
 
-    pmull (v11, T1Q, v2, v0, T1D);
-    pmull2(v12, T1Q, v2, v0, T2D);
-    ldrq(v2, Address(buf, 0x20));
-    eor3(v2, T16B, v11, v12, v2);
+    pmull (v19, T1Q, v1, v16, T1D);
+    pmull2(v20, T1Q, v1, v16, T2D);
+    ldrq(v1, Address(buf, 0x20));
+    eor3(v1, T16B, v19, v20, v1);
 
-    pmull (v13, T1Q, v3, v0, T1D);
-    pmull2(v14, T1Q, v3, v0, T2D);
-    ldrq(v3, Address(buf, 0x30));
-    eor3(v3, T16B, v13, v14, v3);
+    pmull (v21, T1Q, v2, v16, T1D);
+    pmull2(v22, T1Q, v2, v16, T2D);
+    ldrq(v2, Address(buf, 0x30));
+    eor3(v2, T16B, v21, v22, v2);
 
-    pmull (v15, T1Q, v4, v0, T1D);
-    pmull2(v16, T1Q, v4, v0, T2D);
-    ldrq(v4, Address(buf, 0x40));
-    eor3(v4, T16B, v15, v16, v4);
+    pmull (v23, T1Q, v3, v16, T1D);
+    pmull2(v24, T1Q, v3, v16, T2D);
+    ldrq(v3, Address(buf, 0x40));
+    eor3(v3, T16B, v23, v24, v3);
 
-    pmull (v17, T1Q, v5, v0, T1D);
-    pmull2(v18, T1Q, v5, v0, T2D);
-    ldrq(v5, Address(buf, 0x50));
-    eor3(v5, T16B, v17, v18, v5);
+    pmull (v25, T1Q, v4, v16, T1D);
+    pmull2(v26, T1Q, v4, v16, T2D);
+    ldrq(v4, Address(buf, 0x50));
+    eor3(v4, T16B, v25, v26, v4);
 
-    pmull (v19, T1Q, v6, v0, T1D);
-    pmull2(v20, T1Q, v6, v0, T2D);
-    ldrq(v6, Address(buf, 0x60));
-    eor3(v6, T16B, v19, v20, v6);
+    pmull (v27, T1Q, v5, v16, T1D);
+    pmull2(v28, T1Q, v5, v16, T2D);
+    ldrq(v5, Address(buf, 0x60));
+    eor3(v5, T16B, v27, v28, v5);
 
-    pmull (v21, T1Q, v7, v0, T1D);
-    pmull2(v22, T1Q, v7, v0, T2D);
-    ldrq(v7, Address(buf, 0x70));
-    eor3(v7, T16B, v21, v22, v7);
+    pmull (v29, T1Q, v6, v16, T1D);
+    pmull2(v30, T1Q, v6, v16, T2D);
+    ldrq(v6, Address(buf, 0x70));
+    eor3(v6, T16B, v29, v30, v6);
 
-    pmull (v23, T1Q, v8, v0, T1D);
-    pmull2(v24, T1Q, v8, v0, T2D);
-    ldrq(v8, Address(pre(buf, 0x80)));
-    eor3(v8, T16B, v23, v24, v8);
+    // Reuse registers v23, v24.
+    // Using them won't block the first instruction of the next iteration.
+    pmull (v23, T1Q, v7, v16, T1D);
+    pmull2(v24, T1Q, v7, v16, T2D);
+    ldrq(v7, Address(pre(buf, 0x80)));
+    eor3(v7, T16B, v23, v24, v7);
 
     subs(len, len, 0x80);
     br(Assembler::GE, CRC_by128_loop);
 
     // fold into 512 bits
-    ldrq(v0, Address(table, 0x10));
+    // Use v31 for constants because v16 can be still in use.
+    ldrq(v31, Address(table, 0x10));
 
-    pmull (v10,  T1Q, v1, v0, T1D);
-    pmull2(v11, T1Q, v1, v0, T2D);
-    eor3(v1, T16B, v10, v11, v5);
+    pmull (v17,  T1Q, v0, v31, T1D);
+    pmull2(v18, T1Q, v0, v31, T2D);
+    eor3(v0, T16B, v17, v18, v4);
 
-    pmull (v12, T1Q, v2, v0, T1D);
-    pmull2(v13, T1Q, v2, v0, T2D);
-    eor3(v2, T16B, v12, v13, v6);
+    pmull (v19, T1Q, v1, v31, T1D);
+    pmull2(v20, T1Q, v1, v31, T2D);
+    eor3(v1, T16B, v19, v20, v5);
 
-    pmull (v14, T1Q, v3, v0, T1D);
-    pmull2(v15, T1Q, v3, v0, T2D);
-    eor3(v3, T16B, v14, v15, v7);
+    pmull (v21, T1Q, v2, v31, T1D);
+    pmull2(v22, T1Q, v2, v31, T2D);
+    eor3(v2, T16B, v21, v22, v6);
 
-    pmull (v16, T1Q, v4, v0, T1D);
-    pmull2(v17, T1Q, v4, v0, T2D);
-    eor3(v4, T16B, v16, v17, v8);
+    pmull (v23, T1Q, v3, v31, T1D);
+    pmull2(v24, T1Q, v3, v31, T2D);
+    eor3(v3, T16B, v23, v24, v7);
 
     // fold into 128 bits
-    ldrq(v5, Address(table, 0x20));
-    pmull (v10, T1Q, v1, v5, T1D);
-    pmull2(v11, T1Q, v1, v5, T2D);
-    eor3(v4, T16B, v4, v10, v11);
+    // Use v17 for constants because v31 can be still in use.
+    ldrq(v17, Address(table, 0x20));
+    pmull (v25, T1Q, v0, v17, T1D);
+    pmull2(v26, T1Q, v0, v17, T2D);
+    eor3(v3, T16B, v3, v25, v26);
 
-    ldrq(v6, Address(table, 0x30));
-    pmull (v12, T1Q, v2, v6, T1D);
-    pmull2(v13, T1Q, v2, v6, T2D);
-    eor3(v4, T16B, v4, v12, v13);
+    // Use v18 for constants because v17 can be still in use.
+    ldrq(v18, Address(table, 0x30));
+    pmull (v27, T1Q, v1, v18, T1D);
+    pmull2(v28, T1Q, v1, v18, T2D);
+    eor3(v3, T16B, v3, v27, v28);
 
-    ldrq(v7, Address(table, 0x40));
-    pmull (v14, T1Q, v3, v7, T1D);
-    pmull2(v15, T1Q, v3, v7, T2D);
-    eor3(v1, T16B, v4, v14, v15);
+    // Use v19 for constants because v18 can be still in use.
+    ldrq(v19, Address(table, 0x40));
+    pmull (v29, T1Q, v2, v19, T1D);
+    pmull2(v30, T1Q, v2, v19, T2D);
+    eor3(v0, T16B, v3, v29, v30);
 
     add(len, len, 0x80);
     add(buf, buf, 0x10);
 
-    mov(tmp0, v1, D, 0);
-    mov(tmp1, v1, D, 1);
+    mov(tmp0, v0, D, 0);
+    mov(tmp1, v0, D, 1);
 }
 
 SkipIfEqual::SkipIfEqual(
@@ -4311,7 +4475,7 @@ void MacroAssembler::load_method_holder_cld(Register rresult, Register rmethod) 
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   ldr(holder, Address(method, Method::const_offset()));                      // ConstMethod*
   ldr(holder, Address(holder, ConstMethod::constants_offset()));             // ConstantPool*
-  ldr(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes())); // InstanceKlass*
+  ldr(holder, Address(holder, ConstantPool::pool_holder_offset()));          // InstanceKlass*
 }
 
 void MacroAssembler::load_klass(Register dst, Register src) {
@@ -4320,6 +4484,23 @@ void MacroAssembler::load_klass(Register dst, Register src) {
     decode_klass_not_null(dst);
   } else {
     ldr(dst, Address(src, oopDesc::klass_offset_in_bytes()));
+  }
+}
+
+void MacroAssembler::restore_cpu_control_state_after_jni(Register tmp1, Register tmp2) {
+  if (RestoreMXCSROnJNICalls) {
+    Label OK;
+    get_fpcr(tmp1);
+    mov(tmp2, tmp1);
+    // Set FPCR to the state we need. We do want Round to Nearest. We
+    // don't want non-IEEE rounding modes or floating-point traps.
+    bfi(tmp1, zr, 22, 4); // Clear DN, FZ, and Rmode
+    bfi(tmp1, zr, 8, 5);  // Clear exception-control bits (8-12)
+    bfi(tmp1, zr, 0, 2);  // Clear AH:FIZ
+    eor(tmp2, tmp1, tmp2);
+    cbz(tmp2, OK);        // Only reset FPCR if it's wrong
+    set_fpcr(tmp1);
+    bind(OK);
   }
 }
 
@@ -4348,7 +4529,7 @@ void MacroAssembler::load_mirror(Register dst, Register method, Register tmp1, R
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(dst, Address(rmethod, Method::const_offset()));
   ldr(dst, Address(dst, ConstMethod::constants_offset()));
-  ldr(dst, Address(dst, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(dst, Address(dst, ConstantPool::pool_holder_offset()));
   ldr(dst, Address(dst, mirror_offset));
   resolve_oop_handle(dst, tmp1, tmp2);
 }
@@ -5217,28 +5398,25 @@ address MacroAssembler::arrays_equals(Register a1, Register a2, Register tmp3,
 
 // For Strings we're passed the address of the first characters in a1
 // and a2 and the length in cnt1.
-// elem_size is the element size in bytes: either 1 or 2.
 // There are two implementations.  For arrays >= 8 bytes, all
 // comparisons (including the final one, which may overlap) are
 // performed 8 bytes at a time.  For strings < 8 bytes, we compare a
 // halfword, then a short, and then a byte.
 
 void MacroAssembler::string_equals(Register a1, Register a2,
-                                   Register result, Register cnt1, int elem_size)
+                                   Register result, Register cnt1)
 {
   Label SAME, DONE, SHORT, NEXT_WORD;
   Register tmp1 = rscratch1;
   Register tmp2 = rscratch2;
   Register cnt2 = tmp2;  // cnt2 only used in array length compare
 
-  assert(elem_size == 1 || elem_size == 2, "must be 2 or 1 byte");
   assert_different_registers(a1, a2, result, cnt1, rscratch1, rscratch2);
 
 #ifndef PRODUCT
   {
-    const char kind = (elem_size == 2) ? 'U' : 'L';
     char comment[64];
-    snprintf(comment, sizeof comment, "{string_equals%c", kind);
+    snprintf(comment, sizeof comment, "{string_equalsL");
     BLOCK_COMMENT(comment);
   }
 #endif
@@ -5286,14 +5464,12 @@ void MacroAssembler::string_equals(Register a1, Register a2,
     cbnzw(tmp1, DONE);
   }
   bind(TAIL01);
-  if (elem_size == 1) { // Only needed when comparing 1-byte elements
-    tbz(cnt1, 0, SAME); // 0-1 bytes left.
+  tbz(cnt1, 0, SAME); // 0-1 bytes left.
     {
-      ldrb(tmp1, a1);
-      ldrb(tmp2, a2);
-      eorw(tmp1, tmp1, tmp2);
-      cbnzw(tmp1, DONE);
-    }
+    ldrb(tmp1, a1);
+    ldrb(tmp2, a2);
+    eorw(tmp1, tmp1, tmp2);
+    cbnzw(tmp1, DONE);
   }
   // Arrays are equal.
   bind(SAME);
@@ -5546,7 +5722,7 @@ void MacroAssembler::fill_words(Register base, Register cnt, Register value)
 // - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
 //     return the number of characters copied.
 // - java/lang/StringUTF16.compress
-//     return zero (0) if copy fails, otherwise 'len'.
+//     return index of non-latin1 character if copy fails, otherwise 'len'.
 //
 // This version always returns the number of characters copied, and does not
 // clobber the 'len' register. A successful copy will complete with the post-
@@ -5763,15 +5939,15 @@ address MacroAssembler::byte_array_inflate(Register src, Register dst, Register 
 }
 
 // Compress char[] array to byte[].
+// Intrinsic for java.lang.StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+// Return the array length if every element in array can be encoded,
+// otherwise, the index of first non-latin1 (> 0xff) character.
 void MacroAssembler::char_array_compress(Register src, Register dst, Register len,
                                          Register res,
                                          FloatRegister tmp0, FloatRegister tmp1,
                                          FloatRegister tmp2, FloatRegister tmp3,
                                          FloatRegister tmp4, FloatRegister tmp5) {
   encode_iso_array(src, dst, len, res, false, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5);
-  // Adjust result: res == len ? len : 0
-  cmp(len, res);
-  csel(res, res, zr, EQ);
 }
 
 // java.math.round(double a)
@@ -5966,51 +6142,43 @@ void MacroAssembler::leave() {
 // For more details on PAC see pauth_aarch64.hpp.
 
 // Sign the LR. Use during construction of a stack frame, before storing the LR to memory.
-// Uses the FP as the modifier.
+// Uses value zero as the modifier.
 //
 void MacroAssembler::protect_return_address() {
   if (VM_Version::use_rop_protection()) {
     check_return_address();
-    // The standard convention for C code is to use paciasp, which uses SP as the modifier. This
-    // works because in C code, FP and SP match on function entry. In the JDK, SP and FP may not
-    // match, so instead explicitly use the FP.
-    pacia(lr, rfp);
+    paciaz();
   }
 }
 
 // Sign the return value in the given register. Use before updating the LR in the existing stack
 // frame for the current function.
-// Uses the FP from the start of the function as the modifier - which is stored at the address of
-// the current FP.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::protect_return_address(Register return_reg, Register temp_reg) {
+void MacroAssembler::protect_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
     check_return_address(return_reg);
-    ldr(temp_reg, Address(rfp));
-    pacia(return_reg, temp_reg);
+    paciza(return_reg);
   }
 }
 
 // Authenticate the LR. Use before function return, after restoring FP and loading LR from memory.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::authenticate_return_address(Register return_reg) {
+void MacroAssembler::authenticate_return_address() {
   if (VM_Version::use_rop_protection()) {
-    autia(return_reg, rfp);
-    check_return_address(return_reg);
+    autiaz();
+    check_return_address();
   }
 }
 
 // Authenticate the return value in the given register. Use before updating the LR in the existing
 // stack frame for the current function.
-// Uses the FP from the start of the function as the modifier - which is stored at the address of
-// the current FP.
+// Uses value zero as the modifier.
 //
-void MacroAssembler::authenticate_return_address(Register return_reg, Register temp_reg) {
+void MacroAssembler::authenticate_return_address(Register return_reg) {
   if (VM_Version::use_rop_protection()) {
-    assert(PreserveFramePointer, "PreserveFramePointer must be set for ROP protection");
-    ldr(temp_reg, Address(rfp));
-    autia(return_reg, temp_reg);
+    autiza(return_reg);
     check_return_address(return_reg);
   }
 }
@@ -6213,96 +6381,123 @@ void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
   }
 }
 
-// Implements fast-locking.
-// Branches to slow upon failure to lock the object, with ZF cleared.
-// Falls through upon success with ZF set.
+// Implements lightweight-locking.
 //
 //  - obj: the object to be locked
-//  - hdr: the header, already loaded from obj, will be destroyed
-//  - t1, t2: temporary registers, will be destroyed
-void MacroAssembler::fast_lock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+//  - t1, t2, t3: temporary registers, will be destroyed
+//  - slow: branched to if locking fails, absolute offset may larger than 32KB (imm14 encoding).
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  assert_different_registers(obj, t1, t2, t3, rscratch1);
 
-  // Check if we would have space on lock-stack for the object.
-  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
-  cmpw(t1, (unsigned)LockStack::end_offset() - 1);
-  br(Assembler::GT, slow);
+  Label push;
+  const Register top = t1;
+  const Register mark = t2;
+  const Register t = t3;
 
-  // Load (object->mark() | 1) into hdr
-  orr(hdr, hdr, markWord::unlocked_value);
-  // Clear lock-bits, into t2
-  eor(t2, hdr, markWord::unlocked_value);
-  // Try to swing header from unlocked to locked
-  cmpxchg(/*addr*/ obj, /*expected*/ hdr, /*new*/ t2, Assembler::xword,
-          /*acquire*/ true, /*release*/ true, /*weak*/ false, t1);
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  // Check if the lock-stack is full.
+  ldrw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
+  cmpw(top, (unsigned)LockStack::end_offset());
+  br(Assembler::GE, slow);
+
+  // Check for recursion.
+  subw(t, top, oopSize);
+  ldr(t, Address(rthread, t));
+  cmp(obj, t);
+  br(Assembler::EQ, push);
+
+  // Check header for monitor (0b10).
+  tst(mark, markWord::monitor_value);
   br(Assembler::NE, slow);
 
-  // After successful lock, push object on lock-stack
-  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
-  str(obj, Address(rthread, t1));
-  addw(t1, t1, oopSize);
-  strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+  // Try to lock. Transition lock bits 0b01 => 0b00
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
+  orr(mark, mark, markWord::unlocked_value);
+  eor(t, mark, markWord::unlocked_value);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::xword,
+          /*acquire*/ true, /*release*/ false, /*weak*/ false, noreg);
+  br(Assembler::NE, slow);
+
+  bind(push);
+  // After successful lock, push object on lock-stack.
+  str(obj, Address(rthread, top));
+  addw(top, top, oopSize);
+  strw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
 }
 
-// Implements fast-unlocking.
-// Branches to slow upon failure, with ZF cleared.
-// Falls through upon success, with ZF set.
+// Implements lightweight-unlocking.
 //
 // - obj: the object to be unlocked
-// - hdr: the (pre-loaded) header of the object
-// - t1, t2: temporary registers
-void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Register t2, Label& slow) {
+// - t1, t2, t3: temporary registers
+// - slow: branched to if unlocking fails, absolute offset may larger than 32KB (imm14 encoding).
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, t1, t2);
+  // cmpxchg clobbers rscratch1.
+  assert_different_registers(obj, t1, t2, t3, rscratch1);
 
 #ifdef ASSERT
   {
-    // The following checks rely on the fact that LockStack is only ever modified by
-    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
-    // entries after inflation will happen delayed in that case.
-
     // Check for lock-stack underflow.
     Label stack_ok;
     ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
     cmpw(t1, (unsigned)LockStack::start_offset());
-    br(Assembler::GT, stack_ok);
+    br(Assembler::GE, stack_ok);
     STOP("Lock-stack underflow");
     bind(stack_ok);
   }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    subw(t1, t1, oopSize);
-    ldr(t1, Address(rthread, t1));
-    cmpoop(t1, obj);
-    br(Assembler::EQ, tos_ok);
-    STOP("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
-  }
-  {
-    // Check that hdr is fast-locked.
-    Label hdr_ok;
-    tst(hdr, markWord::lock_mask_in_place);
-    br(Assembler::EQ, hdr_ok);
-    STOP("Header is not fast-locked");
-    bind(hdr_ok);
-  }
 #endif
 
-  // Load the new header (unlocked) into t1
-  orr(t1, hdr, markWord::unlocked_value);
+  Label unlocked, push_and_slow;
+  const Register top = t1;
+  const Register mark = t2;
+  const Register t = t3;
 
-  // Try to swing header from locked to unlocked
-  cmpxchg(obj, hdr, t1, Assembler::xword,
-          /*acquire*/ true, /*release*/ true, /*weak*/ false, t2);
+  // Check if obj is top of lock-stack.
+  ldrw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
+  subw(top, top, oopSize);
+  ldr(t, Address(rthread, top));
+  cmp(obj, t);
   br(Assembler::NE, slow);
 
-  // After successful unlock, pop object from lock-stack
-  ldrw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
-  subw(t1, t1, oopSize);
+  // Pop lock-stack.
+  DEBUG_ONLY(str(zr, Address(rthread, top));)
+  strw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
+
+  // Check if recursive.
+  subw(t, top, oopSize);
+  ldr(t, Address(rthread, t));
+  cmp(obj, t);
+  br(Assembler::EQ, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  ldr(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+  tbnz(mark, log2i_exact(markWord::monitor_value), push_and_slow);
+
 #ifdef ASSERT
-  str(zr, Address(rthread, t1));
+  // Check header not unlocked (0b01).
+  Label not_unlocked;
+  tbz(mark, log2i_exact(markWord::unlocked_value), not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
 #endif
-  strw(t1, Address(rthread, JavaThread::lock_stack_top_offset()));
+
+  // Try to unlock. Transition lock bits 0b00 => 0b01
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
+  orr(t, mark, markWord::unlocked_value);
+  cmpxchg(obj, mark, t, Assembler::xword,
+          /*acquire*/ false, /*release*/ true, /*weak*/ false, noreg);
+  br(Assembler::EQ, unlocked);
+
+  bind(push_and_slow);
+  // Restore lock-stack and handle the unlock in runtime.
+  DEBUG_ONLY(str(obj, Address(rthread, top));)
+  addw(top, top, oopSize);
+  strw(top, Address(rthread, JavaThread::lock_stack_top_offset()));
+  b(slow);
+
+  bind(unlocked);
 }

@@ -58,6 +58,8 @@ package org.w3c.dom;
  * methods may return error codes similar to those listed in the
  * corresponding method descriptions.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
+ *
+ * @since 1.4, DOM Level 2
  */
 public class DOMException extends RuntimeException {
     public DOMException(short code, String message) {

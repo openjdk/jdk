@@ -202,7 +202,7 @@ void JvmtiTrace::initialize() {
             if (op == '+') {
               _trace_flags[i] |= bits;
             } else {
-              _trace_flags[i] &= ~bits;
+              _trace_flags[i] &= (jbyte)~bits;
             }
             _on = true;
           }
@@ -231,7 +231,7 @@ void JvmtiTrace::initialize() {
           if (op == '+') {
             _event_trace_flags[i] |= bits;
           } else {
-            _event_trace_flags[i] &= ~bits;
+            _event_trace_flags[i] &= (jbyte)~bits;
           }
           _on = true;
         }

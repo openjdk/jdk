@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,21 +261,6 @@ public class ObjectInputStream
     /** marker for unshared objects in internal handle table */
     private static final Object unsharedMarker = new Object();
 
-    /**
-     * immutable table mapping primitive type names to corresponding
-     * class objects
-     */
-    private static final Map<String, Class<?>> primClasses =
-        Map.of("boolean", boolean.class,
-               "byte", byte.class,
-               "char", char.class,
-               "short", short.class,
-               "int", int.class,
-               "long", long.class,
-               "float", float.class,
-               "double", double.class,
-               "void", void.class);
-
     private static class Caches {
         /** cache of subclass security audit results */
         static final ClassValue<Boolean> subclassAudits =
@@ -405,6 +390,7 @@ public class ObjectInputStream
      * @see     ObjectInputStream#readFields()
      * @see     ObjectOutputStream#ObjectOutputStream(OutputStream)
      */
+    @SuppressWarnings("this-escape")
     public ObjectInputStream(InputStream in) throws IOException {
         verifySubclass();
         bin = new BlockDataInputStream(in);
@@ -803,7 +789,7 @@ public class ObjectInputStream
         try {
             return Class.forName(name, false, latestUserDefinedLoader());
         } catch (ClassNotFoundException ex) {
-            Class<?> cl = primClasses.get(name);
+            Class<?> cl = Class.forPrimitiveName(name);
             if (cl != null) {
                 return cl;
             } else {
@@ -2002,9 +1988,8 @@ public class ObjectInputStream
             resolveEx = ex;
         } catch (IllegalAccessError aie) {
             throw new InvalidClassException(aie.getMessage(), aie);
-        } catch (OutOfMemoryError memerr) {
-            throw new InvalidObjectException("Proxy interface limit exceeded: " +
-                                             Arrays.toString(ifaces), memerr);
+        } catch (OutOfMemoryError oome) {
+            throw genInvalidObjectException(oome, ifaces);
         }
 
         // Call filterCheck on the class before reading anything else
@@ -2016,9 +2001,8 @@ public class ObjectInputStream
             totalObjectRefs++;
             depth++;
             desc.initProxy(cl, resolveEx, readClassDesc(false));
-        } catch (OutOfMemoryError memerr) {
-            throw new InvalidObjectException("Proxy interface limit exceeded: " +
-                                             Arrays.toString(ifaces), memerr);
+        } catch (OutOfMemoryError oome) {
+            throw genInvalidObjectException(oome, ifaces);
         } finally {
             depth--;
         }
@@ -2026,6 +2010,14 @@ public class ObjectInputStream
         handles.finish(descHandle);
         passHandle = descHandle;
         return desc;
+    }
+
+    // Generate an InvalidObjectException for an OutOfMemoryError
+    // Use String.concat() to avoid string formatting invoke dynamic
+    private static InvalidObjectException genInvalidObjectException(OutOfMemoryError oome,
+                                                                    String[] ifaces) {
+        return new InvalidObjectException("Proxy interface limit exceeded: "
+                .concat(Arrays.toString(ifaces)), oome);
     }
 
     /**

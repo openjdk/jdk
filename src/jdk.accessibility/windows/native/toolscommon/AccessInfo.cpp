@@ -149,8 +149,8 @@ char *getAccessibleInfo(long vmID, AccessibleContext ac, int x, int y,
     wchar_t tmpBuf[LINE_BUFSIZE];
     wchar_t name[LINE_BUFSIZE];
     int i, j;
-    long start;
-    long end;
+    jint start;
+    jint end;
 
     if (buffer == NULL || bufsize <= 0) {
         return NULL;

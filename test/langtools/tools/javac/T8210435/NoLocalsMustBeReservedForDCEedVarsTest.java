@@ -25,8 +25,8 @@
  * @test
  * @summary
  * @library /tools/lib
- * @modules jdk.jdeps/com.sun.tools.classfile
- *          jdk.compiler/com.sun.tools.javac.api
+ * @enablePreview
+ * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  *          jdk.jdeps/com.sun.tools.javap
@@ -37,7 +37,8 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-import com.sun.tools.classfile.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -64,11 +65,12 @@ public class NoLocalsMustBeReservedForDCEedVarsTest {
                 .run();
 
         File cfile = new File(Paths.get(System.getProperty("user.dir"), "Test.class").toUri());
-        ClassFile classFile = ClassFile.read(cfile);
-        for (Method method: classFile.methods) {
-            if (method.getName(classFile.constant_pool).equals("foo")) {
-                Code_attribute codeAttr = (Code_attribute)method.attributes.get("Code");
-                Assert.check(codeAttr.max_locals == 0, "max locals found " + codeAttr.max_locals);
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
+        for (MethodModel method: classFile.methods()) {
+            if (method.methodName().stringValue().equals("foo")) {
+                CodeAttribute codeAttr = method.findAttribute(Attributes.CODE).orElse(null);
+                assert codeAttr != null;
+                Assert.check(codeAttr.maxLocals() == 0, "max locals found " + codeAttr.maxLocals());
             }
         }
     }

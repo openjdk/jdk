@@ -22,15 +22,14 @@
  *
  */
 
-#include "opto/addnode.hpp"
-#include "opto/node.hpp"
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
-
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
@@ -591,12 +590,6 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print_cr("Split-if");
-  }
-  if (TraceLoopOpts) {
-    tty->print_cr("SplitIf");
-  }
 
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
@@ -628,7 +621,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       for (j = n->outs(); n->has_out(j); j++) {
         Node* m = n->out(j);
         // If m is dead, throw it away, and declare progress
-        if (_nodes[m->_idx] == nullptr) {
+        if (_loop_or_ctrl[m->_idx] == nullptr) {
           _igvn.remove_dead_node(m);
           // fall through
         }

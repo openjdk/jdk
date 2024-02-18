@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile RecordComponent.
+ * @summary Testing ClassFile RecordComponent.
  * @run junit TestRecordComponent
  */
 import java.lang.annotation.ElementType;
@@ -38,12 +36,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import helpers.ClassRecord;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.attribute.RecordAttribute;
+import java.lang.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
@@ -55,7 +53,8 @@ class TestRecordComponent {
 
     @Test
     void testAdapt() throws Exception {
-        ClassModel cm = Classfile.parse(Files.readAllBytes(testClassPath));
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 List<RecordComponentInfo> components = rm.components();
@@ -66,21 +65,23 @@ class TestRecordComponent {
             } else
                 cb.with(ce);
         };
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = cc.parse(cc.transform(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
     @Test
     void testPassThrough() throws Exception {
-        ClassModel cm = Classfile.parse(Files.readAllBytes(testClassPath));
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> cb.with(ce);
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = cc.parse(cc.transform(cm, xform));
         ClassRecord.assertEquals(newModel, cm);
     }
 
     @Test
     void testChagne() throws Exception {
-        ClassModel cm = Classfile.parse(Files.readAllBytes(testClassPath));
+        var cc = ClassFile.of();
+        ClassModel cm = cc.parse(Files.readAllBytes(testClassPath));
         ClassTransform xform = (cb, ce) -> {
             if (ce instanceof RecordAttribute ra) {
                 List<RecordComponentInfo> components = ra.components();
@@ -91,7 +92,7 @@ class TestRecordComponent {
             else
                 cb.with(ce);
         };
-        ClassModel newModel = Classfile.parse(cm.transform(xform));
+        ClassModel newModel = cc.parse(cc.transform(cm, xform));
         RecordAttribute ra = newModel.findAttribute(Attributes.RECORD).orElseThrow();
         assertEquals(ra.components().size(), 2, "Should have two components");
         assertEquals(ra.components().get(0).name().stringValue(), "fooXYZ");
@@ -103,7 +104,7 @@ class TestRecordComponent {
     @Test
     void testOptions() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
-        ClassModel cm = Classfile.parse(Files.readAllBytes(testClassPath));
+        ClassModel cm = ClassFile.of().parse(Files.readAllBytes(testClassPath));
         cm.forEachElement((ce) -> {
             if (ce instanceof RecordAttribute rm) {
                 count.addAndGet(rm.components().size());

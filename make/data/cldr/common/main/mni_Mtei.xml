@@ -12,11 +12,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<script type="Mtei"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="mni" draft="contributed">ꯃꯤꯇꯩꯂꯣꯟ</language>
 		</languages>
@@ -26,7 +21,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</scripts>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[꯬ ꯀ ꯁ ꯂ ꯃ ꯄ ꯅ ꯆ ꯇ ꯈ ꯉ ꯊ ꯋ ꯌ ꯍ ꯎ ꯏ ꯐ ꯑ ꯒ ꯓ ꯔ ꯕ ꯖ ꯗ ꯘ ꯙ ꯚ ꯣ ꯤ \uABE5 ꯦ ꯧ \uABE8 ꯩ ꯪ ꯛ ꯜ ꯝ ꯞ ꯟ ꯠ ꯡ ꯢ \uABED]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[꯬ ꯀ ꯁ ꯂ ꯃ ꯄ ꯅ ꯆ ꯇ ꯈ ꯉ ꯊ ꯋ ꯌ ꯍ ꯎ ꯏ ꯐ ꯑ ꯒ ꯓ ꯔ ꯕ ꯖ ꯗ ꯘ ꯙ ꯚ ꯣ ꯤ ꯥ ꯦ ꯧ ꯨ ꯩ ꯪ ꯛ ꯜ ꯝ ꯞ ꯟ ꯠ ꯡ ꯢ ꯭]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % + 0꯰ 1꯱ 2꯲ 3꯳ 4꯴ 5꯵ 6꯶ 7꯷ 8꯸ 9꯹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="provisional">[\- ‑ , ; \: ! ? . … ꯫ ' &quot; ( ) \[ \] @ * / \&amp; #]</exemplarCharacters>
 	</characters>
@@ -37,13 +32,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, d MMMM, y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM, y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">

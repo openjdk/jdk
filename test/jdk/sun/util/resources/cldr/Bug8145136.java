@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
  /*
  * @test
- * @bug 8145136 8202537 8221432 8251317 8258794 8265315
+ * @bug 8145136 8202537 8221432 8251317 8258794 8265315 8306116
  * @modules jdk.localedata
  * @summary Tests LikelySubtags is correctly reflected in JDK.
  * @run main/othervm -Djava.locale.providers=CLDR Bug8145136
@@ -37,7 +37,7 @@ public class Bug8145136 {
 
     public static void main(String[] args) {
         /* This golden data is names of all *.xml files which contain locale
-         * specific data in CLDR 41. With LikelySubtags,
+         * specific data in CLDR 44. With LikelySubtags,
          * these locales should be present in output of getAvailableLocales()
          * method.
          */
@@ -110,7 +110,7 @@ public class Bug8145136 {
             "tr-TR", "tt", "tt-RU", "twq", "twq-NE", "tzm", "tzm-MA", "ug", "ug-CN", "uk", "uk-UA", "ur", "ur-IN",
             "ur-PK", "uz", "uz-Arab", "uz-Arab-AF", "uz-Cyrl", "uz-Cyrl-UZ", "uz-Latn", "uz-Latn-UZ", "vai",
             "vai-Latn", "vai-Latn-LR", "vai-Vaii", "vai-Vaii-LR", "vi", "vi-VN", "vun", "vun-TZ", "wae", "wae-CH",
-            "wo", "wo-SN", "xh", "xh-ZA", "xog", "xog-UG", "yav", "yav-CM", "yi", "yi-001", "yo", "yo-BJ", "yo-NG",
+            "wo", "wo-SN", "xh", "xh-ZA", "xog", "xog-UG", "yav", "yav-CM", "yi", "yi-UA", "yo", "yo-BJ", "yo-NG",
             "yrl", "yrl-BR", "yrl-CO", "yrl-VE", "yue", "yue-Hans", "yue-Hans-CN", "yue-Hant", "yue-Hant-HK", "zgh",
             "zgh-MA", "zh", "zh-Hans", "zh-Hans-CN", "zh-Hans-HK", "zh-Hans-MO", "zh-Hans-SG", "zh-Hant",
             "zh-Hant-HK", "zh-Hant-MO", "zh-Hant-TW", "zu", "zu-ZA");

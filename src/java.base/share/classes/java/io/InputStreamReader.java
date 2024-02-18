@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,10 +47,9 @@ import sun.nio.cs.StreamDecoder;
  * <p> For top efficiency, consider wrapping an InputStreamReader within a
  * BufferedReader.  For example:
  *
- * <pre>
- * BufferedReader in
- *   = new BufferedReader(new InputStreamReader(anInputStream));
- * </pre>
+ * {@snippet lang=java :
+ *     BufferedReader in = new BufferedReader(new InputStreamReader(anInputStream));
+ * }
  *
  * @see BufferedReader
  * @see InputStream
@@ -85,6 +84,7 @@ public class InputStreamReader extends Reader {
      *
      * @see Charset#defaultCharset()
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in) {
         super(in);
         Charset cs = Charset.defaultCharset();
@@ -103,6 +103,7 @@ public class InputStreamReader extends Reader {
      * @throws     UnsupportedEncodingException
      *             If the named charset is not supported
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, String charsetName)
         throws UnsupportedEncodingException
     {
@@ -120,6 +121,7 @@ public class InputStreamReader extends Reader {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, Charset cs) {
         super(in);
         if (cs == null)
@@ -135,6 +137,7 @@ public class InputStreamReader extends Reader {
      *
      * @since 1.4
      */
+    @SuppressWarnings("this-escape")
     public InputStreamReader(InputStream in, CharsetDecoder dec) {
         super(in);
         if (dec == null)
@@ -158,8 +161,6 @@ public class InputStreamReader extends Reader {
      *         {@code null} if the stream has been closed
      *
      * @see Charset
-     *
-     * @revised 1.4
      */
     public String getEncoding() {
         return sd.getEncoding();

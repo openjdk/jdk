@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 package common;
 
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import java.util.EnumSet;
 import java.util.Set;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,6 +33,11 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.xpath.XPathFactory;
 import jdk.xml.internal.JdkProperty.ImplPropMap;
+import jdk.xml.internal.XMLSecurityManager.BooleanMapper;
+import jdk.xml.internal.XMLSecurityManager.IntegerMapper;
+import jdk.xml.internal.XMLSecurityManager.Limit;
+import jdk.xml.internal.XMLSecurityManager.StringMapper;
+import jdk.xml.internal.XMLSecurityManager.ValueMapper;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 import org.w3c.dom.DOMConfiguration;
@@ -90,8 +94,21 @@ public class ImplPropertyTest {
                 Processor.StAX, Processor.VALIDATION, Processor.TRANSFORM);
 
         for (Limit limit : Limit.values()) {
+            Object value1 = null, value2 = null;
+            ValueMapper mapper = limit.mapper();
+            if (mapper instanceof StringMapper) {
+                value1 = mapper.toObject(0);
+                value2 = mapper.toObject(1);
+            } else if (mapper instanceof BooleanMapper) {
+                value1 = true;
+                value2 = false;
+            } else if (mapper instanceof IntegerMapper) {
+                value1 = 100;
+                value2 = 200;
+            }
             for (Processor p : pLimit) {
-                testProperties(p, limit.apiProperty(), 100, limit.systemProperty(), 200, true);
+                testProperties(p, limit.apiProperty(), value1, limit.systemProperty(), value2,
+                    (limit.systemProperty() != null && !limit.apiProperty().equals(limit.systemProperty())));
             }
         }
     }
@@ -176,7 +193,6 @@ public class ImplPropertyTest {
     private void testProperties(Processor processor, String name1, Object value1,
             String name2, Object value2, boolean differ)
             throws Exception {
-
         Object ret1 = null;
         Object ret2 = null;
         switch (processor) {
@@ -265,7 +281,14 @@ public class ImplPropertyTest {
         }
         if ((value1 instanceof Integer) && ret1 instanceof String) {
             ret1 = Integer.parseInt((String)ret1);
-            ret2 = Integer.parseInt((String)ret2);
+            if (differ) {
+                ret2 = Integer.parseInt((String)ret2);
+            }
+        } else if ((value1 instanceof Boolean) && ret1 instanceof String) {
+            ret1 = Boolean.parseBoolean((String)ret1);
+            if (differ) {
+                ret2 = Boolean.parseBoolean((String)ret2);
+            }
         }
 
         // name1 is set, expected return value: value1 (set with the old name)

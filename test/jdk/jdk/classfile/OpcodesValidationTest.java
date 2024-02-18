@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -25,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile constant instruction opcodes.
+ * @summary Testing ClassFile constant instruction opcodes.
  * @run junit OpcodesValidationTest
  */
 import java.lang.constant.ClassDesc;
@@ -34,12 +32,12 @@ import static java.lang.constant.ConstantDescs.CD_void;
 import java.lang.constant.MethodTypeDesc;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Opcode;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Opcode;
 import org.junit.jupiter.api.*;
 import static org.junit.jupiter.api.DynamicTest.dynamicTest;
 import static org.junit.jupiter.api.Assertions.*;
-import static jdk.internal.classfile.Opcode.*;
+import static java.lang.classfile.Opcode.*;
 import java.util.stream.Stream;
 
 public class OpcodesValidationTest {
@@ -105,7 +103,7 @@ public class OpcodesValidationTest {
     }
 
     private void testPositiveCase(Opcode opcode, Object constant) {
-        Classfile.build(ClassDesc.of("MyClass"),
+        ClassFile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                                       mb -> mb.withCode(
@@ -122,7 +120,7 @@ public class OpcodesValidationTest {
     }
 
     private void testNegativeCase(Opcode opcode, Object constant) {
-        Classfile.build(ClassDesc.of("MyClass"),
+        ClassFile.of().build(ClassDesc.of("MyClass"),
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                         mb -> mb .withCode(

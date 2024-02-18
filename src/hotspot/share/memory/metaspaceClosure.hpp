@@ -106,14 +106,13 @@ public:
   // [2] All Array<T> dimensions are statically declared.
   class Ref : public CHeapObj<mtMetaspace> {
     Writability _writability;
-    bool _keep_after_pushing;
+    address _enclosing_obj;
     Ref* _next;
-    void* _user_data;
     NONCOPYABLE(Ref);
 
   protected:
     virtual void** mpp() const = 0;
-    Ref(Writability w) : _writability(w), _keep_after_pushing(false), _next(nullptr), _user_data(nullptr) {}
+    Ref(Writability w) : _writability(w), _enclosing_obj(nullptr), _next(nullptr) {}
   public:
     virtual bool not_null() const = 0;
     virtual int size() const = 0;
@@ -131,13 +130,15 @@ public:
       return (address*)mpp();
     }
 
-    void update(address new_loc) const;
+    // See comments in ArchiveBuilder::remember_embedded_pointer_in_enclosing_obj()
+    address enclosing_obj() const {
+      return _enclosing_obj;
+    }
+    void set_enclosing_obj(address obj) {
+      _enclosing_obj = obj;
+    }
 
     Writability writability() const { return _writability; };
-    void set_keep_after_pushing()   { _keep_after_pushing = true; }
-    bool keep_after_pushing()       { return _keep_after_pushing; }
-    void set_user_data(void* data)  { _user_data = data; }
-    void* user_data()               { return _user_data; }
     void set_next(Ref* n)           { _next = n; }
     Ref* next() const               { return _next; }
   };
@@ -254,6 +255,9 @@ private:
   // Normally, chains of references like a->b->c->d are iterated recursively. However,
   // if recursion is too deep, we save the Refs in _pending_refs, and push them later in
   // MetaspaceClosure::finish(). This avoids overflowing the C stack.
+  //
+  // When we are visting d, the _enclosing_ref is c,
+  // When we are visting c, the _enclosing_ref is b, ... and so on.
   static const int MAX_NEST_LEVEL = 5;
   Ref* _pending_refs;
   int _nest_level;
@@ -268,32 +272,14 @@ public:
 
   void finish();
 
-  // enclosing_ref() is used to compute the offset of a field in a C++ class. For example
-  // class Foo { intx scala; Bar* ptr; }
-  //    Foo *f = 0x100;
-  // when the f->ptr field is iterated with do_ref() on 64-bit platforms, we will have
-  //    do_ref(Ref* r) {
-  //       r->addr() == 0x108;                // == &f->ptr;
-  //       enclosing_ref()->obj() == 0x100;   // == foo
-  // So we know that we are iterating upon a field at offset 8 of the object at 0x100.
-  //
-  // Note that if we have stack overflow, do_pending_ref(r) will be called first and
-  // do_ref(r) will be called later, for the same r. In this case, enclosing_ref() is valid only
-  // when do_pending_ref(r) is called, and will return null when do_ref(r) is called.
-  Ref* enclosing_ref() const {
-    return _enclosing_ref;
-  }
-
-  // This is called when a reference is placed in _pending_refs. Override this
-  // function if you're using enclosing_ref(). See notes above.
-  virtual void do_pending_ref(Ref* ref) {}
-
   // returns true if we want to keep iterating the pointers embedded inside <ref>
   virtual bool do_ref(Ref* ref, bool read_only) = 0;
 
 private:
   template <class REF_TYPE, typename T>
   void push_with_ref(T** mpp, Writability w) {
+    // We cannot make stack allocation because the Ref may need to be saved in
+    // _pending_refs to avoid overflowing the C call stack
     push_impl(new REF_TYPE(mpp, w));
   }
 
@@ -311,8 +297,8 @@ public:
   // Note that the following will fail to compile (to prevent you from adding new fields
   // into the MetaspaceObj subtypes that cannot be properly copied by CDS):
   //
-  // Hashtable*             h  = ...;  it->push(&h);     => Hashtable is not a subclass of MetaspaceObj
-  // Array<Hashtable*>*     a6 = ...;  it->push(&a6);    => Hashtable is not a subclass of MetaspaceObj
+  // MemoryPool*            p  = ...;  it->push(&p);     => MemoryPool is not a subclass of MetaspaceObj
+  // Array<MemoryPool*>*    a6 = ...;  it->push(&a6);    => MemoryPool is not a subclass of MetaspaceObj
   // Array<int*>*           a7 = ...;  it->push(&a7);    => int       is not a subclass of MetaspaceObj
 
   template <typename T>
@@ -336,22 +322,6 @@ public:
     static_assert(std::is_base_of<MetaspaceObj, T>::value, "Do not push Arrays of arbitrary pointer types");
     push_with_ref<MSOPointerArrayRef<T>>(mpp, w);
   }
-
-#if 0
-  // Enable this block if you're changing the push(...) methods, to test for types that should be
-  // disallowed. Each of the following "push" calls should result in a compile-time error.
-  void test_disallowed_types(MetaspaceClosure* it) {
-    Hashtable<bool, mtInternal>* h  = nullptr;
-    it->push(&h);
-
-    Array<Hashtable<bool, mtInternal>*>* a6 = nullptr;
-    it->push(&a6);
-
-    Array<int*>* a7 = nullptr;
-    it->push(&a7);
-  }
-#endif
-
 };
 
 // This is a special MetaspaceClosure that visits each unique MetaspaceObj once.

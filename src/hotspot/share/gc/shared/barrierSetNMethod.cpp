@@ -186,6 +186,14 @@ int BarrierSetNMethod::nmethod_stub_entry_barrier(address* return_address_ptr) {
   // Called upon first entry after being armed
   bool may_enter = bs_nm->nmethod_entry_barrier(nm);
 
+  // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
+  // are made visible, by using a cross modify fence. Note that this is synchronous cross modifying
+  // code, where the existence of new instructions is communicated via data (the guard value).
+  // This cross modify fence is only needed when the nmethod entry barrier modifies the
+  // instructions. Not all platforms currently do that, so if this check becomes expensive,
+  // it can be made conditional on the nmethod_patching_type.
+  OrderAccess::cross_modify_fence();
+
   // Diagnostic option to force deoptimization 1 in 3 times. It is otherwise
   // a very rare event.
   if (DeoptimizeNMethodBarriersALot) {
@@ -214,6 +222,7 @@ bool BarrierSetNMethod::nmethod_osr_entry_barrier(nmethod* nm) {
 
   assert(nm->is_osr_method(), "Should not reach here");
   log_trace(nmethod, barrier)("Running osr nmethod entry barrier: " PTR_FORMAT, p2i(nm));
+  bool result = nmethod_entry_barrier(nm);
   OrderAccess::cross_modify_fence();
-  return nmethod_entry_barrier(nm);
+  return result;
 }

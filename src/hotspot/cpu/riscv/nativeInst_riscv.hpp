@@ -591,8 +591,8 @@ public:
     // an addiw as well.
     return is_nop() && is_lui_to_zr_at(addr_at(4));
   }
-  int displacement() const;
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const;
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
@@ -624,7 +624,7 @@ class NativeDeoptInstruction: public NativeInstruction {
 
   static bool is_deopt_at(address instr) {
     assert(instr != nullptr, "");
-    uint32_t value = *(uint32_t *) instr;
+    uint32_t value = Assembler::ld_instr(instr);
     // 0xc0201073 encodes CSRRW x0, instret, x0
     return value == 0xc0201073;
   }

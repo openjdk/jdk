@@ -34,6 +34,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 
 import org.testng.Assert;
 import org.testng.annotations.Test;
@@ -57,11 +58,78 @@ public class TestTranslatedException {
             throwable = new ExceptionInInitializerError(new InvocationTargetException(new RuntimeException(String.valueOf(i), throwable), "invoke"));
         }
         encodeDecode(throwable);
+
+        try {
+            VMSupport.decodeAndThrowThrowable(0, 0L, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (NullPointerException decoded) {
+            // Expected
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        try {
+            VMSupport.decodeAndThrowThrowable(1, 0L, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (InternalError decoded) {
+            if (!decoded.getMessage().startsWith("native buffer could not be allocated")) {
+                throw new AssertionError("unexpected exception: " + decoded);
+            }
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        try {
+            VMSupport.decodeAndThrowThrowable(2, 0L, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (OutOfMemoryError decoded) {
+            // Expected
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        try {
+            VMSupport.decodeAndThrowThrowable(3, 0L, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (InternalError decoded) {
+            // Expected
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        try {
+            VMSupport.decodeAndThrowThrowable(4, 0L, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (InternalError decoded) {
+            // Expected
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        }
+
+        Unsafe unsafe = Unsafe.getUnsafe();
+        byte[] problem = "very unlikely problem".getBytes(StandardCharsets.UTF_8);
+        long buffer = unsafe.allocateMemory(problem.length + 4);
+        try {
+            unsafe.putInt(buffer, problem.length);
+            unsafe.copyMemory(problem, Unsafe.ARRAY_BYTE_BASE_OFFSET, null, buffer + 4, problem.length);
+            VMSupport.decodeAndThrowThrowable(3, buffer, true);
+            throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
+        } catch (InternalError decoded) {
+            String msg = decoded.getMessage();
+            if (!msg.endsWith("very unlikely problem")) {
+                throw new AssertionError("unexpected exception: " + decoded);
+            }
+        } catch (Throwable decoded) {
+            throw new AssertionError("unexpected exception: " + decoded);
+        } finally {
+            unsafe.freeMemory(buffer);
+        }
     }
 
     private void encodeDecode(Throwable throwable) throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();
         int bufferSize = 512;
+        int format = 0;
         long buffer = 0L;
         while (true) {
             buffer = unsafe.allocateMemory(bufferSize);
@@ -71,7 +139,7 @@ public class TestTranslatedException {
                     bufferSize = -res;
                 } else {
                     try {
-                        VMSupport.decodeAndThrowThrowable(buffer, true);
+                        VMSupport.decodeAndThrowThrowable(format, buffer, true);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
                     } catch (Throwable decoded) {
                         assertThrowableEquals(throwable, decoded);

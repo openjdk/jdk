@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -41,7 +43,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassUseMapper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -60,13 +61,12 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      *
      * @param configuration the configuration
      * @param mapper a mapper to provide details of where elements are used
-     * @param filename the file to be generated
      * @param pkgElement the package element to be documented
      */
     public PackageUseWriter(HtmlConfiguration configuration,
-                            ClassUseMapper mapper, DocPath filename,
+                            ClassUseMapper mapper,
                             PackageElement pkgElement) {
-        super(configuration, configuration.docPaths.forPackage(pkgElement).resolve(filename));
+        super(configuration, pathFor(configuration, pkgElement));
         this.packageElement = pkgElement;
 
         // by examining all classes in this package, find what packages
@@ -80,7 +80,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                     Set<TypeElement> usedClasses = usingPackageToUsedClasses
                             .get(utils.getPackageName(usingPackage));
                     if (usedClasses == null) {
-                        usedClasses = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                        usedClasses = new TreeSet<>(comparators.generalPurposeComparator());
                         usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
@@ -90,27 +90,16 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         }
     }
 
-    /**
-     * Generate a class page.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @param mapper        the mapping of the class usage.
-     * @param pkgElement    the package being documented.
-     * @throws DocFileIOException if there is a problem generating the package use page
-     */
-    public static void generate(HtmlConfiguration configuration,
-                                ClassUseMapper mapper, PackageElement pkgElement)
-            throws DocFileIOException {
-        DocPath filename = DocPaths.PACKAGE_USE;
-        PackageUseWriter pkgusegen = new PackageUseWriter(configuration, mapper, filename, pkgElement);
-        pkgusegen.generatePackageUseFile();
+    private static DocPath pathFor(HtmlConfiguration configuration, PackageElement packageElement) {
+        return configuration.docPaths.forPackage(packageElement).resolve(DocPaths.PACKAGE_USE);
     }
 
     /**
      * Generate the package use list.
      * @throws DocFileIOException if there is a problem generating the package use page
      */
-    protected void generatePackageUseFile() throws DocFileIOException {
+    @Override
+    public void buildPage() throws DocFileIOException {
         HtmlTree body = getBody();
         Content mainContent = new ContentBuilder();
         if (usingPackageToUsedClasses.isEmpty()) {
@@ -229,9 +218,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(packageElement), false));
+        }
+        subnavLinks.add(getBreadcrumbLink(packageElement, true));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }

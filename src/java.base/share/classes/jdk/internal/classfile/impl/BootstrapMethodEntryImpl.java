@@ -26,11 +26,11 @@ package jdk.internal.classfile.impl;
 
 import java.util.List;
 
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.BootstrapMethodEntry;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.BootstrapMethodEntry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.LoadableConstantEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
 
 import static jdk.internal.classfile.impl.AbstractPoolEntry.MethodHandleEntryImpl;
 

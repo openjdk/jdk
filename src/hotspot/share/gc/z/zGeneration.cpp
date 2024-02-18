@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -285,6 +286,10 @@ void ZGeneration::desynchronize_relocation() {
   _relocate.desynchronize();
 }
 
+bool ZGeneration::is_relocate_queue_active() const {
+  return _relocate.is_queue_active();
+}
+
 void ZGeneration::reset_statistics() {
   assert(SafepointSynchronize::is_at_safepoint(), "Should be at safepoint");
   _freed = 0;
@@ -398,13 +403,19 @@ const char* ZGeneration::phase_to_string() const {
 
 class VM_ZOperation : public VM_Operation {
 private:
-  const uint _gc_id;
-  bool       _success;
+  const uint           _gc_id;
+  const GCCause::Cause _gc_cause;
+  bool                 _success;
 
 public:
-  VM_ZOperation()
+  VM_ZOperation(GCCause::Cause gc_cause)
     : _gc_id(GCId::current()),
+      _gc_cause(gc_cause),
       _success(false) {}
+
+  virtual const char* cause() const {
+    return GCCause::to_string(_gc_cause);
+  }
 
   virtual bool block_jni_critical() const {
     // Blocking JNI critical regions is needed in operations where we change
@@ -558,6 +569,9 @@ void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
 
 class VM_ZMarkStartYoungAndOld : public VM_ZOperation {
 public:
+  VM_ZMarkStartYoungAndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoungAndOld;
   }
@@ -578,7 +592,22 @@ public:
   }
 };
 
-class VM_ZMarkStartYoung : public VM_ZOperation {
+class VM_ZYoungOperation : public VM_ZOperation {
+private:
+  static ZDriver* driver() {
+    if (ZGeneration::young()->type() == ZYoungType::minor) {
+      return ZDriver::minor();
+    } else {
+      return ZDriver::major();
+    }
+  }
+
+public:
+  VM_ZYoungOperation()
+    : VM_ZOperation(driver()->gc_cause()) {}
+};
+
+class VM_ZMarkStartYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoung;
@@ -626,7 +655,7 @@ void ZGenerationYoung::concurrent_mark() {
   mark_follow();
 }
 
-class VM_ZMarkEndYoung : public VM_ZOperation {
+class VM_ZMarkEndYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndYoung;
@@ -785,7 +814,8 @@ void ZGenerationYoung::concurrent_select_relocation_set() {
   select_relocation_set(_id, promote_all);
 }
 
-class VM_ZRelocateStartYoung : public VM_ZOperation {
+class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
+
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartYoung;
@@ -835,7 +865,7 @@ void ZGenerationYoung::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Flip remembered set bits
@@ -1047,6 +1077,9 @@ void ZGenerationOld::concurrent_mark() {
 
 class VM_ZMarkEndOld : public VM_ZOperation {
 public:
+  VM_ZMarkEndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndOld;
   }
@@ -1125,6 +1158,9 @@ void ZGenerationOld::concurrent_select_relocation_set() {
 
 class VM_ZRelocateStartOld : public VM_ZOperation {
 public:
+  VM_ZRelocateStartOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartOld;
   }
@@ -1181,7 +1217,7 @@ void ZGenerationOld::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics
@@ -1284,6 +1320,10 @@ void ZGenerationOld::process_non_strong_references() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();
@@ -1421,13 +1461,7 @@ public:
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
-      _nm_cl() {
-    ClassLoaderDataGraph_lock->lock();
-  }
-
-  ~ZRemapYoungRootsTask() {
-    ClassLoaderDataGraph_lock->unlock();
-  }
+      _nm_cl() {}
 
   virtual void work() {
     {
@@ -1467,7 +1501,7 @@ void ZGenerationOld::remap_young_roots() {
   uint remap_nworkers = clamp(ZGeneration::young()->workers()->active_workers() + prev_nworkers, 1u, ZOldGCThreads);
   _workers.set_active_workers(remap_nworkers);
 
-  // TODO: The STS joiner is only needed to satisfy z_assert_is_barrier_safe that doesn't
+  // TODO: The STS joiner is only needed to satisfy ZBarrier::assert_is_state_barrier_safe that doesn't
   // understand the driver locker. Consider making the assert aware of the driver locker.
   SuspendibleThreadSetJoiner sts_joiner;
 

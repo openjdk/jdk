@@ -94,6 +94,6 @@ void MonitorDeflationThread::monitor_deflation_thread_entry(JavaThread* jt, TRAP
       }
     }
 
-    (void)ObjectSynchronizer::deflate_idle_monitors(/* ObjectMonitorsHashtable is not needed here */ nullptr);
+    (void)ObjectSynchronizer::deflate_idle_monitors();
   }
 }

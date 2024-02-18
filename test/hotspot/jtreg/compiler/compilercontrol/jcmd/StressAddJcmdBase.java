@@ -116,7 +116,7 @@ public abstract class StressAddJcmdBase {
     private class TimeLimitedExecutor extends Executor {
         public TimeLimitedExecutor() {
             /* There are no need to check the state */
-            super(true, VM_OPTIONS, null, null);
+            super(VM_OPTIONS, null, null);
         }
 
         @Override

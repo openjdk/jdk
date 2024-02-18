@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,15 @@ static bool stack_trace_precondition(const ObjectSample* sample) {
   return sample->has_stack_trace_id() && !sample->is_dead();
 }
 
+static void add_to_leakp_set(const ObjectSample* sample) {
+  assert(sample != nullptr, "invariant");
+  oop object = sample->object();
+  if (object == nullptr) {
+    return;
+  }
+  JfrTraceId::load_leakp(object->klass());
+}
+
 class StackTraceBlobInstaller {
  private:
   BlobCache _cache;
@@ -219,6 +228,7 @@ class StackTraceBlobInstaller {
   }
   void sample_do(ObjectSample* sample) {
     if (stack_trace_precondition(sample)) {
+      add_to_leakp_set(sample);
       install(sample);
     }
   }
@@ -416,9 +426,9 @@ static void install_type_set_blobs() {
   iterate_samples(installer);
 }
 
-static void save_type_set_blob(JfrCheckpointWriter& writer, bool copy = false) {
+static void save_type_set_blob(JfrCheckpointWriter& writer) {
   assert(writer.has_data(), "invariant");
-  const JfrBlobHandle blob = copy ? writer.copy() : writer.move();
+  const JfrBlobHandle blob = writer.copy();
   if (saved_type_set_blobs.valid()) {
     saved_type_set_blobs->set_next(blob);
   } else {
@@ -438,9 +448,8 @@ void ObjectSampleCheckpoint::on_type_set(JfrCheckpointWriter& writer) {
 }
 
 void ObjectSampleCheckpoint::on_type_set_unload(JfrCheckpointWriter& writer) {
-  assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
   assert(LeakProfiler::is_running(), "invariant");
   if (writer.has_data() && ObjectSampler::sampler()->last() != nullptr) {
-    save_type_set_blob(writer, true);
+    save_type_set_blob(writer);
   }
 }

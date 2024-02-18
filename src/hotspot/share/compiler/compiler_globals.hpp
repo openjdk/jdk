@@ -50,7 +50,7 @@
                                                                             \
   /* compiler interface */                                                  \
                                                                             \
-  develop(bool, CIPrintCompilerName, false,                                 \
+  product(bool, CIPrintCompilerName, false, DIAGNOSTIC,                     \
           "when CIPrint is active, print the name of the active compiler")  \
                                                                             \
   product(bool, CIPrintCompileQueue, false, DIAGNOSTIC,                     \
@@ -378,6 +378,10 @@
   develop(intx, HugeMethodLimit,  8000,                                     \
           "Don't compile methods larger than this if "                      \
           "+DontCompileHugeMethods")                                        \
+                                                                            \
+  product(bool, CaptureBailoutInformation, trueInDebug, DIAGNOSTIC,         \
+          "If compilation is stopped with an error, capture diagnostic "    \
+          "information at the bailout point")                               \
                                                                             \
 
 // end of COMPILER_FLAGS

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,19 @@
  */
 
 /*
- * @test
- * @bug     6173675 8231209
+ * @test    id=G1
+ * @bug     6173675 8231209 8304074 8313081
  * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
- * @author  Paul Hohensee
+ * @requires vm.gc.G1
+ * @run main/othervm -XX:+UseG1GC ThreadAllocatedMemory
+ */
+
+/*
+ * @test    id=Serial
+ * @bug     6173675 8231209 8304074 8313081
+ * @summary Basic test of ThreadMXBean.getThreadAllocatedBytes
+ * @requires vm.gc.Serial
+ * @run main/othervm -XX:+UseSerialGC ThreadAllocatedMemory
  */
 
 import java.lang.management.*;
@@ -33,6 +42,7 @@ import java.lang.management.*;
 public class ThreadAllocatedMemory {
     private static com.sun.management.ThreadMXBean mbean =
         (com.sun.management.ThreadMXBean)ManagementFactory.getThreadMXBean();
+    private static boolean testFailed = false;
     private static volatile boolean done = false;
     private static volatile boolean done1 = false;
     private static Object obj = new Object();
@@ -54,6 +64,13 @@ public class ThreadAllocatedMemory {
 
         // Test many threads that are not this one
         testGetThreadsAllocatedBytes();
+
+        // Test cumulative Java thread allocation since JVM launch
+        testGetTotalThreadAllocatedBytes();
+
+        if (testFailed) {
+            throw new RuntimeException("TEST FAILED");
+        }
 
         System.out.println("Test passed");
     }
@@ -92,13 +109,15 @@ public class ThreadAllocatedMemory {
     }
 
     private static void testGetCurrentThreadAllocatedBytes() {
+        Thread curThread = Thread.currentThread();
+
         long size = mbean.getCurrentThreadAllocatedBytes();
-        ensureValidSize(size);
+        ensureValidSize(curThread, size);
 
         // do some more allocation
         doit();
 
-        checkResult(Thread.currentThread(), size,
+        checkResult(curThread, size,
                     mbean.getCurrentThreadAllocatedBytes());
     }
 
@@ -107,7 +126,7 @@ public class ThreadAllocatedMemory {
         long id = curThread.getId();
 
         long size = mbean.getThreadAllocatedBytes(id);
-        ensureValidSize(size);
+        ensureValidSize(curThread, size);
 
         // do some more allocation
         doit();
@@ -119,7 +138,8 @@ public class ThreadAllocatedMemory {
         throws Exception {
 
         // start a thread
-        done = false; done1 = false;
+        done = false;
+        done1 = false;
         Thread curThread = new MyThread("MyThread");
         curThread.start();
         long id = curThread.getId();
@@ -128,7 +148,7 @@ public class ThreadAllocatedMemory {
         waitUntilThreadBlocked(curThread);
 
         long size = mbean.getThreadAllocatedBytes(id);
-        ensureValidSize(size);
+        ensureValidSize(curThread, size);
 
         // let thread go to do some more allocation
         synchronized (obj) {
@@ -152,8 +172,7 @@ public class ThreadAllocatedMemory {
         try {
             curThread.join();
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception is thrown.");
-            e.printStackTrace(System.out);
+            reportUnexpected(e, "during join");
         }
     }
 
@@ -161,7 +180,8 @@ public class ThreadAllocatedMemory {
         throws Exception {
 
         // start threads
-        done = false; done1 = false;
+        done = false;
+        done1 = false;
         for (int i = 0; i < NUM_THREADS; i++) {
             threads[i] = new MyThread("MyThread-" + i);
             threads[i].start();
@@ -172,7 +192,7 @@ public class ThreadAllocatedMemory {
 
         for (int i = 0; i < NUM_THREADS; i++) {
             sizes[i] = mbean.getThreadAllocatedBytes(threads[i].getId());
-            ensureValidSize(sizes[i]);
+            ensureValidSize(threads[i], sizes[i]);
         }
 
         // let threads go to do some more allocation
@@ -201,38 +221,106 @@ public class ThreadAllocatedMemory {
             try {
                 threads[i].join();
             } catch (InterruptedException e) {
-                System.out.println("Unexpected exception is thrown.");
-                e.printStackTrace(System.out);
+                reportUnexpected(e, "during join");
                 break;
             }
         }
     }
 
-    private static void ensureValidSize(long size) {
+    private static void testGetTotalThreadAllocatedBytes()
+        throws Exception {
+
+        // baseline should be positive
+        Thread curThread = Thread.currentThread();
+        long cumulativeSize = mbean.getTotalThreadAllocatedBytes();
+        if (cumulativeSize <= 0) {
+            throw new RuntimeException(
+                "Invalid allocated bytes returned for " + curThread.getName() + " = " + cumulativeSize);
+        }
+
+        // start threads
+        done = false;
+        done1 = false;
+        for (int i = 0; i < NUM_THREADS; i++) {
+            threads[i] = new MyThread("MyThread-" + i);
+            threads[i].start();
+        }
+
+        // wait for threads to block after doing some allocation
+        waitUntilThreadsBlocked();
+
+        // check after threads are blocked
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
+
+        // let threads go to do some more allocation
+        synchronized (obj) {
+            done = true;
+            obj.notifyAll();
+        }
+
+        // wait for threads to get going again. we don't care if we
+        // catch them in mid-execution or if some of them haven't
+        // restarted after we're done sleeping.
+        goSleep(400);
+
+        System.out.println("Done sleeping");
+
+        // check while threads are running
+        cumulativeSize = checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
+
+        // let threads exit
+        synchronized (obj) {
+            done1 = true;
+            obj.notifyAll();
+        }
+
+        for (int i = 0; i < NUM_THREADS; i++) {
+            try {
+                threads[i].join();
+            } catch (InterruptedException e) {
+                reportUnexpected(e, "during join");
+                break;
+            }
+        }
+
+        // check after threads exit
+        checkResult(curThread, cumulativeSize, mbean.getTotalThreadAllocatedBytes());
+    }
+
+    private static void ensureValidSize(Thread curThread, long size) {
         // implementation could have started measurement when
         // measurement was enabled, in which case size can be 0
         if (size < 0) {
             throw new RuntimeException(
-                "Invalid allocated bytes returned = " + size);
+                "Invalid allocated bytes returned for thread " +
+                curThread.getName() + " = " + size);
         }
     }
 
-    private static void checkResult(Thread curThread,
-                                    long prev_size, long curr_size) {
-        if (curr_size < prev_size) {
-            throw new RuntimeException("Allocated bytes " + curr_size +
-                                       " expected >= " + prev_size);
-        }
+    private static long checkResult(Thread curThread,
+                                    long prevSize, long currSize) {
         System.out.println(curThread.getName() +
-                           " Previous allocated bytes = " + prev_size +
-                           " Current allocated bytes = " + curr_size);
+                           " Previous allocated bytes = " + prevSize +
+                           " Current allocated bytes = " + currSize);
+        if (currSize < prevSize) {
+            throw new RuntimeException("TEST FAILED: " +
+                                       curThread.getName() +
+                                       " previous allocated bytes = " + prevSize +
+                                       " > current allocated bytes = " + currSize);
+        }
+        return currSize;
+    }
+
+    private static void reportUnexpected(Exception e, String when) {
+        System.out.println("Unexpected exception thrown " + when + ".");
+        e.printStackTrace(System.out);
+        testFailed = true;
     }
 
     private static void goSleep(long ms) throws Exception {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException e) {
-            System.out.println("Unexpected exception is thrown.");
             throw e;
         }
     }
@@ -287,34 +375,23 @@ public class ThreadAllocatedMemory {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
-                        e.printStackTrace(System.out);
+                        reportUnexpected(e, "while !done");
                         break;
                     }
                 }
             }
 
-            long size1 = mbean.getThreadAllocatedBytes(getId());
+            long prevSize = mbean.getThreadAllocatedBytes(getId());
             ThreadAllocatedMemory.doit();
-            long size2 = mbean.getThreadAllocatedBytes(getId());
-
-            System.out.println(getName() + ": " +
-                "ThreadAllocatedBytes  = " + size1 +
-                " ThreadAllocatedBytes  = " + size2);
-
-            if (size1 > size2) {
-                throw new RuntimeException(getName() +
-                    " ThreadAllocatedBytes = " + size1 +
-                    " > ThreadAllocatedBytes = " + size2);
-            }
+            long currSize = mbean.getThreadAllocatedBytes(getId());
+            checkResult(this, prevSize, currSize);
 
             synchronized (obj) {
                 while (!done1) {
                     try {
                         obj.wait();
                     } catch (InterruptedException e) {
-                        System.out.println("Unexpected exception is thrown.");
-                        e.printStackTrace(System.out);
+                        reportUnexpected(e, "while !done1");
                         break;
                     }
                 }

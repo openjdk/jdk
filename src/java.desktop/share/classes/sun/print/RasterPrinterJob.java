@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1080,6 +1080,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
             return false;
         }
 
+        this.attributes = attributes;
+
         if (!service.equals(newService)) {
             try {
                 setPrintService(newService);
@@ -1721,7 +1723,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
      * applies some validity checks, changes them only if they are
      * clearly unreasonable, then sets them into the new Paper.
      * Subclasses are expected to override this method to make more
-     * informed decisons.
+     * informed decisions.
      */
     protected void validatePaper(Paper origPaper, Paper newPaper) {
         if (origPaper == null || newPaper == null) {
@@ -2090,8 +2092,8 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private AffineTransform defaultDeviceTransform;
     private PrinterGraphicsConfig pgConfig;
 
-    synchronized void setGraphicsConfigInfo(AffineTransform at,
-                                            double pw, double ph) {
+    protected synchronized void setGraphicsConfigInfo(AffineTransform at,
+                                                      double pw, double ph) {
         Point2D.Double pt = new Point2D.Double(pw, ph);
         at.transform(pt, pt);
 

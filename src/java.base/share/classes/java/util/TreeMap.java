@@ -193,6 +193,7 @@ public class TreeMap<K,V>
      *         or are not mutually comparable
      * @throws NullPointerException if the specified map is null
      */
+    @SuppressWarnings("this-escape")
     public TreeMap(Map<? extends K, ? extends V> m) {
         comparator = null;
         putAll(m);
@@ -1195,6 +1196,8 @@ public class TreeMap<K,V>
      * {@code Set.remove}, {@code removeAll}, {@code retainAll} and
      * {@code clear} operations.  It does not support the
      * {@code add} or {@code addAll} operations.
+     *
+     * @return {@inheritDoc SortedMap}
      */
     public Set<Map.Entry<K,V>> entrySet() {
         EntrySet es = entrySet;

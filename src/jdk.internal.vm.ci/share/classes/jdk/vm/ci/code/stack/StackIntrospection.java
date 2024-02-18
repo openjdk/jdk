@@ -43,4 +43,12 @@ public interface StackIntrospection {
      *         should stop), or null if the whole stack was iterated.
      */
     <T> T iterateFrames(ResolvedJavaMethod[] initialMethods, ResolvedJavaMethod[] matchingMethods, int initialSkip, InspectedFrameVisitor<T> visitor);
+
+    /**
+     * Determines if {@link InspectedFrame#materializeVirtualObjects(boolean)} can be called for frames
+     * visited by {@link #iterateFrames}.
+     */
+    default boolean canMaterializeVirtualObjects() {
+        return true;
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package com.sun.crypto.provider;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.*;
 import java.security.spec.AlgorithmParameterSpec;
 import java.util.Arrays;
@@ -62,11 +65,11 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
     @SuppressWarnings("deprecation")
     protected void engineInit(AlgorithmParameterSpec params,
             SecureRandom random) throws InvalidAlgorithmParameterException {
-        if (params instanceof TlsMasterSecretParameterSpec == false) {
+        if (!(params instanceof TlsMasterSecretParameterSpec)) {
             throw new InvalidAlgorithmParameterException(MSG);
         }
         this.spec = (TlsMasterSecretParameterSpec)params;
-        if ("RAW".equals(spec.getPremasterSecret().getFormat()) == false) {
+        if (!"RAW".equals(spec.getPremasterSecret().getFormat())) {
             throw new InvalidAlgorithmParameterException(
                 "Key format must be RAW");
         }
@@ -191,6 +194,22 @@ public final class TlsMasterSecretGenerator extends KeyGeneratorSpi {
             return key.clone();
         }
 
-    }
+       /**
+        * Restores the state of this object from the stream.
+        *
+        * @param  stream the {@code ObjectInputStream} from which data is read
+        * @throws IOException if an I/O error occurs
+        * @throws ClassNotFoundException if a serialized class cannot be loaded
+        */
+       @java.io.Serial
+       private void readObject(ObjectInputStream stream)
+               throws IOException, ClassNotFoundException {
+           stream.defaultReadObject();
+           if ((key == null) || (key.length == 0)) {
+               throw new InvalidObjectException("TlsMasterSecretKey is null");
+           }
+           key = key.clone();
+       }
+   }
 }
 

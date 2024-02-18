@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@ extern "C" {
 
 #define TESTED_CLASS "ap02t001Exception"
 
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -50,7 +50,7 @@ static jlong timeout = 0;
 static int user_data = 0;
 static const char* TESTED_CLASS_SIGNATURE = "Lnsk/jvmti/scenarios/allocation/AP02/ap02t001Exception;";
 static const jlong TESTED_CLASS_TAG = (jlong)1024;
-static jclass testedClass = NULL;
+static jclass testedClass = nullptr;
 
 jvmtiIterationControl JNICALL
 heapObjectCallback(jlong class_tag,
@@ -142,9 +142,9 @@ static void runIterations (jvmtiEnv* jvmti, jclass testedClass, jint exp_count) 
 
     NSK_DISPLAY0("Calling IterateOverReachableObjects\n");
     obj_count = 0;
-    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(NULL /*heapRootCallback*/,
+    if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(nullptr /*heapRootCallback*/,
                                                              stackReferenceCallback,
-                                                             NULL /*objectReferenceCallback*/,
+                                                             nullptr /*objectReferenceCallback*/,
                                                              &user_data))) {
         nsk_jvmti_setFailStatus();
         return;
@@ -173,12 +173,12 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 
     NSK_DISPLAY1("Find tested class: %s\n", TESTED_CLASS_SIGNATURE);
     testedClass = nsk_jvmti_classBySignature(TESTED_CLASS_SIGNATURE);
-    if (testedClass == NULL) {
+    if (testedClass == nullptr) {
         nsk_jvmti_setFailStatus();
         return;
     }
 
-    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)jni->NewGlobalRef(testedClass)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (testedClass = (jclass)jni->NewGlobalRef(testedClass)) != nullptr))
         return;
 
     NSK_DISPLAY0("Set tag for tested class\n\n");
@@ -222,7 +222,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(jvmtiCapabilities));
@@ -236,7 +236,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!caps.can_tag_objects)
         NSK_DISPLAY0("Warning: tagging objects is not implemented\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("agentProc has been set\n\n");
 

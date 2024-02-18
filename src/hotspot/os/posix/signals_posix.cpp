@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,8 +42,10 @@
 #include "runtime/threadCrashProtection.hpp"
 #include "signals_posix.hpp"
 #include "suspendResume_posix.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/events.hpp"
 #include "utilities/ostream.hpp"
+#include "utilities/parseInteger.hpp"
 #include "utilities/vmError.hpp"
 
 #include <signal.h>
@@ -338,7 +340,7 @@ static const struct {
 ////////////////////////////////////////////////////////////////////////////////
 // sun.misc.Signal and BREAK_SIGNAL support
 
-void jdk_misc_signal_init() {
+static void jdk_misc_signal_init() {
   // Initialize signal structures
   ::memset((void*)pending_signals, 0, sizeof(pending_signals));
 
@@ -378,7 +380,7 @@ int os::signal_wait() {
 ////////////////////////////////////////////////////////////////////////////////
 // signal chaining support
 
-struct sigaction* get_chained_signal_action(int sig) {
+static struct sigaction* get_chained_signal_action(int sig) {
   struct sigaction *actp = nullptr;
 
   if (libjsig_is_loaded) {
@@ -681,7 +683,7 @@ static void UserHandler(int sig, siginfo_t* siginfo, void* context) {
 
 static void print_signal_handler_name(outputStream* os, address handler, char* buf, size_t buflen) {
   // We demangle, but omit arguments - signal handlers should have always the same prototype.
-  os::print_function_and_library_name(os, handler, buf, buflen,
+  os::print_function_and_library_name(os, handler, buf, checked_cast<int>(buflen),
                                        true, // shorten_path
                                        true, // demangle
                                        true  // omit arguments
@@ -1243,7 +1245,7 @@ int os::get_signal_number(const char* signal_name) {
   return -1;
 }
 
-void set_signal_handler(int sig) {
+static void set_signal_handler(int sig) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)nullptr, &oldAct);
@@ -1290,7 +1292,7 @@ void set_signal_handler(int sig) {
 
 // install signal handlers for signals that HotSpot needs to
 // handle in order to support Java-level exception handling.
-void install_signal_handlers() {
+static void install_signal_handlers() {
   // signal-chaining
   typedef void (*signal_setting_t)();
   signal_setting_t begin_signal_setting = nullptr;
@@ -1721,18 +1723,19 @@ static void SR_handler(int sig, siginfo_t* siginfo, void* context) {
   errno = old_errno;
 }
 
-int SR_initialize() {
+static int SR_initialize() {
   struct sigaction act;
   char *s;
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
-    int sig = ::strtol(s, 0, 10);
-    if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
+    int sig;
+    bool result = parse_integer(s, &sig);
+    if (result && sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
         sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
       PosixSignals::SR_signum = sig;
     } else {
-      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
-              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
+      warning("You set _JAVA_SR_SIGNUM=%s. It must be a number in range [%d, %d]. Using %d instead.",
+              s, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, PosixSignals::SR_signum);
     }
   }
 

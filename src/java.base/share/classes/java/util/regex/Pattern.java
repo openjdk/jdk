@@ -1463,9 +1463,9 @@ public final class Pattern
      * </tr>
      * </thead>
      * <tbody>
-     * <tr><th scope="row" style="text-weight:normal">:</th>
+     * <tr><th scope="row" style="font-weight:normal">:</th>
      *     <td>{@code { "boo", "and", "foo" }}</td></tr>
-     * <tr><th scope="row" style="text-weight:normal">o</th>
+     * <tr><th scope="row" style="font-weight:normal">o</th>
      *     <td>{@code { "b", "", ":and:f" }}</td></tr>
      * </tbody>
      * </table>
@@ -2712,14 +2712,15 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             if (read() != '<')
                 throw error("\\k is not followed by '<' for named capturing group");
             String name = groupname(read());
-            if (!namedGroupsMap().containsKey(name))
+            Integer number = namedGroupsMap().get(name);
+            if (number == null)
                 throw error("named capturing group <" + name + "> does not exist");
             if (create) {
                 hasGroupRef = true;
                 if (has(CASE_INSENSITIVE))
-                    root = new CIBackRef(namedGroupsMap().get(name), has(UNICODE_CASE));
+                    root = new CIBackRef(number, has(UNICODE_CASE));
                 else
-                    root = new BackRef(namedGroupsMap().get(name));
+                    root = new BackRef(number);
             }
             return -1;
         case 'l':
@@ -5186,6 +5187,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             groupIndex = groupCount + groupCount;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5222,6 +5229,12 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             this.doUnicodeCase = doUnicodeCase;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
+            // reference to not existing group must never match
+            // group does not exist if matcher didn't allocate space for it
+            if (groupIndex >= matcher.groups.length) {
+                return false;
+            }
+
             int j = matcher.groups[groupIndex];
             int k = matcher.groups[groupIndex+1];
 
@@ -5528,10 +5541,10 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
      * they are ignored for purposes of finding word boundaries.
      */
     static final class Bound extends Node {
-        static int LEFT = 0x1;
-        static int RIGHT= 0x2;
-        static int BOTH = 0x3;
-        static int NONE = 0x4;
+        static final int LEFT = 0x1;
+        static final int RIGHT= 0x2;
+        static final int BOTH = 0x3;
+        static final int NONE = 0x4;
         int type;
         boolean useUWORD;
         Bound(int n, boolean useUWORD) {

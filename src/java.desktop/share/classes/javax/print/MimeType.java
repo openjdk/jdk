@@ -38,8 +38,8 @@ import java.util.Set;
 /**
  * Class {@code MimeType} encapsulates a Multipurpose Internet Mail Extensions
  * (MIME) media type as defined in
- * <a href="http://www.ietf.org/rfc/rfc2045.txt">RFC 2045</a> and
- * <a href="http://www.ietf.org/rfc/rfc2046.txt">RFC 2046</a>. A MIME type
+ * <a href="https://www.rfc-editor.org/info/rfc2045">RFC 2045</a> and
+ * <a href="https://www.rfc-editor.org/info/rfc2046">RFC 2046</a>. A MIME type
  * object is part of a {@link DocFlavor DocFlavor} object and specifies the
  * format of the print data.
  * <p>
@@ -74,6 +74,10 @@ import java.util.Set;
  * </ul>
  *
  * @author Alan Kaminsky
+ * @spec https://www.rfc-editor.org/info/rfc2045
+ *      RFC 2045: Multipurpose Internet Mail Extensions (MIME) Part One: Format of Internet Message Bodies
+ * @spec https://www.rfc-editor.org/info/rfc2046
+ *      RFC 2046: Multipurpose Internet Mail Extensions (MIME) Part Two: Media Types
  */
 class MimeType implements Serializable, Cloneable {
 

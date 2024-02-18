@@ -543,7 +543,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
     } else {
         char s[LINE_BUFSIZE];
         snprintf( s, sizeof(s),
-            "ERROR calling GetAccessibleContextInfo; vmID = %X, context = %p",
+            "ERROR calling GetAccessibleContextInfo; vmID = %lX, context = %p",
             vmID, (void*)context );
 
         TVITEM tvi;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class Object {
     public final native Class<?> getClass();
 
     /**
-     * Returns a hash code value for the object. This method is
+     * {@return a hash code value for this object} This method is
      * supported for the benefit of hash tables such as those provided by
      * {@link java.util.HashMap}.
      * <p>
@@ -95,7 +95,11 @@ public class Object {
      * As far as is reasonably practical, the {@code hashCode} method defined
      * by class {@code Object} returns distinct integers for distinct objects.
      *
-     * @return  a hash code value for this object.
+     * @apiNote
+     * The {@link java.util.Objects#hash(Object...) hash} and {@link
+     * java.util.Objects#hashCode(Object) hashCode} methods of {@link
+     * java.util.Objects} can be used to help construct simple hash codes.
+     *
      * @see     java.lang.Object#equals(java.lang.Object)
      * @see     java.lang.System#identityHashCode
      */
@@ -153,6 +157,9 @@ public class Object {
      * method whenever this method is overridden, so as to maintain the
      * general contract for the {@code hashCode} method, which states
      * that equal objects must have equal hash codes.
+     * <p>The two-argument {@link java.util.Objects#equals(Object,
+     * Object) Objects.equals} method implements an equivalence relation
+     * on two possibly-null object references.
      *
      * @param   obj   the reference object with which to compare.
      * @return  {@code true} if this object is the same as the obj
@@ -229,7 +236,7 @@ public class Object {
     protected native Object clone() throws CloneNotSupportedException;
 
     /**
-     * Returns a string representation of the object.
+     * {@return a string representation of the object}
      * @apiNote
      * In general, the
      * {@code toString} method returns a string that
@@ -246,12 +253,14 @@ public class Object {
      * the unsigned hexadecimal representation of the hash code of the
      * object. In other words, this method returns a string equal to the
      * value of:
-     * <blockquote>
-     * <pre>
+     * {@snippet lang=java :
      * getClass().getName() + '@' + Integer.toHexString(hashCode())
-     * </pre></blockquote>
-     *
-     * @return  a string representation of the object.
+     * }
+     * The {@link java.util.Objects#toIdentityString(Object)
+     * Objects.toIdentityString} method returns the string for an
+     * object equal to the string that would be returned if neither
+     * the {@code toString} nor {@code hashCode} methods were
+     * overridden by the object's class.
      */
     public String toString() {
         return getClass().getName() + "@" + Integer.toHexString(hashCode());
@@ -446,16 +455,16 @@ public class Object {
      * below. Among other things, this approach avoids problems that can be caused
      * by spurious wakeups.
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     synchronized (obj) {
-     *         while (<condition does not hold> and <timeout not exceeded>) {
+     *         while ( <condition does not hold and timeout not exceeded> ) {
      *             long timeoutMillis = ... ; // recompute timeout values
      *             int nanos = ... ;
      *             obj.wait(timeoutMillis, nanos);
      *         }
      *         ... // Perform action appropriate to condition or timeout
      *     }
-     * }</pre>
+     * }
      *
      * @param  timeoutMillis the maximum time to wait, in milliseconds
      * @param  nanos   additional time, in nanoseconds, in the range 0-999999 inclusive
@@ -555,7 +564,8 @@ public class Object {
      * To guard against exceptions prematurely terminating the finalize chain,
      * the subclass should use a {@code try-finally} block to ensure
      * {@code super.finalize()} is always invoked. For example,
-     * <pre>{@code      @Override
+     * {@snippet lang="java":
+     *     @Override
      *     protected void finalize() throws Throwable {
      *         try {
      *             ... // cleanup subclass state
@@ -563,7 +573,7 @@ public class Object {
      *             super.finalize();
      *         }
      *     }
-     * }</pre>
+     * }
      *
      * @deprecated Finalization is deprecated and subject to removal in a future
      * release. The use of finalization can lead to problems with security,

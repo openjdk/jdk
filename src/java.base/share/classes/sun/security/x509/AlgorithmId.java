@@ -123,6 +123,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
      * @param oid the identifier for the algorithm.
      * @param params the associated algorithm parameters, can be null.
      */
+    @SuppressWarnings("this-escape")
     public AlgorithmId(ObjectIdentifier oid, DerValue params)
             throws IOException {
         this.algid = oid;
@@ -339,9 +340,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
     }
 
     /**
-     * Returns a hashcode for this AlgorithmId.
-     *
-     * @return a hashcode for this AlgorithmId.
+     * {@return a hashcode for this AlgorithmId}
      */
     @Override
     public int hashCode() {
@@ -544,8 +543,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (pn != null && mn != null) {
             return ((mn.equals("java.base") &&
                     (pn.equals("SUN") || pn.equals("SunRsaSign") ||
-                    pn.equals("SunJCE") || pn.equals("SunJSSE"))) ||
-                (mn.equals("jdk.crypto.ec") && pn.equals("SunEC")) ||
+                    pn.equals("SunJCE") || pn.equals("SunJSSE") ||
+                    pn.equals("SunEC"))) ||
                 (mn.equals("jdk.crypto.mscapi") && pn.equals("SunMSCAPI")) ||
                 (mn.equals("jdk.crypto.cryptoki") &&
                     pn.startsWith("SunPKCS11")));

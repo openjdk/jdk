@@ -204,7 +204,7 @@ int64_t JfrChunkWriter::write_chunk_header_checkpoint(bool flushpoint) {
   head.write_next_generation(!flushpoint);
   head.write_flags();
   assert(current_offset() - header_content_pos == HEADER_SIZE, "invariant");
-  const u4 checkpoint_size = current_offset() - event_size_offset;
+  const u4 checkpoint_size = static_cast<u4>(current_offset() - event_size_offset);
   write_padded_at_offset<u4>(checkpoint_size, event_size_offset);
   set_last_checkpoint_offset(event_size_offset);
   const int64_t sz_written = size_written();

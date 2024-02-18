@@ -24,12 +24,12 @@
 
 import java.util.stream.Stream;
 
-import jdk.internal.util.Version;
+import jdk.internal.util.OSVersion;
 
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,21 +45,21 @@ public class VersionTest {
 
     private static Stream<Arguments> versionParams() {
         return Stream.of(
-                Arguments.of("1", new Version(1, 0)),
-                Arguments.of("1.2", new Version(1, 2)),
-                Arguments.of("1.2", new Version(1, 2, 0)),
-                Arguments.of("1.2.3", new Version(1, 2, 3)),
-                Arguments.of("1-abc", new Version(1, 0, 0)), // Ignore extra
-                Arguments.of("1.2-abc", new Version(1, 2, 0)), // Ignore extra
-                Arguments.of("1.2.3.4", new Version(1, 2, 3)), // Ignore extra
-                Arguments.of("1.2.3-abc", new Version(1, 2, 3)) // Ignore extra
+                Arguments.of("1", new OSVersion(1, 0)),
+                Arguments.of("1.2", new OSVersion(1, 2)),
+                Arguments.of("1.2", new OSVersion(1, 2, 0)),
+                Arguments.of("1.2.3", new OSVersion(1, 2, 3)),
+                Arguments.of("1-abc", new OSVersion(1, 0, 0)), // Ignore extra
+                Arguments.of("1.2-abc", new OSVersion(1, 2, 0)), // Ignore extra
+                Arguments.of("1.2.3.4", new OSVersion(1, 2, 3)), // Ignore extra
+                Arguments.of("1.2.3-abc", new OSVersion(1, 2, 3)) // Ignore extra
         );
     }
 
     @ParameterizedTest
     @MethodSource("versionParams")
-    public void checkParse(String verName, Version expected) {
-        Version actual = Version.parse(verName);
+    public void checkParse(String verName, OSVersion expected) {
+        OSVersion actual = OSVersion.parse(verName);
         assertEquals(actual, expected, "Parsed version mismatch");
     }
 
@@ -74,27 +74,27 @@ public class VersionTest {
     @ParameterizedTest()
     @MethodSource("illegalVersionParams")
     public void checkIllegalParse(String verName) {
-        Throwable th = assertThrows(IllegalArgumentException.class, () -> Version.parse(verName));
+        Throwable th = assertThrows(IllegalArgumentException.class, () -> OSVersion.parse(verName));
         String expectedMsg = "malformed version, missing digits: " + verName;
         assertEquals(th.getMessage(), expectedMsg, "message mismatch");
     }
 
     private static Stream<Arguments> versionCompare() {
         return Stream.of(
-                Arguments.of(new Version(2, 1), new Version(2, 1), 0),
-                Arguments.of(new Version(2, 1), new Version(2, 0), +1),
-                Arguments.of(new Version(2, 0), new Version(2, 1), -1),
-                Arguments.of(new Version(3, 3, 1), new Version(3, 3, 1), 0),
-                Arguments.of(new Version(3, 3, 1), new Version(3, 3, 0), +1),
-                Arguments.of(new Version(3, 3, 0), new Version(3, 3, 1), -1),
-                Arguments.of(new Version(2, 0), new Version(3, 0), -1),
-                Arguments.of(new Version(3, 0), new Version(2, 0), +1)
+                Arguments.of(new OSVersion(2, 1), new OSVersion(2, 1), 0),
+                Arguments.of(new OSVersion(2, 1), new OSVersion(2, 0), +1),
+                Arguments.of(new OSVersion(2, 0), new OSVersion(2, 1), -1),
+                Arguments.of(new OSVersion(3, 3, 1), new OSVersion(3, 3, 1), 0),
+                Arguments.of(new OSVersion(3, 3, 1), new OSVersion(3, 3, 0), +1),
+                Arguments.of(new OSVersion(3, 3, 0), new OSVersion(3, 3, 1), -1),
+                Arguments.of(new OSVersion(2, 0), new OSVersion(3, 0), -1),
+                Arguments.of(new OSVersion(3, 0), new OSVersion(2, 0), +1)
         );
     }
 
     @ParameterizedTest()
     @MethodSource("versionCompare")
-    public void checkVersionCompare(Version v1, Version v2, int expected) {
+    public void checkVersionCompare(OSVersion v1, OSVersion v2, int expected) {
         int result1 = v1.compareTo(v2);
         assertEquals(result1, expected, "v1 vs v2");
         int result2 = v2.compareTo(v1);

@@ -109,22 +109,43 @@ public @interface IR {
     String[] applyIf() default {};
 
     /**
+     * Accepts a single pair composed of a platform string followed by a true/false
+     * value where a true value necessitates that we are currently testing on that platform and vice-versa.
+     * IR checks are enforced only if the specified platform constraint is met.
+     */
+    String[] applyIfPlatform() default {};
+
+    /**
+     * Accepts a list of pairs where each pair is composed of a platform string followed by a true/false
+     * value where a true value necessitates that we are currently testing on that platform and vice-versa.
+     * IR checks are enforced only if all the specified platform constraints are met.
+     */
+    String[] applyIfPlatformAnd() default {};
+
+    /**
+     * Accepts a list of pairs where each pair is composed of a platform string followed by a true/false
+     * value where a true value necessitates that we are currently testing on that platform and vice-versa.
+     * IR checks are enforced if any of the specified platform constraints are met.
+     */
+    String[] applyIfPlatformOr() default {};
+
+    /**
      * Accepts a single feature pair which is composed of CPU feature string followed by a true/false
-     * value where a true value necessities existence of CPU feature and vice-versa.
+     * value where a true value necessitates existence of CPU feature and vice-versa.
      * IR verifications checks are enforced only if the specified feature constraint is met.
      */
     String[] applyIfCPUFeature() default {};
 
     /**
      * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
-     * value where a true value necessities existence of target feature and vice-versa.
+     * value where a true value necessitates existence of target feature and vice-versa.
      * IR verifications checks are enforced only if all the specified feature constraints are met.
      */
     String[] applyIfCPUFeatureAnd() default {};
 
      /**
      * Accepts a list of feature pairs where each pair is composed of target feature string followed by a true/false
-     * value where a true value necessities existence of target feature and vice-versa.
+     * value where a true value necessitates existence of target feature and vice-versa.
      * IR verifications checks are enforced if any of the specified feature constraint is met.
      */
     String[] applyIfCPUFeatureOr() default {};

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ class CodeSection {
   bool        _locs_own;        // did I allocate the locs myself?
   bool        _scratch_emit;    // Buffer is used for scratch emit, don't relocate.
   int         _skipped_instructions_size;
-  char        _index;           // my section number (SECT_INST, etc.)
+  int8_t      _index;           // my section number (SECT_INST, etc.)
   CodeBuffer* _outer;           // enclosing CodeBuffer
 
   // (Note:  _locs_point used to be called _last_reloc_offset.)
@@ -121,11 +121,11 @@ class CodeSection {
     _locs_own      = false;
     _scratch_emit  = false;
     _skipped_instructions_size = 0;
-    debug_only(_index = (char)-1);
+    debug_only(_index = -1);
     debug_only(_outer = (CodeBuffer*)badAddress);
   }
 
-  void initialize_outer(CodeBuffer* outer, int index) {
+  void initialize_outer(CodeBuffer* outer, int8_t index) {
     _outer = outer;
     _index = index;
   }
@@ -173,7 +173,7 @@ class CodeSection {
   csize_t     locs_point_off() const{ return (csize_t)(_locs_point - _start); }
   csize_t     locs_capacity() const { return (csize_t)(_locs_limit - _locs_start); }
 
-  int         index() const         { return _index; }
+  int8_t      index() const         { return _index; }
   bool        is_allocated() const  { return _start != nullptr; }
   bool        is_empty() const      { return _start == _end; }
   bool        has_locs() const      { return _locs_end != nullptr; }
@@ -209,7 +209,7 @@ class CodeSection {
   }
   void    set_locs_point(address pc) {
     assert(pc >= locs_point(), "relocation addr may not decrease");
-    assert(allocates2(pc),     "relocation addr must be in this section");
+    assert(allocates2(pc),     "relocation addr " INTPTR_FORMAT " must be in this section from " INTPTR_FORMAT " to " INTPTR_FORMAT, p2i(pc), p2i(_start), p2i(_limit));
     _locs_point = pc;
   }
 
@@ -396,7 +396,7 @@ class CodeBuffer: public StackObj DEBUG_ONLY(COMMA private Scrubber) {
 
  public:
   typedef int csize_t;  // code size type; would be size_t except for history
-  enum {
+  enum : int8_t {
     // Here is the list of all possible sections.  The order reflects
     // the final layout.
     SECT_FIRST = 0,

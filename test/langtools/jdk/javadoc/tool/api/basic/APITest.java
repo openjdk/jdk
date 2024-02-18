@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,16 +196,11 @@ class APITest {
             "allclasses-index.html",
             "allpackages-index.html",
             "constant-values.html",
-            "copy.svg",
             "deprecated-list.html",
             "help-doc.html",
             "index-all.html",
             "index.html",
-            "script-dir/jquery-3.6.1.min.js",
-            "script-dir/jquery-ui.min.js",
-            "script-dir/jquery-ui.min.css",
             "search.html",
-            "search-page.js",
             "member-search-index.js",
             "module-search-index.js",
             "overview-tree.html",
@@ -214,23 +209,32 @@ class APITest {
             "pkg/C.html",
             "pkg/package-summary.html",
             "pkg/package-tree.html",
-            "resources/glass.png",
-            "resources/x.png",
-            "script.js",
-            "search.js",
-            "stylesheet.css",
+            "resource-files/copy.svg",
+            "resource-files/glass.png",
+            "resource-files/jquery-ui.min.css",
+            "resource-files/link.svg",
+            "resource-files/stylesheet.css",
+            "resource-files/x.png",
+            "script-files/jquery-3.6.1.min.js",
+            "script-files/jquery-ui.min.js",
+            "script-files/script.js",
+            "script-files/search.js",
+            "script-files/search-page.js",
             "tag-search-index.js",
             "type-search-index.js"
     ));
 
     protected static Set<String> noIndexFiles = standardExpectFiles.stream()
-            .filter(s ->    !s.startsWith("script-dir")
-                         && !s.startsWith("resources")
-                         && !s.endsWith("-search-index.js")
+            .filter(s ->
+                            !s.endsWith("-search-index.js")
                          && !s.equals("index-all.html")
-                         && !s.equals("search.js")
+                         && !s.equals("resource-files/glass.png")
+                         && !s.equals("resource-files/jquery-ui.min.css")
+                         && !s.equals("resource-files/x.png")
+                         && !s.startsWith("script-files/jquery-")
+                         && !s.equals("script-files/search.js")
+                         && !s.equals("script-files/search-page.js")
                          && !s.equals("search.html")
-                         && !s.equals("search-page.js")
                          && !s.equals("allclasses-index.html")
                          && !s.equals("allpackages-index.html")
                          && !s.equals("system-properties.html"))

@@ -28,6 +28,7 @@
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.hpp"
 #include "ci/ciEnv.hpp"
+#include "code/compiledIC.hpp"
 #include "code/nativeInst.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -94,7 +95,7 @@ void AddressLiteral::set_rspec(relocInfo::relocType rtype) {
 void MacroAssembler::lookup_virtual_method(Register recv_klass,
                                            Register vtable_index,
                                            Register method_result) {
-  const int base_offset = in_bytes(Klass::vtable_start_offset()) + vtableEntry::method_offset_in_bytes();
+  const ByteSize base_offset = Klass::vtable_start_offset() + vtableEntry::method_offset();
   assert(vtableEntry::size() * wordSize == wordSize, "adjust the scaling in the code below");
   add(recv_klass, recv_klass, AsmOperand(vtable_index, lsl, LogBytesPerWord));
   ldr(method_result, Address(recv_klass, base_offset));
@@ -297,11 +298,13 @@ Address MacroAssembler::receiver_argument_address(Register params_base, Register
   return Address(tmp, -Interpreter::stackElementSize);
 }
 
+void MacroAssembler::align(int modulus, int target) {
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) nop();
+}
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) {
-    nop();
-  }
+  align(modulus, offset());
 }
 
 int MacroAssembler::set_last_Java_frame(Register last_java_sp,
@@ -1380,7 +1383,7 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
   assert_different_registers(Rklass, Rintf, Rscan, Rtmp);
 
   const int entry_size = itableOffsetEntry::size() * HeapWordSize;
-  assert(itableOffsetEntry::interface_offset_in_bytes() == 0, "not added for convenience");
+  assert(itableOffsetEntry::interface_offset() == 0, "not added for convenience");
 
   // Compute start of first itableOffsetEntry (which is at the end of the vtable)
   const int base = in_bytes(Klass::vtable_start_offset());
@@ -1404,15 +1407,15 @@ void MacroAssembler::lookup_interface_method(Register Rklass,
 
   if (method_result != noreg) {
     // Interface found at previous position of Rscan, now load the method
-    ldr_s32(Rtmp, Address(Rscan, itableOffsetEntry::offset_offset_in_bytes() - entry_size));
+    ldr_s32(Rtmp, Address(Rscan, in_bytes(itableOffsetEntry::offset_offset()) - entry_size));
     if (itable_index.is_register()) {
       add(Rtmp, Rtmp, Rklass); // Add offset to Klass*
       assert(itableMethodEntry::size() * HeapWordSize == wordSize, "adjust the scaling in the code below");
-      assert(itableMethodEntry::method_offset_in_bytes() == 0, "adjust the offset in the code below");
+      assert(itableMethodEntry::method_offset() == 0, "adjust the offset in the code below");
       ldr(method_result, Address::indexed_ptr(Rtmp, itable_index.as_register()));
     } else {
       int method_offset = itableMethodEntry::size() * HeapWordSize * itable_index.as_constant() +
-                          itableMethodEntry::method_offset_in_bytes();
+                          in_bytes(itableMethodEntry::method_offset());
       add_slow(method_result, Rklass, method_offset);
       ldr(method_result, Address(method_result, Rtmp));
     }
@@ -1643,7 +1646,7 @@ void MacroAssembler::load_mirror(Register mirror, Register method, Register tmp)
   const int mirror_offset = in_bytes(Klass::java_mirror_offset());
   ldr(tmp, Address(method, Method::const_offset()));
   ldr(tmp, Address(tmp,  ConstMethod::constants_offset()));
-  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset_in_bytes()));
+  ldr(tmp, Address(tmp, ConstantPool::pool_holder_offset()));
   ldr(mirror, Address(tmp, mirror_offset));
   resolve_oop_handle(mirror);
 }
@@ -1748,14 +1751,14 @@ void MacroAssembler::read_polling_page(Register dest, relocInfo::relocType rtype
   POISON_REG(mask, 1, R2, poison)               \
   POISON_REG(mask, 2, R3, poison)
 
-// Attempt to fast-lock an object
+// Attempt to lightweight-lock an object
 // Registers:
 //  - obj: the object to be locked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
@@ -1806,14 +1809,14 @@ void MacroAssembler::fast_lock_2(Register obj, Register t1, Register t2, Registe
   // Success: fall through
 }
 
-// Attempt to fast-unlock an object
+// Attempt to lightweight-unlock an object
 // Registers:
 //  - obj: the object to be unlocked
 //  - t1, t2, t3: temp registers. If corresponding bit in savemask is set, they get saved, otherwise blown.
 // Result:
 //  - Success: fallthrough
 //  - Error:   break to slow, Z cleared.
-void MacroAssembler::fast_unlock_2(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Register t3, unsigned savemask, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
   assert_different_registers(obj, t1, t2, t3);
 
@@ -1859,4 +1862,32 @@ void MacroAssembler::fast_unlock_2(Register obj, Register t1, Register t2, Regis
 #endif
 
   // Fallthrough: success
+}
+
+int MacroAssembler::ic_check_size() {
+  return NativeInstruction::instruction_size * 7;
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = j_rarg0;
+  Register tmp1 = R4;
+  Register tmp2 = R5;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  ldr(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+  ldr(tmp2, Address(Ricklass, CompiledICData::speculated_klass_offset()));
+  cmp(tmp1, tmp2);
+
+  Label dont;
+  b(dont, eq);
+  jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type);
+  bind(dont);
+  return uep_offset;
 }

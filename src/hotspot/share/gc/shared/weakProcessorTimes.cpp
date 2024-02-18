@@ -173,7 +173,7 @@ static const char* indent_str(size_t i) {
   return indents[MIN2(i, max_indents_index)];
 }
 
-#define TIME_FORMAT "%.1lfms"
+#define TIME_FORMAT "%.2lfms"
 
 void WeakProcessorTimes::log_summary(OopStorageSet::WeakId id, uint indent) const {
   LogTarget(Debug, gc, phases) lt;

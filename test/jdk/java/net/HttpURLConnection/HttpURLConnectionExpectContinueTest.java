@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,11 @@
  * @summary Verify that expect 100-continue doesn't hang
  * @library /test/lib
  * @run junit/othervm HttpURLConnectionExpectContinueTest
+ * @run junit/othervm -Djava.net.preferIPv4Stack=true HttpURLConnectionExpectContinueTest
+ * @run junit/othervm -Djava.net.preferIPv6Addresses=true HttpURLConnectionExpectContinueTest
  */
 
+import jdk.test.lib.net.URIBuilder;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -73,7 +76,7 @@ public class HttpURLConnectionExpectContinueTest {
 
         control.serverSocket = new ServerSocket();
         control.serverSocket.setReuseAddress(true);
-        control.serverSocket.bind(new InetSocketAddress("127.0.0.1", 54321));
+        control.serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         Runnable runnable = () -> {
             while (!control.stop) {
                 try {
@@ -419,12 +422,15 @@ public class HttpURLConnectionExpectContinueTest {
     }
 
     // Creates a connection with all the common settings used in each test
-    private HttpURLConnection createConnection() throws IOException {
-        URL url = new URL("http://localhost:" + control.serverSocket.getLocalPort());
+    private HttpURLConnection createConnection() throws Exception {
+        URL url = URIBuilder.newBuilder()
+                .scheme("http")
+                .loopback()
+                .port(control.serverSocket.getLocalPort())
+                .toURL();
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
-        connection.setConnectTimeout(1000);
         connection.setReadTimeout(5000);
         connection.setUseCaches(false);
         connection.setInstanceFollowRedirects(false);

@@ -445,9 +445,8 @@ public class AnnotationParser {
     }
     static Class<?> toClass(Type o) {
         if (o instanceof GenericArrayType gat)
-            return Array.newInstance(toClass(gat.getGenericComponentType()), 0)
-                .getClass();
-        return (Class)o;
+            return toClass(gat.getGenericComponentType()).arrayType();
+        return (Class<?>) o;
     }
 
     /**

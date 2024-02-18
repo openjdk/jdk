@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -60,16 +60,16 @@ void C1_MacroAssembler::float_cmp(bool is_float, int unordered_result,
   }
 }
 
-int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
+int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert_different_registers(hdr, obj, disp_hdr);
+  assert_different_registers(hdr, obj, disp_hdr, temp, rscratch2);
   int null_check_offset = -1;
 
   verify_oop(obj);
 
   // save object being locked into the BasicObjectLock
-  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  str(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
 
   null_check_offset = offset();
 
@@ -80,12 +80,12 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
     br(Assembler::NE, slow_case);
   }
 
-  // Load object header
-  ldr(hdr, Address(obj, hdr_offset));
   if (LockingMode == LM_LIGHTWEIGHT) {
-    fast_lock(obj, hdr, rscratch1, rscratch2, slow_case);
+    lightweight_lock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     Label done;
+    // Load object header
+    ldr(hdr, Address(obj, hdr_offset));
     // and mark it as unlocked
     orr(hdr, hdr, markWord::unlocked_value);
     // save unlocked object header into the displaced header location on the stack
@@ -125,10 +125,10 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
 }
 
 
-void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Label& slow_case) {
+void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_hdr, Register temp, Label& slow_case) {
   const int aligned_mask = BytesPerWord -1;
   const int hdr_offset = oopDesc::mark_offset_in_bytes();
-  assert(hdr != obj && hdr != disp_hdr && obj != disp_hdr, "registers must be different");
+  assert_different_registers(hdr, obj, disp_hdr, temp, rscratch2);
   Label done;
 
   if (LockingMode != LM_LIGHTWEIGHT) {
@@ -140,16 +140,11 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   }
 
   // load object
-  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset_in_bytes()));
+  ldr(obj, Address(disp_hdr, BasicObjectLock::obj_offset()));
   verify_oop(obj);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    ldr(hdr, Address(obj, oopDesc::mark_offset_in_bytes()));
-    // We cannot use tbnz here, the target might be too far away and cannot
-    // be encoded.
-    tst(hdr, markWord::monitor_value);
-    br(Assembler::NE, slow_case);
-    fast_unlock(obj, hdr, rscratch1, rscratch2, slow_case);
+    lightweight_unlock(obj, hdr, temp, rscratch2, slow_case);
   } else if (LockingMode == LM_LEGACY) {
     // test if object header is pointing to the displaced header, and if so, restore
     // the displaced header in the object - if the object header is not pointing to
@@ -307,17 +302,6 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   verify_oop(obj);
 }
-
-
-void C1_MacroAssembler::inline_cache_check(Register receiver, Register iCache) {
-  verify_oop(receiver);
-  // explicit null check not needed since load from [klass_offset] causes a trap
-  // check against inline cache
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()), "must add explicit null check");
-
-  cmp_klass(receiver, iCache, rscratch1);
-}
-
 
 void C1_MacroAssembler::build_frame(int framesize, int bang_size_in_bytes) {
   assert(bang_size_in_bytes >= framesize, "stack bang size incorrect");

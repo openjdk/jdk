@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,9 @@
 
 package sun.security.mscapi;
 
+import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.PrivateKey;
 
 /**
@@ -35,6 +38,7 @@ import java.security.PrivateKey;
  */
 class CPrivateKey extends CKey implements PrivateKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 8113152807912338063L;
 
     private CPrivateKey(String alg, NativeHandles handles, int keyLength) {
@@ -72,8 +76,26 @@ class CPrivateKey extends CKey implements PrivateKey {
     }
 
     // This class is not serializable
+    @java.io.Serial
     private void writeObject(java.io.ObjectOutputStream out)
             throws java.io.IOException {
-        throw new java.io.NotSerializableException();
+        throw new java.io.InvalidObjectException(
+                "CPrivateKeys are not serializable");
+    }
+
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "CPrivateKeys are not deserializable");
     }
 }

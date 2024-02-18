@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jvmtiCapabilities jvmti_caps;
@@ -70,8 +70,8 @@ typedef struct _refLink {
   struct _refLink *next;
 } refLink;
 
-static MyTag *fakeRoot = NULL;
-static MyTag *missed = NULL;
+static MyTag *fakeRoot = nullptr;
+static MyTag *missed = nullptr;
 
 static void breakpoint() {
   printf("Continuing from BREAKPOINT\n");
@@ -82,10 +82,10 @@ static MyTag *newTag(refKind kind,
                      jlong size,
                      const char* name) {
   static jlong seq_num = 0;
-  MyTag* new_tag = NULL;
+  MyTag* new_tag = nullptr;
 
   new_tag = (MyTag*) malloc(sizeof(MyTag));
-  if (NULL == new_tag) {
+  if (nullptr == new_tag) {
     printf("Error (newTag malloc): failed\n");
     result = STATUS_FAILED;
   }
@@ -95,7 +95,7 @@ static MyTag *newTag(refKind kind,
   new_tag->sequence = ++seq_num;
   new_tag->visited = JNI_FALSE;
   new_tag->name = name;
-  new_tag->ref = NULL;
+  new_tag->ref = nullptr;
   return new_tag;
 }
 
@@ -103,11 +103,11 @@ static void setTag(JNIEnv *env,
                    jobject obj,
                    refKind kind,
                    const char* name) {
-  MyTag *new_tag = NULL;
-  MyTag *class_tag = NULL;
+  MyTag *new_tag = nullptr;
+  MyTag *class_tag = nullptr;
   jvmtiError err;
   jlong size = 0;
-  jclass obj_class = NULL;
+  jclass obj_class = nullptr;
   jlong haba = 0;
 
   err = jvmti->GetObjectSize(obj, &size);
@@ -124,7 +124,7 @@ static void setTag(JNIEnv *env,
     printf("Error (GetTag): %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
-  if (class_tag != NULL && class_tag->kind != rclass) {
+  if (class_tag != nullptr && class_tag->kind != rclass) {
     printf("Error class tag which is not a class\n");
     result = STATUS_FAILED;
   }
@@ -142,7 +142,7 @@ static void addRef(MyTag *from, int reference_kind, MyTag *to) {
   refLink *new_ref;
 
   new_ref = (refLink*) malloc(sizeof(refLink));
-  if (NULL == new_ref) {
+  if (nullptr == new_ref) {
     printf("Error (addRef malloc): failed\n");
     result = STATUS_FAILED;
   }
@@ -215,7 +215,7 @@ static void walk(MyTag* tag, jint depth, const char* ref_label) {
   const char *indent = spaces + (len - 2 * depth);
 
   const MyTag* const ctag = tag->class_tag;
-  const char* const cname = ctag != NULL ? ctag->name : "";
+  const char* const cname = ctag != nullptr ? ctag->name : "";
 
   printf("%s", indent);
 
@@ -256,12 +256,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
 
-  if (options != NULL && strcmp(options, "printdump") == 0) {
+  if (options != nullptr && strcmp(options, "printdump") == 0) {
     printdump = JNI_TRUE;
   }
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     printf("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -279,7 +279,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
 jvmtiIterationControl JNICALL
 heapMarkCallback(jlong class_tag, jlong size, jlong* tag_ptr, void* user_data) {
-  const MyTag* const tag = newTag(rmark, (const MyTag*)(intptr_t)class_tag, size, NULL);
+  const MyTag* const tag = newTag(rmark, (const MyTag*)(intptr_t)class_tag, size, nullptr);
   *tag_ptr = (intptr_t)tag;
 
   if (user_data != &dummy_user_data && user_data_error_flag == JNI_FALSE) {
@@ -298,7 +298,7 @@ heapRootCallback(jvmtiHeapRootKind root_kind,
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, nullptr);
     addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, tag);
     *tag_ptr = (intptr_t)tag;
   } else {
@@ -324,7 +324,7 @@ stackReferenceCallback(jvmtiHeapRootKind root_kind,
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, nullptr);
     addRef(fakeRoot, HEAP_ROOT_REF_KIND_BASE+root_kind, tag);
     *tag_ptr = (intptr_t)tag;
   } else {
@@ -345,7 +345,7 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
                         jlong* tag_ptr, jlong referrer_tag,
                         jint referrer_index, void* user_data) {
   refKind kind = rother;
-  MyTag* referrer = NULL;
+  MyTag* referrer = nullptr;
 
   if (0 == referrer_tag) {
     referrer = missed;
@@ -355,7 +355,7 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
 
   if (0 == *tag_ptr) {
     /* new tag */
-    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, NULL);
+    MyTag* tag = newTag(kind, (MyTag*)(intptr_t)class_tag, size, nullptr);
     addRef(referrer, reference_kind, tag);
     *tag_ptr = (intptr_t) tag;
   } else {
@@ -380,13 +380,13 @@ Java_nsk_jvmti_unit_refignore_check(JNIEnv *env, jclass cls) {
   jint threadCount = 0;
   jint i;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     printf("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
 
-  fakeRoot = newTag(rother, (const MyTag *)NULL, 0, "FAKE_ROOT");
-  missed = newTag(rother, (const MyTag *)NULL, 0, "MISSED");
+  fakeRoot = newTag(rother, nullptr, 0, "FAKE_ROOT");
+  missed = newTag(rother, nullptr, 0, "MISSED");
 
   if (env->PushLocalFrame(500) != 0) {
     printf("Error (PushLocalFrame): failed\n");
@@ -402,7 +402,7 @@ Java_nsk_jvmti_unit_refignore_check(JNIEnv *env, jclass cls) {
   for (i = 0; i < classCount; ++i) {
     char *classSig;
     jclass k = classes[i];
-    err = jvmti->GetClassSignature(k, &classSig, NULL);
+    err = jvmti->GetClassSignature(k, &classSig, nullptr);
     if (err != JVMTI_ERROR_NONE) {
       printf("Error (getClassSignature): %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
@@ -412,7 +412,7 @@ Java_nsk_jvmti_unit_refignore_check(JNIEnv *env, jclass cls) {
       if (classSig[len-1] == ';') {
         classSig[len-1] = 0;
       }
-      if (*classSig == 'L' && slash != NULL) {
+      if (*classSig == 'L' && slash != nullptr) {
         classSig = slash + 1;
       }
       setTag(env, k, rclass, (const char*)classSig);
@@ -437,7 +437,7 @@ Java_nsk_jvmti_unit_refignore_check(JNIEnv *env, jclass cls) {
     }
   }
 
-  env->PopLocalFrame(NULL);
+  env->PopLocalFrame(nullptr);
 
   user_data_error_flag = JNI_FALSE;
   err = jvmti->IterateOverHeap(

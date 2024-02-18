@@ -41,8 +41,7 @@ namespace metaspace {
 //  memory blocks themselves are the nodes, with the block size being the key.
 //
 // We store node pointer information in these blocks when storing them. That
-//  imposes a minimum size to the managed memory blocks.
-//  See get_raw_word_size_for_requested_word_size() (msCommon.hpp).
+//  imposes a minimum size to the managed memory blocks (1 word)
 //
 // We want to manage many memory blocks of the same size, but we want
 //  to prevent the tree from blowing up and degenerating into a list. Therefore

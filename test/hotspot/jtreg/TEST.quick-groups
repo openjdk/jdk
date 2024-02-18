@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -1484,20 +1484,14 @@ vmTestbase_vm_gc_quick = \
   vmTestbase/vm/gc/containers/LinkedBlockingDeque_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/LinkedHashMap_Arrays/TestDescription.java \
   vmTestbase/vm/gc/containers/Combination05/TestDescription.java \
-  vmTestbase/gc/ArrayJuggle/Juggle01 \
-  vmTestbase/gc/ArrayJuggle/Juggle14 \
-  vmTestbase/gc/ArrayJuggle/Juggle22 \
-  vmTestbase/gc/ArrayJuggle/Juggle29 \
-  vmTestbase/gc/ArrayJuggle/Juggle34 \
+  vmTestbase/gc/ArrayJuggle/Juggle3Quick.java \
   vmTestbase/gc/gctests/LargeObjects/large001/large001.java \
   vmTestbase/gc/gctests/LoadUnloadGC2/LoadUnloadGC2.java \
   vmTestbase/gc/gctests/StringGC/StringGC.java \
   vmTestbase/gc/gctests/StringInternGC/StringInternGC.java \
   vmTestbase/gc/gctests/ReferencesGC/ReferencesGC.java \
   vmTestbase/gc/lock/jni/jnilock001/TestDescription.java \
-  vmTestbase/gc/lock/jniref/jnireflock01/TestDescription.java \
-  vmTestbase/gc/lock/jvmti/alloc/jvmtialloclock01/TestDescription.java \
-  vmTestbase/gc/lock/malloc/malloclock01/TestDescription.java
+  vmTestbase/gc/lock/jniref/jnireflock01/TestDescription.java
 
 vmTestbase_vm_compiler_quick = \
   vmTestbase/vm/compiler/jbe/constprop/constprop01/constprop01.java \

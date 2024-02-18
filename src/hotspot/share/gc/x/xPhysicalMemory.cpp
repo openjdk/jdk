@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,15 @@
 #include "gc/x/xArray.inline.hpp"
 #include "gc/x/xGlobals.hpp"
 #include "gc/x/xLargePages.inline.hpp"
+#include "gc/x/xList.inline.hpp"
 #include "gc/x/xNUMA.inline.hpp"
 #include "gc/x/xPhysicalMemory.inline.hpp"
 #include "logging/log.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"

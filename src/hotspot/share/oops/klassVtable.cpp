@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1118,9 +1118,9 @@ klassItable::klassItable(InstanceKlass* klass) {
       intptr_t* method_entry  = (intptr_t *)(((address)klass) + offset_entry->offset());
       intptr_t* end         = klass->end_of_itable();
 
-      _table_offset      = (intptr_t*)offset_entry - (intptr_t*)klass;
-      _size_offset_table = (method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size();
-      _size_method_table = (end - method_entry)                  / itableMethodEntry::size();
+      _table_offset      = int((intptr_t*)offset_entry - (intptr_t*)klass);
+      _size_offset_table = int((method_entry - ((intptr_t*)offset_entry)) / itableOffsetEntry::size());
+      _size_method_table = int((end - method_entry)                  / itableMethodEntry::size());
       assert(_table_offset >= 0 && _size_offset_table >= 0 && _size_method_table >= 0, "wrong computation");
       return;
     }
@@ -1442,7 +1442,7 @@ class InterfaceVisiterClosure : public StackObj {
 };
 
 // Visit all interfaces with at least one itable method
-void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
+static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
   // Handle array argument
   for(int i = 0; i < transitive_intf->length(); i++) {
     InstanceKlass* intf = transitive_intf->at(i);
@@ -1497,7 +1497,7 @@ class SetupItableClosure : public InterfaceVisiterClosure  {
   itableMethodEntry* method_entry() const { return _method_entry; }
 
   void doit(InstanceKlass* intf, int method_count) {
-    int offset = ((address)_method_entry) - _klass_begin;
+    int offset = int(((address)_method_entry) - _klass_begin);
     _offset_entry->initialize(intf, offset);
     _offset_entry++;
     _method_entry += method_count;

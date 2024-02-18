@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 4062985 4108758 4108762 4157299
  * @library /java/text/testlib
  * @summary Test CollationElementIterator, particularly the new methods in 1.2
+ * @run junit IteratorTest
  */
 /*
  * (C) Copyright IBM Corp. 1998 - All Rights Reserved
@@ -40,22 +41,23 @@
 import java.util.Locale;
 import java.text.*;
 
-public class IteratorTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class IteratorTest {
     // TODO:
     //  - Test previous() with contracting character sequences, which don't work
     //      at the moment.
     //  - Test edge cases on setOffset(), e.g. offset > length, etc.
     //
-    public static void main(String[] args) throws Exception {
-        new IteratorTest().run(args);
-    }
-
     /**
      * Test for CollationElementIterator.previous()
      *
      * @bug 4108758 - Make sure it works with contracting characters
      *
      */
+    @Test
     public void TestPrevious() throws ParseException {
         // A basic test to see if it's working at all
         backAndForth(en_us.getCollationElementIterator(test1));
@@ -82,6 +84,7 @@ public class IteratorTest extends CollatorTest {
     /**
      * Test for getOffset() and setOffset()
      */
+    @Test
     public void TestOffset() {
         CollationElementIterator iter = en_us.getCollationElementIterator(test1);
 
@@ -96,7 +99,7 @@ public class IteratorTest extends CollatorTest {
 
         // Now set the offset back to the beginning and see if it works
         iter.setOffset(0);
-        assertEqual(iter, en_us.getCollationElementIterator(test1));
+        TestUtils.compareCollationElementIters(iter, en_us.getCollationElementIterator(test1));
 
         // TODO: try iterating halfway through a messy string.
     }
@@ -104,6 +107,7 @@ public class IteratorTest extends CollatorTest {
     /**
      * Test for setText()
      */
+    @Test
     public void TestSetText() {
         CollationElementIterator iter1 = en_us.getCollationElementIterator(test1);
         CollationElementIterator iter2 = en_us.getCollationElementIterator(test2);
@@ -117,12 +121,13 @@ public class IteratorTest extends CollatorTest {
 
         // Now set it to point to the same string as the first iterator
         iter2.setText(test1);
-        assertEqual(iter1, iter2);
+        TestUtils.compareCollationElementIters(iter1, iter2);
     }
 
     /** @bug 4108762
      * Test for getMaxExpansion()
      */
+    @Test
     public void TestMaxExpansion() throws ParseException {
         // Try a simple one first:
         // The only expansion ends with 'e' and has length 2
@@ -151,6 +156,7 @@ public class IteratorTest extends CollatorTest {
     /*
      * @bug 4157299
      */
+    @Test
     public void TestClearBuffers() throws ParseException {
         RuleBasedCollator c = new RuleBasedCollator("< a < b < c & ab = d");
         CollationElementIterator i = c.getCollationElementIterator("abcd");
@@ -160,7 +166,7 @@ public class IteratorTest extends CollatorTest {
         i.setOffset(0);      // go back to the beginning
         int e = i.next();    // and get this one again
         if (e != e0) {
-           errln("got " + Integer.toString(e, 16) + ", expected " +
+           fail("got " + Integer.toString(e, 16) + ", expected " +
                        Integer.toString(e0, 16));
         }
     }
@@ -179,26 +185,26 @@ public class IteratorTest extends CollatorTest {
 
         while ((o = iter.previous()) != CollationElementIterator.NULLORDER) {
             if (o != orders[--index]) {
-                errln("Mismatch at index " + index + ": "
+                fail("Mismatch at index " + index + ": "
                         + orders[index] + " vs " + o);
                 break;
             }
         }
         if (index != 0) {
-            errln("Didn't get back to beginning - index is " + index);
+            fail("Didn't get back to beginning - index is " + index);
 
             iter.reset();
-            err("next: ");
+            fail("next: ");
             while ((o = iter.next()) != NULLORDER) {
-                err( Integer.toHexString(o) + " ");
+                fail( Integer.toHexString(o) + " ");
             }
-            errln("");
+            fail("");
 
-            err("prev: ");
+            fail("prev: ");
             while ((o = iter.previous()) != NULLORDER) {
-                 err( Integer.toHexString(o) + " ");
+                 fail( Integer.toHexString(o) + " ");
             }
-            errln("");
+            fail("");
         }
     }
 
@@ -226,7 +232,7 @@ public class IteratorTest extends CollatorTest {
 
             if (order == NULLORDER || iter.next() != NULLORDER) {
                 iter.reset();
-                errln("verifyExpansion: '" + tests[i][0] +
+                fail("verifyExpansion: '" + tests[i][0] +
                     "' has multiple orders:" + orderString(iter));
             }
 
@@ -234,7 +240,7 @@ public class IteratorTest extends CollatorTest {
             int expect = new Integer(tests[i][1]).intValue();
 
             if (expansion != expect) {
-                errln("expansion for '" + tests[i][0] + "' is wrong: " +
+                fail("expansion for '" + tests[i][0] + "' is wrong: " +
                     "expected " + expect + ", got " + expansion);
             }
         }

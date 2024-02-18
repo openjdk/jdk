@@ -63,11 +63,6 @@ inline HeapWord* G1AllocRegion::par_allocate(HeapRegion* alloc_region,
   return alloc_region->par_allocate(min_word_size, desired_word_size, actual_word_size);
 }
 
-inline HeapWord* G1AllocRegion::attempt_allocation(size_t word_size) {
-  size_t temp;
-  return attempt_allocation(word_size, word_size, &temp);
-}
-
 inline HeapWord* G1AllocRegion::attempt_allocation(size_t min_word_size,
                                                    size_t desired_word_size,
                                                    size_t* actual_word_size) {

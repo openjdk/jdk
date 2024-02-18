@@ -35,6 +35,7 @@
 #include "oops/oop.inline.hpp"
 #include "oops/verifyOopClosure.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -136,6 +137,7 @@ void VMThread::create() {
     _perf_accumulated_vm_operation_time =
                  PerfDataManager::create_counter(SUN_THREADS, "vmOperationTime",
                                                  PerfData::U_Ticks, CHECK);
+    CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::vm);
   }
 }
 
@@ -288,6 +290,12 @@ void VMThread::evaluate_operation(VM_Operation* op) {
                      op->evaluate_at_safepoint() ? 0 : 1);
   }
 
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    assert(Thread::current() == this, "Must be called from VM thread");
+    // Update vm_thread_cpu_time after each VM operation.
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::vm);
+    tttc.do_thread(this);
+  }
 }
 
 class HandshakeALotClosure : public HandshakeClosure {
@@ -407,7 +415,14 @@ void VMThread::inner_execute(VM_Operation* op) {
   _cur_vm_operation = op;
 
   HandleMark hm(VMThread::vm_thread());
-  EventMarkVMOperation em("Executing %sVM operation: %s", prev_vm_operation != nullptr ? "nested " : "", op->name());
+
+  const char* const cause = op->cause();
+  EventMarkVMOperation em("Executing %sVM operation: %s%s%s%s",
+      prev_vm_operation != nullptr ? "nested " : "",
+      op->name(),
+      cause != nullptr ? " (" : "",
+      cause != nullptr ? cause : "",
+      cause != nullptr ? ")" : "");
 
   log_debug(vmthread)("Evaluating %s %s VM operation: %s",
                        prev_vm_operation != nullptr ? "nested" : "",

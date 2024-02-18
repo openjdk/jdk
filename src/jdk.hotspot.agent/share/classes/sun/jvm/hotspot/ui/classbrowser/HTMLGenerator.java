@@ -1916,7 +1916,7 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       for (JavaVFrame vf = thread.getLastJavaVFrameDbg(); vf != null; vf = vf.javaSender()) {
          Method method = vf.getMethod();
          buf.append(" - ");
-         buf.append(genMethodLink(method));
+         buf.append(genMethodAndKlassLink(method));
          buf.append(" @bci = " + vf.getBCI());
 
          int lineNumber = method.getLineNumberFromBCI(vf.getBCI());

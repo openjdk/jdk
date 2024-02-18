@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,13 +77,13 @@ public class PrintDirectivesTest extends AbstractTestBase {
             if (command == Command.INTRINSIC) {
                 argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
             }
-            CompileCommand compileCommand = new CompileCommand(command,
+            CompileCommand compileCommand = new CompileCommand(command, true,
                     methodDescriptor, cmdGen.generateCompiler(),
                     Scenario.Type.DIRECTIVE, argument);
             builder.add(compileCommand);
         }
         // print all directives
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
+        builder.add(new JcmdCommand(Command.NONEXISTENT, true, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         Scenario scenario = builder.build();
         scenario.execute();

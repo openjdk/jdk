@@ -34,6 +34,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Error;
+import com.sun.tools.javac.code.Source.Feature;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -55,6 +56,8 @@ import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 public class MemberEnter extends JCTree.Visitor {
     protected static final Context.Key<MemberEnter> memberEnterKey = new Context.Key<>();
 
+    /** The Source language setting. */
+    private final Source source;
     private final Enter enter;
     private final Log log;
     private final Check chk;
@@ -62,6 +65,7 @@ public class MemberEnter extends JCTree.Visitor {
     private final Symtab syms;
     private final Annotate annotate;
     private final Types types;
+    private final Names names;
     private final DeferredLintHandler deferredLintHandler;
 
     public static MemberEnter instance(Context context) {
@@ -81,6 +85,8 @@ public class MemberEnter extends JCTree.Visitor {
         syms = Symtab.instance(context);
         annotate = Annotate.instance(context);
         types = Types.instance(context);
+        source = Source.instance(context);
+        names = Names.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
     }
 
@@ -285,7 +291,8 @@ public class MemberEnter extends JCTree.Visitor {
         Type vartype = tree.isImplicitlyTyped()
                 ? env.info.scope.owner.kind == MTH ? Type.noType : syms.errType
                 : tree.vartype.type;
-        VarSymbol v = new VarSymbol(0, tree.name, vartype, enclScope.owner);
+        Name name = tree.name;
+        VarSymbol v = new VarSymbol(0, name, vartype, enclScope.owner);
         v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
         tree.sym = v;
         if (tree.init != null) {
@@ -297,12 +304,15 @@ public class MemberEnter extends JCTree.Visitor {
                 v.setLazyConstValue(initEnv(tree, initEnv), attr, tree);
             }
         }
-        if (chk.checkUnique(tree.pos(), v, enclScope)) {
-            chk.checkTransparentVar(tree.pos(), v, enclScope);
-            enclScope.enter(v);
-        } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
-            // if this is a parameter or a field obtained from a record component, enter it
-            enclScope.enter(v);
+
+        if(!(Feature.UNNAMED_VARIABLES.allowedInSource(source) && tree.sym.isUnnamedVariable())) {
+            if (chk.checkUnique(tree.pos(), v, enclScope)) {
+                chk.checkTransparentVar(tree.pos(), v, enclScope);
+                enclScope.enter(v);
+            } else if (v.owner.kind == MTH || (v.flags_field & (Flags.PRIVATE | Flags.FINAL | Flags.GENERATED_MEMBER | Flags.RECORD)) != 0) {
+                // if this is a parameter or a field obtained from a record component, enter it
+                enclScope.enter(v);
+            }
         }
 
         annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());

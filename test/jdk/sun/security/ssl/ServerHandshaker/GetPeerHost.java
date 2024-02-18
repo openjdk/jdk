@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,8 @@ public class GetPeerHost {
         String testRoot = System.getProperty("test.src", ".");
         System.setProperty("javax.net.ssl.trustStore", testRoot
                             + "/../../../../javax/net/ssl/etc/truststore");
+        System.setProperty("javax.net.ssl.trustStoreType", "PKCS12");
+        System.setProperty("javax.net.ssl.trustStorePassword", "passphrase");
         GetPeerHostServer server = new GetPeerHostServer();
         server.start();
         GetPeerHostClient client =

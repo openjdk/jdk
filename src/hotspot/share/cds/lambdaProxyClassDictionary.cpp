@@ -28,19 +28,6 @@
 #include "classfile/systemDictionaryShared.hpp"
 #include "memory/resourceArea.hpp"
 
-// This constructor is used only by SystemDictionaryShared::clone_dumptime_tables().
-// See comments there about the need for making a deep copy.
-DumpTimeLambdaProxyClassInfo::DumpTimeLambdaProxyClassInfo(const DumpTimeLambdaProxyClassInfo& src) {
-  _proxy_klasses = nullptr;
-  if (src._proxy_klasses != nullptr && src._proxy_klasses->length() > 0) {
-    int n = src._proxy_klasses->length();
-    _proxy_klasses = new (mtClassShared) GrowableArray<InstanceKlass*>(n, mtClassShared);
-    for (int i = 0; i < n; i++) {
-      _proxy_klasses->append(src._proxy_klasses->at(i));
-    }
-  }
-}
-
 DumpTimeLambdaProxyClassInfo::~DumpTimeLambdaProxyClassInfo() {
   if (_proxy_klasses != nullptr) {
     delete _proxy_klasses;

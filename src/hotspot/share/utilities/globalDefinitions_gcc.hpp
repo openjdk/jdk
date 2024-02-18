@@ -132,7 +132,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #endif // _LP64
 
 // gcc warns about applying offsetof() to non-POD object or calculating
-// offset directly when base address is NULL. The -Wno-invalid-offsetof
+// offset directly when base address is null. The -Wno-invalid-offsetof
 // option could be used to suppress this warning, but we instead just
 // avoid the use of offsetof().
 //
@@ -141,7 +141,7 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 // temporarily disabled.
 #define offset_of(klass,field)                          \
 ([]() {                                                 \
-  char space[sizeof (klass)] ATTRIBUTE_ALIGNED(16);     \
+  alignas(16) char space[sizeof (klass)];               \
   klass* dummyObj = (klass*)space;                      \
   char* c = (char*)(void*)&dummyObj->field;             \
   return (size_t)(c - space);                           \
@@ -159,9 +159,5 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define NOINLINE     __attribute__ ((noinline))
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
 #define ATTRIBUTE_FLATTEN __attribute__ ((flatten))
-
-// Alignment
-//
-#define ATTRIBUTE_ALIGNED(x) __attribute__((aligned(x)))
 
 #endif // SHARE_UTILITIES_GLOBALDEFINITIONS_GCC_HPP

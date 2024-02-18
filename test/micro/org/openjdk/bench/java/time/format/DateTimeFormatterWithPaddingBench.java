@@ -36,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(3)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class DateTimeFormatterWithPaddingBench {
 
     private static final DateTimeFormatter FORMATTER_WITH_PADDING = new DateTimeFormatterBuilder()

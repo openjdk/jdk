@@ -28,7 +28,6 @@
 #include "asm/assembler.inline.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvm.h"
@@ -126,7 +125,7 @@ frame os::fetch_frame_from_context(const void* ucVoid) {
   address epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   // Avoid crash during crash if pc broken.
   if (epc) {
-    frame fr(sp, epc);
+    frame fr(sp, epc, frame::kind::unknown);
     return fr;
   }
   frame fr(sp);
@@ -137,21 +136,21 @@ frame os::fetch_compiled_frame_from_context(const void* ucVoid) {
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
   intptr_t* sp = os::Aix::ucontext_get_sp(uc);
   address lr = ucontext_get_lr(uc);
-  return frame(sp, lr);
+  return frame(sp, lr, frame::kind::unknown);
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
   if (*fr->sp() == (intptr_t) nullptr) {
     // fr is the last C frame
-    return frame(nullptr, nullptr);
+    return frame();
   }
-  return frame(fr->sender_sp(), fr->sender_pc());
+  return frame(fr->sender_sp(), fr->sender_pc(), frame::kind::unknown);
 }
 
 
 frame os::current_frame() {
   intptr_t* csp = *(intptr_t**) __builtin_frame_address(0);
-  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame));
+  frame topframe(csp, CAST_FROM_FN_PTR(address, os::current_frame), frame::kind::unknown);
   return os::get_sender_for_C_frame(&topframe);
 }
 
@@ -331,9 +330,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        va_list va_dummy = nullptr;
-        VMError::report_and_die(thread, uc, nullptr, 0, msg, detail_msg, va_dummy);
-        va_end(va_dummy);
+        VMError::report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
 
         ShouldNotReachHere();
       }
@@ -463,7 +460,7 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Posix::ucontext_get_pc(uc);
-  print_instructions(st, pc, /*instrsize=*/4);
+  print_instructions(st, pc);
   st->cr();
 
   // Try to decode the instructions.
@@ -516,7 +513,7 @@ int os::extra_bang_size_in_bytes() {
   return 0;
 }
 
-bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size) {
+bool os::Aix::platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc) {
   AixNativeCallstack::print_callstack_for_context(st, (const ucontext_t*)context, true, buf, (size_t) buf_size);
   return true;
 }

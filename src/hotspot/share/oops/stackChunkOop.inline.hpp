@@ -123,7 +123,7 @@ inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
     "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
-  return p - start_address();
+  return (int)(p - start_address());
 }
 
 inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {
@@ -256,12 +256,13 @@ inline BitMapView stackChunkOopDesc::bitmap() const {
   return bitmap;
 }
 
-inline BitMap::idx_t stackChunkOopDesc::bit_index_for(intptr_t* p) const {
+inline BitMap::idx_t stackChunkOopDesc::bit_index_for(address p) const {
   return UseCompressedOops ? bit_index_for((narrowOop*)p) : bit_index_for((oop*)p);
 }
 
 template <typename OopT>
 inline BitMap::idx_t stackChunkOopDesc::bit_index_for(OopT* p) const {
+  assert(is_aligned(p, alignof(OopT)), "should be aligned: " PTR_FORMAT, p2i(p));
   assert(p >= (OopT*)start_address(), "Address not in chunk");
   return p - (OopT*)start_address();
 }
@@ -387,7 +388,7 @@ inline int stackChunkOopDesc::relativize_address(intptr_t* p) const {
   assert(start_address() <= p && p <= base, "start_address: " PTR_FORMAT " p: " PTR_FORMAT " base: " PTR_FORMAT,
          p2i(start_address()), p2i(p), p2i(base));
   assert(0 <= offset && offset <= std::numeric_limits<int>::max(), "offset: " PTR_FORMAT, offset);
-  return offset;
+  return (int)offset;
 }
 
 inline void stackChunkOopDesc::relativize_frame(frame& fr) const {

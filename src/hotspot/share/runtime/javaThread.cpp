@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -73,6 +73,7 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
@@ -193,7 +194,7 @@ oop JavaThread::scopedValueCache() const {
 }
 
 void JavaThread::set_scopedValueCache(oop p) {
-  if (_scopedValueCache.ptr_raw() != nullptr) { // i.e. if the OopHandle has been allocated
+  if (!_scopedValueCache.is_empty()) { // i.e. if the OopHandle has been allocated
     _scopedValueCache.replace(p);
   } else {
     assert(p == nullptr, "not yet initialized");
@@ -262,7 +263,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 jlong* JavaThread::_jvmci_old_thread_counters;
 
-bool jvmci_counters_include(JavaThread* thread) {
+static bool jvmci_counters_include(JavaThread* thread) {
   return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
 }
 
@@ -281,7 +282,7 @@ void JavaThread::collect_counters(jlong* array, int length) {
 }
 
 // Attempt to enlarge the array for per thread counters.
-jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
+static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
   if (new_counters == nullptr) {
     return nullptr;
@@ -439,6 +440,7 @@ JavaThread::JavaThread() :
   _carrier_thread_suspended(false),
   _is_in_VTMS_transition(false),
   _is_in_tmp_VTMS_transition(false),
+  _is_disable_suspend(false),
 #ifdef ASSERT
   _is_VTMS_transition_disabler(false),
 #endif
@@ -743,6 +745,7 @@ static void ensure_join(JavaThread* thread) {
   // Clear the native thread instance - this makes isAlive return false and allows the join()
   // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
   // requirements.
+  assert(java_lang_Thread::thread(threadObj()) == thread, "must be alive");
   java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
@@ -874,10 +877,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // Since above code may not release JNI monitors and if someone forgot to do an
   // JNI monitorexit, held count should be equal jni count.
   // Consider scan all object monitor for this owner if JNI count > 0 (at least on detach).
-  assert(this->held_monitor_count() == this->jni_monitor_count(),
-         "held monitor count should be equal to jni: " INT64_FORMAT " != " INT64_FORMAT,
-         (int64_t)this->held_monitor_count(), (int64_t)this->jni_monitor_count());
-  if (CheckJNICalls && this->jni_monitor_count() > 0) {
+  assert(held_monitor_count() == jni_monitor_count(),
+         "held monitor count should be equal to jni: " INTX_FORMAT " != " INTX_FORMAT,
+         held_monitor_count(), jni_monitor_count());
+  if (CheckJNICalls && jni_monitor_count() > 0) {
     // We would like a fatal here, but due to we never checked this before there
     // is a lot of tests which breaks, even with an error log.
     log_debug(jni)("JavaThread %s (tid: " UINTX_FORMAT ") with Objects still locked by JNI MonitorEnter.",
@@ -1453,7 +1456,7 @@ void JavaThread::metadata_do(MetadataClosure* f) {
 }
 
 // Printing
-const char* _get_thread_state_name(JavaThreadState _thread_state) {
+static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";
@@ -1587,6 +1590,13 @@ const char* JavaThread::name() const  {
   return Thread::name();
 }
 
+// Like name() but doesn't include the protection check. This must only be
+// called when it is known to be safe, even though the protection check can't tell
+// that e.g. when this thread is the init_thread() - see instanceKlass.cpp.
+const char* JavaThread::name_raw() const  {
+  return get_thread_name_string();
+}
+
 // Returns a non-null representation of this thread's name, or a suitable
 // descriptive string if there is no set name.
 const char* JavaThread::get_thread_name_string(char* buf, int buflen) const {
@@ -1710,9 +1720,15 @@ void JavaThread::print_jni_stack() {
       tty->print_cr("Unable to print native stack - out of memory");
       return;
     }
-    frame f = os::current_frame();
-    VMError::print_native_stack(tty, f, this, true /*print_source_info */,
-                                -1 /* max stack */, buf, O_BUFLEN);
+    address lastpc = nullptr;
+    if (os::platform_print_native_stack(tty, nullptr, buf, O_BUFLEN, lastpc)) {
+      // We have printed the native stack in platform-specific code,
+      // so nothing else to do in this case.
+    } else {
+      frame f = os::current_frame();
+      VMError::print_native_stack(tty, f, this, true /*print_source_info */,
+                                  -1 /* max stack */, buf, O_BUFLEN);
+    }
   } else {
     print_active_stack_on(tty);
   }
@@ -1933,24 +1949,24 @@ void JavaThread::trace_stack() {
 
 #endif // PRODUCT
 
-void JavaThread::inc_held_monitor_count(int i, bool jni) {
+void JavaThread::inc_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
   _held_monitor_count += i;
   if (jni) {
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
     _jni_monitor_count += i;
   }
 #endif
 }
 
-void JavaThread::dec_held_monitor_count(int i, bool jni) {
+void JavaThread::dec_held_monitor_count(intx i, bool jni) {
 #ifdef SUPPORT_MONITOR_COUNT
   _held_monitor_count -= i;
-  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_held_monitor_count);
+  assert(_held_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _held_monitor_count);
   if (jni) {
     _jni_monitor_count -= i;
-    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INT64_FORMAT, (int64_t)_jni_monitor_count);
+    assert(_jni_monitor_count >= 0, "Must always be greater than 0: " INTX_FORMAT, _jni_monitor_count);
   }
 #endif
 }
@@ -2140,6 +2156,8 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   // on a ThreadsList. We don't want to wait for the release when the
   // Theads_lock is dropped when the 'mu' destructor is run since the
   // JavaThread* is already visible to JVM/TI via the ThreadsList.
+
+  assert(java_lang_Thread::thread(thread_oop()) == nullptr, "must not be alive");
   java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }

@@ -43,9 +43,9 @@ import static java.util.stream.Collectors.toSet;
 
 /**
  * @test
- * @summary test bit sequences produced by clases that implement interface RandomGenerator
+ * @summary test bit sequences produced by classes that implement interface RandomGenerator
  * @bug 8248862
- * @run main RandomTestBsi1999
+ * @run main/othervm/timeout=400 RandomTestBsi1999
  * @key randomness
  */
 
