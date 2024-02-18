@@ -48,4 +48,3 @@ class JfrTimeToSafepoint : AllStatic {
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINTEVENT_HPP
-

@@ -21,6 +21,9 @@
  * questions.
  */
 
+#ifndef SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
+#define SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
+
 #include "jfr/jfrEvents.hpp"
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/support/jfrTimeToSafepoint.hpp"
@@ -55,7 +58,7 @@ inline void JfrTimeToSafepoint::on_thread_not_running(JavaThread* thread, int it
   }
 
   if (_entries == nullptr) {
-    _entries = new (mtTracing) GrowableArray<Entry>(8, mtTracing);
+    _entries = new (mtTracing) GrowableArray<Entry>(4, mtTracing);
   }
 
   Entry entry = {thread, end, iterations};
@@ -73,8 +76,8 @@ inline void JfrTimeToSafepoint::on_synchronized() {
   JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
   assert(!tl->has_cached_stack_trace(), "invariant");
 
-  for (int i = 0; i < _entries ->length(); i++) {
-    Entry& entry = _entries ->at(i);
+  for (int i = 0; i < _entries->length(); i++) {
+    Entry& entry = _entries->at(i);
 
     EventTimeToSafepoint event(UNTIMED);
     event.set_starttime(_start);
@@ -100,5 +103,11 @@ inline void JfrTimeToSafepoint::on_synchronized() {
   }
 
   tl->clear_cached_stack_trace();
+
+  // Should we shrink it?
   _entries->clear();
 }
+
+#undef ENTRY_ARRAY_SIZE
+
+#endif // SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
