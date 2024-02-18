@@ -21,79 +21,10 @@
  * questions.
  */
 
-#include "precompiled.hpp"
-
-#include "jfr/jfrEvents.hpp"
-#include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/support/jfrTimeToSafepoint.hpp"
 
-#include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
+bool JfrTimeToSafepoint::_active = false;
 
-struct Entry {
-  JavaThread* thread;
-  Ticks start;
-  Ticks end;
-  int iterations;
-};
+JfrTicks JfrTimeToSafepoint::_start;
 
-static GrowableArray<Entry>* _events = nullptr;
-
-void JfrTimeToSafepoint::record(JavaThread* thread, Ticks& start, Ticks& end, int iterations) {
-  assert(Thread::current()->is_VM_thread(), "invariant");
-  assert(SafepointSynchronize::is_synchronizing(), "invariant");
-  assert(start.value() > 0 && end.value() > 0, "invariant");
-
-  jlong duration = (end - start).value();
-  if (duration <= JfrEventSetting::threshold(EventTimeToSafepoint::eventId)) {
-    return;
-  }
-
-  if (_events == nullptr) {
-    _events = new (mtTracing) GrowableArray<Entry>(8, mtTracing);
-  }
-
-  Entry entry = {thread, start, end, iterations};
-  _events->append(entry);
-}
-
-void JfrTimeToSafepoint::emit_events() {
-  assert(Thread::current()->is_VM_thread(), "invariant");
-  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
-
-  if (_events == nullptr || _events->length() == 0) {
-    return;
-  }
-
-  JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
-  assert(!tl->has_cached_stack_trace(), "invariant");
-
-  for (int i = 0; i < _events->length(); i++) {
-    Entry& entry = _events->at(i);
-
-    EventTimeToSafepoint event(UNTIMED);
-    event.set_starttime(entry.start);
-    event.set_endtime(entry.end);
-
-    event.set_safepointId(SafepointSynchronize::safepoint_id());
-    event.set_iterations(entry.iterations);
-
-    JavaThread* jt = entry.thread;
-    event.set_thread(JfrThreadLocal::thread_id(jt));
-
-    if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
-      JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
-      if (stacktrace.record(jt, jt->last_frame(), 0, -1)) {
-        tl->set_cached_stack_trace_id(JfrStackTraceRepository::add(stacktrace));
-      } else {
-        tl->set_cached_stack_trace_id(0);
-      }
-    } else {
-      tl->set_cached_stack_trace_id(0);
-    }
-    event.commit();
-  }
-
-  tl->clear_cached_stack_trace();
-  _events->clear();
-}
+GrowableArray<JfrTimeToSafepoint::Entry>* JfrTimeToSafepoint::_entries = nullptr;

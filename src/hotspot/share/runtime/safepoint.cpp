@@ -72,7 +72,7 @@
 #include "utilities/systemMemoryBarrier.hpp"
 
 #if INCLUDE_JFR
-#include "jfr/support/jfrTimeToSafepoint.hpp"
+#include "jfr/support/jfrTimeToSafepoint.inline.hpp"
 #endif
 
 static void post_safepoint_begin_event(EventSafepointBegin& event,
@@ -220,11 +220,6 @@ static void back_off(int64_t start_time) {
 
 int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int nof_threads, int* initial_running)
 {
-#if INCLUDE_JFR
-  bool ttsp_event_enabled = EventTimeToSafepoint::is_enabled();
-  Ticks ttsp_start = ttsp_event_enabled ? Ticks::now() : Ticks(0);
-#endif
-
   JavaThreadIteratorWithHandle jtiwh;
 
 #ifdef ASSERT
@@ -243,6 +238,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
     assert(cur_tss->get_next() == nullptr, "Must be null");
     if (thread_not_running(cur_tss)) {
       --still_running;
+      JFR_ONLY(JfrTimeToSafepoint::on_thread_not_running(cur_tss->thread(), 0);)
     } else {
       *p_prev = cur_tss;
       p_prev = cur_tss->next_ptr();
@@ -269,8 +265,6 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
       print_safepoint_timeout();
     }
 
-    JFR_ONLY(Ticks ttsp_end = ttsp_event_enabled ? Ticks::now() : Ticks(0);)
-
     p_prev = &tss_head;
     ThreadSafepointState *cur_tss = tss_head;
     while (cur_tss != nullptr) {
@@ -281,11 +275,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
         ThreadSafepointState *tmp = cur_tss;
         cur_tss = cur_tss->get_next();
         tmp->set_next(nullptr);
-#if INCLUDE_JFR
-        if (ttsp_event_enabled) {
-          JfrTimeToSafepoint::record(tmp->thread(), ttsp_start, ttsp_end, iterations);
-        }
-#endif
+        JFR_ONLY(JfrTimeToSafepoint::on_thread_not_running(tmp->thread(), iterations);)
       } else {
         *p_prev = cur_tss;
         p_prev = cur_tss->next_ptr();
@@ -404,6 +394,8 @@ void SafepointSynchronize::begin() {
   // Arms the safepoint, _current_jni_active_count and _waiting_to_block must be set before.
   arm_safepoint();
 
+  JFR_ONLY(JfrTimeToSafepoint::on_synchronizing();)
+
   // Will spin until all threads are safe.
   int iterations = synchronize_threads(safepoint_limit_time, nof_threads, &initial_running);
   assert(_waiting_to_block == 0, "No thread should be running");
@@ -454,7 +446,7 @@ void SafepointSynchronize::begin() {
 
   SafepointTracing::synchronized(nof_threads, initial_running, _nof_threads_hit_polling_page);
 
-  JFR_ONLY(JfrTimeToSafepoint::emit_events();)
+  JFR_ONLY(JfrTimeToSafepoint::on_synchronized();)
 
   // We do the safepoint cleanup first since a GC related safepoint
   // needs cleanup to be completed before running the GC op.

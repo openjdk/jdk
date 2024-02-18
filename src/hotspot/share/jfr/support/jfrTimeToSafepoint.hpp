@@ -24,11 +24,27 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_HPP
 #define SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_HPP
 
+#include "jfr/utilities/jfrTime.hpp"
+#include "memory/allStatic.hpp"
+#include "runtime/javaThread.hpp"
+#include "utilities/growableArray.hpp"
+
 class JfrTimeToSafepoint : AllStatic {
  public:
-  static void record(JavaThread* thread, Ticks& start, Ticks& end, int iterations);
+  static void on_synchronizing();
+  static void on_thread_not_running(JavaThread* thread, int iterations);
+  static void on_synchronized();
 
-  static void emit_events();
+ private:
+  struct Entry {
+    JavaThread* thread;
+    JfrTicks end;
+    int iterations;
+  };
+
+  static bool _active;
+  static JfrTicks _start;
+  static GrowableArray<Entry>* _entries;
 };
 
 #endif // SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINTEVENT_HPP
