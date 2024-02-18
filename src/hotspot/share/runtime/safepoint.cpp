@@ -269,12 +269,7 @@ int SafepointSynchronize::synchronize_threads(jlong safepoint_limit_time, int no
       print_safepoint_timeout();
     }
 
-#if INCLUDE_JFR
-    Ticks ttsp_end = Ticks(0);
-    if (ttsp_event_enabled) {
-      ttsp_end = Ticks::now();
-    }
-#endif
+    JFR_ONLY(Ticks ttsp_end = ttsp_event_enabled ? Ticks::now() : Ticks(0);)
 
     p_prev = &tss_head;
     ThreadSafepointState *cur_tss = tss_head;
