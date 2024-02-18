@@ -575,8 +575,6 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 
 java/nio/file/Path/ToRealPath.java                              8315273 windows-all
 
-jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
-
 ############################################################################
 
 # jdk_rmi
