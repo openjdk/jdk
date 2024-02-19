@@ -1532,9 +1532,12 @@ final class NativeKeyHolder {
 
                     // destroy
                     this.keyID = 0;
-                    this.ref.removeNativeKey();
-                    // prevent enqueuing SessionKeyRef until removeNativeKey is done
-                    Reference.reachabilityFence(this);
+                    try {
+                        this.ref.removeNativeKey();
+                    } finally {
+                        // prevent enqueuing SessionKeyRef until removeNativeKey is done
+                        Reference.reachabilityFence(this);
+                    }
                 } else {
                     if (cnt < 0) {
                         // should never happen as we start count at 1 and pair get/release calls
