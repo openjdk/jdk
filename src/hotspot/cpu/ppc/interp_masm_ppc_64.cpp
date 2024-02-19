@@ -1114,7 +1114,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor) {
     ld(object, in_bytes(BasicObjectLock::obj_offset()), monitor);
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      lightweight_unlock(object, header, current_header, slow_case);
+      lightweight_unlock(object, header, slow_case);
     } else {
       addi(object_mark_addr, object, oopDesc::mark_offset_in_bytes());
 

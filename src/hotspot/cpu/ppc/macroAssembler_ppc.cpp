@@ -2433,7 +2433,7 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
 
     bind(push);
     // After successful lock, push object on lock-stack.
-    stdx(obj, top, R16_thread);
+    stdx(obj, R16_thread, top);
     addi(top, top, oopSize);
     stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
     b(locked);
@@ -2518,7 +2518,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     // Pop lock-stack.
     DEBUG_ONLY(li(t, 0);)
-    DEBUG_ONLY(stdx(t, top, R16_thread);)
+    DEBUG_ONLY(stdx(t, R16_thread, top);)
     stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 
     // The underflow check is elided. The recursive check will always fail
@@ -2552,7 +2552,7 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
 
     bind(push_and_slow);
     // Restore lock-stack and handle the unlock in runtime.
-    DEBUG_ONLY(stdx(obj, top, R16_thread);)
+    DEBUG_ONLY(stdx(obj, R16_thread, top);)
     addi(top, top, oopSize);
     stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
     b(slow_path);
@@ -4301,7 +4301,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, La
 
   bind(push);
   // After successful lock, push object on lock-stack
-  stdx(obj, top, R16_thread);
+  stdx(obj, R16_thread, top);
   addi(top, top, oopSize);
   stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 }
@@ -4309,10 +4309,10 @@ void MacroAssembler::lightweight_lock(Register obj, Register t1, Register t2, La
 // Implements lightweight-unlocking.
 //
 // - obj: the object to be unlocked
-//  - t1, t2: temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, Label& slow) {
+//  - t1: temporary register
+void MacroAssembler::lightweight_unlock(Register obj, Register t1, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, t1, t2);
+  assert_different_registers(obj, t1);
 
 #ifdef ASSERT
   {
@@ -4332,8 +4332,8 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
 
   Label unlocked, push_and_slow;
   const Register top = t1;
-  const Register mark = t2;
-  Register t = t2;
+  const Register mark = R0;
+  Register t = R0;
 
   // Check if obj is top of lock-stack.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
@@ -4344,7 +4344,7 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
 
   // Pop lock-stack.
   DEBUG_ONLY(li(t, 0);)
-  DEBUG_ONLY(stdx(t, top, R16_thread);)
+  DEBUG_ONLY(stdx(t, R16_thread, top);)
   stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
 
   // The underflow check is elided. The recursive check will always fail
@@ -4374,16 +4374,14 @@ void MacroAssembler::lightweight_unlock(Register obj, Register t1, Register t2, 
 #endif
 
   // Try to unlock. Transition lock bits 0b00 => 0b01
-  atomically_flip_locked_state(/* is_unlock */ true, obj, mark, push_and_slow, MacroAssembler::MemBarRel);
+  atomically_flip_locked_state(/* is_unlock */ true, obj, t, push_and_slow, MacroAssembler::MemBarRel);
   b(unlocked);
 
   bind(push_and_slow);
-  // Use mark as tmp
-  t = mark;
 
   // Restore lock-stack and handle the unlock in runtime.
   lwz(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
-  DEBUG_ONLY(stdx(obj, top, R16_thread);)
+  DEBUG_ONLY(stdx(obj, R16_thread, top);)
   addi(top, top, oopSize);
   stw(top, in_bytes(JavaThread::lock_stack_top_offset()), R16_thread);
   b(slow);

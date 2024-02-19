@@ -613,7 +613,7 @@ class MacroAssembler: public Assembler {
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
   void lightweight_lock(Register obj, Register t1, Register t2, Label& slow);
-  void lightweight_unlock(Register obj, Register t1, Register t2, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
   void tlab_allocate(

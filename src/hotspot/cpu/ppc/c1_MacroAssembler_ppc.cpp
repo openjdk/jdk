@@ -178,7 +178,7 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   verify_oop(Roop, FILE_AND_LINE);
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    lightweight_unlock(Roop, Rmark, Rbox, slow_int);
+    lightweight_unlock(Roop, Rmark, slow_int);
   } else if (LockingMode == LM_LEGACY) {
     // Check if it is still a light weight lock, this is is true if we see
     // the stack address of the basicLock in the markWord of the object.
