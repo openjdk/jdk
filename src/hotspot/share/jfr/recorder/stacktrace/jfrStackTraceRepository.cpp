@@ -120,8 +120,8 @@ size_t JfrStackTraceRepository::write(JfrChunkWriter& sw, bool clear) {
   if (clear) {
     memset(_table, 0, sizeof(_table));
     _entries = 0;
-    _last_entries = 0;
   }
+  _last_entries = _entries;
   return count;
 }
 
