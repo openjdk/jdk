@@ -84,7 +84,6 @@ public class TestSplitPacks {
         bI = generateI();
         aL = generateL();
         bL = generateL();
-        // TODO decide what types we keep
 
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aI.clone(), bI.clone(), mI); });
@@ -104,6 +103,7 @@ public class TestSplitPacks {
         tests.put("test4e",      () -> { return test4e(aS.clone(), bS.clone()); });
         tests.put("test4f",      () -> { return test4f(aS.clone(), bS.clone()); });
         tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
+        tests.put("test5a",      () -> { return test5a(aS.clone(), bS.clone(), mS); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -131,7 +131,8 @@ public class TestSplitPacks {
                  "test4d",
                  "test4e",
                  "test4f",
-                 "test4g"})
+                 "test4g",
+                 "test5a"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -680,4 +681,41 @@ public class TestSplitPacks {
         }
         return new Object[]{ a, b };
     }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.ADD_VS,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Split pack into power-of-2 sizes
+    static Object[] test5a(short[] a, short[] b, short val) {
+        for (int i = 0; i < RANGE; i+=16) {
+            b[i+ 0] = (short)(a[i+ 0] + val); // 8 pack
+            b[i+ 1] = (short)(a[i+ 1] + val);
+            b[i+ 2] = (short)(a[i+ 2] + val);
+            b[i+ 3] = (short)(a[i+ 3] + val);
+            b[i+ 4] = (short)(a[i+ 4] + val);
+            b[i+ 5] = (short)(a[i+ 5] + val);
+            b[i+ 6] = (short)(a[i+ 6] + val);
+            b[i+ 7] = (short)(a[i+ 7] + val);
+
+            b[i+ 8] = (short)(a[i+ 8] + val); // 4-pack
+            b[i+ 9] = (short)(a[i+ 9] + val);
+            b[i+10] = (short)(a[i+10] + val);
+            b[i+11] = (short)(a[i+11] + val);
+
+            b[i+12] = (short)(a[i+12] + val); // 2-pack
+            b[i+13] = (short)(a[i+13] + val);
+
+            b[i+14] = (short)(a[i+14] + val);
+        }
+        return new Object[]{ a, b };
+    }
+
 }
