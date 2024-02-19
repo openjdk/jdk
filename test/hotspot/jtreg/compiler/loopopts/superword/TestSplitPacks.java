@@ -104,6 +104,7 @@ public class TestSplitPacks {
         tests.put("test4f",      () -> { return test4f(aS.clone(), bS.clone()); });
         tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
         tests.put("test5a",      () -> { return test5a(aS.clone(), bS.clone(), mS); });
+        tests.put("test6a",      () -> { return test6a(aI.clone(), bI.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -132,7 +133,8 @@ public class TestSplitPacks {
                  "test4e",
                  "test4f",
                  "test4g",
-                 "test5a"})
+                 "test5a",
+                 "test6a"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -718,4 +720,29 @@ public class TestSplitPacks {
         return new Object[]{ a, b };
     }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,          IRNode.VECTOR_SIZE_4, "> 0", // reduction moved out of loop
+                  IRNode.ADD_REDUCTION_V,                       "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Split packs including reductions
+    static Object[] test6a(int[] a, int[] b) {
+        int s = 0;
+        for (int i = 0; i < RANGE; i+=8) {
+            s += a[i+0] * b[i+0];
+            s += a[i+1] * b[i+1];
+            s += a[i+2] * b[i+2];
+            s += a[i+3] * b[i+3];
+
+            s += a[i+4] & b[i+4];
+            s += a[i+5] & b[i+5];
+            s += a[i+6] & b[i+6];
+            s += a[i+7] & b[i+7];
+        }
+        return new Object[]{ a, b, new int[]{ s } };
+    }
 }

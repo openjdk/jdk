@@ -1140,7 +1140,7 @@ bool SuperWord::have_similar_inputs(Node* s1, Node* s2) {
 
 //------------------------------reduction---------------------------
 // Is there a data path between s1 and s2 and the nodes reductions?
-bool SuperWord::reduction(Node* s1, Node* s2) {
+bool SuperWord::reduction(Node* s1, Node* s2) const {
   bool retValue = false;
   int d1 = depth(s1);
   int d2 = depth(s2);
@@ -3058,6 +3058,9 @@ void SuperWord::verify_no_extract() {
 
 // Check if n_super's pack uses are a superset of n_sub's pack uses.
 bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
+  Node_List* pack = my_pack(n_super);
+  assert(pack != nullptr && pack == my_pack(n_sub), "must have the same pack");
+
   // For all uses of n_sub that are in a pack (use_sub) ...
   for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
     Node* use_sub = n_sub->fast_out(j);
@@ -3102,6 +3105,9 @@ bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) co
 // If no boundary is found, return zero.
 uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
   Node* p0 = pack->at(0);
+  Node* p1 = pack->at(1);
+
+  const bool is_reduction_pack = reduction(p0, p1);
 
   // Inputs range
   uint start, end;
@@ -3112,16 +3118,25 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
     Node* n0 = pack->at(i + 0);
     Node* n1 = pack->at(i + 1);
 
+
     // 1. Check for matching defs
     for (uint j = start; j < end; j++) {
-      if (my_pack(n0->in(j)) != my_pack(n1->in(j))) {
+      Node* n0_in = n0->in(j);
+      Node* n1_in = n1->in(j);
+      // No boundary if:
+      // 1) the same packs OR
+      // 2) reduction edge n0->n1 or n1->n0
+      if (my_pack(n0_in) != my_pack(n1_in) &&
+          !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
         return i + 1;
       }
     }
 
-    // 2. Check for matching uses: equal if both are superset of the other
-    if (!has_use_pack_superset(n0, n1) ||
-        !has_use_pack_superset(n1, n0)) {
+    // 2. Check for matching uses: equal if both are superset of the other.
+    //    Reductions have no pack uses, so they match trivially on the use packs.
+    if (!is_reduction_pack &&
+        (!has_use_pack_superset(n0, n1) ||
+         !has_use_pack_superset(n1, n0))) {
       return i + 1;
     }
   }

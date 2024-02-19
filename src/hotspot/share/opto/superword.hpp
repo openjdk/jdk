@@ -365,7 +365,7 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n)           const { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(const Node* n)     const { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
@@ -417,7 +417,7 @@ public:
   // almost-equivalent but faster SuperWord::mark_reductions() is preferable.
   static bool is_reduction(const Node* n);
   // Whether n is marked as a reduction node.
-  bool is_marked_reduction(Node* n) { return _loop_reductions.test(n->_idx); }
+  bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
   // Whether the current loop has any reduction node.
   bool is_marked_reduction_loop() { return !_loop_reductions.is_empty(); }
 private:
@@ -467,7 +467,7 @@ private:
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
-  bool reduction(Node* s1, Node* s2);
+  bool reduction(Node* s1, Node* s2) const;
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
