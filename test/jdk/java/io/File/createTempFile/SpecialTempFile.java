@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,11 @@
 /*
  * @test
  * @bug 8013827 8011950 8017212 8025128
+ * @library /test/lib
+ * @modules java.base/jdk.internal.util
  * @summary Check whether File.createTempFile can handle special parameters
+ * @build jdk.test.lib.OSVersion jdk.test.lib.Platform
+   @run main SpecialTempFile
  * @author Dan Xu
  */
 
@@ -32,10 +36,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+
+import jdk.test.lib.Platform;
+import jdk.test.lib.OSVersion;
 
 public class SpecialTempFile {
-
     private static void test(String name, String[] prefix, String[] suffix,
                              boolean exceptionExpected) throws IOException
     {
@@ -48,7 +53,7 @@ public class SpecialTempFile {
         final String exceptionMsg = "Unable to create temporary file";
         String[] dirs = { null, "." };
 
-        Path testPath = Paths.get(System.getProperty("test.dir", "."));
+        Path testPath = Path.of(System.getProperty("test.dir", "."));
         for (int i = 0; i < prefix.length; i++) {
             boolean exceptionThrown = false;
             File f = null;
@@ -99,12 +104,15 @@ public class SpecialTempFile {
         test("SlashedName", slashPre, slashSuf, true);
 
         // Windows tests
-        if (!System.getProperty("os.name").startsWith("Windows"))
+        if (!Platform.isWindows())
             return;
 
         // Test JDK-8013827
         String[] resvPre = { "LPT1.package.zip", "com7.4.package.zip" };
         String[] resvSuf = { ".temp", ".temp" };
-        test("ReservedName", resvPre, resvSuf, true);
+        boolean exceptionExpected =
+            !(System.getProperty("os.name").endsWith("11") ||
+              new OSVersion(10, 0).compareTo(OSVersion.current()) > 0);
+        test("ReservedName", resvPre, resvSuf, exceptionExpected);
     }
 }
