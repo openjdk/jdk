@@ -248,25 +248,36 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-extern "C" {
-  static int compare_secondary_supers(const void* void_a, const void* void_b) {
-    const Klass** a = (const Klass**)void_a;
-    const Klass** b = (const Klass**)void_b;
-    return (*a)->hash() > (*b)->hash() ? 1
-      : (*a)->hash() < (*b)->hash() ? -1
-      : 0;
-  }
+// extern "C" {
+//   static int compare_secondary_supers(const void* void_a, const void* void_b) {
+//     const Klass** a = (const Klass**)void_a;
+//     const Klass** b = (const Klass**)void_b;
+//     return (*a)->hash() > (*b)->hash() ? 1
+//       : (*a)->hash() < (*b)->hash() ? -1
+//       : 0;
+//   }
+// }
+
+void Klass::set_secondary_supers(Array<Klass*>* secondaries, uint64_t bitmap) {
+  _bitmap = bitmap;
+  set_secondary_supers(secondaries);
 }
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
+  _secondary_supers = secondaries;
+#ifdef ASSERT
+  if (secondaries) {
+    uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
+    assert(_bitmap == real_bitmap, "must be");
+  } else {
+    assert(_bitmap == 0, "must be");
+  }
+#endif
+}
+
+uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
   ResourceMark rm;
   uint64_t bitmap = 0;
-  if (! secondaries || secondaries->length() == 0) {
-    _bitmap = 0;
-    _secondary_supers = secondaries;
-    return;
-  }
-
   GrowableArray<Klass*>* hashed_secondaries
     = new GrowableArray<Klass*>(MAX(64, secondaries->length()));
 
@@ -293,20 +304,30 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
     }
   }
 
-  int i = 0;
-  for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
-    if (hashed_secondaries->at(slot) != nullptr) {
-      secondaries->at_put(i, hashed_secondaries->at(slot));  // add secondaries on the end.
-      i++;
+  if (rewrite) {
+    int i = 0;
+    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+      if (hashed_secondaries->at(slot) != nullptr) {
+        secondaries->at_put(i, hashed_secondaries->at(slot));  // add secondaries on the end.
+        i++;
+      }
     }
+  } else {
+#ifdef ASSERT
+    int i = 0;
+    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+      if (hashed_secondaries->at(slot) != nullptr) {
+        assert(secondaries->at(i) == hashed_secondaries->at(slot), "must be");
+        i++;
+      }
+    }
+#endif
   }
-
-  _bitmap = bitmap;
-  _secondary_supers = secondaries;
-
   if (secondaries->length() > 16) {
     asm("nop");
   }
+
+  return bitmap;
 }
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
@@ -417,12 +438,15 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       s2->at_put(j+fill_p, secondaries->at(j));  // add secondaries on the end.
     }
 
+    _bitmap = hash_secondary_supers(s2, /*rewrite*/true);
+
   #ifdef ASSERT
       // We must not copy any null placeholders left over from bootstrap.
     for (int j = 0; j < s2->length(); j++) {
       assert(s2->at(j) != nullptr, "correct bootstrapping order");
     }
   #endif
+
     set_secondary_supers(s2);
   }
 }

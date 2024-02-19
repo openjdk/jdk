@@ -133,6 +133,7 @@ OopHandle Universe::_virtual_machine_error_instance;
 OopHandle Universe::_reference_pending_list;
 
 Array<Klass*>* Universe::_the_array_interfaces_array = nullptr;
+uint64_t Universe::_the_array_interfaces_bitmap = 0;
 LatestMethodCache* Universe::_finalizer_register_cache = nullptr;
 LatestMethodCache* Universe::_loader_addClass_cache    = nullptr;
 LatestMethodCache* Universe::_throw_illegal_access_error_cache = nullptr;
@@ -378,6 +379,9 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(0, vmClasses::Cloneable_klass());
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
+
+    Universe::_the_array_interfaces_bitmap
+      = Klass::hash_secondary_supers(_the_array_interfaces_array, /*rewrite*/false);
 
     initialize_basic_type_klass(_fillerArrayKlassObj, CHECK);
 

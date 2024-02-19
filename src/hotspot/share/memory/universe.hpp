@@ -128,6 +128,7 @@ class Universe: AllStatic {
   static Array<Method*>*        _the_empty_method_array;         // Canonicalized method array
 
   static Array<Klass*>*  _the_array_interfaces_array;
+  static uint64_t _the_array_interfaces_bitmap;
 
   // array of preallocated error objects with backtrace
   static OopHandle     _preallocated_out_of_memory_error_array;
@@ -266,6 +267,7 @@ class Universe: AllStatic {
   static oop          vm_exception()                  { return virtual_machine_error_instance(); }
 
   static Array<Klass*>* the_array_interfaces_array()  { return _the_array_interfaces_array;   }
+  static uint64_t     the_array_interfaces_bitmap()  { return _the_array_interfaces_bitmap;   }
   static Method*      finalizer_register_method()     { return _finalizer_register_cache->get_method(); }
   static Method*      loader_addClass_method()        { return _loader_addClass_cache->get_method(); }
 
