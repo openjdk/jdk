@@ -88,7 +88,10 @@ public class TestSplitPacks {
 
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aI.clone(), bI.clone(), mI); });
-        tests.put("test1",       () -> { return test1(aI.clone(), bI.clone(), mI); });
+        tests.put("test2a",      () -> { return test2a(aI.clone(), bI.clone(), mI); });
+        tests.put("test2b",      () -> { return test2b(aI.clone(), bI.clone(), mI); });
+        tests.put("test2c",      () -> { return test2c(aI.clone(), bI.clone(), mI); });
+        tests.put("test2d",      () -> { return test2d(aI.clone(), bI.clone(), mI); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -101,8 +104,10 @@ public class TestSplitPacks {
 
     @Warmup(100)
     @Run(test = {"test0",
-                 "test1"})
-                 //"test2"})
+                 "test2a",
+                 "test2b",
+                 "test2c",
+                 "test2d"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -236,13 +241,13 @@ public class TestSplitPacks {
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Load is already split
+    // Load and store are already split
     //
     //  0 1 - - 4 5 6 7
     //  | |     | | | |
     //  0 1 - - 4 5 6 7
     static Object[] test0(int[] a, int[] b, int mask) {
-        for (int i = 0; i < RANGE; i+=16) {
+        for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
             int b1 = a[i+1] & mask;
 
@@ -264,9 +269,9 @@ public class TestSplitPacks {
 
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
                   IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
-                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
@@ -279,9 +284,10 @@ public class TestSplitPacks {
     //  | |    \ \ \ \
     //  0 1 - - 4 5 6 7
     //
-    // TODO does not work yet because of bad alignment
-    static Object[] test1(int[] a, int[] b, int mask) {
-        for (int i = 0; i < RANGE; i+=16) {
+    // The 4-pack does not vectorize. This is a technical limitation that
+    // we can hopefully soon remove. Load and store offsets are different.
+    static Object[] test2a(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
             int b0 = a[i+0] & mask;
             int b1 = a[i+1] & mask;
             int b2 = a[i+2] & mask;
@@ -296,6 +302,123 @@ public class TestSplitPacks {
             b[i+5] = b3;
             b[i+6] = b4;
             b[i+7] = b5;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Split the load
+    //
+    //  0 1 2 3 4 5 - -
+    //  | | | |  \ \
+    //  | | | |   \ \
+    //  | | | |    \ \
+    //  0 1 2 3 -- 6 7
+    //
+    // The 2-pack does not vectorize. This is a technical limitation that
+    // we can hopefully soon remove. Load and store offsets are different.
+    static Object[] test2b(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            int b0 = a[i+0] & mask;
+            int b1 = a[i+1] & mask;
+            int b2 = a[i+2] & mask;
+            int b3 = a[i+3] & mask;
+            int b4 = a[i+4] & mask;
+            int b5 = a[i+5] & mask;
+
+            b[i+0] = b0;
+            b[i+1] = b1;
+            b[i+2] = b2;
+            b[i+3] = b3;
+
+            b[i+6] = b4;
+            b[i+7] = b5;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "= 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Split the load
+    //
+    //  0 1 - - 4 5 6 7
+    //  | |    / / / /
+    //  | |   / / / /
+    //  | |  / / / /
+    //  0 1 2 3 4 5 - -
+    //
+    // The 4-pack does not vectorize. This is a technical limitation that
+    // we can hopefully soon remove. Load and store offsets are different.
+    static Object[] test2c(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            int b0 = a[i+0] & mask;
+            int b1 = a[i+1] & mask;
+
+            int b4 = a[i+4] & mask;
+            int b5 = a[i+5] & mask;
+            int b6 = a[i+6] & mask;
+            int b7 = a[i+7] & mask;
+
+            b[i+0] = b0;
+            b[i+1] = b1;
+            b[i+2] = b4;
+            b[i+3] = b5;
+            b[i+4] = b6;
+            b[i+5] = b7;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_2, "= 0",
+                  IRNode.AND_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Split the load
+    //
+    //  0 1 2 3 - - 6 7
+    //  | | | |    / /
+    //  | | | |   / /
+    //  | | | |  / /
+    //  0 1 2 3 4 5 - -
+    //
+    // The 2-pack does not vectorize. This is a technical limitation that
+    // we can hopefully soon remove. Load and store offsets are different.
+    static Object[] test2d(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            int b0 = a[i+0] & mask;
+            int b1 = a[i+1] & mask;
+            int b2 = a[i+2] & mask;
+            int b3 = a[i+3] & mask;
+
+            int b6 = a[i+6] & mask;
+            int b7 = a[i+7] & mask;
+
+            b[i+0] = b0;
+            b[i+1] = b1;
+            b[i+2] = b2;
+            b[i+3] = b3;
+            b[i+4] = b6;
+            b[i+5] = b7;
         }
         return new Object[]{ a, b };
     }
