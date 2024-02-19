@@ -516,28 +516,42 @@ private:
     }
   };
 
+  // After split_pack, we either have:
+  //    changed    first_pack    second_pack
+  // 1) false      old_pack      nullptr       -> old_pack not modified
+  // 2) true       nullptr       nullptr       -> old_pack rejected
+  // 3) true       old_pack      nullptr       -> old_pack modified (nodes removed)
+  // 4) true       pack1         pack2         -> old_pack split into two packs
   class SplitStatus {
   private:
     // TODO: just have a first and a second - no swapping - adjust construction for that
     //       Also move my_pack adjustments?
-    Node_List* _old_pack; // old pack, possibly modified - or nullptr
-    Node_List* _new_pack; // new pack                    - or nullptr
+    Node_List* _first_pack;
+    Node_List* _second_pack;
     bool _changed;
 
-    SplitStatus(Node_List* old_pack, Node_List* new_pack, bool changed) :
-      _old_pack(old_pack), _new_pack(new_pack), _changed(changed)
+    SplitStatus(Node_List* first_pack, Node_List* second_pack, bool changed) :
+      _first_pack(first_pack), _second_pack(second_pack), _changed(changed)
     {
-      assert(_new_pack == nullptr || _changed, "second pack implies is_changed");
-      assert(_new_pack == nullptr || _old_pack != nullptr, "second pack implies first pack");
+      assert(_second_pack == nullptr || _changed, "second pack implies is_changed");
+      assert(_second_pack == nullptr || _first_pack != nullptr, "second pack implies first pack");
+      assert(second_pack == nullptr || first_pack != second_pack, "cannot have the same pack twice");
     }
 
   public:
     static SplitStatus make_no_change(Node_List* old_pack) {
+      assert(old_pack != nullptr, "must have 1 pack");
       return SplitStatus(old_pack, nullptr, false);
     }
 
-    static SplitStatus make_changed(Node_List* old_pack, Node_List* new_pack) {
-      return SplitStatus(old_pack, new_pack, true);
+    static SplitStatus make_one_pack(Node_List* first_pack) {
+      assert(first_pack != nullptr, "must have 1 pack");
+      return SplitStatus(first_pack, nullptr, true);
+    }
+
+    static SplitStatus make_two_packs(Node_List* first_pack, Node_List* second_pack) {
+      assert(first_pack != nullptr && second_pack != nullptr, "must have 2 packs");
+      return SplitStatus(first_pack, second_pack, true);
     }
 
     static SplitStatus make_reject() {
@@ -545,8 +559,8 @@ private:
     }
 
     bool is_changed() const { return _changed; }
-    Node_List* old_pack() const { return _old_pack; }
-    Node_List* new_pack() const { return _new_pack; }
+    Node_List* first_pack() const { return _first_pack; }
+    Node_List* second_pack() const { return _second_pack; }
   };
 
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);

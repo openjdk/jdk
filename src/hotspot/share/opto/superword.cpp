@@ -1599,7 +1599,7 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
         n->dump();
       }
 #endif
-    return SplitStatus::make_changed(pack, nullptr);
+    return SplitStatus::make_one_pack(pack);
   }
 
   // Just remove a single node at front?
@@ -1615,7 +1615,7 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
         n->dump();
       }
 #endif
-    return SplitStatus::make_changed(pack, nullptr);
+    return SplitStatus::make_one_pack(pack);
   }
 
   // We must will have two packs
@@ -1632,7 +1632,9 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
     pack->pop();
   }
 
-  return SplitStatus::make_changed(pack, new_pack);
+  // We assume that new_pack is more "stable" (i.e. will have to be split less than new_pack).
+  // Put "pack" second, so that we insert it later in the list, and iterate over it again sooner.
+  return SplitStatus::make_two_packs(new_pack, pack);
 }
 
 template <typename SplitStrategy>
@@ -1648,21 +1650,17 @@ void SuperWord::split_packs(const char* split_name,
       SplitTask task = strategy(pack);
       SplitStatus status = split_pack(split_name, pack, task);
       changed |= status.is_changed();
-      Node_List* old_pack = status.old_pack();
-      Node_List* new_pack = status.new_pack();
+      Node_List* first_pack = status.first_pack();
+      Node_List* second_pack = status.second_pack();
       _packset.at_put(i, nullptr); // take out pack
-      // If we have two packs, we want to append the one that requires more changes at the end
-      if (old_pack != nullptr && new_pack != nullptr) {
-        swap(old_pack, new_pack);
-      }
-      if (old_pack != nullptr) {
+      if (first_pack != nullptr) {
         // The first pack can be put at the current position
         assert(i >= new_packset_length, "only move packs down");
-        _packset.at_put(new_packset_length++, old_pack);
+        _packset.at_put(new_packset_length++, first_pack);
       }
-      if (new_pack != nullptr) {
+      if (second_pack != nullptr) {
         // The second node has to be appended at the end
-        _packset.append(new_pack);
+        _packset.append(second_pack);
       }
     }
     _packset.trunc_to(new_packset_length);
