@@ -96,6 +96,7 @@ public class TestSplitPacks {
         tests.put("test2b",      () -> { return test2b(aI.clone(), bI.clone(), mI); });
         tests.put("test2c",      () -> { return test2c(aI.clone(), bI.clone(), mI); });
         tests.put("test2d",      () -> { return test2d(aI.clone(), bI.clone(), mI); });
+        tests.put("test3a",      () -> { return test3a(aS.clone(), bS.clone(), mS); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -115,7 +116,8 @@ public class TestSplitPacks {
                  "test2a",
                  "test2b",
                  "test2c",
-                 "test2d"})
+                 "test2d",
+                 "test3a"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -522,4 +524,44 @@ public class TestSplitPacks {
         }
         return new Object[]{ a, b };
     }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Adjacent Load and Store, but split by Add/Mul
+    static Object[] test3a(short[] a, short[] b, short val) {
+        int sum = 0;
+        for (int i = 0; i < RANGE; i+=16) {
+          short a0 = a[i+0]; // required for alignment / offsets, technical limitation.
+
+          short a1 = a[i+1]; // adjacent to 4-pack, but need to be split off
+          short a2 = a[i+2];
+          short a3 = a[i+3];
+
+          short a4 = a[i+4]; // 4-pack
+          short a5 = a[i+5];
+          short a6 = a[i+6];
+          short a7 = a[i+7];
+
+
+          b[i+0] = a0; // required for alignment / offsets, technical limitation.
+
+          sum += a1 + a2 + a3; // not packed
+
+          b[i+3] = val; // adjacent to 4-pack but needs to be split off
+
+          b[i+4] = a4; // 4-pack
+          b[i+5] = a5;
+          b[i+6] = a6;
+          b[i+7] = a7;
+
+          b[i+8] = val; // adjacent to 4-pack but needs to be split off
+        }
+        return new Object[]{ a, b, new int[]{ sum } };
+    }
+
+
 }
