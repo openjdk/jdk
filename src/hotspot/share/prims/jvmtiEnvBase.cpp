@@ -1479,25 +1479,29 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
 
   jint nWant = 0, nWait = 0;
   markWord mark = hobj->mark();
+  ResourceMark rm(current_thread);
+  GrowableArray<JavaThread*>* wantList = nullptr;
+
   if (mark.has_monitor()) {
     mon = mark.monitor();
     assert(mon != nullptr, "must have monitor");
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor
     nWait = mon->waiters();     // # of threads in Object.wait()
+    wantList =  Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
+    nWant = wantList->length();
   } else {
     // this object has a lightweight monitor
   }
-
-  ResourceMark rm(current_thread);
-  GrowableArray<JavaThread*>* wantList = Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
-  nWant = wantList->length();
 
   if (mon != nullptr) {
     ObjectWaiter *waiter = mon->first_waiter();
     for (int i = 0; i < nWait; i++) {
       if (waiter == nullptr || (i != 0 && waiter == mon->first_waiter())) {
         // robustness: the waiting list has gotten smaller
+        // The nWait count we got from the mon->waiters() may include the re-entering
+        // the monitor threads after being notified. Here we are correcting the actual
+        // number of the waiting threads by excluding those re-entering the monitor.
         nWait = i;
         break;
       }
