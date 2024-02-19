@@ -67,7 +67,7 @@ bool LinuxSystemMemoryBarrier::initialize() {
 // But RISCV actually don't support it until 6.9.
   long major, minor;
   os::Linux::kernel_version(&major, &minor);
-  if (!(major >= 6 && minor >= 9)) {
+  if (!(major > 6 || (major == 6 && minor >= 9))) {
     log_info(os)("Linux kernel %ld.%ld do not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
                  major, minor);
     return false;
