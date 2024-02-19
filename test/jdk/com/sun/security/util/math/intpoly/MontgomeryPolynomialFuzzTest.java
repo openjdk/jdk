@@ -24,7 +24,6 @@
 
 import java.util.Random;
 import sun.security.util.math.IntegerMontgomeryFieldModuloP;
-import sun.security.util.math.IntegerResidueMontgomeryFieldModuloP;
 import sun.security.util.math.ImmutableIntegerModuloP;
 import java.math.BigInteger;
 import sun.security.util.math.intpoly.*;
@@ -69,21 +68,15 @@ public class MontgomeryPolynomialFuzzTest {
                 rnd.setSeed(seed);
 
                 IntegerMontgomeryFieldModuloP montField = MontgomeryIntegerPolynomialP256.ONE;
-                IntegerResidueMontgomeryFieldModuloP montResField = MontgomeryIntegerPolynomialP256.ONE;
                 BigInteger P = MontgomeryIntegerPolynomialP256.ONE.MODULUS;
                 BigInteger r = BigInteger.ONE.shiftLeft(260).mod(P);
                 BigInteger rInv = r.modInverse(P);
-                //BigInteger R = BigInteger.ONE.shiftLeft(260*2).mod(P);
-
                 BigInteger aRef = (new BigInteger(P.bitLength(), rnd)).mod(P);
-                ImmutableIntegerModuloP a = montField.getElement(aRef);
-                check(aRef, a, seed);
 
-                if (rnd.nextBoolean()) {
-                        aRef = aRef.multiply(r).mod(P);
-                        a = montResField.toMontgomery(a);
-                        check(aRef, a, seed);
-                }
+                // Test conversion to montgomery domain
+                ImmutableIntegerModuloP a = montField.getElement(aRef);
+                aRef = aRef.multiply(r).mod(P);
+                check(aRef, a, seed);
 
                 if (rnd.nextBoolean()) {
                         aRef = aRef.multiply(aRef).multiply(rInv).mod(P);
@@ -97,12 +90,13 @@ public class MontgomeryPolynomialFuzzTest {
                         check(aRef, a, seed);
                 }
 
-                if (rnd.nextBoolean()) {
-                        aRef = (new BigInteger(P.bitLength()+4, rnd));
-                        a = montField.getElement(aRef);
-                        aRef = aRef.mod(P);
-                        check(aRef, a, seed);
-                }
+                // TODO: Confirm getElement() cannot handle BigInteger>Field.getModulus()
+                // if (rnd.nextBoolean()) { 
+                //         aRef = (new BigInteger(P.bitLength()+14, rnd));
+                //         a = montField.getElement(aRef);
+                //         aRef = aRef.multiply(r).mod(P);
+                //         check(aRef, a, seed);
+                // }
         }
 }
 

@@ -32,7 +32,7 @@ import sun.security.util.math.intpoly.*;
  * @test
  * @key randomness
  * @modules jdk.crypto.ec/sun.security.ec java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
- * @run main/othervm -XX:+UnlockDiagnosticVMOptions  -XX:-UseIntPolyIntrinsics IntegerPolynomialTest
+ * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:-UseIntPolyIntrinsics IntegerPolynomialTest
  * @summary Unit test MontgomeryPolynomialFuzzTest.
  */
 

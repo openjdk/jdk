@@ -32,7 +32,7 @@ import javax.crypto.KeyAgreement;
 public abstract class KeyAgreementBench extends CryptoBase {
 
     @Param({})
-    protected String kpgAlgorithm;
+    private String kpgAlgorithm;
 
     @Param({})
     private String algorithm;
@@ -41,9 +41,9 @@ public abstract class KeyAgreementBench extends CryptoBase {
     private int keyLength;
 
 
-    protected KeyAgreement keyAgreement;
-    protected PrivateKey privKey;
-    protected PublicKey pubKey;
+    private KeyAgreement keyAgreement;
+    private PrivateKey privKey;
+    private PublicKey pubKey;
 
     @Setup
     public void setup() throws NoSuchAlgorithmException {
@@ -90,44 +90,9 @@ public abstract class KeyAgreementBench extends CryptoBase {
         @Param({"ECDH"})
         private String algorithm;
 
-        //@Param({"256", "384", "521"})
-        @Param({"256"})
+        @Param({"256", "384", "521"})
         private int keyLength;
 
-        @Param({"true","false"})
-        private boolean montgomery;
-
-        @Override
-        @Setup
-        public void setup() throws NoSuchAlgorithmException {
-            setupProvider();
-            try {
-                KeyPairGenerator generator = KeyPairGenerator.getInstance("EC");
-                java.security.SecureRandom rnd = new java.security.SecureRandom();
-                java.security.spec.ECGenParameterSpec spec = new java.security.spec.ECGenParameterSpec("secp256r1");
-                try {
-                    java.lang.reflect.Field mont = java.security.spec.ECGenParameterSpec.class.getField("montgomery");
-                    mont.setBoolean(spec, this.montgomery);
-                    //spec.montgomery = this.montgomery;
-                } catch (NoSuchFieldException | IllegalAccessException e ) {
-                    System.err.println("No montgomery field found!");
-                }
-                generator.initialize(spec, rnd);
-                // KeyPairGenerator generator = (prov == null) ?
-                //     KeyPairGenerator.getInstance(kpgAlgorithm) :
-                //     KeyPairGenerator.getInstance(kpgAlgorithm, prov);
-                // generator.initialize(keyLength);
-                KeyPair kpA = generator.generateKeyPair();
-                privKey = kpA.getPrivate();
-                KeyPair kpB = generator.generateKeyPair();
-                pubKey = kpB.getPublic();
-            } catch (InvalidAlgorithmParameterException e) {
-                throw new NoSuchAlgorithmException();
-            }
-            keyAgreement = (prov == null) ?
-                KeyAgreement.getInstance(algorithm) :
-                KeyAgreement.getInstance(algorithm, prov);
-        }
     }
 
     public static class XDH extends KeyAgreementBench {

@@ -24,6 +24,7 @@
 
 import java.util.Random;
 import java.math.BigInteger;
+import java.lang.reflect.Field;
 import java.security.spec.ECParameterSpec;
 import sun.security.ec.ECOperations;
 import sun.security.util.ECUtil;
@@ -32,13 +33,13 @@ import sun.security.util.CurveDB;
 import sun.security.ec.point.*;
 import java.security.spec.ECPoint;
 import sun.security.util.KnownOIDs;
-import sun.security.util.math.IntegerResidueMontgomeryFieldModuloP;
+import sun.security.util.math.IntegerMontgomeryFieldModuloP;
 
 /*
  * @test
  * @key randomness
  * @modules java.base/sun.security.ec java.base/sun.security.ec.point java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
- * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions  -XX:-UseIntPolyIntrinsics ECOperationsFuzzTest
+ * @run main/othervm/timeout=1200 --add-opens java.base/sun.security.ec=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions -XX:-UseIntPolyIntrinsics ECOperationsFuzzTest
  * @summary Unit test ECOperationsFuzzTest.
  */
 
@@ -46,7 +47,7 @@ import sun.security.util.math.IntegerResidueMontgomeryFieldModuloP;
  * @test
  * @key randomness
  * @modules java.base/sun.security.ec java.base/sun.security.ec.point java.base/sun.security.util java.base/sun.security.util.math java.base/sun.security.util.math.intpoly
- * @run main/othervm/timeout=1200 -XX:+UnlockDiagnosticVMOptions -XX:+UseIntPolyIntrinsics ECOperationsFuzzTest
+ * @run main/othervm/timeout=1200 --add-opens java.base/sun.security.ec=ALL-UNNAMED -XX:+UnlockDiagnosticVMOptions -XX:+UseIntPolyIntrinsics ECOperationsFuzzTest
  * @summary Unit test ECOperationsFuzzTest.
  */
 
@@ -71,44 +72,55 @@ public class ECOperationsFuzzTest {
 
         public static void test(int repeat) throws Exception {
                 Random rnd = new Random();
-                long seed = 4156581389403250683L; //rnd.nextLong();
+                long seed = rnd.nextLong();
                 rnd.setSeed(seed);
+
                 int keySize = 256;
                 ECParameterSpec params = ECUtil.getECParameterSpec(null, keySize);
                 NamedCurve curve = CurveDB.lookup(KnownOIDs.secp256r1.value());
                 ECPoint generator = curve.getGenerator();
-                BigInteger orderB = curve.getCurve().getB();
-                if (params == null || generator == null || orderB == null) {
+                if (params == null || generator == null) {
                         throw new RuntimeException("No EC parameters available for key size " + keySize + " bits");
                 }
-
-                ECOperations opsReference = ECOperations.forParameters(params).get();
-                AffinePoint refAffineGenerator = AffinePoint.fromECPoint(generator, opsReference.getField());
-
-                params.montgomery2 = true;
+                
                 ECOperations ops = ECOperations.forParameters(params).get();
-                IntegerResidueMontgomeryFieldModuloP residueField = (IntegerResidueMontgomeryFieldModuloP)ops.montgomeryOps.getField();
-                AffinePoint affineGenerator = AffinePoint.fromECPoint(generator, residueField);
-                affineGenerator = new AffinePoint(
-                    residueField.toMontgomery(affineGenerator.getX()), 
-                    residueField.toMontgomery(affineGenerator.getY()));
-
-                if (ops.montgomeryOps == null) {
-                        throw new RuntimeException();
+                ECOperations opsReference = ECOperations.forParameters(params).get();
+                
+                try {
+                        Field montgomeryOps = ECOperations.class.getDeclaredField("montgomeryOps");
+                        montgomeryOps.setAccessible(true);
+                        if (montgomeryOps.get(ops) == null) {
+                                throw new RuntimeException("Expected to find montgomery field for P256");
+                        }
+                        montgomeryOps.set(opsReference, null); // Disable Montgomery field operations
+                } catch (NoSuchFieldException | IllegalAccessException ex) {
+                        throw new RuntimeException(ex);
                 }
 
                 byte[] multiple = new byte[keySize/8];
                 rnd.nextBytes(multiple);
-                multiple[keySize/8-1] &= 0x7f;
+                multiple[keySize/8-1] &= 0x7f; //copied from opsReference.seedToScalar(multiple);
 
                 MutablePoint referencePoint = opsReference.multiply(generator, multiple);
                 MutablePoint point = ops.multiply(generator, multiple);
                 check(referencePoint, point, seed, -1);
 
+                AffinePoint refAffineGenerator = AffinePoint.fromECPoint(generator, referencePoint.getField());
+                AffinePoint montAffineGenerator = AffinePoint.fromECPoint(generator, point.getField());
+
+                MutablePoint refProjGenerator = new ProjectivePoint.Mutable(
+                        refAffineGenerator.getX().mutable(), 
+                        refAffineGenerator.getY().mutable(), 
+                        referencePoint.getField().get1().mutable());
+                
+                MutablePoint projGenerator = new ProjectivePoint.Mutable(
+                        montAffineGenerator.getX().mutable(), 
+                        montAffineGenerator.getY().mutable(), 
+                        point.getField().get1().mutable());
+
                 for (int i = 0; i < repeat; i++) {
                         rnd.nextBytes(multiple);
-                        //multiple = opsReference.seedToScalar(multiple); //package private
-                        multiple[keySize/8-1] &= 0x7f;
+                        multiple[keySize/8-1] &= 0x7f; //copied from opsReference.seedToScalar(multiple);
 
                         MutablePoint nextReferencePoint = opsReference.multiply(referencePoint.asAffine(), multiple);
                         MutablePoint nextPoint = ops.multiply(point.asAffine().toECPoint(), multiple);
@@ -121,8 +133,8 @@ public class ECOperationsFuzzTest {
                         }
 
                         if (rnd.nextBoolean()) {
-                                opsReference.setSum(nextReferencePoint, refAffineGenerator);
-                                ops.setSum(nextPoint, affineGenerator);
+                                opsReference.setSum(nextReferencePoint, refProjGenerator);
+                                ops.setSum(nextPoint, projGenerator);
                                 check(nextReferencePoint, nextPoint, seed, i);
                         }
 
@@ -137,57 +149,6 @@ public class ECOperationsFuzzTest {
                 }
         }
 
-
-        public static void test2(int repeat) throws Exception {
-                Random rnd = new Random();
-                long seed = rnd.nextLong();
-                rnd.setSeed(seed);
-                int keySize = 256;
-                ECParameterSpec params = ECUtil.getECParameterSpec(null, keySize);
-                NamedCurve curve = CurveDB.lookup(KnownOIDs.secp256r1.value());
-                ECPoint generator = curve.getGenerator();
-                BigInteger orderB = curve.getCurve().getB();
-                if (params == null || generator == null || orderB == null) {
-                        throw new RuntimeException("No EC parameters available for key size " + keySize + " bits");
-                }
-
-                ECOperations opsReference = ECOperations.forParameters(params).get();
-                AffinePoint refAffineGenerator = AffinePoint.fromECPoint(generator, opsReference.getField());
-
-                params.montgomery2 = true;
-                ECOperations ops = ECOperations.forParameters(params).get();
-                IntegerResidueMontgomeryFieldModuloP residueField = (IntegerResidueMontgomeryFieldModuloP)ops.montgomeryOps.getField();
-                AffinePoint affineGenerator = AffinePoint.fromECPoint(generator, residueField);
-                affineGenerator = new AffinePoint(
-                    residueField.toMontgomery(affineGenerator.getX()), 
-                    residueField.toMontgomery(affineGenerator.getY()));
-
-                if (ops.montgomeryOps == null) {
-                        throw new RuntimeException();
-                }
-
-                int i = 0;
-                byte[] multiple = new byte[keySize/8];
-                rnd.nextBytes(multiple);
-                multiple[keySize/8-1] &= 0x7f;
-                System.err.println("VP Case ------------START-------------");
-                MutablePoint referencePoint = opsReference.multiply(generator, multiple);
-                MutablePoint point = ops.multiply(generator, multiple);
-                //check(referencePoint, point, seed, -1);
-
-                rnd.nextBytes(multiple);
-                //multiple = opsReference.seedToScalar(multiple); //package private
-                multiple[keySize/8-1] &= 0x7f;
-
-                System.err.println("VP Case ------------START2-------------");
-
-                MutablePoint nextReferencePoint = opsReference.multiply(referencePoint.asAffine(), multiple);
-                MutablePoint nextPoint = ops.multiply(point.asAffine().toECPoint(), multiple);
-                //check(nextReferencePoint, nextPoint, seed, i);
-                throw new RuntimeException();
-        }
-
-
 }
 
-//make test TEST="test/jdk/com/sun/security/ec/ECOperationsTest.java"
+//make test TEST="test/jdk/com/sun/security/ec/ECOperationsFuzzTest.java"

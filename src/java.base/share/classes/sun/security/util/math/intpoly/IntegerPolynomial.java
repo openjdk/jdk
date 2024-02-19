@@ -336,7 +336,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
     }
 
     protected void setLimbsValuePositive(BigInteger v, long[] limbs) {
-        //assert bitsPerLimb < 32;
         long limbMask = (1L << bitsPerLimb) - 1;
         for (int i = 0; i < limbs.length; i++) {
             limbs[i] = v.longValue() & limbMask;
@@ -568,13 +567,11 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Element b = (Element)genB;
 
             // Reduce if required.
-            // if (numAdds >= maxAddsMul) {
             if (numAdds > maxAddsAdd) {
                reduce(limbs);
                numAdds = 0;
             }
 
-            // if (b.numAdds >= maxAddsMul) {
             if (b.numAdds > maxAddsAdd) {
                 reduce(b.limbs);
                 b.numAdds = 0;
@@ -755,7 +752,7 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
                 b.numAdds = 0;
             }
 
-            numAdds = mult(limbs, b.limbs, limbs);;
+            numAdds = mult(limbs, b.limbs, limbs);
             return this;
         }
 
@@ -769,7 +766,6 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
 
             int value = ((Limb)v).value;
             numAdds += multByInt(limbs, value);
-            // numAdds = 0;
             return this;
         }
 
@@ -779,13 +775,11 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Element b = (Element)genB;
 
             // Reduce if required.
-            // if (numAdds >= maxAddsMul) {
             if (numAdds > maxAddsAdd) {
                reduce(limbs);
                numAdds = 0;
             }
 
-            // if (b.numAdds >= maxAddsMul) {
             if (b.numAdds > maxAddsAdd) {
                 reduce(b.limbs);
                 b.numAdds = 0;
@@ -805,13 +799,11 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
             Element b = (Element)genB;
 
             // Reduce if required.
-            // if (numAdds >= maxAddsMul) {
             if (numAdds > maxAddsAdd) {
                reduce(limbs);
                numAdds = 0;
             }
 
-            // if (b.numAdds >= maxAddsMul) {
             if (b.numAdds > maxAddsAdd) {
                 reduce(b.limbs);
                 b.numAdds = 0;

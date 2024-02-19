@@ -2661,9 +2661,7 @@ private:
 
   void vpshldvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
   void vpshrdvd(XMMRegister dst, XMMRegister src, XMMRegister shift, int vector_len);
-  void evpshldq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, int imm8, bool merge, int vector_len);
-  void evpshrdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, int imm8, bool merge, int vector_len);
-  
+
   // And packed integers
   void pand(XMMRegister dst, XMMRegister src);
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);

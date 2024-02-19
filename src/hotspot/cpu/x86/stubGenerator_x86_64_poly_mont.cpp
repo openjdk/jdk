@@ -79,31 +79,70 @@ static address shift_1L() {
   return (address)SHIFT1L;
 }
 
+/**
+ * Unrolled Word-by-Word Montgomery Multiplication
+ * r = a * b * 2^-260 (mod P)
+ * 
+ * Reference: Shay Gueron and Vlad Krasnov "Fast Prime Field Elliptic Curve Cryptography with 256 Bit Primes"
+ *    See Figure 5. "Algorithm 2: Word-by-Word Montgomery Multiplication for a Montgomery 
+ *    Friendly modulus p". Note: Step 6. Skipped; Instead use numAdds to reuse existing overflow
+ *    logic.
+ * 
+ * Pseudocode:
+ * 
+ *                                                     +--+--+--+--+--+--+--+--+
+ *   M = load(*modulus_p256)                           | 0| 0| 0|m5|m4|m3|m2|m1|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *   A = load(*aLimbs)                                 | 0| 0| 0|a5|a4|a3|a2|a1|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *   Acc1 = 0                                          | 0| 0| 0| 0| 0| 0| 0| 0|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *      ---- for i = 0 to 4                            
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          Acc2 = 0                                   | 0| 0| 0| 0| 0| 0| 0| 0|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          B = replicate(bLimbs[i])                   |bi|bi|bi|bi|bi|bi|bi|bi|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|
+ *                                                    *| 0| 0| 0|a5|a4|a3|a2|a1|
+ *          Acc1 += A *  B                             |bi|bi|bi|bi|bi|bi|bi|bi|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                               Acc2+=| 0| 0| 0| 0| 0| 0| 0| 0|
+ *                                                   *h| 0| 0| 0|a5|a4|a3|a2|a1|
+ *          Acc2 += A *h B                             |bi|bi|bi|bi|bi|bi|bi|bi|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          N = replicate(Acc1[0])                     |n0|n0|n0|n0|n0|n0|n0|n0|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                               Acc1+=| 0| 0| 0|c5|c4|c3|c2|c1|  
+ *                                                    *| 0| 0| 0|m5|m4|m3|m2|m1|
+ *          Acc1 += M *  N                             |n0|n0|n0|n0|n0|n0|n0|n0| Note: 52 low bits of Acc1[0] == 0 due to Montgomery! 
+ *                                                     +--+--+--+--+--+--+--+--+
+ *                                               Acc2+=| 0| 0| 0|d5|d4|d3|d2|d1|
+ *                                                   *h| 0| 0| 0|m5|m4|m3|m2|m1|
+ *          Acc2 += M *h N                             |n0|n0|n0|n0|n0|n0|n0|n0|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          if (i == 4) break;
+ *          // Combine high/low partial sums Acc1 + Acc2
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          carry = Acc1[0] >> 52                      | 0| 0| 0| 0| 0| 0| 0|c1|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          Acc2[0] += carry
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          Acc1 = Acc1 shift one q element>>          | 0| 0| 0| 0|c5|c4|c3|c2|
+ *                                                     +--+--+--+--+--+--+--+--+
+ *          Acc1 = Acc1 + Acc2
+ *      ---- done
+ *   // Last Carry round: Combine high/low partial sums Acc1<high_bits> + Acc1 + Acc2
+ *   carry = Acc1 >> 52
+ *   Acc1 = Acc1 shift one q element >>
+ *   Acc1  = mask52(Acc1)
+ *   Acc2  += carry
+ *   Acc1 = Acc1 + Acc2
+ *   output to rLimbs
+ */
 void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLimbs, const Register rLimbs) {
-  /*
-    M1 = load(*m)
-    M2 = M1 shift one q element <<
-    A1 = load(*a)
-    A2 = A1 shift one q element <<
-    Acc1 = 0
-    ---- for i = 0 to 5
-        Acc2 = 0
-        B1[0] = load(b[i])
-        B1 = B1[0] replicate q
-        Acc1 += A1 *  B1
-        Acc2 += A2 *h B1
-        N = Acc1[0] replicate q
-        Acc1 += M1  * N
-        Acc2 += M1 *h N
-        // carry
-        Acc1 = Acc1 shift one q element >>
-        Acc1 = Acc1 + Acc2
-    ---- done
-    // Acc2 = Acc1 - P
-    // select = Acc2(carry)
-    // R = select ? Acc1 : Acc2
-  */    
-
   Register t0 = r13;
   Register rscratch = r13;
 
@@ -140,10 +179,10 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
   __ evmovdquq(broadcast5, allLimbs, ExternalAddress(broadcast_5()), false, Assembler::AVX_512bit, rscratch);
   __ evmovdquq(mask52, allLimbs, ExternalAddress(p256_mask52()), false, Assembler::AVX_512bit, rscratch);
 
-  // M1 = load(*m)
+  // M = load(*modulus_p256)
   __ evmovdquq(modulus, allLimbs, ExternalAddress(modulus_p256()), false, Assembler::AVX_512bit, rscratch);
 
-  // A1 = load(*a)
+  // A = load(*aLimbs)
   __ evmovdquq(A, Address(aLimbs, 8), Assembler::AVX_256bit);                          // Acc1 = load(*a)
   __ evpermq(A, allLimbs, shift1L, A, false, Assembler::AVX_512bit);
   __ movq(T, Address(aLimbs, 0));
@@ -155,31 +194,33 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
       // Acc2 = 0
       __ vpxorq(Acc2, Acc2, Acc2, Assembler::AVX_512bit);
 
-      // B1[0] = load(b[i])
-      // B1 = B1[0] replicate q
+      // B = replicate(bLimbs[i])
       __ vpbroadcastq(B, Address(bLimbs, i*8), Assembler::AVX_512bit);
 
-      // Acc1 += A1 *  B1
+      // Acc1 += A * B
       __ evpmadd52luq(Acc1, A, B, Assembler::AVX_512bit);
       
-      // Acc2 += A2 *h B1
+      // Acc2 += A *h B
       __ evpmadd52huq(Acc2, A, B, Assembler::AVX_512bit);
 
-      // N = Acc1[0] replicate q
+      // N = replicate(Acc1[0])
       __ vpbroadcastq(N, Acc1, Assembler::AVX_512bit);
 
-      // N = N mask 52 // not needed, implied by IFMA
-      // Acc1 += M1  * N
+      // Acc1 += M *  N
       __ evpmadd52luq(Acc1, modulus, N, Assembler::AVX_512bit);
 
-      // Acc2 += M1 *h N
+      // Acc2 += M *h N
       __ evpmadd52huq(Acc2, modulus, N, Assembler::AVX_512bit);
+      
+      if (i == 4) break;
 
-      // Acc1[0] =>> 52
-      __ evpsrlq(Acc1, limb0, Acc1, 52, true, Assembler::AVX_512bit);
+      // Combine high/low partial sums Acc1 + Acc2
 
-      // Acc2[0] += Acc1[0]
-      __ evpaddq(Acc2, limb0, Acc1, Acc2, true, Assembler::AVX_512bit);
+      // carry = Acc1[0] >> 52
+      __ evpsrlq(carry, limb0, Acc1, 52, true, Assembler::AVX_512bit);
+
+      // Acc2[0] += carry
+      __ evpaddq(Acc2, limb0, carry, Acc2, true, Assembler::AVX_512bit);
 
       // Acc1 = Acc1 shift one q element >>
       __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
@@ -187,16 +228,24 @@ void StubGenerator::montgomeryMultiply(const Register aLimbs, const Register bLi
       // Acc1 = Acc1 + Acc2
       __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
   }
-  
-  // Carry1 = Acc1>>52
-  __ evpsrlq(carry, allLimbs, Acc1, 52, false, Assembler::AVX_512bit);
-  // Carry1 = shift one q element <<
-  __ evpermq(carry, allLimbs, shift1L, carry, false, Assembler::AVX_512bit);
-  // Acc1 += Carry1
-  __ evpandq(Acc1, Acc1, mask52, Assembler::AVX_512bit); // Clear top 12 bits
-  __ vpaddq(Acc1, Acc1, carry, Assembler::AVX_512bit);
 
-  // output to r
+  // Last Carry round: Combine high/low partial sums Acc1<high_bits> + Acc1 + Acc2
+  // carry = Acc1 >> 52
+  __ evpsrlq(carry, allLimbs, Acc1, 52, true, Assembler::AVX_512bit);
+
+  // Acc1 = Acc1 shift one q element >>
+  __ evpermq(Acc1, allLimbs, shift1R, Acc1, false, Assembler::AVX_512bit);
+
+  // Acc1  = mask52(Acc1)
+  __ evpandq(Acc1, Acc1, mask52, Assembler::AVX_512bit); // Clear top 12 bits
+
+  // Acc2 += carry
+  __ evpaddq(Acc2, allLimbs, carry, Acc2, true, Assembler::AVX_512bit);
+
+  // Acc1 = Acc1 + Acc2
+  __ vpaddq(Acc1, Acc1, Acc2, Assembler::AVX_512bit);
+
+  // output to rLimbs (1 + 4 limbs)
   __ movq(Address(rLimbs, 0), Acc1);
   __ evpermq(Acc1, k0, shift1R, Acc1, true, Assembler::AVX_512bit);
   __ evmovdquq(Address(rLimbs, 8), k0, Acc1, true, Assembler::AVX_256bit);
@@ -253,7 +302,7 @@ address StubGenerator::generate_intpoly_montgomeryMult_P256() {
   __ pop(rsi);
   #endif
   __ pop(rbx);
-  __ mov64(rax, 0x1);
+  __ mov64(rax, 0x1); // Return 1 (Step 6 skipped in montgomeryMultiply)
 
   __ leave();
   __ ret(0);

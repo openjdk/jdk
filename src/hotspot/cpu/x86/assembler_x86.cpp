@@ -8176,32 +8176,6 @@ void Assembler::vpshrdvd(XMMRegister dst, XMMRegister src, XMMRegister shift, in
   emit_int16(0x73, (0xC0 | encode));
 }
 
-void  Assembler::evpshldq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, int imm8, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512_vbmi2(), "requires vbmi2");
-  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  attributes.set_embedded_opmask_register_specifier(mask);
-  if (merge) {
-    attributes.reset_is_clear_context();
-  }
-
-  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int24(0x71, (0xC0 | encode), imm8);
-}
-
-void  Assembler::evpshrdq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, int imm8, bool merge, int vector_len) {
-  assert(VM_Version::supports_avx512_vbmi2(), "requires vbmi2");
-  InstructionAttr attributes(vector_len, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
-  attributes.set_is_evex_instruction();
-  attributes.set_embedded_opmask_register_specifier(mask);
-  if (merge) {
-    attributes.reset_is_clear_context();
-  }
-
-  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
-  emit_int24(0x73, (0xC0 | encode), imm8);
-}
-
 void Assembler::pandn(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   InstructionAttr attributes(AVX_128bit, /* vex_w */ VM_Version::supports_evex(), /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);

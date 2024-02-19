@@ -974,7 +974,6 @@ public class FieldGen {
             result.appendLine(indexedExpr(isArray, prefix, (index - pos))
                     + " " + accOp + " " + x + ";");
         } else {
-            // Marker: generate MontgomeryIntegerPolynomialP{256,...}.java
             int secondPos = reduceBits / params.getBitsPerLimb();
             int bitOffset = (secondPos + 1) * params.getBitsPerLimb()
                     - reduceBits;

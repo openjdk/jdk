@@ -34,7 +34,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.Random;
 
 public class SignatureBench extends CryptoBase {
@@ -44,21 +43,20 @@ public class SignatureBench extends CryptoBase {
     @Param({"SHA256withDSA"})
     private String algorithm;
 
-    //@Param({"1024", "16384"})
-    @Param({""+(256/8)})
+    @Param({"1024", "16384"})
     int dataSize;
 
     @Param({"1024"})
     private int keyLength;
 
-    protected PrivateKey privateKey;
-    protected PublicKey publicKey;
-    protected byte[][] data;
-    protected byte[][] signedData;
+    private PrivateKey privateKey;
+    private PublicKey publicKey;
+    private byte[][] data;
+    private byte[][] signedData;
     int index;
 
 
-    protected String getKeyPairGeneratorName() {
+    private String getKeyPairGeneratorName() {
         int withIndex = algorithm.lastIndexOf("with");
         if (withIndex < 0) {
             return algorithm;
@@ -125,41 +123,6 @@ public class SignatureBench extends CryptoBase {
 
         @Param({"256"})
         private int keyLength;
-
-        @Param({"true","false"})
-        private boolean montgomery;
-
-        @Override
-        @Setup()
-        public void setup() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {//, InvalidAlgorithmParameterException {
-            setupProvider();
-            try {
-                java.security.SecureRandom rnd = new java.security.SecureRandom();
-                KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
-                //KeyPairGenerator.getInstance(getKeyPairGeneratorName());
-                //kpg.initialize(keyLength);
-                java.security.spec.ECGenParameterSpec spec = new java.security.spec.ECGenParameterSpec("secp256r1");
-                try {
-                    java.lang.reflect.Field mont = java.security.spec.ECGenParameterSpec.class.getField("montgomery");
-                    mont.setBoolean(spec, this.montgomery);
-                    //spec.montgomery = this.montgomery;
-                } catch (NoSuchFieldException | IllegalAccessException e ) {
-                    System.err.println("No montgomery field found!");
-                }
-                kpg.initialize(spec, rnd);
-                KeyPair keys = kpg.generateKeyPair();
-                privateKey = keys.getPrivate();
-                publicKey = keys.getPublic();
-            } catch (InvalidAlgorithmParameterException e) {
-                throw new NoSuchAlgorithmException();
-            }
-            data = fillRandom(new byte[SET_SIZE][dataSize]);
-            signedData = new byte[data.length][];
-            for (int i = 0; i < data.length; i++) {
-                signedData[i] = sign(data[i]);
-            }
-
-        }
 
     }
 
