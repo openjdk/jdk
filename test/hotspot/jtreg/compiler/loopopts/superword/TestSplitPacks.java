@@ -97,6 +97,13 @@ public class TestSplitPacks {
         tests.put("test2c",      () -> { return test2c(aI.clone(), bI.clone(), mI); });
         tests.put("test2d",      () -> { return test2d(aI.clone(), bI.clone(), mI); });
         tests.put("test3a",      () -> { return test3a(aS.clone(), bS.clone(), mS); });
+        tests.put("test4a",      () -> { return test4a(aS.clone(), bS.clone()); });
+        tests.put("test4b",      () -> { return test4b(aS.clone(), bS.clone()); });
+        tests.put("test4c",      () -> { return test4c(aS.clone(), bS.clone()); });
+        tests.put("test4d",      () -> { return test4d(aS.clone(), bS.clone()); });
+        tests.put("test4e",      () -> { return test4e(aS.clone(), bS.clone()); });
+        tests.put("test4f",      () -> { return test4f(aS.clone(), bS.clone()); });
+        tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -117,7 +124,14 @@ public class TestSplitPacks {
                  "test2b",
                  "test2c",
                  "test2d",
-                 "test3a"})
+                 "test3a",
+                 "test4a",
+                 "test4b",
+                 "test4c",
+                 "test4d",
+                 "test4e",
+                 "test4f",
+                 "test4g"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -531,7 +545,13 @@ public class TestSplitPacks {
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Adjacent Load and Store, but split by Add/Mul
+    // 0 1 2 3 4 5 6 7 -
+    // | | | | | | | |
+    // | + + + | | | |
+    // |       | | | |
+    // |     v | | | | v
+    // |     | | | | | |
+    // 1 - - 3 4 5 6 7 8
     static Object[] test3a(short[] a, short[] b, short val) {
         int sum = 0;
         for (int i = 0; i < RANGE; i+=16) {
@@ -563,5 +583,101 @@ public class TestSplitPacks {
         return new Object[]{ a, b, new int[]{ sum } };
     }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 2 -> split into 2-packs
+    static Object[] test4a(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+2] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 3 -> split into 2-packs
+    static Object[] test4b(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+3] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 4 -> split into 4-packs
+    static Object[] test4c(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+4] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 5 -> split into 4-packs
+    static Object[] test4d(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+5] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 6 -> split into 4-packs
+    static Object[] test4e(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+6] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 7 -> split into 4-packs
+    static Object[] test4f(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+7] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_8, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Cyclic dependency with distance 8 -> split into 8-packs
+    static Object[] test4g(short[] a, short[] b) {
+        for (int i = 0; i < RANGE-64; i++) {
+          b[i+8] = a[i+0];
+        }
+        return new Object[]{ a, b };
+    }
 }
