@@ -186,6 +186,9 @@ int main(int argc, char *argv[])
   // Verify that the results of the parse are consistent
   AD.verify();
 
+  // Check defined operands are used
+  AD.check_usage();
+
   // Prepare to generate the result files:
   AD.generateMatchLists();
   AD.identify_unique_operands();

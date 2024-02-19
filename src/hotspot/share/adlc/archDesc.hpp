@@ -226,6 +226,7 @@ public:
   inline void getForm(EncodeForm **ptr)     { *ptr = _encode; }
 
   bool verify();
+  bool check_usage();
   void dump();
 
   // Helper utility that gets MatchList components from inside MatchRule
