@@ -3752,12 +3752,12 @@ void MacroAssembler::update_word_crc32(Register crc, Register v, Register tmp1, 
  * @param buf   register pointing to input byte buffer (byte*)
  * @param len   register containing number of bytes
  * @param table register that will contain address of CRC table
- * @param tmp   scratch register
+ * @param tmp   scratch registers
  */
 void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
         Register table0, Register table1, Register table2, Register table3,
-        Register tmp, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
-  assert_different_registers(crc, buf, table0, table1, table2, table3, tmp, tmp2, tmp3, tmp4, tmp5);
+        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
+  assert_different_registers(crc, buf, table0, table1, table2, table3, tmp1, tmp2, tmp3, tmp4, tmp5);
   Label L_by16_loop, L_unroll_loop, L_unroll_loop_entry, L_by4, L_by4_loop, L_by1, L_by1_loop, L_exit;
 
   const int64_t unroll = 16;
@@ -3768,9 +3768,9 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   const ExternalAddress table_addr = StubRoutines::crc_table_addr();
   la(table0, table_addr);
-  add(table1, table0, 1*256*sizeof(juint), tmp);
-  add(table2, table0, 2*256*sizeof(juint), tmp);
-  add(table3, table2, 1*256*sizeof(juint), tmp);
+  add(table1, table0, 1*256*sizeof(juint), tmp1);
+  add(table2, table0, 2*256*sizeof(juint), tmp1);
+  add(table3, table2, 1*256*sizeof(juint), tmp1);
 
   bge(len, zr, L_unroll_loop_entry);
   addiw(len, len, unroll_words-4);
@@ -3781,15 +3781,15 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   align(CodeEntryAlignment);
   bind(L_unroll_loop_entry);
-    const Register buf_end = x30; // t5
+    const Register buf_end = tmp3;
     add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
     andi(len, len, unroll_words-1); // len = (len % unroll_words)
     sub(len, len, unroll_words); // Length after all iterations
   bind(L_unroll_loop);
     for (int i = 0; i < unroll; i++) {
-      ld(tmp, Address(buf, i*wordSize));
-      update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, true);
+      ld(tmp1, Address(buf, i*wordSize));
+      update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, false);
+      update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, true);
     }
 
     addi(buf, buf, unroll_words);
@@ -3801,8 +3801,8 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     j(L_exit);
 
   bind(L_by4_loop);
-    lwu(tmp, Address(buf));
-    update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
+    lwu(tmp1, Address(buf));
+    update_word_crc32(crc, tmp1, tmp2, tmp4, table0, table1, table2, table3, false);
     subw(len, len, 4);
     addi(buf, buf, 4);
     bge(len, zr, L_by4_loop);
@@ -3811,24 +3811,24 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
 
   bind(L_by1_loop);
     subw(len, len, 1);
-    lwu(tmp, Address(buf));
-    andi(tmp2, tmp, right_8_bits);
+    lwu(tmp1, Address(buf));
+    andi(tmp2, tmp1, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
     ble(len, zr, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp, 8);
+    srli(tmp2, tmp1, 8);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
     ble(len, zr, L_exit);
 
     subw(len, len, 1);
-    srli(tmp2, tmp, 16);
+    srli(tmp2, tmp1, 16);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
     ble(len, zr, L_exit);
 
-    srli(tmp2, tmp, 24);
+    srli(tmp2, tmp1, 24);
     andi(tmp2, tmp2, right_8_bits);
     update_byte_crc32(crc, tmp2, table0);
 

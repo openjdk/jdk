@@ -4652,11 +4652,11 @@ static const int64_t right_3_bits = right_n_bits(3);
     const Register table2 = c_rarg5;
     const Register table3 = c_rarg6;
 
-    const Register tmp1 = t0;
-    const Register tmp2 = t1;
-    const Register tmp3 = t2;
-    const Register tmp4 = x28; // t3
-    const Register tmp5 = x29; // t4
+    const Register tmp1 = c_rarg7;
+    const Register tmp2 = t2;
+    const Register tmp3 = x28; // t3
+    const Register tmp4 = x29; // t4
+    const Register tmp5 = x30; // t5
 
     BLOCK_COMMENT("Entry:");
     __ enter(); // required for proper stackwalking of RuntimeStub frame
