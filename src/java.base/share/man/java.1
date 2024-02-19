@@ -1460,10 +1460,11 @@ usage by individual \f[V]CallSite\f[R], individual virtual memory region
 and its committed regions.
 .RE
 .TP
-\f[V]-XX:TrimNativeHeapInterval=\f[R]\f[I]millis\f[R]\f[R]
-Interval, in ms, at which the JVM will trim the native heap. Lower values
-will reclaim memory more eagerly at the cost of higher overhead. A value
-of 0 (default) disables native heap trimming.
+\f[V]-XX:TrimNativeHeapInterval=\f[R]\f[I]millis\f[R]
+Interval, in ms, at which the JVM will trim the native heap.
+Lower values will reclaim memory more eagerly at the cost of higher
+overhead.
+A value of 0 (default) disables native heap trimming.
 Native heap trimming is performed in a dedicated thread.
 .RS
 .PP
