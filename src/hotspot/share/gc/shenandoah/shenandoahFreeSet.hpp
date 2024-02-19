@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2016, 2019, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
@@ -30,6 +29,273 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+#undef KELVIN_TRACE_HPP
+#ifdef KELVIN_TRACE_HPP
+
+extern char* ltos_1(size_t arg);
+extern char* ltos_2(size_t arg);
+#endif
+
+
+// ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_contiguous_bits() and
+// find_prev_contiguous_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
+// break abstraction rules, because efficient implementation requires assumptions about superclass internals that
+// might be violatee through future software maintenance.
+class ShenandoahSimpleBitMap {
+  static const size_t _bits_per_array_element = HeapWordSize * 8;
+
+  const ssize_t _num_bits;
+  const size_t _num_words;
+  size_t* const _bitmap;
+
+public:
+#ifdef KELVIN_DOES_NOT_WANT
+  // No-arg constructor simplifies declaration and subsequent re-initialization after number of regions is known.
+  ShenandoahSimpleBitMap() :
+      _num_bits(0),
+      _num_words(0),
+      _bitmap(nullptr) {
+    clear_all();
+  }
+#endif
+  
+  ShenandoahSimpleBitMap(size_t num_bits) :
+      _num_bits(num_bits),
+      _num_words((num_bits + (_bits_per_array_element - 1)) / _bits_per_array_element),
+      _bitmap(NEW_C_HEAP_ARRAY(size_t, _num_words, mtGC))
+  {
+    clear_all();
+  }
+
+  ~ShenandoahSimpleBitMap() {
+    if (_bitmap != nullptr) {
+      FREE_C_HEAP_ARRAY(size_t, _bitmap);
+    }
+  }
+
+  void clear_all() {
+    for (size_t i = 0; i < _num_words; i++) {
+      _bitmap[i] = 0;
+    }
+  }
+
+private:
+
+  // Count consecutive ones in forward order, starting from start_idx.  Requires that there is at least one zero
+  // between start_idx and index value (_num_bits - 1), inclusive.
+  size_t count_leading_ones(ssize_t start_idx) const {
+    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
+    size_t array_idx = start_idx / _bits_per_array_element;
+    size_t element_bits = _bitmap[array_idx];
+    size_t bit_number = start_idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t omit_mask = the_bit - 1;
+    size_t mask = ((size_t) ((ssize_t) -1)) & omit_mask;
+    if ((element_bits & mask) == mask) {
+      size_t counted_ones = _bits_per_array_element - bit_number;
+#ifdef KELVIN_TRACE_HPP
+      printf("count_leading_ones(%ld) in %s with mask %s returning %ld + recurse with %ld",
+                   start_idx, ltos_1(element_bits), ltos_2(mask), counted_ones, start_idx + counted_ones);
+#endif
+      return counted_ones + count_leading_ones(start_idx + counted_ones);
+    } else {
+      size_t counted_ones;
+      for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
+        the_bit <<= 1;
+      }
+#ifdef KELVIN_TRACE_HPP
+      printf("count_leading_ones(%ld) in %s with mask %s returning %ld",
+                   start_idx, ltos_1(element_bits), ltos_2(mask), counted_ones);
+#endif
+      return counted_ones;
+    }
+  }
+
+  // Count consecutive ones in reverse order, starting from last_idx.  Requires that there is at least one zero
+  // between last_idx and index value zero, inclusive.
+  size_t count_trailing_ones(ssize_t last_idx) const {
+    assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
+    size_t array_idx = last_idx / _bits_per_array_element;
+    size_t element_bits = _bitmap[array_idx];
+    size_t bit_number = last_idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+
+    // All ones from bit 0 to the_bit
+    size_t mask = (the_bit * 2) - 1;
+    if ((element_bits & mask) == mask) {
+      size_t counted_ones = bit_number;
+#ifdef KELVIN_TRACE_HPP
+      printf("count_trailing_ones(%ld) in %s with mask %s returning %ld + recurse with %ld",
+                   last_idx, ltos_1(element_bits), ltos_2(mask), counted_ones, last_idx - counted_ones);
+#endif
+      return counted_ones + count_trailing_ones(last_idx - counted_ones);
+    } else {
+      size_t counted_ones;
+      for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
+        the_bit >>= 1;
+      }
+#ifdef KELVIN_TRACE_HPP
+      printf("count_trailing_ones(%ld) in %s with mask %s returning %ld",
+                   last_idx, ltos_1(element_bits), ltos_2(mask), counted_ones);
+#endif
+      return counted_ones;
+    }
+  }
+
+  bool is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const {
+    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
+    assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
+    size_t array_idx = start_idx / _bits_per_array_element;
+    size_t bit_number = start_idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t element_bits = _bitmap[array_idx];
+
+    if ((ssize_t) (_bits_per_array_element - bit_number) > count) {
+      // All relevant bits reside within this array element
+      size_t overreach_mask = ((size_t) 0x1 << (bit_number + count)) - 1;
+      size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+      size_t exact_mask = overreach_mask & ~exclude_mask;
+#ifdef KELVIN_TRACE_HPP
+      printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
+                   start_idx, count, ltos_1(element_bits), ltos_2(exact_mask), (element_bits & exact_mask) == exact_mask? "true": "false");
+#endif
+      return (element_bits & exact_mask) == exact_mask? true: false;
+    } else {
+      // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
+      size_t overreach_mask = (size_t) (ssize_t) - 1;
+      size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+      size_t exact_mask = overreach_mask & ~exclude_mask;
+      if ((element_bits & exact_mask) == exact_mask) {
+        size_t matched_bits = _bits_per_array_element - bit_number;
+#ifdef KELVIN_TRACE_HPP
+      printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s recursing",
+                   start_idx, count, ltos_1(element_bits), ltos_2(exact_mask));
+#endif
+        return is_forward_consecutive_ones(start_idx + matched_bits, count - matched_bits);
+      } else {
+#ifdef KELVIN_TRACE_HPP
+        printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
+                     start_idx, count, ltos_1(element_bits), ltos_2(exact_mask), "false");
+#endif
+        return false;
+      }
+    }
+  }
+
+  bool is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const {
+    assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
+    assert(last_idx - count >= -1, "precondition");
+    size_t array_idx = last_idx / _bits_per_array_element;
+    size_t bit_number = last_idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t element_bits = _bitmap[array_idx];
+
+    if ((ssize_t) (bit_number + 1) >= count) {
+      // All relevant bits reside within this array element
+      size_t overreach_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+      size_t exclude_mask = ((size_t) 0x1 << (bit_number + 1 - count)) - 1;
+      size_t exact_mask = overreach_mask & ~exclude_mask;
+#ifdef KELVIN_TRACE_HPP
+      printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
+                   last_idx, count, ltos_1(element_bits), ltos_2(exact_mask), (element_bits & exact_mask) == exact_mask? "true": "false");
+#endif
+      return (element_bits & exact_mask) == exact_mask? true: false;
+    } else {
+      // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
+      size_t exact_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+      if ((element_bits & exact_mask) == exact_mask) {
+        size_t matched_bits = bit_number + 1;
+#ifdef KELVIN_TRACE_HPP
+        printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s recursing",
+                     last_idx, count,ltos_1( element_bits), ltos_2(exact_mask));
+#endif
+        return is_backward_consecutive_ones(last_idx - matched_bits, count - matched_bits);
+      } else {
+#ifdef KELVIN_TRACE_HPP
+        printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
+                     last_idx, count, ltos_1(element_bits), ltos_2(exact_mask), "false");
+#endif
+        return false;
+      }
+    }
+  }
+
+public:
+
+  inline ssize_t aligned_index(ssize_t idx) const {
+    assert((idx >= 0) && (idx < _num_bits), "precondition");
+    ssize_t array_idx = idx / _bits_per_array_element;
+    return array_idx * _bits_per_array_element;
+  }
+
+  inline ssize_t alignment() const {
+    return _bits_per_array_element;
+  }
+
+  inline size_t bits_at(ssize_t idx) const {
+    assert((idx >= 0) && (idx < _num_bits), "precondition");
+    ssize_t array_idx = idx / _bits_per_array_element;
+    return _bitmap[array_idx];
+  }
+
+  inline void set_bit(ssize_t idx) {
+    assert((idx >= 0) && (idx < _num_bits), "precondition");
+    size_t array_idx = idx / _bits_per_array_element;
+    size_t bit_number = idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    _bitmap[array_idx] |= the_bit;
+  }
+
+  inline void clear_bit(ssize_t idx) {
+    assert((idx >= 0) && (idx < _num_bits), "precondition");
+    assert(idx >= 0, "precondition");
+    size_t array_idx = idx / _bits_per_array_element;
+    size_t bit_number = idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    _bitmap[array_idx] &= ~the_bit;
+  }
+  
+  inline bool is_set(ssize_t idx) const {
+    assert((idx >= 0) && (idx < _num_bits), "precondition");
+    assert(idx >= 0, "precondition");
+    size_t array_idx = idx / _bits_per_array_element;
+    size_t bit_number = idx % _bits_per_array_element;
+    size_t the_bit = ((size_t) 0x01) << bit_number;
+    return (_bitmap[array_idx] & the_bit)? true: false;
+  }
+
+  // Return the index of the first set bit which is greater or equal to start_idx.  If not found, return _num_bits.
+  inline ssize_t find_next_set_bit(ssize_t start_idx) const;
+
+  // Return the index of the first set bit which is greater or equal to start_idx and less than boundary_idx. 
+  // If not found, return boundary_idx
+  inline ssize_t find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const;
+
+  // Return the index of the last set bit which is less or equal to start_idx.  If not found, return -1.
+  inline ssize_t find_prev_set_bit(ssize_t last_idx) const;
+
+  // Return the index of the last set bit which is less or equal to start_idx and greater than boundary_idx.
+  // If not found, return boundary_idx.
+  inline ssize_t find_prev_set_bit(ssize_t last_idx, ssize_t boundary_idx) const;
+
+  // Return the smallest index at which a run of num_bits consecutive ones is found, where return value is >= start_idx
+  // and return value < _num_bits.  If no run of num_bits consecutive ones is found within the target range, return _num_bits.
+  inline ssize_t find_next_consecutive_bits(size_t num_bits, ssize_t start_idx) const;
+
+  // Return the smallest index at which a run of num_bits consecutive ones is found, where return value is >= start_idx
+  // and return value < boundary_idx.  If no run of num_bits consecutive ones is found within the target range,
+  // return boundary_idx.
+  ssize_t find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const;
+
+  // Return the largest index at which a run of num_bits consecutive ones is found, where return value is <= last_idx and > -1.
+  // If no run of num_bits consecutive ones is found within the target range, return -1.
+  inline ssize_t find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx) const;
+
+  // Return the largest index at which a run of num_bits consecutive ones is found, where return value is <= last_idx and > -1.
+  // If no run of num_bits consecutive ones is found within the target range, return -1.
+  ssize_t find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx, ssize_t boundary_idx) const;
+};
+
 // Each ShenandoahHeapRegion is associated with a ShenandoahFreeSetPartitionId.
 enum ShenandoahFreeSetPartitionId : uint8_t {
   Mutator,                      // Region is in the Mutator free set: available memory is available to mutators.
@@ -48,24 +314,29 @@ enum ShenandoahFreeSetPartitionId : uint8_t {
 class ShenandoahRegionPartitions {
 
 private:
-  const size_t _max;            // The maximum number of heap regions
+  const ssize_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;
+#ifdef KELVIN_DEPRECATE
   ShenandoahFreeSetPartitionId* const _membership;
+#else
+  // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
+  ShenandoahSimpleBitMap _membership[NumPartitions];
+#endif
 
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
   // represents its least index, and its _rightmosts[p] its greatest index. Empty intervals are indicated by the
-  // canonical [_max, 0].
-  size_t _leftmosts[NumPartitions];
-  size_t _rightmosts[NumPartitions];
+  // canonical [_max, -1].
+  ssize_t _leftmosts[NumPartitions];
+  ssize_t _rightmosts[NumPartitions];
 
   // Allocation for humongous objects needs to find regions that are entirely empty.  For each partion p, _leftmosts_empty[p]
   // represents the first region belonging to this partition that is completely empty and _rightmosts_empty[p] represents the
   // last region that is completely empty.  If there is no completely empty region in this partition, this is represented
-  // by the canonical [_max, 0].
-  size_t _leftmosts_empty[NumPartitions];
-  size_t _rightmosts_empty[NumPartitions];
+  // by the canonical [_max, -1].
+  ssize_t _leftmosts_empty[NumPartitions];
+  ssize_t _rightmosts_empty[NumPartitions];
 
   // For each partition p, _capacity[p] represents the total amount of memory within the partition at the time
   // of the most recent rebuild, _used[p] represents the total amount of memory that has been allocated within this
@@ -77,8 +348,13 @@ private:
   size_t _used[NumPartitions];
   size_t _region_counts[NumPartitions];
 
-  inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx);
-  inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, size_t idx, size_t capacity);
+  inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx);
+  inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t capacity);
+
+  void dump_bitmap_row(ssize_t idx) const;
+  void dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const;
+  void dump_bitmap_all() const;
+
 
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
@@ -89,34 +365,57 @@ public:
 
   // Set the partition id for a particular region without adjusting interval bounds or usage/capacity tallies
   inline void raw_set_membership(size_t idx, ShenandoahFreeSetPartitionId p) {
-    _membership[idx] = p;
+    _membership[p].set_bit(idx);
   }
 
   // Set the Mutator intervals, usage, and capacity according to arguments.  Reset the Collector intervals, used, capacity
   // to represent empty Collector free set.
-  void establish_intervals(size_t mutator_leftmost, size_t mutator_rightmost,
-                           size_t mutator_leftmost_empty, size_t mutator_rightmost_empty,
+  void establish_intervals(ssize_t mutator_leftmost, ssize_t mutator_rightmost,
+                           ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
                            size_t mutator_region_count, size_t mutator_used);
 
   // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
   // Moves this region to the NotFree partition.  Any remnant of available memory at the time of retirement is added to the
   // original partition's total of used bytes.
-  void retire_from_partition(size_t idx, size_t used_bytes);
+  void retire_from_partition(ShenandoahFreeSetPartitionId p, ssize_t idx, size_t used_bytes);
 
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
-  void make_free(size_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
+  void make_free(ssize_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);
 
   // Place region idx into free partition new_partition, adjusting used and capacity totals for the original and new partition
   // given that available bytes can still be allocated within this region.  Requires that idx is currently not NotFree.
-  void move_to_partition(size_t idx, ShenandoahFreeSetPartitionId new_partition, size_t available);
+  void move_from_partition_to_partition(ssize_t idx, ShenandoahFreeSetPartitionId orig_partition,
+                                        ShenandoahFreeSetPartitionId new_partition, size_t available);
 
+  const char* partition_membership_name(ssize_t idx) const;
+
+  // Return the index of the next available region >= start_index, or maximum_regions if not found.
+  inline ssize_t find_index_of_next_available_region(ShenandoahFreeSetPartitionId which_partition, ssize_t start_index) const;
+
+  // Return the index of the previous available region <= last_index, or -1 if not found.
+  inline ssize_t find_index_of_previous_available_region(ShenandoahFreeSetPartitionId which_partition, ssize_t last_index) const;
+
+  // Return the index of the next available cluster of cluster_size regions >= start_index, or maximum_regions if not found.
+  inline ssize_t find_index_of_next_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
+                                                                 ssize_t start_index, size_t cluster_size) const;
+
+  // Return the index of the previous available cluster of cluster_size regions <= last_index, or -1 if not found.
+  inline ssize_t find_index_of_previous_available_cluster_of_regions(ShenandoahFreeSetPartitionId which_partition,
+                                                                     ssize_t last_index, size_t cluster_size) const;
+
+  inline bool in_free_set(ShenandoahFreeSetPartitionId which_partition, ssize_t idx) const {
+    return _membership[which_partition].is_set(idx);
+  }
+
+#ifdef ASSERT
   // Returns the ShenandoahFreeSetPartitionId affiliation of region idx, NotFree if this region is not currently in any partition.
   // This does not enforce that free_set membership implies allocation capacity.
-  inline ShenandoahFreeSetPartitionId membership(size_t idx) const;
+  inline ShenandoahFreeSetPartitionId membership(ssize_t idx) const;
 
   // Returns true iff region idx's membership is which_partition.  If which_partition represents a free set, asserts
   // that the region has allocation capacity.
-  inline bool partition_id_matches(size_t idx, ShenandoahFreeSetPartitionId which_partition) const;
+  inline bool partition_id_matches(ssize_t idx, ShenandoahFreeSetPartitionId which_partition) const;
+#endif
 
   inline size_t max_regions() const { return _max; }
 
@@ -129,10 +428,10 @@ public:
   //     leftmost() and leftmost_empty() return _max, rightmost() and rightmost_empty() return 0
   //   otherwise, expect the following:
   //     0 <= leftmost <= leftmost_empty <= rightmost_empty <= rightmost < _max
-  inline size_t leftmost(ShenandoahFreeSetPartitionId which_partition) const;
-  inline size_t rightmost(ShenandoahFreeSetPartitionId which_partition) const;
-  size_t leftmost_empty(ShenandoahFreeSetPartitionId which_partition);
-  size_t rightmost_empty(ShenandoahFreeSetPartitionId which_partition);
+  inline ssize_t leftmost(ShenandoahFreeSetPartitionId which_partition) const;
+  inline ssize_t rightmost(ShenandoahFreeSetPartitionId which_partition) const;
+  ssize_t leftmost_empty(ShenandoahFreeSetPartitionId which_partition);
+  ssize_t rightmost_empty(ShenandoahFreeSetPartitionId which_partition);
 
   inline bool is_empty(ShenandoahFreeSetPartitionId which_partition) const;
 
@@ -157,8 +456,6 @@ public:
     assert (which_partition < NumPartitions, "selected free set must be valid");
     _used[which_partition] = value;
   }
-
-  inline size_t max() const { return _max; }
 
   inline size_t count(ShenandoahFreeSetPartitionId which_partition) const { return _region_counts[which_partition]; }
 
