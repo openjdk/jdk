@@ -671,16 +671,9 @@ Node* PhaseGVN::apply_ideal(Node* k, bool can_reshape) {
 }
 
 //------------------------------transform--------------------------------------
-// Return a node which computes the same function as this node, but in a
-// faster or cheaper fashion.
-Node *PhaseGVN::transform( Node *n ) {
-  return transform_no_reclaim(n);
-}
-
-//------------------------------transform--------------------------------------
 // Return a node which computes the same function as this node, but
 // in a faster or cheaper fashion.
-Node *PhaseGVN::transform_no_reclaim(Node *n) {
+Node* PhaseGVN::transform(Node* n) {
   NOT_PRODUCT( set_transforms(); )
 
   // Apply the Ideal call in a loop until it no longer applies
@@ -692,7 +685,7 @@ Node *PhaseGVN::transform_no_reclaim(Node *n) {
     k = i;
 #ifdef ASSERT
     if (loop_count >= K + C->live_nodes()) {
-      dump_infinite_loop_info(i, "PhaseGVN::transform_no_reclaim");
+      dump_infinite_loop_info(i, "PhaseGVN::transform");
     }
 #endif
     i = apply_ideal(k, /*can_reshape=*/false);

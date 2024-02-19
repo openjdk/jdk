@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,26 +48,26 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jfieldID actual_fid = NULL;
+static jfieldID actual_fid = nullptr;
 static char actual_sig = '\0';
 static jvalue actual_val = {};
 static field flds[] = {
-    { "fld0", "J", JNI_TRUE, "static long", NULL, {} },
-    { "fld1", "J", JNI_FALSE, "long", NULL, {} },
-    { "fld2", "F", JNI_TRUE, "static float", NULL, {} },
-    { "fld3", "F", JNI_FALSE, "float", NULL, {} },
-    { "fld4", "D", JNI_TRUE, "static double", NULL, {} },
-    { "fld5", "D", JNI_FALSE, "double", NULL, {} },
-    { "fld6", "Ljava/lang/Object;", JNI_TRUE, "static Object", NULL, {} },
-    { "fld7", "Ljava/lang/Object;", JNI_FALSE, "Object", NULL, {} },
-    { "fld8", "Z", JNI_TRUE, "static boolean", NULL, {} },
-    { "fld9", "Z", JNI_FALSE, "boolean", NULL, {} },
-    { "fld10", "B", JNI_TRUE, "static byte", NULL, {} },
-    { "fld11", "B", JNI_FALSE, "byte", NULL, {} },
-    { "fld12", "S", JNI_TRUE, "static short", NULL, {} },
-    { "fld13", "S", JNI_FALSE, "short", NULL, {} },
-    { "fld14", "C", JNI_TRUE, "static char", NULL, {} },
-    { "fld15", "C", JNI_FALSE, "char", NULL, {} }
+    { "fld0", "J", JNI_TRUE, "static long", nullptr, {} },
+    { "fld1", "J", JNI_FALSE, "long", nullptr, {} },
+    { "fld2", "F", JNI_TRUE, "static float", nullptr, {} },
+    { "fld3", "F", JNI_FALSE, "float", nullptr, {} },
+    { "fld4", "D", JNI_TRUE, "static double", nullptr, {} },
+    { "fld5", "D", JNI_FALSE, "double", nullptr, {} },
+    { "fld6", "Ljava/lang/Object;", JNI_TRUE, "static Object", nullptr, {} },
+    { "fld7", "Ljava/lang/Object;", JNI_FALSE, "Object", nullptr, {} },
+    { "fld8", "Z", JNI_TRUE, "static boolean", nullptr, {} },
+    { "fld9", "Z", JNI_FALSE, "boolean", nullptr, {} },
+    { "fld10", "B", JNI_TRUE, "static byte", nullptr, {} },
+    { "fld11", "B", JNI_FALSE, "byte", nullptr, {} },
+    { "fld12", "S", JNI_TRUE, "static short", nullptr, {} },
+    { "fld13", "S", JNI_FALSE, "short", nullptr, {} },
+    { "fld14", "C", JNI_TRUE, "static char", nullptr, {} },
+    { "fld15", "C", JNI_FALSE, "char", nullptr, {} }
 };
 
 void JNICALL FieldModification(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -133,12 +133,12 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -216,7 +216,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_getReady(JNIEnv *env,
         } else {
             flds[i].fid = env->GetFieldID(cls, flds[i].name, flds[i].sig);
         }
-        if (flds[i].fid == NULL) {
+        if (flds[i].fid == nullptr) {
             printf("Unable to set modification watch on %s fld%" PRIuPTR ", fieldID=0",
                    flds[i].descr, i);
         } else {
@@ -233,7 +233,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_getReady(JNIEnv *env,
         }
     }
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_FIELD_MODIFICATION, NULL);
+        JVMTI_EVENT_FIELD_MODIFICATION, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("(SetEventNotificationMode) unexpected error: %s (%d)\n",
                TranslateError(err), err);
@@ -366,7 +366,7 @@ Java_nsk_jvmti_SetFieldModificationWatch_setfmodw005_check(JNIEnv *env,
     default:
         break;
     }
-    actual_fid = NULL;
+    actual_fid = nullptr;
     actual_sig = '\0';
     actual_val.j = 0L;
 }

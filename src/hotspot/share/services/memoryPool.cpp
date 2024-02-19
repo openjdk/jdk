@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,11 +63,16 @@ MemoryPool::MemoryPool(const char* name,
   _gc_usage_threshold(new ThresholdSupport(support_gc_threshold, support_gc_threshold)),
   _usage_sensor(),
   _gc_usage_sensor(),
-  _memory_pool_obj()
+  _memory_pool_obj(),
+  _memory_pool_obj_initialized(false)
 {}
 
 bool MemoryPool::is_pool(instanceHandle pool) const {
-  return pool() == Atomic::load(&_memory_pool_obj).resolve();
+  if (Atomic::load_acquire(&_memory_pool_obj_initialized)) {
+    return pool() == _memory_pool_obj.resolve();
+  } else {
+    return false;
+  }
 }
 
 void MemoryPool::add_manager(MemoryManager* mgr) {
@@ -83,10 +88,10 @@ void MemoryPool::add_manager(MemoryManager* mgr) {
 // It creates a MemoryPool instance when the first time
 // this function is called.
 instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
+  // Lazily create the pool object.
   // Must do an acquire so as to force ordering of subsequent
   // loads from anything _memory_pool_obj points to or implies.
-  oop pool_obj = Atomic::load_acquire(&_memory_pool_obj).resolve();
-  if (pool_obj == nullptr) {
+  if (!Atomic::load_acquire(&_memory_pool_obj_initialized)) {
     // It's ok for more than one thread to execute the code up to the locked region.
     // Extra pool instances will just be gc'ed.
     InstanceKlass* ik = Management::sun_management_ManagementFactoryHelper_klass(CHECK_NULL);
@@ -113,33 +118,36 @@ instanceOop MemoryPool::get_memory_pool_instance(TRAPS) {
                            &args,
                            CHECK_NULL);
 
-    instanceOop p = (instanceOop) result.get_oop();
-    instanceHandle pool(THREAD, p);
+    // Verify we didn't get a null pool.  If that could happen then we'd
+    // need to return immediately rather than continuing on and recording the
+    // pool has been created.
+    oop p = result.get_oop();
+    guarantee(p != nullptr, "Pool creation returns null");
+    instanceHandle pool(THREAD, (instanceOop)p);
 
-    {
-      // Get lock since another thread may have create the instance
-      MutexLocker ml(THREAD, Management_lock);
+    // Allocate global handle outside lock, to avoid any lock nesting issues
+    // with the Management_lock.
+    OopHandle pool_handle(Universe::vm_global(), pool());
 
-      // Check if another thread has created the pool.  We reload
-      // _memory_pool_obj here because some other thread may have
-      // initialized it while we were executing the code before the lock.
-      pool_obj = Atomic::load(&_memory_pool_obj).resolve();
-      if (pool_obj != nullptr) {
-         return (instanceOop)pool_obj;
-      }
+    // Get lock since another thread may have created and installed the instance.
+    MutexLocker ml(THREAD, Management_lock);
 
-      // Get the address of the object we created via call_special.
-      pool_obj = pool();
-
-      // Use store barrier to make sure the memory accesses associated
-      // with creating the pool are visible before publishing its address.
-      // The unlock will publish the store to _memory_pool_obj because
-      // it does a release first.
-      Atomic::release_store(&_memory_pool_obj, OopHandle(Universe::vm_global(), pool_obj));
+    if (Atomic::load(&_memory_pool_obj_initialized)) {
+      // Some other thread won the race.  Release the handle we allocated and
+      // use the other one.  Relaxed load is sufficient because flag update is
+      // under the lock.
+      pool_handle.release(Universe::vm_global());
+    } else {
+      // Record the object we created via call_special.
+      assert(_memory_pool_obj.is_empty(), "already set pool obj");
+      _memory_pool_obj = pool_handle;
+      // Record pool has been created.  Release matching unlocked acquire, to
+      // safely publish the pool object.
+      Atomic::release_store(&_memory_pool_obj_initialized, true);
     }
   }
 
-  return (instanceOop)pool_obj;
+  return (instanceOop)_memory_pool_obj.resolve();
 }
 
 inline static size_t get_max_value(size_t val1, size_t val2) {

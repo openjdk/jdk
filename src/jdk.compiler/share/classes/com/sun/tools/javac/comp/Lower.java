@@ -102,6 +102,7 @@ public class Lower extends TreeTranslator {
     private final PkgInfo pkginfoOpt;
     private final boolean optimizeOuterThis;
     private final boolean useMatchException;
+    private final HashMap<TypePairs, String> typePairToName;
 
     @SuppressWarnings("this-escape")
     protected Lower(Context context) {
@@ -133,6 +134,7 @@ public class Lower extends TreeTranslator {
         Preview preview = Preview.instance(context);
         useMatchException = Feature.PATTERN_SWITCH.allowedInSource(source) &&
                             (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH));
+        typePairToName = TypePairs.initialize(syms);
     }
 
     /** The currently enclosing class.
@@ -2919,6 +2921,178 @@ public class Lower extends TreeTranslator {
         else
             tree.expr = translate(tree.expr);
         result = tree;
+    }
+
+    /**
+     * All the exactness checks between primitive types that require a run-time
+     * check are in {@code java.lang.runtime.ExactConversionsSupport}. Those methods
+     * are in the form {@code ExactConversionsSupport.is<S>To<T>Exact} where both
+     * {@code S} and {@code T} are primitive types and correspond to the runtime
+     * action that will be executed to check whether a certain value (that is passed
+     * as a parameter) can be converted to {@code T} without loss of information.
+     *
+     * Rewrite {@code instanceof if expr : Object} and Type is primitive type:
+     *
+     * {@snippet :
+     *   Object v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (let tmp$123 = v; tmp$123 instanceof Float)
+     * }
+     *
+     * Rewrite {@code instanceof if expr : wrapper reference type}
+     *
+     * {@snippet :
+     *   Integer v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (let tmp$123 = v; tmp$123 != null && ExactConversionsSupport.intToFloatExact(tmp$123.intValue()))
+     * }
+     *
+     * Rewrite {@code instanceof if expr : primitive}
+     *
+     * {@snippet :
+     *   int v = ...
+     *   if (v instanceof float)
+     *   =>
+     *   if (let tmp$123 = v; ExactConversionsSupport.intToFloatExact(tmp$123))
+     * }
+     *
+     * More rewritings:
+     * <ul>
+     * <li>If the {@code instanceof} check is unconditionally exact rewrite to true.</li>
+     * <li>If expression type is {@code Byte}, {@code Short}, {@code Integer}, ..., an
+     *     unboxing conversion followed by a widening primitive conversion.</li>
+     * <li>If expression type is a supertype: {@code Number}, a narrowing reference
+     *     conversion followed by an unboxing conversion.</li>
+     * </ul>
+     */
+    public void visitTypeTest(JCInstanceOf tree) {
+        if (tree.expr.type.isPrimitive() || tree.pattern.type.isPrimitive()) {
+            JCExpression exactnessCheck = null;
+            JCExpression instanceOfExpr = translate(tree.expr);
+
+            // preserving the side effects of the value
+            VarSymbol dollar_s = new VarSymbol(FINAL | SYNTHETIC,
+                    names.fromString("tmp" + tree.pos + this.target.syntheticNameChar()),
+                    tree.expr.type,
+                    currentMethodSym);
+            JCStatement var = make.at(tree.pos())
+                    .VarDef(dollar_s, instanceOfExpr).setType(dollar_s.type);
+
+            if (types.isUnconditionallyExact(tree.expr.type, tree.pattern.type)) {
+                exactnessCheck = make
+                        .LetExpr(List.of(var), make.Literal(BOOLEAN, 1).setType(syms.booleanType.constType(1)))
+                        .setType(syms.booleanType);
+            }
+            else if (tree.expr.type.isReference()) {
+                JCExpression nullCheck = makeBinary(NE,
+                        make.Ident(dollar_s),
+                        makeNull());
+                if (types.isUnconditionallyExact(types.unboxedType(tree.expr.type), tree.pattern.type)) {
+                    exactnessCheck = make
+                            .LetExpr(List.of(var), nullCheck)
+                            .setType(syms.booleanType);
+                } else if (types.unboxedType(tree.expr.type).isPrimitive()) {
+                    exactnessCheck = getExactnessCheck(tree,
+                            boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type)));
+                } else {
+                    exactnessCheck = make.at(tree.pos())
+                            .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
+                            .setType(syms.booleanType);
+                }
+
+                exactnessCheck = make.LetExpr(List.of(var), makeBinary(AND,
+                        nullCheck,
+                        exactnessCheck))
+                        .setType(syms.booleanType);
+            }
+            else if (tree.expr.type.isPrimitive()) {
+                JCIdent argument = make.Ident(dollar_s);
+
+                JCExpression exactnessCheckCall =
+                        getExactnessCheck(tree, argument);
+
+                exactnessCheck = make.LetExpr(List.of(var), exactnessCheckCall)
+                        .setType(syms.booleanType);
+            }
+
+            result = exactnessCheck;
+        } else {
+            tree.expr = translate(tree.expr);
+            tree.pattern = translate(tree.pattern);
+            result = tree;
+        }
+    }
+
+    // TypePairs should be in sync with the corresponding record in SwitchBootstraps
+    record TypePairs(TypeSymbol from, TypeSymbol to) {
+        public static TypePairs of(Symtab syms, Type from, Type to) {
+            if (from == syms.byteType || from == syms.shortType || from == syms.charType) {
+                from = syms.intType;
+            }
+            return new TypePairs(from, to);
+        }
+
+        public TypePairs(Type from, Type to) {
+            this(from.tsym, to.tsym);
+        }
+
+        public static HashMap<TypePairs, String> initialize(Symtab syms) {
+            HashMap<TypePairs, String> typePairToName = new HashMap<>();
+            typePairToName.put(new TypePairs(syms.byteType,   syms.charType),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.byteType),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.shortType,  syms.charType),   "isIntToCharExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.byteType),   "isIntToByteExact");      // redirected
+            typePairToName.put(new TypePairs(syms.charType,   syms.shortType),  "isIntToShortExact");     // redirected
+            typePairToName.put(new TypePairs(syms.intType,    syms.byteType),   "isIntToByteExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.shortType),  "isIntToShortExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.charType),   "isIntToCharExact");
+            typePairToName.put(new TypePairs(syms.intType,    syms.floatType),  "isIntToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.byteType),   "isLongToByteExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.shortType),  "isLongToShortExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.charType),   "isLongToCharExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.intType),    "isLongToIntExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.floatType),  "isLongToFloatExact");
+            typePairToName.put(new TypePairs(syms.longType,   syms.doubleType), "isLongToDoubleExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.byteType),   "isFloatToByteExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.shortType),  "isFloatToShortExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.charType),   "isFloatToCharExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.intType),    "isFloatToIntExact");
+            typePairToName.put(new TypePairs(syms.floatType,  syms.longType),   "isFloatToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.byteType),   "isDoubleToByteExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.shortType),  "isDoubleToShortExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.charType),   "isDoubleToCharExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.intType),    "isDoubleToIntExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.longType),   "isDoubleToLongExact");
+            typePairToName.put(new TypePairs(syms.doubleType, syms.floatType),  "isDoubleToFloatExact");
+            return typePairToName;
+        }
+    }
+
+    private JCExpression getExactnessCheck(JCInstanceOf tree, JCExpression argument) {
+        TypePairs pair = TypePairs.of(syms, types.unboxedTypeOrType(tree.expr.type), tree.pattern.type);
+
+        Name exactnessFunction = names.fromString(typePairToName.get(pair));
+
+        // Resolve the exactness method
+        Symbol ecsym = lookupMethod(tree.pos(),
+                exactnessFunction,
+                syms.exactConversionsSupportType,
+                List.of(pair.from.type));
+
+        // Generate the method call ExactnessChecks.<exactness method>(<argument>);
+        JCFieldAccess select = make.Select(
+                make.QualIdent(syms.exactConversionsSupportType.tsym),
+                exactnessFunction);
+        select.sym = ecsym;
+        select.setType(syms.booleanType);
+
+        JCExpression exactnessCheck = make.Apply(List.nil(),
+                select,
+                List.of(argument));
+        exactnessCheck.setType(syms.booleanType);
+        return exactnessCheck;
     }
 
     public void visitNewClass(JCNewClass tree) {

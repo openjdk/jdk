@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID mid = NULL;
+static jmethodID mid = nullptr;
 static jbyteArray classBytes;
 
 void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
@@ -64,7 +64,7 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
     classDef.klass = klass;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
     classDef.class_bytes = (unsigned char *)
-        env->GetByteArrayElements(classBytes, NULL);
+        env->GetByteArrayElements(classBytes, nullptr);
 
     if (printdump == JNI_TRUE) {
         printf(">>> bp: about to call RedefineClasses\n");
@@ -93,12 +93,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -148,7 +148,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass017_getReady(JNIEnv *env, jclass cls,
         jclass clazz, jbyteArray bytes) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -158,7 +158,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass017_getReady(JNIEnv *env, jclass cls,
         !caps.can_generate_breakpoint_events) return;
 
     mid = env->GetMethodID(clazz, "checkPoint", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for method run\n");
         result = STATUS_FAILED;
         return;
@@ -175,7 +175,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass017_getReady(JNIEnv *env, jclass cls,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

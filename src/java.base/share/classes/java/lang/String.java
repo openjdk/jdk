@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -841,7 +841,7 @@ public final class String
         }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(ca, 0, caLen);
-            int coder = StringUTF16.coderFromArrayLen(val, len);
+            byte coder = StringUTF16.coderFromArrayLen(val, caLen);
             return new String(val, coder);
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
@@ -2444,7 +2444,8 @@ public final class String
      *          {@code -1} if the character does not occur.
      */
     public int indexOf(int ch) {
-        return indexOf(ch, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, 0, value.length)
+                : StringUTF16.indexOf(value, ch, 0, value.length >> 1);
     }
 
     /**
@@ -2500,8 +2501,9 @@ public final class String
      * {@code fromIndex} were larger than the string length, or were negative.
      */
     public int indexOf(int ch, int fromIndex) {
-        return isLatin1() ? StringLatin1.indexOf(value, ch, fromIndex, length())
-                : StringUTF16.indexOf(value, ch, fromIndex, length());
+        fromIndex = Math.max(fromIndex, 0);
+        return isLatin1() ? StringLatin1.indexOf(value, ch, Math.min(fromIndex, value.length), value.length)
+                : StringUTF16.indexOf(value, ch, Math.min(fromIndex, value.length >> 1), value.length >> 1);
     }
 
     /**

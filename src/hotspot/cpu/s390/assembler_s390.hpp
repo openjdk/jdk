@@ -107,7 +107,7 @@ class RelAddr {
 
   static bool is_in_range_of_RelAddr(address target, address pc, bool shortForm) {
     // Guard against illegal branch targets, e.g. -1. Occurrences in
-    // CompiledStaticCall and ad-file. Do not assert (it's a test
+    // CompiledDirectCall and ad-file. Do not assert (it's a test
     // function!). Just return false in case of illegal operands.
     if ((((uint64_t)target) & 0x0001L) != 0) return false;
     if ((((uint64_t)pc)     & 0x0001L) != 0) return false;
