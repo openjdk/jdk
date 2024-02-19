@@ -261,32 +261,35 @@ extern "C" {
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   ResourceMark rm;
   uint64_t bitmap = 0;
-  if (! secondaries) {
+  if (! secondaries || secondaries->length() == 0) {
     _bitmap = 0;
-    _secondary_supers = nullptr;
+    _secondary_supers = secondaries;
     return;
   }
 
-  GrowableArray<Klass*>* hashed_secondaries = new GrowableArray<Klass*>(64);
+  GrowableArray<Klass*>* hashed_secondaries
+    = new GrowableArray<Klass*>(MAX(64, secondaries->length()));
 
-  for (int i = 0; i < 64; i++)   hashed_secondaries->push(nullptr);
+  for (int i = 0; i < hashed_secondaries->capacity(); i++)   hashed_secondaries->push(nullptr);
 
   for (int j = 0; j < secondaries->length(); j++) {
     Klass *k = secondaries->at(j);
     unsigned int slot = k->hash() >> (64 - 6);
-    {
-      int i;
-      for (i = 0; i < 64; i++, slot++) {
+
+    if (j >= 64) {
+      hashed_secondaries->at_put(j, k);
+    } else {
+      for (int i = 0; i < 64; i++, slot++) {
         slot &= 63;
         if (hashed_secondaries->at(slot) == nullptr) {
           bitmap |= uint64_t(1) << slot;
           hashed_secondaries->at_put(slot, k);
-          break;
+          goto stashed;
         }
       }
-      if (i == 64) {
-        assert(false, "fubar");
-      }
+      assert(false, "shouldn't happen");
+    stashed:
+      asm("nop");
     }
   }
 
@@ -420,9 +423,6 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       assert(s2->at(j) != nullptr, "correct bootstrapping order");
     }
   #endif
-
-    qsort(s2->adr_at(0), s2->length(), sizeof s2->at(0),
-          compare_secondary_supers);
     set_secondary_supers(s2);
   }
 }

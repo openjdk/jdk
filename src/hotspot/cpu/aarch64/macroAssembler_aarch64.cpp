@@ -1589,6 +1589,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+// Ensure that the inline code and the stub are using the same registers.
 #define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
 do {                                                                    \
   assert(r_super_klass == r0 && r_array_base == r1 &&                   \
@@ -1631,7 +1632,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
 
   // We're going to need the bitmap in a vector reg and in a core reg,
-  // so do both now.
+  // so load both now.
   ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
   if (super_klass->hash() != 0) {
     ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
@@ -1655,21 +1656,24 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   mov_metadata(r_super_klass, super_klass);
 
   // We will consult the secondary-super array.
-  // mov_metadata(r_array_base, (Metadata*)super_klass->secondary_supers());
   ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
-  // The value i in r_array_index is 1 <= i <= 64, so even though
-  // r_array_base points to the length, we don't need to adjust it to
-  // point to the data.
+  // The value i in r_array_index is >= 1, so even though r_array_base
+  // points to the length, we don't need to adjust it to point to the
+  // data.
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
 
   ldr(result, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
   cmp(result, r_super_klass);
   br(EQ, L_success);
+
+  // Is there another entry to check? Consult the bitmap.
   tbz(r_bitmap, (bit+1) & 63, L_failure);
 
   // Linear probe.
-  if (bit > 0)   ror(r_bitmap, r_bitmap, bit);
+  if (bit > 0) {
+    ror(r_bitmap, r_bitmap, bit);
+  }
   adr(result, L_success);
   trampoline_call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
 
@@ -1703,22 +1707,49 @@ void MacroAssembler::klass_subtype_fallback() {
   add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
   // Linear probe
-  Label LOOPY, L_failure, L_success;
+  Label LOOPY, L_failure, L_success, huge;
 
-  bind(LOOPY);
-  tbz(bitmap, 1, L_failure); // End of run
-  ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
-  cmp(rscratch1, r_super_klass);
-  br(EQ, L_success);
+  // The bitmap is full to bursting: >= 64 entries.
+  cmn(bitmap, (u1)1);
+  br(EQ, huge);
 
-  ror(bitmap, bitmap, 1);
-  add(r_array_index, r_array_index, 1);
-  cmp(r_array_index, r_array_length);
-  csel(r_array_index, zr, r_array_index, GE);
-  b(LOOPY);
+  {
+    bind(LOOPY);
+
+    ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
+    cmp(rscratch1, r_super_klass);
+    br(EQ, L_success);
+
+    tbz(bitmap, 1, L_failure); // End of run
+
+    ror(bitmap, bitmap, 1);
+    add(r_array_index, r_array_index, 1);
+    cmp(r_array_index, r_array_length);
+    csel(r_array_index, zr, r_array_index, GE);
+    b(LOOPY);
+  }
 
   bind(L_failure);
   ret(lr);
+
+  // Degenerate case: more than 64 secondary supers
+  bind(huge);
+  mov(r_array_index, 0);
+  {
+    // FIXME: We could do something smarter here, maybe a vectorized
+    // comparison, but do we really care?
+    Label again;
+    bind(again);
+    ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
+    cmp(rscratch1, r_super_klass);
+    br(EQ, L_success);
+    add(r_array_index, r_array_index, 1);
+    cmp(r_array_index, r_array_length);
+    br(LT, again);
+
+    ret(lr); // We failed
+  }
+
 
   bind(L_success);
   br(result);

@@ -3701,9 +3701,11 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
-  st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
-  for (int i = 0; i < _secondary_supers->length(); i++) {
-    st->print_cr("  %d:  %p (hash=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> (64-6));
+  if (_secondary_supers) {
+    st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+    for (int i = 0; i < _secondary_supers->length(); i++) {
+      st->print_cr("  %d:  %p (hash=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> (64-6));
+    }
   }
 
   FieldPrinter print_static_field(st);
