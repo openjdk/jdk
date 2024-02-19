@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -426,14 +426,17 @@ public class TestSearch extends JavadocTester {
                 """
                     <script type="text/javascript" src="script-files/jquery-ui.min.js"></script>""",
                 """
-                    var pathtoroot = "./";
+                    const pathtoroot = "./";
                     loadScripts(document, 'script');""",
                 "<div class=\"nav-list-search\">",
                 """
-                    <div class="nav-list-search"><a href="search.html">SEARCH</a>
-                    <input type="text" id="search-input" disabled placeholder="Search">
-                    <input type="reset" id="reset-button" disabled value="reset">
-                    """);
+                    <li><a href="search.html">Search</a></li>""",
+                """
+                    <div class="nav-list-search">
+                    <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
+                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    <input type="reset" id="reset-search" disabled value="Reset">
+                    </div>""");
     }
 
     void checkSingleIndex() {
@@ -781,8 +784,8 @@ public class TestSearch extends JavadocTester {
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
-                    <div id="all-classes-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,

@@ -1593,8 +1593,11 @@ Zone Atlantic/Stanley	-3:51:24 -	LMT	1890
 			-3:00	-	-03
 
 # French Guiana
+# For the 1911/1912 establishment of standard time in French possessions, see:
+# Société Française de Physique, Recueil de constantes physiques (1913),
+# page 752, 18b.
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]
-Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul
+Zone America/Cayenne	-3:29:20 -	LMT	1911 Jul  1
 			-4:00	-	-04	1967 Oct
 			-3:00	-	-03
 
@@ -1720,6 +1723,12 @@ Rule	Para	2010	2012	-	Apr	Sun>=8	0:00	0	-
 # From Carlos Raúl Perasso (2014-02-28):
 # Decree 1264 can be found at:
 # http://www.presidencia.gov.py/archivos/documentos/DECRETO1264_ey9r8zai.pdf
+#
+# From Paul Eggert (2023-07-26):
+# Transition dates are now set by Law No. 7115, not by presidential decree.
+# https://www.abc.com.py/politica/2023/07/12/promulgacion-el-cambio-de-hora-sera-por-ley/
+# From Carlos Raúl Perasso (2023-07-27):
+# http://silpy.congreso.gov.py/descarga/ley-144138
 Rule	Para	2013	max	-	Mar	Sun>=22	0:00	0	-
 
 # Zone	NAME		STDOFF	RULES	FORMAT	[UNTIL]

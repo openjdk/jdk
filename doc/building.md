@@ -349,7 +349,7 @@ will most likely need to install developer packages.
 For apt-based distributions (Debian, Ubuntu, etc), try this:
 
 ```
-sudo apt-get install build-essential
+sudo apt-get install build-essential autoconf
 ```
 
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
@@ -572,6 +572,7 @@ required on all platforms except Windows and macOS.
 libfontconfig-dev`.
 * To install on an rpm-based Linux, try running `sudo yum install
 fontconfig-devel`.
+* To install on Alpine Linux, try running `sudo apk add fontconfig-dev`.
 
 Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>` if
 `configure` does not automatically locate the platform Fontconfig files.
@@ -683,6 +684,14 @@ The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
+
+### Graphviz and Pandoc
+
+In order to build the full docs (see the `--enable-full-docs`
+configure option) [Graphviz](https://www.graphviz.org) and
+[Pandoc](https://pandoc.org) are required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
 
 ## Running Configure
 
@@ -1316,9 +1325,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     https://httpredir.debian.org/debian/
   ```
 
-  If the target architecture is `riscv64`, the path should be `debian-ports`
-  instead of `debian`.
-
 * To create an Ubuntu-based chroot:
 
   ```
@@ -1946,12 +1952,25 @@ configuration with the name `<name>`. Alternatively, you can create a directory
 under `build` and run `configure` from there, e.g. `mkdir build/<name> && cd
 build/<name> && bash ../../configure`.
 
-Then you can build that configuration using `make CONF_NAME=<name>` or `make
-CONF=<pattern>`, where `<pattern>` is a substring matching one or several
-configurations, e.g. `CONF=debug`. The special empty pattern (`CONF=`) will
-match *all* available configuration, so `make CONF= hotspot` will build the
-`hotspot` target for all configurations. Alternatively, you can execute `make`
-in the configuration directory, e.g. `cd build/<name> && make`.
+Then you can build that configuration using `make CONF=<selector>`, where
+`<selector>` is interpreted as follows:
+
+* If `<selector>` exacly matches the name of a configuration, this and only
+  this configuration will be selected.
+* If `<selector>` matches (i.e. is a substring of) the names of several
+  configurations, then all these configurations will be selected.
+* If `<selector>` is empty (i.e. `CONF=`), then all configurations will be
+  selected.
+* If `<selector>` begins with `!`, then all configurations **not** matching the
+  string following `!` will be selected.
+
+A more specialized version, `CONF_NAME=<name>` also exists, which will only
+match if the given `<name>` exactly matches a single configuration.
+
+Alternatively, you can execute `make` in the configuration directory, e.g. `cd
+build/<name> && make`.
+
+`make CONF_NAME=<name>` or
 
 ### Handling Reconfigurations
 

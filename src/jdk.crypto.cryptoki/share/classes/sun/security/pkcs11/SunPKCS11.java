@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1254,6 +1254,24 @@ public final class SunPKCS11 extends AuthProvider {
                 ("Token info for token in slot " + slotID + ":");
             System.out.println(token.tokenInfo);
         }
+        Set<Long> brokenMechanisms = Set.of();
+        if (P11Util.isNSS(token)) {
+            CK_VERSION nssVersion = slotInfo.hardwareVersion;
+            if (nssVersion.major < 3 ||
+                    nssVersion.major == 3 && nssVersion.minor < 65) {
+                // RSA-PSS is broken in NSS prior to 3.65
+                brokenMechanisms = Set.of(CKM_RSA_PKCS_PSS,
+                        CKM_SHA1_RSA_PKCS_PSS,
+                        CKM_SHA224_RSA_PKCS_PSS,
+                        CKM_SHA256_RSA_PKCS_PSS,
+                        CKM_SHA384_RSA_PKCS_PSS,
+                        CKM_SHA512_RSA_PKCS_PSS,
+                        CKM_SHA3_224_RSA_PKCS_PSS,
+                        CKM_SHA3_256_RSA_PKCS_PSS,
+                        CKM_SHA3_384_RSA_PKCS_PSS,
+                        CKM_SHA3_512_RSA_PKCS_PSS);
+            }
+        }
         long[] supportedMechanisms = p11.C_GetMechanismList(slotID);
 
         // Create a map from the various Descriptors to the "most
@@ -1284,6 +1302,13 @@ public final class SunPKCS11 extends AuthProvider {
             if (isLegacy(mechInfo)) {
                 if (showInfo) {
                     System.out.println("DISABLED due to legacy");
+                }
+                continue;
+            }
+
+            if (brokenMechanisms.contains(longMech)) {
+                if (showInfo) {
+                    System.out.println("DISABLED due to known issue with NSS");
                 }
                 continue;
             }

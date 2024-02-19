@@ -25,7 +25,6 @@
 #include "code/codeCache.hpp"
 #include "code/relocInfo.hpp"
 #include "code/nmethod.hpp"
-#include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -334,23 +333,13 @@ oop ZNMethod::load_oop(oop* p, DecoratorSet decorators) {
 
 class ZNMethodUnlinkClosure : public NMethodClosure {
 private:
-  bool          _unloading_occurred;
-  volatile bool _failed;
-
-  void set_failed() {
-    Atomic::store(&_failed, true);
-  }
+  bool _unloading_occurred;
 
 public:
   ZNMethodUnlinkClosure(bool unloading_occurred)
-    : _unloading_occurred(unloading_occurred),
-      _failed(false) {}
+    : _unloading_occurred(unloading_occurred) {}
 
   virtual void do_nmethod(nmethod* nm) {
-    if (failed()) {
-      return;
-    }
-
     if (nm->is_unloading()) {
       // Unlink from the ZNMethodTable
       ZNMethod::unregister_nmethod(nm);
@@ -386,26 +375,18 @@ public:
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
-  }
-
-  bool failed() const {
-    return Atomic::load(&_failed);
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
 
 class ZNMethodUnlinkTask : public ZTask {
 private:
   ZNMethodUnlinkClosure _cl;
-  ICRefillVerifier*     _verifier;
 
 public:
-  ZNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier)
+  ZNMethodUnlinkTask(bool unloading_occurred)
     : ZTask("ZNMethodUnlinkTask"),
-      _cl(unloading_occurred),
-      _verifier(verifier) {
+      _cl(unloading_occurred) {
     ZNMethodTable::nmethods_do_begin(false /* secondary */);
   }
 
@@ -414,33 +395,13 @@ public:
   }
 
   virtual void work() {
-    ICRefillVerifierMark mark(_verifier);
     ZNMethodTable::nmethods_do(false /* secondary */, &_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void ZNMethod::unlink(ZWorkers* workers, bool unloading_occurred) {
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      ZNMethodUnlinkTask task(unloading_occurred, &verifier);
-      workers->run(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts_leaver;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  ZNMethodUnlinkTask task(unloading_occurred);
+  workers->run(&task);
 }
 
 void ZNMethod::purge() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 
 /* ============================================================================= */
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 /* ============================================================================= */
 
@@ -106,7 +106,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     jvmtiCapabilities caps;
 
     if (!NSK_VERIFY(
-                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL
+                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr
                 )
        )
         return JNI_ERR;
@@ -131,7 +131,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     if (!NSK_JVMTI_VERIFY(
                 jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                 JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
-                                                NULL)))
+                                                nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

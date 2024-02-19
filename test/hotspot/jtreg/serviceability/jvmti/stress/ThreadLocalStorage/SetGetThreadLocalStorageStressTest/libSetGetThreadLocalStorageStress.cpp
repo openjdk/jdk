@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,15 +48,15 @@ StorageStructure* check_tls(jvmtiEnv * jvmti, JNIEnv * jni, jthread thread, cons
 
   jvmtiError err = jvmti->GetThreadLocalStorage(thread, (void **) &storage);
   if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    return NULL;
+    return nullptr;
   }
   check_jvmti_status(jni, err, "Error in GetThreadLocalStorage");
   LOG("Check %s with %p in %s\n", thread_info.name, storage, source);
 
 
-  if (storage == NULL) {
+  if (storage == nullptr) {
     // Might be not set
-    return NULL;
+    return nullptr;
   }
 
   if (storage->self_pointer != storage || (strcmp(thread_info.name, storage->data) != 0)) {
@@ -71,12 +71,12 @@ StorageStructure* check_tls(jvmtiEnv * jvmti, JNIEnv * jni, jthread thread, cons
 void check_delete_tls(jvmtiEnv * jvmti, JNIEnv * jni, jthread thread, const char* source) {
   StorageStructure *storage = check_tls(jvmti, jni, thread, source);
 
-  if (storage == NULL) {
+  if (storage == nullptr) {
     return;
   }
 
   check_jvmti_status(jni, jvmti->Deallocate((unsigned char *)storage), "Deallocation failed.");
-  jvmtiError err = jvmti->SetThreadLocalStorage(thread, NULL);
+  jvmtiError err = jvmti->SetThreadLocalStorage(thread, nullptr);
   if (err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
     return;
   }
@@ -125,7 +125,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
   LOG("Started.....\n");
 
   while (true) {
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint count = 0;
 
     sleep_ms(10);
@@ -136,7 +136,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
     }
     check_jvmti_status(jni, jvmti->GetAllThreads(&count, &threads), "Error in GetAllThreads");
     for (int i = 0; i < count; i++) {
-      jthread testedThread = NULL;
+      jthread testedThread = nullptr;
       jvmtiError err;
 
       err = GetVirtualThread(jvmti, jni, threads[i], &testedThread);
@@ -145,7 +145,7 @@ agentProc(jvmtiEnv * jvmti, JNIEnv * jni, void * arg) {
       }
       check_jvmti_status(jni, err,  "Error in GetVirtualThread");
 
-      if (testedThread == NULL) {
+      if (testedThread == nullptr) {
         testedThread = threads[i];
         continue;
       }
@@ -205,7 +205,7 @@ VirtualThreadEnd(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) {
 
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
-  jvmtiEnv * jvmti = NULL;
+  jvmtiEnv * jvmti = nullptr;
 
   jvmtiEventCallbacks callbacks;
   jvmtiCapabilities caps;
@@ -213,7 +213,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -250,19 +250,19 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL);
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, NULL);
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
-  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, NULL);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_END, nullptr);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
+  jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_END, nullptr);
 
   err = init_agent_data(jvmti, &agent_data);
   if (err != JVMTI_ERROR_NONE) {
     return JNI_ERR;
   }
 
-  if (set_agent_proc(agentProc, NULL) != JNI_TRUE) {
+  if (set_agent_proc(agentProc, nullptr) != JNI_TRUE) {
     return JNI_ERR;
   }
   return JNI_OK;

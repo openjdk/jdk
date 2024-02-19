@@ -51,7 +51,6 @@
 #endif
 
 NEEDS_CLEANUP // remove this definitions ?
-const Register IC_Klass    = t1;    // where the IC klass is cached
 const Register SYNC_header = x10;   // synchronization header
 const Register SHIFT_count = x10;   // where count for shift operations must be
 
@@ -265,26 +264,7 @@ void LIR_Assembler::osr_entry() {
 
 // inline cache check; done before the frame is built.
 int LIR_Assembler::check_icache() {
-  Register receiver = FrameMap::receiver_opr->as_register();
-  Register ic_klass = IC_Klass;
-  int start_offset = __ offset();
-  Label dont;
-  __ inline_cache_check(receiver, ic_klass, dont);
-
-  // if icache check fails, then jump to runtime routine
-  // Note: RECEIVER must still contain the receiver!
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  // We align the verified entry point unless the method body
-  // (including its inline cache check) will fit in a single 64-byte
-  // icache line.
-  if (!method()->is_accessor() || __ offset() - start_offset > 4 * 4) {
-    // force alignment after the cache check.
-    __ align(CodeEntryAlignment);
-  }
-
-  __ bind(dont);
-  return start_offset;
+  return __ ic_check(CodeEntryAlignment);
 }
 
 void LIR_Assembler::jobject2reg(jobject o, Register reg) {
@@ -1398,7 +1378,7 @@ void LIR_Assembler::emit_static_call_stub() {
   __ relocate(static_stub_Relocation::spec(call_pc));
   __ emit_static_call_stub();
 
-  assert(__ offset() - start + CompiledStaticCall::to_trampoline_stub_size()
+  assert(__ offset() - start + CompiledDirectCall::to_trampoline_stub_size()
          <= call_stub_size(), "stub too big");
   __ end_a_stub();
 }

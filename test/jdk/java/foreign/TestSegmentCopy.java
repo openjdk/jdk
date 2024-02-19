@@ -145,6 +145,66 @@ public class TestSegmentCopy {
         MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, segment, 0, 4);
     }
 
+    @Test
+    public void testCopy5ArgWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, -1, dst, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopy7ArgWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, -1, dst, JAVA_BYTE, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, JAVA_BYTE, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopyFromArrayWithNegativeValues() {
+        MemorySegment src = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        byte[] dst = new byte[] {1, 2, 3, 4};
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, -1, dst, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, JAVA_BYTE, 0, dst, 0, -1)
+        );
+    }
+
+    @Test
+    public void testCopyToArrayWithNegativeValues() {
+        byte[] src = new byte[] {1, 2, 3, 4};
+        MemorySegment dst = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, -1, dst, JAVA_BYTE, 0, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, JAVA_BYTE, -1, 4)
+        );
+        assertThrows(IndexOutOfBoundsException.class, () ->
+                MemorySegment.copy(src, 0, dst, JAVA_BYTE, 0, -1)
+        );
+    }
+
     enum Type {
         // Byte
         BYTE(byte.class, JAVA_BYTE, i -> (byte)i),
