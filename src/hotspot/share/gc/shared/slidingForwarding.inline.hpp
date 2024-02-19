@@ -99,7 +99,7 @@ HeapWord* SlidingForwarding::decode_forwarding(HeapWord* from, uintptr_t encoded
 
   size_t from_idx = biased_region_index_containing(from);
   HeapWord* base = _biased_bases[alternate][from_idx];
-  assert(base != UNUSED_BASE, "must not be unused base");
+  assert(base != UNUSED_BASE, "must not be unused base: encoded: " INTPTR_FORMAT, encoded);
   HeapWord* decoded = base + offset;
   assert(decoded >= _heap_start,
          "Address must be above heap start. encoded: " INTPTR_FORMAT ", alt_region: " SIZE_FORMAT ", base: " PTR_FORMAT,
@@ -132,8 +132,9 @@ inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
   assert(_bases_table != nullptr, "expect sliding forwarding initialized");
   forward_to_impl(obj, fwd);
   assert(forwardee(obj) == fwd, "must be forwarded to correct forwardee");
-#endif
+#else
   obj->forward_to(fwd);
+#endif
 }
 
 inline oop SlidingForwarding::forwardee_impl(oop from) {
@@ -154,8 +155,9 @@ inline oop SlidingForwarding::forwardee(oop obj) {
 #ifdef _LP64
   assert(_bases_table != nullptr, "expect sliding forwarding initialized");
   return forwardee_impl(obj);
-#endif
+#else
   return obj->forwardee();
+#endif
 }
 
 #endif // SHARE_GC_SHARED_SLIDINGFORWARDING_INLINE_HPP
