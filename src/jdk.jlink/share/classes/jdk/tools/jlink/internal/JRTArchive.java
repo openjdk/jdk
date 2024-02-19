@@ -25,8 +25,8 @@
 
 package jdk.tools.jlink.internal;
 
+import static jdk.tools.jlink.internal.JlinkTask.DIFF_PATTERN;
 import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
-import static jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -42,8 +42,10 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -65,6 +67,7 @@ public class JRTArchive implements Archive {
     private final ModuleReference ref;
     private final List<JRTFile> files = new ArrayList<>();
     private final List<String> otherRes;
+    private final Map<String, ResourceDiff> resDiff;
     private final boolean errorOnModifiedFile;
 
     JRTArchive(String module, Path path, boolean errorOnModifiedFile) {
@@ -76,6 +79,7 @@ public class JRTArchive implements Archive {
                                     new IllegalArgumentException("Module " + module + " not part of the JDK install"));
         this.errorOnModifiedFile = errorOnModifiedFile;
         this.otherRes = readModuleResourceFile(module);
+        this.resDiff = readModuleResourceDiff(module);
     }
 
     @Override
@@ -134,24 +138,46 @@ public class JRTArchive implements Archive {
     private void collectFiles() throws IOException {
         if (files.isEmpty()) {
             addNonClassResources();
-            // Add classes/resources from image module
+            // Add classes/resources from image module,
+            // patched with the runtime image link diff
             files.addAll(ref.open().list()
-                            .filter(s -> !RUNIMAGE_LINK_STAMP.equals(s))
+                                   .filter(i -> {
+                                       String lookupKey = String.format("/%s/%s", module, i);
+                                       ResourceDiff rd = resDiff.get(lookupKey);
+                                       // Filter all resources with a resource diff
+                                       // that are of kind MODIFIED.
+                                       // Note that REMOVED won't happen since in
+                                       // that case the module listing won't have
+                                       // the resource anyway.
+                                       return (rd == null || rd.getKind() == ResourceDiff.Kind.MODIFIED);
+                                   })
                                    .map(s -> {
-                return new JRTArchiveFile(JRTArchive.this, s,
-                                          EntryType.CLASS_OR_RESOURCE, null /* hashOrTarget */, false /* symlink */);
-            }).collect(Collectors.toList()));
-
-            if (module.equals("jdk.jlink")) {
-                // this entry represents that the image being created is based on the
-                // run-time image (not the packaged modules).
-                files.add(createRuntimeImageLinkStamp());
-            }
+                                               String lookupKey = String.format("/%s/%s", module, s);
+                                               return new JRTArchiveFile(JRTArchive.this, s,
+                                                       EntryType.CLASS_OR_RESOURCE,
+                                                       null /* hashOrTarget */,
+                                                       false /* symlink */,
+                                                       resDiff.get(lookupKey));
+                                   })
+                                   .collect(Collectors.toList()));
+            // Finally add all files only present in the resource diff
+            // That is, removed items in the runtime image.
+            files.addAll(resDiff.values().stream()
+                                         .filter(rd -> rd.getKind() == ResourceDiff.Kind.REMOVED)
+                                         .map(s -> {
+                                                 int secondSlash = s.getName().indexOf("/", 1);
+                                                 if (secondSlash == -1) {
+                                                     throw new AssertionError();
+                                                 }
+                                                 String pathWithoutModule = s.getName().substring(secondSlash + 1, s.getName().length());
+                                                 return new JRTArchiveFile(JRTArchive.this, pathWithoutModule,
+                                                         EntryType.CLASS_OR_RESOURCE,
+                                                         null  /* hashOrTarget */,
+                                                         false /* symlink */,
+                                                         s);
+                                         })
+                                         .collect(Collectors.toList()));
         }
-    }
-
-    private JRTFile createRuntimeImageLinkStamp() {
-        return new JRTArchiveStampFile(this, RUNIMAGE_LINK_STAMP, EntryType.CLASS_OR_RESOURCE, null, false);
     }
 
     /*
@@ -179,7 +205,7 @@ public class JRTArchive implements Archive {
                             }
                         }
 
-                        return new JRTArchiveFile(JRTArchive.this, m.resPath, toEntryType(m.resType), m.hashOrTarget, m.symlink);
+                        return new JRTArchiveFile(JRTArchive.this, m.resPath, toEntryType(m.resType), m.hashOrTarget, m.symlink, null);
                  })
                  .collect(Collectors.toList()));
         }
@@ -338,11 +364,11 @@ public class JRTArchive implements Archive {
         Entry toEntry();
     }
 
-    record JRTArchiveFile (Archive archive, String resPath, EntryType resType, String sha, boolean symlink)
+    record JRTArchiveFile (Archive archive, String resPath, EntryType resType, String sha, boolean symlink, ResourceDiff diff)
             implements JRTFile
     {
         public Entry toEntry() {
-            return new Entry(archive, resPath, resPath, resType) {
+            return new Entry(archive, String.format("/%s/%s", archive.moduleName(), resPath), resPath, resType) {
                 @Override
                 public long size() {
                     try {
@@ -357,7 +383,15 @@ public class JRTArchive implements Archive {
                             // Read from the module image. This works, because
                             // the underlying base path is a JrtPath with the
                             // JrtFileSystem underneath which is able to handle
-                            // this size query
+                            // this size query.
+                            if (diff != null) {
+                                // If the resource has a diff to the
+                                // packaged modules, use the diff. Diffs of kind
+                                // ADDED have been filtered in collectFiles();
+                                assert diff.getKind() != ResourceDiff.Kind.ADDED;
+                                assert diff.getName().equals(String.format("/%s/%s", archive.moduleName(), resPath));
+                                return diff.getResourceBytes().length;
+                            }
                             return Files.size(archive.getPath().resolve(resPath));
                         }
                     } catch (IOException e) {
@@ -372,35 +406,17 @@ public class JRTArchive implements Archive {
                         Path path = symlink ? BASE.resolve(sha) : BASE.resolve(resPath);
                         return Files.newInputStream(path);
                     } else {
-                        // Read from the module image.
+                        // Read from the module image. Use the diff to the
+                        // packaged modules if we have one.
+                        if (diff != null) {
+                            assert diff.getKind() != ResourceDiff.Kind.ADDED;
+                            assert diff.getName().equals(String.format("/%s/%s", archive.moduleName(), resPath));
+                            return new ByteArrayInputStream(diff.getResourceBytes());
+                        }
                         String module = archive.moduleName();
                         ModuleReference mRef = ModuleFinder.ofSystem().find(module).orElseThrow();
                         return mRef.open().open(resPath).orElseThrow();
                     }
-                }
-
-            };
-        }
-    }
-
-    // Stamp file marker for single-hop implementation
-    record JRTArchiveStampFile(Archive archive, String resPath, EntryType resType, String sha, boolean symlink)
-            implements JRTFile
-    {
-        @Override
-        public Entry toEntry() {
-            return new Entry(archive, resPath, resPath, resType) {
-
-                @Override
-                public long size() {
-                    // empty file
-                    return 0;
-                }
-
-                @Override
-                public InputStream stream() throws IOException {
-                    // empty content
-                    return new ByteArrayInputStream(new byte[0]);
                 }
 
             };
@@ -421,6 +437,20 @@ public class JRTArchive implements Archive {
             }
         } catch (IOException e) {
             throw new InternalError("Failed to process run-time image resources for " + modName);
+        }
+    }
+
+    static Map<String, ResourceDiff> readModuleResourceDiff(String modName) {
+        String resName = String.format(DIFF_PATTERN, modName);
+        try {
+            try (InputStream inStream = JRTArchive.class.getModule().getResourceAsStream(resName)) {
+                List<ResourceDiff> diffs = ResourceDiff.read(inStream);
+                Map<String, ResourceDiff> resDiffsAsMap = new HashMap<>();
+                diffs.forEach(r -> resDiffsAsMap.put(r.getName(), r));
+                return resDiffsAsMap;
+            }
+        } catch (IOException e) {
+            throw new InternalError("Failed to process run-time image diff file for " + modName);
         }
     }
 }

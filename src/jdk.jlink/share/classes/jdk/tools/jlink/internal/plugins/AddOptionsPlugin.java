@@ -25,8 +25,6 @@
 
 package jdk.tools.jlink.internal.plugins;
 
-import java.util.List;
-
 /**
  * Plugin to add VM command-line options, by storing them in a resource
  * that's read by the VM at startup
@@ -37,12 +35,6 @@ public final class AddOptionsPlugin extends AddResourcePlugin {
 
     public AddOptionsPlugin() {
         super("add-options", OPTS_FILE);
-    }
-
-    // Filter the file we create for run-time image based links
-    @Override
-    public List<String> getExcludePatterns() {
-        return List.of("glob:" + AddOptionsPlugin.OPTS_FILE);
     }
 
 }

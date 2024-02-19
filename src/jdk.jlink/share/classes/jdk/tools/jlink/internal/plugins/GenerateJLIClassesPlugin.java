@@ -31,7 +31,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -153,22 +152,6 @@ public final class GenerateJLIClassesPlugin extends AbstractPlugin {
             }
         }
         return out.build();
-    }
-
-    // We generate these JLI Species classes so they would be in the run-time
-    // image we derive from if we don't filter them for run-time image based
-    // links. This filter corresponds to the set of classes part of the
-    // jmods.
-    @Override
-    public List<String> getExcludePatterns() {
-        return List.of("regex:/java\\.base/java/lang/invoke/BoundMethodHandle\\$Species_(?:D|DL|I|IL|LJ|LL).*\\.class");
-    }
-
-    // This plugin doesn't persist, since generated classes are filtered for
-    // run-time image based links.
-    @Override
-    public boolean runTimeImageLinkPersistent() {
-        return false;
     }
 
     private static final String DIRECT_METHOD_HOLDER_ENTRY =

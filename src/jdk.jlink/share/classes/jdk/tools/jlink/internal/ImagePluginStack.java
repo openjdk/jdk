@@ -171,25 +171,22 @@ public final class ImagePluginStack {
     private final Plugin lastSorter;
     private final List<Plugin> plugins = new ArrayList<>();
     private final List<ResourcePrevisitor> resourcePrevisitors = new ArrayList<>();
-    private final List<JlinkCLIArgsListener> cliArgsListeners = new ArrayList<>();
     private final boolean validate;
-    private final List<String> cliArgs;
 
     public ImagePluginStack() {
-        this(null, Collections.emptyList(), null, null);
+        this(null, Collections.emptyList(), null);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
-            Plugin lastSorter, List<String> cliArgs) {
-        this(imageBuilder, plugins, lastSorter, true, cliArgs);
+            Plugin lastSorter) {
+        this(imageBuilder, plugins, lastSorter, true);
     }
 
     public ImagePluginStack(ImageBuilder imageBuilder,
             List<Plugin> plugins,
             Plugin lastSorter,
-            boolean validate,
-            List<String> cliArgs) {
+            boolean validate) {
         this.imageBuilder = Objects.requireNonNull(imageBuilder);
         this.lastSorter = lastSorter;
         this.plugins.addAll(Objects.requireNonNull(plugins));
@@ -198,11 +195,7 @@ public final class ImagePluginStack {
             if (p instanceof ResourcePrevisitor) {
                 resourcePrevisitors.add((ResourcePrevisitor) p);
             }
-            if (p instanceof JlinkCLIArgsListener) {
-                cliArgsListeners.add((JlinkCLIArgsListener) p);
-            }
         });
-        this.cliArgs = cliArgs;
         this.validate = validate;
     }
 
@@ -242,9 +235,6 @@ public final class ImagePluginStack {
             return new ResourcePoolManager(resources.byteOrder(),
                     resources.getStringTable()).resourcePool();
         }
-        cliArgsListeners.forEach((p) -> {
-            p.process(cliArgs);
-        });
         PreVisitStrings previsit = new PreVisitStrings();
         resourcePrevisitors.forEach((p) -> {
             p.previsit(resources.resourcePool(), previsit);

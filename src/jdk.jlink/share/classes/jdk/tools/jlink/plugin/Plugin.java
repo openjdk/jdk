@@ -25,11 +25,9 @@
 package jdk.tools.jlink.plugin;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import jdk.tools.jlink.internal.plugins.ExcludePlugin;
 import jdk.tools.jlink.internal.plugins.PluginsResourceBundle;
 
 /**
@@ -176,34 +174,6 @@ public interface Plugin {
      */
     public default boolean isHidden() {
         return false;
-    }
-
-    /**
-     * A list of exclude patterns suitable to be fed to the
-     * {@link ExcludePlugin}. The list of patterns should be such that
-     * the classes and resource list will be the same as before the
-     * plugin ran.
-     *
-     * @return A list of glob or regex patterns suitable for the
-     *         exclude-resource plugin.
-     */
-    public default List<String> getExcludePatterns() {
-        return null;
-    }
-
-    /**
-     * Determined whether or not application of the plugin changes binary files
-     * in the resulting image on the filesystem or the plugin changes classes or
-     * resources in the resulting jimage and there is no way to undo this
-     * operation. This is being used for the run-time image based link so as to
-     * craft an equivalent CLI command of a link using packaged modules.
-     *
-     * @return {@code true} if the transformation cannot be undone and carries
-     *         forward in a subsequent jlink using the run-time image.
-     *         {@code false} otherwise.
-     */
-    public default boolean runTimeImageLinkPersistent() {
-        return getType() == Category.FILTER || getType() == Category.TRANSFORMER;
     }
 
     /**

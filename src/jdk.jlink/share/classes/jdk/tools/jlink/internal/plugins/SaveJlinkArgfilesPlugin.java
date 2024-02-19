@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.internal.JlinkTask;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
@@ -104,11 +103,5 @@ public final class SaveJlinkArgfilesPlugin extends AbstractPlugin {
         out.add(ResourcePoolEntry.create("/jdk.jlink/" + OPTIONS_RESOURCE,
                                          savedOptions));
         return out.build();
-    }
-
-    // Filter the file we create for run-time image based links
-    @Override
-    public List<String> getExcludePatterns() {
-        return List.of("glob:/jdk.jlink/" + JlinkTask.OPTIONS_RESOURCE);
     }
 }
