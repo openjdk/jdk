@@ -34,7 +34,7 @@ import java.nio.ByteOrder;
 
 /*
  * @test
- * @bug 8309267
+ * @bug 8326139
  * @summary Test splitting packs in SuperWord
  * @library /test/lib /
  * @requires vm.compiler2.enabled
