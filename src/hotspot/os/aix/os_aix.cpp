@@ -1167,23 +1167,28 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
 */
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void* result = nullptr;
-  unsigned long buffer_length = strlen(filename);
-  int extension_length = 3;
-  char* file_path = NEW_C_HEAP_ARRAY(char, buffer_length + extension_length + 1, mtInternal);
-  strncpy(file_path,filename, buffer_length + 1);
+  char *file_path = strdup(filename);
   char* const pointer_to_dot = strrchr(file_path, '.');
+  char const *old_extension = ".so";
+  char const *new_extension = ".a";
   if (pointer_to_dot == nullptr) {
     log_info(os)("Attempting to load a shared object without extension %s", filename);
     FREE_C_HEAP_ARRAY(char, file_path);
     return result;
   }
   // First try to load the existing file.
-  result = dll_load_library(file_path, ebuf, ebuflen);
+  result = dll_load_library(filename, ebuf, ebuflen);
+  int error_code = errno;
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr) {
-    if (strcmp(pointer_to_dot, ".so") == 0) {
-      sprintf(pointer_to_dot, ".a");
+  if (error_code == EACCES || error_code == ENOENT) {
+    if (strlen(new_extension) > strlen(old_extension)){
+      log_info(os)("New extension length must be less than existing one");
+      FREE_C_HEAP_ARRAY(char, file_path);
+      return result;
+    }
+    if (strcmp(pointer_to_dot, old_extension) == 0) {
+      sprintf(pointer_to_dot, "%s", new_extension);
       result = dll_load_library(file_path, ebuf, ebuflen);
     }
   }
