@@ -816,9 +816,10 @@ public final class LauncherHelper {
     private static Class<?> loadMainClass(int mode, String what) {
         // get the class name
         String cn = null;
-        // In LM_JAR mode, put the underlying file in the JarFile/ZipFile cache.
-        // This will avoid needing to re-parse the manifest when the JAR file
-        // is opened on the class path, triggered by Class.forName below.
+        // In LM_JAR mode, keep the underlying file open to retain it in
+        // the JarFile/ZipFile cache. This will avoid needing to re-parse
+        // the central directory when the file is opened on the class path,
+        // triggered by Class.forName below.
         JarFile jarFile = null;
         switch (mode) {
             case LM_CLASS:
