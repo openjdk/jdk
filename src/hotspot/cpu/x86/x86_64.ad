@@ -519,7 +519,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 }
 
 // This could be in MacroAssembler but it's fairly C2 specific
-void emit_cmpfp_fixup(MacroAssembler& _masm) {
+static void emit_cmpfp_fixup(MacroAssembler& _masm) {
   Label exit;
   __ jccb(Assembler::noParity, exit);
   __ pushf();
@@ -539,7 +539,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -558,10 +558,10 @@ void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
 // je            #
 // |-jz -> a | b # a & b
 // |    -> a     #
-void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
-                     XMMRegister a, XMMRegister b,
-                     XMMRegister xmmt, Register rt,
-                     bool min, bool single) {
+static void emit_fp_min_max(MacroAssembler& _masm, XMMRegister dst,
+                            XMMRegister a, XMMRegister b,
+                            XMMRegister xmmt, Register rt,
+                            bool min, bool single) {
 
   Label nan, zero, below, above, done;
 
@@ -1472,40 +1472,19 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   if (UseCompressedClassPointers) {
     st->print_cr("movl    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    st->print_cr("\tcmpq    rax, rscratch1\t # Inline cache check");
+    st->print_cr("\tcmpl    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   } else {
-    st->print_cr("\tcmpq    rax, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t"
-                 "# Inline cache check");
+    st->print_cr("movq    rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tcmpq    rscratch1, [rax + CompiledICData::speculated_klass_offset()]\t # Inline cache check");
   }
   st->print_cr("\tjne     SharedRuntime::_ic_miss_stub");
-  st->print_cr("\tnop\t# nops to align entry point");
 }
 #endif
 
 void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   MacroAssembler masm(&cbuf);
-  uint insts_size = cbuf.insts_size();
-  if (UseCompressedClassPointers) {
-    masm.load_klass(rscratch1, j_rarg0, rscratch2);
-    masm.cmpptr(rax, rscratch1);
-  } else {
-    masm.cmpptr(rax, Address(j_rarg0, oopDesc::klass_offset_in_bytes()));
-  }
-
-  masm.jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     4 bytes aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 4 - ((cbuf.insts_size() - insts_size) & 0x3);
-  if (OptoBreakpoint) {
-    // Leave space for int3
-    nops_cnt -= 1;
-  }
-  nops_cnt &= 0x3; // Do not add nops if code is aligned.
-  if (nops_cnt > 0)
-    masm.nop(nops_cnt);
+  masm.ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -1840,7 +1819,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call_offset);
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, mark);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -12404,7 +12383,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
 %}
 
 instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRegP scr) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box);
   ins_cost(300);
@@ -12417,12 +12396,37 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, rRegP object, rax_RegP box, rRegP tmp) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "fastunlock $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP rax_reg, TEMP tmp, USE_KILL box);
+  ins_cost(300);
+  format %{ "fastlock $object,$box\t! kills $box,$rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, rRegP object, rax_RegP rax_reg, rRegP tmp) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object rax_reg));
+  effect(TEMP tmp, USE_KILL rax_reg);
+  ins_cost(300);
+  format %{ "fastunlock $object,$rax_reg\t! kills $rax_reg,$tmp" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $rax_reg$$Register, $tmp$$Register, r15_thread);
   %}
   ins_pipe(pipe_slow);
 %}

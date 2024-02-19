@@ -98,6 +98,12 @@ class TenuredGeneration: public Generation {
   MemRegion prev_used_region() const { return _prev_used_region; }
   void save_used_region()   { _prev_used_region = used_region(); }
 
+  // Returns true if this generation cannot be expanded further
+  // without a GC.
+  bool is_maximal_no_gc() const {
+    return _virtual_space.uncommitted_size() == 0;
+  }
+
   HeapWord* block_start(const void* p) const;
 
   void scan_old_to_young_refs();
@@ -159,6 +165,14 @@ class TenuredGeneration: public Generation {
   // Promotion of the full amount is not guaranteed but
   // might be attempted in the worst case.
   bool promotion_attempt_is_safe(size_t max_promoted_in_bytes) const;
+
+  // "obj" is the address of an object in young-gen.  Allocate space for "obj"
+  // in the old-gen, and copy "obj" into the newly allocated space, if
+  // possible, returning the result (or null if the allocation failed).
+  //
+  // The "obj_size" argument is just obj->size(), passed along so the caller can
+  // avoid repeating the virtual call to retrieve it.
+  oop promote(oop obj, size_t obj_size);
 
   virtual void verify();
   virtual void print_on(outputStream* st) const;

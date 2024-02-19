@@ -25,6 +25,7 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -1193,6 +1194,81 @@ void MacroAssembler::post_call_nop() {
   InlineSkippedInstructionsCounter skipCounter(this);
   Assembler::emit_int32(Assembler::CMPLI_OPCODE | Assembler::opp_u_field(1, 9, 9));
   assert(is_post_call_nop(*(int*)(pc() - 4)), "post call not not found");
+}
+
+int MacroAssembler::ic_check_size() {
+  bool implicit_null_checks_available = ImplicitNullChecks && os::zero_page_read_protected(),
+       use_fast_receiver_null_check   = implicit_null_checks_available || TrapBasedNullChecks,
+       use_trap_based_null_check      = !implicit_null_checks_available && TrapBasedNullChecks;
+
+  int num_ins;
+  if (use_fast_receiver_null_check && TrapBasedICMissChecks) {
+    num_ins = 3;
+    if (use_trap_based_null_check) num_ins += 1;
+  } else {
+    num_ins = 7;
+    if (!implicit_null_checks_available) num_ins += 2;
+  }
+  return num_ins * BytesPerInstWord;
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  bool implicit_null_checks_available = ImplicitNullChecks && os::zero_page_read_protected(),
+       use_fast_receiver_null_check   = implicit_null_checks_available || TrapBasedNullChecks,
+       use_trap_based_null_check      = !implicit_null_checks_available && TrapBasedNullChecks;
+
+  Register receiver = R3_ARG1;
+  Register data = R19_inline_cache_reg;
+  Register tmp1 = R11_scratch1;
+  Register tmp2 = R12_scratch2;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, end_alignment, end_alignment - ic_check_size());
+
+  int uep_offset = offset();
+
+  if (use_fast_receiver_null_check && TrapBasedICMissChecks) {
+    // Fast version which uses SIGTRAP
+
+    if (use_trap_based_null_check) {
+      trap_null_check(receiver);
+    }
+    if (UseCompressedClassPointers) {
+      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
+    } else {
+      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
+    }
+    ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
+    trap_ic_miss_check(tmp1, tmp2);
+
+  } else {
+    // Slower version which doesn't use SIGTRAP
+
+    // Load stub address using toc (fixed instruction size, unlike load_const_optimized)
+    calculate_address_from_global_toc(tmp1, SharedRuntime::get_ic_miss_stub(),
+                                      true, true, false); // 2 instructions
+    mtctr(tmp1);
+
+    if (!implicit_null_checks_available) {
+      cmpdi(CCR0, receiver, 0);
+      beqctr(CCR0);
+    }
+    if (UseCompressedClassPointers) {
+      lwz(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
+    } else {
+      ld(tmp1, oopDesc::klass_offset_in_bytes(), receiver);
+    }
+    ld(tmp2, in_bytes(CompiledICData::speculated_klass_offset()), data);
+    cmpd(CCR0, tmp1, tmp2);
+    bnectr(CCR0);
+  }
+
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,

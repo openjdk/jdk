@@ -43,6 +43,7 @@ class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
 class VectorSet;
+class VSharedData;
 class Invariance;
 struct small_cache;
 
@@ -231,14 +232,11 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
-  // Cached CountedLoopEndNode of pre loop for main loops
-  CountedLoopEndNode* _pre_loop_end;
-
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0), _pre_loop_end(nullptr) {
+      _slp_maximum_unroll_factor(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -330,9 +328,6 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
-  CountedLoopNode* pre_loop_head() const;
-  CountedLoopEndNode* pre_loop_end();
-  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -1103,6 +1098,7 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1117,6 +1113,7 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1436,6 +1433,14 @@ public:
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
+
+  // AutoVectorize the loop: replace scalar ops with vector ops.
+  enum AutoVectorizeStatus {
+    Impossible,      // This loop has the wrong shape to even try vectorization.
+    Success,         // We just successfully vectorized the loop.
+    TriedAndFailed,  // We tried to vectorize, but failed.
+  };
+  AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);

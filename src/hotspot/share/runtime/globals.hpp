@@ -880,9 +880,6 @@ const int ObjectAlignmentInBytes = 8;
   notproduct(bool, TraceInvocationCounterOverflow, false,                   \
           "Trace method invocation counter overflow")                       \
                                                                             \
-  develop(bool, TraceInlineCacheClearing, false,                            \
-          "Trace clearing of inline caches in nmethods")                    \
-                                                                            \
   develop(bool, VerifyDependencies, trueInDebug,                            \
           "Exercise and verify the compilation dependency mechanism")       \
                                                                             \
@@ -900,12 +897,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
-                                                                            \
-  develop(bool, TraceICBuffer, false,                                       \
-          "Trace usage of IC buffer")                                       \
-                                                                            \
-  develop(bool, TraceCompiledIC, false,                                     \
-          "Trace changes of compiled IC")                                   \
                                                                             \
   develop(bool, FLSVerifyDictionary, false,                                 \
           "Do lots of (expensive) FLS dictionary verification")             \
