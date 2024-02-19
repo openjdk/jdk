@@ -2158,13 +2158,6 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
   return result;
 }
 
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
-                    read_only, allow_exec);
-}
-
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
