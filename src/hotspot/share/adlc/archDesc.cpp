@@ -763,7 +763,7 @@ bool ArchDesc::check_usage() {
       cnt++;
     }
   }
-  if (cnt) fprintf(stderr, "\n-------Warning: total %d unused operandsn", cnt);
+  if (cnt) fprintf(stderr, "\n-------Warning: total %d unused operands\n", cnt);
 
   return true;
 }
