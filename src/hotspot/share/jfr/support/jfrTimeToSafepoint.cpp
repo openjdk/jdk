@@ -21,6 +21,7 @@
  * questions.
  */
 
+#include "precompiled.hpp"
 #include "jfr/support/jfrTimeToSafepoint.hpp"
 
 bool JfrTimeToSafepoint::_active = false;
