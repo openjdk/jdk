@@ -643,7 +643,7 @@ public class Inflater {
      *
      * @deprecated This method cannot safely return a result without a potential
      * loss of information about the magnitude and sign of the returned value.
-     * Use the @link #getBytesRead()} method instead when obtaining this information.
+     * Use the {@link #getBytesRead()} method instead when obtaining this information.
      *
      * @return the total number of compressed bytes input so far, discarding
      * the 32 highest order bits
