@@ -201,7 +201,7 @@ public class JlinkTask {
         }, "--ignore-signing-information"),
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.ignoreModifiedRuntime = true;
-        }, true, "--ignore-modified-runtime"),
+        }, true, "--ignore-modified-runtime")
     };
 
 
@@ -508,15 +508,6 @@ public class JlinkTask {
             finder = limitFinder(finder, limitMods, Objects.requireNonNull(roots));
         }
         return finder;
-    }
-
-    private static ModuleFinder moduleFinderFromPath(List<Path> paths, Runtime.Version version) {
-        if (Objects.requireNonNull(paths).isEmpty()) {
-            throw new IllegalArgumentException(taskHelper.getMessage("err.empty.module.path"));
-       }
-
-       Path[] entries = paths.toArray(new Path[0]);
-       return ModulePath.of(version, true, entries);
     }
 
     private static void deleteDirectory(Path dir) throws IOException {

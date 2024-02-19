@@ -25,6 +25,9 @@
 
 package jdk.tools.jlink.internal.plugins;
 
+import static jdk.tools.jlink.internal.JlinkTask.CLI_RESOURCE_FILE;
+import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
+
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -46,10 +49,6 @@ import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolModule;
 
-import static jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
-import static jdk.tools.jlink.internal.JlinkTask.CLI_RESOURCE_FILE;
-import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
-
 
 /**
  * Plugin to collect resources from jmod which aren't classes or
@@ -64,19 +63,6 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
     private static final String CLI_RESOURCE = "/" + JLINK_MOD_NAME + "/" + CLI_RESOURCE_FILE;
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile(".*\\s.*");
     private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
-
-    // Type file format:
-    // '<type>|{0,1}|<sha-sum>|<file-path>'
-    //   (1)    (2)      (3)      (4)
-    //
-    // Where fields are:
-    //
-    // (1) The resource type as specified by ResourcePoolEntry.type()
-    // (2) Symlink designator. 0 => regular resource, 1 => symlinked resource
-    // (3) The SHA-512 sum of the resources' content. The link to the target
-    //     for symlinked resources.
-    // (4) The relative file path of the resource
-    private static final String TYPE_FILE_FORMAT = "%d|%d|%s|%s";
 
     private final Map<String, List<String>> nonClassResEntries;
 
@@ -182,7 +168,7 @@ public final class JlinkResourcesListPlugin extends AbstractPlugin implements Jl
 
     @Override
     public Set<State> getState() {
-        return EnumSet.of(State.AUTO_ENABLED, State.FUNCTIONAL);
+        return EnumSet.of(State.FUNCTIONAL);
     }
 
     @Override
