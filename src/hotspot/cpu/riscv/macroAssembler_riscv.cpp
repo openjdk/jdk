@@ -3682,8 +3682,7 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
 
   xorr(val, val, crc);
   andi(val, val, right_8_bits);
-  slli(val, val, 2);
-  add(val, table, val);
+  shadd(val, val, table, val, 2);
   lwu(val, Address(val));
   srli(crc, crc, 8);
   xorr(crc, val, crc);
