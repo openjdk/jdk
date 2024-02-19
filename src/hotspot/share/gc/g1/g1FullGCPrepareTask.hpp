@@ -89,7 +89,6 @@ private:
     bool do_heap_region(HeapRegion* hr);
   };
 
-  template <bool ALT_FWD>
   class G1PrepareCompactLiveClosure : public StackObj {
     G1FullGCCompactionPoint* _cp;
 
@@ -101,7 +100,6 @@ private:
 
 // Closure to re-prepare objects in the serial compaction point queue regions for
 // serial compaction.
-template <bool ALT_FWD>
 class G1SerialRePrepareClosure : public StackObj {
   G1FullGCCompactionPoint* _cp;
   HeapWord* _dense_prefix_top;

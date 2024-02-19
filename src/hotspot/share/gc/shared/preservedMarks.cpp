@@ -41,20 +41,18 @@ void PreservedMarks::restore() {
   assert_empty();
 }
 
-template <bool ALT_FWD>
-void PreservedMarks::adjust_during_full_gc_impl() {
-  StackIterator<PreservedMark, mtGC> iter(_stack);
-  while (!iter.is_empty()) {
-    PreservedMark* elem = iter.next_addr();
-    adjust_preserved_mark<ALT_FWD>(elem);
+void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
+  oop obj = elem->get_oop();
+  if (obj->is_forwarded()) {
+    elem->set_oop(SlidingForwarding::forwardee(obj));
   }
 }
 
 void PreservedMarks::adjust_during_full_gc() {
-  if (UseAltGCForwarding) {
-    adjust_during_full_gc_impl<true>();
-  } else {
-    adjust_during_full_gc_impl<false>();
+  StackIterator<PreservedMark, mtGC> iter(_stack);
+  while (!iter.is_empty()) {
+    PreservedMark* elem = iter.next_addr();
+    adjust_preserved_mark(elem);
   }
 }
 

@@ -265,29 +265,15 @@ void GenMarkSweep::mark_sweep_phase3() {
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 
-  if (UseAltGCForwarding) {
-    AdjustPointerClosure<true> adjust_pointer_closure;
-    CLDToOopClosure adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
-    CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+  CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  gch->process_roots(SerialHeap::SO_AllCodeCache,
+                     &adjust_pointer_closure,
+                     &adjust_cld_closure,
+                     &adjust_cld_closure,
+                     &code_closure);
 
-    gch->gen_process_weak_roots(&adjust_pointer_closure);
-  } else {
-    AdjustPointerClosure<false> adjust_pointer_closure;
-    CLDToOopClosure adjust_cld_closure(&adjust_pointer_closure, ClassLoaderData::_claim_stw_fullgc_adjust);
-    CodeBlobToOopClosure code_closure(&adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
-    gch->process_roots(SerialHeap::SO_AllCodeCache,
-                       &adjust_pointer_closure,
-                       &adjust_cld_closure,
-                       &adjust_cld_closure,
-                       &code_closure);
+  gch->gen_process_weak_roots(&adjust_pointer_closure);
 
-    gch->gen_process_weak_roots(&adjust_pointer_closure);
-  }
   adjust_marks();
   GenAdjustPointersClosure blk;
   gch->generation_iterate(&blk, true);

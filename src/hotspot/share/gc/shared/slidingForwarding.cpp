@@ -45,63 +45,57 @@ SlidingForwarding::FallbackTable* SlidingForwarding::_fallback_table = nullptr;
 
 void SlidingForwarding::initialize(MemRegion heap, size_t region_size_words) {
 #ifdef _LP64
-  if (UseAltGCForwarding) {
-    _heap_start = heap.start();
+  _heap_start = heap.start();
 
-    // If the heap is small enough to fit directly into the available offset bits,
-    // and we are running Serial GC, we can treat the whole heap as a single region
-    // if it happens to be aligned to allow biasing.
-    size_t rounded_heap_size = round_up_power_of_2(heap.byte_size());
+  // If the heap is small enough to fit directly into the available offset bits,
+  // and we are running Serial GC, we can treat the whole heap as a single region
+  // if it happens to be aligned to allow biasing.
+  size_t rounded_heap_size = round_up_power_of_2(heap.byte_size());
 
-    if (UseSerialGC && (heap.word_size() <= (1 << NUM_OFFSET_BITS)) &&
-        is_aligned((uintptr_t)_heap_start, rounded_heap_size)) {
-      _num_regions = 1;
-      _region_size_words = heap.word_size();
-      _region_size_bytes_shift = log2i_exact(rounded_heap_size);
-    } else {
-      _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
-      _region_size_words = region_size_words;
-      _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
-    }
-    _heap_start_region_bias = (uintptr_t)_heap_start >> _region_size_bytes_shift;
-    _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
-
-    guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned: _heap_start_region_bias: " SIZE_FORMAT ", _region_size_byte_shift: %u, _heap_start: " PTR_FORMAT, _heap_start_region_bias, _region_size_bytes_shift, p2i(_heap_start));
-
-    assert(_region_size_words >= 1, "regions must be at least a word large");
-    assert(_bases_table == nullptr, "should not be initialized yet");
-    assert(_fallback_table == nullptr, "should not be initialized yet");
+  if (UseSerialGC && (heap.word_size() <= (1 << NUM_OFFSET_BITS)) &&
+      is_aligned((uintptr_t)_heap_start, rounded_heap_size)) {
+    _num_regions = 1;
+    _region_size_words = heap.word_size();
+    _region_size_bytes_shift = log2i_exact(rounded_heap_size);
+  } else {
+    _num_regions = align_up(pointer_delta(heap.end(), heap.start()), region_size_words) / region_size_words;
+    _region_size_words = region_size_words;
+    _region_size_bytes_shift = log2i_exact(_region_size_words) + LogHeapWordSize;
   }
+  _heap_start_region_bias = (uintptr_t)_heap_start >> _region_size_bytes_shift;
+  _region_mask = ~((uintptr_t(1) << _region_size_bytes_shift) - 1);
+
+  guarantee((_heap_start_region_bias << _region_size_bytes_shift) == (uintptr_t)_heap_start, "must be aligned: _heap_start_region_bias: " SIZE_FORMAT ", _region_size_byte_shift: %u, _heap_start: " PTR_FORMAT, _heap_start_region_bias, _region_size_bytes_shift, p2i(_heap_start));
+
+  assert(_region_size_words >= 1, "regions must be at least a word large");
+  assert(_bases_table == nullptr, "should not be initialized yet");
+  assert(_fallback_table == nullptr, "should not be initialized yet");
 #endif
 }
 
 void SlidingForwarding::begin() {
 #ifdef _LP64
-  if (UseAltGCForwarding) {
-    assert(_bases_table == nullptr, "should not be initialized yet");
-    assert(_fallback_table == nullptr, "should not be initialized yet");
+  assert(_bases_table == nullptr, "should not be initialized yet");
+  assert(_fallback_table == nullptr, "should not be initialized yet");
 
-    size_t max = _num_regions * NUM_TARGET_REGIONS;
-    _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
-    HeapWord** biased_start = _bases_table - _heap_start_region_bias;
-    _biased_bases[0] = biased_start;
-    _biased_bases[1] = biased_start + _num_regions;
-    for (size_t i = 0; i < max; i++) {
-      _bases_table[i] = UNUSED_BASE;
-    }
+  size_t max = _num_regions * NUM_TARGET_REGIONS;
+  _bases_table = NEW_C_HEAP_ARRAY(HeapWord*, max, mtGC);
+  HeapWord** biased_start = _bases_table - _heap_start_region_bias;
+  _biased_bases[0] = biased_start;
+  _biased_bases[1] = biased_start + _num_regions;
+  for (size_t i = 0; i < max; i++) {
+    _bases_table[i] = UNUSED_BASE;
   }
 #endif
 }
 
 void SlidingForwarding::end() {
 #ifdef _LP64
-  if (UseAltGCForwarding) {
-    assert(_bases_table != nullptr, "should be initialized");
-    FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
-    _bases_table = nullptr;
-    delete _fallback_table;
-    _fallback_table = nullptr;
-  }
+  assert(_bases_table != nullptr, "should be initialized");
+  FREE_C_HEAP_ARRAY(HeapWord*, _bases_table);
+  _bases_table = nullptr;
+  delete _fallback_table;
+  _fallback_table = nullptr;
 #endif
 }
 

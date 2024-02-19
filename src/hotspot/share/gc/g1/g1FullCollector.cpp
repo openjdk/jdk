@@ -394,8 +394,7 @@ uint G1FullCollector::truncate_parallel_cps() {
   return lowest_current;
 }
 
-template <bool ALT_FWD>
-void G1FullCollector::phase2c_prepare_serial_compaction_impl() {
+void G1FullCollector::phase2c_prepare_serial_compaction() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare serial compaction", scope()->timer());
   // At this point, we know that after parallel compaction there will be regions that
   // are partially compacted into. Thus, the last compaction region of all
@@ -420,7 +419,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction_impl() {
   serial_cp->initialize(start_hr);
 
   HeapWord* dense_prefix_top = compaction_top(start_hr);
-  G1SerialRePrepareClosure<ALT_FWD> re_prepare(serial_cp, dense_prefix_top);
+  G1SerialRePrepareClosure re_prepare(serial_cp, dense_prefix_top);
 
   for (uint i = start_serial + 1; i < _heap->max_reserved_regions(); i++) {
     if (is_compaction_target(i)) {
@@ -433,16 +432,7 @@ void G1FullCollector::phase2c_prepare_serial_compaction_impl() {
   serial_cp->update();
 }
 
-void G1FullCollector::phase2c_prepare_serial_compaction() {
-  if (UseAltGCForwarding) {
-    phase2c_prepare_serial_compaction_impl<true>();
-  } else {
-    phase2c_prepare_serial_compaction_impl<false>();
-  }
-}
-
-template <bool ALT_FWD>
-void G1FullCollector::phase2d_prepare_humongous_compaction_impl() {
+void G1FullCollector::phase2d_prepare_humongous_compaction() {
   GCTraceTime(Debug, gc, phases) debug("Phase 2: Prepare humongous compaction", scope()->timer());
   G1FullGCCompactionPoint* serial_cp = serial_compaction_point();
   assert(serial_cp->has_regions(), "Sanity!" );
@@ -464,7 +454,7 @@ void G1FullCollector::phase2d_prepare_humongous_compaction_impl() {
       uint num_regions = (uint)G1CollectedHeap::humongous_obj_size_in_regions(obj_size);
       // Even during last-ditch compaction we should not move pinned humongous objects.
       if (!hr->has_pinned_objects()) {
-        humongous_cp->forward_humongous<ALT_FWD>(hr);
+        humongous_cp->forward_humongous(hr);
       }
       region_index += num_regions; // Advance over all humongous regions.
       continue;
@@ -474,14 +464,6 @@ void G1FullCollector::phase2d_prepare_humongous_compaction_impl() {
       humongous_cp->add(hr);
     }
     region_index++;
-  }
-}
-
-void G1FullCollector::phase2d_prepare_humongous_compaction() {
-  if (UseAltGCForwarding) {
-    phase2d_prepare_humongous_compaction_impl<true>();
-  } else {
-    phase2d_prepare_humongous_compaction_impl<false>();
   }
 }
 

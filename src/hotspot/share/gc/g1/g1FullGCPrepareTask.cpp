@@ -104,25 +104,18 @@ G1FullGCPrepareTask::G1CalculatePointersClosure::G1CalculatePointersClosure(G1Fu
   _cp(cp) { }
 
 
-template <bool ALT_FWD>
-G1FullGCPrepareTask::G1PrepareCompactLiveClosure<ALT_FWD>::G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp) :
+G1FullGCPrepareTask::G1PrepareCompactLiveClosure::G1PrepareCompactLiveClosure(G1FullGCCompactionPoint* cp) :
     _cp(cp) { }
 
-template <bool ALT_FWD>
-size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure<ALT_FWD>::apply(oop object) {
+size_t G1FullGCPrepareTask::G1PrepareCompactLiveClosure::apply(oop object) {
   size_t size = object->size();
-  _cp->forward<ALT_FWD>(object, size);
+  _cp->forward(object, size);
   return size;
 }
 
 void G1FullGCPrepareTask::G1CalculatePointersClosure::prepare_for_compaction(HeapRegion* hr) {
   if (!_collector->is_free(hr->hrm_index())) {
-    if (UseAltGCForwarding) {
-      G1PrepareCompactLiveClosure<true> prepare_compact(_cp);
-      hr->apply_to_marked_objects(_bitmap, &prepare_compact);
-    } else {
-      G1PrepareCompactLiveClosure<false> prepare_compact(_cp);
-      hr->apply_to_marked_objects(_bitmap, &prepare_compact);
-    }
+    G1PrepareCompactLiveClosure prepare_compact(_cp);
+    hr->apply_to_marked_objects(_bitmap, &prepare_compact);
   }
 }

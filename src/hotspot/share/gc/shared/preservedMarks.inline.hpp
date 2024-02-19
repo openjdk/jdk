@@ -26,7 +26,6 @@
 #define SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP
 
 #include "gc/shared/preservedMarks.hpp"
-#include "gc/shared/slidingForwarding.inline.hpp"
 
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
@@ -59,14 +58,6 @@ inline PreservedMarks::PreservedMarks()
 
 void PreservedMark::set_mark() const {
   _o->set_mark(_m);
-}
-
-template <bool ALT_FWD>
-inline void PreservedMarks::adjust_preserved_mark(PreservedMark* elem) {
-  oop obj = elem->get_oop();
-  if (obj->is_forwarded()) {
-    elem->set_oop(SlidingForwarding::forwardee<ALT_FWD>(obj));
-  }
 }
 
 #endif // SHARE_GC_SHARED_PRESERVEDMARKS_INLINE_HPP

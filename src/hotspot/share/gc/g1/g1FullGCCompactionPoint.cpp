@@ -93,7 +93,6 @@ void G1FullGCCompactionPoint::switch_region() {
   initialize_values();
 }
 
-template <bool ALT_FWD>
 void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   assert(_current_region != nullptr, "Must have been initialized");
 
@@ -104,7 +103,7 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
 
   // Store a forwarding pointer if the object should be moved.
   if (cast_from_oop<HeapWord*>(object) != _compaction_top) {
-    SlidingForwarding::forward_to<ALT_FWD>(object, cast_to_oop(_compaction_top));
+    SlidingForwarding::forward_to(object, cast_to_oop(_compaction_top));
     assert(SlidingForwarding::is_forwarded(object), "must be forwarded");
   } else {
     assert(SlidingForwarding::is_not_forwarded(object), "must not be forwarded");
@@ -114,9 +113,6 @@ void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   _compaction_top += size;
   _current_region->update_bot_for_block(_compaction_top - size, _compaction_top);
 }
-
-template void G1FullGCCompactionPoint::forward<true>(oop object, size_t size);
-template void G1FullGCCompactionPoint::forward<false>(oop object, size_t size);
 
 void G1FullGCCompactionPoint::add(HeapRegion* hr) {
   _compaction_regions->append(hr);
@@ -150,7 +146,6 @@ void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
                                      });
 }
 
-template <bool ALT_FWD>
 void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   assert(hr->is_starts_humongous(), "Sanity!");
 
@@ -174,7 +169,7 @@ void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   _collector->marker(0)->preserved_stack()->push_if_necessary(obj, obj->mark());
 
   HeapRegion* dest_hr = _compaction_regions->at(range_begin);
-  SlidingForwarding::forward_to<ALT_FWD>(obj, cast_to_oop(dest_hr->bottom()));
+  SlidingForwarding::forward_to(obj, cast_to_oop(dest_hr->bottom()));
   assert(SlidingForwarding::is_forwarded(obj), "Object must be forwarded!");
 
   // Add the humongous object regions to the compaction point.
@@ -185,9 +180,6 @@ void G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
 
   return;
 }
-
-template void G1FullGCCompactionPoint::forward_humongous<true>(HeapRegion* hr);
-template void G1FullGCCompactionPoint::forward_humongous<false>(HeapRegion* hr);
 
 uint G1FullGCCompactionPoint::find_contiguous_before(HeapRegion* hr, uint num_regions) {
   assert(num_regions > 0, "Sanity!");
