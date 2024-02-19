@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,14 +636,19 @@ public class Inflater {
     }
 
     /**
-     * Returns the total number of compressed bytes input so far.
+     * Returns the total number of compressed bytes input so far, discarding
+     * the 32 highest order bits, as if the {@link #getBytesRead()}
+     * method was called followed by a narrowing conversion from <code>long</code>
+     * to <code>int</code>.
      *
-     * <p>Since the number of bytes may be greater than
-     * Integer.MAX_VALUE, the {@link #getBytesRead()} method is now
-     * the preferred means of obtaining this information.</p>
+     * @deprecated This method cannot safely return a result without a potential
+     * loss of information about the magnitude and sign of the returned value.
+     * Use the @link #getBytesRead()} method instead when obtaining this information.
      *
-     * @return the total number of compressed bytes input so far
+     * @return the total number of compressed bytes input so far, discarding
+     * the 32 highest order bits
      */
+    @Deprecated
     public int getTotalIn() {
         return (int) getBytesRead();
     }
