@@ -488,6 +488,10 @@ private:
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
+  // The lambda method for split_packs can return one of these tasks:
+  // 1) reject   -> the pack is removed
+  // 2) no_split -> split_size = 0, the old_pack is unchanged
+  // 3) else     -> split away split_size nodes from the end of the old_pack
   class SplitTask {
   private:
     const uint _split_size;
@@ -524,8 +528,6 @@ private:
   // 4) true       pack1         pack2         -> old_pack split into two packs
   class SplitStatus {
   private:
-    // TODO: just have a first and a second - no swapping - adjust construction for that
-    //       Also move my_pack adjustments?
     Node_List* _first_pack;
     Node_List* _second_pack;
     bool _changed;

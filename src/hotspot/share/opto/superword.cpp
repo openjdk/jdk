@@ -1530,7 +1530,6 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
-
 // Split pack according to task. Return true if any change was made, else false.
 SuperWord::SplitStatus
 SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
