@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,14 +142,15 @@ public class CopyMoveVariations {
         Path source = null;
         Path target = null;
         Path linkTarget = null;
+        Path dir = Path.of(".");
         try {
             switch (type) {
                 case FILE ->
-                    source = Files.createTempFile(Path.of("."), "file", "dat");
+                    source = Files.createTempFile(dir, "file", "dat");
                 case DIR ->
-                    source = Files.createTempDirectory(Path.of("."), "dir");
+                    source = Files.createTempDirectory(dir, "dir");
                 case LINK -> {
-                    linkTarget = Files.createTempFile(Path.of("."), "link", "target");
+                    linkTarget = Files.createTempFile(dir, "link", "target");
                     Path link = Path.of("link");
                     source = Files.createSymbolicLink(link, linkTarget);
                 }
@@ -163,7 +164,7 @@ public class CopyMoveVariations {
                 Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
-                target = Files.createTempFile(Path.of("."), "file", "target");
+                target = Files.createTempFile(dir, "file", "target");
             else
                 target = Path.of("target");
 
