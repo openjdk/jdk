@@ -226,6 +226,7 @@ private:
     size_t capacity() const { return _capacity; }
 
     bool expand();
+    bool expand(size_t new_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
