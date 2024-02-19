@@ -3780,24 +3780,7 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
   bgt(len, zr, L_by1_loop);
   j(L_exit);
 
-  bind(L_by4_loop);
-    lwu(tmp, Address(buf));
-    update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
-    subw(len, len, 4);
-    addi(buf, buf, 4);
-    bge(len, zr, L_by4_loop);
-    addiw(len, len, 4);
-    ble(len, zr, L_exit);
-
-  bind(L_by1_loop);
-    subw(len, len, 1);
-    lbu(tmp, Address(buf));
-    update_byte_crc32(crc, tmp, table0);
-    addi(buf, buf, 1);
-    bgt(len, zr, L_by1_loop);
-    j(L_exit);
-
-    align(CodeEntryAlignment);
+  align(CodeEntryAlignment);
   bind(L_unroll_loop_entry);
     const Register buf_end = x30; // t5
     add(buf_end, buf, len); // buf_end will be used as endpoint for loop below
@@ -3816,6 +3799,39 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     bge(len, zr, L_by4_loop);
     addiw(len, len, 4);
     bgt(len, zr, L_by1_loop);
+    j(L_exit);
+
+  bind(L_by4_loop);
+    lwu(tmp, Address(buf));
+    update_word_crc32(crc, tmp, tmp2, tmp4, table0, table1, table2, table3, false);
+    subw(len, len, 4);
+    addi(buf, buf, 4);
+    bge(len, zr, L_by4_loop);
+    addiw(len, len, 4);
+    ble(len, zr, L_exit);
+
+  bind(L_by1_loop);
+    subw(len, len, 1);
+    lwu(tmp, Address(buf));
+    andi(tmp2, tmp, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    subw(len, len, 1);
+    srli(tmp2, tmp, 8);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    subw(len, len, 1);
+    srli(tmp2, tmp, 16);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
+    ble(len, zr, L_exit);
+
+    srli(tmp2, tmp, 24);
+    andi(tmp2, tmp2, right_8_bits);
+    update_byte_crc32(crc, tmp2, table0);
 
   bind(L_exit);
     andn(crc, tmp5, crc);
