@@ -88,6 +88,10 @@ public class TestSplitPacks {
 
         // Add all tests to list
         tests.put("test0",       () -> { return test0(aI.clone(), bI.clone(), mI); });
+        tests.put("test1a",      () -> { return test1a(aI.clone(), bI.clone(), mI); });
+        tests.put("test1b",      () -> { return test1b(aI.clone(), bI.clone(), mI); });
+        tests.put("test1c",      () -> { return test1c(aI.clone(), bI.clone(), mI); });
+        tests.put("test1d",      () -> { return test1d(aI.clone(), bI.clone(), mI); });
         tests.put("test2a",      () -> { return test2a(aI.clone(), bI.clone(), mI); });
         tests.put("test2b",      () -> { return test2b(aI.clone(), bI.clone(), mI); });
         tests.put("test2c",      () -> { return test2c(aI.clone(), bI.clone(), mI); });
@@ -104,6 +108,10 @@ public class TestSplitPacks {
 
     @Warmup(100)
     @Run(test = {"test0",
+                 "test1a",
+                 "test1b",
+                 "test1c",
+                 "test1d",
                  "test2a",
                  "test2b",
                  "test2c",
@@ -263,6 +271,98 @@ public class TestSplitPacks {
             b[i+5] = b5;
             b[i+6] = b6;
             b[i+7] = b7;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Adjacent Load and Store, but split by Add/Mul
+    static Object[] test1a(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            b[i+0] = a[i+0] + mask; // Add
+            b[i+1] = a[i+1] + mask;
+            b[i+2] = a[i+2] + mask;
+            b[i+3] = a[i+3] + mask;
+
+            b[i+4] = a[i+4] * mask; // Mul
+            b[i+5] = a[i+5] * mask;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Adjacent Load and Store, but split by Add/Mul
+    static Object[] test1b(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            b[i+0] = a[i+0] * mask; // Mul
+            b[i+1] = a[i+1] * mask;
+            b[i+2] = a[i+2] * mask;
+            b[i+3] = a[i+3] * mask;
+
+            b[i+4] = a[i+4] + mask; // Add
+            b[i+5] = a[i+5] + mask;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Adjacent Load and Store, but split by Add/Mul
+    static Object[] test1c(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            b[i+0] = a[i+0] + mask; // Add
+            b[i+1] = a[i+1] + mask;
+
+            b[i+2] = a[i+2] * mask; // Mul
+            b[i+3] = a[i+3] * mask;
+            b[i+4] = a[i+4] * mask;
+            b[i+5] = a[i+5] * mask;
+        }
+        return new Object[]{ a, b };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.ADD_VI,        IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,        IRNode.VECTOR_SIZE_2, "> 0",
+                  IRNode.STORE_VECTOR, "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Adjacent Load and Store, but split by Add/Mul
+    static Object[] test1d(int[] a, int[] b, int mask) {
+        for (int i = 0; i < RANGE; i+=8) {
+            b[i+0] = a[i+0] * mask; // Mul
+            b[i+1] = a[i+1] * mask;
+
+            b[i+2] = a[i+2] + mask; // Add
+            b[i+3] = a[i+3] + mask;
+            b[i+4] = a[i+4] + mask;
+            b[i+5] = a[i+5] + mask;
         }
         return new Object[]{ a, b };
     }
