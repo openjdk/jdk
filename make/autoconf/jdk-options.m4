@@ -593,6 +593,22 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 
 ################################################################################
 #
+# jlink related.
+#
+# Determines whether or not a run-time linkable JDK image is being
+# produced from the product image.
+#
+AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_RUN_TIME_LINK_IMAGE],
+[
+  UTIL_ARG_ENABLE(NAME: runtime-link-image, DEFAULT: false,
+      RESULT: JLINK_PRODUCE_RUNTIME_LINK_JDK,
+      DESC: [enable producing an image suitable for runtime linking],
+      CHECKING_MSG: [whether or not an image suitable for runtime linking should be produced])
+  AC_SUBST(JLINK_PRODUCE_RUNTIME_LINK_JDK)
+])
+
+################################################################################
+#
 # Enable or disable generation of the classlist at build time
 #
 AC_DEFUN_ONCE([JDKOPT_ENABLE_DISABLE_GENERATE_CLASSLIST],
