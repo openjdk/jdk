@@ -1589,7 +1589,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Reserve the shared segment.
   int shmid = shmget(IPC_PRIVATE, size, IPC_CREAT | S_IRUSR | S_IWUSR);
   if (shmid == -1) {
-    ErrorPreserver ep;
+    ErrnoPreserver ep;
     log_trace(os, map)("shmget(.., " UINTX_FORMAT ", ..) failed (errno=%s).",
                        size, os::strerror(ep.saved_errno()));
     return nullptr;
@@ -1605,7 +1605,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   memset(&shmbuf, 0, sizeof(shmbuf));
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
-    ErrorPreserver ep;
+    ErrnoPreserver ep;
     assert(false, "Failed to set page size (need " UINTX_FORMAT
                        " 64K pages) - shmctl failed. (errno=%s).",
                        size / (64 * K),
@@ -1624,7 +1624,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // (A) Right after shmat and before handing shmat errors delete the shm segment.
   if (::shmctl(shmid, IPC_RMID, nullptr) == -1) {
-    ErrorPreserver ep;
+    ErrnoPreserver ep;
     log_trace(os, map)("shmctl(%u, IPC_RMID) failed (errno=%s)\n",
                        shmid,
                        os::strerror(ep.saved_errno()));
@@ -1633,7 +1633,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
 
   // Handle shmat error. If we failed to attach, just return.
   if (addr == (char*)-1) {
-    ErrorPreserver ep;
+    ErrnoPreserver ep;
     log_trace(os, map)("Failed to attach segment at " PTR_FORMAT " (errno=%s).",
                        p2i(requested_addr),
                        os::strerror(ep.saved_errno()));
