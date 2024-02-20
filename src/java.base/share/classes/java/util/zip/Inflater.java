@@ -648,7 +648,7 @@ public class Inflater {
      * @return the total number of compressed bytes input so far, discarding
      * the 32 highest order bits
      */
-    @Deprecated
+    @Deprecated(since = "23")
     public int getTotalIn() {
         return (int) getBytesRead();
     }
