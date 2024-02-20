@@ -366,7 +366,7 @@ public class StringBuilders {
 
     @Benchmark
     public String emptyToString(Data data) {
-        return data.sb.toString();
+        return data.sbEmpty.toString();
     }
 
     @State(Scope.Thread)
@@ -385,7 +385,7 @@ public class StringBuilders {
             }
         }
 
-        StringBuilder sb;
+        StringBuilder sbEmpty;
         String str;
         String utf16Str;
         CharSequence cs;
@@ -404,7 +404,8 @@ public class StringBuilders {
         }
 
         private void generateData() {
-            sb = new StringBuilder(length);
+            sbEmpty = new StringBuilder(length);
+
             char[] chars = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
 
             StringBuilder sb = new StringBuilder(length);
