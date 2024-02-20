@@ -152,7 +152,7 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-      size_t new_capacity = bucket_size(bucket) * 2;
+      size_t new_capacity = MIN2(bucket_size(bucket) * 2, _max_capacity);
       if (!expand(new_capacity)) {
         return nullptr;
       }
@@ -213,9 +213,7 @@ bool G1CMMarkStack::ChunkAllocator::expand(size_t new_capacity) {
 }
 
 bool G1CMMarkStack::ChunkAllocator::expand() {
-  // Double capacity if possible.
   size_t new_capacity = MIN2(_capacity * 2, _max_capacity);
-
   return expand(new_capacity);
 }
 
@@ -240,6 +238,9 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
 
+  // Allocate all buckets associated with indexes between the current capacity (_capacity)
+  // and the new capacity (new_capacity). This step ensures that there are no gaps in the
+  // array and that the capacity accurately reflects the reserved memory.
   for (; i <= highest_bucket; i++) {
     if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
