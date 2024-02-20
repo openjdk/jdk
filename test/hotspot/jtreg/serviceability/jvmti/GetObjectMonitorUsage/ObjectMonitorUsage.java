@@ -23,21 +23,21 @@
 
 /*
  * @test
+ * @bug 8247972
  *
- * @summary converted from VM Testbase nsk/jvmti/GetObjectMonitorUsage/ObjectMonitorUsage.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
+ * @summary converted from VM Testbase nsk/jvmti/GetObjectMonitorUsage/objmonusage003
  * DESCRIPTION
  *     The test checks if JVMTI function GetObjectMonitorUsage returns
  *     the expected values for the owner, entry_count, water_count
  *     fields of JVMTI_monitor_info. The tescases are the following:
  *       - unowned object without any waitings
  *       - owned object without any waitings
+ *       - owned object with N waitings to enter the monitor
+ *       - owned object with N waitings to be notified
+ *       - owned object with N waitings to enter, from 0 to N waitings to re-enter,
+ *         from N to 0 waitings to be notified
  *       - unowned object with waitings through Object.wait()
- *       - unowned object has been waiting
- * COMMENTS
- *     Fixed according to 4669812 bug.
- *     Ported from JVMDI test nsk/jvmdi/GetMonitorInfo/getmoninfo003.
+ *       - all the above is checked for both platform and virtual threads
  * @requires vm.jvmti
  * @compile ObjectMonitorUsage.java
  * @run main/othervm/native -agentlib:ObjectMonitorUsage ObjectMonitorUsage
@@ -51,7 +51,7 @@ public class ObjectMonitorUsage {
     final static int NUMBER_OF_THREADS = NUMBER_OF_ENTERING_THREADS + NUMBER_OF_WAITING_THREADS;
 
     static Object lockCheck = new Object();
-    static Thread thr[] = new Thread[NUMBER_OF_THREADS];
+    static Thread[] thr = new Thread[NUMBER_OF_THREADS];
 
     native static int getRes();
     native static void check(Object obj, Thread owner,
