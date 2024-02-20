@@ -280,7 +280,7 @@ public class HttpClientBuilderTest {
                     "wantClientAuth() was expected to be false");
         }
         // needClientAuth = true and thus wantClientAuth = false
-        final SSLParameters needClientAuthParams = new SSLParameters();
+        SSLParameters needClientAuthParams = new SSLParameters();
         needClientAuthParams.setNeedClientAuth(true);
         builder.sslParameters(needClientAuthParams);
         try (var closer = closeable(builder)) {
@@ -290,7 +290,7 @@ public class HttpClientBuilderTest {
                     "wantClientAuth() was expected to be false");
         }
         // wantClientAuth = true and thus needClientAuth = false
-        final SSLParameters wantClientAuthParams = new SSLParameters();
+        SSLParameters wantClientAuthParams = new SSLParameters();
         wantClientAuthParams.setWantClientAuth(true);
         builder.sslParameters(wantClientAuthParams);
         try (var closer = closeable(builder)) {
