@@ -38,6 +38,10 @@ inline void JfrTimeToSafepoint::on_synchronizing() {
   _active = EventTimeToSafepoint::is_enabled();
   if (_active) {
     _start = JfrTicks::now();
+  } else if (_entries != nullptr) {
+    assert(_entries->length() == 0, "invariant");
+    delete _entries;
+    _entries = nullptr;
   }
 }
 
@@ -76,6 +80,7 @@ inline void JfrTimeToSafepoint::on_synchronized() {
   JfrThreadLocal* tl = VMThread::vm_thread()->jfr_thread_local();
   assert(!tl->has_cached_stack_trace(), "invariant");
 
+  bool stacktrace_enabled = EventTimeToSafepoint::is_stacktrace_enabled();
   for (int i = 0; i < _entries->length(); i++) {
     Entry& entry = _entries->at(i);
 
@@ -89,7 +94,7 @@ inline void JfrTimeToSafepoint::on_synchronized() {
     JavaThread* jt = entry.thread;
     event.set_thread(JfrThreadLocal::thread_id(jt));
 
-    if (EventTimeToSafepoint::is_stacktrace_enabled() && jt->has_last_Java_frame()) {
+    if (stacktrace_enabled && jt->has_last_Java_frame()) {
       JfrStackTrace stacktrace(tl->stackframes(), tl->stackdepth());
       if (stacktrace.record(jt, jt->last_frame(), 0, -1)) {
         tl->set_cached_stack_trace_id(JfrStackTraceRepository::add(stacktrace));
@@ -107,7 +112,5 @@ inline void JfrTimeToSafepoint::on_synchronized() {
   // Should we shrink it?
   _entries->clear();
 }
-
-#undef ENTRY_ARRAY_SIZE
 
 #endif // SHARE_JFR_SUPPORT_JFRTIMETOSAFEPOINT_INLINE_HPP
