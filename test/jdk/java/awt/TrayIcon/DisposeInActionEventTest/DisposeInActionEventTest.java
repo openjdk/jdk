@@ -42,34 +42,29 @@ import jdk.test.lib.Platform;
  * @build Sysout jtreg.SkippedException
  * @run main/manual DisposeInActionEventTest
  */
+
 public class DisposeInActionEventTest {
     private static JTextArea textArea;
 
     public static void main(String[] args) throws Exception {
-        String instructions;
         if (!SystemTray.isSupported()) {
-            throw new jtreg.SkippedException("The test cannot be run because SystemTray is not supported.");
-        } else {
-            String clickInstruction;
-            if (Platform.isOSX()) {
-                clickInstruction = "right";
-            } else {
-                clickInstruction = "left";
-            }
-
-            instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
-                           "  don't see a tray icon, please, make sure that the tray area\n" +
-                           "  (also called Taskbar Status Area on MS Windows, Notification\n" +
-                           "  Area on Gnome or System Tray on KDE) is visible.\n" +
-                           "Double-click with " + clickInstruction + " button on the tray icon to trigger the\n" +
-                           "  action event. Brief information about action events is printed\n" +
-                           "  in the frame. After each action event the tray icon is removed from\n" +
-                           "  the tray and then added back in a second.\n" +
-                           "The test performs some automatic checks when removing the icon. If\n" +
-                           "  something is wrong the corresponding message is displayed below.\n" +
-                           "  Repeat double-clicks several times. If no 'Test FAILED' messages\n" +
-                           "  are printed, press PASS button else FAIL button.";
+            throw new jtreg.SkippedException("The test cannot be run because " +
+                    "SystemTray is not supported.");
         }
+        String clickInstruction = (Platform.isOSX()) ? "Right-click" : "Double-left click";
+
+        String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
+                       "  don't see a tray icon, please, make sure that the tray area\n" +
+                       "  (also called Taskbar Status Area on MS Windows, Notification\n" +
+                       "  Area on Gnome or System Tray on KDE) is visible.\n" +
+                        clickInstruction + " the button on the tray icon to trigger the\n" +
+                       "  action event. Brief information about action events is printed\n" +
+                       "  in the frame. After each action event the tray icon is removed from\n" +
+                       "  the tray and then added back in a second.\n" +
+                       "The test performs some automatic checks when removing the icon. If\n" +
+                       "  something is wrong the corresponding message is displayed below.\n" +
+                       "  Repeat clicks several times. If no 'Test FAILED' messages\n" +
+                       "  are printed, press PASS button else FAIL button.";
 
         PassFailJFrame.builder()
                 .title("Test Instructions Frame")
