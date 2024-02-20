@@ -60,30 +60,30 @@ import jdk.test.lib.net.URIBuilder;
  * whether the socket is closed after closing the Context.
  *
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest
+ *      LdapSSLHandshakeFailureTest
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest true
+ *      LdapSSLHandshakeFailureTest true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest 0
+ *      LdapSSLHandshakeFailureTest 0
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest 0 true
+ *      LdapSSLHandshakeFailureTest 0 true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest 2000
+ *      LdapSSLHandshakeFailureTest 2000
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest 2000 true
+ *      LdapSSLHandshakeFailureTest 2000 true
  * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeTest -1000
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected 1000
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected true
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactoryNoUnconnected 1000 true
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory 1000
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory true
- * @run main/othervm LdapSSLHandshakeTest LdapSSLHandshakeTest$CustomSocketFactory 1000 true
+ *      LdapSSLHandshakeFailureTest -1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000 true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory true
+ * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactory 1000 true
  */
 
-public class LdapSSLHandshakeTest {
+public class LdapSSLHandshakeFailureTest {
     private static int SERVER_SLEEPING_TIME = 4000;
     private static String progArgs[];
     private static int curArg;
@@ -106,7 +106,7 @@ public class LdapSSLHandshakeTest {
         if (arg == null)
             return;
 
-        if (arg.startsWith("LdapSSLHandshakeTest$CustomSocketFactory")) {
+        if (arg.startsWith("LdapSSLHandshakeFailureTest$CustomSocketFactory")) {
             customSocketFactory = arg;
             arg = popArg();
             if (arg == null)
