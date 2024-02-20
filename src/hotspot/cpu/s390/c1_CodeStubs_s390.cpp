@@ -428,9 +428,7 @@ void ArrayCopyStub::emit_code(LIR_Assembler* ce) {
          "must be aligned");
 
   ce->emit_static_call_stub();
-  if (ce->compilation()->bailed_out()) {
-    return; // CodeCache is full
-  }
+  CHECK_BAILOUT();
 
   // Prepend each BRASL with a nop.
   __ relocate(relocInfo::static_call_type);
