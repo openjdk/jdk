@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static jdk.test.lib.process.ProcessTools.createTestJavaProcessBuilder;
+import static jdk.test.lib.process.ProcessTools.executeCommand;
 
 public class CheckSealedTest {
     private static final String ARCHIVE_NAME = "b.jar";
@@ -55,31 +57,30 @@ public class CheckSealedTest {
 
         String baseDir = System.getProperty("user.dir") + File.separator;
         String javac = JDKToolFinder.getTestJDKTool("javac");
-        String java = JDKToolFinder.getTestJDKTool("java");
 
         setup(baseDir);
         String srcDir = System.getProperty("test.src");
         String cp = srcDir + File.separator + "a" + File.pathSeparator
                 + srcDir + File.separator + "b.jar" + File.pathSeparator
                 + ".";
+
+        // Compile
+        ProcessTools.executeCommand(javac, "-cp", cp, "-d", ".",
+                srcDir + File.separator + TEST_NAME + ".java");
+
         List<String[]> allCMDs = List.of(
-                // Compile command
-                new String[]{
-                        javac, "-cp", cp, "-d", ".",
-                        srcDir + File.separator + TEST_NAME + ".java"
-                },
                 // Run test the first time
                 new String[]{
-                        java, "-cp", cp, TEST_NAME, "1"
+                        "-cp", cp, TEST_NAME, "1"
                 },
                 // Run test the second time
                 new String[]{
-                        java, "-cp", cp, TEST_NAME, "2"
+                        "-cp", cp, TEST_NAME, "2"
                 }
         );
 
         for (String[] cmd : allCMDs) {
-            ProcessTools.executeCommand(cmd)
+            executeCommand(createTestJavaProcessBuilder(cmd))
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .shouldHaveExitValue(0);
