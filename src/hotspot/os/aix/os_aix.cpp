@@ -1181,7 +1181,7 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
   if (result == nullptr) {
-    assert(strlen(new_extension) < strlen(old_extension),"New extension length must be less than existing one");
+    assert(strlen(new_extension) < strlen(old_extension), "New extension length must be less than existing one");
     if (strcmp(pointer_to_dot, old_extension) == 0) {
       sprintf(pointer_to_dot, "%s", new_extension);
       result = dll_load_library(file_path, ebuf, ebuflen);
