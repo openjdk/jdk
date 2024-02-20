@@ -32,12 +32,13 @@ import javax.swing.JLabel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 import static java.awt.image.BufferedImage.TYPE_INT_RGB;
 
 /*
  * @test
  * @bug 4248210 8075917
+ * @key headful
  * @summary Tests that HTML in JLabel is painted using LAF-defined
             foreground color
  * @run main bug4248210
@@ -58,20 +59,18 @@ public class bug4248210 {
 
     private static void test(UIManager.LookAndFeelInfo laf) {
         setLookAndFeel(laf);
-        if (UIManager.getLookAndFeel() instanceof SynthLookAndFeel &&
-                UIManager.getLookAndFeel().getName().contains("Nimbus")) {
+        if (UIManager.getLookAndFeel() instanceof NimbusLookAndFeel) {
             // reset "basic" properties
             UIManager.getDefaults().put("Label.foreground", null);
             // set "synth - nimbus" properties
             UIManager.getDefaults().put("Label[Enabled].textForeground", labelColor);
         } else {
             // reset "synth - nimbus" properties
-            if (UIManager.getLookAndFeel().getName().contains("Nimbus")) {
-                UIManager.getDefaults().put("Label[Enabled].textForeground", null);
-            }
+            UIManager.getDefaults().put("Label[Enabled].textForeground", null);
             // set "basic" properties
             UIManager.getDefaults().put("Label.foreground", labelColor);
         }
+
         JLabel label = new JLabel("<html><body>Can You Read This?</body></html>");
         label.setSize(150, 30);
 
