@@ -103,7 +103,7 @@ void JfrKlassUnloading::clear() {
 
 static void add_to_unloaded_klass_set(traceid klass_id) {
   assert_locked_or_safepoint(ClassLoaderDataGraph_lock);
-  GrowableArray<traceid>* const unload_set =  get_unload_set();
+  GrowableArray<traceid>* const unload_set = get_unload_set();
   assert(unload_set != nullptr, "invariant");
   assert(unload_set->find(klass_id) == -1, "invariant");
   unload_set->append(klass_id);
