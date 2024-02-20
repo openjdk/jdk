@@ -2016,9 +2016,60 @@ public class Exhaustiveness extends TestRunner {
 
                    static int r(R r) {
                       return switch (r) {
-                          case R(A a,  V b) -> 1; // Any A with specific B
-                          case R(T a,  B b) -> 2; // Specific A with any B
-                          case R(U a,  W b) -> 3; // Specific A with specific B
+                          case R(A a, V b) -> 1; // Any A with specific B
+                          case R(T a, B b) -> 2; // Specific A with any B
+                          case R(U a, W b) -> 3; // Specific A with specific B
+                      };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
+
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
+
+                   static final class V implements B { public V() {} }
+                   static final class W implements B { public W() {} }
+
+                   final static record R(B b, A a) { }
+
+                   static int r(R r) {
+                      return switch (r) {
+                          case R(V b, A a) -> 1; // Any A with specific B
+                          case R(B b, T a) -> 2; // Specific A with any B
+                          case R(W b, U a) -> 3; // Specific A with specific B
+                      };
+                   }
+               }
+               """);
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   sealed interface A permits T, U {}
+                   sealed interface B permits V, W {}
+
+                   static final class T implements A { public T() {} }
+                   static final class U implements A { public U() {} }
+
+                   static final class V implements B { public V() {} }
+                   static final class W implements B { public W() {} }
+
+                   final static record X(B b) { }
+                   final static record R(A a, X x) { }
+
+                   static int r(R r) {
+                      return switch (r) {
+                          case R(A a, X(V b)) -> 1; // Any A with specific B
+                          case R(T a, X(B b)) -> 2; // Specific A with any B
+                          case R(U a, X(W b)) -> 3; // Specific A with specific B
                       };
                    }
                }
