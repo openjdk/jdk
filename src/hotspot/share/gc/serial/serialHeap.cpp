@@ -950,17 +950,6 @@ void SerialHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
 }
 
-void SerialHeap::generation_iterate(GenClosure* cl,
-                                    bool old_to_young) {
-  if (old_to_young) {
-    cl->do_generation(_old_gen);
-    cl->do_generation(_young_gen);
-  } else {
-    cl->do_generation(_young_gen);
-    cl->do_generation(_old_gen);
-  }
-}
-
 bool SerialHeap::is_maximal_no_gc() const {
   // We don't expand young-gen except at a GC.
   return _old_gen->is_maximal_no_gc();
@@ -1058,18 +1047,10 @@ void SerialHeap::gc_epilogue(bool full) {
 };
 
 #ifndef PRODUCT
-class GenGCSaveTopsBeforeGCClosure: public SerialHeap::GenClosure {
- private:
- public:
-  void do_generation(Generation* gen) {
-    gen->record_spaces_top();
-  }
-};
-
 void SerialHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {
-    GenGCSaveTopsBeforeGCClosure blk;
-    generation_iterate(&blk, false);  // not old-to-young.
+    _young_gen->record_spaces_top();
+    _old_gen->record_spaces_top();
   }
 }
 #endif  // not PRODUCT
