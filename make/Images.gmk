@@ -30,6 +30,7 @@ include MakeBase.gmk
 include Execute.gmk
 include Modules.gmk
 include Utils.gmk
+include ToolsJdk.gmk
 
 JDK_TARGETS :=
 JRE_TARGETS :=
@@ -87,21 +88,11 @@ JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
+  ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
+    JLINK_RUNTIME_CREATE_EXTRA = --keep-packaged-modules $(RUNTIME_LINK_IMAGE_DIR)/jmods
+  endif
 endif
 
-####################################################
-ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-
-JDK_JMODS_DIFF := $(SUPPORT_OUTPUTDIR)/runtime-image-link/jimage_packaged_modules_diff.data
-
-$(JDK_JMODS_DIFF): $(BUILD_TOOLS_JDK) $(JDK_IMAGE_DIR)/lib/modules $(IMAGES_OUTPUTDIR)/jmods
-        $(call LogInfo, Generating the jimage to packaged modules diff)
-        $(call MakeTargetDir)
-        $(TOOL_JIMAGE_DIFF_TO_JMODS) $(IMAGES_OUTPUTDIR)/jmods $(JDK_IMAGE_DIR)/lib/modules $@
-
-endif
-
-####################################################
 
 JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
 
@@ -120,32 +111,55 @@ $(eval $(call SetupExecute, jlink_jdk, \
         $(JLINK_DISABLE_WARNINGS), \
 ))
 
+JLINK_JDK_TARGETS := $(jlink_jdk)
+
+JLINK_LINKABLE_RUNTIME_TARGETS :=
+
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
-JLINK_RUNTIME_CREATE_EXTRA := --create-linkable-runtime=$(JDK_JMODS_DIFF)
+JLINK_RUNTIME_CREATE_EXTRA += --create-linkable-runtime=$(JDK_JMODS_DIFF)
 JDK_RUN_TIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jlink-run-time
+
+JDK_JMODS_DIFF := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR)/jimage_packaged_modules_diff.data
+
+$(eval $(call SetupExecute, generate_jimage_diff, \
+    WARN := Generating the jimage to packaged modules diff, \
+    DEPS := $(jlink_jdk), \
+    OUTPUT_FILE := $(JDK_JMODS_DIFF), \
+    SUPPORT_DIR := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR), \
+    COMMAND := $(TOOL_JIMAGE_DIFF_TO_JMODS) $(IMAGES_OUTPUTDIR)/jmods \
+        $(JDK_IMAGE_DIR)/lib/modules $(JDK_JMODS_DIFF), \
+))
 
 $(eval $(call SetupExecute, jlink_runtime_jdk, \
     WARN := Creating jdk image for runtime linking, \
-    DEPS := $(JDK_JMODS_DIFF) $(JDK_IMAGE_DIR), \
+    DEPS := $(generate_jimage_diff), \
     OUTPUT_DIR := $(RUNTIME_LINK_IMAGE_DIR), \
     SUPPORT_DIR := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) -r $(RUNTIME_LINK_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
-        $(JLINK_JDK_EXTRA_OPTS) $(JLINK_RUNTIME_CREATE_EXTRA) \
+        $(JLINK_RUNTIME_CREATE_EXTRA) \
         --output $(RUNTIME_LINK_IMAGE_DIR) \
         $(JLINK_DISABLE_WARNINGS), \
 ))
 
+JLINK_LINKABLE_RUNTIME_TARGETS += $(generate_jimage_diff)
+JLINK_LINKABLE_RUNTIME_TARGETS += $(jlink_runtime_jdk)
+
 endif
 
-JLINK_JDK_TARGETS := $(jlink_jdk)
+$(eval $(call SetupExecute, jlink_jre, \
+    WARN := Creating legacy jre image, \
+    DEPS := $(JRE_JMODS) $(BASE_RELEASE_FILE) \
+        $(call DependOnVariable, JRE_MODULES_LIST, $(JRE_IMAGE_SUPPORT_DIR)/_jlink_jre.vardeps), \
+    OUTPUT_DIR := $(JRE_IMAGE_DIR), \
+    SUPPORT_DIR := $(JRE_IMAGE_SUPPORT_DIR), \
+    PRE_COMMAND := $(RM) -r $(JRE_IMAGE_DIR), \
+    COMMAND := $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
+        $(JLINK_JRE_EXTRA_OPTS) --output $(JRE_IMAGE_DIR), \
+))
+
 JLINK_JRE_TARGETS := $(jlink_jre)
-
-JLINK_RUNTIME_LINK_TARGETS :=
-ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-  JLINK_RUNTIME_LINK_TARGETS += $(jlink_runtime_jdk)
-endif
 
 # Optimize CDS shared heap for small heap sizes, which are typically used
 # for small cloud-based apps that have the most critical start-up requirement.
@@ -338,7 +352,7 @@ $(JDK_TARGETS): $(JLINK_JDK_TARGETS)
 
 jdk: $(JLINK_JDK_TARGETS) $(JDK_TARGETS)
 jre: $(JLINK_JRE_TARGETS) $(JRE_TARGETS)
-runtime-link-jdk: $(JLINK_RUNTIME_LINK_TARGETS)
+runtime-link-jdk: $(JLINK_LINKABLE_RUNTIME_TARGETS)
 symbols: $(SYMBOLS_TARGETS)
 
 all: jdk jre symbols runtime-link-jdk
