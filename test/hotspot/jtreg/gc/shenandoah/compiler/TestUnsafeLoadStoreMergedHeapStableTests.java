@@ -29,8 +29,6 @@
  * @modules java.base/jdk.internal.misc:+open
  *
  * @run main/othervm -XX:+UseShenandoahGC -XX:-BackgroundCompilation TestUnsafeLoadStoreMergedHeapStableTests
- *
- *
  */
 
 import jdk.internal.misc.Unsafe;
