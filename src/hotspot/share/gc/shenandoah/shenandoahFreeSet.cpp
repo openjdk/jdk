@@ -44,33 +44,148 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 
 #undef KELVIN_TRACE
 
+#undef KELVIN_HUMONGOUS
 
-#ifdef KELVIN_TRACE
-static char buf1[17], buf2[17];
-const static char ascii[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
+size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
+  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
+  size_t array_idx = start_idx / _bits_per_array_element;
+  size_t element_bits = _bitmap[array_idx];
+  size_t bit_number = start_idx % _bits_per_array_element;
+  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t omit_mask = the_bit - 1;
+  size_t mask = ((size_t) ((ssize_t) -1)) & omit_mask;
 
-// NOT THREAD SAFE
-char* ltos_1(size_t arg) {
-  buf1[16] = '\0';
-  for (int i = 15; i >= 0; i--) {
-    size_t byte = arg & 0xff;
-    buf1[i] = ascii[byte];
-    arg >>= 4;
-  }
-  return buf1;
-}
-
-char* ltos_2(size_t arg) {
-  buf2[16] = '\0';
-  for (int i = 15; i >= 0; i--) {
-    size_t byte = arg & 0xff;
-    buf2[i] = ascii[byte];
-    arg >>= 4;
-  }
-  return buf2;
-}
+  if ((element_bits & mask) == mask) {
+    size_t counted_ones = _bits_per_array_element - bit_number;
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("count_leading_ones(%ld) in 0x%016lx with mask 0x%016lx returning %ld + recurse with %ld",
+                 start_idx, element_bits, mask, counted_ones, start_idx + counted_ones);
 #endif
+    return counted_ones + count_leading_ones(start_idx + counted_ones);
+  } else {
+    size_t counted_ones;
+    for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
+      the_bit <<= 1;
+    }
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("count_leading_ones(%ld) in 0x%016lx with mask 0x%016lx returning %ld",
+                 start_idx, element_bits, mask, counted_ones);
+#endif
+    return counted_ones;
+  }
+}
 
+// Count consecutive ones in reverse order, starting from last_idx.  Requires that there is at least one zero
+// between last_idx and index value zero, inclusive.
+size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
+  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
+  size_t array_idx = last_idx / _bits_per_array_element;
+  size_t element_bits = _bitmap[array_idx];
+  size_t bit_number = last_idx % _bits_per_array_element;
+  size_t the_bit = ((size_t) 0x01) << bit_number;
+
+  // All ones from bit 0 to the_bit
+  size_t mask = (the_bit * 2) - 1;
+  if ((element_bits & mask) == mask) {
+    size_t counted_ones = bit_number;
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("count_trailing_ones(%ld) in 0x%016lx with mask 0x%016lx returning %ld + recurse with %ld",
+                 last_idx, element_bits, mask, counted_ones, last_idx - counted_ones);
+#endif
+    return counted_ones + count_trailing_ones(last_idx - counted_ones);
+  } else {
+    size_t counted_ones;
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("count_trailing_ones @ top of loop, the_bit: 0x%016lx", the_bit);
+#endif
+    for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
+      the_bit >>= 1;
+    }
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("count_trailing_ones(%ld) in 0x%016lx with mask 0x%016lx returning %ld",
+                 last_idx, element_bits, mask, counted_ones);
+#endif
+    return counted_ones;
+  }
+}
+
+bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const {
+  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
+  assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
+  size_t array_idx = start_idx / _bits_per_array_element;
+  size_t bit_number = start_idx % _bits_per_array_element;
+  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t element_bits = _bitmap[array_idx];
+
+  if ((ssize_t) (_bits_per_array_element - bit_number) > count) {
+    // All relevant bits reside within this array element
+    size_t overreach_mask = ((size_t) 0x1 << (bit_number + count)) - 1;
+    size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+    size_t exact_mask = overreach_mask & ~exclude_mask;
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("is_forward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx returning %s",
+                 start_idx, count, element_bits, exact_mask, (element_bits & exact_mask) == exact_mask? "true": "false");
+#endif
+    return (element_bits & exact_mask) == exact_mask? true: false;
+  } else {
+    // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
+    size_t overreach_mask = (size_t) (ssize_t) - 1;
+    size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+    size_t exact_mask = overreach_mask & ~exclude_mask;
+    if ((element_bits & exact_mask) == exact_mask) {
+      size_t matched_bits = _bits_per_array_element - bit_number;
+#ifdef KELVIN_HUMONGOUS
+      log_info(gc)("is_forward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx recurse after matching %ld",
+                   start_idx, count, element_bits, exact_mask, matched_bits);
+#endif
+      return is_forward_consecutive_ones(start_idx + matched_bits, count - matched_bits);
+    } else {
+#ifdef KELVIN_HUMONGOUS
+      log_info(gc)("is_forward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx returning %s",
+                   start_idx, count, element_bits, exact_mask, "false");
+#endif
+      return false;
+    }
+  }
+}
+
+bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const {
+  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
+  assert(last_idx - count >= -1, "precondition");
+  size_t array_idx = last_idx / _bits_per_array_element;
+  size_t bit_number = last_idx % _bits_per_array_element;
+  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t element_bits = _bitmap[array_idx];
+
+  if ((ssize_t) (bit_number + 1) >= count) {
+    // All relevant bits reside within this array element
+    size_t overreach_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+    size_t exclude_mask = ((size_t) 0x1 << (bit_number + 1 - count)) - 1;
+    size_t exact_mask = overreach_mask & ~exclude_mask;
+#ifdef KELVIN_HUMONGOUS
+    log_info(gc)("is_backward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx returning %s",
+                 last_idx, count, element_bits, exact_mask, (element_bits & exact_mask) == exact_mask? "true": "false");
+#endif
+    return (element_bits & exact_mask) == exact_mask? true: false;
+  } else {
+    // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
+    size_t exact_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+    if ((element_bits & exact_mask) == exact_mask) {
+      size_t matched_bits = bit_number + 1;
+#ifdef KELVIN_HUMONGOUS
+      log_info(gc)("is_backward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx recurse after matching %ld",
+                   last_idx, count, element_bits, exact_mask, matched_bits);
+#endif
+      return is_backward_consecutive_ones(last_idx - matched_bits, count - matched_bits);
+    } else {
+#ifdef KELVIN_HUMONGOUS
+      log_info(gc)("is_backward_consecutive_ones(%ld, %ld) in 0x%016lx with mask 0x%016lx returning %s",
+                   last_idx, count, element_bits, exact_mask, "false");
+#endif
+      return false;
+    }
+  }
+}
 
 inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
@@ -194,7 +309,7 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bit
 
 ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-#ifdef KELVIN_TRACE
+#ifdef KELVIN_HUMONGOUS
   ssize_t orig_start_idx = start_idx;
 #endif
 
@@ -202,9 +317,9 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
   ssize_t start_boundary = boundary_idx - num_bits;
   while (start_idx <= start_boundary) {
     if (is_forward_consecutive_ones(start_idx, num_bits)) {
-#ifdef KELVIN_TRACE
+#ifdef KELVIN_HUMONGOUS
       log_info(gc)("find_next_consecutive_bits(%ld, %ld, %ld) wants to return %ld",
-                   num_bits, start_idx, boundary_idx, orig_start_idx);
+                   num_bits, orig_start_idx, boundary_idx, start_idx);
 #endif
       return start_idx;
     } else {
@@ -224,7 +339,7 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bit
 
 ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx, ssize_t boundary_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-#ifdef KELVIN_TRACE
+#ifdef KELVIN_HUMONGOUS
   ssize_t orig_last_idx = last_idx;
 #endif
 
@@ -232,9 +347,9 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
   ssize_t last_boundary = boundary_idx + num_bits;
   while (last_idx >= last_boundary) {
     if (is_backward_consecutive_ones(last_idx, num_bits)) {
-#ifdef KELVIN_TRACE
+#ifdef KELVIN_HUMONGOUS
       log_info(gc)("find_prev_consecutive_bits(%ld, %ld, %ld) wants to return %ld",
-                   num_bits, last_idx, boundary_idx, orig_last_idx);
+                   num_bits, orig_last_idx, boundary_idx, last_idx + 1 - num_bits);
 #endif
       return last_idx + 1 - num_bits;
     } else {
@@ -375,7 +490,7 @@ void ShenandoahRegionPartitions::establish_intervals(ssize_t mutator_leftmost, s
   _region_counts[Collector] = 0;
   _used[Collector] = 0;
   _capacity[Collector] = 0;
-#ifdef KELVIN_TRACE
+#if defined(KELVIN_TRACE) || defined(KELVIN_HUMONGOUS)
   dump_bitmap_all();
 #endif
 }
@@ -601,11 +716,19 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_
   ssize_t rightmost_idx = rightmost(which_partition);
   ssize_t leftmost_idx = leftmost(which_partition);
   if ((rightmost_idx < leftmost_idx) || (start_index > rightmost_idx)) return _max;
+#ifdef KELVIN_HUMONGOUS
+  log_info(gc)("find_index_of_next_available_cluster(%s, %ld, %ld)", partition_name(which_partition), start_index, cluster_size);
+  log_info(gc)("Mutator range [%ld, %ld], Collector range [%ld, %ld]",
+               _leftmosts[Mutator], _rightmosts[Mutator], _leftmosts[Collector], _rightmosts[Collector]);
+  log_info(gc)("Empty Mutator range [%ld, %ld], Empty Collector range [%ld, %ld]",
+               _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
+               _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
+#endif
   ssize_t result = _membership[which_partition].find_next_consecutive_bits(cluster_size, start_index, rightmost_idx + 1);
-#ifdef KELVIN_TRACE
+#ifdef KELVIN_HUMONGOUS
   log_info(gc)("find_index_of_next_available_cluster(%s, %ld, " SIZE_FORMAT ") returning %ld",
                partition_name(which_partition), start_index, cluster_size, (result > rightmost_idx)? _max: result);
-  dump_bitmap_row(start_index);
+  dump_bitmap_row((result > rightmost_index)? _max - 1: result);
 #endif
   return (result > rightmost_idx)? _max: result;
 }
@@ -616,9 +739,18 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_clus
   ssize_t leftmost_idx = leftmost(which_partition);
   // if (leftmost_idx == max) then (last_index < leftmost_idx)
   if (last_index < leftmost_idx) return -1;
+#ifdef KELVIN_HUMONGOUS
+  log_info(gc)("find_index_of_previous_available_cluster(%s, %ld, " SIZE_FORMAT ")",
+               partition_name(which_partition), last_index, cluster_size);
+  log_info(gc)("Mutator range [%ld, %ld], Collector range [%ld, %ld]",
+               _leftmosts[Mutator], _rightmosts[Mutator], _leftmosts[Collector], _rightmosts[Collector]);
+  log_info(gc)("Empty Mutator range [%ld, %ld], Empty Collector range [%ld, %ld]",
+               _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
+               _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
+#endif
   ssize_t result = _membership[which_partition].find_prev_consecutive_bits(cluster_size, last_index, leftmost_idx - 1);
-#ifdef KELVIN_TRACE
-  log_info(gc)("find_index_of_next_available_cluster(%s, %ld, " SIZE_FORMAT ") returning %ld",
+#ifdef KELVIN_HUMONGOUS
+  log_info(gc)("find_index_of_previous_available_cluster(%s, %ld, " SIZE_FORMAT ") returning %ld",
                partition_name(which_partition), last_index, cluster_size, (result <= leftmost_idx)? -1: result);
   dump_bitmap_row(last_index);
 #endif
@@ -939,12 +1071,12 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
   }
 
   ssize_t start_range = _partitions.leftmost_empty(Mutator);
-  ssize_t end_range = _partitions.rightmost_empty(Mutator);
+  ssize_t last_possible_start = _partitions.rightmost_empty(Mutator) + 1 - num;
 
   // Find the continuous interval of $num regions, starting from $beg and ending in $end,
   // inclusive. Contiguous allocations are biased to the beginning.
   ssize_t beg = _partitions.find_index_of_next_available_cluster_of_regions(Mutator, start_range, num);
-  if (beg > end_range) {
+  if (beg > last_possible_start) {
     // Hit the end, goodbye
     return nullptr;
   }
@@ -954,8 +1086,9 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
     // We've confirmed num contiguous regions belonging to Mutator partition, so no need to confirm membership.
     // If region is not completely free, the current [beg; end] is useless, and we may fast-forward.
     while (!can_allocate_from(_heap->get_region(end))) {
-      beg = _partitions.find_index_of_next_available_cluster_of_regions(Mutator, end_range + 1, num);
-      if (beg > end_range) {
+      // region[end] is not empty, so we restart our search after region[end]
+      beg = _partitions.find_index_of_next_available_cluster_of_regions(Mutator, end + 1, num);
+      if (beg > last_possible_start) {
         // Hit the end, goodbye
         return nullptr;
       }

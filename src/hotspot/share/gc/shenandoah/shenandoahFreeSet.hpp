@@ -30,11 +30,6 @@
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
 #undef KELVIN_TRACE_HPP
-#ifdef KELVIN_TRACE_HPP
-
-extern char* ltos_1(size_t arg);
-extern char* ltos_2(size_t arg);
-#endif
 
 
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_contiguous_bits() and
@@ -83,142 +78,14 @@ private:
 
   // Count consecutive ones in forward order, starting from start_idx.  Requires that there is at least one zero
   // between start_idx and index value (_num_bits - 1), inclusive.
-  size_t count_leading_ones(ssize_t start_idx) const {
-    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-    size_t array_idx = start_idx / _bits_per_array_element;
-    size_t element_bits = _bitmap[array_idx];
-    size_t bit_number = start_idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
-    size_t omit_mask = the_bit - 1;
-    size_t mask = ((size_t) ((ssize_t) -1)) & omit_mask;
-    if ((element_bits & mask) == mask) {
-      size_t counted_ones = _bits_per_array_element - bit_number;
-#ifdef KELVIN_TRACE_HPP
-      printf("count_leading_ones(%ld) in %s with mask %s returning %ld + recurse with %ld",
-                   start_idx, ltos_1(element_bits), ltos_2(mask), counted_ones, start_idx + counted_ones);
-#endif
-      return counted_ones + count_leading_ones(start_idx + counted_ones);
-    } else {
-      size_t counted_ones;
-      for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
-        the_bit <<= 1;
-      }
-#ifdef KELVIN_TRACE_HPP
-      printf("count_leading_ones(%ld) in %s with mask %s returning %ld",
-                   start_idx, ltos_1(element_bits), ltos_2(mask), counted_ones);
-#endif
-      return counted_ones;
-    }
-  }
+  size_t count_leading_ones(ssize_t start_idx) const;
 
   // Count consecutive ones in reverse order, starting from last_idx.  Requires that there is at least one zero
   // between last_idx and index value zero, inclusive.
-  size_t count_trailing_ones(ssize_t last_idx) const {
-    assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-    size_t array_idx = last_idx / _bits_per_array_element;
-    size_t element_bits = _bitmap[array_idx];
-    size_t bit_number = last_idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t count_trailing_ones(ssize_t last_idx) const;
 
-    // All ones from bit 0 to the_bit
-    size_t mask = (the_bit * 2) - 1;
-    if ((element_bits & mask) == mask) {
-      size_t counted_ones = bit_number;
-#ifdef KELVIN_TRACE_HPP
-      printf("count_trailing_ones(%ld) in %s with mask %s returning %ld + recurse with %ld",
-                   last_idx, ltos_1(element_bits), ltos_2(mask), counted_ones, last_idx - counted_ones);
-#endif
-      return counted_ones + count_trailing_ones(last_idx - counted_ones);
-    } else {
-      size_t counted_ones;
-      for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
-        the_bit >>= 1;
-      }
-#ifdef KELVIN_TRACE_HPP
-      printf("count_trailing_ones(%ld) in %s with mask %s returning %ld",
-                   last_idx, ltos_1(element_bits), ltos_2(mask), counted_ones);
-#endif
-      return counted_ones;
-    }
-  }
-
-  bool is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const {
-    assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-    assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
-    size_t array_idx = start_idx / _bits_per_array_element;
-    size_t bit_number = start_idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
-    size_t element_bits = _bitmap[array_idx];
-
-    if ((ssize_t) (_bits_per_array_element - bit_number) > count) {
-      // All relevant bits reside within this array element
-      size_t overreach_mask = ((size_t) 0x1 << (bit_number + count)) - 1;
-      size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
-      size_t exact_mask = overreach_mask & ~exclude_mask;
-#ifdef KELVIN_TRACE_HPP
-      printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
-                   start_idx, count, ltos_1(element_bits), ltos_2(exact_mask), (element_bits & exact_mask) == exact_mask? "true": "false");
-#endif
-      return (element_bits & exact_mask) == exact_mask? true: false;
-    } else {
-      // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-      size_t overreach_mask = (size_t) (ssize_t) - 1;
-      size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
-      size_t exact_mask = overreach_mask & ~exclude_mask;
-      if ((element_bits & exact_mask) == exact_mask) {
-        size_t matched_bits = _bits_per_array_element - bit_number;
-#ifdef KELVIN_TRACE_HPP
-      printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s recursing",
-                   start_idx, count, ltos_1(element_bits), ltos_2(exact_mask));
-#endif
-        return is_forward_consecutive_ones(start_idx + matched_bits, count - matched_bits);
-      } else {
-#ifdef KELVIN_TRACE_HPP
-        printf("is_forward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
-                     start_idx, count, ltos_1(element_bits), ltos_2(exact_mask), "false");
-#endif
-        return false;
-      }
-    }
-  }
-
-  bool is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const {
-    assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-    assert(last_idx - count >= -1, "precondition");
-    size_t array_idx = last_idx / _bits_per_array_element;
-    size_t bit_number = last_idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
-    size_t element_bits = _bitmap[array_idx];
-
-    if ((ssize_t) (bit_number + 1) >= count) {
-      // All relevant bits reside within this array element
-      size_t overreach_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
-      size_t exclude_mask = ((size_t) 0x1 << (bit_number + 1 - count)) - 1;
-      size_t exact_mask = overreach_mask & ~exclude_mask;
-#ifdef KELVIN_TRACE_HPP
-      printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
-                   last_idx, count, ltos_1(element_bits), ltos_2(exact_mask), (element_bits & exact_mask) == exact_mask? "true": "false");
-#endif
-      return (element_bits & exact_mask) == exact_mask? true: false;
-    } else {
-      // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-      size_t exact_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
-      if ((element_bits & exact_mask) == exact_mask) {
-        size_t matched_bits = bit_number + 1;
-#ifdef KELVIN_TRACE_HPP
-        printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s recursing",
-                     last_idx, count,ltos_1( element_bits), ltos_2(exact_mask));
-#endif
-        return is_backward_consecutive_ones(last_idx - matched_bits, count - matched_bits);
-      } else {
-#ifdef KELVIN_TRACE_HPP
-        printf("is_backward_consecutive_ones(%ld, %ld) in %s with mask %s returning %s",
-                     last_idx, count, ltos_1(element_bits), ltos_2(exact_mask), "false");
-#endif
-        return false;
-      }
-    }
-  }
+  bool is_forward_consecutive_ones(ssize_t start_idx, ssize_t count) const;
+  bool is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const;
 
 public:
 
