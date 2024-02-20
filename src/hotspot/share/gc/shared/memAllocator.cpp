@@ -426,7 +426,7 @@ void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
 
   const size_t padding_in_bytes = size_in_bytes - base_offset_in_bytes - length_in_bytes;
   if (padding_in_bytes != 0) {
-    Copy::fill_to_bytes(obj_end - padding_in_bytes, padding_in_bytes, heapPaddingByte);
+    Copy::fill_to_bytes(obj_end - padding_in_bytes, padding_in_bytes, heapPaddingByteVal);
   }
 }
 #endif
