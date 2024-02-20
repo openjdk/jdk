@@ -27,23 +27,6 @@
 # This file contains functionality related to native debug symbol handling.
 
 ################################################################################
-define SetupDebugSymbols
-  $$(call SetIfEmpty, $1_COMPILE_WITH_DEBUG_SYMBOLS, $$(COMPILE_WITH_DEBUG_SYMBOLS))
-
-  ifeq ($(STATIC_LIBS), true)
-    # For release builds where debug symbols are configured to be moved to
-    # separate debuginfo files, disable debug symbols for static libs instead.
-    # We don't currently support this configuration and we don't want symbol
-    # information in release builds unless explicitly asked to provide it.
-    ifeq ($(DEBUG_LEVEL), release)
-      ifeq ($(COPY_DEBUG_SYMBOLS), true)
-        $1_COMPILE_WITH_DEBUG_SYMBOLS := false
-      endif
-    endif
-  endif
-endef
-
-################################################################################
 define CreateDebugSymbols
   ifneq ($$($1_COPY_DEBUG_SYMBOLS), false)
     $1_COPY_DEBUG_SYMBOLS := $(COPY_DEBUG_SYMBOLS)
