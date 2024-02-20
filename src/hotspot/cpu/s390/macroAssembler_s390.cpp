@@ -3269,14 +3269,16 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
     // Store a non-null value into the box.
     z_stg(box, BasicLock::displaced_header_offset_in_bytes(), box);
   }
-#ifdef ASSERT
+
+  z_bre(done);
+  // Check if we are already the owner (recursive lock)
+  z_cgr(currentHeader, Z_thread);
+
   z_brne(done);
-  // We've acquired the monitor, check some invariants.
-  // Invariant 1: _recursions should be 0.
-  asm_assert_mem8_is_zero(OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions), monitor_tagged,
-                          "monitor->_recursions should be 0", -1);
-  z_ltgr(zero, zero); // Set CR=EQ.
-#endif
+
+  // Current thread already owns the lock. Just increment recursion.
+  z_asi(Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1);
+
   bind(done);
 
   BLOCK_COMMENT("} compiler_fast_lock_object");
