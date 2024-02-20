@@ -121,13 +121,17 @@ public class ClassWriterExt extends ClassWriter {
         cacheMHandles = value;
     }
 
-    public int getBytecodeLength(ClassModel cm) {
-        ConstantPool constantPool = cm.constantPool();
-        if (constantPool instanceof ClassReader classReader) {
-            return classReader.classfileLength();
-        } else {
-            throw new IllegalArgumentException("Invalid ConstantPool implementation: ClassReader expected");
+    public int getByteCodeLength(ClassModel cm) {
+        int length = 0;
+        for (MethodModel fm : cm.methods()) {
+            CodeModel code = fm.code().get();
+            if (code instanceof CodeAttribute ca) {
+                length += ca.codeLength();
+            } else {
+                throw new InaccessibleObjectException("Code attribute is not accessible");
+            }
         }
+        return length;
     }
 }
 
