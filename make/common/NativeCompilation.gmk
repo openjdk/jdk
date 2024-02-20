@@ -25,8 +25,8 @@
 
 ################################################################################
 # This is the top-level entry point for our native compilation and linking.
-# It contains the SetupNativeCompilation function, but is supported by helper
-# functions in the make/common/native directory.
+# It contains the SetupNativeCompilation macro, but is supported by helper
+# macros in the make/common/native directory.
 ################################################################################
 
 ifndef _NATIVE_COMPILATION_GMK
@@ -129,10 +129,10 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
-  # In this functions, macros named Setup<Foo> are just setting variables.
-  # Macros called Create<Foo> are setting up rules to create files.
-  # Macros starting with any other verb are more complicated, and can do all
-  # of the above, and also call directly to the shell.
+  # When reading this code, note that macros named Setup<Foo> are just setting
+  # variables, and macros called Create<Foo> are setting up rules to create
+  # files. Macros starting with any other verb are more complicated, and can do
+  # all of the above, and also call directly to the shell.
 
   ###
   ### Prepare for compilation and linking
@@ -140,7 +140,7 @@ define SetupNativeCompilationBody
 
   $$(eval $$(call VerifyArguments,$1))
 
-  # Setup variables for the rest of the function to work with
+  # Setup variables for the rest of this macro to work with
   $$(eval $$(call SetupBasicVariables,$1))
 
   # Setup the toolchain to be used
