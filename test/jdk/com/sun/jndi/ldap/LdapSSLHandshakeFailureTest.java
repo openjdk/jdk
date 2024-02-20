@@ -59,20 +59,14 @@ import jdk.test.lib.net.URIBuilder;
  * In all other cases a valid Context object shall be returned and we check
  * whether the socket is closed after closing the Context.
  *
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest true
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 0
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 0 true
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 2000
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest 2000 true
- * @run main/othervm --add-opens java.naming/javax.naming=ALL-UNNAMED --add-opens java.naming/com.sun.jndi.ldap=ALL-UNNAMED
- *      LdapSSLHandshakeFailureTest -1000
+ * @modules java.naming/javax.naming:+open java.naming/com.sun.jndi.ldap:+open
+ * @run main/othervm LdapSSLHandshakeFailureTest
+ * @run main/othervm LdapSSLHandshakeFailureTest true
+ * @run main/othervm LdapSSLHandshakeFailureTest 0
+ * @run main/othervm LdapSSLHandshakeFailureTest 0 true
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000
+ * @run main/othervm LdapSSLHandshakeFailureTest 2000 true
+ * @run main/othervm LdapSSLHandshakeFailureTest -1000
  * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected
  * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected 1000
  * @run main/othervm LdapSSLHandshakeFailureTest LdapSSLHandshakeFailureTest$CustomSocketFactoryNoUnconnected true
@@ -220,8 +214,8 @@ public class LdapSSLHandshakeFailureTest {
             super();
         }
 
-        public CustomSocket(String s, int timeout) throws IOException {
-            super(s, timeout);
+        public CustomSocket(String s, int port) throws IOException {
+            super(s, port);
         }
 
         public int closeMethodCalledCount() {
@@ -243,8 +237,8 @@ public class LdapSSLHandshakeFailureTest {
         }
 
         @Override
-        public Socket createSocket(String s, int timeout) throws IOException {
-            customSocket = new CustomSocket(s, timeout);
+        public Socket createSocket(String s, int port) throws IOException {
+            customSocket = new CustomSocket(s, port);
             return customSocket;
         }
 
