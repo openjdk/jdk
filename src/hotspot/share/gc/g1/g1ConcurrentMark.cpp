@@ -485,7 +485,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
   _remark_mark_times(),
   _remark_weak_ref_times(),
   _cleanup_times(),
-  _total_cleanup_time(0.0),
 
   _accum_task_vtime(nullptr),
 
@@ -1549,9 +1548,7 @@ void G1ConcurrentMark::cleanup() {
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupAfter);
 
   // Local statistics
-  double recent_cleanup_time = (os::elapsedTime() - start);
-  _total_cleanup_time += recent_cleanup_time;
-  _cleanup_times.add(recent_cleanup_time);
+  _cleanup_times.add((os::elapsedTime() - start) * 1000.0);
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
@@ -2126,7 +2123,7 @@ void G1ConcurrentMark::print_summary_info() {
   }
   print_ms_time_info("  ", "cleanups", _cleanup_times);
   log.trace("    Finalize live data total time = %8.2f s (avg = %8.2f ms).",
-            _total_cleanup_time, (_cleanup_times.num() > 0 ? _total_cleanup_time * 1000.0 / (double)_cleanup_times.num() : 0.0));
+            _cleanup_times.sum() / 1000.0, _cleanup_times.avg());
   log.trace("  Total stop_world time = %8.2f s.",
             (_init_times.sum() + _remark_times.sum() + _cleanup_times.sum())/1000.0);
   log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
