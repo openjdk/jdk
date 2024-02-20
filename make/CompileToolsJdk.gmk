@@ -62,8 +62,6 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
         --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
         --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
         --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
-        --add-exports jdk.jlink/jdk.tools.jlink.internal=ALL-UNNAMED \
-        --add-modules jdk.jlink \
         , \
 ))
 
