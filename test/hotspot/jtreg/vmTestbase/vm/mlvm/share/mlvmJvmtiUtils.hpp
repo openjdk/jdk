@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,25 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
-#define SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
+#ifndef MLVMJVMTIUTILS_HPP_
+#define MLVMJVMTIUTILS_HPP_
 
-#include "oops/compiledICHolder.hpp"
+#include "jvmti.h"
 
-#include "oops/klass.inline.hpp"
+extern "C" {
 
-inline bool CompiledICHolder::is_loader_alive() {
-  Klass* k = _is_metadata_method ? ((Method*)_holder_metadata)->method_holder() : (Klass*)_holder_metadata;
-  if (!k->is_loader_alive()) {
-    return false;
-  }
-  if (!_holder_klass->is_loader_alive()) {
-    return false;
-  }
-  return true;
+void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst);
+
+struct MethodName {
+    char methodName[256];
+    char classSig[256];
+} MethodNameStruct;
+
+struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method);
+
+char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location);
+
+void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
 }
 
-#endif // SHARE_OOPS_COMPILEDICHOLDER_INLINE_HPP
+#endif /* MLVMJVMTIUTILS_HPP_ */

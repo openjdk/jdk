@@ -617,10 +617,6 @@
           "GC invoke count where +VerifyBefore/AfterGC kicks in")           \
           range(0, max_uintx)                                               \
                                                                             \
-  product(int, VerifyGCLevel,     0, DIAGNOSTIC,                            \
-          "Generation level at which to start +VerifyBefore/AfterGC")       \
-          range(0, 1)                                                       \
-                                                                            \
   product(uint, MaxTenuringThreshold,    15,                                \
           "Maximum value for tenuring threshold")                           \
           range(0, markWord::max_age + 1)                                   \
