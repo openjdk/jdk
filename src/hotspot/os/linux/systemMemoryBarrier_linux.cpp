@@ -68,7 +68,7 @@ bool LinuxSystemMemoryBarrier::initialize() {
   long major, minor;
   os::Linux::kernel_version(&major, &minor);
   if (!(major > 6 || (major == 6 && minor >= 9))) {
-    log_info(os)("Linux kernel %ld.%ld do not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
+    log_info(os)("Linux kernel %ld.%ld does not support MEMBARRIER PRIVATE_EXPEDITED on RISC-V.",
                  major, minor);
     return false;
   }
