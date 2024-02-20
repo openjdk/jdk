@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,6 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "code/codeCache.hpp"
-#include "compiler/oopMap.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCAdjustTask.hpp"
@@ -41,6 +38,7 @@
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
@@ -122,8 +120,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(this),
-    _humongous_compaction_point(this),
+    _serial_compaction_point(this, nullptr),
+    _humongous_compaction_point(this, nullptr),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _humongous_compaction_regions(8),
@@ -144,11 +142,13 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   }
 
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint(this);
+    _markers[i] = new G1FullGCMarker(this, i, _live_stats);
+    _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
+  _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
+  _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
 }
 
@@ -191,6 +191,7 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
+  _heap->flush_region_pin_cache();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -319,14 +320,7 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   // Class unloading and cleanup.
   if (ClassUnloading) {
-    GCTraceTime(Debug, gc, phases) debug("Phase 1: Class Unloading and Cleanup", scope()->timer());
-    {
-      CodeCache::UnlinkingScope unloading_scope(&_is_alive);
-      // Unload classes and purge the SystemDictionary.
-      bool unloading_occurred = SystemDictionary::do_unloading(scope()->timer());
-      _heap->complete_cleaning(unloading_occurred);
-    }
-    CodeCache::flush_unlinked_nmethods();
+    _heap->unload_classes_and_code("Phase 1: Class Unloading and Cleanup", &_is_alive, scope()->timer());
   }
 
   {

@@ -242,6 +242,7 @@ bool CollectedHeap::is_oop(oop object) const {
 CollectedHeap::CollectedHeap() :
   _capacity_at_last_gc(0),
   _used_at_last_gc(0),
+  _soft_ref_policy(),
   _is_gc_active(false),
   _last_whole_heap_examined_time_ns(os::javaTimeNanos()),
   _total_collections(0),
@@ -558,9 +559,13 @@ void CollectedHeap::record_whole_heap_examined_timestamp() {
 
 void CollectedHeap::full_gc_dump(GCTimer* timer, bool before) {
   assert(timer != nullptr, "timer is null");
+  static uint count = 0;
   if ((HeapDumpBeforeFullGC && before) || (HeapDumpAfterFullGC && !before)) {
-    GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
-    HeapDumper::dump_heap();
+    if (FullGCHeapDumpLimit == 0 || count < FullGCHeapDumpLimit) {
+      GCTraceTime(Info, gc) tm(before ? "Heap Dump (before full gc)" : "Heap Dump (after full gc)", timer);
+      HeapDumper::dump_heap();
+      count++;
+    }
   }
 
   LogTarget(Trace, gc, classhisto) lt;

@@ -44,7 +44,8 @@
 
 ShenandoahDegenGC::ShenandoahDegenGC(ShenandoahDegenPoint degen_point) :
   ShenandoahGC(),
-  _degen_point(degen_point) {
+  _degen_point(degen_point),
+  _abbreviated(false) {
 }
 
 bool ShenandoahDegenGC::collect(GCCause::Cause cause) {
@@ -131,6 +132,27 @@ void ShenandoahDegenGC::op_degenerated() {
       // and we can do evacuation. Otherwise, it would be the shortcut cycle.
       if (heap->is_evacuation_in_progress()) {
 
+        if (_degen_point == _degenerated_evac) {
+          // Degeneration under oom-evac protocol allows the mutator LRB to expose
+          // references to from-space objects. This is okay, in theory, because we
+          // will come to the safepoint here to complete the evacuations and update
+          // the references. However, if the from-space reference is written to a
+          // region that was EC during final mark or was recycled after final mark
+          // it will not have TAMS or UWM updated. Such a region is effectively
+          // skipped during update references which can lead to crashes and corruption
+          // if the from-space reference is accessed.
+          if (UseTLAB) {
+            heap->labs_make_parsable();
+          }
+
+          for (size_t i = 0; i < heap->num_regions(); i++) {
+            ShenandoahHeapRegion* r = heap->get_region(i);
+            if (r->is_active() && r->top() > r->get_update_watermark()) {
+              r->set_update_watermark_at_safepoint(r->top());
+            }
+          }
+        }
+
         // Degeneration under oom-evac protocol might have left some objects in
         // collection set un-evacuated. Restart evacuation from the beginning to
         // capture all objects. For all the objects that are already evacuated,
@@ -172,6 +194,8 @@ void ShenandoahDegenGC::op_degenerated() {
       if (heap->has_forwarded_objects()) {
         op_init_updaterefs();
         assert(!heap->cancelled_gc(), "STW reference update can not OOM");
+      } else {
+        _abbreviated = true;
       }
 
     case _degenerated_updaterefs:
@@ -209,6 +233,8 @@ void ShenandoahDegenGC::op_degenerated() {
     op_degenerated_futile();
   } else {
     heap->notify_gc_progress();
+    heap->shenandoah_policy()->record_success_degenerated(_abbreviated);
+    heap->heuristics()->record_success_degenerated();
   }
 }
 
@@ -322,17 +348,11 @@ void ShenandoahDegenGC::op_cleanup_complete() {
 }
 
 void ShenandoahDegenGC::op_degenerated_fail() {
-  log_info(gc)("Cannot finish degeneration, upgrading to Full GC");
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-
-  ShenandoahFullGC full_gc;
-  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
+  upgrade_to_full();
 }
 
 void ShenandoahDegenGC::op_degenerated_futile() {
-  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
-  ShenandoahFullGC full_gc;
-  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
+  upgrade_to_full();
 }
 
 const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) const {
@@ -351,4 +371,11 @@ const char* ShenandoahDegenGC::degen_event_message(ShenandoahDegenPoint point) c
       ShouldNotReachHere();
       return "ERROR";
   }
+}
+
+void ShenandoahDegenGC::upgrade_to_full() {
+  log_info(gc)("Degenerated GC upgrading to Full GC");
+  ShenandoahHeap::heap()->shenandoah_policy()->record_degenerated_upgrade_to_full();
+  ShenandoahFullGC full_gc;
+  full_gc.op_full(GCCause::_shenandoah_upgrade_to_full_gc);
 }

@@ -38,13 +38,11 @@
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
- private:
+class PSCheckForUnmarkedOops : public BasicOopIterateClosure {
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
   HeapWord*    _unmarked_addr;
 
- protected:
   template <class T> void do_oop_work(T* p) {
     oop obj = RawAccess<>::oop_load(p);
     if (_young_gen->is_in_reserved(obj) &&
@@ -57,11 +55,11 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   }
 
  public:
-  CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
+  PSCheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
-  virtual void do_oop(oop* p)       { CheckForUnmarkedOops::do_oop_work(p); }
-  virtual void do_oop(narrowOop* p) { CheckForUnmarkedOops::do_oop_work(p); }
+  void do_oop(oop* p)       override { do_oop_work(p); }
+  void do_oop(narrowOop* p) override { do_oop_work(p); }
 
   bool has_unmarked_oop() {
     return _unmarked_addr != nullptr;
@@ -70,13 +68,13 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
 
 // Checks all objects for the existence of some type of mark,
 // precise or imprecise, dirty or newgen.
-class CheckForUnmarkedObjects : public ObjectClosure {
+class PSCheckForUnmarkedObjects : public ObjectClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
 
  public:
-  CheckForUnmarkedObjects() {
+  PSCheckForUnmarkedObjects() {
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
     _card_table = heap->card_table();
@@ -87,7 +85,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
-    CheckForUnmarkedOops object_check(_young_gen, _card_table);
+    PSCheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
       guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
@@ -111,7 +109,7 @@ void PSCardTable::scan_obj_with_limit(PSPromotionManager* pm,
   }
 }
 
-void PSCardTable::pre_scavenge(HeapWord* old_gen_bottom, uint active_workers) {
+void PSCardTable::pre_scavenge(uint active_workers) {
   _preprocessing_active_workers = active_workers;
 }
 
@@ -379,7 +377,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
 // This should be called before a scavenge.
 void PSCardTable::verify_all_young_refs_imprecise() {
-  CheckForUnmarkedObjects check;
+  PSCheckForUnmarkedObjects check;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();

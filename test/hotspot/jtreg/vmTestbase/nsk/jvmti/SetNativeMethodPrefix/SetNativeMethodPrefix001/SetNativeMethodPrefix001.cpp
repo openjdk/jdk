@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ static const void *METHODS [METHODS_COUNT] = {
 
 /* ============================================================================= */
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 /* ============================================================================= */
 
@@ -120,17 +120,17 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMethodPrefix (
         )
 {
     jboolean result = JNI_TRUE;
-    char *str = NULL;
+    char *str = nullptr;
 
-    if (prefix != NULL) {
-        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != NULL))
+    if (prefix != nullptr) {
+        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != nullptr))
         { result = JNI_FALSE; goto finally; }
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefix(str)))
     { result = JNI_FALSE; goto finally; }
 
-    if (str != NULL) {
+    if (str != nullptr) {
         NSK_DISPLAY1("New PREFIX is set: %s\n"
                 , str
                 );
@@ -139,7 +139,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMethodPrefix (
     }
 
 finally:
-    if (str != NULL) {
+    if (str != nullptr) {
         jni->ReleaseStringUTFChars(prefix, str);
     }
 
@@ -156,10 +156,10 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMultiplePrefixes (
         )
 {
     jboolean result = JNI_TRUE;
-    char *str = NULL;
+    char *str = nullptr;
 
-    if (prefix != NULL) {
-        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != NULL))
+    if (prefix != nullptr) {
+        if (!NSK_VERIFY((str = (char *) jni->GetStringUTFChars(prefix, 0)) != nullptr))
         { result = JNI_FALSE; goto finally; }
 
         if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefixes(1, (char **) &str)))
@@ -170,7 +170,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMultiplePrefixes (
                 );
     } else {
         char* prefixes[1];
-        prefixes[0] = NULL;
+        prefixes[0] = nullptr;
 
         if (!NSK_JVMTI_VERIFY(jvmti->SetNativeMethodPrefixes(0, (char **)&prefixes)))
         { result = JNI_FALSE; goto finally; }
@@ -179,7 +179,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_setMultiplePrefixes (
     }
 
 finally:
-    if (str != NULL) {
+    if (str != nullptr) {
         jni->ReleaseStringUTFChars(prefix, str);
     }
 
@@ -209,11 +209,11 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_registerMethod (
         return JNI_FALSE;
     }
 
-    if (!NSK_VERIFY((method.name = (char *) jni->GetStringUTFChars(method_name_obj, 0)) != NULL)) {
+    if (!NSK_VERIFY((method.name = (char *) jni->GetStringUTFChars(method_name_obj, 0)) != nullptr)) {
         goto finally;
     }
 
-    if (!NSK_VERIFY((method.signature = (char *) jni->GetStringUTFChars(method_sig_obj, 0)) != NULL)) {
+    if (!NSK_VERIFY((method.signature = (char *) jni->GetStringUTFChars(method_sig_obj, 0)) != nullptr)) {
         goto finally;
     }
 
@@ -226,7 +226,7 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_registerMethod (
 
     if (jni->RegisterNatives(bound_klass, (const JNINativeMethod*) &method, 1) != 0)
     {
-        if (jni->ExceptionOccurred() != NULL) {
+        if (jni->ExceptionOccurred() != nullptr) {
             jni->ExceptionClear();
         }
 
@@ -237,11 +237,11 @@ Java_nsk_jvmti_SetNativeMethodPrefix_Binder_registerMethod (
 
     result = JNI_TRUE;
 finally:
-    if (method.name != NULL) {
+    if (method.name != nullptr) {
         jni->ReleaseStringUTFChars(method_name_obj, method.name);
     }
 
-    if (method.signature != NULL) {
+    if (method.signature != nullptr) {
         jni->ReleaseStringUTFChars(method_sig_obj, method.signature);
     }
 
@@ -273,7 +273,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
         return JNI_ERR;
 
     if (!NSK_VERIFY(
-                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL
+                (jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr
                 )
        )
         return JNI_ERR;

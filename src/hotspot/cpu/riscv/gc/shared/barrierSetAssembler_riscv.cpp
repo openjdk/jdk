@@ -308,12 +308,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm, Label* slo
     Label skip_barrier;
     __ beq(t0, t1, skip_barrier);
 
-    RuntimeAddress target(StubRoutines::method_entry_barrier());
-    __ relocate(target.rspec(), [&] {
-      int32_t offset;
-      __ la_patchable(t0, target, offset);
-      __ jalr(ra, t0, offset);
-    });
+    __ rt_call(StubRoutines::method_entry_barrier());
 
     __ j(skip_barrier);
 

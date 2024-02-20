@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,23 +80,23 @@ typedef struct {    /* local variables of a method */
     jmethodID mid;  /* JNI's method ID */
 } methInfo;
 
-/* list of original methods with NULL pointers to localVar */
+/* list of original methods with nullptr pointers to localVar */
 static methInfo origMethInfo[] = {
-    { 1, (char*) "<init>", (char*) "()V", 1, NULL, NULL },
-    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 4, NULL, NULL },
-    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 5, NULL, NULL },
-    { 0, (char*) "statMethod", (char*) "(III)D", 3, NULL, NULL }
+    { 1, (char*) "<init>", (char*) "()V", 1, nullptr, nullptr },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 4, nullptr, nullptr },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 5, nullptr, nullptr },
+    { 0, (char*) "statMethod", (char*) "(III)D", 3, nullptr, nullptr }
 };
 
 /* list of redefined methods */
 static methInfo redefMethInfo[] = {
-    { 1, (char*) "<init>", (char*) "()V", 6, constr_lv, NULL },
-    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, checkIt_lv, NULL },
-    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, NULL },
-    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, NULL }
+    { 1, (char*) "<init>", (char*) "()V", 6, constr_lv, nullptr },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 3, checkIt_lv, nullptr },
+    { 1, (char*) "finMethod", (char*) "(CJIJ)V", 7, finMeth_lv, nullptr },
+    { 0, (char*) "statMethod", (char*) "(III)D", 5, statMeth_lv, nullptr }
 };
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 
 #ifdef STATIC_BUILD
@@ -174,7 +174,7 @@ int checkAttr(JNIEnv *env, jclass redefCls, methInfo methodsInfo[],
             methodsInfo[i].mid = env->GetStaticMethodID(redefCls,
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
         }
-        if (methodsInfo[i].mid == NULL) {
+        if (methodsInfo[i].mid == nullptr) {
             printf("%s: Failed to get the method ID for the%s%s method \"%s\", signature \"%s\"\n",
                 __FILE__, full ? " " : " original ", methodsInfo[i].inst ? "instance":"static",
                 methodsInfo[i].m_name, methodsInfo[i].m_sign);
@@ -250,7 +250,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass009_makeRedefinition(JNIEnv *env,
     jvmtiError err;
     jvmtiClassDefinition classDef;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -262,7 +262,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass009_makeRedefinition(JNIEnv *env,
     /* fill the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (vrb)
         printf("\n>>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",

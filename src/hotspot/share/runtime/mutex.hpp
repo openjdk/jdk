@@ -221,7 +221,7 @@ class Monitor : public Mutex {
 
 class PaddedMutex : public Mutex {
   enum {
-    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Mutex),
+    CACHE_LINE_PADDING = (int)DEFAULT_PADDING_SIZE - (int)sizeof(Mutex),
     PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
   };
   char _padding[PADDING_LEN];
@@ -232,7 +232,7 @@ public:
 
 class PaddedMonitor : public Monitor {
   enum {
-    CACHE_LINE_PADDING = (int)DEFAULT_CACHE_LINE_SIZE - (int)sizeof(Monitor),
+    CACHE_LINE_PADDING = (int)DEFAULT_PADDING_SIZE - (int)sizeof(Monitor),
     PADDING_LEN = CACHE_LINE_PADDING > 0 ? CACHE_LINE_PADDING : 1
   };
   char _padding[PADDING_LEN];

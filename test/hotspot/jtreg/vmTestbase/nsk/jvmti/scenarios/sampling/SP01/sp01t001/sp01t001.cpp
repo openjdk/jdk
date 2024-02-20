@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,8 +39,8 @@ extern "C" {
 #define THREADS_FIELD_SIG       "[L" THREAD_CLASS_NAME ";"
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* number of tested threads */
@@ -114,24 +114,24 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
  *    - make global refs
  */
 static int prepare() {
-    jclass debugeeClass = NULL;
-    jfieldID threadsFieldID = NULL;
-    jobjectArray threadsArray = NULL;
+    jclass debugeeClass = nullptr;
+    jfieldID threadsFieldID = nullptr;
+    jobjectArray threadsArray = nullptr;
     jsize threadsArrayLength = 0;
     jsize i;
 
     /* find debugee class */
-    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     /* find static field with threads array */
     if (!NSK_JNI_VERIFY(jni, (threadsFieldID =
-            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != NULL))
+            jni->GetStaticFieldID(debugeeClass, THREADS_FIELD_NAME, THREADS_FIELD_SIG)) != nullptr))
         return NSK_FALSE;
 
     /* get threads array from static field */
     if (!NSK_JNI_VERIFY(jni, (threadsArray = (jobjectArray)
-            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != NULL))
+            jni->GetStaticObjectField(debugeeClass, threadsFieldID)) != nullptr))
         return NSK_FALSE;
 
     /* check array length */
@@ -142,14 +142,14 @@ static int prepare() {
     /* get each thread from array */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                jni->GetObjectArrayElement(threadsArray, i)) != NULL))
+                jni->GetObjectArrayElement(threadsArray, i)) != nullptr))
             return NSK_FALSE;
     }
 
     /* make global references to threads */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsList[i] = (jthread)
-                jni->NewGlobalRef(threadsList[i])) != NULL))
+                jni->NewGlobalRef(threadsList[i])) != nullptr))
             return NSK_FALSE;
     }
 
@@ -260,11 +260,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
