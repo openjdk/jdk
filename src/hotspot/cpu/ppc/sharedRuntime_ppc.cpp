@@ -48,7 +48,6 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframeArray.hpp"
 #include "utilities/align.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "vmreg_ppc.inline.hpp"
 #ifdef COMPILER1

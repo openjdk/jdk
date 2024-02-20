@@ -47,7 +47,6 @@
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vm_version.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 
@@ -2187,7 +2186,6 @@ void MacroAssembler::compiler_fast_lock_object(ConditionRegister flag, Register 
                                                Register temp, Register displaced_header, Register current_header) {
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_lock_lightweight");
   assert_different_registers(oop, box, temp, displaced_header, current_header);
-  assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label object_has_monitor;
   Label cas_failed;
   Label success, failure;
@@ -2298,7 +2296,6 @@ void MacroAssembler::compiler_fast_unlock_object(ConditionRegister flag, Registe
                                                  Register temp, Register displaced_header, Register current_header) {
   assert(LockingMode != LM_LIGHTWEIGHT, "uses fast_unlock_lightweight");
   assert_different_registers(oop, box, temp, displaced_header, current_header);
-  assert(LockingMode != LM_LIGHTWEIGHT || flag == CCR0, "bad condition register");
   Label success, failure, object_has_monitor, notRecursive;
 
   if (LockingMode == LM_LEGACY) {

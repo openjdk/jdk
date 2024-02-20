@@ -25,11 +25,8 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
-#include "oops/markWord.hpp"
 #include "opto/c2_MacroAssembler.hpp"
 #include "opto/intrinsicnode.hpp"
-#include "register_ppc.hpp"
-#include "runtime/objectMonitor.hpp"
 #include "runtime/vm_version.hpp"
 
 #ifdef PRODUCT
@@ -42,13 +39,11 @@
 
 void C2_MacroAssembler::fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
                                               Register tmp1, Register tmp2, Register tmp3) {
-  // TODO: Current implementation does not use box, consider removing a TEMP and use box instead.
   compiler_fast_lock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
 }
 
 void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
                                                 Register tmp1, Register tmp2, Register tmp3) {
-  // TODO: Current implementation does not use box, consider removing a TEMP and use box instead.
   compiler_fast_unlock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
 }
 
