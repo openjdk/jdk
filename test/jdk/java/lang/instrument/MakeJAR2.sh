@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -87,7 +87,8 @@ ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} \
-    --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED ${AGENT}.java asmlib/*.java
+    --enable-preview --release 23 \
+    ${AGENT}.java asmlib/*.java
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 
 echo "Manifest-Version: 1.0"    >  ${AGENT}.mf

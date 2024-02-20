@@ -28,6 +28,7 @@ import java.io.*;
 
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.gc.shared.*;
+import sun.jvm.hotspot.memory.MemRegion;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
@@ -64,68 +65,46 @@ public class SerialHeap extends CollectedHeap {
     genFactory = new GenerationFactory();
   }
 
-  public int nGens() {
-    return 2; // Young + Old
+  public DefNewGeneration youngGen() {
+    return VMObjectFactory.newObject(DefNewGeneration.class, youngGenField.getValue(addr));
   }
 
-  public Generation getGen(int i) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that((i == 0) || (i == 1), "Index " + i +
-                  " out of range (should be 0 or 1)");
-    }
-
-    switch (i) {
-    case 0:
-      return genFactory.newObject(youngGenField.getValue(addr));
-    case 1:
-      return genFactory.newObject(oldGenField.getValue(addr));
-    default:
-      // no generation for i, and assertions disabled.
-      return null;
-    }
+  public TenuredGeneration oldGen() {
+    return VMObjectFactory.newObject(TenuredGeneration.class, oldGenField.getValue(addr));
   }
 
   public boolean isIn(Address a) {
-    for (int i = 0; i < nGens(); i++) {
-      Generation gen = getGen(i);
-      if (gen.isIn(a)) {
-        return true;
-      }
-    }
-
-    return false;
+    return youngGen().isIn(a) || oldGen().isIn(a);
   }
 
   public long capacity() {
     long capacity = 0;
-    for (int i = 0; i < nGens(); i++) {
-      capacity += getGen(i).capacity();
-    }
+    capacity += youngGen().capacity();
+    capacity += oldGen().capacity();
     return capacity;
   }
 
   public long used() {
     long used = 0;
-    for (int i = 0; i < nGens(); i++) {
-      used += getGen(i).used();
-    }
+    used += youngGen().used();
+    used += oldGen().used();
     return used;
   }
 
   public void liveRegionsIterate(LiveRegionsClosure closure) {
-    // Run through all generations, obtaining bottom-top pairs.
-    for (int i = 0; i < nGens(); i++) {
-      Generation gen = getGen(i);
-      gen.liveRegionsIterate(closure);
-    }
+    youngGen().liveRegionsIterate(closure);
+    oldGen().liveRegionsIterate(closure);
   }
 
   public void printOn(PrintStream tty) {
-    for (int i = 0; i < nGens(); i++) {
-      tty.print("Gen " + i + ": ");
-      getGen(i).printOn(tty);
-      tty.println("Invocations: " + getGen(i).invocations());
-      tty.println();
-    }
+    tty.println("SerialHeap:");
+
+    tty.println("Young Generation - Invocations: " + youngGen().invocations());
+    youngGen().printOn(tty);
+    tty.println();
+
+    tty.println("Old Generation - Invocations: " + oldGen().invocations());
+    oldGen().printOn(tty);
+    tty.println();
   }
 }

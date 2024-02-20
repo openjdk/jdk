@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package org.openjdk.bench.vm.gc.systemgc;
 
-#ifndef MLVMJVMTIUTILS_H_
-#define MLVMJVMTIUTILS_H_
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 
-#include "jvmti.h"
+import java.util.concurrent.TimeUnit;
 
-extern "C" {
+@BenchmarkMode(Mode.SingleShotTime)
+@Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g", "-XX:+AlwaysPreTouch"})
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+public class NoObjects {
 
-void copyFromJString(JNIEnv * pEnv, jstring src, char ** dst);
+    /*
+     * Test the System GC when there are no additionally allocate
+     * objects.
+     *
+     * The heap settings provided are the same as for the other
+     * test for consistency.
+     */
 
-struct MethodName {
-    char methodName[256];
-    char classSig[256];
-} MethodNameStruct;
+    @Benchmark
+    public void gc() {
+        System.gc();
+    }
 
-struct MethodName * getMethodName(jvmtiEnv * pJvmtiEnv, jmethodID method);
-
-char * locationToString(jvmtiEnv * pJvmtiEnv, jmethodID method, jlocation location);
-
-void * getTLS(jvmtiEnv * pJvmtiEnv, jthread thread, jsize sizeToAllocate);
 }
-
-#endif /* MLVMJVMTIUTILS_H_ */

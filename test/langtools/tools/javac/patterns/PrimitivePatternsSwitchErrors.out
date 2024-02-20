@@ -32,6 +32,9 @@ PrimitivePatternsSwitchErrors.java:44:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:52:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:201:16: compiler.err.not.exhaustive
 PrimitivePatternsSwitchErrors.java:207:9: compiler.err.not.exhaustive.statement
+PrimitivePatternsSwitchErrors.java:223:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:231:16: compiler.err.not.exhaustive
+PrimitivePatternsSwitchErrors.java:239:16: compiler.err.not.exhaustive
 - compiler.note.preview.filename: PrimitivePatternsSwitchErrors.java, DEFAULT
 - compiler.note.preview.recompile
-34 errors
+37 errors
