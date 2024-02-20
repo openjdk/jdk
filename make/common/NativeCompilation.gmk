@@ -129,8 +129,10 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
-  # In this functions, helpers named Setup<Foo> are just setting variables.
-  # Functions called Create<Foo> are setting up rules to create files.
+  # In this functions, macros named Setup<Foo> are just setting variables.
+  # Macros called Create<Foo> are setting up rules to create files.
+  # Macros starting with any other verb are more complicated, and can do all
+  # of the above, and also call directly to the shell.
 
   ###
   ### Prepare for compilation and linking
