@@ -23,7 +23,8 @@
 
 /**
  * @test
- * @summary 
+ * @bug 8325372
+ * @summary fusion of heap stable test causes GetAndSet node to be removed
  * @requires vm.gc.Shenandoah
  * @modules java.base/jdk.internal.misc:+open
  *
@@ -63,7 +64,7 @@ public class TestUnsafeLoadStoreMergedHeapStableTests {
 
     static Object field;
 
-    
+
     static Object test1(boolean flag, Object o, long offset) {
         return testHelper(flag, null, offset, field);
     }
