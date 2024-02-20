@@ -617,7 +617,7 @@ public final class Utils {
     }
 
     public static SSLParameters copySSLParameters(SSLParameters p) {
-        final SSLParameters p1 = new SSLParameters();
+        SSLParameters p1 = new SSLParameters();
         p1.setAlgorithmConstraints(p.getAlgorithmConstraints());
         p1.setCipherSuites(p.getCipherSuites());
         // JDK 8 EXCL START
