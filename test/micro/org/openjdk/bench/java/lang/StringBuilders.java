@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -364,6 +364,11 @@ public class StringBuilders {
         return sbUtf16.charAt(charAt_index);
     }
 
+    @Benchmark
+    public String emptyToString(Data data) {
+        return data.sb.toString();
+    }
+
     @State(Scope.Thread)
     public static class Data {
         int i = 0;
@@ -380,6 +385,7 @@ public class StringBuilders {
             }
         }
 
+        StringBuilder sb;
         String str;
         String utf16Str;
         CharSequence cs;
@@ -398,6 +404,7 @@ public class StringBuilders {
         }
 
         private void generateData() {
+            sb = new StringBuilder(length);
             char[] chars = "abcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
 
             StringBuilder sb = new StringBuilder(length);

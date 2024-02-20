@@ -735,6 +735,9 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
     @Override
     @IntrinsicCandidate
     public synchronized String toString() {
+        if (length() == 0) {
+            return "";
+        }
         if (toStringCache == null) {
             return toStringCache = new String(this, null);
         }

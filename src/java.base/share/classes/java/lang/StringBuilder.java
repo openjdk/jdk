@@ -471,8 +471,11 @@ public final class StringBuilder
     @Override
     @IntrinsicCandidate
     public String toString() {
+        if (length() == 0) {
+            return "";
+        }
         // Create a copy, don't share the array
-        return new String(this);
+        return new String(this, null);
     }
 
     /**
