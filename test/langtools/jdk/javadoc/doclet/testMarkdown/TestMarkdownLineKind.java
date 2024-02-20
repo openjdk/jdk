@@ -74,7 +74,7 @@ public class TestMarkdownLineKind extends JavadocTester {
 
                     abc ` def""",
                 """
-                        <p>abc ` def</p>"""),
+                    <p>abc ` def</p>"""),
 
         ATX_HEADER("""
                     # ATX Heading ` more
