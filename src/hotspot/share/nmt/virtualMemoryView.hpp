@@ -43,6 +43,7 @@
 */
 
 class VirtualMemoryView {
+  friend class VirtualMemoryViewTest;
   friend class NmtVirtualMemoryViewTest;
 
   using Id = int32_t;
@@ -198,6 +199,7 @@ private:
   static bool disjoint(Range a, Range b);
   static bool overlaps(Range a, Range b);
   static bool is_same(Range a, Range b);
+  static bool is_empty(Range a);
   static Range union_of(Range a, Range b);
   static Range overlap_of(Range a, Range b);
   static bool same_stack(TrackedRange a, TrackedRange b);
@@ -272,6 +274,16 @@ public:
   }
 
   // Compute the summary snapshot of a VirtualMemory state.
+  // Range -> flag mapping
+  struct RangeFlag {
+    VirtualMemoryView::Range r;
+    MEMFLAGS f;
+    bool mapped;
+  };
+
+  static void map_it(const VirtualMemoryView::RegionStorage& res,
+                     const VirtualMemoryView::OffsetRegionStorage& map,
+                     VirtualMemoryView::RegionStorage& mapping);
   static void compute_summary_snapshot(VirtualMemory& vmem);
 };
 

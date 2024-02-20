@@ -30,7 +30,7 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/ostream.hpp"
 
-uint32_t VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
+int VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
 GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
 NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
 bool VirtualMemoryView::_is_detailed_mode = false;
@@ -380,6 +380,10 @@ bool VirtualMemoryView::is_same(Range a, Range b) {
   return a.start == b.start && a.size == b.size;
 }
 
+bool VirtualMemoryView::is_empty(Range a) {
+  return a.size == 0;
+}
+
 bool VirtualMemoryView::same_stack(TrackedRange a, TrackedRange b) {
   NativeCallStackStorage::StackIndex ai = a.stack_idx;
   NativeCallStackStorage::StackIndex bi = b.stack_idx;
@@ -547,28 +551,88 @@ void VirtualMemoryView::snapshot_thread_stacks() {
   merge_thread_stacks(*thread_stacks);
 }
 
+void VirtualMemoryView::map_it(const VirtualMemoryView::RegionStorage& res,
+                               const VirtualMemoryView::OffsetRegionStorage& map,
+                               VirtualMemoryView::RegionStorage& mapping) {
+  // Pre-cond: res and map merged and sorted
+  using Range = VirtualMemoryView::Range;
+  mapping.clear();
+  auto& front = mapping;
+  RegionStorage back{};
+  for (int i = 0; i < res.length(); i++) {
+    back.push(res.at(i));
+  }
+
+  for (int i = 0; i < back.length(); i++) {
+    // Ignore O(n^2) for now
+    TrackedRange& range = back.at(i);
+    for (int j = 0; j < map.length(); j++) {
+      // Ignore case when we're outside of map range
+      const TrackedOffsetRange& mapped = map.at(j);
+      TrackedOffsetRange out[2];
+      int len;
+      OverlappingResult res = overlap_of(TrackedOffsetRange{range}, Range{mapped}, out, &len);
+      if (res == OverlappingResult::NoOverlap) {
+        continue;
+      } else if (res == OverlappingResult::EntirelyEnclosed) {
+        front.push(TrackedRange{mapped.physical_address, mapped.size, range.stack_idx, range.flag});
+      } else if (res == OverlappingResult::ShortenedFromLeft) {
+        TrackedOffsetRange& R = out[0];
+        size_t offset = range.start - mapped.start;
+        address phys_start = mapped.physical_address + offset;
+        size_t size = R.start - range.start;
+        // Push the mapping
+        front.push(TrackedRange{phys_start, size, range.stack_idx, range.flag});
+        // Replace the original range with the now smaller one
+        back.at_put(i, R);
+      } else if (res == OverlappingResult::ShortenedFromRight) {
+        TrackedOffsetRange& R = out[0];
+        address phys_start = mapped.physical_address;
+        size_t size = range.size - R.size;
+        // Push the mapping
+        front.push(TrackedRange{phys_start, size, range.stack_idx, range.flag});
+        // Replace the original range with the now smaller one
+        back.at_put(i, R);
+      } else if (res == OverlappingResult::SplitInMiddle) {
+        front.push(TrackedRange{mapped.physical_address, mapped.size, range.stack_idx, range.flag});
+        // Here's the O(n^2) case, we really need to reverse the order of the merge and sort.
+        back.at_put(i, out[1]);
+        back.insert_before(i, out[0]);
+      }
+    }
+    // OK, done with mapping this range, push it and remove it
+    front.push(range);
+    // O(n^2) here also.
+    back.remove_at(i);
+  }
+};
+
 void VirtualMemoryView::compute_summary_snapshot(VirtualMemory& vmem) {
-  // Take length of any array as max id, cannot look at PhysicalMemorySpace::unique_id
-  // in case it has changed.
-  for (int id = 0; id < vmem.committed_regions.length(); id++) {
-    VirtualMemorySnapshot& snap = vmem.summary.at(id);
-    // Reset all memory, keeping peak values
+  // Reset all memory, keeping peak values
+  for (int i = 0; i < vmem.summary.length(); i++) {
+    VirtualMemorySnapshot& snap = vmem.summary.at(i);
     for (int i = 0; i < mt_number_of_types; i++) {
       MEMFLAGS flag = NMTUtil::index_to_flag(i);
       ::VirtualMemory* mem = snap.by_type(flag);
       mem->release_memory(mem->reserved());
       mem->uncommit_memory(mem->committed());
     }
-    // Fill out summary
-    const RegionStorage& reserved_ranges = vmem.reserved_regions.at(id);
-    for (int i = 0; i < vmem.reserved_regions.length(); i++) {
-      const TrackedRange& range = reserved_ranges.at(i);
+  }
+
+  // Register all reserved memory for each id
+  for (int i = 0; i < vmem.reserved_regions.length(); i++) {
+    VirtualMemorySnapshot& snap = vmem.summary.at(i);
+    const RegionStorage& reserved_ranges = vmem.reserved_regions.at(i);
+    for (int j = 0; j < reserved_ranges.length(); j++) {
+      const TrackedRange& range = reserved_ranges.at(j);
       snap.by_type(range.flag)->reserve_memory(range.size);
     }
-    const RegionStorage& committed_ranges = vmem.committed_regions.at(id);
-    for (int i = 0; i < committed_ranges.length(); i++) {
-      const TrackedRange& range = committed_ranges.at(i);
-      snap.by_type(range.flag)->commit_memory(range.size);
-    }
   }
+
+  // We must now find all committed memory regions contained by each reserved area.
+  // Any committed memory outside of the reserved area is ignored.
+  const RegionStorage& reserved_ranges = vmem.reserved_regions.at(0);
+  const OffsetRegionStorage& mapped_ranges = vmem.mapped_regions.at(0);
+  GrowableArrayCHeap<RangeFlag, mtNMT> mapping;
+  map_it(reserved_ranges, mapped_ranges, mapping);
 }
