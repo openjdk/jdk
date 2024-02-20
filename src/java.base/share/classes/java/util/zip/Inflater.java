@@ -636,17 +636,13 @@ public class Inflater {
     }
 
     /**
-     * Returns the total number of compressed bytes input so far, discarding
-     * the 32 highest order bits, as if the {@link #getBytesRead()}
-     * method was called followed by a narrowing conversion from <code>long</code>
-     * to <code>int</code>.
+     * Returns the total number of compressed bytes input so far.
      *
-     * @deprecated This method cannot safely return a result without a potential
-     * loss of information about the magnitude and sign of the returned value.
-     * Use the {@link #getBytesRead()} method instead when obtaining this information.
+     * @deprecated This method cannot return the correct value when the
+     * number of compressed bytes is larger than {@link Integer#MAX_VALUE}.
+     * Use {@link #getBytesRead()} instead.
      *
-     * @return the total number of compressed bytes input so far, discarding
-     * the 32 highest order bits
+     * @return the total number of compressed bytes input so far
      */
     @Deprecated(since = "23")
     public int getTotalIn() {
