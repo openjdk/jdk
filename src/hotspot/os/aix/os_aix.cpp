@@ -1495,14 +1495,12 @@ struct vmembk_t {
   // also check that range is fully page aligned to the page size if the block.
   void assert_is_valid_subrange(char* p, size_t s) const {
     if (!contains_range(p, s)) {
-      fatal(RANGEFMT " is not a sub "
-              "range of " RANGEFMT, RANGEFMTARGS(p, s),
-              RANGEFMTARGS(addr, size));
+      fatal(RANGEFMT " is not a sub range of " RANGEFMT, RANGEFMTARGS(p, s),
+            RANGEFMTARGS(addr, size));
     }
     if (!is_aligned_to(p, pagesize) || !is_aligned_to(p + s, pagesize)) {
       fatal("range " RANGEFMT " is not aligned to pagesize (%lu)",
-                         RANGEFMTARGS(p, s),
-                         (unsigned long)pagesize);
+            RANGEFMTARGS(p, s), (unsigned long)pagesize);
     }
   }
 };
@@ -1605,11 +1603,10 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   memset(&shmbuf, 0, sizeof(shmbuf));
   shmbuf.shm_pagesize = 64*K;
   if (shmctl(shmid, SHM_PAGESIZE, &shmbuf) != 0) {
-    ErrnoPreserver ep;
-    assert(false, "Failed to set page size (need " UINTX_FORMAT
-                       " 64K pages) - shmctl failed. (errno=%s).",
-                       size / (64 * K),
-                       os::strerror(ep.saved_errno()));
+    assert(false,
+           "Failed to set page size (need " UINTX_FORMAT
+           " 64K pages) - shmctl failed. (errno=%s).",
+           size / (64 * K), os::strerror(os::get_last_error()));
   }
 
   // Now attach the shared segment.
