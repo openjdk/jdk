@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.util.Arrays;
 import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
@@ -31,10 +32,11 @@ class GetAvailableLocales {
     public static void main(String[] args) {
         Set<String> expected = Set.of(args);
         Set<String> actual =
-            Locale.availableLocales()
+            Arrays.stream(Locale.getAvailableLocales())
                   // "(root)" for Locale.ROOT rather than ""
                   .map(loc -> loc.equals(Locale.ROOT) ? "(root)" : loc.toString())
                   .collect(Collectors.toSet());
+
         if (!expected.equals(actual)) {
             diff(expected, actual);
             System.exit(1);
