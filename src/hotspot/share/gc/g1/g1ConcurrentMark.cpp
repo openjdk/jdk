@@ -152,8 +152,8 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-      size_t new_capacity = MIN2(bucket_size(bucket) * 2, _max_capacity);
-      if (!expand(new_capacity)) {
+      size_t desired_capacity = bucket_size(bucket) * 2;
+      if (!try_expand_to(desired_capacity)) {
         return nullptr;
       }
     }
@@ -197,24 +197,26 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   return true;
 }
 
-bool G1CMMarkStack::ChunkAllocator::expand(size_t new_capacity) {
+bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   if (_capacity == _max_capacity) {
     log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
     return false;
   }
 
   size_t old_capacity = _capacity;
-  if (reserve(new_capacity)) {
+  desired_capacity = MIN2(desired_capacity, _max_capacity);
+
+  if (reserve(desired_capacity)) {
     log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
-                  old_capacity, new_capacity);
+                  old_capacity, desired_capacity);
     return true;
   }
   return false;
 }
 
 bool G1CMMarkStack::ChunkAllocator::expand() {
-  size_t new_capacity = MIN2(_capacity * 2, _max_capacity);
-  return expand(new_capacity);
+  size_t new_capacity = _capacity * 2;
+  return try_expand_to(new_capacity);
 }
 
 G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {

@@ -227,7 +227,7 @@ private:
 
     // Expand the mark stack doubling its size.
     bool expand();
-    bool expand(size_t new_capacity);
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
