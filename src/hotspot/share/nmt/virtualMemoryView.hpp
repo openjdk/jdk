@@ -79,7 +79,7 @@ public:
     TrackedOffsetRange(address start = 0, size_t size = 0, address physical_address = 0, NativeCallStackStorage::StackIndex stack_idx = {0,0}, MEMFLAGS flag = mtNone)
       :  TrackedRange(start, size, stack_idx, flag),
       physical_address(physical_address) {}
-    explicit TrackedOffsetRange(TrackedRange& rng)
+    explicit TrackedOffsetRange(const TrackedRange& rng)
     : TrackedOffsetRange(rng.start, rng.size, rng.start, rng.stack_idx, rng.flag) {}
     TrackedOffsetRange(const TrackedOffsetRange& rng) = default;
     TrackedOffsetRange& operator=(const TrackedOffsetRange& rng) {
@@ -245,6 +245,14 @@ private:
   static void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
   static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
 
+
+  // Create a canonical mapping from address to MEMFLAGS stored in `mapping`.
+  // This is used for computing the MEMFLAGS of each committed region
+  // TODO: Unnecessarily high computational complexity right now.
+  static void map_it(const VirtualMemoryView::RegionStorage& res,
+                     const VirtualMemoryView::OffsetRegionStorage& map,
+                     VirtualMemoryView::RegionStorage& mapping);
+
 public:
   // A default PhysicalMemorySpace for when allocating to the heap.
   static PhysicalMemorySpace heap;
@@ -274,16 +282,6 @@ public:
   }
 
   // Compute the summary snapshot of a VirtualMemory state.
-  // Range -> flag mapping
-  struct RangeFlag {
-    VirtualMemoryView::Range r;
-    MEMFLAGS f;
-    bool mapped;
-  };
-
-  static void map_it(const VirtualMemoryView::RegionStorage& res,
-                     const VirtualMemoryView::OffsetRegionStorage& map,
-                     VirtualMemoryView::RegionStorage& mapping);
   static void compute_summary_snapshot(VirtualMemory& vmem);
 };
 

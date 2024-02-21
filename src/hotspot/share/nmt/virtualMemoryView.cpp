@@ -629,10 +629,32 @@ void VirtualMemoryView::compute_summary_snapshot(VirtualMemory& vmem) {
     }
   }
 
-  // We must now find all committed memory regions contained by each reserved area.
-  // Any committed memory outside of the reserved area is ignored.
-  const RegionStorage& reserved_ranges = vmem.reserved_regions.at(0);
-  const OffsetRegionStorage& mapped_ranges = vmem.mapped_regions.at(0);
-  GrowableArrayCHeap<RangeFlag, mtNMT> mapping;
-  map_it(reserved_ranges, mapped_ranges, mapping);
+  for (int i = 0; i < vmem.reserved_regions.length(); i++) {
+    // We must now find all committed memory regions contained by each reserved area.
+    // Any committed memory outside of the reserved area is ignored.
+    RegionStorage& reserved_ranges = vmem.reserved_regions.at(i);
+    OffsetRegionStorage& mapped_ranges = vmem.mapped_regions.at(i);
+    RegionStorage& committed_ranges = vmem.committed_regions.at(i);
+
+    // Set up for map_it.
+    sort_regions(reserved_ranges);
+    merge_memregions(reserved_ranges);
+    sort_regions(committed_ranges);
+    merge_memregions(committed_ranges);
+    sort_regions(mapped_ranges);
+    merge_mapped(mapped_ranges);
+
+    RegionStorage mapping;
+    map_it(reserved_ranges, mapped_ranges, mapping);
+    VirtualMemorySnapshot& snap = vmem.summary.at(i);
+    // Use this mapping to find each appropriate memory flag for each committed mapping
+    for (int i = 0; i < committed_ranges.length(); i++) {
+      const TrackedRange& crng = committed_ranges.at(i);
+      for (int j = 0; j < mapping.length(); j++) {
+        TrackedRange& m = mapping.at(j);
+        Range olap = overlap_of(crng, m);
+        snap.by_type(m.flag)->commit_memory(olap.size);
+      }
+    }
+  }
 }
