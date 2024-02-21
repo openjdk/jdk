@@ -545,9 +545,10 @@ public abstract sealed class Reference<T>
 
     /**
      * Ensures that the given object remains
-     * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>,
-     * regardless of any other actions of the program that might otherwise cause
-     * the object to become unreachable; thus, the object is not
+     * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>.
+     * This reachability is assured regardless of any optimizing transformations
+     * the VM may perform that might otherwise allow the object to become
+     * unreachable (see {@jls 12.6.1}). Thus, the given object is not
      * reclaimable by garbage collection at least until after the invocation of
      * this method. References to the given object will not be cleared (or
      * enqueued, if applicable) by the garbage collector until after invocation
@@ -653,7 +654,8 @@ public abstract sealed class Reference<T>
      * remains a better option in cases where this approach is not as efficient,
      * desirable, or possible; for example because it would encounter deadlock.
      *
-     * @param ref the reference. If {@code null}, this method has no effect.
+     * @param ref the reference to the object to keep strongly reachable. If
+     * {@code null}, this method has no effect.
      * @since 9
      */
     @ForceInline
