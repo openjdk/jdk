@@ -314,6 +314,10 @@ locate_files() {
     LIB_EXCLUDE="-e '/lib.*\.dSYM/'"
     $CAT "$ALL_FILES_PATH" | eval $GREP $LIB_FILTER | eval $GREP -v $LIB_EXCLUDE > $LIB_FILES_PATH
 
+    DEBUG_FILES_PATH=$TEMP_DIR/debug_files.txt
+    DEBUG_FILTER="-e '\.dSYM/'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $DEBUG_FILTER > $DEBUG_FILES_PATH
+
     EXEC_FILES_PATH=$TEMP_DIR/exec_files.txt
     if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
       EXEC_FILTER="-e '\.exe$'"
@@ -325,13 +329,14 @@ locate_files() {
 
     OTHER_FILES_PATH=$TEMP_DIR/other_files.txt
     ACCOUNTED_FILES_PATH=$TEMP_DIR/accounted_files.txt
-    $CAT $ZIP_FILES_PATH $JMOD_FILES_PATH $JAR_FILES_PATH $LIB_FILES_PATH $EXEC_FILES_PATH > $ACCOUNTED_FILES_PATH
+    $CAT $ZIP_FILES_PATH $JMOD_FILES_PATH $JAR_FILES_PATH $LIB_FILES_PATH $DEBUG_FILES_PATH $EXEC_FILES_PATH > $ACCOUNTED_FILES_PATH
     $CAT $ACCOUNTED_FILES_PATH $ALL_FILES_PATH | $SORT | $UNIQ -u > $OTHER_FILES_PATH
 
     ALL_ZIP_FILES=$($CAT $ZIP_FILES_PATH)
     ALL_JMOD_FILES=$($CAT $JMOD_FILES_PATH)
     ALL_JAR_FILES=$($CAT $JAR_FILES_PATH)
     ALL_LIB_FILES=$($CAT $LIB_FILES_PATH)
+    ALL_DEBUG_FILES=$($CAT $DEBUG_FILES_PATH)
     ALL_EXEC_FILES=$($CAT $EXEC_FILES_PATH)
     ALL_OTHER_FILES=$($CAT $OTHER_FILES_PATH)
 }
@@ -1060,7 +1065,7 @@ compare_all_other_files() {
     locate_files $THIS_DIR
 
     echo Other files with binary differences...
-    for f in $ALL_OTHER_FILES
+    for f in $ALL_OTHER_FILES $ALL_DEBUG_FILES
     do
         echo Other file: $f
         # Skip all files in test/*/native
