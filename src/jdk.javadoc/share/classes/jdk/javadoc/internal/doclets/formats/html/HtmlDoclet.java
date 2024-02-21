@@ -467,18 +467,16 @@ public class HtmlDoclet extends AbstractDoclet {
         try {
             // Extract font file names from CSS file
             URL cssURL = HtmlConfiguration.class.getResource(DocPaths.RESOURCES.resolve(cssPath).getPath());
-            InputStream in = cssURL.openStream();
             Pattern pattern = Pattern.compile("DejaVu[-\\w]+\\.\\w+");
 
-            try (in) {
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        Matcher m = pattern.matcher(line);
-                        if (m.find()) {
-                            DocPath fontPath = DocPaths.FONTS.resolve(m.group());
-                            copyResource(fontPath, DocPaths.RESOURCE_FILES.resolve(fontPath), false);
-                        }
+            try (InputStream in = cssURL.openStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    Matcher m = pattern.matcher(line);
+                    if (m.find()) {
+                        DocPath fontPath = DocPaths.FONTS.resolve(m.group());
+                        copyResource(fontPath, DocPaths.RESOURCE_FILES.resolve(fontPath), false);
                     }
                 }
             }
