@@ -89,17 +89,6 @@ public class JlinkTask {
             = new TaskHelper(JLINK_BUNDLE);
     private static final String JLINK_MOD_NAME = "jdk.jlink";
 
-    // Flag for scratch task validation in run-time image mode
-    private final boolean isScratch;
-
-    public JlinkTask() {
-        this(false);
-    }
-
-    private JlinkTask(boolean isScratch) {
-        this.isScratch = isScratch;
-    }
-
     private static final Option<?>[] recognizedOptions = {
         new Option<JlinkTask>(false, (task, opt, arg) -> {
             task.options.help = true;
@@ -182,7 +171,7 @@ public class JlinkTask {
         }, "--version"),
         new Option<JlinkTask>(true, (task, opt, arg) -> {
             Path path = Paths.get(arg);
-            if (!task.isScratch && Files.exists(path)) {
+            if (Files.exists(path)) {
                 throw taskHelper.newBadArgs("err.dir.exists", path);
             }
             task.options.packagedModulesPath = path;
@@ -447,7 +436,7 @@ public class JlinkTask {
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
             taskHelper.getPluginsConfig(options.output, options.launchers,
-                    imageProvider.targetPlatform, config));
+                    imageProvider.targetPlatform));
 
         //Ask the stack to proceed
         stack.operate(imageProvider);
@@ -562,10 +551,19 @@ public class JlinkTask {
 
         // Perform some setup for run-time image based links
         if (config.linkFromRuntimeImage()) {
-            // Disallow a link with jdk.jlink included if we are performing a
-            // runtime link.
+            // Catch the case where we don't have a linkable runtime. In that
+            // case, fs_java.base_files doesn't exist in the jdk.jlink
+            // module.
+            String resourceName = String.format(RESPATH_PATTERN, "java.base");
+            InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
+            if (inStream == null) {
+                // Only linkable runtimes have those resources. Abort otherwise.
+                String msg = taskHelper.getMessage("err.runtime.link.not.linkable.runtime");
+                throw new IllegalArgumentException(msg);
+            }
+            // Disallow a runtime-image-based-link with jdk.jlink included
             if (cf.findModule(JLINK_MOD_NAME).isPresent()) {
-                String msg = taskHelper.getMessage("err.runtime.link.recursive");
+                String msg = taskHelper.getMessage("err.runtime.link.jdk.jlink.prohibited");
                 throw new IllegalArgumentException(msg);
             }
 

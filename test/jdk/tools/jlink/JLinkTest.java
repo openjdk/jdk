@@ -27,15 +27,17 @@ import java.io.StringWriter;
 import java.lang.module.ModuleDescriptor;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.spi.ToolProvider;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import jdk.tools.jlink.internal.PluginRepository;
 import jdk.tools.jlink.plugin.Plugin;
+import jdk.tools.jlink.internal.PluginRepository;
 import tests.Helper;
 import tests.JImageGenerator;
 
@@ -93,8 +95,7 @@ public class JLinkTest {
             // number of built-in plugins
             List<Plugin> builtInPlugins = new ArrayList<>();
             builtInPlugins.addAll(PluginRepository.getPlugins(ModuleLayer.boot()));
-            // AddRunImageResourcesPlugin is hidden from --list-plugins
-            totalPlugins = builtInPlugins.stream().filter(p -> !p.isHidden()).collect(Collectors.toList()).size();
+            totalPlugins = builtInPlugins.size();
             // actual num. of plugins loaded from jdk.jlink module
             int actualJLinkPlugins = 0;
             for (Plugin p : builtInPlugins) {

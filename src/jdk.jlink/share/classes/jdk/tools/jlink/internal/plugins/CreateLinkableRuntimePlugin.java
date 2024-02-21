@@ -86,11 +86,6 @@ public final class CreateLinkableRuntimePlugin extends AbstractPlugin {
     }
 
     @Override
-    public boolean isHidden() {
-        return true; // Don't show in --list-plugins output
-    }
-
-    @Override
     public void configure(Map<String, String> config) {
         String v = config.get(PLUGIN_NAME);
         if (v == null)
@@ -211,9 +206,9 @@ public final class CreateLinkableRuntimePlugin extends AbstractPlugin {
     @Override
     public Category getType() {
         // Ensure we run in a later stage as we need to generate
-        // SHA-512 sums for non-(class/resource) files. The jmod_resources
+        // SHA-512 sums for non-(class/resource) files. The fs_$module_files
         // files can be considered meta-info describing the universe we
-        // draft from.
+        // draft from (together with the jimage and respective diff_$module files).
         return Category.METAINFO_ADDER;
     }
 }

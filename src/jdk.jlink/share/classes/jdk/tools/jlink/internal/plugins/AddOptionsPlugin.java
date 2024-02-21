@@ -31,10 +31,8 @@ package jdk.tools.jlink.internal.plugins;
  */
 public final class AddOptionsPlugin extends AddResourcePlugin {
 
-    private static final String OPTS_FILE = "/java.base/jdk/internal/vm/options";
-
     public AddOptionsPlugin() {
-        super("add-options", OPTS_FILE);
+        super("add-options", "/java.base/jdk/internal/vm/options");
     }
 
 }
