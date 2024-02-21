@@ -133,11 +133,6 @@ class PSPromotionManager {
     return &_claimed_stack_depth;
   }
 
-  bool young_gen_is_full()             { return _young_gen_is_full; }
-
-  bool old_gen_is_full()               { return _old_gen_is_full; }
-  void set_old_gen_is_full(bool state) { _old_gen_is_full = state; }
-
   // Promotion methods
   template<bool promote_immediately> oop copy_to_survivor_space(oop o);
   oop oop_promotion_failed(oop obj, markWord obj_mark);

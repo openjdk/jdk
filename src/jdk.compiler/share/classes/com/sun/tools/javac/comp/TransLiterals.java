@@ -254,7 +254,12 @@ public final class TransLiterals extends TreeTranslator {
         }
 
         boolean isNamedProcessor(Name name) {
-            if (processor instanceof JCIdent ident && ident.sym instanceof VarSymbol varSym) {
+            Symbol sym = switch (processor) {
+                case JCIdent ident -> ident.sym;
+                case JCFieldAccess access -> access.sym;
+                default -> null;
+            };
+            if (sym instanceof VarSymbol varSym) {
                 if (varSym.flags() == (Flags.PUBLIC | Flags.FINAL | Flags.STATIC) &&
                         varSym.name == name &&
                         types.isSameType(varSym.owner.type, syms.stringTemplateType)) {
@@ -265,8 +270,7 @@ public final class TransLiterals extends TreeTranslator {
         }
 
         boolean isLinkageProcessor() {
-            return processor != null &&
-                   !useValuesList &&
+            return !useValuesList &&
                    types.isSubtype(processor.type, syms.linkageType) &&
                    processor.type.isFinal() &&
                    TreeInfo.symbol(processor) instanceof VarSymbol varSymbol &&
@@ -278,7 +282,7 @@ public final class TransLiterals extends TreeTranslator {
             JCExpression result;
             make.at(tree.pos);
 
-            if (processor == null || isNamedProcessor(names.RAW)) {
+            if (isNamedProcessor(names.RAW)) {
                 result = newStringTemplate();
             } else if (isNamedProcessor(names.STR)) {
                 result = concatExpression(fragments, expressions);

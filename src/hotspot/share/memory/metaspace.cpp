@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +25,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "gc/shared/collectedHeap.hpp"
@@ -577,54 +579,15 @@ bool Metaspace::class_space_is_initialized() {
 
 // Reserve a range of memory that is to contain narrow Klass IDs. If "try_in_low_address_ranges"
 // is true, we will attempt to reserve memory suitable for zero-based encoding.
-ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool try_in_low_address_ranges) {
-
+ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size, bool optimize_for_zero_base) {
   char* result = nullptr;
-  const bool randomize = RandomizeClassSpaceLocation;
 
-  // First try to reserve in low address ranges.
-  if (try_in_low_address_ranges) {
-    constexpr uintptr_t unscaled_max = ((uintptr_t)UINT_MAX + 1);
-    log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for unscaled narrow Klass encoding", unscaled_max);
-    result = os::attempt_reserve_memory_between(nullptr, (char*)unscaled_max,
-                                                size, Metaspace::reserve_alignment(), randomize);
-    if (result == nullptr) {
-      constexpr uintptr_t zerobased_max = unscaled_max << LogKlassAlignmentInBytes;
-      log_debug(metaspace, map)("Trying below " SIZE_FORMAT_X " for zero-based narrow Klass encoding", zerobased_max);
-      result = os::attempt_reserve_memory_between((char*)unscaled_max, (char*)zerobased_max,
-                                                  size, Metaspace::reserve_alignment(), randomize);
-    }
-  } // end: low-address reservation
-
-#if defined(AARCH64) || defined(PPC64) || defined(S390)
-  if (result == nullptr) {
-    // Failing zero-based allocation, or in strict_base mode, try to come up with
-    // an optimized start address that is amenable to JITs that use 16-bit moves to
-    // load the encoding base as a short immediate.
-    // Therefore we try here for an address that when right-shifted by
-    // LogKlassAlignmentInBytes has only 1s in the third 16-bit quadrant.
-    //
-    // Example: for shift=3, the address space searched would be
-    // [0x0080_0000_0000 - 0xFFF8_0000_0000].
-
-    // Number of least significant bits that should be zero
-    constexpr int lo_zero_bits = 32 + LogKlassAlignmentInBytes;
-    // Number of most significant bits that should be zero
-    constexpr int hi_zero_bits = 16;
-
-    constexpr size_t alignment = nth_bit(lo_zero_bits);
-    assert(alignment >= Metaspace::reserve_alignment(), "Sanity");
-    constexpr uint64_t min = alignment;
-    constexpr uint64_t max = nth_bit(64 - hi_zero_bits);
-
-    log_debug(metaspace, map)("Trying between " UINT64_FORMAT_X " and " UINT64_FORMAT_X
-                              " with " SIZE_FORMAT_X " alignment", min, max, alignment);
-    result = os::attempt_reserve_memory_between((char*)min, (char*)max, size, alignment, randomize);
-  }
-#endif // defined(AARCH64) || defined(PPC64) || defined(S390)
+  NOT_ZERO(result =
+      (char*) CompressedKlassPointers::reserve_address_space_for_compressed_classes(size, RandomizeClassSpaceLocation,
+                                                                                    optimize_for_zero_base));
 
   if (result == nullptr) {
-    // Fallback: reserve anywhere and hope the resulting block is usable.
+    // Fallback: reserve anywhere
     log_debug(metaspace, map)("Trying anywhere...");
     result = os::reserve_memory_aligned(size, Metaspace::reserve_alignment(), false);
   }
@@ -632,10 +595,12 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
   // Wrap resulting range in ReservedSpace
   ReservedSpace rs;
   if (result != nullptr) {
+    log_debug(metaspace, map)("Mapped at " PTR_FORMAT, p2i(result));
     assert(is_aligned(result, Metaspace::reserve_alignment()), "Alignment too small for metaspace");
     rs = ReservedSpace::space_for_range(result, size, Metaspace::reserve_alignment(),
                                                       os::vm_page_size(), false, false);
   } else {
+    log_debug(metaspace, map)("Failed to map.");
     rs = ReservedSpace();
   }
   return rs;
@@ -725,7 +690,7 @@ void Metaspace::global_initialize() {
 
   metaspace::ChunkHeaderPool::initialize();
 
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     assert(!UseSharedSpaces, "sanity");
     MetaspaceShared::initialize_for_static_dump();
   }

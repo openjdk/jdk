@@ -26,6 +26,7 @@
  * @bug 8289551 8302976
  * @summary Verify conversion between float and the binary16 format
  * @requires (vm.cpu.features ~= ".*avx512vl.*" | vm.cpu.features ~= ".*f16c.*") | os.arch=="aarch64"
+ *           | (os.arch == "riscv64" & vm.cpu.features ~= ".*zfh,.*")
  * @requires vm.compiler1.enabled & vm.compiler2.enabled
  * @requires vm.compMode != "Xcomp"
  * @comment default run
@@ -309,7 +310,8 @@ public class Binary16Conversion {
                 f_prime_diff > f_prime_up_diff) {
                 errors++;
                 System.out.println("Round-to-nearest violation on converting " +
-                                   Float.toHexString(f) + "/" + Integer.toHexString(i) + " to binary16 and back: " + Integer.toHexString(0xffff & f_as_bin16) + " f_prime: " + Float.toHexString(f_prime));
+                                   Float.toHexString(f) + "/" + Integer.toHexString(i) + " to binary16 and back: " +
+                                   Integer.toHexString(0xffff & f_as_bin16) + " f_prime: " + Float.toHexString(f_prime));
             }
         }
         return errors;
@@ -326,11 +328,14 @@ public class Binary16Conversion {
              ell++) {
             float f = Float.intBitsToFloat((int)ell);
             short s1 = Float.floatToFloat16(f);
-            short s2 =    testAltFloatToFloat16(f);
+            short s2 = testAltFloatToFloat16(f);
 
             if (s1 != s2) {
                 errors++;
-                System.out.println("Different conversion of float value " + Float.toHexString(f));
+                System.out.println("Different conversion of float value (" + f + "/" +
+                                    Integer.toHexString(Float.floatToRawIntBits(f)) + "): " +
+                                    Integer.toHexString(s1 & 0xffff) + "(" + s1 + ")" + " != " +
+                                    Integer.toHexString(s2 & 0xffff) + "(" + s2 + ")");
             }
         }
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,5 +38,3 @@ sun/tools/jhsdb/heapconfig/JMapHeapConfigTest.java 8307393   generic-all
 sun/tools/jhsdb/HeapDumpTestWithActiveProcess.java 8307393   generic-all
 
 com/sun/jdi/ThreadMemoryLeakTest.java          8307402 generic-all
-java/util/concurrent/locks/Lock/OOMEInAQS.java 8309218 generic-all
-java/nio/channels/vthread/BlockingChannelOps.java#direct-register 8315544 windows-x64

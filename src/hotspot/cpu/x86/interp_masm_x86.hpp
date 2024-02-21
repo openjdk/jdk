@@ -103,20 +103,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
-  void get_cache_and_index_at_bcp(Register cache,
-                                  Register index,
-                                  int bcp_offset,
-                                  size_t index_size = sizeof(u2));
-  void get_cache_and_index_and_bytecode_at_bcp(Register cache,
-                                               Register index,
-                                               Register bytecode,
-                                               int byte_no,
-                                               int bcp_offset,
-                                               size_t index_size = sizeof(u2));
-  void get_cache_entry_pointer_at_bcp(Register cache,
-                                      Register tmp,
-                                      int bcp_offset,
-                                      size_t index_size = sizeof(u2));
+
   void get_cache_index_at_bcp(Register index,
                               int bcp_offset,
                               size_t index_size = sizeof(u2));
@@ -128,11 +115,6 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_klass_at_index(Register klass,  // contains the Klass on return
                                     Register cpool,  // the constant pool (corrupted on return)
                                     Register index); // the constant pool index (corrupted on return)
-
-  void load_resolved_method_at_index(int byte_no,
-                                     Register method,
-                                     Register cache,
-                                     Register index);
 
   NOT_LP64(void f2ieee();)        // truncate ftos to 32bits
   NOT_LP64(void d2ieee();)        // truncate dtos to 64bits
@@ -308,6 +290,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void load_resolved_indy_entry(Register cache, Register index);
   void load_field_entry(Register cache, Register index, int bcp_offset = 1);
+  void load_method_entry(Register cache, Register index, int bcp_offset = 1);
 };
 
 #endif // CPU_X86_INTERP_MASM_X86_HPP

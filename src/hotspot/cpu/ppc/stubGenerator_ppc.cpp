@@ -3558,7 +3558,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_nmethod_entry_barrier() {
+  address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
 
@@ -3643,8 +3643,6 @@ class StubGenerator: public StubCodeGenerator {
 #define VALID_B64 0x80
 #define VB64(x) (VALID_B64 | x)
 
-#define VEC_ALIGN __attribute__ ((aligned(16)))
-
 #define BLK_OFFSETOF(x) (offsetof(constant_block, x))
 
 // In little-endian mode, the lxv instruction loads the element at EA into
@@ -3681,7 +3679,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char pack_permute_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
 
       .offsetLUT_val = {
         ARRAY_TO_LXV_ORDER(
@@ -4263,7 +4261,7 @@ class StubGenerator: public StubCodeGenerator {
       unsigned char base64_48_63_URL_val[16];
     } constant_block;
 
-    static const constant_block VEC_ALIGN const_block = {
+    alignas(16) static const constant_block const_block = {
       .expand_permute_val = {
         ARRAY_TO_LXV_ORDER(
         0,  4,  5,  6,
@@ -4806,7 +4804,7 @@ class StubGenerator: public StubCodeGenerator {
     // nmethod entry barriers for concurrent class unloading
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::ppc::_nmethod_entry_barrier            = generate_nmethod_entry_barrier();
+      StubRoutines::_method_entry_barrier            = generate_method_entry_barrier();
     }
 
     // arraycopy stubs used by compilers

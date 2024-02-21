@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,12 +33,12 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
-static jmethodID mid = NULL;
+static jmethodID mid = nullptr;
 
 void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method,
@@ -52,7 +52,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
 
     if (mid == method) {
         err = jvmti->SetEventNotificationMode(JVMTI_DISABLE,
-            JVMTI_EVENT_METHOD_EXIT, NULL);
+            JVMTI_EVENT_METHOD_EXIT, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to disable metod exit event: %s (%d)\n",
                    TranslateError(err), err);
@@ -98,7 +98,7 @@ void JNICALL MethodExit(jvmtiEnv *jvmti_env, JNIEnv *env,
                 if (printdump == JNI_TRUE) {
                     printf(">>> null pointer check ...\n");
                 }
-                err = jvmti->GetLocalFloat(thr, 0, table[i].slot, NULL);
+                err = jvmti->GetLocalFloat(thr, 0, table[i].slot, nullptr);
                 if (err != JVMTI_ERROR_NULL_POINTER) {
                     printf("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
                     printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -129,12 +129,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -181,7 +181,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_GetLocalVariable_getlocal002_getMeth(JNIEnv *env, jclass cls) {
     jvmtiError err;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -191,14 +191,14 @@ Java_nsk_jvmti_GetLocalVariable_getlocal002_getMeth(JNIEnv *env, jclass cls) {
         !caps.can_generate_method_exit_events) return;
 
     mid = env->GetMethodID(cls, "meth01", "()D");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for meth01\n");
         result = STATUS_FAILED;
         return;
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_METHOD_EXIT, NULL);
+        JVMTI_EVENT_METHOD_EXIT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable metod exit event: %s (%d)\n",
                TranslateError(err), err);
@@ -215,12 +215,12 @@ Java_nsk_jvmti_GetLocalVariable_getlocal002_checkLoc(JNIEnv *env,
     jmethodID mid;
     jint i1;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         return;
     }
 
     mid = env->GetStaticMethodID(cls, "meth02", "()V");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for meth02\n");
         result = STATUS_FAILED;
         return;

@@ -47,9 +47,9 @@ private:
 public:
   PCMarkAndPushClosure(ParCompactionManager* cm) : _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 class PCIterateMarkAndPushClosure: public ClaimMetadataVisitingOopIterateClosure {
@@ -60,9 +60,9 @@ public:
     ClaimMetadataVisitingOopIterateClosure(ClassLoaderData::_claim_stw_fullgc_mark, rp),
     _compaction_manager(cm) { }
 
-  template <typename T> void do_oop_nv(T* p)      { _compaction_manager->mark_and_push(p); }
-  virtual void do_oop(oop* p)                     { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)               { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p)      { _compaction_manager->mark_and_push(p); }
+  virtual void do_oop(oop* p)                     { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)               { do_oop_work(p); }
 };
 
 inline bool ParCompactionManager::steal(int queue_num, oop& t) {

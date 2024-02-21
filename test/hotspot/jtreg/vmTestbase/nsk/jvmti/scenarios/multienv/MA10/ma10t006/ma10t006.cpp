@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,34 +49,34 @@ static void JNICALL
 CompiledMethodLoad(jvmtiEnv *jvmti_env, jmethodID method,
         jint code_size, const void* code_addr, jint map_length,
         const jvmtiAddrLocationMap* map, const void* compile_info) {
-    char *name = NULL;
-    char *signature = NULL;
+    char *name = nullptr;
+    char *signature = nullptr;
 
     CompiledMethodLoadEventsCount++;
 
-    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, NULL))) {
+    if (!NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(method, &name, &signature, nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
     NSK_DISPLAY3("CompiledMethodLoad event: %s%s (0x%p)\n",
         name, signature, code_addr);
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
-    if (signature != NULL)
+    if (signature != nullptr)
         jvmti_env->Deallocate((unsigned char*)signature);
 }
 
 static void JNICALL
 CompiledMethodUnload(jvmtiEnv *jvmti_env, jmethodID method,
         const void* code_addr) {
-    char *name = NULL;
-    char *sig = NULL;
+    char *name = nullptr;
+    char *sig = nullptr;
     jvmtiError err;
     CompiledMethodUnloadEventsCount++;
 
     NSK_DISPLAY0("CompiledMethodUnload event received\n");
     // Check for the case that the class has been unloaded
-    err = jvmti_env->GetMethodName(method, &name, &sig, NULL);
+    err = jvmti_env->GetMethodName(method, &name, &sig, nullptr);
     if (err == JVMTI_ERROR_NONE) {
         NSK_DISPLAY3("for: \tmethod: name=\"%s\" signature=\"%s\"\n\tnative address=0x%p\n",
           name, sig, code_addr);
@@ -127,7 +127,7 @@ JNIEXPORT jint JNI_OnLoad_ma10t006(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -139,10 +139,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));
@@ -157,9 +157,9 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(nsk_jvmti_init_MA(&callbacks)))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_LOAD, nullptr)))
         return JNI_ERR;
-    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, NULL)))
+    if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_COMPILED_METHOD_UNLOAD, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

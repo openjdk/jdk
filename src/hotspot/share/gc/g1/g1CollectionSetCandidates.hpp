@@ -26,6 +26,8 @@
 #define SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP
 
 #include "gc/g1/g1CollectionSetCandidates.hpp"
+#include "gc/g1/g1_globals.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
@@ -64,6 +66,20 @@ public:
   G1CollectionCandidateRegionListIterator end() const { return _regions.end(); }
 };
 
+struct G1CollectionSetCandidateInfo {
+  HeapRegion* _r;
+  double _gc_efficiency;
+  uint _num_unreclaimed;          // Number of GCs this region has been found unreclaimable.
+
+  G1CollectionSetCandidateInfo() : G1CollectionSetCandidateInfo(nullptr, 0.0) { }
+  G1CollectionSetCandidateInfo(HeapRegion* r, double gc_efficiency) : _r(r), _gc_efficiency(gc_efficiency), _num_unreclaimed(0) { }
+
+  bool update_num_unreclaimed() {
+    ++_num_unreclaimed;
+    return _num_unreclaimed < G1NumCollectionsKeepPinned;
+  }
+};
+
 class G1CollectionCandidateListIterator : public StackObj {
   G1CollectionCandidateList* _which;
   uint _position;
@@ -72,7 +88,7 @@ public:
   G1CollectionCandidateListIterator(G1CollectionCandidateList* which, uint position);
 
   G1CollectionCandidateListIterator& operator++();
-  HeapRegion* operator*();
+  G1CollectionSetCandidateInfo* operator*();
 
   bool operator==(const G1CollectionCandidateListIterator& rhs);
   bool operator!=(const G1CollectionCandidateListIterator& rhs);
@@ -83,23 +99,13 @@ public:
 class G1CollectionCandidateList : public CHeapObj<mtGC> {
   friend class G1CollectionCandidateListIterator;
 
-public:
-  struct CandidateInfo {
-    HeapRegion* _r;
-    double _gc_efficiency;
-
-    CandidateInfo() : CandidateInfo(nullptr, 0.0) { }
-    CandidateInfo(HeapRegion* r, double gc_efficiency) : _r(r), _gc_efficiency(gc_efficiency) { }
-  };
-
-private:
-  GrowableArray<CandidateInfo> _candidates;
+  GrowableArray<G1CollectionSetCandidateInfo> _candidates;
 
 public:
   G1CollectionCandidateList();
 
   // Put the given set of candidates into this list, preserving the efficiency ordering.
-  void set(CandidateInfo* candidate_infos, uint num_infos);
+  void set(G1CollectionSetCandidateInfo* candidate_infos, uint num_infos);
   // Add the given HeapRegion to this list at the end, (potentially) making the list unsorted.
   void append_unsorted(HeapRegion* r);
   // Restore sorting order by decreasing gc efficiency, using the existing efficiency
@@ -114,7 +120,7 @@ public:
 
   void clear();
 
-  CandidateInfo& at(uint position) { return _candidates.at(position); }
+  G1CollectionSetCandidateInfo& at(uint position) { return _candidates.at(position); }
 
   uint length() const { return (uint)_candidates.length(); }
 
@@ -123,7 +129,7 @@ public:
   // Comparison function to order regions in decreasing GC efficiency order. This
   // will cause regions with a lot of live objects and large remembered sets to end
   // up at the end of the list.
-  static int compare(CandidateInfo* ci1, CandidateInfo* ci2);
+  static int compare(G1CollectionSetCandidateInfo* ci1, G1CollectionSetCandidateInfo* ci2);
 
   G1CollectionCandidateListIterator begin() {
     return G1CollectionCandidateListIterator(this, 0);
@@ -138,9 +144,9 @@ public:
 // of the regions returned.
 class G1CollectionSetCandidatesIterator : public StackObj {
   G1CollectionSetCandidates* _which;
-  uint _position;
+    uint _position;
 
-public:
+  public:
   G1CollectionSetCandidatesIterator(G1CollectionSetCandidates* which, uint position);
 
   G1CollectionSetCandidatesIterator& operator++();
@@ -198,7 +204,7 @@ public:
 
   // Merge collection set candidates from marking into the current marking list
   // (which needs to be empty).
-  void set_candidates_from_marking(G1CollectionCandidateList::CandidateInfo* candidate_infos,
+  void set_candidates_from_marking(G1CollectionSetCandidateInfo* candidate_infos,
                                    uint num_infos);
   // The most recent length of the list that had been merged last via
   // set_candidates_from_marking(). Used for calculating minimum collection set

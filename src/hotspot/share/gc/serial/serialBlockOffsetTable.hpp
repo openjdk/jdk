@@ -36,168 +36,34 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-// The CollectedHeap type requires subtypes to implement a method
-// "block_start".  For some subtypes, notably generational
-// systems using card-table-based write barriers, the efficiency of this
-// operation may be important.  Implementations of the "BlockOffsetArray"
-// class may be useful in providing such efficient implementations.
-//
-// BlockOffsetTable (abstract)
-//   - BlockOffsetArray (abstract)
-//     - BlockOffsetArrayContigSpace
-//
-
-class ContiguousSpace;
-
-//////////////////////////////////////////////////////////////////////////
-// The BlockOffsetTable "interface"
-//////////////////////////////////////////////////////////////////////////
-class BlockOffsetTable {
+class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class VMStructs;
-protected:
-  // These members describe the region covered by the table.
+  friend class SerialBlockOffsetTable;
 
-  // The space this table is covering.
-  HeapWord* _bottom;    // == reserved.start
-  HeapWord* _end;       // End of currently allocated region.
-
-public:
-  // Initialize the table to cover the given space.
-  // The contents of the initial table are undefined.
-  BlockOffsetTable(HeapWord* bottom, HeapWord* end):
-    _bottom(bottom), _end(end) {
-    assert(_bottom <= _end, "arguments out of order");
-    assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
-  }
-
-  // Note that the committed size of the covered space may have changed,
-  // so the table size might also wish to change.
-  virtual void resize(size_t new_word_size) = 0;
-
-  virtual void set_bottom(HeapWord* new_bottom) {
-    assert(new_bottom <= _end, "new_bottom > _end");
-    _bottom = new_bottom;
-    resize(pointer_delta(_end, _bottom));
-  }
-
-  // Requires "addr" to be contained by a block, and returns the address of
-  // the start of that block.
-  virtual HeapWord* block_start_unsafe(const void* addr) const = 0;
-
-  // Returns the address of the start of the block containing "addr", or
-  // else "null" if it is covered by no block.
-  HeapWord* block_start(const void* addr) const;
-};
-
-//////////////////////////////////////////////////////////////////////////
-// One implementation of "BlockOffsetTable," the BlockOffsetArray,
-// divides the covered region into "N"-word subregions (where
-// "N" = 2^"LogN".  An array with an entry for each such subregion
-// indicates how far back one must go to find the start of the
-// chunk that includes the first word of the subregion.
-//
-// Each BlockOffsetArray is owned by a Space.  However, the actual array
-// may be shared by several BlockOffsetArrays; this is useful
-// when a single resizable area (such as a generation) is divided up into
-// several spaces in which contiguous allocation takes place.  (Consider,
-// for example, the garbage-first generation.)
-
-// Here is the shared array type.
-//////////////////////////////////////////////////////////////////////////
-// BlockOffsetSharedArray
-//////////////////////////////////////////////////////////////////////////
-class BlockOffsetSharedArray: public CHeapObj<mtGC> {
-  friend class BlockOffsetArray;
-  friend class BlockOffsetArrayNonContigSpace;
-  friend class BlockOffsetArrayContigSpace;
-  friend class VMStructs;
-
- private:
-  bool _init_to_zero;
-
-  // The reserved region covered by the shared array.
+  // The reserved heap (i.e. old-gen) covered by the shared array.
   MemRegion _reserved;
-
-  // End of the current committed region.
-  HeapWord* _end;
 
   // Array for keeping offsets for retrieving object start fast given an
   // address.
   VirtualSpace _vs;
-  u_char* _offset_array;          // byte array keeping backwards offsets
+  uint8_t* _offset_array;          // byte array keeping backwards offsets
 
-  void fill_range(size_t start, size_t num_cards, u_char offset) {
+  void fill_range(size_t start, size_t num_cards, uint8_t offset) {
     void* start_ptr = &_offset_array[start];
-    // If collector is concurrent, special handling may be needed.
-    G1GC_ONLY(assert(!UseG1GC, "Shouldn't be here when using G1");)
     memset(start_ptr, offset, num_cards);
   }
 
- protected:
-  // Bounds checking accessors:
-  // For performance these have to devolve to array accesses in product builds.
-  u_char offset_array(size_t index) const {
+  uint8_t offset_array(size_t index) const {
     assert(index < _vs.committed_size(), "index out of range");
     return _offset_array[index];
   }
-  // An assertion-checking helper method for the set_offset_array() methods below.
-  void check_reducing_assertion(bool reducing);
-
-  void set_offset_array(size_t index, u_char offset, bool reducing = false) {
-    check_reducing_assertion(reducing);
-    assert(index < _vs.committed_size(), "index out of range");
-    assert(!reducing || _offset_array[index] >= offset, "Not reducing");
-    _offset_array[index] = offset;
-  }
-
-  void set_offset_array(size_t index, HeapWord* high, HeapWord* low, bool reducing = false) {
-    check_reducing_assertion(reducing);
-    assert(index < _vs.committed_size(), "index out of range");
-    assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::card_size_in_words(), "offset too large");
-    assert(!reducing || _offset_array[index] >=  (u_char)pointer_delta(high, low),
-           "Not reducing");
-    _offset_array[index] = (u_char)pointer_delta(high, low);
-  }
-
-  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset, bool reducing = false) {
-    check_reducing_assertion(reducing);
-    assert(index_for(right - 1) < _vs.committed_size(),
-           "right address out of range");
-    assert(left  < right, "Heap addresses out of order");
-    size_t num_cards = pointer_delta(right, left) >> BOTConstants::log_card_size_in_words();
-
-    fill_range(index_for(left), num_cards, offset);
-  }
-
-  void set_offset_array(size_t left, size_t right, u_char offset, bool reducing = false) {
-    check_reducing_assertion(reducing);
-    assert(right < _vs.committed_size(), "right address out of range");
-    assert(left  <= right, "indexes out of order");
-    size_t num_cards = right - left + 1;
-
-    fill_range(left, num_cards, offset);
-  }
-
-  void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
-    assert(index < _vs.committed_size(), "index out of range");
-    assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) <= BOTConstants::card_size_in_words(), "offset too large");
-    assert(_offset_array[index] == pointer_delta(high, low),
-           "Wrong offset");
-  }
-
-  bool is_card_boundary(HeapWord* p) const;
 
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
-  // We always add an extra slot because if an object
-  // ends on a card boundary we put a 0 in the next
-  // offset array slot, so we want that slot always
-  // to be reserved.
+  static size_t compute_size(size_t mem_region_words) {
+    assert(mem_region_words % BOTConstants::card_size_in_words() == 0, "precondition");
 
-  size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / BOTConstants::card_size_in_words()) + 1;
+    size_t number_of_slots = mem_region_words / BOTConstants::card_size_in_words();
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
@@ -207,24 +73,13 @@ public:
   // (see "resize" below) up to the size of "_reserved" (which must be at
   // least "init_word_size".)  The contents of the initial table are
   // undefined; it is the responsibility of the constituent
-  // BlockOffsetTable(s) to initialize cards.
-  BlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
+  // SerialBlockOffsetTable(s) to initialize cards.
+  SerialBlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
 
   // Notes a change in the committed size of the region covered by the
   // table.  The "new_word_size" may not be larger than the size of the
   // reserved region this table covers.
   void resize(size_t new_word_size);
-
-  void set_bottom(HeapWord* new_bottom);
-
-  // Whether entries should be initialized to zero. Used currently only for
-  // error checking.
-  void set_init_to_zero(bool val) { _init_to_zero = val; }
-  bool init_to_zero() { return _init_to_zero; }
-
-  // Updates all the BlockOffsetArray's sharing this shared array to
-  // reflect the current "top"'s of their spaces.
-  void update_offset_arrays();   // Not yet implemented!
 
   // Return the appropriate index into "_offset_array" for "p".
   size_t index_for(const void* p) const;
@@ -232,173 +87,65 @@ public:
   // Return the address indicating the start of the region corresponding to
   // "index" in "_offset_array".
   HeapWord* address_for_index(size_t index) const;
+
+  void set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
+    assert(index < _vs.committed_size(), "index out of range");
+    assert(high >= low, "addresses out of order");
+    assert(pointer_delta(high, low) < BOTConstants::card_size_in_words(), "offset too large");
+    _offset_array[index] = checked_cast<uint8_t>(pointer_delta(high, low));
+  }
+
+  void set_offset_array(size_t left, size_t right, uint8_t offset) {
+    assert(right < _vs.committed_size(), "right address out of range");
+    assert(left <= right, "precondition");
+    size_t num_cards = right - left + 1;
+
+    fill_range(left, num_cards, offset);
+  }
 };
 
-class Space;
-
-//////////////////////////////////////////////////////////////////////////
-// The BlockOffsetArray whose subtypes use the BlockOffsetSharedArray.
-//////////////////////////////////////////////////////////////////////////
-class BlockOffsetArray: public BlockOffsetTable {
+// SerialBlockOffsetTable divides the covered region into "N"-word subregions (where
+// "N" = 2^"LogN".  An array with an entry for each such subregion indicates
+// how far back one must go to find the start of the chunk that includes the
+// first word of the subregion.
+class SerialBlockOffsetTable {
   friend class VMStructs;
- protected:
-  // The shared array, which is shared with other BlockOffsetArray's
-  // corresponding to different spaces within a generation or span of
-  // memory.
-  BlockOffsetSharedArray* _array;
 
-  // The space that owns this subregion.
-  Space* _sp;
+  // The array that contains offset values. Its reacts to heap resizing.
+  SerialBlockOffsetSharedArray* _array;
 
-  // If true, array entries are initialized to 0; otherwise, they are
-  // initialized to point backwards to the beginning of the covered region.
-  bool _init_to_zero;
+  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
-  // An assertion-checking helper method for the set_remainder*() methods below.
-  void check_reducing_assertion(bool reducing) { _array->check_reducing_assertion(reducing); }
-
-  // Sets the entries
-  // corresponding to the cards starting at "start" and ending at "end"
-  // to point back to the card before "start": the interval [start, end)
-  // is right-open. The last parameter, reducing, indicates whether the
-  // updates to individual entries always reduce the entry from a higher
-  // to a lower value. (For example this would hold true during a temporal
-  // regime during which only block splits were updating the BOT.
-  void set_remainder_to_point_to_start(HeapWord* start, HeapWord* end, bool reducing = false);
-  // Same as above, except that the args here are a card _index_ interval
-  // that is closed: [start_index, end_index]
-  void set_remainder_to_point_to_start_incl(size_t start, size_t end, bool reducing = false);
-
-  // A helper function for BOT adjustment/verification work
-  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, bool reducing = false);
-
- public:
-  // The space may not have its bottom and top set yet, which is why the
-  // region is passed as a parameter.  If "init_to_zero" is true, the
-  // elements of the array are initialized to zero.  Otherwise, they are
-  // initialized to point backwards to the beginning.
-  BlockOffsetArray(BlockOffsetSharedArray* array, MemRegion mr,
-                   bool init_to_zero_);
-
-  // Note: this ought to be part of the constructor, but that would require
-  // "this" to be passed as a parameter to a member constructor for
-  // the containing concrete subtype of Space.
-  // This would be legal C++, but MS VC++ doesn't allow it.
-  void set_space(Space* sp) { _sp = sp; }
-
-  // Resets the covered region to the given "mr".
-  void set_region(MemRegion mr) {
-    _bottom = mr.start();
-    _end = mr.end();
+  static HeapWord* align_up_by_card_size(HeapWord* const addr) {
+    return align_up(addr, BOTConstants::card_size());
   }
 
-  // Note that the committed size of the covered space may have changed,
-  // so the table size might also wish to change.
-  virtual void resize(size_t new_word_size) {
-    HeapWord* new_end = _bottom + new_word_size;
-    if (_end < new_end && !init_to_zero()) {
-      // verify that the old and new boundaries are also card boundaries
-      assert(_array->is_card_boundary(_end),
-             "_end not a card boundary");
-      assert(_array->is_card_boundary(new_end),
-             "new _end would not be a card boundary");
-      // set all the newly added cards
-      _array->set_offset_array(_end, new_end, BOTConstants::card_size_in_words());
-    }
-    _end = new_end;  // update _end
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
+
+public:
+  // Initialize the table to cover the given space.
+  // The contents of the initial table are undefined.
+  SerialBlockOffsetTable(SerialBlockOffsetSharedArray* array) : _array(array) {
+    assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
   }
 
-  // Adjust the BOT to show that it has a single block in the
-  // range [blk_start, blk_start + size). All necessary BOT
-  // cards are adjusted, but _unallocated_block isn't.
-  void single_block(HeapWord* blk_start, HeapWord* blk_end);
-  void single_block(HeapWord* blk, size_t size) {
-    single_block(blk, blk + size);
+  static bool is_crossing_card_boundary(HeapWord* const obj_start,
+                                        HeapWord* const obj_end) {
+    HeapWord* cur_card_boundary = align_up_by_card_size(obj_start);
+    // Strictly greater-than, since we check if this block *crosses* card boundary.
+    return obj_end > cur_card_boundary;
   }
 
-  // When the alloc_block() call returns, the block offset table should
-  // have enough information such that any subsequent block_start() call
-  // with an argument equal to an address that is within the range
-  // [blk_start, blk_end) would return the value blk_start, provided
-  // there have been no calls in between that reset this information
-  // (e.g. see BlockOffsetArrayNonContigSpace::single_block() call
-  // for an appropriate range covering the said interval).
-  // These methods expect to be called with [blk_start, blk_end)
-  // representing a block of memory in the heap.
-  virtual void alloc_block(HeapWord* blk_start, HeapWord* blk_end);
-  void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk + size);
-  }
+  // Returns the address of the start of the block reaching into the card containing
+  // "addr".
+  HeapWord* block_start_reaching_into_card(const void* addr) const;
 
-  // If true, initialize array slots with no allocated blocks to zero.
-  // Otherwise, make them point back to the front.
-  bool init_to_zero() { return _init_to_zero; }
-  // Corresponding setter
-  void set_init_to_zero(bool val) {
-    _init_to_zero = val;
-    assert(_array != nullptr, "_array should be non-null");
-    _array->set_init_to_zero(val);
-  }
-
-  // Debugging
-  // Return the index of the last entry in the "active" region.
-  virtual size_t last_active_index() const = 0;
-  // Verify the block offset table
-  void verify() const;
-  void check_all_cards(size_t left_card, size_t right_card) const;
-};
-
-////////////////////////////////////////////////////////////////////////////
-// A subtype of BlockOffsetArray that takes advantage of the fact
-// that its underlying space is a ContiguousSpace, so that its "active"
-// region can be more efficiently tracked (than for a non-contiguous space).
-////////////////////////////////////////////////////////////////////////////
-class BlockOffsetArrayContigSpace: public BlockOffsetArray {
-  friend class VMStructs;
- private:
-  // allocation boundary at which offset array must be updated
-  HeapWord* _next_offset_threshold;
-  size_t    _next_offset_index;      // index corresponding to that boundary
-
-  // Work function when allocation start crosses threshold.
-  void alloc_block_work(HeapWord* blk_start, HeapWord* blk_end);
-
- public:
-  BlockOffsetArrayContigSpace(BlockOffsetSharedArray* array, MemRegion mr):
-    BlockOffsetArray(array, mr, true) {
-    _next_offset_threshold = nullptr;
-    _next_offset_index = 0;
-  }
-
-  void set_contig_space(ContiguousSpace* sp) { set_space((Space*)sp); }
-
-  // Initialize the threshold for an empty heap.
-  void initialize_threshold();
-  // Zero out the entry for _bottom (offset will be zero)
-  void zero_bottom_entry();
-
-  // Return the next threshold, the point at which the table should be
-  // updated.
-  HeapWord* threshold() const { return _next_offset_threshold; }
-
-  // In general, these methods expect to be called with
   // [blk_start, blk_end) representing a block of memory in the heap.
-  // In this implementation, however, we are OK even if blk_start and/or
-  // blk_end are null because null is represented as 0, and thus
-  // never exceeds the "_next_offset_threshold".
-  void alloc_block(HeapWord* blk_start, HeapWord* blk_end) {
-    if (blk_end > _next_offset_threshold) {
-      alloc_block_work(blk_start, blk_end);
+  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
+    if (is_crossing_card_boundary(blk_start, blk_end)) {
+      update_for_block_work(blk_start, blk_end);
     }
   }
-  void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk + size);
-  }
-
-  HeapWord* block_start_unsafe(const void* addr) const;
-
-  // Debugging support
-  virtual size_t last_active_index() const;
 };
 
 #endif // SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_HPP

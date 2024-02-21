@@ -359,15 +359,6 @@ public class Check {
         return types.createErrorType(found instanceof Type type ? type : syms.errType);
     }
 
-    /** Report an error that symbol cannot be referenced before super
-     *  has been called.
-     *  @param pos        Position to be used for error reporting.
-     *  @param sym        The referenced symbol.
-     */
-    void earlyRefError(DiagnosticPosition pos, Symbol sym) {
-        log.error(pos, Errors.CantRefBeforeCtorCalled(sym));
-    }
-
     /** Report duplicate declaration error.
      */
     void duplicateError(DiagnosticPosition pos, Symbol sym) {
@@ -461,7 +452,8 @@ public class Check {
             }
         }
         for (Symbol sym = s.owner; sym != null; sym = sym.owner) {
-            if (sym.kind == TYP && sym.name == name && sym.name != names.error) {
+            if (sym.kind == TYP && sym.name == name && sym.name != names.error &&
+                    !sym.isImplicit()) {
                 duplicateError(pos, sym);
                 return true;
             }
@@ -2285,7 +2277,7 @@ public class Check {
         }
 
         if (!found) {
-            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
+            log.error(pos, Errors.ImplicitClassDoesNotHaveMainMethod);
         }
     }
 
@@ -3934,10 +3926,11 @@ public class Check {
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-            JCMethodInvocation app = TreeInfo.firstConstructorCall(l.head);
-            if (app == null) continue;
-            JCMethodDecl meth = (JCMethodDecl) l.head;
-            if (TreeInfo.name(app.meth) == names._this) {
+            if (!TreeInfo.isConstructor(l.head))
+                continue;
+            JCMethodDecl meth = (JCMethodDecl)l.head;
+            JCMethodInvocation app = TreeInfo.findConstructorCall(meth);
+            if (app != null && TreeInfo.name(app.meth) == names._this) {
                 callMap.put(meth.sym, TreeInfo.symbol(app.meth));
             } else {
                 meth.sym.flags_field |= ACYCLIC;
@@ -3967,6 +3960,128 @@ public class Check {
                 ctor.flags_field &= ~LOCKED;
             }
             ctor.flags_field |= ACYCLIC;
+        }
+    }
+
+/* *************************************************************************
+ * Verify the proper placement of super()/this() calls.
+ *
+ *    - super()/this() may only appear in constructors
+ *    - There must be at most one super()/this() call per constructor
+ *    - The super()/this() call, if any, must be a top-level statement in the
+ *      constructor, i.e., not nested inside any other statement or block
+ *    - There must be no return statements prior to the super()/this() call
+ **************************************************************************/
+
+    void checkSuperInitCalls(JCClassDecl tree) {
+        new SuperThisChecker().check(tree);
+    }
+
+    private class SuperThisChecker extends TreeScanner {
+
+        // Match this scan stack: 1=JCMethodDecl, 2=JCExpressionStatement, 3=JCMethodInvocation
+        private static final int MATCH_SCAN_DEPTH = 3;
+
+        private boolean constructor;        // is this method a constructor?
+        private boolean firstStatement;     // at the first statement in method?
+        private JCReturn earlyReturn;       // first return prior to the super()/init(), if any
+        private Name initCall;              // whichever of "super" or "init" we've seen already
+        private int scanDepth;              // current scan recursion depth in method body
+
+        public void check(JCClassDecl classDef) {
+            scan(classDef.defs);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            Assert.check(!constructor);
+            Assert.check(earlyReturn == null);
+            Assert.check(initCall == null);
+            Assert.check(scanDepth == 1);
+
+            // Initialize state for this method
+            constructor = TreeInfo.isConstructor(tree);
+            try {
+
+                // Scan method body
+                if (tree.body != null) {
+                    firstStatement = true;
+                    for (List<JCStatement> l = tree.body.stats; l.nonEmpty(); l = l.tail) {
+                        scan(l.head);
+                        firstStatement = false;
+                    }
+                }
+
+                // Verify no 'return' seen prior to an explicit super()/this() call
+                if (constructor && earlyReturn != null && initCall != null)
+                    log.error(earlyReturn.pos(), Errors.ReturnBeforeSuperclassInitialized);
+            } finally {
+                firstStatement = false;
+                constructor = false;
+                earlyReturn = null;
+                initCall = null;
+            }
+        }
+
+        @Override
+        public void scan(JCTree tree) {
+            scanDepth++;
+            try {
+                super.scan(tree);
+            } finally {
+                scanDepth--;
+            }
+        }
+
+        @Override
+        public void visitApply(JCMethodInvocation apply) {
+            do {
+
+                // Is this a super() or this() call?
+                Name methodName = TreeInfo.name(apply.meth);
+                if (methodName != names._super && methodName != names._this)
+                    break;
+
+                // super()/this() calls must only appear in a constructor
+                if (!constructor) {
+                    log.error(apply.pos(), Errors.CallMustOnlyAppearInCtor);
+                    break;
+                }
+
+                // super()/this() calls must be a top level statement
+                if (scanDepth != MATCH_SCAN_DEPTH) {
+                    log.error(apply.pos(), Errors.CtorCallsNotAllowedHere);
+                    break;
+                }
+
+                // super()/this() calls must not appear more than once
+                if (initCall != null) {
+                    log.error(apply.pos(), Errors.RedundantSuperclassInit);
+                    break;
+                }
+
+                // If super()/this() isn't first, require "statements before super()" feature
+                if (!firstStatement)
+                    preview.checkSourceLevel(apply.pos(), Feature.SUPER_INIT);
+
+                // We found a legitimate super()/this() call; remember it
+                initCall = methodName;
+            } while (false);
+
+            // Proceed
+            super.visitApply(apply);
+        }
+
+        @Override
+        public void visitReturn(JCReturn tree) {
+            if (constructor && initCall == null && earlyReturn == null)
+                earlyReturn = tree;             // we have seen a return but not (yet) a super()/this()
+            super.visitReturn(tree);
+        }
+
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            // don't descend any further
         }
     }
 
@@ -4370,8 +4485,7 @@ public class Check {
             if (typeArguments.size() == 2) {
                 resultType = typeArguments.head;
             } else {
-                log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
-                        Errors.ProcessorTypeCannotBeARawType(processorType.tsym));
+                resultType = syms.objectType;
             }
         } else {
             log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
@@ -4686,11 +4800,13 @@ public class Check {
 
         return false;
     }
-    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+    void checkSwitchCaseLabelDominated(JCCaseLabel unconditionalCaseLabel, List<JCCase> cases) {
         List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
+        boolean unconditionalFound = false;
+
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
             for (JCCaseLabel label : c.labels) {
@@ -4718,10 +4834,11 @@ public class Check {
                     JCCase testCase = caseAndLabel.fst;
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
-                    if (types.isSubtype(currentType, testType) &&
+                    boolean dominated = false;
+                    if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
+                    if (types.isUnconditionallyExact(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
-                        boolean dominated = false;
                         if (label instanceof JCConstantCaseLabel) {
                             dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
                                          TreeInfo.unguardedCase(testCase);
@@ -4731,9 +4848,15 @@ public class Check {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
-                        if (dominated) {
-                            log.error(label.pos(), Errors.PatternDominated);
-                        }
+                    }
+
+                    // Domination can occur even when we have not an unconditional pair between case labels.
+                    if (unconditionalFound && unconditionalCaseLabel != label) {
+                        dominated = true;
+                    }
+
+                    if (dominated) {
+                        log.error(label.pos(), Errors.PatternDominated);
                     }
                 }
                 caseLabels = caseLabels.prepend(Pair.of(c, label));
@@ -4744,22 +4867,15 @@ public class Check {
         private Type labelType(JCCaseLabel label) {
             return types.erasure(switch (label.getTag()) {
                 case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
-                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                case CONSTANTCASELABEL -> ((JCConstantCaseLabel) label).expr.type;
                 default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
             });
         }
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
                 return false;
-            }
-            if (existingPatternType.isPrimitive()) {
-                return types.isSameType(existingPatternType, currentPatternType);
-            } else {
-                if (!types.isSubtype(currentPatternType, existingPatternType)) {
-                    return false;
-                }
             }
             if (currentPattern instanceof JCBindingPattern ||
                 currentPattern instanceof JCAnyPattern) {

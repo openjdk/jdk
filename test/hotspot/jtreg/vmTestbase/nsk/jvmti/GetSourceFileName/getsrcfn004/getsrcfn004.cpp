@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 static jvmtiCapabilities caps;
@@ -53,12 +53,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint code;
     jvmtiError res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     code = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (code != JNI_OK || jvmti == NULL) {
+    if (code != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -96,7 +96,7 @@ Java_nsk_jvmti_GetSourceFileName_getsrcfn004_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
     char *name;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -104,7 +104,7 @@ Java_nsk_jvmti_GetSourceFileName_getsrcfn004_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> invalid class check ...\n");
     }
-    err = jvmti->GetSourceFileName(NULL, &name);
+    err = jvmti->GetSourceFileName(nullptr, &name);
     if (err == JVMTI_ERROR_MUST_POSSESS_CAPABILITY && caps.can_get_source_file_name) {
         printf("Error expected: JVMTI_ERROR_INVALID_CLASS,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);
@@ -118,7 +118,7 @@ Java_nsk_jvmti_GetSourceFileName_getsrcfn004_check(JNIEnv *env, jclass cls) {
     if (printdump == JNI_TRUE) {
         printf(">>> null pointer check ...\n");
     }
-    err = jvmti->GetSourceFileName(cls, NULL);
+    err = jvmti->GetSourceFileName(cls, nullptr);
     if (err == JVMTI_ERROR_MUST_POSSESS_CAPABILITY && caps.can_get_source_file_name) {
         printf("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
         printf("\tactual: %s (%d)\n", TranslateError(err), err);

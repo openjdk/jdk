@@ -115,7 +115,6 @@ Monitor* Notification_lock            = nullptr;
 Monitor* PeriodicTask_lock            = nullptr;
 Monitor* RedefineClasses_lock         = nullptr;
 Mutex*   Verify_lock                  = nullptr;
-Monitor* Zip_lock                     = nullptr;
 
 #if INCLUDE_JFR
 Mutex*   JfrStacktrace_lock           = nullptr;
@@ -124,9 +123,6 @@ Mutex*   JfrBuffer_lock               = nullptr;
 Monitor* JfrThreadSampler_lock        = nullptr;
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-Mutex*   UnsafeJlong_lock             = nullptr;
-#endif
 Mutex*   CodeHeapStateAnalytics_lock  = nullptr;
 
 Monitor* ContinuationRelativize_lock  = nullptr;
@@ -299,10 +295,6 @@ void mutex_init() {
   MUTEX_DEFN(JfrThreadSampler_lock           , PaddedMonitor, nosafepoint);
 #endif
 
-#ifndef SUPPORTS_NATIVE_CX8
-  MUTEX_DEFN(UnsafeJlong_lock                , PaddedMutex  , nosafepoint);
-#endif
-
   MUTEX_DEFN(ContinuationRelativize_lock     , PaddedMonitor, nosafepoint-3);
   MUTEX_DEFN(CodeHeapStateAnalytics_lock     , PaddedMutex  , safepoint);
   MUTEX_DEFN(ThreadsSMRDelete_lock           , PaddedMonitor, service-2); // Holds ConcurrentHashTableResize_lock
@@ -324,7 +316,6 @@ void mutex_init() {
   MUTEX_DEFN(ScratchObjects_lock             , PaddedMutex  , nosafepoint-1); // Holds DumpTimeTable_lock
 #endif // INCLUDE_CDS
   MUTEX_DEFN(Bootclasspath_lock              , PaddedMutex  , nosafepoint);
-  MUTEX_DEFN(Zip_lock                        , PaddedMonitor, nosafepoint-1); // Holds DumpTimeTable_lock
 
 #if INCLUDE_JVMCI
   // JVMCIRuntime::_lock must be acquired before JVMCI_lock to avoid deadlock

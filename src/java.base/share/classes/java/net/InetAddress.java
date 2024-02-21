@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,8 +194,8 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * caching. Likewise, a system admin can configure a different
  * negative caching TTL value when needed or extend the usage of the stale data.
  *
- * <p> Three Java security properties control the TTL values used for
- *  positive and negative host name resolution caching:
+ * <p> Three Java {@linkplain java.security.Security security} properties control
+ * the TTL values used for positive and negative host name resolution caching:
  *
  * <dl style="margin-left:2em">
  * <dt><b>networkaddress.cache.ttl</b></dt>
@@ -1722,6 +1722,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
      * @throws NullPointerException if the {@code ipAddressLiteral} is {@code null}.
      * @see Inet4Address#ofLiteral(String)
      * @see Inet6Address#ofLiteral(String)
+     * @since 22
      */
     public static InetAddress ofLiteral(String ipAddressLiteral) {
         Objects.requireNonNull(ipAddressLiteral);

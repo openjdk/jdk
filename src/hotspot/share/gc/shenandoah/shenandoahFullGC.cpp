@@ -31,6 +31,7 @@
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahConcurrentGC.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
@@ -105,15 +106,21 @@ void ShenandoahFullGC::op_full(GCCause::Cause cause) {
   // Perform full GC
   do_it(cause);
 
+  ShenandoahHeap* const heap = ShenandoahHeap::heap();
+
   metrics.snap_after();
 
   if (metrics.is_good_progress()) {
-    ShenandoahHeap::heap()->notify_gc_progress();
+    heap->notify_gc_progress();
   } else {
     // Nothing to do. Tell the allocation path that we have failed to make
     // progress, and it can finally fail.
-    ShenandoahHeap::heap()->notify_gc_no_progress();
+    heap->notify_gc_no_progress();
   }
+
+  // Regardless if progress was made, we record that we completed a "successful" full GC.
+  heap->heuristics()->record_success_full();
+  heap->shenandoah_policy()->record_success_full();
 }
 
 void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
@@ -910,6 +917,9 @@ public:
     // Make empty regions that have been allocated into regular
     if (r->is_empty() && live > 0) {
       r->make_regular_bypass();
+      if (ZapUnusedHeapArea) {
+        SpaceMangler::mangle_region(MemRegion(r->top(), r->end()));
+      }
     }
 
     // Reclaim regular regions that became empty

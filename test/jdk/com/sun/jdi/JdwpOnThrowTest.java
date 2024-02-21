@@ -57,12 +57,11 @@ public class JdwpOnThrowTest {
     private static AttachingConnector attachingConnector;
 
     public static void main(String[] args) throws Exception {
-        int port = findFreePort();
-        try (Debuggee debuggee = Debuggee.launcher("ThrowCaughtException").setAddress("localhost:" + port)
-                                         .enableOnThrow("Ex", "Start").setSuspended(true).launch()) {
+        try (Debuggee debuggee = Debuggee.launcher("ThrowCaughtException")
+                                         .enableOnThrow("Ex").setSuspended(true).launch()) {
             VirtualMachine vm = null;
             try {
-                vm = attach("localhost", "" + port);
+                vm = attach("localhost", debuggee.getAddress());
                 EventQueue queue = vm.eventQueue();
                 log("Waiting for exception event");
                 long start = System.currentTimeMillis();
@@ -107,14 +106,6 @@ public class JdwpOnThrowTest {
         }
         if (!ex.exception().type().name().equals("Ex")) {
             throw new RuntimeException("Exception has wrong type: " + ex.exception().type().name());
-        }
-    }
-
-    private static int findFreePort() {
-        try (ServerSocket socket = new ServerSocket(0)) {
-            return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
