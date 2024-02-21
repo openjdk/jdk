@@ -480,7 +480,6 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   // _verbose_level set below
 
-  _init_times(),
   _remark_times(),
   _remark_mark_times(),
   _remark_weak_ref_times(),
@@ -2114,7 +2113,6 @@ void G1ConcurrentMark::print_summary_info() {
   }
 
   log.trace(" Concurrent marking:");
-  print_ms_time_info("  ", "init marks", _init_times);
   print_ms_time_info("  ", "remarks", _remark_times);
   {
     print_ms_time_info("     ", "final marks", _remark_mark_times);
@@ -2125,7 +2123,7 @@ void G1ConcurrentMark::print_summary_info() {
   log.trace("    Finalize live data total time = %8.2f s (avg = %8.2f ms).",
             _cleanup_times.sum() / 1000.0, _cleanup_times.avg());
   log.trace("  Total stop_world time = %8.2f s.",
-            (_init_times.sum() + _remark_times.sum() + _cleanup_times.sum())/1000.0);
+            (_remark_times.sum() + _cleanup_times.sum())/1000.0);
   log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
             cm_thread()->vtime_accum(), cm_thread()->vtime_mark_accum());
 }
