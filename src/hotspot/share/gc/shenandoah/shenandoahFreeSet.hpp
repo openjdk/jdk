@@ -216,6 +216,8 @@ private:
   size_t _region_counts[NumPartitions];
 
   inline void shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx);
+  inline void shrink_interval_if_range_modifies_either_boundary(ShenandoahFreeSetPartitionId partition,
+                                                                ssize_t low_idx, ssize_t high_idx);
   inline void expand_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t capacity);
 
   void dump_bitmap_row(ssize_t idx) const;
@@ -241,10 +243,15 @@ public:
                            ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
                            size_t mutator_region_count, size_t mutator_used);
 
-  // Retire region idx from within its partition.  Requires that region idx is in in Mutator or Collector partitions.
-  // Moves this region to the NotFree partition.  Any remnant of available memory at the time of retirement is added to the
+  // Retire region idx from within partition.  Requires that region idx is in in the Mutator or Collector partitions.
+  // Hereafter, identifies this region as NotFree.  Any remnant of available memory at the time of retirement is added to the
   // original partition's total of used bytes.
   void retire_from_partition(ShenandoahFreeSetPartitionId p, ssize_t idx, size_t used_bytes);
+
+  // Retire all regions between low_idx and high_idx inclusive from within partition.  Requires that each region idx is
+  // in the same Mutator or Collector partition.  Hereafter, identifies each region as NotFree.   Assumes that each region
+  // is now considered fully used, since the region is presumably used to represent a humongous object.
+  void retire_range_from_partition(ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx);
 
   // Place region idx into free set which_partition.  Requires that idx is currently NotFree.
   void make_free(ssize_t idx, ShenandoahFreeSetPartitionId which_partition, size_t region_capacity);

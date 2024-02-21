@@ -44,7 +44,7 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 
 #undef KELVIN_TRACE
 
-#undef KELVIN_HUMONGOUS
+#define KELVIN_HUMONGOUS
 
 size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
@@ -199,17 +199,15 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssiz
     size_t array_idx = start_idx / _bits_per_array_element;
     size_t bit_number = start_idx % _bits_per_array_element;
     size_t element_bits = _bitmap[array_idx];
-
-    size_t mask = (size_t) (ssize_t) -1;
     if (bit_number > 0) {
       size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
-      mask &= ~mask_out;
+      element_bits &= ~mask_out;
     }
 #ifdef KELVIN_TRACE
     log_info(gc)(" @ top of loop, bit_number: " SIZE_FORMAT ", elements: 0x%016lx, mask: 0x%016lx",
                  bit_number, element_bits, mask);
 #endif
-    if (element_bits & mask) {
+    if (element_bits) {
       // The next set bit is here
       size_t the_bit = ((size_t) 0x01) << bit_number;
       while (bit_number < _bits_per_array_element) {
@@ -255,22 +253,16 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize
     ssize_t array_idx = last_idx / _bits_per_array_element;
     size_t bit_number = last_idx % _bits_per_array_element;
     size_t element_bits = _bitmap[array_idx];
-
-    // Does not work if bit_number is 63
-
-    size_t mask;
-    if (bit_number == 63){
-      mask = ~((size_t) 0x0);
-    } else {
-      mask = (((size_t) 0x1) << (bit_number + 1)) - 1;
+    if (bit_number < 63){
+      size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
+      element_bits &= mask_in;
     }
-
 #ifdef KELVIN_TRACE
       log_info(gc)(" @top of inner loop, array_idx: %ld, bit_number: %ld, element_bits: %lx, mask: %lx",
                    array_idx, bit_number, element_bits, mask);
 #endif
 
-    if (element_bits & mask) {
+    if (element_bits) {
       // The prev set bit is here
       size_t the_bit = ((size_t) 0x01) << bit_number;
 
@@ -315,8 +307,21 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t start_boundary = boundary_idx - num_bits;
+  size_t array_idx = start_idx / _bits_per_array_element;
+  size_t bit_number = start_idx % _bits_per_array_element;
+  size_t element_bits = _bitmap[array_idx];
+  if (bit_number > 0) {
+    size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
+    element_bits &= ~mask_out;
+  }
   while (start_idx <= start_boundary) {
-    if (is_forward_consecutive_ones(start_idx, num_bits)) {
+    if (!element_bits) {
+      // move to the next element
+      start_idx += _bits_per_array_element - bit_number;
+      array_idx++;
+      bit_number = 0;
+      element_bits = _bitmap[array_idx];
+    } else if (is_forward_consecutive_ones(start_idx, num_bits)) {
 #ifdef KELVIN_HUMONGOUS
       log_info(gc)("find_next_consecutive_bits(%ld, %ld, %ld) wants to return %ld",
                    num_bits, orig_start_idx, boundary_idx, start_idx);
@@ -326,6 +331,13 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
       // There is at least one zero bit in this span.  Align the next probe at the start of trailing ones for probed span.
       size_t trailing_ones = count_trailing_ones(start_idx + num_bits - 1);
       start_idx += num_bits - trailing_ones;
+      array_idx = start_idx / _bits_per_array_element;
+      element_bits = _bitmap[array_idx];
+      bit_number = start_idx % _bits_per_array_element;
+      if (bit_number > 0) {
+        size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
+        element_bits &= ~mask_out;
+      }
     }
   }
   // No match found.
@@ -345,8 +357,21 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t last_boundary = boundary_idx + num_bits;
+  ssize_t array_idx = last_idx / _bits_per_array_element;
+  size_t bit_number = last_idx % _bits_per_array_element;
+  size_t element_bits = _bitmap[array_idx];
+  if (bit_number < 63){
+    size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
+    element_bits &= mask_in;
+  }
   while (last_idx >= last_boundary) {
-    if (is_backward_consecutive_ones(last_idx, num_bits)) {
+    if (!element_bits) {
+      // move to the previous element
+      last_idx -= bit_number + 1;
+      array_idx--;
+      bit_number = 63;
+      element_bits = _bitmap[array_idx];
+    } else if (is_backward_consecutive_ones(last_idx, num_bits)) {
 #ifdef KELVIN_HUMONGOUS
       log_info(gc)("find_prev_consecutive_bits(%ld, %ld, %ld) wants to return %ld",
                    num_bits, orig_last_idx, boundary_idx, last_idx + 1 - num_bits);
@@ -356,6 +381,13 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
       // There is at least one zero bit in this span.  Align the next probe at the end of leading ones for probed span.
       size_t leading_ones = count_leading_ones(last_idx - (num_bits - 1));
       last_idx -= num_bits - leading_ones;
+      array_idx = last_idx / _bits_per_array_element;
+      bit_number = last_idx % _bits_per_array_element;
+      element_bits = _bitmap[array_idx];
+      if (bit_number < 63){
+        size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
+        element_bits &= mask_in;
+      }
     }
   }
   // No match found.
@@ -503,10 +535,51 @@ void ShenandoahRegionPartitions::increase_used(ShenandoahFreeSetPartitionId whic
           _used[which_partition], _capacity[which_partition], bytes);
 }
 
+inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either_boundary(
+  ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx) {
+  assert((low_idx <= high_idx) && (low_idx >= 0) && (high_idx < _max), "Range must span legal index values");
+  if (low_idx == _leftmosts[partition]) {
+    assert (!_membership[partition].is_set(low_idx), "Do not shrink interval if region not removed");
+    if (high_idx + 1 == _max) {
+      _leftmosts[partition] = _max;
+    } else {
+      _leftmosts[partition] = find_index_of_next_available_region(partition, high_idx + 1);
+    }
+    if (_leftmosts_empty[partition] < _leftmosts[partition]) {
+      // This gets us closer to where we need to be; we'll scan further when leftmosts_empty is requested.
+      _leftmosts_empty[partition] = _leftmosts[partition];
+    }
+  }
+  if (high_idx == _rightmosts[partition]) {
+    assert (!_membership[partition].is_set(high_idx), "Do not shrink interval if region not removed");
+    if (low_idx == 0) {
+      _rightmosts[partition] = -1;
+    } else {
+      _rightmosts[partition] = find_index_of_previous_available_region(partition, low_idx - 1);
+    }
+    if (_rightmosts_empty[partition] > _rightmosts[partition]) {
+      // This gets us closer to where we need to be; we'll scan further when rightmosts_empty is requested.
+      _rightmosts_empty[partition] = _rightmosts[partition];
+    }
+  }
+  if (_leftmosts[partition] > _rightmosts[partition]) {
+    _leftmosts[partition] = _max;
+    _rightmosts[partition] = -1;
+    _leftmosts_empty[partition] = _max;
+    _rightmosts_empty[partition] = -1;
+  }
+
+
+}
+
 inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx) {
+  assert((idx >= 0) && (idx < _max), "Range must span legal index values");
   if (idx == _leftmosts[partition]) {
-    while ((_leftmosts[partition] < _max) && !_membership[partition].is_set(_leftmosts[partition])) {
-      _leftmosts[partition] = find_index_of_next_available_region(partition, _leftmosts[partition] + 1);
+    assert (!_membership[partition].is_set(idx), "Do not shrink interval if region not removed");
+    if (idx + 1 == _max) {
+      _leftmosts[partition] = _max;
+    } else {
+      _leftmosts[partition] = find_index_of_next_available_region(partition, idx + 1);
     }
     if (_leftmosts_empty[partition] < _leftmosts[partition]) {
       // This gets us closer to where we need to be; we'll scan further when leftmosts_empty is requested.
@@ -514,8 +587,11 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(She
     }
   }
   if (idx == _rightmosts[partition]) {
-    while (_rightmosts[partition] >= 0 && !_membership[partition].is_set(_rightmosts[partition])) {
-      _rightmosts[partition] = find_index_of_previous_available_region(partition, _rightmosts[partition] - 1);
+    assert (!_membership[partition].is_set(idx), "Do not shrink interval if region not removed");
+    if (idx == 0) {
+      _rightmosts[partition] = -1;
+    } else {
+      _rightmosts[partition] = find_index_of_previous_available_region(partition, idx - 1);
     }
     if (_rightmosts_empty[partition] > _rightmosts[partition]) {
       // This gets us closer to where we need to be; we'll scan further when rightmosts_empty is requested.
@@ -553,6 +629,32 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
     _rightmosts[partition] = idx;
   }
 #ifdef KELVIN_TRACE
+  log_info(gc)(" @ exit: [" SSIZE_FORMAT ", " SSIZE_FORMAT "], empty: [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+               _leftmosts[partition], _rightmosts[partition], _leftmosts_empty[partition], _rightmosts_empty[partition]);
+#endif
+}
+
+// Remove the consecutive regions between low_idx and high_idx inclusive from partition since all of these will be subsumed
+// by a humongous object.  The entirety of each retired region is assumed to equal the region size.
+void ShenandoahRegionPartitions::retire_range_from_partition(
+  ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx) {
+
+  // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
+  assert ((low_idx < _max) && (high_idx < _max), "Both indices are sane: " SIZE_FORMAT " and " SIZE_FORMAT " < " SIZE_FORMAT,
+          low_idx, high_idx, _max);
+  assert (partition < NumPartitions, "Cannot remove from free partitions if not already free");
+
+  for (ssize_t idx = low_idx; idx <= high_idx; idx++) {
+    assert (in_free_set(partition, idx), "Must be in partition to remove from partition");
+    _membership[partition].clear_bit(idx);
+  }
+  _region_counts[partition] -= high_idx + 1 - low_idx;
+  shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
+
+#ifdef KELVIN_TRACE
+  log_info(gc)("retired range [" SIZE_FORMAT ", " SIZE_FORMAT "] from partition %s", low_idx, high_idx, partition_name(partition));
+  dump_bitmap_row(low_idx);
+  dump_bitmap_row(low_idx);
   log_info(gc)(" @ exit: [" SSIZE_FORMAT ", " SSIZE_FORMAT "], empty: [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts[partition], _rightmosts[partition], _leftmosts_empty[partition], _rightmosts_empty[partition]);
 #endif
@@ -728,7 +830,7 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_
 #ifdef KELVIN_HUMONGOUS
   log_info(gc)("find_index_of_next_available_cluster(%s, %ld, " SIZE_FORMAT ") returning %ld",
                partition_name(which_partition), start_index, cluster_size, (result > rightmost_idx)? _max: result);
-  dump_bitmap_row((result > rightmost_index)? _max - 1: result);
+  dump_bitmap_row((result > rightmost_idx)? _max - 1: result);
 #endif
   return (result > rightmost_idx)? _max: result;
 }
@@ -1129,10 +1231,8 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
 
     r->set_update_watermark(r->bottom());
     r->set_top(r->bottom() + used_words);
-
-    // While individual regions report their true use, all humongous regions are marked used in the free partition.
-    _partitions.retire_from_partition(Mutator, r->index(), ShenandoahHeapRegion::region_size_bytes());
   }
+  _partitions.retire_range_from_partition(Mutator, beg, end);
 
   size_t total_humongous_size = ShenandoahHeapRegion::region_size_bytes() * num;
   _partitions.increase_used(Mutator, total_humongous_size);
