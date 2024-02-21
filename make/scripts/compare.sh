@@ -315,7 +315,7 @@ locate_files() {
     $CAT "$ALL_FILES_PATH" | eval $GREP $LIB_FILTER | eval $GREP -v $LIB_EXCLUDE > $LIB_FILES_PATH
 
     DEBUG_FILES_PATH=$TEMP_DIR/debug_files.txt
-    DEBUG_FILTER="-e '\.dSYM/' -e '\.debuginfo$' -e '\.diz'"
+    DEBUG_FILTER="-e '\.dSYM/' -e '\.debuginfo$' -e '\.diz$' -e '\.pdb$' -e '\.map$'"
     $CAT "$ALL_FILES_PATH" | eval $GREP $DEBUG_FILTER > $DEBUG_FILES_PATH
 
     EXEC_FILES_PATH=$TEMP_DIR/exec_files.txt
