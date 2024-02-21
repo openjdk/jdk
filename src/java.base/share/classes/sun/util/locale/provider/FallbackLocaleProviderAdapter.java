@@ -25,6 +25,9 @@
 
 package sun.util.locale.provider;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.text.spi.BreakIteratorProvider;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
@@ -44,6 +47,8 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     // Required locales/langtags
     private static final Locale[] AVAILABLE_LOCS = {Locale.US, Locale.ENGLISH, Locale.ROOT};
     private static final Set<String> AVAILABLE_LANGTAGS = Set.of("en-US", "en", "und");
+
+    private volatile BreakIteratorProvider breakIteratorProvider;
 
     /**
      * Returns the type of this LocaleProviderAdapter
@@ -74,5 +79,25 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
         locale = locale.stripExtensions();
         return langtags.contains(locale.toLanguageTag());
+    }
+
+    @Override
+    // In order to correctly report supported locales
+    public BreakIteratorProvider getBreakIteratorProvider() {
+        if (breakIteratorProvider == null) {
+            @SuppressWarnings("removal")
+            BreakIteratorProvider provider = AccessController.doPrivileged(
+                    (PrivilegedAction<BreakIteratorProvider>) () ->
+                            new BreakIteratorProviderImpl(
+                                    getAdapterType(),
+                                    getLanguageTagSet("BreakIteratorRules")));
+
+            synchronized (this) {
+                if (breakIteratorProvider == null) {
+                    breakIteratorProvider = provider;
+                }
+            }
+        }
+        return breakIteratorProvider;
     }
 }

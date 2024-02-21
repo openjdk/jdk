@@ -303,14 +303,13 @@ public abstract class LocaleProviderAdapter {
 
     public static Locale[] toLocaleArray(Set<String> tags) {
         return tags.stream()
-            .map(t -> {
-                return switch (t) {
-                    case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
-                    case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
-                    case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
-                    default -> Locale.forLanguageTag(t);
-                };
+            .map(t -> switch (t) {
+                case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                default -> Locale.forLanguageTag(t);
             })
+            .distinct()
             .toArray(Locale[]::new);
     }
 
