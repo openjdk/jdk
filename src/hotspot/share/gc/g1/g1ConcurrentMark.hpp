@@ -435,7 +435,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1OldTracer*            _gc_tracer_cm;
 
   // Timing statistics. All of them are in ms
-  NumberSeq _init_times;
   NumberSeq _remark_times;
   NumberSeq _remark_mark_times;
   NumberSeq _remark_weak_ref_times;
