@@ -217,6 +217,8 @@ class VM_Version : public Abstract_VM_Version {
 
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
+  constexpr static bool supports_recursive_lightweight_locking() { return true; }
+
   static bool supports_on_spin_wait() { return UseZihintpause; }
 
   // RISCV64 supports fast class initialization checks
