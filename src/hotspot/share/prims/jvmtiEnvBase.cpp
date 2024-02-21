@@ -933,11 +933,18 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
       obj = mon->object();
       assert(obj != nullptr, "ObjectMonitor should have a valid object!");
     }
-    // implied else: no contended ObjectMonitor
   } else {
     // thread is doing an Object.wait() call
-    obj = mon->object();
-    assert(obj != nullptr, "Object.wait() should have an object");
+    oop thread_oop = get_vthread_or_thread_oop(java_thread);
+    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+    jint state = is_virtual ? JvmtiEnvBase::get_vthread_state(thread_oop, java_thread)
+                            : JvmtiEnvBase::get_thread_state(thread_oop, java_thread);
+
+    if (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) {
+      // thread is re-entering the monitor in an Object.wait() call
+      obj = mon->object();
+      assert(obj != nullptr, "Object.wait() should have an object");
+    }
   }
 
   if (obj == nullptr) {

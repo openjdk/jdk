@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1981,8 +1981,8 @@ JDWP "Java(tm) Debug Wire Protocol"
     (Command CurrentContendedMonitor=9
         "Returns the object, if any, for which this thread is waiting. The "
         "thread may be waiting to enter a monitor, or it may be waiting, via "
-        "the java.lang.Object.wait method, for another thread to invoke the "
-        "notify method. "
+        "the java.lang.Object.wait method, to re-enter a monitor after being "
+        "notified by another thread. "
         "The thread must be suspended, and the returned information is "
         "relevant only while the thread is suspended. "
         "Requires canGetCurrentContendedMonitor capability - see "
