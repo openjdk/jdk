@@ -1057,6 +1057,34 @@ compare_all_execs() {
 }
 
 ################################################################################
+# Compare native debug symbol files
+
+compare_all_debug_files() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+
+    locate_files $THIS_DIR
+
+    echo Debug symbol files with binary differences...
+    for f in $ALL_DEBUG_FILES
+    do
+        if [ -e $OTHER_DIR/$f ]; then
+            OTHER_FILE=$OTHER_DIR/$f
+            THIS_FILE=$THIS_DIR/$f
+            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            if [ -n "$DIFF_OUT" ]; then
+                echo $f
+                REGRESSIONS=true
+                if [ "$SHOW_DIFFS" = "true" ]; then
+                    echo "$DIFF_OUT"
+                fi
+            fi
+        fi
+    done
+}
+
+################################################################################
 # Compare the rest of the files
 
 compare_all_other_files() {
@@ -1067,9 +1095,8 @@ compare_all_other_files() {
     locate_files $THIS_DIR
 
     echo Other files with binary differences...
-    for f in $ALL_OTHER_FILES $ALL_DEBUG_FILES
+    for f in $ALL_OTHER_FILES
     do
-        echo Other file: $f
         # Skip all files in test/*/native
         if [[ "$f" == */native/* ]]; then
             continue
@@ -1117,8 +1144,6 @@ compare_all_other_files() {
             fi
         fi
     done
-
-
 }
 
 ################################################################################
@@ -1520,21 +1545,30 @@ if [ "$CMP_GENERAL" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
         compare_all_other_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+        echo -n "JDK "
+        compare_all_debug_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
         compare_all_other_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        echo -n "JDK Bundle "
+        compare_all_debug_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
         compare_all_other_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
+        echo -n "Docs "
+        compare_all_debug_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
         compare_all_other_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
+        echo -n "Test "
+        compare_all_debug_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
         compare_all_other_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_debug_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
 fi
 
