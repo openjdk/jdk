@@ -37,14 +37,17 @@ class CachedNMTInformation;
 
 class MappingPrintSession {
   outputStream* const _out;
-  const bool _summary_only;
+  const bool _detail_mode;
+  const bool _print_only_summary;
   const CachedNMTInformation& _nmt_info;
 public:
-  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, bool summary_only);
-  void print_nmt_info_for_region(const void* from, const void* to);
-  void print_nmt_flag_legend(int indent);
-  outputStream* out() { return _out; }
-  bool summary_only() const { return _summary_only; }
+  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info,
+                      bool detail_mode, bool print_only_summary);
+  void print_nmt_info_for_region(const void* from, const void* to) const;
+  void print_nmt_flag_legend(int indent) const;
+  outputStream* out() const { return _out; }
+  bool print_only_summary() const { return _print_only_summary; }
+  bool detail_mode() const { return _detail_mode; }
 };
 
 class MemMapPrinter : public AllStatic {

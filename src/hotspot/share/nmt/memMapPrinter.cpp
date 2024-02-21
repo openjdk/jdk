@@ -226,17 +226,18 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
 ///////////////
 
-MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, bool summary_only) :
-    _out(st), _summary_only(summary_only), _nmt_info(nmt_info)
+MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info,
+                                         bool detail_mode, bool print_only_summary) :
+    _out(st), _detail_mode(detail_mode), _print_only_summary(print_only_summary), _nmt_info(nmt_info)
 {}
 
-void MappingPrintSession::print_nmt_flag_legend(int indent) {
+void MappingPrintSession::print_nmt_flag_legend(int indent) const {
 #define DO(flag, shortname, text) _out->fill_to(indent); _out->print_cr("%10s: %s", shortname, text);
   NMT_FLAGS_DO(DO)
 #undef DO
 }
 
-void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const void* vma_to) {
+void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const void* vma_to) const {
 
   // print NMT information, if available
   if (MemTracker::enabled()) {
@@ -262,9 +263,10 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   }
 }
 
-void MemMapPrinter::print_all_mappings(outputStream* st, bool summary_only) {
+void MemMapPrinter::print_all_mappings(outputStream* st, bool detail_mode, bool print_only_summary) {
   CachedNMTInformation nmt_info;
   st->print_cr("Memory mappings:");
+  // If we only print summary
   if (!summary_only) {
     if (MemTracker::enabled()) {
       // Prepare NMT mapping information.

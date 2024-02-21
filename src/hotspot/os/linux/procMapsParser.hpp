@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, 2024, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,7 @@ class ProcMapsParserBase {
 protected:
   static constexpr size_t max_line_len = 2048;
   char _line[max_line_len];
+  bool read_line(); // sets had_error in case of error
 public:
   ProcMapsParserBase(FILE* f);
   bool had_error() const { return _had_error; }
@@ -67,9 +68,8 @@ public:
 class ProcMapsParser : public ProcMapsParserBase {
 public:
   ProcMapsParser(FILE* f) : ProcMapsParserBase(f) {}
-  // Starts or continues parsing.
-  // On success, returns true and info in out.
-  // On error or EOF, returns false (use had_error()).
+  // Starts or continues parsing. Returns true on success,
+  // false on EOF or on error.
   bool parse_next(ProcMapsInfo& out);
 };
 
@@ -79,9 +79,8 @@ class ProcSmapsParser : public ProcMapsParserBase {
   void scan_additional_line(ProcSmapsInfo& out);
 public:
   ProcSmapsParser(FILE* f) : ProcMapsParserBase(f) {}
-  // Starts or continues parsing.
-  // On success, returns true and info in out.
-  // On error or EOF, returns false (use had_error()).
+  // Starts or continues parsing. Returns true on success,
+  // false on EOF or on error.
   bool parse_next(ProcSmapsInfo& out);
 };
 

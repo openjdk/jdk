@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2024, Red Hat, Inc. and/or its affiliates.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,19 +37,25 @@ ProcMapsParserBase::ProcMapsParserBase(FILE* f) : _f(f), _had_error(false) {
   assert(_f != nullptr, "Invalid file handle given");
 }
 
-// Starts or continues parsing.
-// On success, returns true and info in out.
-// On error or EOF, returns false (use had_error()).
-bool ProcMapsParser::parse_next(ProcMapsInfo& out) {
+bool ProcMapsParserBase::read_line() {
   assert(!_had_error, "Don't call in error state");
+  if (::fgets(_line, sizeof(_line), _f) == nullptr) {
+    _had_error = (::ferror(_f) != 0);
+    return false;
+  }
+  return true;
+}
+
+// Starts or continues parsing. Returns true on success,
+// false on EOF or on error.
+bool ProcMapsParser::parse_next(ProcMapsInfo& out) {
   bool success = false;
   out.reset();
   while (success == false) {
-    if (::fgets(line, sizeof(line), _f) == nullptr) {
-      _had_error = (::ferror(_f) != 0);
+    if (!read_line()) {
       return false;
     }
-    const int items_read = ::sscanf(line, "%p-%p %20s %*20s %*20s %*20s %1024s",
+    const int items_read = ::sscanf(_line, "%p-%p %20s %*20s %*20s %*20s %1024s",
         &out.from, &out.to, out.prot, out.filename);
     success = (items_read >= 2);
   }
@@ -96,309 +102,27 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
   }
 }
 
-// Starts or continues parsing.
-// On success, returns true and info in out.
-// On error or EOF, returns false (use had_error()).
+// Starts or continues parsing. Returns true on success,
+// false on EOF or on error.
 bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
-  assert(!_had_error, "Don't call in error state");
-  bool success = false;
-  char line[max_line_len];
+  // Information about a single mapping reaches across several lines.
   out.reset();
-  // Information about a single mapping is smeared across several lines.
-  // We expect to read a header line here. We read the header line and
-  // and subsequent lines
-  while (success == false) {
-    if (::fgets(line, sizeof(line), _f) == nullptr) {
-      _had_error = (::ferror(_f) != 0);
+  // Read header line, unless we already read it
+  if (_line[0] == '\0') {
+    if (!read_line()) {
       return false;
     }
-    const int items_read = ::sscanf(line, "%p-%p %20s %*20s %*20s %*20s %1024s",
-        &out.from, &out.to, out.prot, out.filename);
-    success = (items_read >= 2);
   }
-  return true;
-}
-
-
-
-
-
-struct ProcMapsInfo {
-  void* from = 0;
-  void* to = 0;
-  char prot[20 + 1];
-  char filename[1024 + 1];
-  size_t kernelpagesize;
-  size_t rss;
-  size_t private_hugetlb;
-  size_t shared_hugetlb;
-  size_t anonhugepages;
-  size_t swap;
-  bool sh; // shared
-  bool nr; // no reserve
-  bool hg; // thp-advised
-  bool ht; // uses hugetlb pages
-  bool nh; // thp forbidden
-  bool thp_eligible;
-
-  void reset() {
-    from = to = nullptr;
-    prot[0] = filename[0] = '\0';
-    kernelpagesize = rss = private_hugetlb = anonhugepages = swap = 0;
-  }
-
-  static bool is_header_line(const char* line) {
-    void* dummy;
-    //return ::sscanf(line, "%p", &dummy) == 1;
-    //return ::sscanf(line, "%p-%p", &dummy, &dummy) == 2;
-    return is_lowercase_hex(line[0]); // All other lines start with uppercase letters
-  }
-
-  void scan_header_line(const char* line) {
-    const int items_read = ::sscanf(line, "%p-%p %20s %*s %*s %*s %1024s",
-        &from, &to, prot, filename);
-    assert(items_read >= 2, "Expected header_line");
-  }
-
-  void scan_additional_lines(const char* line) {
-#define SCAN(key, var) \
-  if (::sscanf(line, key ": %zu kB", &var) == 1) { \
-      var *= K; \
-      return; \
-  }
-    SCAN("KernelPageSize", kernelpagesize);
-    SCAN("Rss", rss);
-    SCAN("AnonHugePages", anonhugepages);
-    SCAN("Private_Hugetlb", private_hugetlb);
-    SCAN("Shared_Hugetlb", shared_hugetlb);
-    SCAN("Swap", swap);
-    int i = 0;
-    if (::sscanf(line, "THPeligible: %d", &i) == 1) {
-      thp_eligible = (i == 1);
+  assert(is_header_line(), "Not a header line?");
+  scan_header_line(out);
+  // Now read until we encounter the next header line or EOF or an error.
+  bool stop = false;
+  do {
+    stop = !read_line() || is_header_line();
+    if (!stop) {
+      scan_additional_line(out);
     }
-#undef SCAN
-    // scan some flags too
-    if (strncmp(line, "VmFlags:", 8) == 0) {
-#define SCAN(flag) flag = (::strstr(line + 8, " " #flag) != nullptr);
-      SCAN(nr);
-      SCAN(sh);
-      SCAN(hg);
-      SCAN(ht);
-      SCAN(nh);
-#undef SCAN
-      return;
-    }
-  }
+  } while (!stop);
 
-  size_t vsize() const {
-    return from < to ? pointer_delta(to, from, 1) : 0;
-  }
-
-  void print_mapping(MappingPrintSession& session) {
-    outputStream* st = session.out();
-    int pos = 0;
-#define INDENT_BY(n) pos += n; st->fill_to(pos);
-    st->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(from), p2i(to));
-    INDENT_BY(40);
-
-    st->print("%10zu", vsize());
-    INDENT_BY(11);
-
-    st->print("%10zu", rss);
-    INDENT_BY(11);
-
-    st->print("%10zu", private_hugetlb);
-    INDENT_BY(11);
-
-    st->print(EXACTFMT " ", EXACTFMTARGS(kernelpagesize));
-    INDENT_BY(5);
-
-    st->print("%s ", prot);
-    INDENT_BY(5);
-
-    bool comma = false;
-#define PRINTIF(cond, s) \
-    if (cond) { \
-      st->print("%s%s", (comma ? "," : ""), s); \
-      comma = true; \
-    }
-    PRINTIF(anonhugepages > 0, "thp");
-    PRINTIF(hg, "thpadv");
-    PRINTIF(nh, "nothp");
-    PRINTIF(sh, "shrd");
-    PRINTIF(ht, "huge");
-    PRINTIF(nr, "nores");
-    PRINTIF(thp_eligible, "thpel");
-    PRINTIF(swap > 0, "swap");
-    if (comma) {
-      st->print(" ");
-    }
-#undef PRINTIF
-    INDENT_BY(17);
-    session.print_nmt_info_for_region(from, to);
-    st->print_raw(filename);
-#undef INDENT_BY
-
-    st->cr();
-  }
-};
-
-// A simple histogram for sizes by pagesize. We keep pagesizes in an array by page size bit
-// index. Smallest page size we expect is 4k (2^12), largest pagesize we expect is 16G (powerpc)
-// - 2^34. So we store 34-12 = 22 sizes.
-class PageSizeHistogram {
-  static constexpr int log_smallest_pagesize = 12; // 4K
-  static constexpr int log_largest_pagesize = 34;  // 16G, ppc
-  static constexpr int num_pagesizes = log_largest_pagesize - log_smallest_pagesize;
-  size_t _v[num_pagesizes];
-public:
-  PageSizeHistogram() {
-    memset(_v, 0, sizeof(_v));
-  }
-  void add(size_t pagesize, size_t size) {
-    assert(is_aligned(size, pagesize), "strange");
-    const int n = exact_log2(pagesize) - log_smallest_pagesize;
-    assert(n >= 0 && n < num_pagesizes, "strange");
-    _v[n] += size;
-  }
-  void print_on(MappingPrintSession& session) {
-    outputStream* st = session.out();
-    for (int i = 0; i < num_pagesizes; i++) {
-      if (_v[i] > 0) {
-        const size_t pagesize = 1 << (log_smallest_pagesize + i);
-        st->fill_to(16);
-        st->print(EXACTFMT, EXACTFMTARGS(pagesize));
-        st->print_cr(": %zu pages, %zu bytes (" PROPERFMT ")", _v[i] / pagesize, _v[i], PROPERFMTARGS(_v[i]));
-      }
-    }
-  }
-};
-
-class Summary {
-  unsigned _num_mappings;
-  size_t _vsize;
-  size_t _rss;
-  size_t _committed;
-  size_t _shared;
-  size_t _swapped_out;
-  size_t _hugetlb;
-  size_t _thp;
-  PageSizeHistogram _pagesizes;
-
-public:
-
-  Summary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
-              _swapped_out(0), _hugetlb(0), _thp(0) {}
-
-  void add_mapping(ProcMapsInfo& info) {
-    _num_mappings ++;
-    _vsize += info.vsize();
-    _rss += info.rss;
-    _committed += info.nr ? 0 : info.vsize();
-    _shared += info.sh ? info.vsize() : 0;
-    _swapped_out += info.swap;
-    _hugetlb += info.private_hugetlb + info.shared_hugetlb;
-    _thp += info.anonhugepages;
-    if (info.ht) {
-      _pagesizes.add(info.kernelpagesize,
-                     info.private_hugetlb + info.shared_hugetlb);
-    } else {
-      _pagesizes.add(info.kernelpagesize, info.rss); // only resident pages
-    }
-  }
-
-  void print_on(MappingPrintSession& session) {
-    outputStream* st = session.out();
-    st->print_cr("Number of mappings: %u", _num_mappings);
-    st->print_cr("             vsize: %zu (" PROPERFMT ")", _vsize, PROPERFMTARGS(_vsize));
-    st->print_cr("               rss: %zu (" PROPERFMT ")", _rss, PROPERFMTARGS(_rss));
-    st->print_cr("         committed: %zu (" PROPERFMT ")", _committed, PROPERFMTARGS(_committed));
-    st->print_cr("            shared: %zu (" PROPERFMT ")", _shared, PROPERFMTARGS(_shared));
-    st->print_cr("       swapped out: %zu (" PROPERFMT ")", _swapped_out, PROPERFMTARGS(_swapped_out));
-    st->print_cr("         using thp: %zu (" PROPERFMT ")", _thp, PROPERFMTARGS(_thp));
-    st->print_cr("           hugetlb: %zu (" PROPERFMT ")", _hugetlb, PROPERFMTARGS(_hugetlb));
-    st->print_cr("By page size:");
-    _pagesizes.print_on(session);
-  }
-};
-
-static void print_legend(MappingPrintSession& session) {
-  outputStream* st = session.out();
-  st->print_cr("from, to, size: address range and size");
-  st->print_cr("rss:            resident set size");
-  st->print_cr("pgsz:           page size");
-  st->print_cr("notes:          mapping information");
-  st->print_cr("                    shared: mapping is shared");
-  st->print_cr("                     nores: mapping uncommitted (no swap space reserved)");
-  st->print_cr("                      swap: mapping partly or completely swapped out");
-  st->print_cr("                       thp: mapping uses THP");
-  st->print_cr("                     thpel: mapping is eligible for THP");
-  st->print_cr("                    thpadv: mapping is THP-madvised");
-  st->print_cr("                     nothp: mapping will not THP");
-  st->print_cr("                      huge: mapping uses hugetlb pages");
-  st->print_cr("vm info:        VM information (requires NMT)");
-  session.print_nmt_flag_legend(16);
-  st->print_cr("file:           file mapped, if mapping is not anonymous");
-}
-
-static void print_header(MappingPrintSession& session) {
-  outputStream* st = session.out();
-  //            .         .         .         .         .         .         .         .         .         .         .
-  //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-  //            0x0000000414000000 - 0x0000000453000000 1234567890 1234567890 1234567890 16g  rw-p thp,thpadv       JAVAHEAP /shared/tmp.txt
-  st->print_cr("from                 to                       size        rss    hugetlb pgsz prot notes            vm-info file");
-}
-
-void MemMapPrinter::pd_print_all_mappings(MappingPrintSession& session) {
-  outputStream* st = session.out();
-
-  const bool print_individual_mappings = !session.summary_only();
-
-  if (!session.summary_only()) {
-    print_legend(session);
-    st->cr();
-    print_header(session);
-  }
-
-  FILE* f = os::fopen("/proc/self/smaps", "r");
-  if (f == nullptr) {
-    return;
-  }
-
-  Summary summary;
-
-  constexpr size_t linesize = sizeof(ProcMapsInfo);
-  char line[linesize];
-  int lines_scanned = 0;
-  ProcMapsInfo info;
-
-  while (fgets(line, sizeof(line), f) == line) {
-    line[sizeof(line) - 1] = '\0';
-    if (info.is_header_line(line)) {
-      if (lines_scanned > 0) {
-        summary.add_mapping(info);
-        if (print_individual_mappings) {
-          info.print_mapping(session);
-        }
-      }
-      info.reset();
-      info.scan_header_line(line);
-    } else {
-      info.scan_additional_lines(line);
-    }
-    lines_scanned ++;
-  }
-
-  if (lines_scanned > 0) {
-    summary.add_mapping(info);
-    if (print_individual_mappings) {
-      info.print_mapping(session);
-    }
-  }
-
-  ::fclose(f);
-
-  // print summary
-  st->cr();
-  summary.print_on(session);
+  return !had_error();
 }
