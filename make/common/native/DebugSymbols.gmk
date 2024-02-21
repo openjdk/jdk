@@ -59,7 +59,8 @@ define CreateDebugSymbols
           # so we can run it after strip is called, since strip can sometimes mangle the
           # embedded debuglink, which we want to avoid.
           $1_CREATE_DEBUGINFO_CMDS := \
-              $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) $$(NEWLINE)
+              $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) && \
+              $$(CHMOD) -x $$($1_DEBUGINFO_FILES)
           $1_CREATE_DEBUGLINK_CMDS := $(CD) $$($1_SYMBOLS_DIR) && \
               $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
 
