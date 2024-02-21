@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,10 @@
 package sun.util.locale;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.util.ReferencedKeyMap;
+import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -93,7 +92,7 @@ public final class BaseLocale {
     }
 
     // Non-normalized to normalized BaseLocale cache for saving costly normalizations
-    private static final Map<BaseLocale, BaseLocale> CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
+    private static final ReferencedKeySet<BaseLocale> CACHE = ReferencedKeySet.create(true, ConcurrentHashMap::new);
 
     public static final String SEP = "_";
 
@@ -164,12 +163,12 @@ public final class BaseLocale {
         // BaseLocale as the key. The returned "normalized" instance
         // can subsequently be used by the Locale instance which
         // guarantees the locale components are properly cased/interned.
-        return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
-                (b) -> new BaseLocale(
-                        LocaleUtils.toLowerString(b.language).intern(),
-                        LocaleUtils.toTitleString(b.script).intern(),
-                        LocaleUtils.toUpperString(b.region).intern(),
-                        b.variant.intern()));
+        return CACHE.intern(new BaseLocale(language, script, region, variant),
+            (b) -> new BaseLocale(
+                LocaleUtils.toLowerString(b.language).intern(),
+                LocaleUtils.toTitleString(b.script).intern(),
+                LocaleUtils.toUpperString(b.region).intern(),
+                b.variant.intern()));
     }
 
     public static String convertOldISOCodes(String language) {
