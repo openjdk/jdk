@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,8 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef NSK_SHARE_JVMTI_AOD_H
-#define NSK_SHARE_JVMTI_AOD_H
+#ifndef NSK_SHARE_JVMTI_AOD_HPP
+#define NSK_SHARE_JVMTI_AOD_HPP
 
 #include <aod.h>
 #include <jvmti.h>
@@ -68,8 +68,8 @@ int nsk_jvmti_aod_getThreadName(jvmtiEnv * jvmti, jthread thread, char threadNam
 
 // events enabling/disabling
 
-#define nsk_jvmti_aod_enableEvent(X,Y)  NSK_JVMTI_VERIFY(X->SetEventNotificationMode(JVMTI_ENABLE, Y, NULL))
-#define nsk_jvmti_aod_disableEvent(X,Y) NSK_JVMTI_VERIFY(X->SetEventNotificationMode(JVMTI_DISABLE, Y, NULL))
+#define nsk_jvmti_aod_enableEvent(X,Y)  NSK_JVMTI_VERIFY(X->SetEventNotificationMode(JVMTI_ENABLE, Y, nullptr))
+#define nsk_jvmti_aod_disableEvent(X,Y) NSK_JVMTI_VERIFY(X->SetEventNotificationMode(JVMTI_DISABLE, Y, nullptr))
 
 int nsk_jvmti_aod_enableEvents(jvmtiEnv* jvmti, jvmtiEvent events[], int eventsNumber);
 int nsk_jvmti_aod_disableEvents(jvmtiEnv* jvmti, jvmtiEvent events[], int eventsNumber);
@@ -90,4 +90,4 @@ void printCapabilities(jvmtiCapabilities caps);
 
 }
 
-#endif /* END OF NSK_SHARE_JVMTI_AOD_H */
+#endif /* END OF NSK_SHARE_JVMTI_AOD_HPP */
