@@ -384,10 +384,10 @@ bool VirtualMemoryView::is_empty(Range a) {
   return a.size == 0;
 }
 
-bool VirtualMemoryView::same_stack(TrackedRange a, TrackedRange b) {
-  NativeCallStackStorage::StackIndex ai = a.stack_idx;
-  NativeCallStackStorage::StackIndex bi = b.stack_idx;
-  return ai.index() == bi.index() && ai.chunk() == bi.chunk() || _stack_storage->get(ai).equals(_stack_storage->get(bi));
+bool VirtualMemoryView::same_stack(TrackedRange& a, TrackedRange& b) {
+  NativeCallStackStorage::StackIndex& ai = a.stack_idx;
+  NativeCallStackStorage::StackIndex& bi = b.stack_idx;
+  return ai.index() == bi.index() && ai.chunk() == bi.chunk();
 }
 
 VirtualMemoryView::Range VirtualMemoryView::overlap_of(Range a, Range b) {

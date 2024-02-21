@@ -202,7 +202,7 @@ private:
   static bool is_empty(Range a);
   static Range union_of(Range a, Range b);
   static Range overlap_of(Range a, Range b);
-  static bool same_stack(TrackedRange a, TrackedRange b);
+  static bool same_stack(TrackedRange& a, TrackedRange& b);
 
   // Pre-condition: ranges is sorted in a left-aligned fashion
   // That is: (a,b) comes before (c,d) if a <= c
