@@ -134,6 +134,7 @@ IfNode* PhaseIdealLoop::find_unswitch_candidate(const IdealLoopTree* loop) const
             // If condition is invariant and not a loop exit,
             // then found reason to unswitch.
             if (loop->is_invariant(bol) && !loop->is_loop_exit(iff)) {
+              assert(iff->Opcode() == Op_If || iff->is_RangeCheck() || iff->is_BaseCountedLoopEnd(), "valid ifs");
               unswitch_candidate = iff;
             }
           }
