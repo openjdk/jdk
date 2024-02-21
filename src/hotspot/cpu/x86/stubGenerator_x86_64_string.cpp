@@ -586,6 +586,7 @@ address StubGenerator::generate_string_indexof() {
       __ bind(L_innerLoop);
       __ blsrl(rsi, rsi);
       __ je(L_loopTop);
+      __ bind(L_tmp);
       __ tzcntl(r8, rsi);
       __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
       __ jne(L_innerLoop);
@@ -609,6 +610,7 @@ address StubGenerator::generate_string_indexof() {
       __ bind(L_innerLoop);
       __ blsrl(rsi, rsi);
       __ je(L_loopTop);
+      __ bind(L_tmp);
       __ tzcntl(r8, rsi);
       __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
       __ jne(L_innerLoop);
@@ -809,7 +811,7 @@ address StubGenerator::generate_string_indexof() {
       __ arrays_equals(true, rdi, rsi, rdx, rax, r12, xmm0, xmm1,
                       false /* char */, knoreg);
       __ testl(rax, rax);
-      __ je_b(L_loopTop);
+      __ je(L_loopTop);
       __ movq(rbp, r15);
       __ jmp(L_returnRBP);
     }
