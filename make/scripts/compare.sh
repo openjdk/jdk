@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -60,13 +60,15 @@ else
     STAT_PRINT_SIZE="-c %s"
 fi
 
-COMPARE_EXCEPTIONS_INCLUDE="$TOPDIR/make/scripts/compare_exceptions.sh.incl"
-if [ ! -e "$COMPARE_EXCEPTIONS_INCLUDE" ]; then
-    echo "Error: Cannot locate the exceptions file, it should have been here: $COMPARE_EXCEPTIONS_INCLUDE"
-    exit 1
+
+if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+  # We ship a pdb file inside a published zip. Such files can never be built
+  # reproducibly, so ignore it.
+  ACCEPTED_JARZIP_CONTENTS="/modules_libs/java.security.jgss/w2k_lsa_auth.dll.pdb"
+elif [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
+  # Due to signing, we can never get a byte-by-byte identical build on macOS
+  STRIP_TESTS_BEFORE_COMPARE="true"
 fi
-# Include exception definitions
-. "$COMPARE_EXCEPTIONS_INCLUDE"
 
 ################################################################################
 #
@@ -117,35 +119,6 @@ diff_text() {
 
     TMP=$($DIFF $THIS_FILE $OTHER_FILE)
 
-    if test "x$SUFFIX" = "xclass"; then
-        if [ "$NAME" = "SystemModules\$all.class" ] \
-           || [ "$NAME" = "SystemModules\$default.class" ]; then
-            # The SystemModules\$*.classes are not comparable as they contain the
-            # module hashes which would require a whole other level of
-            # reproducible builds to get reproducible. There is also random
-            # order of map initialization.
-            TMP=""
-        elif [ "$NAME" = "module-info.class" ]; then
-            # The module-info.class have several issues with random ordering of
-            # elements in HashSets.
-            MODULES_CLASS_FILTER="$SED \
-                -e 's/,$//' \
-                -e 's/;$//' \
-                -e 's/^ *[0-9]*://' \
-                -e 's/#[0-9]* */#/' \
-                -e 's/ *\/\// \/\//' \
-                -e 's/aload *[0-9]*/aload X/' \
-                -e 's/ldc_w/ldc  /' \
-                | $SORT \
-                "
-            $JAVAP -c -constants -l -p "${OTHER_FILE}" \
-                | eval "$MODULES_CLASS_FILTER" >  ${OTHER_FILE}.javap &
-            $JAVAP -c -constants -l -p "${THIS_FILE}" \
-                | eval "$MODULES_CLASS_FILTER" > ${THIS_FILE}.javap &
-            wait
-            TMP=$($DIFF ${OTHER_FILE}.javap ${THIS_FILE}.javap)
-        fi
-    fi
 
     if test -n "$TMP"; then
         echo Files $OTHER_FILE and $THIS_FILE differ
@@ -312,75 +285,60 @@ compare_file_types() {
 }
 
 ################################################################################
-# Compare the rest of the files
+# Find all files to compare and separate them into different categories
 
-compare_general_files() {
+locate_files() {
     THIS_DIR=$1
-    OTHER_DIR=$2
-    WORK_DIR=$3
+    TEMP_DIR=$COMPARE_ROOT/support
+    $MKDIR -p $TEMP_DIR
 
-    GENERAL_FILES=$(cd $THIS_DIR && $FIND . -type f ! -name "*.so" ! -name "*.jar" \
-        ! -name "*.zip" ! -name "*.debuginfo" ! -name "*.dylib" ! -name "jexec" \
-        ! -name "modules" ! -name "ct.sym" ! -name "*.diz" ! -name "*.dll" \
-        ! -name "*.cpl" ! -name "*.pdb" ! -name "*.exp" ! -name "*.ilk" \
-        ! -name "*.lib" ! -name "*.jmod" ! -name "*.exe" \
-        ! -name "*.obj" ! -name "*.o" ! -name "jspawnhelper" ! -name "*.a" \
-        ! -name "*.tar.gz" ! -name "gtestLauncher" \
-        ! -name "*.map" \
-        | $GREP -v "./bin/"  | $SORT | $FILTER)
+    ALL_FILES_PATH=$TEMP_DIR/all_files.txt
+    cd $THIS_DIR && $FIND . -type f | $SORT | $FILTER > $ALL_FILES_PATH
 
-    echo Other files with binary differences...
-    for f in $GENERAL_FILES
-    do
-        # Skip all files in test/*/native
-        if [[ "$f" == */native/* ]]; then
-            continue
-        fi
-        if [ -e $OTHER_DIR/$f ]; then
-            SUFFIX="${f##*.}"
-            if [ "$(basename $f)" = "release" ]; then
-                # In release file, ignore differences in source rev numbers
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE)
-                $MKDIR -p $(dirname $THIS_FILE)
-                RELEASE_FILTER="$SED -e 's/SOURCE=".*"/SOURCE=<src-rev>/g'"
-                $CAT $OTHER_DIR/$f | eval "$RELEASE_FILTER" > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | eval "$RELEASE_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "svg" ]; then
-                # GraphViz has non-determinism when generating svg files
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                SVG_FILTER="$SED \
-                    -e 's/edge[0-9][0-9]*/edgeX/g'
-                    "
-                $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
-                $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "jar_contents" ]; then
-                # The jar_contents files may have some lines in random order
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                $RM $OTHER_FILE $THIS_FILE
-                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
-            else
-                OTHER_FILE=$OTHER_DIR/$f
-                THIS_FILE=$THIS_DIR/$f
-            fi
-            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
-            if [ -n "$DIFF_OUT" ]; then
-                echo $f
-                REGRESSIONS=true
-                if [ "$SHOW_DIFFS" = "true" ]; then
-                    echo "$DIFF_OUT"
-                fi
-            fi
-        fi
-    done
+    ZIP_FILES_PATH=$TEMP_DIR/zip_files.txt
+    ZIP_FILTER="-e '\.zip$' -e '\.tar.gz$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $ZIP_FILTER > $ZIP_FILES_PATH
 
+    JMOD_FILES_PATH=$TEMP_DIR/jmod_files.txt
+    JMOD_FILTER="-e '\.jmod$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $JMOD_FILTER > $JMOD_FILES_PATH
 
+    JAR_FILES_PATH=$TEMP_DIR/jar_files.txt
+    JAR_FILTER="-e '\.jar$' -e '\.war$' -e '/module$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $JAR_FILTER > $JAR_FILES_PATH
+
+    LIB_FILES_PATH=$TEMP_DIR/lib_files.txt
+    LIB_FILTER="-e '\.dylib$' -e '/lib.*\.so$' -e '\.dll$' -e '\.obj$' -e '\.o$' -e '\.a$' -e '\.cpl$'"
+    # On macos, filter out the dSYM debug symbols files. They are identically named .dylib files that reside
+    # under a *.dSYM directory
+    LIB_EXCLUDE="-e '/lib.*\.dSYM/'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $LIB_FILTER | eval $GREP -v $LIB_EXCLUDE > $LIB_FILES_PATH
+
+    DEBUG_FILES_PATH=$TEMP_DIR/debug_files.txt
+    DEBUG_FILTER="-e '\.dSYM/' -e '\.debuginfo$' -e '\.diz$' -e '\.pdb$' -e '\.map$'"
+    $CAT "$ALL_FILES_PATH" | eval $GREP $DEBUG_FILTER > $DEBUG_FILES_PATH
+
+    EXEC_FILES_PATH=$TEMP_DIR/exec_files.txt
+    if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
+      EXEC_FILTER="-e '\.exe$'"
+      $CAT "$ALL_FILES_PATH" | eval $GREP $EXEC_FILTER > $EXEC_FILES_PATH
+    else
+      # Find all files with the executable bit set
+      cd $THIS_DIR && $FIND . -type f -perm -100 | $SORT | $FILTER > $EXEC_FILES_PATH
+    fi
+
+    OTHER_FILES_PATH=$TEMP_DIR/other_files.txt
+    ACCOUNTED_FILES_PATH=$TEMP_DIR/accounted_files.txt
+    $CAT $ZIP_FILES_PATH $JMOD_FILES_PATH $JAR_FILES_PATH $LIB_FILES_PATH $DEBUG_FILES_PATH $EXEC_FILES_PATH > $ACCOUNTED_FILES_PATH
+    $CAT $ACCOUNTED_FILES_PATH $ALL_FILES_PATH | $SORT | $UNIQ -u > $OTHER_FILES_PATH
+
+    ALL_ZIP_FILES=$($CAT $ZIP_FILES_PATH)
+    ALL_JMOD_FILES=$($CAT $JMOD_FILES_PATH)
+    ALL_JAR_FILES=$($CAT $JAR_FILES_PATH)
+    ALL_LIB_FILES=$($CAT $LIB_FILES_PATH)
+    ALL_DEBUG_FILES=$($CAT $DEBUG_FILES_PATH)
+    ALL_EXEC_FILES=$($CAT $EXEC_FILES_PATH)
+    ALL_OTHER_FILES=$($CAT $OTHER_FILES_PATH)
 }
 
 ################################################################################
@@ -450,12 +408,14 @@ compare_zip_file() {
     if [ -n "$ONLY_OTHER" ]; then
         echo "        Only OTHER $ZIP_FILE contains:"
         echo "$ONLY_OTHER" | sed "s|Only in $OTHER_UNZIPDIR|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
     if [ -n "$ONLY_THIS" ]; then
         echo "        Only THIS $ZIP_FILE contains:"
         echo "$ONLY_THIS" | sed "s|Only in $THIS_UNZIPDIR|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
@@ -484,6 +444,7 @@ compare_zip_file() {
         done
 
         if [ -s "$WORK_DIR/$ZIP_FILE.diffs" ]; then
+            REGRESSIONS=true
             return_value=1
             echo "        Differing files in $ZIP_FILE"
             $CAT $WORK_DIR/$ZIP_FILE.diffs | $GREP 'differ$' | cut -f 2 -d ' ' | \
@@ -508,6 +469,7 @@ compare_zip_file() {
             compare_bin_file $THIS_UNZIPDIR $OTHER_UNZIPDIR $WORK_DIR/$ZIP_FILE.bin \
                              $file
             if [ "$?" != "0" ]; then
+                REGRESSIONS=true
                 return_value=1
             fi
         done
@@ -547,12 +509,14 @@ compare_jmod_file() {
     if [ -n "$ONLY_OTHER" ]; then
         echo "        Only OTHER $JMOD_FILE contains:"
         echo "$ONLY_OTHER" | sed "s|^>|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
     if [ -n "$ONLY_THIS" ]; then
         echo "        Only THIS $JMOD_FILE contains:"
         echo "$ONLY_THIS" | sed "s|^<|            |"g | sed 's|: |/|g'
+        REGRESSIONS=true
         return_value=1
     fi
 
@@ -567,19 +531,18 @@ compare_all_zip_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.zip" -o -name "*.tar.gz" \
-        | $SORT | $FILTER )
+    locate_files $THIS_DIR
 
-    if [ -n "$ZIPS" ]; then
+    if [ -n "$ALL_ZIP_FILES" ]; then
         echo Zip/tar.gz files...
 
         return_value=0
-        for f in $ZIPS; do
+        for f in $ALL_ZIP_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -596,18 +559,18 @@ compare_all_jmod_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    JMODS=$(cd $THIS_DIR && $FIND . -type f -name "*.jmod" | $SORT | $FILTER )
+    locate_files $THIS_DIR
 
-    if [ -n "$JMODS" ]; then
+    if [ -n "$ALL_JMOD_FILES" ]; then
         echo Jmod files...
 
         return_value=0
-        for f in $JMODS; do
+        for f in $ALL_JMOD_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_jmod_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -624,20 +587,18 @@ compare_all_jar_files() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    # TODO filter?
-    ZIPS=$(cd $THIS_DIR && $FIND . -type f -name "*.jar" -o -name "*.war" \
-        -o -name "modules" | $SORT | $FILTER)
+    locate_files $THIS_DIR
 
-    if [ -n "$ZIPS" ]; then
+    if [ -n "$ALL_JAR_FILES" ]; then
         echo Jar files...
 
         return_value=0
-        for f in $ZIPS; do
+        for f in $ALL_JAR_FILES; do
             if [ -f "$OTHER_DIR/$f" ]; then
                 compare_zip_file $THIS_DIR $OTHER_DIR $WORK_DIR $f
                 if [ "$?" != "0" ]; then
-                    return_value=1
                     REGRESSIONS=true
+                    return_value=1
                 fi
             fi
         done
@@ -699,14 +660,16 @@ compare_bin_file() {
         unset _NT_SYMBOL_PATH
         if [ "$(uname -o)" = "Cygwin" ]; then
             THIS=$(cygpath -msa $THIS)
-            OTHER=$(cygpath -msa $OTHER)
+            if [ -n "$OTHER" ]; then
+              OTHER=$(cygpath -msa $OTHER)
+            fi
         fi
         # Build an _NT_SYMBOL_PATH that contains all known locations for
         # pdb files.
         PDB_DIRS="$(ls -d \
             {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
             {$OTHER,$THIS}/support/native/jdk.jpackage/* \
-            )"
+            2> /dev/null )"
         export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
     fi
 
@@ -1047,23 +1010,16 @@ compare_all_libs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    LIBS=$(cd $THIS_DIR && $FIND . -type f \( -name 'lib*.so' -o -name '*.dylib' \
-        -o -name '*.dll' -o -name '*.obj' -o -name '*.o' -o -name '*.a' \
-        -o -name '*.cpl' \) | $SORT | $FILTER)
+    locate_files $THIS_DIR
 
-    # On macos, filter out the dSYM debug symbols files as they are also
-    # named *.dylib.
-    if [ "$OPENJDK_TARGET_OS" = "macosx" ]; then
-        LIBS=$(echo "$LIBS" | $GREP -v '\.dSYM/')
-    fi
-
-    if [ -n "$LIBS" ]; then
+    if [ -n "$ALL_LIB_FILES" ]; then
         echo Libraries...
         print_binary_diff_header
-        for l in $LIBS; do
+        for l in $ALL_LIB_FILES; do
             if [ -f "$OTHER_DIR/$l" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $l
                 if [ "$?" != "0" ]; then
+                    REGRESSIONS=true
                     return_value=1
                 fi
             fi
@@ -1081,33 +1037,16 @@ compare_all_execs() {
     OTHER_DIR=$2
     WORK_DIR=$3
 
-    if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-        EXECS=$(cd $THIS_DIR && $FIND . -type f -name '*.exe' | $SORT | $FILTER)
-    else
-        EXECS=$(cd $THIS_DIR && $FIND . -name db -prune -o -type f -perm -100 \! \
-            \( -name '*.so' -o -name '*.dylib' -o -name '*.dll' -o -name '*.cgi' \
-            -o -name '*.jar' -o -name '*.diz' -o -name 'jcontrol' -o -name '*.properties' \
-            -o -name '*.data' -o -name '*.bfc' -o -name '*.src' -o -name '*.txt' \
-            -o -name '*.cfg' -o -name 'meta-index' -o -name '*.properties.ja' \
-            -o -name '*.xml' -o -name '*.html' -o -name '*.png' -o -name 'README' \
-            -o -name '*.zip' -o -name '*.jimage' -o -name '*.java' -o -name '*.mf' \
-            -o -name '*.jpg' -o -name '*.wsdl' -o -name '*.js' -o -name '*.sh' \
-            -o -name '*.bat' -o -name '*LICENSE' -o -name '*.d' -o -name '*store' \
-            -o -name 'blocked' -o -name '*certs' -o -name '*.ttf' \
-            -o -name '*.jfc' -o -name '*.dat'  -o -name 'release' -o -name '*.dir'\
-            -o -name '*.sym' -o -name '*.idl' -o -name '*.h' -o -name '*.access' \
-            -o -name '*.template' -o -name '*.policy' -o -name '*.security' \
-            -o -name 'COPYRIGHT' -o -name '*.1' -o -name '*.debuginfo' \
-            -o -name 'classlist' \) | $SORT | $FILTER)
-    fi
+    locate_files $THIS_DIR
 
-    if [ -n "$EXECS" ]; then
+    if [ -n "$ALL_EXEC_FILES" ]; then
         echo Executables...
         print_binary_diff_header
-        for e in $EXECS; do
+        for e in $ALL_EXEC_FILES; do
             if [ -f "$OTHER_DIR/$e" ]; then
                 compare_bin_file $THIS_DIR $OTHER_DIR $WORK_DIR $e
                 if [ "$?" != "0" ]; then
+                    REGRESSIONS=true
                     return_value=1
                 fi
             fi
@@ -1115,6 +1054,95 @@ compare_all_execs() {
     fi
 
     return $return_value
+}
+
+################################################################################
+# Compare native debug symbol files
+
+compare_all_debug_files() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+
+    locate_files $THIS_DIR
+
+    echo Debug symbol files with binary differences...
+    for f in $ALL_DEBUG_FILES
+    do
+        if [ -e $OTHER_DIR/$f ]; then
+            SUFFIX="${f##*.}"
+            if [ "$SUFFIX" = "pdb" ]; then
+              # pdb files are never reproducible
+              DIFF_OUT=""
+            else
+              OTHER_FILE=$OTHER_DIR/$f
+              THIS_FILE=$THIS_DIR/$f
+              DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            fi
+
+            if [ -n "$DIFF_OUT" ]; then
+                echo $f
+                REGRESSIONS=true
+                if [ "$SHOW_DIFFS" = "true" ]; then
+                    echo "$DIFF_OUT"
+                fi
+            fi
+        fi
+    done
+}
+
+################################################################################
+# Compare the rest of the files
+
+compare_all_other_files() {
+    THIS_DIR=$1
+    OTHER_DIR=$2
+    WORK_DIR=$3
+
+    locate_files $THIS_DIR
+
+    echo Other files with binary differences...
+    for f in $ALL_OTHER_FILES
+    do
+        # Skip all files in test/*/native
+        if [[ "$f" == */native/* ]]; then
+            continue
+        fi
+        if [ -e $OTHER_DIR/$f ]; then
+            SUFFIX="${f##*.}"
+            if [ "$(basename $f)" = "release" ]; then
+                # In release file, ignore differences in source rev numbers
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE)
+                $MKDIR -p $(dirname $THIS_FILE)
+                RELEASE_FILTER="$SED -e 's/SOURCE=".*"/SOURCE=<src-rev>/g'"
+                $CAT $OTHER_DIR/$f | eval "$RELEASE_FILTER" > $OTHER_FILE
+                $CAT $THIS_DIR/$f  | eval "$RELEASE_FILTER" > $THIS_FILE
+            elif [ "$SUFFIX" = "jar_contents" ]; then
+                # The jar_contents files are generated by the build and may have
+                # some lines in random order. They are only included for demos,
+                # which they shouldn't really...
+                OTHER_FILE=$WORK_DIR/$f.other
+                THIS_FILE=$WORK_DIR/$f.this
+                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
+                $RM $OTHER_FILE $THIS_FILE
+                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
+                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
+            else
+                OTHER_FILE=$OTHER_DIR/$f
+                THIS_FILE=$THIS_DIR/$f
+            fi
+            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            if [ -n "$DIFF_OUT" ]; then
+                echo $f
+                REGRESSIONS=true
+                if [ "$SHOW_DIFFS" = "true" ]; then
+                    echo "$DIFF_OUT"
+                fi
+            fi
+        fi
+    done
 }
 
 ################################################################################
@@ -1515,22 +1543,31 @@ fi
 if [ "$CMP_GENERAL" = "true" ]; then
     if [ -n "$THIS_JDK" ] && [ -n "$OTHER_JDK" ]; then
         echo -n "JDK "
-        compare_general_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+        compare_all_other_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
+        echo -n "JDK "
+        compare_all_debug_files $THIS_JDK $OTHER_JDK $COMPARE_ROOT/jdk
     fi
     if [ -n "$THIS_JDK_BUNDLE" ] && [ -n "$OTHER_JDK_BUNDLE" ]; then
         echo -n "JDK Bundle "
-        compare_general_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        compare_all_other_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
+        echo -n "JDK Bundle "
+        compare_all_debug_files $THIS_JDK_BUNDLE $OTHER_JDK_BUNDLE $COMPARE_ROOT/jdk-bundle
     fi
     if [ -n "$THIS_DOCS" ] && [ -n "$OTHER_DOCS" ]; then
         echo -n "Docs "
-        compare_general_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
+        compare_all_other_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
+        echo -n "Docs "
+        compare_all_debug_files $THIS_DOCS $OTHER_DOCS $COMPARE_ROOT/docs
     fi
     if [ -n "$THIS_TEST" ] && [ -n "$OTHER_TEST" ]; then
         echo -n "Test "
-        compare_general_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
+        compare_all_other_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
+        echo -n "Test "
+        compare_all_debug_files $THIS_TEST $OTHER_TEST $COMPARE_ROOT/test
     fi
     if [ -n "$THIS_BASE_DIR" ] && [ -n "$OTHER_BASE_DIR" ]; then
-        compare_general_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_other_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
+        compare_all_debug_files $THIS_BASE_DIR $OTHER_BASE_DIR $COMPARE_ROOT/base_dir
     fi
 fi
 

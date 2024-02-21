@@ -31,6 +31,8 @@
 import java.util.FormatProcessor;
 import java.util.Objects;
 import java.util.Locale;
+import java.util.MissingFormatArgumentException;
+import java.util.UnknownFormatConversionException;
 
 import static java.util.FormatProcessor.FMT;
 
@@ -47,6 +49,28 @@ public class FormatterBuilder {
     static void test(String a, String b) {
         if (!Objects.equals(a, b)) {
             throw new RuntimeException("format and FMT do not match: " + a + " : " + b);
+        }
+    }
+
+    public interface Executable {
+        void execute() throws Throwable;
+    }
+
+    static <T extends Throwable> void assertThrows(Class<T> expectedType, Executable executable, String message) {
+        Throwable actualException = null;
+        try {
+            executable.execute();
+        } catch (Throwable e) {
+            actualException = e;
+        }
+        if (actualException == null) {
+            throw new RuntimeException("Expected " + expectedType + " to be thrown, but nothing was thrown.");
+        }
+        if (!expectedType.isInstance(actualException)) {
+            throw new RuntimeException("Expected " + expectedType + " to be thrown, but was thrown " + actualException.getClass());
+        }
+        if (message != null && !message.equals(actualException.getMessage())) {
+            throw new RuntimeException("Expected " + message + " to be thrown, but was thrown " + actualException.getMessage());
         }
     }
 
@@ -911,5 +935,27 @@ public class FormatterBuilder {
         test(String.format("%-10A", -12345.6), fmt."%-10A\{-12345.6}");
         test(String.format("%-10A", 0.0), fmt."%-10A\{0.0}");
         test(String.format("%-10A", 12345.6), fmt."%-10A\{12345.6}");
+
+        test("aaa%false", fmt."aaa%%%b\{false}");
+        test("aaa" + System.lineSeparator() + "false", fmt."aaa%n%b\{false}");
+
+        assertThrows(
+                MissingFormatArgumentException.class,
+                () -> fmt. "%10ba\{ false }",
+                "Format specifier '%10b is not immediately followed by an embedded expression'");
+
+        assertThrows(
+                MissingFormatArgumentException.class,
+                () ->fmt. "%ba\{ false }",
+                "Format specifier '%b is not immediately followed by an embedded expression'");
+
+        assertThrows(
+                MissingFormatArgumentException.class,
+                () ->fmt. "%b",
+                "Format specifier '%b is not immediately followed by an embedded expression'");
+        assertThrows(
+                UnknownFormatConversionException.class,
+                () ->fmt. "%0",
+                "Conversion = '0'");
     }
 }
