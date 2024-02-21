@@ -3465,6 +3465,10 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
   }
+    case Op_CastII: {
+      remove_range_check_cast(n->as_CastII());
+    }
+    break;
 #ifdef _LP64
   case Op_CmpP:
     // Do this transformation here to preserve CmpPNode::sub() and
@@ -3614,16 +3618,6 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     }
     break;
 
-#endif
-
-#ifdef ASSERT
-  case Op_CastII:
-    // Verify that all range check dependent CastII nodes were removed.
-    if (n->isa_CastII()->has_range_check()) {
-      n->dump(3);
-      assert(false, "Range check dependent CastII node was not removed");
-    }
-    break;
 #endif
 
   case Op_ModI:
@@ -3892,6 +3886,34 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
     assert(!n->is_Mem(), "");
     assert(nop != Op_ProfileBoolean, "should be eliminated during IGVN");
     break;
+  }
+}
+
+void Compile::remove_range_check_cast(CastIINode* cast) {
+  if (cast->has_range_check()) {
+    // Range check CastII nodes feed into an address computation subgraph. Remove them to let that subgraph float freely.
+    // For memory access or integer divisions nodes that depend on the cast, record the dependency on the cast's control
+    // as a precedence edge, so they can't float above the cast in case that cast's narrowed type helped eliminated a
+    // range check or a null divisor check.
+    assert(cast->in(0) != nullptr, "");
+    ResourceMark rm;
+    Unique_Node_List wq;
+    wq.push(cast);
+    for (uint next = 0; next < wq.size(); ++next) {
+      Node* m = wq.at(next);
+      for (DUIterator_Fast imax, i = m->fast_outs(imax); i < imax; i++) {
+        Node* use = m->fast_out(i);
+        if (use->is_Mem() || use->Opcode() == Op_DivI || use->Opcode() == Op_DivL) {
+          use->ensure_control_or_add_prec(cast->in(0));
+        } else if (!use->is_CFG() && !use->is_Phi()) {
+          wq.push(use);
+        }
+      }
+    }
+    cast->subsume_by(cast->in(1), this);
+    if (cast->outcnt() == 0) {
+      cast->disconnect_inputs(this);
+    }
   }
 }
 
