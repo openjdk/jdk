@@ -23,20 +23,21 @@
 
 package jdk.jfr.event.io;
 
+import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.consumer.RecordingStream;
+import jdk.test.lib.jfr.Events;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
+import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serial;
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -46,7 +47,7 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /*
  * @test
- * @bug 8275338
+ * @bug 8275338 8324220
  * @summary Check generation of JFR events for misdeclared fields and methods
  *          relevant to serialization
  * @key jfr
@@ -56,16 +57,16 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
  */
 public class TestSerializationMisdeclarationEvent {
 
-    private static final List<RecordedEvent> events = new ArrayList<>();
+    private static List<RecordedEvent> events;
 
     @BeforeAll
-    static void recordEvents() {
-        try (var rs = new RecordingStream()) {
-            rs.enable(SerializationMisdeclaration);
-            rs.onEvent(SerializationMisdeclaration, events::add);
-            rs.startAsync();
+    static void recordEvents() throws IOException {
+        try (Recording r = new Recording()) {
+            r.enable(SerializationMisdeclaration);
+            r.start();
             doLookups();
-            rs.stop();
+            r.stop();
+            events = Events.fromRecording(r);
         }
     }
 

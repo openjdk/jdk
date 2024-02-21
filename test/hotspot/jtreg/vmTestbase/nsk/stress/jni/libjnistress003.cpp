@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,8 +141,8 @@ Java_nsk_stress_jni_JNIter003_jniBodyChangeArray (JNIEnv *env, jobject jobj,
   jdouble *doubleOrig, *doubleClone;
   int i;
 
-  if ((orig == NULL) || (clone == NULL)) {
-    fprintf(stderr, "JNI received a NULL array from Java\n");
+  if ((orig == nullptr) || (clone == nullptr)) {
+    fprintf(stderr, "JNI received a null array from Java\n");
     return JNI_FALSE;
   }
   if (count == limit) {

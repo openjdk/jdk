@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ extern "C" {
 
 #define MEM_SIZE 1024
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -161,7 +161,7 @@ static void memoryFunc(jvmtiEnv *jvmti_env, const char *msg) {
 }
 
 static void envStorageFunc(jvmtiEnv *jvmti_env, const char *msg) {
-    LocalStorage* obtainedData = NULL;
+    LocalStorage* obtainedData = nullptr;
     LocalStorage* storedData = &stor;
 
     NSK_DISPLAY2("%s: setting an environment local storage 0x%p ...\n",
@@ -273,7 +273,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* add capability to generate compiled method events */
@@ -302,11 +302,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("setting event callbacks done\nenabling JVMTI events ...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_VM_DEATH,
-                                                          NULL)))
+                                                          nullptr)))
         return JNI_ERR;
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_OBJECT_FREE,
-                                                          NULL)))
+                                                          nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("enabling the events done\n\n");
 

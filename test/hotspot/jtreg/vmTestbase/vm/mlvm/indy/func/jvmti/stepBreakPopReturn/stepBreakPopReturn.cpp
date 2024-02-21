@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 extern "C" {
 
-static jvmtiEnv* gJvmtiEnv = NULL;
+static jvmtiEnv* gJvmtiEnv = nullptr;
 
 static char * gszDebuggeeMethodName = (char*) "NONE";
 static char * gszDebuggeeClassName = (char*) "NONE";
@@ -89,7 +89,7 @@ MethodEntry(jvmtiEnv *jvmti_env,
             gIsMethodEntryWorking = JNI_TRUE;
 
             if (!gIsBreakpointSet)
-                NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
+                NSK_JVMTI_VERIFY(jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_SINGLE_STEP, nullptr));
         }
     }
 
@@ -108,7 +108,7 @@ SingleStep(jvmtiEnv *jvmti_env,
 
     locStr = locationToString(jvmti_env, method, location);
 
-    if (locStr == NULL) {
+    if (locStr == nullptr) {
         NSK_DISPLAY0("Error: Single step event has no location\n");
         gErrorHappened = JNI_TRUE;
     } else {
@@ -116,13 +116,13 @@ SingleStep(jvmtiEnv *jvmti_env,
         free(locStr);
     }
 
-    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, NULL));
+    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_SINGLE_STEP, nullptr));
 
     if (!gIsDebuggerCompatible) {
         if (!NSK_JVMTI_VERIFY(jvmti_env->SetBreakpoint(method, location)))
             return;
 
-        NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL));
+        NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr));
         gIsBreakpointSet = JNI_TRUE;
 
         NSK_DISPLAY0("Pop a frame\n");
@@ -150,7 +150,7 @@ Breakpoint(jvmtiEnv *jvmti_env,
     gIsBreakpointWorking = JNI_TRUE;
 
     locStr = locationToString(jvmti_env, method, location);
-    if (locStr == NULL) {
+    if (locStr == nullptr) {
         NSK_DISPLAY0("Error: Breakpoint event has no location\n");
         gErrorHappened = JNI_TRUE;
     } else {
@@ -159,7 +159,7 @@ Breakpoint(jvmtiEnv *jvmti_env,
     }
 
     NSK_JVMTI_VERIFY(jvmti_env->ClearBreakpoint(method, location));
-    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, NULL));
+    NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, nullptr));
     gIsBreakpointSet = JNI_FALSE;
 
     NSK_DISPLAY0("Forcing early return.\n");
@@ -173,7 +173,7 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
-    if (!NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
+    if (!NSK_VERIFY((gJvmtiEnv = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (nsk_jvmti_findOptionValue("debuggerCompatible")) {
@@ -198,7 +198,7 @@ jint Agent_Initialize(JavaVM * vm, char * options, void * reserved) {
     if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventCallbacks(&callbacks, sizeof(callbacks))))
         return JNI_ERR;
 
-    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, NULL)))
+    if (!NSK_JVMTI_VERIFY(gJvmtiEnv->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_METHOD_ENTRY, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -222,7 +222,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The last modification time of the entry in local date-time
-     *
+     * @throws NullPointerException if {@code time} is null
      * @see #getTimeLocal()
      * @since 9
      */

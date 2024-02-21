@@ -57,7 +57,6 @@
 // second statement is considered the right element.
 
 class VPointer;
-class OrderedPair;
 
 // ========================= Dependence Graph =====================
 
@@ -198,33 +197,6 @@ class SWNodeInfo {
   static const SWNodeInfo initial;
 };
 
-class SuperWord;
-
-// JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
-//------------------------------OrderedPair---------------------------
-// Ordered pair of Node*.
-class OrderedPair {
- protected:
-  Node* _p1;
-  Node* _p2;
- public:
-  OrderedPair() : _p1(nullptr), _p2(nullptr) {}
-  OrderedPair(Node* p1, Node* p2) {
-    if (p1->_idx < p2->_idx) {
-      _p1 = p1; _p2 = p2;
-    } else {
-      _p1 = p2; _p2 = p1;
-    }
-  }
-
-  bool operator==(const OrderedPair &rhs) {
-    return _p1 == rhs._p1 && _p2 == rhs._p2;
-  }
-  void print() { tty->print("  (%d, %d)", _p1->_idx, _p2->_idx); }
-
-  static const OrderedPair initial;
-};
-
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -242,23 +214,16 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
-  GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
-  GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
+  GrowableArray<PhiNode*> _mem_slice_head; // Memory slice head nodes
+  GrowableArray<MemNode*> _mem_slice_tail; // Memory slice tail nodes
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
 
-  GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
-
   DepGraph _dg; // Dependence graph
 
   // Scratch pads
-  VectorSet    _visited;       // Visited set
-  VectorSet    _post_visited;  // Post-visited set
-  Node_Stack   _n_idx_list;    // List of (node,index) pairs
   GrowableArray<Node*> _nlist; // List of nodes
-  GrowableArray<Node*> _stk;   // Stack of nodes
 
  public:
   SuperWord(PhaseIdealLoop* phase);
@@ -275,14 +240,78 @@ class SuperWord : public ResourceObj {
   bool early_return() const        { return _early_return; }
 
 #ifndef PRODUCT
-  bool     is_debug()              { return _vector_loop_debug > 0; }
-  bool     is_trace_alignment()    { return (_vector_loop_debug & 2) > 0; }
-  bool     is_trace_mem_slice()    { return (_vector_loop_debug & 4) > 0; }
-  bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
-  bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
-  bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
-  bool     is_trace_align_vector() { return (_vector_loop_debug & 128) > 0; }
+  // TraceAutoVectorization and TraceSuperWord
+  bool is_trace_superword_precondition() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION);
+  }
+
+  bool is_trace_superword_vector_element_type() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES);
+  }
+
+  bool is_trace_superword_alignment() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
+  }
+
+  bool is_trace_superword_memory_slices() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES);
+  }
+
+  bool is_trace_superword_dependence_graph() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
+  }
+
+  bool is_trace_superword_adjacent_memops() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS);
+  }
+
+  bool is_trace_superword_rejections() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS);
+  }
+
+  bool is_trace_superword_packset() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET);
+  }
+
+  bool is_trace_superword_info() const {
+    return TraceSuperWord ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO);
+  }
+
+  bool is_trace_superword_verbose() const {
+    // Too verbose for TraceSuperWord
+    return _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_superword_any() const {
+    return TraceSuperWord ||
+           is_trace_align_vector() ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PRECONDITION) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_TYPES) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_MEMORY_SLICES) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_INFO) ||
+           _vtrace.is_trace(TraceAutoVectorizationTag::SW_VERBOSE);
+  }
+
+  bool is_trace_align_vector() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::ALIGN_VECTOR) ||
+           is_trace_superword_verbose();
+  }
 #endif
+
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
@@ -299,9 +328,7 @@ class SuperWord : public ResourceObj {
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-#ifndef PRODUCT
-  uintx          _vector_loop_debug; // provide more printing in debug mode
-#endif
+  NOT_PRODUCT(VTrace _vtrace);
 
   // Accessors
   Arena* arena()                   { return _arena; }
@@ -337,15 +364,6 @@ class SuperWord : public ResourceObj {
  private:
   void set_bb_idx(Node* n, int i)  { _bb_idx.at_put_grow(n->_idx, i); }
 
-  // visited set accessors
-  void visited_clear()           { _visited.clear(); }
-  void visited_set(Node* n)      { return _visited.set(bb_idx(n)); }
-  int visited_test(Node* n)      { return _visited.test(bb_idx(n)); }
-  int visited_test_set(Node* n)  { return _visited.test_set(bb_idx(n)); }
-  void post_visited_clear()      { _post_visited.clear(); }
-  void post_visited_set(Node* n) { return _post_visited.set(bb_idx(n)); }
-  int post_visited_test(Node* n) { return _post_visited.test(bb_idx(n)); }
-
   // Ensure node_info contains element "i"
   void grow_node_info(int i) { if (i >= _node_info.length()) _node_info.at_put_grow(i, SWNodeInfo::initial); }
 
@@ -357,7 +375,7 @@ class SuperWord : public ResourceObj {
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n)                         { return _node_info.adr_at(bb_idx(n))->_depth; }
+  int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
   void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
 
   // vector element type
@@ -448,8 +466,13 @@ private:
   int get_iv_adjustment(MemNode* mem);
   // Construct dependency graph.
   void dependence_graph();
+
+  // Analyze the memory slices
+  void find_memory_slices();
+  NOT_PRODUCT( void print_memory_slices(); )
   // Return a memory slice (node list) in predecessor order starting at "start"
   void mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &preds);
+
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
   // Does s exist in a pack at position pos?
@@ -460,15 +483,13 @@ private:
   bool isomorphic(Node* s1, Node* s2);
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
-  // Is any s1 in p dependent on any s2 in p? Yes: return such a s2. No: return nullptr.
-  Node* find_dependence(Node_List* p);
+  // Are all nodes in nodes list mutually independent?
+  bool mutually_independent(Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   // Is there a data path between s1 and s2 and both are reductions?
   bool reduction(Node* s1, Node* s2);
-  // Helper for independent
-  bool independent_path(Node* shallow, Node* deep, uint dp=0);
   void set_alignment(Node* s1, Node* s2, int align);
   int data_size(Node* s);
   // Extend packset by following use->def and def->use links from pack members.
@@ -513,16 +534,14 @@ private:
   bool implemented(Node_List* p);
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(Node_List* p);
-  // If a use of pack p is not a vector use, then replace the use with an extract operation.
-  void insert_extracts(Node_List* p);
+  // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
+  DEBUG_ONLY(void verify_no_extract();)
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
   // Construct reverse postorder list of block members
   bool construct_bb();
   // Initialize per node info
-  void initialize_bb();
-  // Insert n into block after pos
-  void bb_insert_after(Node* n, int pos);
+  void initialize_node_info();
   // Compute max depth for expressions from beginning of block
   void compute_max_depth();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
