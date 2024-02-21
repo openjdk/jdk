@@ -231,7 +231,7 @@ public class SimpleJavaFileObject implements JavaFileObject {
      * The provided {@code content} will be returned from {@link #getCharContent(boolean)}.
      * The {@link #getKind()} method will return {@link Kind#SOURCE}.
      *
-     * <p>All other methods will behave as described in the javadoc for this class,
+     * <p>All other methods will behave as described in the documentation in this class,
      * if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
      *
      * @param uri that should be used for this {@code JavaFileObject}
