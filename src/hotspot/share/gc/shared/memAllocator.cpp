@@ -423,10 +423,12 @@ void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
   const size_t size_in_bytes = _word_size * BytesPerWord;
 
   const address obj_end = reinterpret_cast<address>(mem) + size_in_bytes;
-
-  const size_t padding_in_bytes = size_in_bytes - base_offset_in_bytes - length_in_bytes;
-  if (padding_in_bytes != 0) {
-    Copy::fill_to_bytes(obj_end - padding_in_bytes, padding_in_bytes, heapPaddingByteVal);
+  const address base = reinterpret_cast<address>(mem) + base_offset_in_bytes;
+  const address elements_end = base + length_in_bytes;
+  assert(elements_end <= obj_end, "payload must fit in object");
+  if (elements_end < obj_end) {
+    const size_t padding_in_bytes = obj_end - elements_end;
+    Copy::fill_to_bytes(elements_end, padding_in_bytes, heapPaddingByteVal);
   }
 }
 #endif
