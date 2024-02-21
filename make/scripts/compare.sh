@@ -1070,9 +1070,16 @@ compare_all_debug_files() {
     for f in $ALL_DEBUG_FILES
     do
         if [ -e $OTHER_DIR/$f ]; then
-            OTHER_FILE=$OTHER_DIR/$f
-            THIS_FILE=$THIS_DIR/$f
-            DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            SUFFIX="${f##*.}"
+            if [ "$SUFFIX" = "pdb" ]; then
+              # pdb files are never reproducible
+              DIFF_OUT=""
+            else
+              OTHER_FILE=$OTHER_DIR/$f
+              THIS_FILE=$THIS_DIR/$f
+              DIFF_OUT=$($DIFF $OTHER_FILE $THIS_FILE 2>&1)
+            fi
+
             if [ -n "$DIFF_OUT" ]; then
                 echo $f
                 REGRESSIONS=true
@@ -1102,7 +1109,6 @@ compare_all_other_files() {
             continue
         fi
         if [ -e $OTHER_DIR/$f ]; then
-            SUFFIX="${f##*.}"
             if [ "$(basename $f)" = "release" ]; then
                 # In release file, ignore differences in source rev numbers
                 OTHER_FILE=$WORK_DIR/$f.other
