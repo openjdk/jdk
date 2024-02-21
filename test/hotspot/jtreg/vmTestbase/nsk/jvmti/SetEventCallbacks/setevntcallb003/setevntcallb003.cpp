@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Disable events\n");
-    nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL);
+    nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr);
 
     NSK_DISPLAY0("Let debugee to finish\n");
     if (!nsk_jvmti_resumeSync())
@@ -155,7 +155,7 @@ callbackVMInit(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
             nsk_jvmti_setFailStatus();
         }
 
-        nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT - 1, eventsList + 1, NULL);
+        nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT - 1, eventsList + 1, nullptr);
     }
 }
 
@@ -174,7 +174,7 @@ JNIEXPORT jint JNI_OnLoad_setevntcallb003(JavaVM *jvm, char *options, void *rese
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -182,10 +182,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Testcase #1: Set callbacks for all tested events\n");
@@ -199,7 +199,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         if (!NSK_JVMTI_VERIFY(jvmti->SetEventCallbacks(&eventCallbacks, sizeof(eventCallbacks)))) {
             nsk_jvmti_setFailStatus();
         } else {
-            nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, eventsList, NULL);
+            nsk_jvmti_enableEvents(JVMTI_ENABLE, 1, eventsList, nullptr);
         }
     }
     return JNI_OK;

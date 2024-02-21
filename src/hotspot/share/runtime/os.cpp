@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1289,7 +1288,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
-bool is_pointer_bad(intptr_t* ptr) {
+static bool is_pointer_bad(intptr_t* ptr) {
   return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
 }
 
@@ -1816,10 +1815,10 @@ char* os::reserve_memory(size_t bytes, bool executable, MEMFLAGS flags) {
   return result;
 }
 
-char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable) {
+char* os::attempt_reserve_memory_at(char* addr, size_t bytes, bool executable, MEMFLAGS flag) {
   char* result = SimulateFullAddressSpace ? nullptr : pd_attempt_reserve_memory_at(addr, bytes, executable);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC, flag);
     log_debug(os)("Reserved memory at " INTPTR_FORMAT " for " SIZE_FORMAT " bytes.", p2i(addr), bytes);
   } else {
     log_debug(os)("Attempt to reserve memory at " INTPTR_FORMAT " for "
@@ -2114,33 +2113,37 @@ void os::pretouch_memory(void* start, void* end, size_t page_size) {
     // We're doing concurrent-safe touch and memory state has page
     // granularity, so we can touch anywhere in a page.  Touch at the
     // beginning of each page to simplify iteration.
-    char* cur = static_cast<char*>(align_down(start, page_size));
+    void* first = align_down(start, page_size);
     void* last = align_down(static_cast<char*>(end) - 1, page_size);
-    assert(cur <= last, "invariant");
-    // Iterate from first page through last (inclusive), being careful to
-    // avoid overflow if the last page abuts the end of the address range.
-    for ( ; true; cur += page_size) {
-      Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
-      if (cur >= last) break;
+    assert(first <= last, "invariant");
+    const size_t pd_page_size = pd_pretouch_memory(first, last, page_size);
+    if (pd_page_size > 0) {
+      // Iterate from first page through last (inclusive), being careful to
+      // avoid overflow if the last page abuts the end of the address range.
+      last = align_down(static_cast<char*>(end) - 1, pd_page_size);
+      for (char* cur = static_cast<char*>(first); /* break */; cur += pd_page_size) {
+        Atomic::add(reinterpret_cast<int*>(cur), 0, memory_order_relaxed);
+        if (cur >= last) break;
+      }
     }
   }
 }
 
-char* os::map_memory_to_file(size_t bytes, int file_desc) {
+char* os::map_memory_to_file(size_t bytes, int file_desc, MEMFLAGS flag) {
   // Could have called pd_reserve_memory() followed by replace_existing_mapping_with_file_mapping(),
   // but AIX may use SHM in which case its more trouble to detach the segment and remap memory to the file.
   // On all current implementations null is interpreted as any available address.
   char* result = os::map_memory_to_file(nullptr /* addr */, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit(result, bytes, CALLER_PC, flag);
   }
   return result;
 }
 
-char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc) {
+char* os::attempt_map_memory_to_file_at(char* addr, size_t bytes, int file_desc, MEMFLAGS flag) {
   char* result = pd_attempt_map_memory_to_file_at(addr, bytes, file_desc);
   if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flag);
   }
   return result;
 }
@@ -2153,13 +2156,6 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
   }
   return result;
-}
-
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
-                    read_only, allow_exec);
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {

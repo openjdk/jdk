@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -179,20 +179,11 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
-static JavaThread* get_current_thread(bool allow_null=true) {
-  Thread* thread = Thread::current_or_null_safe();
-  if (thread == nullptr) {
-    assert(allow_null, "npe");
-    return nullptr;
-  }
-  return JavaThread::cast(thread);
-}
-
 // Entry to native method implementation that transitions
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY(result_type, name, signature)        \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -203,7 +194,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -219,7 +210,7 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY_PREFIX(result_type, name, signature) \
   JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();
+  JavaThread* thread = JavaThread::current_or_null();
 
 #define C2V_END }
 
@@ -1389,7 +1380,7 @@ C2V_END
 /*
  * Used by matches() to convert a ResolvedJavaMethod[] to an array of Method*.
  */
-GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
+static GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
   GrowableArray<Method*>* resolved_methods = new GrowableArray<Method*>(methods_oop->length());
   for (int i = 0; i < methods_oop->length(); i++) {
@@ -1408,7 +1399,7 @@ GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JV
  * The ResolvedJavaMethod[] array is converted to a Method* array that is then cached in the resolved_methods_ref in/out parameter.
  * In case of a match, the matching ResolvedJavaMethod is returned in matched_jvmci_method_ref.
  */
-bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
+static bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
   GrowableArray<Method*>* resolved_methods = *resolved_methods_ref;
   if (resolved_methods == nullptr) {
     resolved_methods = init_resolved_methods(methods, JVMCIENV);
@@ -1429,7 +1420,7 @@ bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** reso
 /*
  * Resolves an interface call to a concrete method handle.
  */
-methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
+static methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   Handle receiver = args->receiver();
   Klass* recvrKlass = receiver.is_null() ? (Klass*)nullptr : receiver->klass();
@@ -1444,7 +1435,7 @@ methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* sig
 /*
  * Used by c2v_iterateFrames to make a new vframeStream at the given compiled frame id (stack pointer) and vframe id.
  */
-void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
+static void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
   vfst = vframeStream(thread);
   while (vfst.frame_id() != stack_pointer && !vfst.at_end()) {
     vfst.next();
@@ -1467,7 +1458,7 @@ void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_p
 /*
  * Used by c2v_iterateFrames. Returns an array of any unallocated scope objects or null if none.
  */
-GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
+static GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
   GrowableArray<ScopeValue*>* unallocated = nullptr;
   for (int i = 0; i < scope_objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) scope_objects->at(i);
@@ -1889,7 +1880,10 @@ C2V_END
 
 C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method_data_pointer, jint bci))
   MethodData* mdo = (MethodData*) method_data_pointer;
-  MutexLocker mu(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker mu(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   DataLayout* data    = mdo->extra_data_base();
   DataLayout* end   = mdo->args_data_limit();
   for (;; data = mdo->next_extra(data)) {
@@ -2613,7 +2607,7 @@ static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_
   if (res != JNI_OK) {
     JNI_THROW("attachSharedLibraryThread", InternalError, err_msg("Trying to attach thread returned %d", res));
   }
-  JavaThread* thread = get_current_thread(false);
+  JavaThread* thread = JavaThread::thread_from_jni_environment(hotspotEnv);
   const char* attach_error;
   {
     // Transition to VM
@@ -3071,7 +3065,7 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 C2V_END
 
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
   }

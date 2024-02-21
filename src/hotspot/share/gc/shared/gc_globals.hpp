@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -309,23 +309,6 @@
           "MaxRAM * MaxRAMPercentage / 100")                                \
           range(0, max_uintx)                                               \
                                                                             \
-  product(uintx, MaxRAMFraction, 4,                                         \
-          "Maximum fraction (1/n) of real memory used for maximum heap "    \
-          "size. "                                                          \
-          "Deprecated, use MaxRAMPercentage instead")                       \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uintx, MinRAMFraction, 2,                                         \
-          "Minimum fraction (1/n) of real memory used for maximum heap "    \
-          "size on systems with small physical memory size. "               \
-          "Deprecated, use MinRAMPercentage instead")                       \
-          range(1, max_uintx)                                               \
-                                                                            \
-  product(uintx, InitialRAMFraction, 64,                                    \
-          "Fraction (1/n) of real memory used for initial heap size. "      \
-          "Deprecated, use InitialRAMPercentage instead")                   \
-          range(1, max_uintx)                                               \
-                                                                            \
   product(double, MaxRAMPercentage, 25.0,                                   \
           "Maximum percentage of real memory used for maximum heap size")   \
           range(0.0, 100.0)                                                 \
@@ -441,11 +424,6 @@
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
           constraint(GCPauseIntervalMillisConstraintFunc,AfterErgo)         \
-                                                                            \
-  product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
-          "Adaptive size policy maximum GC minor pause time goal "          \
-          "in millisecond")                                                 \
-          range(0, max_uintx)                                               \
                                                                             \
   product(uint, GCTimeRatio, 99,                                            \
           "Adaptive size policy application time to GC time ratio")         \
@@ -638,10 +616,6 @@
   product(uintx, VerifyGCStartAt,   0, DIAGNOSTIC,                          \
           "GC invoke count where +VerifyBefore/AfterGC kicks in")           \
           range(0, max_uintx)                                               \
-                                                                            \
-  product(int, VerifyGCLevel,     0, DIAGNOSTIC,                            \
-          "Generation level at which to start +VerifyBefore/AfterGC")       \
-          range(0, 1)                                                       \
                                                                             \
   product(uint, MaxTenuringThreshold,    15,                                \
           "Maximum value for tenuring threshold")                           \

@@ -2181,7 +2181,7 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
   log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
   chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
-  assert(chunk->bitmap().count_one_bits(chunk->bit_index_for(effective_end), chunk->bit_index_for(end)) == 0, "bits should not be set");
+  assert(effective_end == end || !chunk->bitmap().at(chunk->bit_index_for(effective_end)), "bit should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {

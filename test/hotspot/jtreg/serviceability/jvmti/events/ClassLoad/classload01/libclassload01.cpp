@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ static volatile int clsEvents[EXP_SIG_NUM];
 static volatile int primClsEvents[UNEXP_SIG_NUM];
 
 static jint result = PASSED;
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jrawMonitorID counter_lock;
 
@@ -91,7 +91,7 @@ static void initCounters() {
 
 static int findSig(char *sig, int expected) {
   for (unsigned int i = 0; i < ((expected == 1) ? EXP_SIG_NUM : UNEXP_SIG_NUM); i++) {
-    if (sig != NULL &&
+    if (sig != nullptr &&
         strcmp(((expected == 1) ? expSigs[i] : unexpSigs[i]), sig) == 0) {
       return i; /* the signature found, return index */
     }
@@ -160,7 +160,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_9);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -197,7 +197,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   }
 
   LOG("setting event callbacks done\nenabling ClassLoad event ...\n");
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_LOAD, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Error in SetEventNotificationMode: %d\n", err);
     return JNI_ERR;

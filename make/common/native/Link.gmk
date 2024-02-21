@@ -1,0 +1,262 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to linking a native binary;
+# creating either a dynamic library, a static library or an executable.
+
+
+################################################################################
+# GetEntitlementsFile
+# Find entitlements file for executable when signing on macosx. If no
+# specialized file is found, returns the default file.
+# This macro might be called from custom makefiles.
+# $1 Executable to find entitlements file for.
+ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+ifeq ($(MACOSX_CODESIGN_MODE), debug)
+  CODESIGN_PLIST_SUFFIX := -debug
+else
+  CODESIGN_PLIST_SUFFIX :=
+endif
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
+
+GetEntitlementsFile = \
+    $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
+      $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
+    )
+
+################################################################################
+define SetupLinking
+  ifneq ($(DISABLE_MAPFILES), true)
+    $1_REAL_MAPFILE := $$($1_MAPFILE)
+  endif
+
+  ifneq ($$($1_REAL_MAPFILE), )
+    $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
+  endif
+
+  # Unless specifically set, stripping should only happen if symbols are also
+  # being copied.
+  $$(call SetIfEmpty, $1_STRIP_SYMBOLS, $$($1_COPY_DEBUG_SYMBOLS))
+
+  ifneq ($$($1_STRIP_SYMBOLS), false)
+    ifneq ($$($1_STRIP), )
+      # Default to using the global STRIPFLAGS. Allow for overriding with an empty value
+      $1_STRIPFLAGS ?= $(STRIPFLAGS)
+      $1_STRIP_CMD := $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET)
+    endif
+  endif
+endef
+
+################################################################################
+define CreateLinkedResult
+  ifeq ($$($1_TYPE), STATIC_LIBRARY)
+    $$(eval $$(call CreateStaticLibrary,$1))
+  else
+    $$(eval $$(call CreateDynamicLibraryOrExecutable,$1))
+  endif
+endef
+
+################################################################################
+define CreateStaticLibrary
+  # Include partial linking when building the static library with clang on linux.
+  ifeq ($(call isTargetOs, linux), true)
+    ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
+      $1_ENABLE_PARTIAL_LINKING := true
+    endif
+  endif
+
+  $1_VARDEPS := $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $$($1_LIBS) \
+      $$($1_EXTRA_LIBS)
+  ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+    $1_VARDEPS += $$($1_LD) $$($1_SYSROOT_LDFLAGS)
+  endif
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  # Generating a static library, ie object file archive.
+  ifeq ($(STATIC_BUILD), true)
+    ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+      STATIC_MAPFILE_DEP := $$($1_MAPFILE)
+    endif
+  endif
+
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) $$(STATIC_MAPFILE_DEP)
+
+  $1_AR_OBJ_ARG := $$($1_LD_OBJ_ARG)
+  # With clang on linux, partial linking is enabled and 'AR' takes the output
+  # object from the partial linking step.
+  ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+    $1_TARGET_RELOCATABLE := $$($1_OBJECT_DIR)/$$($1_PREFIX)$$($1_NAME)_relocatable$(OBJ_SUFFIX)
+    $1_AR_OBJ_ARG := $$($1_TARGET_RELOCATABLE)
+  endif
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+          ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+          else
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+          endif
+        endif
+	$$(call LogInfo, Building static library $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+        # Do partial linking.
+        ifeq ($$($1_ENABLE_PARTIAL_LINKING), true)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_partial_link, \
+	    $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $$($1_LD) $(LDFLAGS_CXX_PARTIAL_LINKING) $$($1_SYSROOT_LDFLAGS) \
+	        $(LD_OUT_OPTION)$$($1_TARGET_RELOCATABLE) \
+	        $$($1_LD_OBJ_ARG))
+        endif
+	$$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	  $(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_AR_OBJ_ARG) \
+	        $$($1_RES))
+        ifeq ($(STATIC_BUILD), true)
+          ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
+	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
+          else
+            # get the exported symbols from mapfiles and if there
+            # is no mapfile, get them from the archive
+	    $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
+	    if [ ! -z $$($1_MAPFILE) -a -e $$($1_MAPFILE) ]; then \
+	      $(ECHO) "Getting symbols from mapfile $$($1_MAPFILE)"; \
+	      $(AWK) '/global:/','/local:/' $$($1_MAPFILE) | \
+		  $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
+		  $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
+		  $$(@D)/$$(basename $$(@F)).symbols || true; \
+	      $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
+		  $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
+		  $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
+	    else \
+	      $(ECHO) "Getting symbols from nm"; \
+	      $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+		  $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
+		  $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
+	    fi
+          endif
+        endif
+endef
+
+################################################################################
+define CreateDynamicLibraryOrExecutable
+  # A shared dynamic library or an executable binary has been specified
+  ifeq ($$($1_TYPE), LIBRARY)
+    # Generating a dynamic library.
+    $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
+
+    # Create loadmap on AIX. Helps in diagnosing some problems.
+    ifneq ($(COMPILER_BINDCMD_FILE_FLAG), )
+      $1_EXTRA_LDFLAGS += $(COMPILER_BINDCMD_FILE_FLAG)$$($1_OBJECT_DIR)/$$($1_NOSUFFIX).loadmap
+    endif
+  endif
+
+  ifeq ($(call isTargetOs, windows), true)
+    ifeq ($$($1_EMBED_MANIFEST), true)
+      $1_EXTRA_LDFLAGS += -manifest:embed
+    endif
+
+    $1_IMPORT_LIBRARY := $$($1_OBJECT_DIR)/$$($1_NAME).lib
+    $1_EXTRA_LDFLAGS += "-implib:$$($1_IMPORT_LIBRARY)"
+    ifeq ($$($1_TYPE), LIBRARY)
+      # To properly trigger downstream dependants of the import library, just as
+      # for debug files, we must have a recipe in the rule. To avoid rerunning
+      # the recipe every time have it touch the target. If an import library
+      # file is deleted by something external, explicitly delete the target to
+      # trigger a rebuild of both.
+      ifneq ($$(wildcard $$($1_IMPORT_LIBRARY)), $$($1_IMPORT_LIBRARY))
+        $$(call LogDebug, Deleting $$($1_BASENAME) because import library is missing)
+        $$(shell $(RM) $$($1_TARGET))
+      endif
+      $$($1_IMPORT_LIBRARY): $$($1_TARGET)
+	$(TOUCH) $$@
+
+      $1 += $$($1_IMPORT_LIBRARY)
+    endif
+  endif
+
+  $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
+      $$($1_LIBS) $$($1_EXTRA_LIBS) $$($1_MT) \
+      $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
+      $$($1_STRIP_CMD) $$($1_CREATE_DEBUGLINK_CMDS)
+  $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
+      $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
+
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
+      $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)
+
+  $$($1_TARGET): $$($1_TARGET_DEPS)
+        ifneq ($$($1_OBJ_FILE_LIST), )
+          ifeq ($$($1_LINK_OBJS_RELATIVE), true)
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS_RELATIVE, $$($1_OBJ_FILE_LIST)))
+          else
+	    $$(eval $$(call ListPathsSafely, $1_ALL_OBJS, $$($1_OBJ_FILE_LIST)))
+          endif
+        endif
+        # Keep as much as possible on one execution line for best performance
+        # on Windows
+	$$(call LogInfo, Linking $$($1_BASENAME))
+	$$(call MakeDir, $$($1_OUTPUT_DIR) $$($1_SYMBOLS_DIR))
+        ifeq ($(call isTargetOs, windows), true)
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
+	          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) \
+	          $$($1_LIBS) $$($1_EXTRA_LIBS)) \
+	      | $(GREP) -v "^   Creating library .*\.lib and object .*\.exp" || \
+	          test "$$$$?" = "1" ; \
+	  $$($1_CREATE_DEBUGINFO_CMDS)
+	  $$($1_STRIP_CMD)
+	  $$($1_CREATE_DEBUGLINK_CMDS)
+          ifeq ($(call isBuildOsEnv, windows.wsl2), true)
+	    $$(CHMOD) +x $$($1_TARGET)
+          endif
+        else
+	  $$(call ExecuteWithLog, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link, \
+	      $$(if $$($1_LINK_OBJS_RELATIVE), $$(CD) $$(OUTPUTDIR) ; ) \
+	      $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
+	          $(LD_OUT_OPTION)$$($1_TARGET) $$($1_LD_OBJ_ARG) $$($1_RES) \
+	          $$($1_LIBS) $$($1_EXTRA_LIBS)) ; \
+	  $$($1_CREATE_DEBUGINFO_CMDS)
+	  $$($1_STRIP_CMD)
+	  $$($1_CREATE_DEBUGLINK_CMDS)
+        endif
+        ifeq ($(call isTargetOs, windows), true)
+          ifneq ($$($1_MANIFEST), )
+	    $$($1_MT) -nologo -manifest $$($1_MANIFEST) -identity:"$$($1_NAME).exe, version=$$($1_MANIFEST_VERSION)" -outputresource:$$@;#1
+          endif
+        endif
+        # On macosx, optionally run codesign on every binary.
+        # Remove signature explicitly first to avoid warnings if the linker
+        # added a default adhoc signature.
+        ifeq ($(MACOSX_CODESIGN_MODE), hardened)
+	  $(CODESIGN) --remove-signature $$@
+	  $(CODESIGN) -f -s "$(MACOSX_CODESIGN_IDENTITY)" --timestamp --options runtime \
+	      --entitlements $$(call GetEntitlementsFile, $$@) $$@
+        else ifeq ($(MACOSX_CODESIGN_MODE), debug)
+	  $(CODESIGN) --remove-signature $$@
+	  $(CODESIGN) -f -s - --entitlements $$(call GetEntitlementsFile, $$@) $$@
+        endif
+endef
