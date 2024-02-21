@@ -265,6 +265,7 @@ int ArchiveHeapWriter::compare_objs_by_oop_fields(int* a, int* b) {
     return rank_a - rank_b;
   } else {
     // If they are the same rank, sort them by their position in the _source_objs array
+    //return 0;
     return *a - *b;
   }
 }

@@ -104,9 +104,12 @@ void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, 
   assert(start_bit < end_bit, "End bit must come after start bit");
   assert(end_bit <= size(), "End bit not in bitmap");
   idx_t start_word = to_words_align_down(start_bit);
-  idx_t end_word = to_words_align_down(end_bit) + 1;
+  idx_t end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
   const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+  //const idx_t possible_size = calc_size_in_words(end_bit - start_bit) * BitsPerWord;
+  //assert(new_size_in_bits == possible_size, "Should be same: %ld vs %ld", new_size_in_bits, possible_size);
+  //const idx_t new_size_in_bits = calc_size_in_words(end_bit - start_bit) * BitsPerWord;
 
   // Shift over elements to avoid allocating a new array
   for (idx_t word = start_word; word < end_word; word++) {
