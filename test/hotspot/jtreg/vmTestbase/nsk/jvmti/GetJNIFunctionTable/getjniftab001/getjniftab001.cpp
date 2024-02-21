@@ -30,7 +30,7 @@
 #include "agent_common.h"
 
 #include "JVMTITools.h"
-#include "native_thread.h"
+#include "native_thread.hpp"
 
 extern "C" {
 

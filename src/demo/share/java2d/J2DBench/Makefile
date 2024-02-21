@@ -29,6 +29,23 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
 
+
+ifndef SOURCE
+export SOURCE := 7
+endif
+ifndef TARGET
+export TARGET := 7
+endif
+ifndef JAVAC
+export JAVAC := javac
+endif
+ifndef JAVA
+export JAVA := java
+endif
+ifndef JAR
+export JAR := jar
+endif
+
 SOURCEPATH=src
 CLASSES=build
 DIST=dist
@@ -80,18 +97,18 @@ SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
 all: mkdirs J2DBench.jar J2DAnalyzer.jar
 
 run: mkdirs J2DBench.jar
-	java -jar $(DIST)/J2DBench.jar
+	$(JAVA) -jar $(DIST)/J2DBench.jar
 
 analyze: mkdirs J2DAnalyzer.jar
-	java -jar $(DIST)/J2DAnalyzer.jar
+	$(JAVA) -jar $(DIST)/J2DAnalyzer.jar
 
 J2DBench.jar: \
 	$(J2DBENCH_CLASSES) $(J2DBENCH_RESOURCES) \
 	$(CLASSES)/j2dbench.manifest
-	jar cvmf $(CLASSES)/j2dbench.manifest $(DIST)/J2DBench.jar -C $(CLASSES) j2dbench
+	$(JAR) cvmf $(CLASSES)/j2dbench.manifest $(DIST)/J2DBench.jar -C $(CLASSES) j2dbench
 
 J2DAnalyzer.jar: $(J2DANALYZER_CLASSES) $(CLASSES)/j2danalyzer.manifest
-	jar cvmf $(CLASSES)/j2danalyzer.manifest \
+	$(JAR) cvmf $(CLASSES)/j2danalyzer.manifest \
 		$(DIST)/J2DAnalyzer.jar -C $(CLASSES) j2dbench/report
 
 $(CLASSES)/j2dbench/tests/iio/images: $(RESOURCES)/images
@@ -120,7 +137,7 @@ $(CLASSES):
 mkdirs: $(DIST) $(CLASSES)
 
 $(CLASSES)/j2dbench/%.class: $(SOURCEPATH)/j2dbench/%.java
-	javac -g:none -source 1.7 -target 1.7 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
+	$(JAVAC) -g:none -source $(SOURCE) -target $(TARGET) -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
 
 clean:
 	rm -rf $(CLASSES)

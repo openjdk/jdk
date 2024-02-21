@@ -1,4 +1,4 @@
-BadBinaryLiterals.java:10:24: compiler.err.expected: ';'
+BadBinaryLiterals.java:10:22: compiler.err.illegal.digit.in.binary.literal
 BadBinaryLiterals.java:12:21: compiler.err.int.number.too.large: 111111111111111111111111111111111
 BadBinaryLiterals.java:14:21: compiler.err.int.number.too.large: 11111111111111111111111111111111111111111111111111111111111111111
 BadBinaryLiterals.java:15:27: compiler.err.expected: ';'

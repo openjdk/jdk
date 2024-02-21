@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -749,6 +749,13 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // cache the system and platform class loaders
   SystemDictionary::compute_java_loaders(CHECK_JNI_ERR);
 
+  if (Continuations::enabled()) {
+    // Initialize Continuation class now so that failure to create enterSpecial/doYield
+    // special nmethods due to limited CodeCache size can be treated as a fatal error at
+    // startup with the proper message that CodeCache size is too small.
+    initialize_class(vmSymbols::jdk_internal_vm_Continuation(), CHECK_JNI_ERR);
+  }
+
 #if INCLUDE_CDS
   // capture the module path info from the ModuleEntryTable
   ClassLoader::initialize_module_path(THREAD);
@@ -1111,7 +1118,7 @@ void Threads::change_thread_claim_token() {
 }
 
 #ifdef ASSERT
-void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
+static void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
   const uintx token = t->threads_do_token();
   assert(token == expected,
          "%s " PTR_FORMAT " has incorrect value " UINTX_FORMAT " != "
