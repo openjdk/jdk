@@ -214,7 +214,7 @@ bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   return false;
 }
 
-bool G1CMMarkStack::ChunkAllocator::expand() {
+bool G1CMMarkStack::ChunkAllocator::try_expand() {
   size_t new_capacity = _capacity * 2;
   return try_expand_to(new_capacity);
 }
@@ -270,7 +270,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
 }
 
 void G1CMMarkStack::expand() {
-  _chunk_allocator.expand();
+  _chunk_allocator.try_expand();
 }
 
 void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {

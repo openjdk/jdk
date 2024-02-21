@@ -226,7 +226,7 @@ private:
     size_t capacity() const { return _capacity; }
 
     // Expand the mark stack doubling its size.
-    bool expand();
+    bool try_expand();
     bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
