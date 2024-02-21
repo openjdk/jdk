@@ -113,7 +113,7 @@ else
 endif
 
 ################################################################################
-define SetupSourceFiles
+define LocateSourceFiles
   $$(foreach d, $$($1_SRC), $$(if $$(wildcard $$d), , \
       $$(error SRC specified to SetupNativeCompilation $1 contains missing directory $$d)))
 
@@ -143,7 +143,10 @@ define SetupSourceFiles
     $1_INCLUDE_FILES_PAT := $$(foreach i, $$($1_SRC), $$(addprefix $$i/, $$($1_INCLUDE_FILES)))
     $1_SRCS := $$(filter $$($1_INCLUDE_FILES_PAT), $$($1_SRCS))
   endif
+  # There can be only a single bin dir root, no need to foreach over the roots.
+  $1_BINS := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
   # Now we have a list of all c/c++ files to compile: $$($1_SRCS)
+  # and we have a list of all existing object files: $$($1_BINS)
 
   # Prepend the source/bin path to the filter expressions. Then do the filtering.
   ifneq ($$($1_INCLUDES), )
@@ -181,6 +184,12 @@ define SetupOutputFiles
   # Calculate the expected output from compiling the sources
   $1_EXPECTED_OBJS_FILENAMES := $$(call replace_with_obj_extension, $$(notdir $$($1_SRCS)))
   $1_EXPECTED_OBJS := $$(addprefix $$($1_OBJECT_DIR)/, $$($1_EXPECTED_OBJS_FILENAMES))
+  # Are there too many object files on disk? Perhaps because some source file was removed?
+  $1_SUPERFLOUS_OBJS := $$(sort $$(filter-out $$($1_EXPECTED_OBJS), $$($1_BINS)))
+  # Clean out the superfluous object files.
+  ifneq ($$($1_SUPERFLUOUS_OBJS), )
+    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
+  endif
   # Sort to remove duplicates and provide a reproducible order on the input files to the linker.
   $1_ALL_OBJS := $$(sort $$($1_EXPECTED_OBJS) $$($1_EXTRA_OBJECT_FILES))
   ifeq ($(STATIC_LIBS), true)
@@ -188,17 +197,6 @@ define SetupOutputFiles
     ifneq ($$($1_STATIC_LIB_EXCLUDE_OBJS), )
       $1_ALL_OBJS := $$(call not-containing, $$($1_STATIC_LIB_EXCLUDE_OBJS), $$($1_ALL_OBJS))
     endif
-  endif
-endef
-
-################################################################################
-define RemoveSuperfluousOutputFiles
-  # Are there too many object files on disk? Perhaps because some source file was removed?
-  $1_BINS := $$(wildcard $$($1_OBJECT_DIR)/*$(OBJ_SUFFIX))
-  $1_SUPERFLOUS_OBJS := $$(sort $$(filter-out $$($1_EXPECTED_OBJS), $$($1_BINS)))
-  # Clean out the superfluous object files.
-  ifneq ($$($1_SUPERFLUOUS_OBJS), )
-    $$(shell $(RM) -f $$($1_SUPERFLUOUS_OBJS))
   endif
 endef
 

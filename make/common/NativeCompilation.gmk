@@ -25,8 +25,8 @@
 
 ################################################################################
 # This is the top-level entry point for our native compilation and linking.
-# It contains the SetupNativeCompilation macro, but is supported by helper
-# macros in the make/common/native directory.
+# It contains the SetupNativeCompilation function, but is supported by helper
+# functions in the make/common/native directory.
 ################################################################################
 
 ifndef _NATIVE_COMPILATION_GMK
@@ -129,25 +129,23 @@ include native/ToolchainDefinitions.gmk
 #
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
-  # When reading this code, note that macros named Setup<Foo> are just setting
-  # variables, and macros called Create<Foo> are setting up rules to create
-  # files. Macros starting with any other verb are more complicated, and can do
-  # all of the above, and also call directly to the shell.
-
-  ###
-  ### Prepare for compilation and linking
-  ###
-
+  # Setup variables for the rest of the function to work with
+  $$(eval $$(call SetupBasicVariables1,$1))
+  $$(eval $$(call SetupDebugSymbols,$1))
+  $$(eval $$(call SetupBasicVariables2,$1))
   $$(eval $$(call VerifyArguments,$1))
+  $$(eval $$(call SetupBasicVariables3,$1))
 
-  # Setup variables for the rest of this macro to work with
-  $$(eval $$(call SetupBasicVariables,$1))
+  # Need to make sure TARGET is first on list
+  $1 := $$($1_TARGET)
 
   # Setup the toolchain to be used
   $$(eval $$(call SetupToolchain,$1))
 
-  # Find all source files to compile and determine the output object file names
-  $$(eval $$(call SetupSourceFiles,$1))
+  # Figure out all source files to compile
+  $$(eval $$(call LocateSourceFiles,$1))
+
+  # ... and what the output object files will be
   $$(eval $$(call SetupOutputFiles,$1))
 
   # Setup CFLAGS/CXXFLAGS based on warnings, optimizations, extra flags etc.
@@ -156,28 +154,19 @@ define SetupNativeCompilationBody
   # Machinery needed for the build to function properly
   $$(eval $$(call SetupBuildSystemSupport,$1))
 
-  $$(eval $$(call RemoveSuperfluousOutputFiles,$1))
-
-  # Need to make sure TARGET is first on list before starting to create files
-  $1 := $$($1_TARGET)
-
-  # Have make print information about the library when we start compiling
-  $$(eval $$(call PrintStartInfo,$1))
-
-  ###
-  ### Compile all native source code files
-  ###
-
   # Create a PCH, if requested
   $$(eval $$(call CreatePrecompiledHeader,$1))
 
-  # Now call CreateCompiledNativeFile for each source file we are going to compile.
+  # Now call SetupCompileNativeFile for each source file we are going to compile.
   $$(foreach file, $$($1_SRCS), \
-      $$(eval $$(call CreateCompiledNativeFile,$1_$$(notdir $$(file)),\
+      $$(eval $$(call SetupCompileNativeFile,$1_$$(notdir $$(file)),\
           FILE := $$(file), \
           BASE := $1, \
       )) \
   )
+
+  # Have make print information about the library when we start compiling
+  $$(eval $$(call PrintInfo,$1))
 
   ifeq ($(call isTargetOs, windows), true)
     # On windows we need to create a resource file
@@ -189,16 +178,15 @@ define SetupNativeCompilationBody
   $$(eval $$(call CreateDependencyFile,$1))
   $$(eval $$(call ImportDependencyFile,$1))
 
-  ###
-  ### Link the object files into a native output library/executable
-  ###
+  # Prepare for linking
+  $$(eval $$(call SetupLinkerFlags,$1))
+
+  $$(eval $$(call SetupMapfile,$1))
 
   # Handle native debug symbols
   $$(eval $$(call CreateDebugSymbols,$1))
 
-  # Prepare for linking
-  $$(eval $$(call SetupLinkerFlags,$1))
-  $$(eval $$(call SetupLinking,$1))
+  $$(eval $$(call SetupStrip,$1))
 
   $$(eval $$(call SetupObjectFileList,$1))
 
@@ -212,30 +200,8 @@ define SetupNativeCompilationBody
 endef
 
 ################################################################################
-# Verify that user passed arguments are valid
-define VerifyArguments
-  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
-    $$(error NAME must not contain any directory path in $1)
-  endif
-  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
-  endif
-  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
-    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
-  endif
-  ifeq ($$($1_OUTPUT_DIR), )
-    $$(error OUTPUT_DIR is missing in $1)
-  endif
-  ifneq ($$($1_MANIFEST), )
-    ifeq ($$($1_MANIFEST_VERSION), )
-      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
-    endif
-  endif
-endef
-
-################################################################################
-# Setup basic variables
-define SetupBasicVariables
+# Setup basic variables, part 1
+define SetupBasicVariables1
   # If type is unspecified, default to LIBRARY
   ifeq ($$($1_TYPE), )
     $1_TYPE := LIBRARY
@@ -248,7 +214,11 @@ define SetupBasicVariables
       $1_TYPE := STATIC_LIBRARY
     endif
   endif
+endef
 
+################################################################################
+# Setup basic variables, part 2
+define SetupBasicVariables2
   # STATIC_LIBS is set from Main.gmk when building static versions of certain
   # native libraries.
   ifeq ($(STATIC_LIBS), true)
@@ -277,7 +247,33 @@ define SetupBasicVariables
       endif
     endif
   endif
+endef
 
+################################################################################
+# Verify that user passed arguments are valid
+define VerifyArguments
+  ifneq ($$($1_NAME), $(basename $$($1_NAME)))
+    $$(error NAME must not contain any directory path in $1)
+  endif
+  ifneq ($(findstring $$($1_SUFFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without suffix: $$($1_SUFFIX) in $1)
+  endif
+  ifneq ($(findstring $$($1_PREFIX), $$($1_NAME)), )
+    $$(error NAME should be specified without prefix: $$($1_PREFIX) in $1)
+  endif
+  ifeq ($$($1_OUTPUT_DIR), )
+    $$(error OUTPUT_DIR is missing in $1)
+  endif
+  ifneq ($$($1_MANIFEST), )
+    ifeq ($$($1_MANIFEST_VERSION), )
+      $$(error If MANIFEST is provided, then MANIFEST_VERSION is required in $1)
+    endif
+  endif
+endef
+
+################################################################################
+# Setup basic variables, part 3
+define SetupBasicVariables3
   $1_BASENAME := $$($1_PREFIX)$$($1_NAME)$$($1_SUFFIX)
   $1_TARGET := $$($1_OUTPUT_DIR)/$$($1_BASENAME)
   $1_NOSUFFIX := $$($1_PREFIX)$$($1_NAME)
@@ -287,6 +283,8 @@ endef
 ################################################################################
 # Setup machinery needed by the build system
 define SetupBuildSystemSupport
+  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
+
   # Track variable changes for all variables that affect the compilation command
   # lines for all object files in this setup. This includes at least all the
   # variables used in the call to add_native_source below.
@@ -299,15 +297,13 @@ endef
 
 ################################################################################
 # Have make print information about the library when we start compiling
-define PrintStartInfo
+define PrintInfo
   # Setup rule for printing progress info when compiling source files.
   # This is a rough heuristic and may not always print accurate information.
   # The $1_BUILD_INFO and $1_BUILD_INFO_DEPS variables are used in
   # TestFilesCompilation.gmk.
   $$(call SetIfEmpty, $1_BUILD_INFO_LOG_MACRO, LogWarn)
   $1_BUILD_INFO_DEPS := $$($1_SRCS) $$($1_COMPILE_VARDEPS_FILE)
-  $1_BUILD_INFO := $$($1_OBJECT_DIR)/_build-info.marker
-
   $$($1_BUILD_INFO): $$($1_BUILD_INFO_DEPS)
         ifeq ($$(wildcard $$($1_TARGET)), )
 	  $$(call $$($1_BUILD_INFO_LOG_MACRO), \
