@@ -32,7 +32,16 @@
 # GetEntitlementsFile
 # Find entitlements file for executable when signing on macosx. If no
 # specialized file is found, returns the default file.
+# This macro might be called from custom makefiles.
 # $1 Executable to find entitlements file for.
+ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
+ifeq ($(MACOSX_CODESIGN_MODE), debug)
+  CODESIGN_PLIST_SUFFIX := -debug
+else
+  CODESIGN_PLIST_SUFFIX :=
+endif
+DEFAULT_ENTITLEMENTS_FILE := $(ENTITLEMENTS_DIR)/default$(CODESIGN_PLIST_SUFFIX).plist
+
 GetEntitlementsFile = \
     $(foreach f, $(ENTITLEMENTS_DIR)/$(strip $(notdir $1))$(CODESIGN_PLIST_SUFFIX).plist, \
       $(if $(wildcard $f), $f, $(DEFAULT_ENTITLEMENTS_FILE)) \
@@ -59,14 +68,6 @@ define SetupLinking
       $1_STRIP_CMD := $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET)
     endif
   endif
-
-  ENTITLEMENTS_DIR := $(TOPDIR)/make/data/macosxsigning
-  ifeq ($(MACOSX_CODESIGN_MODE), debug)
-    CODESIGN_PLIST_SUFFIX := -debug
-  else
-    CODESIGN_PLIST_SUFFIX :=
-  endif
-  DEFAULT_ENTITLEMENTS_FILE := $$(ENTITLEMENTS_DIR)/default$$(CODESIGN_PLIST_SUFFIX).plist
 endef
 
 ################################################################################
