@@ -166,6 +166,7 @@ class MemDetailReporter : public MemSummaryReporter {
     MemSummaryReporter::report();
     report_virtual_memory_map();
     VirtualMemoryView::report(_baseline.vmemview(), output());
+    VirtualMemoryView::compute_summary_snapshot(_baseline.vmemview());
     report_detail();
   }
 
