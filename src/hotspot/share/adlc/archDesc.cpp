@@ -730,6 +730,8 @@ bool ArchDesc::check_usage() {
   }
 
   // these forms are coded in OperandForm::is_user_name_for_sReg
+  // it may happen no instruction use these operands, like stackSlotP in aarch64,
+  // but we can not desclare they are useless.
   callback.do_form_by_name("stackSlotI");
   callback.do_form_by_name("stackSlotP");
   callback.do_form_by_name("stackSlotD");
