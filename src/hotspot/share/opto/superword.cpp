@@ -966,7 +966,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
     return false; // No vectors for this type
   }
 
-  if (isomorphic(s1, s2)) {
+  if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
@@ -1043,6 +1043,17 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
     const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
     return s1_ctrl_inv && s2_ctrl_inv;
   }
+}
+
+// Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
+bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
+  return n1->is_Add() &&
+         n2->is_Add() &&
+         n1->in(1) == iv() &&
+         n2->in(1) == iv() &&
+         n1->in(2)->is_Con() &&
+         n2->in(2)->is_Con() &&
+         n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
 }
 
 //------------------------------independent---------------------------

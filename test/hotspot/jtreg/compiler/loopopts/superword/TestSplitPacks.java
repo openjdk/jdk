@@ -749,23 +749,19 @@ public class TestSplitPacks {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.MUL_VI,          IRNode.VECTOR_SIZE_4, "> 0",
-                  IRNode.POPULATE_INDEX,                        "> 0",
-                  IRNode.ADD_VI,          IRNode.VECTOR_SIZE_4, "> 0", // reduction moved out of loop
-                  IRNode.ADD_REDUCTION_V,                       "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I,  "> 0",
+                  IRNode.MUL_VI,         "> 0",
+                  IRNode.POPULATE_INDEX, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
-    // Index Populate
+        applyIfCPUFeatureOr = {"avx2", "true", "sve", "true"})
+    // Index Populate:
+    // There can be an issue when all the (iv + 1), (iv + 2), ...
+    // get packed, but not (iv). Then we have a pack that is one element
+    // too short, and we start splitting everything in a bad way.
     static Object[] test7a(int[] a, int[] b) {
-        int s = 0;
-        for (int i = 0; i < RANGE; i+=8) {
-            s += a[i+0] * b[i+0] * (i+0);
-            s += a[i+1] * b[i+1] * (i+1);
-            s += a[i+2] * b[i+2] * (i+2);
-            s += a[i+3] * b[i+3] * (i+3);
+        for (int i = 0; i < RANGE; i++) {
+            a[i] = b[i] * i;
         }
-        return new Object[]{ a, b, new int[]{ s } };
+        return new Object[]{ a, b };
     }
 }

@@ -459,6 +459,8 @@ private:
   bool are_adjacent_refs(Node* s1, Node* s2);
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
+  // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
+  bool is_populate_index(const Node* n1, const Node* n2) const;
   // Is there no data path from s1 to s2 or s2 to s1?
   bool independent(Node* s1, Node* s2);
   // Are all nodes in nodes list mutually independent?
