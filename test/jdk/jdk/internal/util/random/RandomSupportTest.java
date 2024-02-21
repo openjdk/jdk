@@ -1,7 +1,7 @@
 /*
  * @test
  * @bug 8326227
- * @modules java.base/jdk.internal.util
+ * @modules java.base/jdk.internal.util.random
  * @summary Verify that RandomSupport methods behave as specified
  * @run junit RandomSupportTest
  */
