@@ -1122,14 +1122,6 @@ compare_all_other_files() {
                     "
                 $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "jar_contents" ]; then
-                # The jar_contents files may have some lines in random order
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                $RM $OTHER_FILE $THIS_FILE
-                $CAT $OTHER_DIR/$f | $SORT > $OTHER_FILE
-                $CAT $THIS_DIR/$f  | $SORT > $THIS_FILE
             else
                 OTHER_FILE=$OTHER_DIR/$f
                 THIS_FILE=$THIS_DIR/$f
