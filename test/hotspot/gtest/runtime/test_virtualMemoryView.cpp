@@ -51,7 +51,7 @@ public:
     ASSERT_TRUE(reserved_ranges.length() == 2);
     range_has(0, 0, 200);
     range_has(1, 0, 200);
-    ASSERT_TRUE(reserved_ranges.at(0).flag == mtTest && reserved_ranges.at(1).flag == mtArguments
-                || reserved_ranges.at(0).flag == mtArguments && reserved_ranges.at(1).flag == mtTest);
+    ASSERT_TRUE((reserved_ranges.at(0).flag == mtTest && reserved_ranges.at(1).flag == mtArguments)
+                || (reserved_ranges.at(0).flag == mtArguments && reserved_ranges.at(1).flag == mtTest));
   }
 };
