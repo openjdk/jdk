@@ -41,14 +41,18 @@ public class TestMulAddS2I {
 
     static short[] sArr1 = new short[RANGE];
     static short[] sArr2 = new short[RANGE];
-    static final int[] GOLDEN;
+    static final int[] GOLDEN_A;
+    static final int[] GOLDEN_B;
+    static final int[] GOLDEN_C;
 
     static {
         for (int i = 0; i < RANGE; i++) {
             sArr1[i] = (short)(AbstractInfo.getRandom().nextInt());
             sArr2[i] = (short)(AbstractInfo.getRandom().nextInt());
         }
-        GOLDEN = test();
+        GOLDEN_A = testa();
+        GOLDEN_B = testb();
+        GOLDEN_C = testc();
     }
 
 
@@ -61,15 +65,17 @@ public class TestMulAddS2I {
         }
     }
 
-    @Run(test = "test")
+    @Run(test = {"testa", "testb", "testc"})
     @Warmup(0)
     public static void run() {
-        compare(test());
+        compare(testa(), GOLDEN_A, "testa");
+        compare(testb(), GOLDEN_B, "testb");
+        compare(testb(), GOLDEN_C, "testc");
     }
 
-    public static void compare(int[] out) {
+    public static void compare(int[] out, int[] golden, String name) {
         for (int i = 0; i < ITER; i++) {
-            Asserts.assertEQ(out[i], GOLDEN[i], "wrong result for out[" + i + "]");
+            Asserts.assertEQ(out[i], golden[i], "wrong result for '" + name + "' out[" + i + "]");
         }
     }
 
@@ -82,12 +88,48 @@ public class TestMulAddS2I {
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
     @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
         counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
-    public static int[] test() {
+    public static int[] testa() {
         int[] out = new int[ITER];
         int[] out2 = new int[ITER];
         for (int i = 0; i < ITER; i++) {
             out[i] += ((sArr1[2*i] * sArr1[2*i]) + (sArr1[2*i+1] * sArr1[2*i+1]));
             out2[i] += out[i];
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testb() {
+        int[] out = new int[ITER];
+        int[] out2 = new int[ITER];
+        for (int i = 0; i < ITER; i++) {
+            out[i] += ((sArr1[2*i] * sArr2[2*i]) + (sArr1[2*i+1] * sArr2[2*i+1]));
+            out2[i] += out[i];
+        }
+        return out;
+    }
+
+    @Test
+    @IR(applyIfCPUFeature = {"sse2", "true"},
+        applyIfPlatform = {"64-bit", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"asimd", "true"},
+        applyIf = {"MaxVectorSize", "16"}, // AD file requires vector_length = 16
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI, "> 0"})
+    @IR(applyIfCPUFeature = {"avx512_vnni", "true"},
+        counts = {IRNode.MUL_ADD_S2I, "> 0", IRNode.MUL_ADD_VS2VI_VNNI, "> 0"})
+    public static int[] testc() {
+        int[] out = new int[ITER];
+        for (int i = 0; i < ITER; i++) {
+            out[i] += ((sArr1[2*i] * sArr2[2*i]) + (sArr1[2*i+1] * sArr2[2*i+1]));
         }
         return out;
     }

@@ -3091,9 +3091,9 @@ bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) co
         Node_List* pack_use_super = my_pack(use_super);
         if (pack_use_sub != pack_use_super) { continue; }
 
-        // ... and where there is an edge use_super->in(i) == n_super
-        Node* def_sub = use_super->in(i);
-        if (def_sub != n_super) { continue; }
+        // ... and where there is an edge use_super->in(i) == n_super.
+        // For MulAddS2I it is expected to have defs over different input edges.
+        if (use_super->in(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
 
         found = true;
         break;
