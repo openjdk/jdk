@@ -121,7 +121,10 @@ public class $i {
                        "-cp", jars,
                        "-Xlog:class+load,cds")
             .setArchiveName(archiveName);
-        CDSTestUtils.createArchiveAndCheck(opts);
+        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
+        if (testClassName.equals("MethodHandlesInvokersTest")) {
+            output.shouldNotContain("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+        }
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
@@ -129,7 +132,7 @@ public class $i {
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
-        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
+        output = CDSTestUtils.runWithArchive(runOpts);
         output.shouldMatch(".class.load. test.java.lang.invoke.$i[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }

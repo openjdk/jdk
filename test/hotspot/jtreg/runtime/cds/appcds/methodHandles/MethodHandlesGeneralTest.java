@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,10 @@ public class MethodHandlesGeneralTest {
                        "-cp", jars,
                        "-Xlog:class+load,cds")
             .setArchiveName(archiveName);
-        CDSTestUtils.createArchiveAndCheck(opts);
+        OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
+        if (testClassName.equals("MethodHandlesInvokersTest")) {
+            output.shouldNotContain("Failed to generate LambdaForm holder classes. Is your classlist out of date?");
+        }
 
         // run with archive
         CDSOptions runOpts = (new CDSOptions())
@@ -97,7 +100,7 @@ public class MethodHandlesGeneralTest {
             .setArchiveName(archiveName)
             .setUseVersion(false)
             .addSuffix(mainClass, testPackageName + "." + testClassName);
-        OutputAnalyzer output = CDSTestUtils.runWithArchive(runOpts);
+        output = CDSTestUtils.runWithArchive(runOpts);
         output.shouldMatch(".class.load. test.java.lang.invoke.MethodHandlesGeneralTest[$][$]Lambda.*/0x.*source:.*shared.*objects.*file")
               .shouldHaveExitValue(0);
     }

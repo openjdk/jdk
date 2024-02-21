@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
@@ -136,9 +137,10 @@ class GenerateJLIClassesHelper {
             for (String invokerType : invokerTypes) {
                 MethodType mt = asMethodType(invokerType);
                 final int lastParam = mt.parameterCount() - 1;
-                if (mt.parameterCount() < 2 ||
+                if ((mt.parameterCount() < 2 ||
                         mt.parameterType(0) != Object.class ||
-                        mt.parameterType(lastParam) != Object.class) {
+                        mt.parameterType(lastParam) != Object.class) &&
+                    !CDS.isDumpingArchive()) {
                     throw new RuntimeException(
                             "Invoker type parameter must start and end with Object: " + invokerType);
                 }
