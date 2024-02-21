@@ -63,7 +63,7 @@ public class TestRoundVectRiscv64 {
   public void kernel_test_round_double() {
       dinp = new double[ARRLEN];
       lout = new long[ARRLEN];
-      for(int i = 0 ; i < ARRLEN; i++) {
+      for (int i = 0 ; i < ARRLEN; i++) {
           dinp[i] = (double)i*1.4;
       }
       for (int i = 0; i < ITERS; i++) {
@@ -83,7 +83,7 @@ public class TestRoundVectRiscv64 {
   public void kernel_test_round() {
       finp = new float[ARRLEN];
       iout = new int[ARRLEN];
-      for(int i = 0 ; i < ARRLEN; i++) {
+      for (int i = 0 ; i < ARRLEN; i++) {
           finp[i] = (float)i*1.4f;
       }
       for (int i = 0; i < ITERS; i++) {
