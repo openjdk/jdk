@@ -1112,16 +1112,6 @@ compare_all_other_files() {
                 RELEASE_FILTER="$SED -e 's/SOURCE=".*"/SOURCE=<src-rev>/g'"
                 $CAT $OTHER_DIR/$f | eval "$RELEASE_FILTER" > $OTHER_FILE
                 $CAT $THIS_DIR/$f  | eval "$RELEASE_FILTER" > $THIS_FILE
-            elif [ "$SUFFIX" = "svg" ]; then
-                # GraphViz has non-determinism when generating svg files
-                OTHER_FILE=$WORK_DIR/$f.other
-                THIS_FILE=$WORK_DIR/$f.this
-                $MKDIR -p $(dirname $OTHER_FILE) $(dirname $THIS_FILE)
-                SVG_FILTER="$SED \
-                    -e 's/edge[0-9][0-9]*/edgeX/g'
-                    "
-                $CAT $OTHER_DIR/$f | eval "$SVG_FILTER" > $OTHER_FILE
-                $CAT $THIS_DIR/$f | eval "$SVG_FILTER" > $THIS_FILE
             else
                 OTHER_FILE=$OTHER_DIR/$f
                 THIS_FILE=$THIS_DIR/$f
