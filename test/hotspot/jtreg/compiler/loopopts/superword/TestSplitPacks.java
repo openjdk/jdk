@@ -105,6 +105,7 @@ public class TestSplitPacks {
         tests.put("test4g",      () -> { return test4g(aS.clone(), bS.clone()); });
         tests.put("test5a",      () -> { return test5a(aS.clone(), bS.clone(), mS); });
         tests.put("test6a",      () -> { return test6a(aI.clone(), bI.clone()); });
+        tests.put("test7a",      () -> { return test7a(aI.clone(), bI.clone()); });
 
         // Compute gold value for all test methods before compilation
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
@@ -134,7 +135,8 @@ public class TestSplitPacks {
                  "test4f",
                  "test4g",
                  "test5a",
-                 "test6a"})
+                 "test6a",
+                 "test7a"})
     public void runTests() {
         for (Map.Entry<String,TestFunction> entry : tests.entrySet()) {
             String name = entry.getKey();
@@ -742,6 +744,27 @@ public class TestSplitPacks {
             s += a[i+5] & b[i+5];
             s += a[i+6] & b[i+6];
             s += a[i+7] & b[i+7];
+        }
+        return new Object[]{ a, b, new int[]{ s } };
+    }
+
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.MUL_VI,          IRNode.VECTOR_SIZE_4, "> 0",
+                  IRNode.POPULATE_INDEX,                        "> 0",
+                  IRNode.ADD_VI,          IRNode.VECTOR_SIZE_4, "> 0", // reduction moved out of loop
+                  IRNode.ADD_REDUCTION_V,                       "> 0"},
+        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfPlatform = {"64-bit", "true"},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    // Index Populate
+    static Object[] test7a(int[] a, int[] b) {
+        int s = 0;
+        for (int i = 0; i < RANGE; i+=8) {
+            s += a[i+0] * b[i+0] * (i+0);
+            s += a[i+1] * b[i+1] * (i+1);
+            s += a[i+2] * b[i+2] * (i+2);
+            s += a[i+3] * b[i+3] * (i+3);
         }
         return new Object[]{ a, b, new int[]{ s } };
     }
