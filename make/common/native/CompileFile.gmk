@@ -100,8 +100,8 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 #   FILE - The full path of the source file to compiler
 #   BASE - The name of the rule for the entire binary to build ($1)
 #
-CreateCompiledNativeFile = $(NamedParamsMacroTemplate)
-define CreateCompiledNativeFileBody
+SetupCompileNativeFile = $(NamedParamsMacroTemplate)
+define SetupCompileNativeFileBody
   $1_FILENAME := $$(notdir $$($1_FILE))
 
   # The target file to be generated.
@@ -120,7 +120,7 @@ define CreateCompiledNativeFileBody
     # This is the definite source file to use for $1_FILENAME.
     $1_SRC_FILE := $$($1_FILE)
 
-    $$(eval $$(call SetupCompileFileFlags,$1,$$($1_BASE)))
+    $$(eval $$(call SetupCompileFileFlags,$1))
 
     ifneq ($$(filter %.c, $$($1_FILENAME)), )
       # Compile as a C file
@@ -250,7 +250,7 @@ define CreatePrecompiledHeader
         $1_GENERATED_PCH_SRC := $$($1_OBJECT_DIR)/$1_pch.cpp
         $1_GENERATED_PCH_OBJ := $$($1_OBJECT_DIR)/$1_pch$(OBJ_SUFFIX)
 
-        $$(eval $$(call CreateCompiledNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
+        $$(eval $$(call SetupCompileNativeFile, $1_$$(notdir $$($1_GENERATED_PCH_SRC)), \
             FILE := $$($1_GENERATED_PCH_SRC), \
             BASE := $1, \
             EXTRA_CXXFLAGS := -Fp$$($1_PCH_FILE) -Yc$$(notdir $$($1_PRECOMPILED_HEADER)), \
