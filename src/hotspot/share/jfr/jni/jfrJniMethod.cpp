@@ -403,6 +403,15 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
 #endif
 JVM_END
 
+JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
+#ifdef LINUX
+  // We want the host swap memory, not the container value.
+  return os::Linux::host_swap();
+#else
+  return os::total_swap_space();
+#endif
+JVM_END
+
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes))
   EventDataLoss::commit(bytes, min_jlong);
 JVM_END

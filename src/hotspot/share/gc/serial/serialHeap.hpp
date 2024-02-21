@@ -249,10 +249,6 @@ public:
     virtual void do_generation(Generation* gen) = 0;
   };
 
-  // Apply "cl.do_generation" to all generations in the heap
-  // If "old_to_young" determines the order.
-  void generation_iterate(GenClosure* cl, bool old_to_young);
-
   // Return "true" if all generations have reached the
   // maximal committed limit that they can reach, without a garbage
   // collection.
