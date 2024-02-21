@@ -1062,6 +1062,7 @@ compare_all_other_files() {
     echo Other files with binary differences...
     for f in $ALL_OTHER_FILES
     do
+        echo Other file: $f
         # Skip all files in test/*/native
         if [[ "$f" == */native/* ]]; then
             continue
