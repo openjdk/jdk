@@ -4817,7 +4817,7 @@ class StubGenerator: public StubCodeGenerator {
   //    6ed9eba1, 20 <= t <= 39
   //    8f1bbcdc, 40 <= t <= 59
   //    ca62c1d6, 60 <= t <= 79
-  void sha1_prepare_k(int round, Register cur_k) {
+  void sha1_prepare_k(Register cur_k, int round) {
     assert(round >= 0 && round < 80, "must be");
 
     static const int64_t ks[] = {0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6};
@@ -4833,6 +4833,12 @@ class StubGenerator: public StubCodeGenerator {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
+      // in the first 16 rounds, in ws[], every register contains 2 W't, e.g.
+      //   in ws[0], high part contains W't-0, low part contains W't-1,
+      //   in ws[1], high part contains W't-2, low part contains W't-3,
+      //   ...
+      //   in ws[7], high part contains W't-14, low part contains W't-15.
+
       if ((round % 2) == 0) {
         __ ld(ws[round/2], Address(buf, round * 4));
         // reverse bytes, as SHA-1 is defined in big-endian.
@@ -4941,18 +4947,21 @@ class StubGenerator: public StubCodeGenerator {
     assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp);
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
+
+    // cur_w will be recalculated at the beginning of each round,
+    // so, we can reuse it as a temp register here.
+    Register tmp2 = cur_w;
     {
       // reuse e as a temporary register, as we will mv new value into it later
-      Register t = e;
-      // cur_w will be recalculated at the beginning of each round,
-      // so, we can reuse it as a temp register here.
-      __ add(cur_w, cur_k, cur_w);
-      __ add(t, t, cur_w);
-      __ rolw_imm(cur_w, a, 5, t0);
-      // as pointed above, we can use cur_w as temporary register here.
+      Register tmp3 = e;
+      __ add(tmp2, cur_k, tmp2);
+      __ add(tmp3, tmp3, tmp2);
+      __ rolw_imm(tmp2, a, 5, t0);
+
       sha1_f(round, tmp, b, c, d);
-      __ add(cur_w, cur_w, tmp);
-      __ add(cur_w, cur_w, t);
+
+      __ add(tmp2, tmp2, tmp);
+      __ add(tmp2, tmp2, tmp3);
     }
 
     // e = d
@@ -4962,10 +4971,10 @@ class StubGenerator: public StubCodeGenerator {
     // a = T
     __ mv(e, d);
     __ mv(d, c);
-    // as pointed above, we can use cur_w as temporary register here.
+
     __ rolw_imm(c, b, 30);
     __ mv(b, a);
-    __ mv(a, cur_w);
+    __ mv(a, tmp2);
   }
 
   // H(i)0 = a + H(i-1)0
@@ -5057,7 +5066,7 @@ class StubGenerator: public StubCodeGenerator {
     // w0, w1, ... w15
     // put two adjecent w's in one register:
     //    one at high word part, another at low word part
-    // at different round (even or odd), w't value resdie in different items in ws[].
+    // at different round (even or odd), w't value reside in different items in ws[].
     // w0 ~ w15, either reside in
     //    ws[0] ~ ws[7], where
     //      w0 at higher 32 bits of ws[0],
@@ -5107,7 +5116,7 @@ class StubGenerator: public StubCodeGenerator {
 
     for (int round = 0; round < 80; round++) {
       // prepare K't value
-      sha1_prepare_k(round, cur_k);
+      sha1_prepare_k(cur_k, round);
 
       // prepare W't value
       sha1_prepare_w(round, cur_w, ws, buf);
@@ -5123,14 +5132,12 @@ class StubGenerator: public StubCodeGenerator {
       __ bge(limit, buf, L_sha1_loop, true);
     }
 
-    const Register mask32 = t2;
-    __ mv(mask32, 0xffffffff);
     // store back the state.
-    __ andr(a, a, mask32);
+    __ zero_extend(a, a, 32);
     __ slli(b, b, 32);
     __ orr(a, a, b);
     __ sd(a, Address(state, 0));
-    __ andr(c, c, mask32);
+    __ zero_extend(c, c, 32);
     __ slli(d, d, 32);
     __ orr(c, c, d);
     __ sd(c, Address(state, 8));
