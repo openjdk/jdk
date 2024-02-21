@@ -200,8 +200,8 @@ public class Asserts {
     public static void assertEquals(Object lhs, Object rhs, String msg) {
         if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
             msg = Objects.toString(msg, "assertEquals")
-                    + ": expected " + Objects.toString(lhs)
-                    + " to equal " + Objects.toString(rhs);
+                    + ": object \"" + Objects.toString(lhs)
+                    + "\" and object \"" + Objects.toString(rhs) + "\" are not equal";
             fail(msg);
         }
     }
