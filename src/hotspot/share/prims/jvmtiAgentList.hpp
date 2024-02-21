@@ -73,7 +73,7 @@ class JvmtiAgentList : AllStatic {
 
   static void load_agents() NOT_JVMTI_RETURN;
   static void load_agent(const char* agent, bool is_absolute_path,
-                         const char* options, outputStream* st) NOT_JVMTI_RETURN_(0);
+                         const char* options, outputStream* st) NOT_JVMTI_RETURN;
   static void load_xrun_agents() NOT_JVMTI_RETURN;
   static void unload_agents() NOT_JVMTI_RETURN;
 
