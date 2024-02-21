@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -96,13 +96,13 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
 
         String msgPrefix = "return code: ";
-        InputStream in = execute("load",
-                                 agentLibrary,
-                                 isAbsolute ? "true" : "false",
-                                 options);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            String result = reader.readLine();
-            if (result == null) {
+        try {
+            InputStream in = execute("load",
+                                     agentLibrary,
+                                     isAbsolute ? "true" : "false",
+                                     options);
+            String result = readErrorMessage(in);
+            if (result.isEmpty()) {
                 throw new AgentLoadException("Target VM did not respond");
             } else if (result.startsWith(msgPrefix)) {
                 int retCode = Integer.parseInt(result.substring(msgPrefix.length()));
@@ -110,8 +110,16 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                     throw new AgentInitializationException("Agent_OnAttach failed", retCode);
                 }
             } else {
-                throw new AgentLoadException(result);
+                String msg = "Failed to load agent library";
+                if (!result.isEmpty()) {
+                    msg += ": " + result;
+                }
+                throw new AgentLoadException(msg);
             }
+        } catch (AttachOperationFailedException ex) {
+            // execute() throws AttachOperationFailedException if attach agent reported error.
+            // Convert it to AgentLoadException.
+            throw new AgentLoadException("Failed to load agent library: " + ex.getMessage());
         }
     }
 
@@ -399,20 +407,10 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                 throw new IOException("Protocol mismatch with target VM");
             }
 
-            // Special-case the "load" command so that the right exception is
-            // thrown.
-            if (cmd.equals("load")) {
-                String msg = "Failed to load agent library";
-                if (!message.isEmpty()) {
-                    msg += ": " + message;
-                }
-                throw new AgentLoadException(msg);
-            } else {
-                if (message.isEmpty()) {
-                    message = "Command failed in target VM";
-                }
-                throw new AttachOperationFailedException(message);
+            if (message.isEmpty()) {
+                message = "Command failed in target VM";
             }
+            throw new AttachOperationFailedException(message);
         }
     }
 
