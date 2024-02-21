@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -428,7 +428,8 @@ protected:
   //
   // The info block is laid out in subblocks of 4 dwords corresponding to
   // eax, ebx, ecx and edx, whether or not they contain anything useful.
-  struct CpuidInfo {
+  class CpuidInfo {
+  public:
     // cpuid function 0
     uint32_t std_max_function;
     uint32_t std_vendor_name_0;
@@ -522,6 +523,31 @@ protected:
 
     // Space to save zmm registers after signal handle
     int          zmm_save[16*4]; // Save zmm0, zmm7, zmm8, zmm31
+
+    uint64_t feature_flags() const;
+
+    // Asserts
+    void assert_is_initialized() const {
+      assert(std_cpuid1_eax.bits.family != 0, "VM_Version not initialized");
+    }
+
+    // Extractors
+    uint32_t extended_cpu_family() const {
+      uint32_t result = std_cpuid1_eax.bits.family;
+      result += std_cpuid1_eax.bits.ext_family;
+      return result;
+    }
+
+    uint32_t extended_cpu_model() const {
+      uint32_t result = std_cpuid1_eax.bits.model;
+      result |= std_cpuid1_eax.bits.ext_model << 4;
+      return result;
+    }
+
+    uint32_t cpu_stepping() const {
+      uint32_t result = std_cpuid1_eax.bits.stepping;
+      return result;
+    }
   };
 
 private:
@@ -529,23 +555,6 @@ private:
   static CpuidInfo _cpuid_info;
 
   // Extractors and predicates
-  static uint32_t extended_cpu_family() {
-    uint32_t result = _cpuid_info.std_cpuid1_eax.bits.family;
-    result += _cpuid_info.std_cpuid1_eax.bits.ext_family;
-    return result;
-  }
-
-  static uint32_t extended_cpu_model() {
-    uint32_t result = _cpuid_info.std_cpuid1_eax.bits.model;
-    result |= _cpuid_info.std_cpuid1_eax.bits.ext_model << 4;
-    return result;
-  }
-
-  static uint32_t cpu_stepping() {
-    uint32_t result = _cpuid_info.std_cpuid1_eax.bits.stepping;
-    return result;
-  }
-
   static uint logical_processor_count() {
     uint result = threads_per_core();
     return result;
@@ -553,7 +562,6 @@ private:
 
   static bool compute_has_intel_jcc_erratum();
 
-  static uint64_t feature_flags();
   static bool os_supports_avx_vectors();
   static void get_processor_features();
 
@@ -594,11 +602,6 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // Asserts
-  static void assert_is_initialized() {
-    assert(_cpuid_info.std_cpuid1_eax.bits.family != 0, "VM_Version not initialized");
-  }
-
   //
   // Processor family:
   //       3   -  386
@@ -614,6 +617,10 @@ public:
   //       processors.  Use the feature test functions below to
   //       determine whether a particular instruction is supported.
   //
+  static void     assert_is_initialized() { _cpuid_info.assert_is_initialized(); }
+  static uint32_t extended_cpu_family()   { return _cpuid_info.extended_cpu_family(); }
+  static uint32_t extended_cpu_model()    { return _cpuid_info.extended_cpu_model(); }
+  static uint32_t cpu_stepping()          { return _cpuid_info.cpu_stepping(); }
   static int  cpu_family()        { return _cpu;}
   static bool is_P6()             { return cpu_family() >= 6; }
   static bool is_amd()            { assert_is_initialized(); return _cpuid_info.std_vendor_name_0 == 0x68747541; } // 'htuA'
@@ -640,7 +647,7 @@ public:
   }
 
   //
-  // Feature identification
+  // Feature identification which can be affected by VM settings
   //
   static bool supports_cpuid()        { return _features  != 0; }
   static bool supports_cmov()         { return (_features & CPU_CMOV) != 0; }
@@ -703,6 +710,11 @@ public:
   static bool supports_cet_ss()       { return (_features & CPU_CET_SS) != 0; }
   static bool supports_cet_ibt()      { return (_features & CPU_CET_IBT) != 0; }
 
+  //
+  // Feature identification not affected by VM flags
+  //
+  static bool cpu_supports_evex()     { return (_cpu_features & CPU_AVX512F) != 0; }
+
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }
@@ -762,6 +774,10 @@ public:
   }
 
   constexpr static bool supports_stack_watermark_barrier() {
+    return true;
+  }
+
+  constexpr static bool supports_recursive_lightweight_locking() {
     return true;
   }
 

@@ -48,15 +48,131 @@ public:
 };
 #endif
 
+// Basic loop structure accessors and vectorization preconditions checking
+class VLoop : public StackObj {
+private:
+  PhaseIdealLoop* const _phase;
+  IdealLoopTree* const _lpt;
+  const bool _allow_cfg;
+  CountedLoopNode* _cl;
+  Node* _cl_exit;
+  PhiNode* _iv;
+  CountedLoopEndNode* _pre_loop_end; // cache access to pre-loop for main loops only
+
+  NOT_PRODUCT(VTrace _vtrace;)
+
+  static constexpr char const* SUCCESS                    = "success";
+  static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
+  static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
+  static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
+  static constexpr char const* FAILURE_VALID_COUNTED_LOOP = "must be valid counted loop (int)";
+  static constexpr char const* FAILURE_CONTROL_FLOW       = "control flow in loop not allowed";
+  static constexpr char const* FAILURE_BACKEDGE           = "nodes on backedge not allowed";
+  static constexpr char const* FAILURE_PRE_LOOP_LIMIT     = "main-loop must be able to adjust pre-loop-limit (not found)";
+
+public:
+  VLoop(IdealLoopTree* lpt, bool allow_cfg) :
+    _phase     (lpt->_phase),
+    _lpt       (lpt),
+    _allow_cfg (allow_cfg),
+    _cl        (nullptr),
+    _cl_exit   (nullptr),
+    _iv        (nullptr) {}
+  NONCOPYABLE(VLoop);
+
+  IdealLoopTree* lpt()        const { return _lpt; };
+  PhaseIdealLoop* phase()     const { return _phase; }
+  CountedLoopNode* cl()       const { return _cl; };
+  Node* cl_exit()             const { return _cl_exit; };
+  PhiNode* iv()               const { return _iv; };
+  int iv_stride()             const { return cl()->stride_con(); };
+  bool is_allow_cfg()         const { return _allow_cfg; }
+
+  CountedLoopEndNode* pre_loop_end() const {
+    assert(cl()->is_main_loop(), "only main loop can reference pre-loop");
+    assert(_pre_loop_end != nullptr, "must have found it");
+    return _pre_loop_end;
+  };
+
+  CountedLoopNode* pre_loop_head() const {
+    CountedLoopNode* head = pre_loop_end()->loopnode();
+    assert(head != nullptr, "must find head");
+    return head;
+  };
+
+  // Estimate maximum size for data structures, to avoid repeated reallocation
+  int estimated_body_length() const { return lpt()->_body.size(); };
+  int estimated_node_count()  const { return (int)(1.10 * phase()->C->unique()); };
+
+#ifndef PRODUCT
+  const VTrace& vtrace()      const { return _vtrace; }
+
+  bool is_trace_preconditions() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
+  }
+
+  bool is_trace_pointer_analysis() const {
+    return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
+  }
+#endif
+
+  // Is the node in the basic block of the loop?
+  // We only accept any nodes which have the loop head as their ctrl.
+  bool in_bb(const Node* n) const {
+    const Node* ctrl = _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n;
+    return n != nullptr && n->outcnt() > 0 && ctrl == _cl;
+  }
+
+  // Check if the loop passes some basic preconditions for vectorization.
+  // Return indicates if analysis succeeded.
+  bool check_preconditions();
+
+private:
+  const char* check_preconditions_helper();
+};
+
+// Optimization to keep allocation of large arrays in AutoVectorization low.
+// We allocate the arrays once, and reuse them for multiple loops that we
+// AutoVectorize, clearing them before every new use.
+class VSharedData : public StackObj {
+private:
+  // Arena, used to allocate all arrays from.
+  Arena _arena;
+
+  // An array that maps node->_idx to a much smaller idx, which is at most the
+  // size of a loop body. This allow us to have smaller arrays for other data
+  // structures, since we are using smaller indices.
+  GrowableArray<int> _node_idx_to_loop_body_idx;
+
+public:
+  VSharedData() :
+    _arena(mtCompiler),
+    _node_idx_to_loop_body_idx(&_arena, estimated_node_count(), 0, 0)
+  {
+  }
+
+  GrowableArray<int>& node_idx_to_loop_body_idx() {
+    return _node_idx_to_loop_body_idx;
+  }
+
+  // Must be cleared before each AutoVectorization use
+  void clear() {
+    _node_idx_to_loop_body_idx.clear();
+  }
+
+private:
+  static int estimated_node_count() {
+    return (int)(1.10 * Compile::current()->unique());
+  }
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
 class VPointer : public ArenaObj {
  protected:
   const MemNode*  _mem;      // My memory reference node
-  PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
-  IdealLoopTree*  _lpt;      // Current IdealLoopTree
-  PhiNode*        _iv;       // The loop induction variable
+  const VLoop&    _vloop;
 
   Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
@@ -74,9 +190,10 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  PhaseIdealLoop* phase() const { return _phase; }
-  IdealLoopTree*  lpt() const   { return _lpt; }
-  PhiNode*        iv() const    { return _iv; }
+  const VLoop&    vloop() const { return _vloop; }
+  PhaseIdealLoop* phase() const { return vloop().phase(); }
+  IdealLoopTree*  lpt() const   { return vloop().lpt(); }
+  PhiNode*        iv() const    { return vloop().iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -97,13 +214,19 @@ class VPointer : public ArenaObj {
     NotComparable = (Less | Greater | Equal)
   };
 
-  VPointer(const MemNode* mem,
-           PhaseIdealLoop* phase, IdealLoopTree* lpt,
+  VPointer(const MemNode* mem, const VLoop& vloop) :
+    VPointer(mem, vloop, nullptr, false) {}
+  VPointer(const MemNode* mem, const VLoop& vloop, Node_Stack* nstack) :
+    VPointer(mem, vloop, nstack, true) {}
+ private:
+  VPointer(const MemNode* mem, const VLoop& vloop,
            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   VPointer(VPointer* p);
+  NONCOPYABLE(VPointer);
 
+ public:
   bool valid()             const { return _adr != nullptr; }
   bool has_iv()            const { return _scale != 0; }
 
@@ -143,7 +266,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, phase(), lpt(), nullptr, false);
+      VPointer p_mem(mem, vloop());
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.

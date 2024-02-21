@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -454,14 +453,10 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         List<Content> subnavLinks = new ArrayList<>();
         if (configuration.showModules) {
-            ModuleElement mdle = configuration.docEnv.getElementUtils().getModuleOf(typeElement);
-            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
         }
-        PackageElement pkg = utils.containingPackage(typeElement);
-        subnavLinks.add(getPackageLink(pkg, getLocalizedPackageName(pkg)));
-        subnavLinks.add(getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                        .style(HtmlStyle.currentSelection)
-                        .skipPreview(true)));
+        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), false));
+        subnavLinks.add(getBreadcrumbLink(typeElement, true));
         return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 

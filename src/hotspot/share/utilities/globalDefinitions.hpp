@@ -581,12 +581,15 @@ extern uint64_t OopEncodingHeapMax;
 
 // Machine dependent stuff
 
+#include CPU_HEADER(globalDefinitions)
+
 // The maximum size of the code cache.  Can be overridden by targets.
+#ifndef CODE_CACHE_SIZE_LIMIT
 #define CODE_CACHE_SIZE_LIMIT (2*G)
+#endif
+
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
-
-#include CPU_HEADER(globalDefinitions)
 
 // To assure the IRIW property on processors that are not multiple copy
 // atomic, sync instructions must be issued between volatile reads to
