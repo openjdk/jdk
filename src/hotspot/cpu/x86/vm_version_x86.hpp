@@ -288,18 +288,6 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
-  union SefCpuid7Ecx1Ebx {
-    uint32_t value;
-  };
-
-  union SefCpuid7Ecx1Ecx {
-    uint32_t value;
-  };
-
-  union SefCpuid7Ecx1Edx {
-    uint32_t value;
-  };
-
   union ExtCpuid1EEbx {
     uint32_t value;
     struct {
@@ -477,9 +465,6 @@ protected:
     SefCpuid7Edx sef_cpuid7_edx;
     // ECX = 1 before calling cpuid()
     SefCpuid7Ecx1Eax sef_cpuid7_ecx1_eax;
-    SefCpuid7Ecx1Ebx sef_cpuid7_ecx1_ebx;
-    SefCpuid7Ecx1Ecx sef_cpuid7_ecx1_ecx;
-    SefCpuid7Ecx1Edx sef_cpuid7_ecx1_edx;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
