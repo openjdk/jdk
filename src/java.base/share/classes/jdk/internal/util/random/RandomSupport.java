@@ -1210,16 +1210,16 @@ public class RandomSupport {
             return DoubleZigguratTables.exponentialX[(int)i] * (U1 >>> 1);
         }
         // We didn't use the upper part of U1 after all.  We'll probably be able to use it later.
-        if (maxValue <= 0.0) {
-            return 0.0;
+        if (maxValue <= DoubleZigguratTables.exponentialX0) {
+            return DoubleZigguratTables.exponentialX0;
         }
         final long maxExtraMinus1;
-        if (maxValue >= MAX_EXPONENTIAL) {
+        if (maxValue >= Math.nextDown(MAX_EXPONENTIAL)) {
             maxExtraMinus1 = Long.MAX_VALUE;
         } else {
-            // Math.round rounds toward infinity in conversion to long; Math.nextUp corrects for any
+            // Math.round rounds toward infinity in conversion to long; adding 1.0 corrects for any
             // downward rounding error in the division
-            maxExtraMinus1 = Math.round(Math.nextUp(maxValue / DoubleZigguratTables.exponentialX0));
+            maxExtraMinus1 = Math.round(1.0 + maxValue / DoubleZigguratTables.exponentialX0);
         }
         for (long extra = 0; ; ) {
             // Use Walker's alias method to sample an (unsigned) integer j from a discrete
