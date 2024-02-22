@@ -644,7 +644,7 @@ public class Inflater {
      * }
      * <p>
      * If the number of compressed bytes is greater than {@link Integer#MAX_VALUE},
-     * the narrowing conversion to <code>int</code> causes the highest 32 bits of
+     * the narrowing conversion to <code>int</code> causes the 32 highest order bits of
      * the number to be discarded. The value returned in such cases will be incorrect
      * and may even be a negative number.
      *
