@@ -84,12 +84,12 @@ public class DefNewGeneration extends Generation {
     return "default new generation";
   }
 
-  public void spaceIterate(SpaceClosure blk, boolean usedOnly) {
-    blk.doSpace(eden());
-    blk.doSpace(from());
-    if (!usedOnly) {
-      blk.doSpace(to());
-    }
+  /* Returns "TRUE" iff "p" points into an allocated object in young
+     generation. */
+  public boolean isIn(Address p) {
+    return eden().contains(p)
+        || from().contains(p)
+        || to().contains(p);
   }
 
   public void liveRegionsIterate(LiveRegionsClosure closure) {

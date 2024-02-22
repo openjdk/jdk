@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -701,7 +701,6 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     }
 
     if (LockingMode == LM_LIGHTWEIGHT) {
-      ldr(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       lightweight_lock(obj_reg, tmp, tmp2, tmp3, slow_case);
       b(count);
     } else if (LockingMode == LM_LEGACY) {
@@ -818,22 +817,6 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     if (LockingMode == LM_LIGHTWEIGHT) {
       Label slow_case;
-
-      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
-      // must handle it.
-      Register tmp = rscratch1;
-      // First check for lock-stack underflow.
-      ldrw(tmp, Address(rthread, JavaThread::lock_stack_top_offset()));
-      cmpw(tmp, (unsigned)LockStack::start_offset());
-      br(Assembler::LE, slow_case);
-      // Then check if the top of the lock-stack matches the unlocked object.
-      subw(tmp, tmp, oopSize);
-      ldr(tmp, Address(rthread, tmp));
-      cmpoop(tmp, obj_reg);
-      br(Assembler::NE, slow_case);
-
-      ldr(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      tbnz(header_reg, exact_log2(markWord::monitor_value), slow_case);
       lightweight_unlock(obj_reg, header_reg, swap_reg, tmp_reg, slow_case);
       b(count);
       bind(slow_case);

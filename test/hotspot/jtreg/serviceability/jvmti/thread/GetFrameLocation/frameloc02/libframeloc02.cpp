@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ typedef struct {
   jlocation loc;
 } frame_info;
 
-static jvmtiEnv *jvmti_env = NULL;
+static jvmtiEnv *jvmti_env = nullptr;
 static jint result = PASSED;
 static frame_info fi =
     {"Lframeloc02;", "check",
@@ -47,7 +47,7 @@ static frame_info fi =
 JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti_env == NULL) {
+  if (res != JNI_OK || jvmti_env == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -98,17 +98,17 @@ Java_frameloc02_check(JNIEnv *env, jclass cls, jthread thr) {
   LOG(">>>     method: \"%s%s\"\n", name, sig);
   LOG(">>>   location: %s\n", jlong_to_string(loc, buffer));
 
-  if (cls_sig == NULL || strcmp(cls_sig, fi.cls_sig) != 0) {
+  if (cls_sig == nullptr || strcmp(cls_sig, fi.cls_sig) != 0) {
     LOG("(GetFrameLocation) wrong class: \"%s\"\n", cls_sig);
     LOG(", expected: \"%s\"\n", fi.cls_sig);
     result = STATUS_FAILED;
   }
-  if (name == NULL || strcmp(name, fi.name) != 0) {
+  if (name == nullptr || strcmp(name, fi.name) != 0) {
     LOG("(GetFrameLocation) wrong method name: \"%s\"", name);
     LOG(", expected: \"%s\"\n", fi.name);
     result = STATUS_FAILED;
   }
-  if (sig == NULL || strcmp(sig, fi.sig) != 0) {
+  if (sig == nullptr || strcmp(sig, fi.sig) != 0) {
     LOG("(GetFrameLocation) wrong method signature: \"%s\"", sig);
     LOG(", expected: \"%s\"\n", fi.sig);
     result = STATUS_FAILED;

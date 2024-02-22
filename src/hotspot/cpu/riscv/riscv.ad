@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
 // Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -1196,13 +1196,13 @@ bool is_CAS(int opcode, bool maybe_volatile)
 // returns true if CAS needs to use an acquiring load otherwise false
 bool needs_acquiring_load_reserved(const Node *n)
 {
-  assert(n != NULL && is_CAS(n->Opcode(), true), "expecting a compare and swap");
+  assert(n != nullptr && is_CAS(n->Opcode(), true), "expecting a compare and swap");
 
   LoadStoreNode* ldst = n->as_LoadStore();
-  if (n != NULL && is_CAS(n->Opcode(), false)) {
-    assert(ldst != NULL && ldst->trailing_membar() != NULL, "expected trailing membar");
+  if (n != nullptr && is_CAS(n->Opcode(), false)) {
+    assert(ldst != nullptr && ldst->trailing_membar() != nullptr, "expected trailing membar");
   } else {
-    return ldst != NULL && ldst->trailing_membar() != NULL;
+    return ldst != nullptr && ldst->trailing_membar() != nullptr;
   }
   // so we can just return true here
   return true;
@@ -1247,7 +1247,7 @@ int MachCallRuntimeNode::ret_addr_offset() {
   //   sd(t1, Address(sp, wordSize))  ->  sd
   //   jalr(t0)                       ->  jalr
   CodeBlob *cb = CodeCache::find_blob(_entry_point);
-  if (cb != NULL) {
+  if (cb != nullptr) {
     return 1 * NativeInstruction::instruction_size;
   } else {
     return 11 * NativeInstruction::instruction_size;
@@ -1286,7 +1286,7 @@ int CallDynamicJavaDirectNode::compute_padding(int current_offset) const
 
 #ifndef PRODUCT
 void MachBreakpointNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  assert_cond(st != NULL);
+  assert_cond(st != nullptr);
   st->print("BREAKPOINT");
 }
 #endif
@@ -1342,14 +1342,14 @@ uint MachConstantBaseNode::size(PhaseRegAlloc* ra_) const {
 
 #ifndef PRODUCT
 void MachConstantBaseNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
-  assert_cond(st != NULL);
+  assert_cond(st != nullptr);
   st->print("-- \t// MachConstantBaseNode (empty encoding)");
 }
 #endif
 
 #ifndef PRODUCT
 void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  assert_cond(st != NULL && ra_ != NULL);
+  assert_cond(st != nullptr && ra_ != nullptr);
   Compile* C = ra_->C;
 
   int framesize = C->output()->frame_slots() << LogBytesPerInt;
@@ -1363,7 +1363,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (PreserveFramePointer) { st->print("sub  fp, sp, #%d\n\t", 2 * wordSize); }
   st->print("sub sp, sp, #%d\n\t", framesize);
 
-  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
     st->print("ld  t0, [guard]\n\t");
     st->print("membar LoadLoad\n\t");
     st->print("ld  t1, [xthread, #thread_disarmed_guard_value_offset]\n\t");
@@ -1377,7 +1377,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 #endif
 
 void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
 
@@ -1392,7 +1392,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     __ nop();  // 4 bytes
   }
 
-  assert_cond(C != NULL);
+  assert_cond(C != nullptr);
 
   if (C->clinit_barrier_on_entry()) {
     assert(!C->method()->holder()->is_not_initialized(), "initialization should have been started");
@@ -1412,9 +1412,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
       // Dummy labels for just measuring the code size
       Label dummy_slow_path;
       Label dummy_continuation;
@@ -1451,7 +1451,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
 uint MachPrologNode::size(PhaseRegAlloc* ra_) const
 {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   return MachNode::size(ra_); // too many variables; just compute it
                               // the hard way
 }
@@ -1465,9 +1465,9 @@ int MachPrologNode::reloc() const
 
 #ifndef PRODUCT
 void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  assert_cond(st != NULL && ra_ != NULL);
+  assert_cond(st != nullptr && ra_ != nullptr);
   Compile* C = ra_->C;
-  assert_cond(C != NULL);
+  assert_cond(C != nullptr);
   int framesize = C->output()->frame_size_in_bytes();
 
   st->print("# pop frame %d\n\t", framesize);
@@ -1491,10 +1491,10 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 #endif
 
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
   C2_MacroAssembler _masm(&cbuf);
-  assert_cond(C != NULL);
+  assert_cond(C != nullptr);
   int framesize = C->output()->frame_size_in_bytes();
 
   __ remove_frame(framesize);
@@ -1517,7 +1517,7 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 }
 
 uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   // Variable size. Determine dynamically.
   return MachNode::size(ra_);
 }
@@ -1568,7 +1568,7 @@ static enum RC rc_class(OptoReg::Name reg) {
 }
 
 uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, bool do_size, outputStream *st) const {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   Compile* C = ra_->C;
 
   // Get registers to move.
@@ -1599,7 +1599,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   int src_offset = ra_->reg2offset(src_lo);
   int dst_offset = ra_->reg2offset(dst_lo);
 
-  if (bottom_type()->isa_vect() != NULL) {
+  if (bottom_type()->isa_vect() != nullptr) {
     uint ireg = ideal_reg();
     if (ireg == Op_VecA && cbuf) {
       C2_MacroAssembler _masm(cbuf);
@@ -1640,7 +1640,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
         ShouldNotReachHere();
       }
     }
-  } else if (cbuf != NULL) {
+  } else if (cbuf != nullptr) {
     C2_MacroAssembler _masm(cbuf);
     switch (src_lo_rc) {
       case rc_int:
@@ -1711,7 +1711,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
     }
   }
 
-  if (st != NULL) {
+  if (st != nullptr) {
     st->print("spill ");
     if (src_lo_rc == rc_stack) {
       st->print("[sp, #%d] -> ", src_offset);
@@ -1745,16 +1745,16 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 
 #ifndef PRODUCT
 void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  if (ra_ == NULL) {
+  if (ra_ == nullptr) {
     st->print("N%d = SpillCopy(N%d)", _idx, in(1)->_idx);
   } else {
-    implementation(NULL, ra_, false, st);
+    implementation(nullptr, ra_, false, st);
   }
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+  implementation(&cbuf, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -1765,7 +1765,7 @@ uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
 
 #ifndef PRODUCT
 void BoxLockNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
-  assert_cond(ra_ != NULL && st != NULL);
+  assert_cond(ra_ != nullptr && st != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg = ra_->get_reg_first(this);
   st->print("add %s, sp, #%d\t# box lock",
@@ -1777,7 +1777,7 @@ void BoxLockNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
   Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see BoxLockNode::size()
 
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   int offset = ra_->reg2offset(in_RegMask(0).find_first_elem());
   int reg    = ra_->get_encode(this);
 
@@ -1805,17 +1805,16 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 #ifndef PRODUCT
 void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
-  assert_cond(st != NULL);
+  assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (CompressedKlassPointers::shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null t0, t0");
-    }
+    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t1, ic_hit");
+  st->print_cr("\tbeq t0, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1825,20 +1824,16 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
+  __ ic_check(CodeEntryAlignment);
 
-  Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, t2 /* call-clobbered t2 as a tmp */, skip);
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  __ bind(skip);
-
-  // These NOPs are critical so that verified entry point is properly
-  // 4 bytes aligned for patching by NativeJump::patch_verified_entry()
-  __ align(NativeInstruction::instruction_size);
+  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
+  // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
+  assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 {
-  assert_cond(ra_ != NULL);
+  assert_cond(ra_ != nullptr);
   return MachNode::size(ra_);
 }
 
@@ -1855,7 +1850,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -1873,7 +1868,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2017,7 +2012,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -2038,7 +2033,7 @@ int Matcher::scalable_vector_reg_size(const BasicType bt) {
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2141,10 +2136,10 @@ const RegMask Matcher::method_handle_invoke_SP_save_mask() {
 }
 
 bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
-  assert_cond(addp != NULL);
+  assert_cond(addp != nullptr);
   for (DUIterator_Fast imax, i = addp->fast_outs(imax); i < imax; i++) {
     Node* u = addp->fast_out(i);
-    if (u != NULL && u->is_Mem()) {
+    if (u != nullptr && u->is_Mem()) {
       int opsize = u->as_Mem()->memory_size();
       assert(opsize > 0, "unexpected memory operand size");
       if (u->as_Mem()->memory_size() != (1 << shift)) {
@@ -2157,7 +2152,7 @@ bool size_fits_all_mem_uses(AddPNode* addp, int shift) {
 
 // Should the Matcher clone input 'm' of node 'n'?
 bool Matcher::pd_clone_node(Node* n, Node* m, Matcher::MStack& mstack) {
-  assert_cond(m != NULL);
+  assert_cond(m != nullptr);
   if (is_vshift_con_pattern(n, m)) { // ShiftV src (ShiftCntV con)
     mstack.push(m, Visit);           // m = ShiftCntV
     return true;
@@ -2216,7 +2211,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL || con == (address)1) {
+    if (con == nullptr || con == (address)1) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -2246,7 +2241,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -2265,7 +2260,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -2351,7 +2346,7 @@ encode %{
     Label done;
     C2_MacroAssembler _masm(&cbuf);
     __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     NULL, &miss);
+                                     nullptr, &miss);
     if ($primary) {
       __ mv(result_reg, zr);
     } else {
@@ -2372,12 +2367,12 @@ encode %{
     Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
 
     address addr = (address)$meth$$method;
-    address call = NULL;
-    assert_cond(addr != NULL);
+    address call = nullptr;
+    assert_cond(addr != nullptr);
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -2391,7 +2386,7 @@ encode %{
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -2402,8 +2397,8 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
-        if (stub == NULL) {
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
+        if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
         }
@@ -2418,7 +2413,7 @@ encode %{
     Assembler::IncompressibleRegion ir(&_masm);  // Fixed length: see ret_addr_offset
     int method_index = resolved_method_index(cbuf);
     address call = __ ic_call((address)$meth$$method, method_index);
-    if (call == NULL) {
+    if (call == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -2444,9 +2439,9 @@ encode %{
     // which loads the absolute address into a register.
     address entry = (address)$meth$$method;
     CodeBlob *cb = CodeCache::find_blob(entry);
-    if (cb != NULL) {
+    if (cb != nullptr) {
       address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -2894,7 +2889,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -3015,7 +3010,7 @@ operand immN()
   interface(CONST_INTER);
 %}
 
-// Narrow NULL Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0()
 %{
   predicate(n->get_narrowcon() == 0);
@@ -4893,7 +4888,7 @@ instruct loadConP0(iRegPNoSp dst, immP0 con)
   match(Set dst con);
 
   ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# NULL ptr, #@loadConP0" %}
+  format %{ "mv  $dst, $con\t# null pointer, #@loadConP0" %}
 
   ins_encode(riscv_enc_mov_zero(dst));
 
@@ -4944,7 +4939,7 @@ instruct loadConN0(iRegNNoSp dst, immN0 con)
   match(Set dst con);
 
   ins_cost(ALU_COST);
-  format %{ "mv  $dst, $con\t# compressed NULL ptr, #@loadConN0" %}
+  format %{ "mv  $dst, $con\t# compressed null pointer, #@loadConN0" %}
 
   ins_encode(riscv_enc_mov_zero(dst));
 
@@ -10338,7 +10333,7 @@ instruct clearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, iRegP_R30 tmp1,
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, $cnt$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -10375,23 +10370,7 @@ instruct string_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_equalsU(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                        iRegI_R10 result, rFlagsReg cr)
-%{
-  predicate(!UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
-
-  format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsU" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 2);
+                     $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
@@ -56,12 +56,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -97,7 +97,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 void checkGetLineNumberTable(jmethodID mid, const char *methName,
         int abstract, jvmtiError exp) {
     jint entryCount = -1;
-    jvmtiLineNumberEntry *table = NULL;
+    jvmtiLineNumberEntry *table = nullptr;
     jvmtiError err;
     int i;
 
@@ -132,7 +132,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
     jclass abstr;
     jclass interf;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -145,13 +145,13 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         printf("\n Check methods of interface:\n");
     }
     interf = env->FindClass("nsk/jvmti/unit/GetLineNumberTable/Interface004");
-    if (interf == NULL) {
+    if (interf == nullptr) {
         printf("Cannot get Interface class!\n");
         return STATUS_FAILED;
     }
 
     mid = env->GetMethodID(cls, "instanceMeth0", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -159,7 +159,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         JVMTI_ERROR_ABSENT_INFORMATION);
 
     mid = env->GetMethodID(cls, "instanceMeth1", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -170,13 +170,13 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         printf("\n Check methods of abstract class:\n");
     }
     abstr = env->GetSuperclass(cls);
-    if (abstr == NULL) {
+    if (abstr == nullptr) {
         printf("Cannot get super class!\n");
         return STATUS_FAILED;
     }
 
     mid = env->GetMethodID(abstr, "instanceMeth0", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -184,7 +184,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         JVMTI_ERROR_ABSENT_INFORMATION);
 
     mid = env->GetMethodID(abstr, "instanceMeth1", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -195,7 +195,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         printf("\n Check methods of regular class:\n");
     }
     mid = env->GetMethodID(cls, "instanceMeth0", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -203,7 +203,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         JVMTI_ERROR_ABSENT_INFORMATION);
 
     mid = env->GetMethodID(cls, "instanceMeth1", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -211,7 +211,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         JVMTI_ERROR_ABSENT_INFORMATION);
 
     mid = env->GetMethodID(cls, "instanceMeth2", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -222,7 +222,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         printf("\n Check native methods of regular class:\n");
     }
     mid = env->GetMethodID(cls, "instanceNativeMeth", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
@@ -230,7 +230,7 @@ Java_nsk_jvmti_unit_GetLineNumberTable_linetab004_check(JNIEnv *env, jclass cls)
         JVMTI_ERROR_NATIVE_METHOD);
 
     mid = env->GetStaticMethodID(cls, "staticNativeMeth", "()I");
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot get method ID!\n");
         return STATUS_FAILED;
     }
