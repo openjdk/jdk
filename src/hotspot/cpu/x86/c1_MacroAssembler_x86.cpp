@@ -191,7 +191,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
     if (!is_aligned(base_offset, BytesPerWord)) {
       // Clear gap/first 4 bytes following the length field.
       xorl(t1, t1);
-      movl(Address(obj, arrayOopDesc::length_offset_in_bytes() + BytesPerInt), t1);
+      movl(Address(obj, base_offset), t1);
     }
 #endif
   }
