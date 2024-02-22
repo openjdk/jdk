@@ -375,6 +375,9 @@ public class TestMarkdownCodeSpans extends JavadocTester {
         checkOutput("p/C.html", false,
                 "{@code TAG}");
 
+        checkOutput(Output.OUT, false,
+                "unknown tag");
+
         for (var tc : TestCase.values()) {
             checkOutput("p/C.html", true,
                     """

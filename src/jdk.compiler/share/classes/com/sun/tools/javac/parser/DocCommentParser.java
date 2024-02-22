@@ -1317,6 +1317,8 @@ public class DocCommentParser {
      * used when checking for indented code blocks, and a serial number
      * that is incremented when a line is encountered that is not a
      * continuation of the previous block.
+     *
+     * @see <a href="https://spec.commonmark.org/0.30/">CommonMark spec</a>
      */
     class Markdown {
         /**
@@ -1362,59 +1364,63 @@ public class DocCommentParser {
             if (ch == '\r' || ch == '\n') {
                 lineKind = LineKind.BLANK;
                 blockId++;
-            } else if (indent >= currIndent + 4 && !isParagraph(prevLineKind)) {
+                return;
+            }
+
+            while (indent < currIndent) {
+                currIndent = indentStack.pop();
+            }
+
+            if (indent >= currIndent + 4 && !isParagraph(prevLineKind)) {
                 if (prevLineKind != LineKind.INDENTED_CODE_BLOCK) {
                     blockId++;
                 }
                 lineKind = LineKind.INDENTED_CODE_BLOCK;
-            } else {
-                while (indent < currIndent) {
-                    currIndent = indentStack.pop();
+                return;
+            }
+
+            lineKind = peekLineKind();
+            switch (lineKind) {
+                case BLOCK_QUOTE -> {
+                    if (prevLineKind != LineKind.BLOCK_QUOTE) {
+                        blockId++;
+                    }
                 }
 
-                lineKind = peekLineKind();
-                switch (lineKind) {
-                    case BLOCK_QUOTE -> {
-                        if (prevLineKind != LineKind.BLOCK_QUOTE) {
+                case BULLETED_LIST_ITEM, ORDERED_LIST_ITEM -> {
+                    var count = indent;
+                    while (ch != ' ' && ch != '\t') {
+                        count++;
+                        nextChar();
+                    }
+                    var listItemIndent = readIndent(count);
+                    if (listItemIndent > count + 4) {
+                        indentStack.push(currIndent);
+                        currIndent = count + 4;
+                        lineKind = LineKind.INDENTED_CODE_BLOCK;
+                    } else if (indent >= currIndent) {
+                        indentStack.push(currIndent);
+                        currIndent = listItemIndent;
+                    }
+                    blockId++;
+                }
+
+                case OTHER -> {
+                    switch (prevLineKind) {
+                        case BLOCK_QUOTE, BULLETED_LIST_ITEM, ORDERED_LIST_ITEM, OTHER -> { }
+                        default -> {
                             blockId++;
                         }
                     }
+                }
 
-                    case BULLETED_LIST_ITEM, ORDERED_LIST_ITEM -> {
-                        var count = indent;
-                        while (ch != ' ' && ch != '\t') {
-                            count++;
-                            nextChar();
-                        }
-                        var listItemIndent = readIndent(count);
-                        if (listItemIndent > count + 4) {
-                            indentStack.push(currIndent);
-                            currIndent = count + 4;
-                            lineKind = LineKind.INDENTED_CODE_BLOCK;
-                        } else if (indent >= currIndent) {
-                            indentStack.push(currIndent);
-                            currIndent = listItemIndent;
-                        }
-                        blockId++;
-                    }
+                case BLANK, ATX_HEADER, SETEXT_UNDERLINE, THEMATIC_BREAK, CODE_FENCE,
+                        INDENTED_CODE_BLOCK -> {
+                    blockId++;
+                }
 
-                    case OTHER -> {
-                        switch (prevLineKind) {
-                            case BLOCK_QUOTE, BULLETED_LIST_ITEM, ORDERED_LIST_ITEM, OTHER -> { }
-                            default -> {
-                                blockId++;
-                            }
-                        }
-                    }
-
-                    case BLANK, ATX_HEADER, SETEXT_UNDERLINE, THEMATIC_BREAK, CODE_FENCE,
-                            INDENTED_CODE_BLOCK -> {
-                        blockId++;
-                    }
-
-                    default -> {
-                        throw new Error(lineKind.toString());
-                    }
+                default -> {
+                    throw new Error(lineKind.toString());
                 }
             }
         }

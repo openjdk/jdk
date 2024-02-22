@@ -1082,7 +1082,8 @@ public class TestMarkdown extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput(Output.OUT, false,
-                "C.java:4: error: no tag name after '@'");
+                "C.java:4: error: no tag name after '@'",
+                "unknown tag");
 
         checkOutput("p/C.html", true,
                 """

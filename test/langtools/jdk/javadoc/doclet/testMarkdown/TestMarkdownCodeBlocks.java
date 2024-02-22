@@ -164,6 +164,30 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                         </ol>
                         <p>end</p>"""),
 
+            // in the following, note the indentation of the list item is 5 spaces
+            // and the block that follows is indented by just 4 spaces
+            POST_LIST_INDENT(
+                    """
+                         1.  list item
+                        
+                             second paragraph
+                             
+                            {@code CODE}
+                            @Anno
+                            
+                        end""",
+                    """
+                        <ol>
+                        <li>
+                        <p>list item</p>
+                        <p>second paragraph</p>
+                        </li>
+                        </ol>
+                        <pre><code>{@code CODE}
+                        @Anno
+                        </code></pre>
+                        <p>end</p>"""),
+
             NOT_INDENT_CONTINUATION(
                     """
 
@@ -273,6 +297,9 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                 "--source-path", src.toString(),
                 "p");
         checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "unknown tag");
 
         for (var tc : TestCase.values()) {
             checkOutput("p/C.html", true,
