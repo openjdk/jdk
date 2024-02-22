@@ -159,10 +159,9 @@ public final class BaseLocale {
             language = convertOldISOCodes(language);
         }
 
-        // Obtain the "normalized" BaseLocale, using un-normalized
-        // BaseLocale as the key. The returned "normalized" instance
-        // can subsequently be used by the Locale instance which
-        // guarantees the locale components are properly cased/interned.
+        // Obtain the "interned" BaseLocale from the cache. The returned
+        // "interned" instance can subsequently be used by the Locale
+        // instance which guarantees the locale components are properly cased/interned.
         return CACHE.intern(new BaseLocale(language, script, region, variant),
             (b) -> new BaseLocale(
                 LocaleUtils.toLowerString(b.language).intern(),
