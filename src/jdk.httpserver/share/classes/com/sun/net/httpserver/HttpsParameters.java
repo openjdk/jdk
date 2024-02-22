@@ -90,9 +90,15 @@ public abstract class HttpsParameters {
      * Returns a copy of the array of ciphersuites or {@code null} if none
      * have been set.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}.
+     *
      * @return a copy of the array of ciphersuites or {@code null} if none have
      * been set
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public String[] getCipherSuites() {
         return cipherSuites != null ? cipherSuites.clone() : null;
     }
@@ -100,8 +106,15 @@ public abstract class HttpsParameters {
     /**
      * Sets the array of ciphersuites.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}. Use
+     * {@link SSLParameters#setCipherSuites(String[])} instead.
+     *
      * @param cipherSuites the array of ciphersuites (or {@code null})
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public void setCipherSuites(String[] cipherSuites) {
         this.cipherSuites = cipherSuites != null ? cipherSuites.clone() : null;
     }
@@ -110,9 +123,15 @@ public abstract class HttpsParameters {
      * Returns a copy of the array of protocols or {@code null} if none have been
      * set.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}.
+     *
      * @return a copy of the array of protocols or {@code null} if none have been
      * set
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public String[] getProtocols() {
         return protocols != null ? protocols.clone() : null;
     }
@@ -120,8 +139,15 @@ public abstract class HttpsParameters {
     /**
      * Sets the array of protocols.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}. Use
+     * {@link SSLParameters#setProtocols(String[])} instead.
+     *
      * @param protocols the array of protocols (or {@code null})
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public void setProtocols(String[] protocols) {
         this.protocols = protocols != null ? protocols.clone() : null;
     }
@@ -129,8 +155,14 @@ public abstract class HttpsParameters {
     /**
      * Returns whether client authentication should be requested.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}.
+     *
      * @return whether client authentication should be requested
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public boolean getWantClientAuth() {
         return wantClientAuth;
     }
@@ -139,8 +171,15 @@ public abstract class HttpsParameters {
      * Sets whether client authentication should be requested. Calling this
      * method clears the {@code needClientAuth} flag.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}. Use
+     * {@link SSLParameters#setWantClientAuth(boolean)} instead.
+     *
      * @param wantClientAuth whether client authentication should be requested
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public void setWantClientAuth(boolean wantClientAuth) {
         this.wantClientAuth = wantClientAuth;
         this.needClientAuth = false;
@@ -149,8 +188,14 @@ public abstract class HttpsParameters {
     /**
      * Returns whether client authentication should be required.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}.
+     *
      * @return whether client authentication should be required
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public boolean getNeedClientAuth() {
         return needClientAuth;
     }
@@ -159,8 +204,15 @@ public abstract class HttpsParameters {
      * Sets whether client authentication should be required. Calling this method
      * clears the {@code wantClientAuth} flag.
      *
+     * @deprecated It is recommended that the SSL parameters be configured and
+     * read through the use of {@link SSLParameters}. Use
+     * {@link SSLParameters#setNeedClientAuth(boolean)} instead.
+     *
      * @param needClientAuth whether client authentication should be required
+     *
+     * @see #setSSLParameters(SSLParameters)
      */
+    @Deprecated(since = "23")
     public void setNeedClientAuth(boolean needClientAuth) {
         this.needClientAuth = needClientAuth;
         this.wantClientAuth = false;

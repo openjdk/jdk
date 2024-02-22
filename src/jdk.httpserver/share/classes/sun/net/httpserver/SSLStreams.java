@@ -66,6 +66,7 @@ class SSLStreams {
         wrapper = new EngineWrapper (chan, engine);
     }
 
+    @SuppressWarnings("deprecation")
     private void configureEngine(HttpsConfigurator cfg, InetSocketAddress addr){
         if (cfg != null) {
             Parameters params = new Parameters (cfg, addr);
