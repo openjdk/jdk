@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -738,7 +738,7 @@ bool ArchDesc::check_usage() {
   callback.do_form_by_name("stackSlotF");
   callback.do_form_by_name("stackSlotL");
 
-  // special generic vector operands used in Matcher::pd_specialize_generic_vector_operand
+  // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
 #if defined(AARCH64)
   callback.do_form_by_name("vecA");
   callback.do_form_by_name("vecD");
