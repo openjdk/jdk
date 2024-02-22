@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,8 +74,21 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // counter to generate unique ids for the aliases
     private final AtomicLong uidCounter;
 
-    // cached entries
-    private final Map<String,Reference<PrivateKeyEntry>> entryCacheMap;
+    /*
+     * The credentials from the KeyStore as
+     * Map: String(alias) -> X509Credentials(credentials)
+     */
+    private final Map<String,X509Credentials> credentialsMap;
+
+    private static class X509Credentials {
+        final PrivateKey privateKey;
+        final X509Certificate[] certificates;
+
+        X509Credentials(PrivateKey privateKey, X509Certificate[] certificates) {
+            this.privateKey = privateKey;
+            this.certificates = certificates;
+        }
+    }
 
     X509KeyManagerImpl(Builder builder) {
         this(Collections.singletonList(builder));
@@ -84,18 +97,59 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     X509KeyManagerImpl(List<Builder> builders) {
         this.builders = builders;
         uidCounter = new AtomicLong();
-        entryCacheMap = Collections.synchronizedMap
-                        (new SizedMap<>());
+        credentialsMap = new HashMap<>();
+        initializeCredentials();
     }
 
-    // LinkedHashMap with a max size of 10
-    // see LinkedHashMap JavaDocs
-    private static class SizedMap<K,V> extends LinkedHashMap<K,V> {
-        @java.io.Serial
-        private static final long serialVersionUID = -8211222668790986062L;
+    private void initializeCredentials() {
+        for (int i = 0, n = builders.size(); i < n; i++) {
+            try {
+                Builder builder = builders.get(i);
+                KeyStore keyStore = builder.getKeyStore();
+                if (keyStore == null) {
+                    continue;
+                }
+                Enumeration<String> aliases = keyStore.aliases();
+                while (aliases.hasMoreElements()) {
+                    String alias = aliases.nextElement();
+                    if (!keyStore.isKeyEntry(alias)) {
+                        continue;
+                    }
+                    Entry newEntry = keyStore.getEntry(alias,
+                            builder.getProtectionParameter(alias));
+                    if (!(newEntry instanceof PrivateKeyEntry)) {
+                        continue;
+                    }
 
-        @Override protected boolean removeEldestEntry(Map.Entry<K,V> eldest) {
-            return size() > 10;
+                    PrivateKeyEntry privateKeyEntry =
+                            (PrivateKeyEntry) newEntry;
+                    PrivateKey privateKey = privateKeyEntry.getPrivateKey();
+                    Certificate[] certs = keyStore.getCertificateChain(alias);
+                    if ((certs == null) || (certs.length == 0) ||
+                            !(certs[0] instanceof X509Certificate)) {
+                        continue;
+                    }
+                    if (!(certs instanceof X509Certificate[])) {
+                        Certificate[] tmp = new X509Certificate[certs.length];
+                        System.arraycopy(certs, 0, tmp, 0, certs.length);
+                        certs = tmp;
+                    }
+
+                    String builderAlias = i + "." + alias;
+                    X509Credentials cred = new X509Credentials(privateKey,
+                            (X509Certificate[])certs);
+                    credentialsMap.put(builderAlias, cred);
+
+                    if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                        SSLLogger.fine("found key for : " +
+                                "keystore builder index = " + i +
+                                " alias = " + alias, (Object[])certs);
+                    }
+
+                }
+            } catch (Exception e) {
+                // ignore
+            }
         }
     }
 
@@ -104,16 +158,31 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     //
 
     @Override
-    public X509Certificate[] getCertificateChain(String alias) {
-        PrivateKeyEntry entry = getEntry(alias);
-        return entry == null ? null :
-                (X509Certificate[])entry.getCertificateChain();
+    public PrivateKey getPrivateKey(String alias) {
+        String builderAlias = removeAliasIndex(alias);
+        if (builderAlias == null) {
+            return null;
+        }
+        X509Credentials cred = credentialsMap.get(builderAlias);
+        if (cred == null) {
+            return null;
+        } else {
+            return cred.privateKey;
+        }
     }
 
     @Override
-    public PrivateKey getPrivateKey(String alias) {
-        PrivateKeyEntry entry = getEntry(alias);
-        return entry == null ? null : entry.getPrivateKey();
+    public X509Certificate[] getCertificateChain(String alias) {
+        String builderAlias = removeAliasIndex(alias);
+        if (builderAlias == null) {
+            return null;
+        }
+        X509Credentials cred = credentialsMap.get(builderAlias);
+        if (cred == null) {
+            return null;
+        } else {
+            return cred.certificates.clone();
+        }
     }
 
     @Override
@@ -180,6 +249,20 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     // implementation private methods
     //
 
+    private String removeAliasIndex (String alias){
+        if (alias == null) {
+            return null;
+        }
+
+        int firstDot = alias.indexOf('.');
+        int secondDot = alias.indexOf('.', firstDot + 1);
+        if ((firstDot == -1) || (secondDot == firstDot)) {
+            // invalid alias
+            return null;
+        }
+        return alias.substring(firstDot + 1);
+    }
+
     // Gets algorithm constraints of the socket.
     private AlgorithmConstraints getAlgorithmConstraints(Socket socket) {
         if (socket != null && socket.isConnected() &&
@@ -236,47 +319,6 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
     private String makeAlias(EntryStatus entry) {
         return uidCounter.incrementAndGet() + "." + entry.builderIndex + "."
                 + entry.alias;
-    }
-
-    private PrivateKeyEntry getEntry(String alias) {
-        // if the alias is null, return immediately
-        if (alias == null) {
-            return null;
-        }
-
-        // try to get the entry from cache
-        Reference<PrivateKeyEntry> ref = entryCacheMap.get(alias);
-        PrivateKeyEntry entry = (ref != null) ? ref.get() : null;
-        if (entry != null) {
-            return entry;
-        }
-
-        // parse the alias
-        int firstDot = alias.indexOf('.');
-        int secondDot = alias.indexOf('.', firstDot + 1);
-        if ((firstDot == -1) || (secondDot == firstDot)) {
-            // invalid alias
-            return null;
-        }
-        try {
-            int builderIndex = Integer.parseInt
-                                (alias.substring(firstDot + 1, secondDot));
-            String keyStoreAlias = alias.substring(secondDot + 1);
-            Builder builder = builders.get(builderIndex);
-            KeyStore ks = builder.getKeyStore();
-            Entry newEntry = ks.getEntry(keyStoreAlias,
-                    builder.getProtectionParameter(keyStoreAlias));
-            if (!(newEntry instanceof PrivateKeyEntry)) {
-                // unexpected type of entry
-                return null;
-            }
-            entry = (PrivateKeyEntry)newEntry;
-            entryCacheMap.put(alias, new SoftReference<>(entry));
-            return entry;
-        } catch (Exception e) {
-            // ignore
-            return null;
-        }
     }
 
     // Class to help verify that the public key algorithm (and optionally
