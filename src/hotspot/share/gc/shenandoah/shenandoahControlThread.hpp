@@ -28,10 +28,8 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "utilities/ostream.hpp"
 
 class ShenandoahControlThread: public ConcurrentGCThread {
   friend class VMStructs;
@@ -58,7 +56,6 @@ private:
   ShenandoahSharedFlag _gc_requested;
   ShenandoahSharedFlag _alloc_failure_gc;
   ShenandoahSharedFlag _graceful_shutdown;
-  ShenandoahSharedFlag _heap_changed;
   GCCause::Cause       _requested_gc_cause;
   ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
@@ -87,8 +84,6 @@ private:
   // Blocks until GC is over.
   void handle_requested_gc(GCCause::Cause cause);
 
-  bool is_explicit_gc(GCCause::Cause cause) const;
-
 public:
   // Constructor
   ShenandoahControlThread();
@@ -103,8 +98,6 @@ public:
   void handle_alloc_failure_evac(size_t words);
 
   void request_gc(GCCause::Cause cause);
-
-  void notify_heap_changed();
 
   void pacing_notify_alloc(size_t words);
 

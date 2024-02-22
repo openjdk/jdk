@@ -129,7 +129,8 @@ public class TestJFREvents {
             .shouldContain(cpuSlicePeriodFld + " = " + expectedSlicePeriod)
             .shouldContain(cpuQuotaFld + " = " + expectedCPUs * expectedSlicePeriod)
             .shouldContain(memoryLimitFld + " = " + expectedMemoryLimit)
-            .shouldContain(totalMem + " = " + hostTotalMemory);
+            .shouldContain(totalMem + " = " + hostTotalMemory)
+            .shouldContain("hostTotalSwapMemory");
     }
 
     private static void testCpuUsage() throws Exception {
