@@ -87,8 +87,7 @@ class SSLStreams {
                 }
                 if (params.getNeedClientAuth()) {
                     engine.setNeedClientAuth(true);
-                }
-                if (params.getWantClientAuth()) {
+                } else if (params.getWantClientAuth()) {
                     engine.setWantClientAuth(true);
                 }
                 if (params.getProtocols() != null) {
