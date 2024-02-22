@@ -41,7 +41,7 @@ import javax.imageio.ImageIO;
  * @test
  * @bug 4242308 4255603
  * @key printer
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests printing of images
  * @run main/manual ImageTest
