@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,6 +86,8 @@ import java.net.URI;
  *
  * @see javax.security.auth.login.LoginContext
  * @see java.security.Security security properties
+ *
+ * @since 1.4
  */
 public class ConfigFile extends Configuration {
 
