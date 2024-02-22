@@ -676,10 +676,8 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
 
     private Color getUnselectedBackgroundAt(int index) {
         Color color = tabPane.getBackgroundAt(index);
-        if (color instanceof UIResource) {
-            if (unselectedBackground != null) {
-                return unselectedBackground;
-            }
+        if (color instanceof UIResource && unselectedBackground != null) {
+            return unselectedBackground;
         }
         return color;
     }
