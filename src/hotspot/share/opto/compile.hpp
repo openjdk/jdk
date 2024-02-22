@@ -318,8 +318,6 @@ class Compile : public Phase {
 
   bool                  _post_loop_opts_phase;  // Loop opts are finished.
 
-  bool                  _merge_stores_phase;    // True during merge stores phase
-
   int                   _major_progress;        // Count of something big happening
   bool                  _inlining_progress;     // progress doing incremental inlining?
   bool                  _inlining_incrementally;// Are we doing incremental inlining (post parse)
@@ -786,9 +784,6 @@ private:
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
   void reset_post_loop_opts_phase() { _post_loop_opts_phase = false; }
-
-  bool merge_stores_phase() { return _merge_stores_phase;  }
-  void set_merge_stores_phase(bool b) { _merge_stores_phase = b;  }
 
   void record_for_post_loop_opts_igvn(Node* n);
   void remove_from_post_loop_opts_igvn(Node* n);

@@ -2761,10 +2761,16 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  if (phase->C->merge_stores_phase()) {
-    Node* progress = Ideal_merge_stores(phase);
-    if (progress != nullptr) { return progress; }
+#ifdef VM_LITTLE_ENDIAN
+  if (MergeStores && UseUnalignedAccesses) {
+    if (phase->C->post_loop_opts_phase()) {
+      Node* progress = Ideal_merge_stores(phase);
+      if (progress != nullptr) { return progress; }
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
   }
+#endif
 
   return nullptr;                  // No further progress
 }
@@ -3169,10 +3175,13 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   }
 
   // Check address adjacency
-  ArrayPointer array_pointer1 = ArrayPointer::make(s1->in(MemNode::Address));
-  ArrayPointer array_pointer2 = ArrayPointer::make(s2->in(MemNode::Address));
-  if (!array_pointer2.is_adjacent_to(array_pointer1, s1->memory_size())) {
-    return nullptr;
+  {
+    ResourceMark rm;
+    ArrayPointer array_pointer1 = ArrayPointer::make(s1->in(MemNode::Address));
+    ArrayPointer array_pointer2 = ArrayPointer::make(s2->in(MemNode::Address));
+    if (!array_pointer2.is_adjacent_to(array_pointer1, s1->memory_size())) {
+      return nullptr;
+    }
   }
 
   // Having checked "use -> def", we now check "def -> use".

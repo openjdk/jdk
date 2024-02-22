@@ -622,7 +622,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _stub_entry_point(nullptr),
                   _max_node_limit(MaxNodeLimit),
                   _post_loop_opts_phase(false),
-                  _merge_stores_phase(false),
                   _inlining_progress(false),
                   _inlining_incrementally(false),
                   _do_cleanup(false),
@@ -914,7 +913,6 @@ Compile::Compile( ciEnv* ci_env,
     _stub_entry_point(nullptr),
     _max_node_limit(MaxNodeLimit),
     _post_loop_opts_phase(false),
-    _merge_stores_phase(false),
     _inlining_progress(false),
     _inlining_incrementally(false),
     _has_reserved_stack_access(false),
@@ -932,6 +930,7 @@ Compile::Compile( ciEnv* ci_env,
     _log(ci_env->log()),
     _failure_reason(nullptr),
     _first_failure_details(nullptr),
+    _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
     _unique(0),
@@ -2442,16 +2441,6 @@ void Compile::Optimize() {
   if (failing())  return;
 
   C->clear_major_progress(); // ensure that major progress is now clear
-
-#ifdef VM_LITTLE_ENDIAN
-  if (MergeStores && UseUnalignedAccesses) {
-    assert(!C->merge_stores_phase(), "merge store phase not yet set");
-    C->gather_nodes_for_merge_stores(igvn);
-    C->set_merge_stores_phase(true);
-    igvn.optimize();
-    C->set_merge_stores_phase(false);
-  }
-#endif
 
   if (failing())  return;
 
