@@ -201,7 +201,7 @@ public class Asserts {
         if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
             msg = Objects.toString(msg, "assertEquals")
                     + ": object \"" + Objects.toString(lhs)
-                    + "\" and object \"" + Objects.toString(rhs) + "\" are not equal";
+                    + "\" is not equal to \"" + Objects.toString(rhs) + "\"";
             fail(msg);
         }
     }
