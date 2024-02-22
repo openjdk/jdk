@@ -70,11 +70,6 @@
 #include "jfr/jfr.hpp"
 #endif
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 JVMCIKlassHandle::JVMCIKlassHandle(Thread* thread, Klass* klass) {
   _thread = thread;
   _klass = klass;
@@ -187,7 +182,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 // Entry to native method implementation that transitions
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY(result_type, name, signature)        \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
@@ -198,7 +193,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCITraceMark jtm("CompilerToVM::" #name);
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
@@ -214,7 +209,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 // Entry to native method implementation that does not transition
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY_PREFIX(result_type, name, signature) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();
 
 #define C2V_END }

@@ -47,11 +47,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
   static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
@@ -1029,11 +1024,11 @@ int JVMCIVMStructs::localHotSpotVMAddresses_count() {
 }
 
 extern "C" {
-JNIEXPORT VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
-JNIEXPORT VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
-JNIEXPORT VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
-JNIEXPORT VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
-JNIEXPORT VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
+VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
+VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
+VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
+VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
+VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
 }
 
 #ifdef ASSERT
