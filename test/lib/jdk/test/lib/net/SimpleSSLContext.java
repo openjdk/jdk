@@ -70,7 +70,7 @@ public class SimpleSSLContext {
                             File f = new File(path, "jdk/test/lib/net/testkeys");
                             if (f.exists()) {
                                 try (FileInputStream fis = new FileInputStream(f)) {
-                                    init(fis, proto);
+                                    ssl = init(fis, proto);
                                     return null;
                                 }
                             }
@@ -104,11 +104,15 @@ public class SimpleSSLContext {
     public SimpleSSLContext(String dir) throws IOException {
         String file = dir + "/testkeys";
         try (FileInputStream fis = new FileInputStream(file)) {
-            init(fis, "TLS");
+            ssl = init(fis, "TLS");
         }
     }
 
-    private void init(InputStream i, String protocol) throws IOException {
+    protected SSLContext init(InputStream i, String protocol) throws IOException {
+        return doInit(i, protocol);
+    }
+
+    private static SSLContext doInit(InputStream i, String protocol) throws IOException {
         try {
             char[] passphrase = "passphrase".toCharArray();
             KeyStore ks = KeyStore.getInstance("PKCS12");
@@ -120,8 +124,9 @@ public class SimpleSSLContext {
             TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
             tmf.init(ks);
 
-            ssl = SSLContext.getInstance(protocol);
-            ssl.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            SSLContext ctx = SSLContext.getInstance(protocol);
+            ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            return ctx;
         } catch (KeyManagementException | KeyStoreException |
                 UnrecoverableKeyException | CertificateException |
                 NoSuchAlgorithmException e) {
