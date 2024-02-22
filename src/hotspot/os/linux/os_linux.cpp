@@ -304,8 +304,32 @@ jlong os::total_swap_space() {
 
 jlong os::free_swap_space() {
   if (OSContainer::is_containerized()) {
-    // TODO add a good implementation
-    return -1;
+    // see src/jdk.management/unix/classes/com/sun/management/internal/OperatingSystemImpl.java
+    // long getFreeSwapSpaceSize()
+    jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    if (mem_swap_limit >= 0 && mem_limit >= 0) {
+      jlong delta_limit = mem_swap_limit - mem_limit;
+      if (delta_limit <= 0) {
+        return 0;
+      }
+      // should we do multiple trys like we do in Java management code ?
+      // cgroupv1 : memory.memsw.usage_in_bytes (CgroupV1Subsystem.java)
+      // cgroupv2 : long swapUsage = getLongVal("memory.swap.current", NO_SWAP); memoryUsage + swapUsage;  (CgroupV2Subsystem.java)
+      //jlong memSwapUsage = containerMetrics.getMemoryAndSwapUsage();
+      jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
+      jlong mem_usage = OSContainer::memory_usage_in_bytes();
+      if (mem_swap_usage > 0 && mem_usage > 0) {
+        jlong delta_usage = mem_swap_usage - mem_usage;
+        if (delta_usage >= 0) {
+          jlong free_swap = delta_limit - delta_usage;
+          if (free_swap >= 0) {
+            return free_swap;
+          }
+        }
+      }
+    }
+    return -1; // check the fallback - maybe use something better ?
   } else {
     struct sysinfo si;
     int ret = sysinfo(&si);
