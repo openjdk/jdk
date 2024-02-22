@@ -24,15 +24,14 @@
 
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
 #include "interpreter/interpreter.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/jniHandles.hpp"
@@ -626,12 +625,9 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   Label skip_fixup;
   const Register receiver       = R0;
   const Register holder_klass   = Rtemp; // XXX should be OK for C2 but not 100% sure
-  const Register receiver_klass = R4;
 
-  __ load_klass(receiver_klass, receiver);
-  __ ldr(holder_klass, Address(Ricklass, CompiledICHolder::holder_klass_offset()));
-  __ ldr(Rmethod, Address(Ricklass, CompiledICHolder::holder_metadata_offset()));
-  __ cmp(receiver_klass, holder_klass);
+  __ ic_check(1 /* end_alignment */);
+  __ ldr(Rmethod, Address(Ricklass, CompiledICData::speculated_method_offset()));
 
   __ ldr(Rtemp, Address(Rmethod, Method::code_offset()), eq);
   __ cmp(Rtemp, 0, eq);
@@ -819,20 +815,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Unverified entry point
   address start = __ pc();
 
-  // Inline cache check, same as in C1_MacroAssembler::inline_cache_check()
   const Register receiver = R0; // see receiverOpr()
-  __ load_klass(Rtemp, receiver);
-  __ cmp(Rtemp, Ricklass);
-  Label verified;
-
-  __ b(verified, eq); // jump over alignment no-ops too
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, Rtemp);
-  __ align(CodeEntryAlignment);
+  __ verify_oop(receiver);
+  // Inline cache check
+  __ ic_check(CodeEntryAlignment /* end_alignment */);
 
   // Verified entry point
-  __ bind(verified);
   int vep_offset = __ pc() - start;
-
 
   if ((InlineObjectHash && method->intrinsic_id() == vmIntrinsics::_hashCode) || (method->intrinsic_id() == vmIntrinsics::_identityHashCode)) {
     // Object.hashCode, System.identityHashCode can pull the hashCode from the header word

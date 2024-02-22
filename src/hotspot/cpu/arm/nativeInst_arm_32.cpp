@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_arm.hpp"
 #include "oops/oop.inline.hpp"

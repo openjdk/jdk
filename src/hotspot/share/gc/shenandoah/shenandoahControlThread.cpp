@@ -30,20 +30,14 @@
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
-#include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
-#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
-#include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
-#include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
+#include "gc/shenandoah/shenandoahPacer.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
-#include "gc/shenandoah/shenandoahVMOperations.hpp"
-#include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
-#include "memory/universe.hpp"
+#include "memory/resourceArea.hpp"
 #include "runtime/atomic.hpp"
 
 ShenandoahControlThread::ShenandoahControlThread() :
@@ -61,8 +55,8 @@ ShenandoahControlThread::ShenandoahControlThread() :
 void ShenandoahControlThread::run_service() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
-  GCMode default_mode = concurrent_normal;
-  GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
+  const GCMode default_mode = concurrent_normal;
+  const GCCause::Cause default_cause = GCCause::_shenandoah_concurrent_gc;
   int sleep = ShenandoahControlIntervalMin;
 
   double last_shrink_time = os::elapsedTime();
@@ -72,23 +66,21 @@ void ShenandoahControlThread::run_service() {
   // Having a period 10x lower than the delay would mean we hit the
   // shrinking with lag of less than 1/10-th of true delay.
   // ShenandoahUncommitDelay is in msecs, but shrink_period is in seconds.
-  double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
+  const double shrink_period = (double)ShenandoahUncommitDelay / 1000 / 10;
 
-  ShenandoahCollectorPolicy* policy = heap->shenandoah_policy();
-  ShenandoahHeuristics* heuristics = heap->heuristics();
+  ShenandoahCollectorPolicy* const policy = heap->shenandoah_policy();
+  ShenandoahHeuristics* const heuristics = heap->heuristics();
   while (!in_graceful_shutdown() && !should_terminate()) {
     // Figure out if we have pending requests.
-    bool alloc_failure_pending = _alloc_failure_gc.is_set();
-    bool is_gc_requested = _gc_requested.is_set();
-    GCCause::Cause requested_gc_cause = _requested_gc_cause;
-    bool explicit_gc_requested = is_gc_requested && is_explicit_gc(requested_gc_cause);
-    bool implicit_gc_requested = is_gc_requested && !is_explicit_gc(requested_gc_cause);
+    const bool alloc_failure_pending = _alloc_failure_gc.is_set();
+    const bool is_gc_requested = _gc_requested.is_set();
+    const GCCause::Cause requested_gc_cause = _requested_gc_cause;
 
-    // This control loop iteration have seen this much allocations.
-    size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
+    // This control loop iteration has seen this much allocation.
+    const size_t allocs_seen = Atomic::xchg(&_allocs_seen, (size_t)0, memory_order_relaxed);
 
     // Check if we have seen a new target for soft max heap size.
-    bool soft_max_changed = check_soft_max_changed();
+    const bool soft_max_changed = heap->check_soft_max_changed();
 
     // Choose which GC mode to run in. The block below should select a single mode.
     GCMode mode = none;
@@ -115,36 +107,17 @@ void ShenandoahControlThread::run_service() {
         mode = stw_full;
       }
 
-    } else if (explicit_gc_requested) {
+    } else if (is_gc_requested) {
       cause = requested_gc_cause;
-      log_info(gc)("Trigger: Explicit GC request (%s)", GCCause::to_string(cause));
-
+      log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
       heuristics->record_requested_gc();
 
-      if (ExplicitGCInvokesConcurrent) {
-        policy->record_explicit_to_concurrent();
+      if (ShenandoahCollectorPolicy::should_run_full_gc(cause)) {
+        mode = stw_full;
+      } else {
         mode = default_mode;
         // Unload and clean up everything
         heap->set_unload_classes(heuristics->can_unload_classes());
-      } else {
-        policy->record_explicit_to_full();
-        mode = stw_full;
-      }
-    } else if (implicit_gc_requested) {
-      cause = requested_gc_cause;
-      log_info(gc)("Trigger: Implicit GC request (%s)", GCCause::to_string(cause));
-
-      heuristics->record_requested_gc();
-
-      if (ShenandoahImplicitGCInvokesConcurrent) {
-        policy->record_implicit_to_concurrent();
-        mode = default_mode;
-
-        // Unload and clean up everything
-        heap->set_unload_classes(heuristics->can_unload_classes());
-      } else {
-        policy->record_implicit_to_full();
-        mode = stw_full;
       }
     } else {
       // Potential normal cycle: ask heuristics if it wants to act
@@ -159,11 +132,11 @@ void ShenandoahControlThread::run_service() {
 
     // Blow all soft references on this cycle, if handling allocation failure,
     // either implicit or explicit GC request,  or we are requested to do so unconditionally.
-    if (alloc_failure_pending || implicit_gc_requested || explicit_gc_requested || ShenandoahAlwaysClearSoftRefs) {
+    if (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs) {
       heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
     }
 
-    bool gc_requested = (mode != none);
+    const bool gc_requested = (mode != none);
     assert (!gc_requested || cause != GCCause::_last_gc_cause, "GC cause should be set");
 
     if (gc_requested) {
@@ -199,7 +172,7 @@ void ShenandoahControlThread::run_service() {
       }
 
       // If this was the requested GC cycle, notify waiters about it
-      if (explicit_gc_requested || implicit_gc_requested) {
+      if (is_gc_requested) {
         notify_gc_waiters();
       }
 
@@ -272,14 +245,14 @@ void ShenandoahControlThread::run_service() {
       }
     }
 
-    double current = os::elapsedTime();
+    const double current = os::elapsedTime();
 
-    if (ShenandoahUncommit && (explicit_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
+    if (ShenandoahUncommit && (is_gc_requested || soft_max_changed || (current - last_shrink_time > shrink_period))) {
       // Explicit GC tries to uncommit everything down to min capacity.
       // Soft max change tries to uncommit everything down to target capacity.
       // Periodic uncommit tries to uncommit suitable regions down to min capacity.
 
-      double shrink_before = (explicit_gc_requested || soft_max_changed) ?
+      double shrink_before = (is_gc_requested || soft_max_changed) ?
                              current :
                              current - (ShenandoahUncommitDelay / 1000.0);
 
@@ -287,7 +260,7 @@ void ShenandoahControlThread::run_service() {
                              heap->soft_max_capacity() :
                              heap->min_capacity();
 
-      service_uncommit(shrink_before, shrink_until);
+      heap->maybe_uncommit(shrink_before, shrink_until);
       heap->phase_timings()->flush_cycle_to_global();
       last_shrink_time = current;
     }
@@ -295,7 +268,7 @@ void ShenandoahControlThread::run_service() {
     // Wait before performing the next action. If allocation happened during this wait,
     // we exit sooner, to let heuristics re-evaluate new conditions. If we are at idle,
     // back off exponentially.
-    if (_heap_changed.try_unset()) {
+    if (heap->has_changed()) {
       sleep = ShenandoahControlIntervalMin;
     } else if ((current - last_sleep_adjust_time) * 1000 > ShenandoahControlIntervalAdjustPeriod){
       sleep = MIN2<int>(ShenandoahControlIntervalMax, MAX2(1, sleep * 2));
@@ -308,25 +281,6 @@ void ShenandoahControlThread::run_service() {
   while (!should_terminate()) {
     os::naked_short_sleep(ShenandoahControlIntervalMin);
   }
-}
-
-bool ShenandoahControlThread::check_soft_max_changed() const {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-  size_t new_soft_max = Atomic::load(&SoftMaxHeapSize);
-  size_t old_soft_max = heap->soft_max_capacity();
-  if (new_soft_max != old_soft_max) {
-    new_soft_max = MAX2(heap->min_capacity(), new_soft_max);
-    new_soft_max = MIN2(heap->max_capacity(), new_soft_max);
-    if (new_soft_max != old_soft_max) {
-      log_info(gc)("Soft Max Heap Size: " SIZE_FORMAT "%s -> " SIZE_FORMAT "%s",
-                   byte_size_in_proper_unit(old_soft_max), proper_unit_for_byte_size(old_soft_max),
-                   byte_size_in_proper_unit(new_soft_max), proper_unit_for_byte_size(new_soft_max)
-      );
-      heap->set_soft_max_capacity(new_soft_max);
-      return true;
-    }
-  }
-  return false;
 }
 
 void ShenandoahControlThread::service_concurrent_normal_cycle(GCCause::Cause cause) {
@@ -420,52 +374,8 @@ void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause
   gc.collect(cause);
 }
 
-void ShenandoahControlThread::service_uncommit(double shrink_before, size_t shrink_until) {
-  ShenandoahHeap* heap = ShenandoahHeap::heap();
-
-  // Determine if there is work to do. This avoids taking heap lock if there is
-  // no work available, avoids spamming logs with superfluous logging messages,
-  // and minimises the amount of work while locks are taken.
-
-  if (heap->committed() <= shrink_until) return;
-
-  bool has_work = false;
-  for (size_t i = 0; i < heap->num_regions(); i++) {
-    ShenandoahHeapRegion *r = heap->get_region(i);
-    if (r->is_empty_committed() && (r->empty_time() < shrink_before)) {
-      has_work = true;
-      break;
-    }
-  }
-
-  if (has_work) {
-    heap->entry_uncommit(shrink_before, shrink_until);
-  }
-}
-
-bool ShenandoahControlThread::is_explicit_gc(GCCause::Cause cause) const {
-  return GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause);
-}
-
 void ShenandoahControlThread::request_gc(GCCause::Cause cause) {
-  assert(GCCause::is_user_requested_gc(cause) ||
-         GCCause::is_serviceability_requested_gc(cause) ||
-         cause == GCCause::_metadata_GC_clear_soft_refs ||
-         cause == GCCause::_codecache_GC_aggressive ||
-         cause == GCCause::_codecache_GC_threshold ||
-         cause == GCCause::_full_gc_alot ||
-         cause == GCCause::_wb_young_gc ||
-         cause == GCCause::_wb_full_gc ||
-         cause == GCCause::_wb_breakpoint ||
-         cause == GCCause::_scavenge_alot,
-         "only requested GCs here: %s", GCCause::to_string(cause));
-
-  if (is_explicit_gc(cause)) {
-    if (!DisableExplicitGC) {
-      handle_requested_gc(cause);
-    }
-  } else {
+  if (ShenandoahCollectorPolicy::should_handle_requested_gc(cause)) {
     handle_requested_gc(cause);
   }
 }
@@ -552,14 +462,6 @@ void ShenandoahControlThread::notify_gc_waiters() {
   _gc_requested.unset();
   MonitorLocker ml(&_gc_waiters_lock);
   ml.notify_all();
-}
-
-void ShenandoahControlThread::notify_heap_changed() {
-  // This is called from allocation path, and thus should be fast.
-  // Notify that something had changed.
-  if (_heap_changed.is_unset()) {
-    _heap_changed.set();
-  }
 }
 
 void ShenandoahControlThread::pacing_notify_alloc(size_t words) {

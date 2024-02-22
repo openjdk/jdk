@@ -47,7 +47,6 @@ CodeCacheUnloadingTask::CodeCacheUnloadingTask(uint num_workers, bool unloading_
 
 CodeCacheUnloadingTask::~CodeCacheUnloadingTask() {
   CodeCache::verify_clean_inline_caches();
-  CodeCache::verify_icholder_relocations();
 }
 
 void CodeCacheUnloadingTask::claim_nmethods(CompiledMethod** claimed_nmethods, int *num_claimed_nmethods) {

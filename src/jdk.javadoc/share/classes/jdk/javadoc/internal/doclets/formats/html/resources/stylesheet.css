@@ -1,4 +1,11 @@
 /*
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl/
+ */
+
+/*
  * Javadoc style sheet
  */
 
@@ -249,6 +256,10 @@ ol.sub-nav-list::-webkit-scrollbar {
 ol.sub-nav-list li {
     list-style:none;
     scroll-snap-align: start;
+}
+ol.sub-nav-list li:not(:first-child) {
+    list-style-type: " > ";
+    margin-left: 20px;
 }
 ol.sub-nav-list a {
     padding: 3px;
