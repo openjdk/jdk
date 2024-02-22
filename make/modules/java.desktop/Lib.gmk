@@ -64,6 +64,7 @@ ifeq ($(call isTargetOs, aix), false)
       CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
       DISABLED_WARNINGS_gcc := undef, \
       DISABLED_WARNINGS_clang := undef, \
+      DISABLED_WARNINGS_clang_PLATFORM_API_MacOSX_Ports.cpp := vla-extension, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS_unix := -ljava -ljvm, \

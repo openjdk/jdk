@@ -80,7 +80,7 @@ ifneq ($(BUILD_CRYPTO), false)
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
         CFLAGS := $(CFLAGS_JDKLIB), \
-        DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
+        DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations import-preprocessor-directive-pedantic, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := -framework Cocoa -framework SystemConfiguration \

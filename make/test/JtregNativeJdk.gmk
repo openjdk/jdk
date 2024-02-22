@@ -55,6 +55,11 @@ BUILD_JDK_JTREG_EXECUTABLES_CFLAGS_exeJliLaunchTest := \
 
 TEST_LIB_NATIVE_SRC := $(TOPDIR)/test/lib/native
 
+ifeq ($(TOOLCHAIN_TYPE), clang)
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libReentrantUpcalls := -Wno-pedantic
+  BUILD_JDK_JTREG_LIBRARIES_CFLAGS_libIntrinsics := -Wno-newline-eof
+endif
+
 # Platform specific setup
 ifeq ($(call isTargetOs, windows), true)
   BUILD_JDK_JTREG_EXCLUDE += libDirectIO.c libInheritedChannel.c \
