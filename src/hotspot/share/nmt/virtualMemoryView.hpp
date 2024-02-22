@@ -48,39 +48,52 @@ class VirtualMemoryView {
 
   using Id = int32_t;
 public:
-   struct PhysicalMemorySpace {
+
+  struct PhysicalMemorySpace {
     Id id; // Uniquely identifies the device
     static Id unique_id;
     static Id next_unique() {
       return unique_id++;
     }
-   };
+  };
 
   // Some memory range
   struct Range {
     address start;
     size_t size;
     Range(address start = 0, size_t size = 0)
-    : start(start), size(size) {}
+      : start(start),
+        size(size) {
+    }
     address end() const {
       return start + size;
     }
   };
+
   // Add tracking information
   struct TrackedRange : public Range {
     NativeCallStackStorage::StackIndex stack_idx; // From whence did this happen?
     MEMFLAGS flag; // What flag does it have? Guaranteed to be mtNone for committed range.
-    TrackedRange(address start = 0, size_t size = 0, NativeCallStackStorage::StackIndex stack_idx = {0,0}, MEMFLAGS flag = mtNone) :
-      Range(start, size), stack_idx(stack_idx), flag(flag) {}
+    TrackedRange(address start = 0, size_t size = 0,
+                 NativeCallStackStorage::StackIndex stack_idx = {0, 0}, MEMFLAGS flag = mtNone)
+      : Range(start, size),
+        stack_idx(stack_idx),
+        flag(flag) {
+    }
   };
+
   // Give it the possibility of being offset
   struct TrackedOffsetRange : public TrackedRange {
     address physical_address;
-    TrackedOffsetRange(address start = 0, size_t size = 0, address physical_address = 0, NativeCallStackStorage::StackIndex stack_idx = {0,0}, MEMFLAGS flag = mtNone)
-      :  TrackedRange(start, size, stack_idx, flag),
-      physical_address(physical_address) {}
+    TrackedOffsetRange(address start = 0, size_t size = 0, address physical_address = 0,
+                       NativeCallStackStorage::StackIndex stack_idx = {0, 0},
+                       MEMFLAGS flag = mtNone)
+      : TrackedRange(start, size, stack_idx, flag),
+        physical_address(physical_address) {
+    }
     explicit TrackedOffsetRange(const TrackedRange& rng)
-    : TrackedOffsetRange(rng.start, rng.size, rng.start, rng.stack_idx, rng.flag) {}
+      : TrackedOffsetRange(rng.start, rng.size, rng.start, rng.stack_idx, rng.flag) {
+    }
     TrackedOffsetRange(const TrackedOffsetRange& rng) = default;
     TrackedOffsetRange& operator=(const TrackedOffsetRange& rng) {
       this->start = rng.start;
@@ -91,7 +104,9 @@ public:
       return *this;
     }
     TrackedOffsetRange(TrackedOffsetRange&& rng)
-      : TrackedRange(rng.start, rng.size, rng.stack_idx, rng.flag), physical_address(rng.physical_address) {}
+      : TrackedRange(rng.start, rng.size, rng.stack_idx, rng.flag),
+        physical_address(rng.physical_address) {
+    }
 
     address physical_end() const {
       return physical_address + size;
@@ -112,10 +127,10 @@ public:
     // Summary tracking per PhysicalMemorySpace
     GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT> summary;
     VirtualMemory()
-     : reserved_regions(),
-       committed_regions(),
-       mapped_regions(),
-       summary() {
+      : reserved_regions(),
+        committed_regions(),
+        mapped_regions(),
+        summary() {
     }
     VirtualMemory(const VirtualMemory& other) {
       *this = other;
@@ -124,7 +139,7 @@ public:
     VirtualMemory& operator=(const VirtualMemory& other) {
       if (this != &other) {
         this->reserved_regions =
-          GrowableArrayCHeap<RegionStorage, mtNMT>{other.reserved_regions.length()};
+            GrowableArrayCHeap<RegionStorage, mtNMT>{other.reserved_regions.length()};
         this->mapped_regions =
             GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{other.mapped_regions.length()};
         this->committed_regions =
@@ -132,7 +147,8 @@ public:
         this->summary = GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT>(other.summary.length());
 
         for (int i = 0; i < other.reserved_regions.length(); i++) {
-          const GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& ith = other.reserved_regions.at(i);
+          const GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& ith =
+              other.reserved_regions.at(i);
           this->reserved_regions.push(ith);
           GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& vith = this->reserved_regions.at(i);
           for (int j = 0; j < ith.length(); j++) {
@@ -192,6 +208,7 @@ private:
     }
   };
   void snapshot_thread_stacks();
+
 private:
   // Utilities
   static bool adjacent(Range a, Range b);
@@ -216,9 +233,9 @@ private:
   static void sort_regions(OffsetRegionStorage& storage);
   static void sort_regions(RegionStorage& storage);
 
-  static bool equal_stacks(NativeCallStackStorage::StackIndex a, NativeCallStackStorage::StackIndex b) {
-    return (a.index() == b.index() && a.chunk() == b.chunk()) ||
-            _stack_storage->get(a).equals(_stack_storage->get(b));
+  static bool equal_stacks(NativeCallStackStorage::StackIndex a,
+                           NativeCallStackStorage::StackIndex b) {
+    return a.index() == b.index() && a.chunk() == b.chunk();
   }
 
   // Split the range to_split by removing to_remove from it, storing the remaining parts in out.
@@ -235,16 +252,17 @@ private:
   static OverlappingResult overlap_of(TrackedOffsetRange to_split, Range to_remove,
                                       TrackedOffsetRange* out, int* len);
 
-  static VirtualMemory* _virt_mem;
-  static GrowableArrayCHeap<Range, mtNMT>* thread_stacks; // Committed thread stacks are handled specially
-  static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
+private:
+  // Data and API
+  VirtualMemory _virt_mem;
+  GrowableArrayCHeap<Range, mtNMT> _thread_stacks; // Committed thread stacks are handled specially
+  GrowableArrayCHeap<const char*, mtNMT> _names; // Map memory space to name
 
-  static NativeCallStackStorage* _stack_storage;
-  static bool _is_detailed_mode;
+  NativeCallStackStorage _stack_storage;
 
-  static void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
-
+  void register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag,
+                              const NativeCallStack& stack);
+  void unregister_memory(RegionStorage& storage, address base_addr, size_t size);
 
   // Create a canonical mapping from address to MEMFLAGS stored in `mapping`.
   // This is used for computing the MEMFLAGS of each committed region
@@ -253,36 +271,76 @@ private:
                      const VirtualMemoryView::OffsetRegionStorage& map,
                      VirtualMemoryView::RegionStorage& mapping);
 
-public:
-  // A default PhysicalMemorySpace for when allocating to the heap.
-  static PhysicalMemorySpace heap;
-  static void initialize(bool is_detailed_mode);
+    // A default PhysicalMemorySpace for when allocating to the heap.
+  PhysicalMemorySpace _heap;
+  void initialize(bool is_detailed_mode);
 
-  static PhysicalMemorySpace register_space(const char* descriptive_name);
+  PhysicalMemorySpace register_space(const char* descriptive_name);
 
-  static void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack);
-  static void release_memory(address base_addr, size_t size);
-  static void commit_memory(address base_addr, size_t size, const NativeCallStack& stack);
-  static void uncommit_memory(address base_addr, size_t size);
+  void reserve_memory(address base_addr, size_t size, MEMFLAGS flag,
+                             const NativeCallStack& stack);
+  void release_memory(address base_addr, size_t size);
+  void commit_memory(address base_addr, size_t size, const NativeCallStack& stack);
+  void uncommit_memory(address base_addr, size_t size);
 
-  static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
+  void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
-  static void remove_view_into_space(const PhysicalMemorySpace& space, address base_addr,
+  void remove_view_into_space(const PhysicalMemorySpace& space, address base_addr,
                                      size_t size);
 
-  static void commit_memory_into_space(const PhysicalMemorySpace& space, address offset, size_t size,
-                                       const NativeCallStack& stack);
-  static void uncommit_memory_into_space(const PhysicalMemorySpace& space, address offset,
+  void commit_memory_into_space(const PhysicalMemorySpace& space, address offset,
+                                       size_t size, const NativeCallStack& stack);
+  void uncommit_memory_into_space(const PhysicalMemorySpace& space, address offset,
                                          size_t size);
 
   // Produce a report on output.
-  static void report(VirtualMemory& mem, outputStream* output, size_t scale = K);
-  static const VirtualMemory& virtual_memory() {
-    return *_virt_mem;
+  void report(VirtualMemory& mem, outputStream* output, size_t scale = K);
+  const VirtualMemory& virtual_memory() {
+    return _virt_mem;
   }
 
   // Compute the summary snapshot of a VirtualMemory state.
-  static void compute_summary_snapshot(VirtualMemory& vmem);
+  void compute_summary_snapshot(VirtualMemory& vmem);
+
+public:
+  VirtualMemoryView(bool is_detailed_mode);
+
+  class Interface : public AllStatic {
+    // A default PhysicalMemorySpace for when allocating to the heap.
+    static PhysicalMemorySpace _heap;
+    static VirtualMemoryView* _instance;
+  public:
+    static void initialize(bool is_detailed_mode);
+
+    static PhysicalMemorySpace register_space(const char* descriptive_name);
+
+    static void reserve_memory(address base_addr, size_t size, MEMFLAGS flag,
+                               const NativeCallStack& stack);
+    static void release_memory(address base_addr, size_t size);
+    static void commit_memory(address base_addr, size_t size, const NativeCallStack& stack);
+    static void uncommit_memory(address base_addr, size_t size);
+
+    static void add_view_into_space(const PhysicalMemorySpace& space, address base_addr,
+                                    size_t size, address offset, MEMFLAGS flag,
+                                    const NativeCallStack& stack);
+    static void remove_view_into_space(const PhysicalMemorySpace& space, address base_addr,
+                                       size_t size);
+
+    static void commit_memory_into_space(const PhysicalMemorySpace& space, address offset,
+                                         size_t size, const NativeCallStack& stack);
+    static void uncommit_memory_into_space(const PhysicalMemorySpace& space, address offset,
+                                           size_t size);
+
+    // Produce a report on output.
+    static void report(VirtualMemory& mem, outputStream* output, size_t scale = K);
+    static const VirtualMemory& virtual_memory() {
+      return _instance->_virt_mem;
+    }
+
+    // Compute the summary snapshot of a VirtualMemory state.
+    static void compute_summary_snapshot(VirtualMemory& vmem);
+  };
 };
+
 
 #endif // SHARE_NMT_VIRTUALMEMORYVIEW_HPP

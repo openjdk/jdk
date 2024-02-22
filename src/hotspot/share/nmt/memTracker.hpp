@@ -170,12 +170,13 @@ class MemTracker : AllStatic {
     }
   }
 
+  using VMVI = VirtualMemoryView::Interface;
   using VMV = VirtualMemoryView;
   static inline VMV::PhysicalMemorySpace register_space(const char* descriptive_name) {
     assert_post_init();
     // if (!enabled()) return;
     ThreadCritical tc;
-    return VMV::register_space(descriptive_name);
+    return VMVI::register_space(descriptive_name);
   }
 
   static inline void reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
@@ -183,7 +184,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (base_addr != nullptr) {
       ThreadCritical tc;
-      VMV::reserve_memory(base_addr, size, flag, stack);
+      VMVI::reserve_memory(base_addr, size, flag, stack);
     }
   }
   static inline void release_memory(address base_addr, size_t size) {
@@ -191,7 +192,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (base_addr != nullptr) {
       ThreadCritical tc;
-      VMV::release_memory(base_addr, size);
+      VMVI::release_memory(base_addr, size);
     }
   }
 
@@ -201,7 +202,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (base_addr != nullptr) {
       ThreadCritical tc;
-      VMV::add_view_into_space(space, base_addr, size, offset, flag, stack);
+      VMVI::add_view_into_space(space, base_addr, size, offset, flag, stack);
     }
   }
 
@@ -210,7 +211,7 @@ class MemTracker : AllStatic {
     if (!enabled()) return;
     if (base_addr != nullptr) {
       ThreadCritical tc;
-      VMV::remove_view_into_space(space, base_addr, size);
+      VMVI::remove_view_into_space(space, base_addr, size);
     }
   }
   static inline void commit_memory_into_space(const VMV::PhysicalMemorySpace space,
@@ -218,13 +219,13 @@ class MemTracker : AllStatic {
     assert_post_init();
     if (!enabled()) return;
     ThreadCritical tc;
-    VMV::commit_memory_into_space(space, offset, size, stack);
+    VMVI::commit_memory_into_space(space, offset, size, stack);
   }
   static inline void uncommit_memory_into_space(const VMV::PhysicalMemorySpace space, address offset, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     ThreadCritical tc;
-    VMV::uncommit_memory_into_space(space, offset, size);
+    VMVI::uncommit_memory_into_space(space, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting

@@ -138,7 +138,7 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 };
 
 void MemBaseline::baseline_summary_vmemview() {
-  VirtualMemoryView::compute_summary_snapshot(this->_vmemview_data);
+  VirtualMemoryView::Interface::compute_summary_snapshot(this->_vmemview_data);
 }
 
 void MemBaseline::baseline_summary() {
@@ -196,7 +196,7 @@ void MemBaseline::baseline(bool summaryOnly) {
   if (!summaryOnly &&
       MemTracker::tracking_level() == NMT_detail) {
     baseline_allocation_sites();
-    this->_vmemview_data = VirtualMemoryView::virtual_memory();
+    this->_vmemview_data = VirtualMemoryView::Interface::virtual_memory();
     baseline_summary_vmemview();
     _baseline_type = Detail_baselined;
   }

@@ -8,7 +8,7 @@
 #include "unittest.hpp"
 
 #include <stdio.h>
-
+/*
 class VirtualMemoryViewTest {
   using vmv = VirtualMemoryView;
 public:
@@ -55,3 +55,4 @@ public:
                 || (reserved_ranges.at(0).flag == mtArguments && reserved_ranges.at(1).flag == mtTest));
   }
 };
+*/

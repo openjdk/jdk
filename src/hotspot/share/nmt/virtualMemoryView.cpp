@@ -31,17 +31,13 @@
 #include "utilities/ostream.hpp"
 
 int VirtualMemoryView::PhysicalMemorySpace::unique_id = 0;
-GrowableArrayCHeap<const char*, mtNMT>* VirtualMemoryView::_names = nullptr;
-NativeCallStackStorage* VirtualMemoryView::_stack_storage = nullptr;
-bool VirtualMemoryView::_is_detailed_mode = false;
-VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::heap{};
-VirtualMemoryView::VirtualMemory* VirtualMemoryView::_virt_mem = nullptr;
-GrowableArrayCHeap<VirtualMemoryView::Range, mtNMT>* VirtualMemoryView::thread_stacks = nullptr;
+VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::Interface::_heap{};
+VirtualMemoryView* VirtualMemoryView::Interface::_instance = nullptr;
 
 void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t scale) {
   auto print_mapped_memory = [&](TrackedOffsetRange& mapped_range) -> void {
     output->print("\n\t");
-    const NativeCallStack& stack = _stack_storage->get(mapped_range.stack_idx);
+    const NativeCallStack& stack = _stack_storage.get(mapped_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
     output->print("[" PTR_FORMAT " - " PTR_FORMAT "]" " of size " SIZE_FORMAT "%s for %s",
                   p2i(mapped_range.start), p2i(mapped_range.end()),
@@ -60,7 +56,7 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     }
   };
   const auto print_committed_memory = [&](TrackedRange& committed_range) {
-    const NativeCallStack& stack = _stack_storage->get(committed_range.stack_idx);
+    const NativeCallStack& stack = _stack_storage.get(committed_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
     output->print("\n\t");
     output->print("\n\t");
@@ -75,7 +71,7 @@ void VirtualMemoryView::report(VirtualMemory& mem, outputStream* output, size_t 
     }
   };
   const auto print_reserved_memory = [&](TrackedRange& reserved_range) {
-    const NativeCallStack& stack = _stack_storage->get(reserved_range.stack_idx);
+    const NativeCallStack& stack = _stack_storage.get(reserved_range.stack_idx);
     const char* scale_name = NMTUtil::scale_name(scale);
     output->print("[" PTR_FORMAT " - " PTR_FORMAT "]" " reserved " SIZE_FORMAT "%s for %s",
                   p2i(reserved_range.start), p2i(reserved_range.end()),
@@ -139,25 +135,25 @@ void VirtualMemoryView::unregister_memory(RegionStorage& storage, address base_a
 }
 
 void VirtualMemoryView::release_memory(address base_addr, size_t size) {
-  unregister_memory(_virt_mem->reserved_regions.at(heap.id), base_addr, size);
+  unregister_memory(_virt_mem.reserved_regions.at(_heap.id), base_addr, size);
 }
 
 void VirtualMemoryView::commit_memory(address base_addr, size_t size, const NativeCallStack& stack) {
-  commit_memory_into_space(heap, base_addr, size, stack);
+  commit_memory_into_space(_heap, base_addr, size, stack);
 }
 void VirtualMemoryView::uncommit_memory(address base_addr, size_t size) {
-  uncommit_memory_into_space(heap, base_addr, size);
+  uncommit_memory_into_space(_heap, base_addr, size);
 }
 
 void VirtualMemoryView::uncommit_memory_into_space(const PhysicalMemorySpace& space,
                                                          address offset, size_t size) {
-  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(space.id);
+  RegionStorage& committed_ranges = _virt_mem.committed_regions.at(space.id);
   unregister_memory(committed_ranges, offset, size);
 
 }
 
 void VirtualMemoryView::register_memory(RegionStorage& storage, address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
-  NativeCallStackStorage::StackIndex idx = _stack_storage->push(stack);
+  NativeCallStackStorage::StackIndex idx = _stack_storage.push(stack);
   // Small optimization: While the next commit overlapping with the last one we can merge without pushing.
   if (storage.length() > 0) {
     int i = 1;
@@ -168,7 +164,7 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
     // Do the merging repeatedly.
     while ((overlaps(range, base_range)
          || adjacent(range, base_range))
-        && _stack_storage->get(range.stack_idx).equals(stack)
+        && _stack_storage.get(range.stack_idx).equals(stack)
         && range.flag == flag) {
       base_range.start = MIN2(base_addr, range.start);
       base_range.size = MAX2(base_addr+size, range.end()) - range.start;
@@ -187,20 +183,20 @@ void VirtualMemoryView::register_memory(RegionStorage& storage, address base_add
 }
 
 void VirtualMemoryView::reserve_memory(address base_addr, size_t size, MEMFLAGS flag, const NativeCallStack& stack) {
-  register_memory(_virt_mem->reserved_regions.at(heap.id), base_addr, size, flag, stack);
+  register_memory(_virt_mem.reserved_regions.at(_heap.id), base_addr, size, flag, stack);
 }
 
 void VirtualMemoryView::commit_memory_into_space(const PhysicalMemorySpace& space,
                                                  address offset, size_t size,
                                                  const NativeCallStack& stack) {
-  RegionStorage& crngs = _virt_mem->committed_regions.at(space.id);
+  RegionStorage& crngs = _virt_mem.committed_regions.at(space.id);
   register_memory(crngs, offset, size, mtNone, stack);
 }
 
 void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
                                                address base_addr, size_t size) {
   Range range_to_remove{base_addr, size};
-  OffsetRegionStorage& range_array = _virt_mem->mapped_regions.at(space.id);
+  OffsetRegionStorage& range_array = _virt_mem.mapped_regions.at(space.id);
   TrackedOffsetRange out[2];
   int len;
   for (int i = 0; i < range_array.length(); i++) {
@@ -226,8 +222,8 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
                                                   MEMFLAGS flag, const NativeCallStack& stack) {
   // This method is a bit tricky because we need to care about preserving the offsets of any already existing view
   // that overlaps with the view being added.
-  NativeCallStackStorage::StackIndex stack_idx = _stack_storage->push(stack);
-  OffsetRegionStorage& rngs = _virt_mem->mapped_regions.at(space.id);
+  NativeCallStackStorage::StackIndex stack_idx = _stack_storage.push(stack);
+  OffsetRegionStorage& rngs = _virt_mem.mapped_regions.at(space.id);
   // We need to find overlapping regions and split on them, because the offsets may differ.
   for (int i = 0; i < rngs.length(); i++) {
     TrackedOffsetRange& rng = rngs.at(i);
@@ -267,24 +263,17 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::register_space(const c
   OffsetRegionStorage to_copy_mapped{};
   RegionStorage to_copy_reserved_committed{};
   VirtualMemorySnapshot to_copy_snapshot{};
-  _virt_mem->reserved_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
-  _virt_mem->mapped_regions.at_put_grow(next_space.id, to_copy_mapped);
-  _virt_mem->committed_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
-  _virt_mem->summary.at_put_grow(next_space.id, to_copy_snapshot);
-  _names->at_put_grow(next_space.id, descriptive_name, "");
+
+  _virt_mem.reserved_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
+  _virt_mem.mapped_regions.at_put_grow(next_space.id, to_copy_mapped);
+  _virt_mem.committed_regions.at_put_grow(next_space.id, to_copy_reserved_committed);
+  _virt_mem.summary.at_put_grow(next_space.id, to_copy_snapshot);
+  _names.at_put_grow(next_space.id, descriptive_name, "");
   return next_space;
 }
 
-void VirtualMemoryView::initialize(bool is_detailed_mode) {
-  _virt_mem = new VirtualMemory();
-  _virt_mem->reserved_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{};
-  _virt_mem->mapped_regions = GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{};
-  _virt_mem->committed_regions = GrowableArrayCHeap<RegionStorage, mtNMT>{};
-  _stack_storage = new NativeCallStackStorage{is_detailed_mode};
-  _names = new GrowableArrayCHeap<const char*, mtNMT>{};
-  _is_detailed_mode = is_detailed_mode;
-  heap = register_space("Heap");
-}
+VirtualMemoryView::VirtualMemoryView(bool is_detailed_mode)
+: _virt_mem{}, _thread_stacks{}, _names{}, _stack_storage{is_detailed_mode} {}
 
 void VirtualMemoryView::merge_memregions(RegionStorage& ranges) {
   RegionStorage merged_ranges;
@@ -521,9 +510,9 @@ bool VirtualMemoryView::RegionIterator::next_committed(address& committed_start,
 
 
 void VirtualMemoryView::snapshot_thread_stacks() {
-  thread_stacks->clear();
-  RegionStorage& reserved_ranges = _virt_mem->reserved_regions.at(heap.id);
-  RegionStorage& committed_ranges = _virt_mem->committed_regions.at(heap.id);
+  _thread_stacks.clear();
+  RegionStorage& reserved_ranges = _virt_mem.reserved_regions.at(_heap.id);
+  RegionStorage& committed_ranges = _virt_mem.committed_regions.at(_heap.id);
   for (int i = 0; i < reserved_ranges.length(); i++) {
     TrackedRange& rng = reserved_ranges.at(i);
     if (rng.flag == mtThreadStack) {
@@ -543,12 +532,12 @@ void VirtualMemoryView::snapshot_thread_stacks() {
           committed_size = stack_bottom + stack_size - committed_start;
         }
       }
-      thread_stacks->push(Range{committed_start, committed_size});
+      _thread_stacks.push(Range{committed_start, committed_size});
     }
   }
 
-  sort_regions(*thread_stacks);
-  merge_thread_stacks(*thread_stacks);
+  sort_regions(_thread_stacks);
+  merge_thread_stacks(_thread_stacks);
 }
 
 void VirtualMemoryView::map_it(const VirtualMemoryView::RegionStorage& res,
@@ -657,4 +646,43 @@ void VirtualMemoryView::compute_summary_snapshot(VirtualMemory& vmem) {
       }
     }
   }
+}
+
+void VirtualMemoryView::Interface::initialize(bool is_detailed_mode) {
+  _instance = (VirtualMemoryView*)os::malloc(sizeof(VirtualMemoryView), mtNMT);
+  ::new (_instance) VirtualMemoryView(is_detailed_mode);;
+  _heap = register_space("Heap");
+}
+VirtualMemoryView::PhysicalMemorySpace
+VirtualMemoryView::Interface::register_space(const char* descriptive_name) {
+  return VirtualMemoryView::PhysicalMemorySpace{};
+}
+void VirtualMemoryView::Interface::reserve_memory(address base_addr, size_t size, MEMFLAGS flag,
+                                                  const NativeCallStack& stack) {
+}
+void VirtualMemoryView::Interface::release_memory(address base_addr, size_t size) {
+}
+void VirtualMemoryView::Interface::commit_memory(address base_addr, size_t size,
+                                                 const NativeCallStack& stack) {
+}
+void VirtualMemoryView::Interface::uncommit_memory(address base_addr, size_t size) {
+}
+void VirtualMemoryView::Interface::add_view_into_space(const PhysicalMemorySpace& space,
+                                                       address base_addr, size_t size,
+                                                       address offset, MEMFLAGS flag,
+                                                       const NativeCallStack& stack) {
+}
+void VirtualMemoryView::Interface::remove_view_into_space(const PhysicalMemorySpace& space,
+                                                          address base_addr, size_t size) {
+}
+void VirtualMemoryView::Interface::commit_memory_into_space(const PhysicalMemorySpace& space,
+                                                            address offset, size_t size,
+                                                            const NativeCallStack& stack) {
+}
+void VirtualMemoryView::Interface::uncommit_memory_into_space(const PhysicalMemorySpace& space,
+                                                              address offset, size_t size) {
+}
+void VirtualMemoryView::Interface::report(VirtualMemory& mem, outputStream* output, size_t scale) {
+}
+void VirtualMemoryView::Interface::compute_summary_snapshot(VirtualMemory& vmem) {
 }
