@@ -573,9 +573,7 @@ void JfrRecorderService::pre_safepoint_write() {
     ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire());
   }
   write_storage(_storage, _chunkwriter);
-  if (_stack_trace_repository.is_modified()) {
-    write_stacktrace(_stack_trace_repository, _chunkwriter, false);
-  }
+  write_stacktrace(_stack_trace_repository, _chunkwriter, true);
 }
 
 void JfrRecorderService::invoke_safepoint_write() {
