@@ -350,7 +350,7 @@ public class TestSplitPacks {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1c(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -373,7 +373,7 @@ public class TestSplitPacks {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"avx2", "true", "asimd", "true"})
     // Adjacent Load and Store, but split by Add/Mul
     static Object[] test1d(int[] a, int[] b, int mask) {
         for (int i = 0; i < RANGE; i+=8) {
@@ -591,7 +591,6 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 2 -> split into 2-packs
@@ -605,7 +604,7 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 3 -> split into 2-packs
@@ -619,7 +618,7 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIf = {"MaxVectorSize", ">=8"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 4 -> split into 4-packs
@@ -633,7 +632,7 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 5 -> split into 4-packs
@@ -647,7 +646,7 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 6 -> split into 4-packs
@@ -661,7 +660,7 @@ public class TestSplitPacks {
     @Test
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=8", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Cyclic dependency with distance 7 -> split into 4-packs
@@ -694,7 +693,7 @@ public class TestSplitPacks {
                   IRNode.ADD_VS,        IRNode.VECTOR_SIZE_8, "> 0",
                   IRNode.ADD_VS,        IRNode.VECTOR_SIZE_4, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
-        applyIf = {"MaxVectorSize", ">=32"},
+        applyIfAnd = {"MaxVectorSize", ">=32", "AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Split pack into power-of-2 sizes
