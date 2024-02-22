@@ -150,8 +150,8 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                 path[1] = (MenuElement)menu;
                 msm.setSelectedPath(path);
 
-                // show mnemonics
-                WindowsLookAndFeel.setMnemonicHidden(false);
+                // toggle between show and hide mnemonics
+                WindowsLookAndFeel.setMnemonicHidden(!WindowsLookAndFeel.isMnemonicHidden());
                 WindowsLookAndFeel.repaintRootPane(menuBar);
             }
         }
