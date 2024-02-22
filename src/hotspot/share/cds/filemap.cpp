@@ -1567,39 +1567,36 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
   return offset + size_in_bytes;
 }
 
+size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
+  size_t old_zeros = map->find_first_set_bit(0);
+  size_t old_size = map->size_in_bytes();
+
+  // Slice and resize bitmap
+  map->slice(old_zeros);
+
+  // Bitmap is word aligned so some leading zeros will be left over
+  // We want to keep track of how many zeros were removed
+  size_t new_zeros = map->find_first_set_bit(0);
+  size_t removed_zeros = old_zeros - new_zeros;
+
+  assert(new_zeros <= old_zeros, "Should have removed leading zeros");
+  assert(map->size_in_bytes() <= old_size, "Map size should have decreased");
+  return old_zeros - new_zeros;
+}
+
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
   size_in_bytes = ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
     // Remove leading zeros
-    size_t old_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
-    size_t old_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
-
-    size_t old_oop_size = heap_info->oopmap()->size_in_bytes();
-    size_t old_ptr_size = heap_info->ptrmap()->size_in_bytes();
-
-    // Slice and resize bitmaps
-    heap_info->oopmap()->slice(old_oop_zeros);
-    heap_info->ptrmap()->slice(old_ptr_zeros);
-
-    // Bitmap is word aligned so some leading zeros will be left over
-    // We want to keep track of how many zeros were removed
-    size_t new_oop_zeros = heap_info->oopmap()->find_first_set_bit(0);
-    size_t new_ptr_zeros = heap_info->ptrmap()->find_first_set_bit(0);
-
-    size_t removed_oop_zeros = old_oop_zeros - new_oop_zeros;
-    size_t removed_ptr_zeros = old_ptr_zeros - new_ptr_zeros;
+    size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
+    size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
 
     header()->set_heap_oopmap_leading_zeros(removed_oop_zeros);
     header()->set_heap_ptrmap_leading_zeros(removed_ptr_zeros);
     MetaspaceShared::set_heap_oopmap_leading_zeros(removed_oop_zeros);
     MetaspaceShared::set_heap_ptrmap_leading_zeros(removed_ptr_zeros);
-
-    assert(new_oop_zeros <= old_oop_zeros, "Should have removed leading zeros");
-    assert(new_ptr_zeros <= old_ptr_zeros, "Should have removed leading zeros");
-    assert(heap_info->oopmap()->size_in_bytes() <= old_oop_size, "Heap oopmap size should have decreased");
-    assert(heap_info->ptrmap()->size_in_bytes() <= old_ptr_size, "Heap ptrmap size should have decreased");
 
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
