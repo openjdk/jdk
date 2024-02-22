@@ -146,7 +146,7 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
 
 ifeq ($(call isTargetOs, windows), true)
-  WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.txt
+  WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
 
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
 endif
