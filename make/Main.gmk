@@ -459,12 +459,6 @@ $(eval $(call SetupTarget, jdk-image, \
     DEPS := jmods zip-source demos release-file, \
 ))
 
-$(eval $(call SetupTarget, jdk-runtime-link-image, \
-    MAKEFILE := Images, \
-    TARGET := runtime-link-jdk, \
-    DEPS := jdk-image, \
-))
-
 $(eval $(call SetupTarget, legacy-jre-image, \
     MAKEFILE := Images, \
     TARGET := jre, \
