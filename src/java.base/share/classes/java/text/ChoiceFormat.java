@@ -255,9 +255,8 @@ public class ChoiceFormat extends NumberFormat {
         // Set up components
         ArrayList<Double> limits = new ArrayList<>();
         ArrayList<String> formats = new ArrayList<>();
-        Segment seg = Segment.LIMIT;
-        Segment.LIMIT.patternBldr.setLength(0);
-        Segment.FORMAT.patternBldr.setLength(0);
+        StringBuilder[] segments = new StringBuilder[]{new StringBuilder(), new StringBuilder()};
+        int part = 0; // 0 denotes LIMIT. 1 denotes FORMAT.
         double limit = 0;
         boolean inQuote = false;
 
@@ -268,24 +267,24 @@ public class ChoiceFormat extends NumberFormat {
                 case '\'':
                     // Check for "''" indicating a literal quote
                     if ((i + 1) < newPattern.length() && newPattern.charAt(i + 1) == ch) {
-                        seg.patternBldr.append(ch);
+                        segments[part].append(ch);
                         ++i;
                     } else {
                         inQuote = !inQuote;
                     }
                     break;
                 case '<', '#', '\u2264':
-                    if (inQuote || seg == Segment.FORMAT) {
+                    if (inQuote || part == 1) {
                         // Don't interpret relational symbols if parsing the format
-                        seg.patternBldr.append(ch);
+                        segments[part].append(ch);
                     } else {
                         // Build the numerical value of the limit
                         // and switch to parsing format
-                        if (Segment.LIMIT.patternBldr.isEmpty()) {
+                        if (segments[0].isEmpty()) {
                             throw new IllegalArgumentException("Each interval must" +
                                     " contain a number before a format");
                         }
-                        limit = stringToNum(Segment.LIMIT.patternBldr.toString());
+                        limit = stringToNum(segments[0].toString());
                         if (ch == '<' && Double.isFinite(limit)) {
                             limit = nextDouble(limit);
                         }
@@ -293,50 +292,38 @@ public class ChoiceFormat extends NumberFormat {
                             throw new IllegalArgumentException("Incorrect order " +
                                     "of intervals, must be in ascending order");
                         }
-                        Segment.LIMIT.patternBldr.setLength(0);
-                        seg = Segment.FORMAT;
+                        segments[0].setLength(0);
+                        part = 1;
                     }
                     break;
                 case '|':
                     if (inQuote) {
-                        seg.patternBldr.append(ch);
+                        segments[part].append(ch);
                     } else {
-                        if (seg != Segment.FORMAT) {
+                        if (part != 1) {
                             // Discard incorrect portion and finish building cFmt
                             break;
                         }
                         // Insert an entry into the format and limit arrays
                         // and switch to parsing limit
                         limits.add(limit);
-                        formats.add(Segment.FORMAT.patternBldr.toString());
-                        Segment.FORMAT.patternBldr.setLength(0);
-                        seg = Segment.LIMIT;
+                        formats.add(segments[1].toString());
+                        segments[1].setLength(0);
+                        part = 0;
                     }
                     break;
                 default:
-                    seg.patternBldr.append(ch);
+                    segments[part].append(ch);
             }
         }
 
         // clean up last one (SubPattern without trailing '|')
-        if (seg == Segment.FORMAT) {
+        if (part == 1) {
             limits.add(limit);
-            formats.add(Segment.FORMAT.patternBldr.toString());
+            formats.add(segments[1].toString());
         }
         choiceLimits = limits.stream().mapToDouble(d -> d).toArray();
         choiceFormats = formats.toArray(new String[0]);
-    }
-
-    // Used to explicitly define the segment mode while applying a pattern
-    private enum Segment {
-        LIMIT(new StringBuilder()),
-        FORMAT(new StringBuilder());
-
-        private final StringBuilder patternBldr;
-
-        Segment(StringBuilder patternBldr) {
-            this.patternBldr = patternBldr;
-        }
     }
 
     /**
