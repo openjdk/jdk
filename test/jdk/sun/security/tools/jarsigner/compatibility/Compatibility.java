@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,6 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
@@ -1020,12 +1019,14 @@ public class Compatibility {
     // Executes the specified function on JdkUtils by the specified JDK.
     private static String execJdkUtils(String jdkPath, String method,
             String... args) throws Throwable {
-        String[] cmd = new String[args.length + 2];
-        cmd[0] = JdkUtils.class.getName();
-        cmd[1] = method;
-        System.arraycopy(args, 0, cmd, 2, args.length);
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(cmd);
-        return ProcessTools.executeCommand(pb).getStdout();
+        String[] cmd = new String[args.length + 5];
+        cmd[0] = jdkPath + "/bin/java";
+        cmd[1] = "-cp";
+        cmd[2] = TEST_CLASSES;
+        cmd[3] = JdkUtils.class.getName();
+        cmd[4] = method;
+        System.arraycopy(args, 0, cmd, 5, args.length);
+        return ProcessTools.executeCommand(cmd).getStdout();
     }
 
     // Executes the specified JDK tools, such as keytool and jarsigner, and
@@ -1036,25 +1037,17 @@ public class Compatibility {
         try {
             String[] cmd;
 
-            String [] jvmArgs = getJvmTestOpts();
-            cmd = new String[args.length + jvmArgs.length + 3];
+            cmd = new String[args.length + 3];
+            System.arraycopy(args, 0, cmd, 3, args.length);
             cmd[0] = toolPath;
             cmd[1] = "-J-Duser.language=en";
             cmd[2] = "-J-Duser.country=US";
-            System.arraycopy(jvmArgs,0, cmd, 3, jvmArgs.length);
-            System.arraycopy(args, 0, cmd, 3 + jvmArgs.length, args.length);
             return ProcessTools.executeCommand(cmd);
 
         } finally {
             long end = System.currentTimeMillis();
             System.out.println("child process duration [ms]: " + (end - start));
         }
-    }
-
-    private static String[] getJvmTestOpts() {
-        return Arrays.stream(Utils.prependTestJavaOpts())
-                .map(opt -> "-J" + opt)
-                .toArray(String[]::new);
     }
 
     private static class JdkInfo {
