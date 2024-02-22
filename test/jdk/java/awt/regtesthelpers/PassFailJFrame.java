@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,6 +63,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 import javax.swing.Timer;
 import javax.swing.text.JTextComponent;
@@ -113,6 +114,13 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  * The {@code Builder.testUI} methods accept interfaces which create one window
  * or a list of windows if the test needs multiple windows,
  * or directly a single window, an array of windows or a list of windows.
+ * <p>
+ * For simple test UI, use {@code Builder.splitUI}, or explicitly
+ * {@code Builder.splitUIRight} or {@code Builder.splitUIBottom} with
+ * a {@code PanelCreator}. The framework will call the provided
+ * {@code createUIPanel} to create the component with test UI and
+ * will place it as the right or bottom component in a split pane
+ * along with instruction UI.
  * <p>
  * Alternatively, use one of the {@code PassFailJFrame} constructors to
  * create an object, then create secondary test UI, register it
@@ -166,6 +174,14 @@ public final class PassFailJFrame {
      */
     private static final String EMPTY_REASON = "(no reason provided)";
 
+    /**
+     * List of windows or frames managed by the {@code PassFailJFrame}
+     * framework. These windows are automatically disposed of when the
+     * test is finished.
+     * <p>
+     * <b>Note:</b> access to this field has to be synchronized by
+     * {@code PassFailJFrame.class}.
+     */
     private static final List<Window> windowList = new ArrayList<>();
 
     private static final CountDownLatch latch = new CountDownLatch(1);
@@ -276,10 +292,33 @@ public final class PassFailJFrame {
                                    enableScreenCapture));
     }
 
-    private PassFailJFrame(Builder builder) throws InterruptedException,
-            InvocationTargetException {
-        this(builder.title, builder.instructions, builder.testTimeOut,
-             builder.rows, builder.columns, builder.screenCapture);
+    /**
+     * Configures {@code PassFailJFrame} using the builder.
+     * It creates test UI specified using {@code testUI} or {@code splitUI}
+     * methods on EDT.
+     * @param builder the builder with the parameters
+     * @throws InterruptedException if the current thread is interrupted while
+     *              waiting for EDT to complete a task
+     * @throws InvocationTargetException if an exception is thrown while
+     *              running a task on EDT
+     */
+    private PassFailJFrame(final Builder builder)
+            throws InterruptedException, InvocationTargetException {
+        invokeOnEDT(() -> createUI(builder));
+
+        if (!builder.splitUI && builder.panelCreator != null) {
+            JComponent content = builder.panelCreator.createUIPanel();
+            String title = content.getName();
+            if (title == null) {
+                title = "Test UI";
+            }
+            JDialog dialog = new JDialog(frame, title, false);
+            dialog.addWindowListener(windowClosingHandler);
+            dialog.add(content, BorderLayout.CENTER);
+            dialog.pack();
+            addTestWindow(dialog);
+            positionTestWindow(dialog, builder.position);
+        }
 
         if (builder.windowListCreator != null) {
             invokeOnEDT(() ->
@@ -299,11 +338,10 @@ public final class PassFailJFrame {
 
             if (builder.positionWindows != null) {
                 positionInstructionFrame(builder.position);
-                invokeOnEDT(() -> {
-                    builder.positionWindows
-                           .positionTestWindows(unmodifiableList(builder.testWindows),
-                                                builder.instructionUIHandler);
-                });
+                invokeOnEDT(() ->
+                        builder.positionWindows
+                               .positionTestWindows(unmodifiableList(builder.testWindows),
+                                                    builder.instructionUIHandler));
             } else if (builder.testWindows.size() == 1) {
                 Window window = builder.testWindows.get(0);
                 positionTestWindow(window, builder.position);
@@ -341,16 +379,61 @@ public final class PassFailJFrame {
         frame = new JFrame(title);
         frame.setLayout(new BorderLayout());
 
+        frame.addWindowListener(windowClosingHandler);
+
+        frame.add(createInstructionUIPanel(instructions,
+                                           testTimeOut,
+                                           rows, columns,
+                                           enableScreenCapture),
+                  BorderLayout.CENTER);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        addTestWindow(frame);
+    }
+
+    private static void createUI(Builder builder) {
+        frame = new JFrame(builder.title);
+        frame.setLayout(new BorderLayout());
+
+        frame.addWindowListener(windowClosingHandler);
+
+        JComponent instructionUI =
+                createInstructionUIPanel(builder.instructions,
+                                         builder.testTimeOut,
+                                         builder.rows, builder.columns,
+                                         builder.screenCapture);
+
+        if (builder.splitUI) {
+            JSplitPane splitPane = new JSplitPane(
+                    builder.splitUIOrientation,
+                    instructionUI,
+                    builder.panelCreator.createUIPanel());
+            frame.add(splitPane, BorderLayout.CENTER);
+        } else {
+            frame.add(instructionUI, BorderLayout.CENTER);
+        }
+
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        addTestWindow(frame);
+    }
+
+    private static JComponent createInstructionUIPanel(String instructions,
+                                                       long testTimeOut,
+                                                       int rows, int columns,
+                                                       boolean enableScreenCapture) {
+        JPanel main = new JPanel(new BorderLayout());
+
         JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
         timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
-        frame.add(testTimeoutLabel, BorderLayout.NORTH);
+        main.add(testTimeoutLabel, BorderLayout.NORTH);
 
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
                               : configurePlainText(instructions, rows, columns);
         text.setEditable(false);
 
-        frame.add(new JScrollPane(text), BorderLayout.CENTER);
+        main.add(new JScrollPane(text), BorderLayout.CENTER);
 
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
@@ -372,12 +455,10 @@ public final class PassFailJFrame {
             buttonsPanel.add(createCapturePanel());
         }
 
-        frame.addWindowListener(windowClosingHandler);
+        main.add(buttonsPanel, BorderLayout.SOUTH);
+        main.setMinimumSize(main.getPreferredSize());
 
-        frame.add(buttonsPanel, BorderLayout.SOUTH);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-        addTestWindow(frame);
+        return main;
     }
 
     private static JTextComponent configurePlainText(String instructions,
@@ -431,6 +512,22 @@ public final class PassFailJFrame {
          * @return a list of test UI windows
          */
         List<? extends Window> createTestUI();
+    }
+
+    /**
+     * Creates a component (panel) with test UI
+     * to be hosted in a split pane or a frame.
+     */
+    @FunctionalInterface
+    public interface PanelCreator {
+        /**
+         * Creates a component which hosts test UI. This component
+         * is placed into a split pane or into a frame to display the UI.
+         * <p>
+         * This method is called by the framework on the EDT.
+         * @return a component (panel) with test UI
+         */
+        JComponent createUIPanel();
     }
 
     /**
@@ -634,10 +731,12 @@ public final class PassFailJFrame {
                 break;
 
             case WINDOWS:
-                windowList.stream()
-                          .filter(Window::isShowing)
-                          .map(Window::getBounds)
-                          .forEach(PassFailJFrame::captureScreen);
+                synchronized (PassFailJFrame.class) {
+                    windowList.stream()
+                              .filter(Window::isShowing)
+                              .map(Window::getBounds)
+                              .forEach(PassFailJFrame::captureScreen);
+                }
                 break;
 
             default:
@@ -950,6 +1049,9 @@ public final class PassFailJFrame {
 
         private List<? extends Window> testWindows;
         private WindowListCreator windowListCreator;
+        private PanelCreator panelCreator;
+        private boolean splitUI;
+        private int splitUIOrientation;
         private PositionWindows positionWindows;
         private InstructionUI instructionUIHandler;
 
@@ -1090,8 +1192,102 @@ public final class PassFailJFrame {
             }
         }
 
-        public Builder positionTestUI(PositionWindows positionWindows) {
-            this.positionWindows = positionWindows;
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component and place it into a dialog.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         * @throws IllegalStateException if split UI was enabled using
+         *              a {@code splitUI} method
+         */
+        public Builder testUI(PanelCreator panelCreator) {
+            if (splitUI) {
+                throw new IllegalStateException("Can't combine splitUI and "
+                                                + "testUI with panelCreator");
+            }
+            this.panelCreator = panelCreator;
+            return this;
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it in a split pane.
+         * <p>
+         * By default, horizontal orientation is used,
+         * and test UI is displayed to the right of the instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUI(PanelCreator panelCreator) {
+            return splitUIRight(panelCreator);
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * to the right of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUIRight(PanelCreator panelCreator) {
+            return splitUI(panelCreator, JSplitPane.HORIZONTAL_SPLIT);
+        }
+
+        /**
+         * Adds a {@code PanelCreator} which the framework will use
+         * to create a component with test UI and display it
+         * in the bottom of instruction UI.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        public Builder splitUIBottom(PanelCreator panelCreator) {
+            return splitUI(panelCreator, JSplitPane.VERTICAL_SPLIT);
+        }
+
+        /**
+         * Enables split UI and stores the orientation of the split pane.
+         *
+         * @param panelCreator a {@code PanelCreator} to create a component
+         *                     with test UI
+         * @param splitUIOrientation orientation of the split pane
+         * @return this builder
+         *
+         * @throws IllegalStateException if a {@code PanelCreator} is
+         *              already set
+         * @throws IllegalArgumentException if {panelCreator} is {@code null}
+         */
+        private Builder splitUI(PanelCreator panelCreator,
+                                int splitUIOrientation) {
+            if (panelCreator == null) {
+                throw new IllegalArgumentException("A PanelCreator cannot be null");
+            }
+            if (this.panelCreator != null) {
+                throw new IllegalStateException("A PanelCreator is already set");
+            }
+
+            splitUI = true;
+            this.splitUIOrientation = splitUIOrientation;
+            this.panelCreator = panelCreator;
             return this;
         }
 
@@ -1129,15 +1325,24 @@ public final class PassFailJFrame {
             }
 
             if (position == null
-                && (testWindows != null || windowListCreator != null)) {
+                && (testWindows != null || windowListCreator != null
+                    || (!splitUI && panelCreator != null))) {
 
                 position = Position.HORIZONTAL;
+            }
+
+            if (panelCreator != null) {
+                if (splitUI && (testWindows != null || windowListCreator != null)) {
+                    // TODO Is it required? We can support both
+                    throw new IllegalStateException("Split UI is not allowed "
+                                                    + "with additional windows");
+                }
             }
 
             if (positionWindows != null) {
                 if (testWindows == null && windowListCreator == null) {
                     throw new IllegalStateException("To position windows, "
-                            + "provide an a list of windows to the builder");
+                            + "provide a list of windows to the builder");
                 }
                 instructionUIHandler = new InstructionUIHandler();
             }
@@ -1176,6 +1381,11 @@ public final class PassFailJFrame {
         }
     }
 
+    /**
+     * Creates a builder for configuring {@code PassFailJFrame}.
+     *
+     * @return the builder for configuring {@code PassFailJFrame}
+     */
     public static Builder builder() {
         return new Builder();
     }

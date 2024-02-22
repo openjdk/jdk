@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,6 +64,7 @@ static void test_for_live_c_heap_block(size_t sz, ssize_t offset) {
   FREE_C_HEAP_ARRAY(char, c);
 }
 
+#ifdef LINUX
 static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
   if (!MemTracker::enabled()) {
     return;
@@ -89,6 +90,7 @@ static void test_for_dead_c_heap_block(size_t sz, ssize_t offset) {
   hdr->revive();
   FREE_C_HEAP_ARRAY(char, c);
 }
+#endif
 
 TEST_VM(NMT, location_printing_cheap_live_1) { test_for_live_c_heap_block(2 * K, 0); }              // start of payload
 TEST_VM(NMT, location_printing_cheap_live_2) { test_for_live_c_heap_block(2 * K, -7); }             // into header

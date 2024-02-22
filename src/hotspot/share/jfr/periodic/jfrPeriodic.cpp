@@ -527,6 +527,13 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
   event.commit();
 }
 
+TRACE_REQUEST_FUNC(SwapSpace) {
+  EventSwapSpace event;
+  event.set_totalSize(os::total_swap_space());
+  event.set_freeSize(os::free_swap_space());
+  event.commit();
+}
+
 TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   EventJavaThreadStatistics event;
   event.set_activeCount(ThreadService::get_live_thread_count());

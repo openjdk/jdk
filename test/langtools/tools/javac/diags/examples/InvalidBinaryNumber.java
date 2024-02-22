@@ -24,5 +24,5 @@
 // key: compiler.err.invalid.binary.number
 
 class InvalidBinaryNumber {
-    int i = 0b201000010;
+    int i = 0b;
 }

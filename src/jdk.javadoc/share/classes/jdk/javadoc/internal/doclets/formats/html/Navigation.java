@@ -321,18 +321,6 @@ public class Navigation {
     }
 
     /**
-     * Adds the summary links to the subnavigation.
-     *
-     * @param target the content to which the subnavigation will be added
-     */
-    private void addSummaryLinks(Content target) {
-        List<? extends Content> listContents = subNavLinks.stream().map(HtmlTree::LI).toList();
-        if (!listContents.isEmpty()) {
-            addListToNav(listContents, target);
-        }
-    }
-
-    /**
      * Adds the navigation Type detail link.
      *
      * @param kind the kind of member being documented
@@ -358,16 +346,6 @@ public class Navigation {
 
     private void addItemToList(Content list, Content item) {
         list.add(HtmlTree.LI(item));
-    }
-
-    private void addListToNav(List<? extends Content> listContents, Content target) {
-        int count = 0;
-        for (Content item : listContents) {
-            target.add(item);
-            if (count++ < listContents.size() - 1) {
-                target.add(Entity.NO_BREAK_SPACE).add(Entity.of("gt")).add(Entity.NO_BREAK_SPACE);
-            }
-        }
     }
 
     private void addActivePageLink(Content target, Content label, boolean display) {
@@ -555,9 +533,9 @@ public class Navigation {
         var subNavContent = HtmlTree.DIV(HtmlStyle.navContent);
 
         // Add the breadcrumb navigation links if present.
-        var ulBreadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
-        addSummaryLinks(ulBreadcrumbNav);
-        subNavContent.addUnchecked(ulBreadcrumbNav);
+        var breadcrumbNav = HtmlTree.OL(HtmlStyle.subNavList);
+        breadcrumbNav.addAll(subNavLinks, HtmlTree::LI);
+        subNavContent.addUnchecked(breadcrumbNav);
 
         if (options.createIndex() && documentedPage != PageMode.SEARCH) {
             addSearch(subNavContent);
