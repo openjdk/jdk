@@ -71,7 +71,7 @@ public class ThreadCountLimit {
     if (args.length == 0) {
       // Called from the driver process so exec a new JVM on Linux.
       if (Platform.isLinux()) {
-        // On Linux this test sometimes hit the limit for the maximum number of memory mappings,
+        // On Linux this test sometimes hits the limit for the maximum number of memory mappings,
         // which leads to various other failure modes. Run this test with a limit on how many
         // threads the process is allowed to create, so we hit that limit first.
 
