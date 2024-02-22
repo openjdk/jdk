@@ -592,7 +592,7 @@ public class TestSplitPacks {
     @IR(counts = {IRNode.LOAD_VECTOR_S, IRNode.VECTOR_SIZE_2, "> 0",
                   IRNode.STORE_VECTOR, "> 0"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
     // Cyclic dependency with distance 2 -> split into 2-packs
     static Object[] test4a(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
@@ -606,7 +606,7 @@ public class TestSplitPacks {
                   IRNode.STORE_VECTOR, "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfPlatform = {"64-bit", "true"},
-        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+        applyIfCPUFeatureOr = {"sse4.1", "true"})
     // Cyclic dependency with distance 3 -> split into 2-packs
     static Object[] test4b(short[] a, short[] b) {
         for (int i = 0; i < RANGE-64; i++) {
