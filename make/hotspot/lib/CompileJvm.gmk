@@ -152,9 +152,9 @@ ifeq ($(call isTargetOs, windows), true)
 endif
 
 ifeq ($(TOOLCHAIN_TYPE), gcc)
-  GCC_LINKER_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/linker-script.txt
+  GCC_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
 
-  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(GCC_LINKER_SCRIPT)
+  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(GCC_VERSION_SCRIPT)
 endif
 
 ################################################################################
