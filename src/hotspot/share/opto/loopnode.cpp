@@ -1107,7 +1107,7 @@ int PhaseIdealLoop::extract_long_range_checks(const IdealLoopTree* loop, jlong s
         if (loop->is_range_check_if(if_proj, this, T_LONG, phi, range, offset, scale) &&
             loop->is_invariant(range) && loop->is_invariant(offset) &&
             original_iters_limit / uabs(scale * stride_con) >= min_iters) {
-          reduced_iters_limit = MIN2(reduced_iters_limit, original_iters_limit / checked_cast<jlong>(uabs(scale)));
+          reduced_iters_limit = MIN2(reduced_iters_limit, checked_cast<jlong>(original_iters_limit / uabs(scale)));
           range_checks.push(c);
         }
       }
