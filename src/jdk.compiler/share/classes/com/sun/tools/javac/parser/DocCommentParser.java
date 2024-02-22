@@ -440,12 +440,22 @@ public class DocCommentParser {
                             }
                             lastNonWhite = bp;
                             var saveNewline = newline;
-                            if (ch == '`' || ch == '~' && markdown.isCodeFence()) {
+                            var isCodeFence = markdown.isCodeFence();
+                            if (ch == '`' || ch == '~' && isCodeFence) {
                                 int end = markdown.skipCode();
                                 if (end == -1) {
-                                    bp = lastNonWhite;
-                                    newline = saveNewline;
-                                    nextChar();
+                                    // if a match for the opening sequence of characters was not found:
+                                    // - if the characters were a fence, the code block extends to the end of file
+                                    // - if the characters were inline, the opening characters are treated literally
+                                    // TODO: a fenced code block in a list item or block quote can be terminated
+                                    //       by end of that block
+                                    if (isCodeFence) {
+                                        lastNonWhite = buflen - 1;
+                                    } else {
+                                        bp = lastNonWhite;
+                                        newline = saveNewline;
+                                        nextChar();
+                                    }
                                 } else {
                                     lastNonWhite = end - 1;
                                 }

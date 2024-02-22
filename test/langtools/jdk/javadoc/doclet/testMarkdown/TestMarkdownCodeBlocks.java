@@ -108,6 +108,42 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                         @Anno
                         </code></pre>
                         <p>end</p>"""),
+
+            INDENT_TABS(
+                    """
+
+                        \ttab
+                         \t1-space tab
+                          \t2-space tab
+                           \t3-space tab
+                            \t4-space tab
+                        \t\t2-tab
+
+                        end
+                        """,
+                    """
+                        <pre><code>tab
+                        1-space tab
+                        2-space tab
+                        3-space tab
+                        \t4-space tab
+                        \t2-tab
+                        </code></pre>
+                        <p>end</p>"""
+            ),
+
+            UNCLOSED_FENCE(
+                    """
+                        ```
+                        {@code}
+                        @Anno
+                        """,
+                    """
+                        <pre><code>{@code}
+                        @Anno
+                        </code></pre>"""
+            ),
+
             LIST_INDENT(
                     """
                         * list item
@@ -311,5 +347,94 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                             .replace("#NAME#", tc.name().toLowerCase(Locale.ROOT))
                             .replace("#FRAG#", tc.expect));
         }
+    }
+
+    @Test
+    public void testTypical(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    /// stand-in for the standard class, to avoid platform links
+                    public class NullPointerException extends RuntimeException  { }
+                    """,
+                """
+                    package p;
+                    /// A class containing examples of "typical" usages.
+                    public class C {
+                        ///
+                        /// Here is an example:
+                        ///
+                        ///     @Deprecated
+                        ///     public class Old { }
+                        ///
+                        /// Here are some more examples:
+                        ///
+                        /// 1.  ```
+                        ///     @Deprecated(forRemoval=true)
+                        ///     public class VeryOld { }
+                        ///     ```
+                        /// 2.  ```
+                        ///     public class C {
+                        ///         @Override
+                        ///         public boolean equals(Object other) {
+                        ///             return false;
+                        ///         }
+                        ///         @Override
+                        ///         public int hashCode() {
+                        ///             return 0;
+                        ///         }
+                        ///     }
+                        ///     ```
+                        ///
+                        /// @param other another instance
+                        /// @throws NullPointerException if other is {@code null}
+                        public C(C other) { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput("p/C.html", true,
+                """
+                    <p>Here is an example:</p>
+                    <pre><code>@Deprecated
+                    public class Old { }
+                    </code></pre>""",
+
+                """
+                    <p>Here are some more examples:</p>
+                    <ol>
+                    <li>
+                    <pre><code>@Deprecated(forRemoval=true)
+                    public class VeryOld { }
+                    </code></pre>
+                    </li>
+                    <li>
+                    <pre><code>public class C {
+                        @Override
+                        public boolean equals(Object other) {
+                            return false;
+                        }
+                        @Override
+                        public int hashCode() {
+                            return 0;
+                        }
+                    }
+                    </code></pre>
+                    </li>
+                    </ol>""",
+
+                """
+                    <dl class="notes">
+                    <dt>Parameters:</dt>
+                    <dd><code>other</code> - another instance</dd>
+                    <dt>Throws:</dt>
+                    <dd><code><a href="NullPointerException.html" title="class in p">NullPointerException</a></code> - if other is <code>null</code></dd>
+                    </dl>""");
     }
 }
