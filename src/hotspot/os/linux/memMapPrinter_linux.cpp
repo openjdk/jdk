@@ -42,7 +42,8 @@ public:
     _num_mappings ++;
     _vsize += info.vsize();
   }
-  void print_on(outputStream* st) {
+  void print_on(const MappingPrintSession& session) const {
+    outputStream* st = session.out();
     st->print_cr("Number of mappings: %u", _num_mappings);
     st->print_cr("             vsize: %zu (" PROPERFMT ")", _vsize, PROPERFMTARGS(_vsize));
   }
@@ -55,8 +56,8 @@ public:
     _session(session)
   {}
 
-  void print_single_mapping(const ProcMapsInfo& info) {
-    assert(_session.detail_mode() == false, "unexpected");
+  void print_single_mapping(const ProcMapsInfo& info) const {
+    assert(!_session.options().detail_mode, "Should be called only for simple mode");
     outputStream* st = _session.out();
     int pos = 0;
 #define INDENT_BY(n) pos += n; st->fill_to(pos);
@@ -80,7 +81,7 @@ public:
     st->print_cr("file:            file mapped, if mapping is not anonymous");
   }
 
-  static void print_header() {
+  void print_header() const {
     outputStream* st = _session.out();
     //            .         .         .         .         .         .         .         .         .         .         .
     //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -88,7 +89,6 @@ public:
     st->print_cr("from                 to                      vsize prot vm-info file");
   }
 };
-
 
 // A simple histogram for sizes by pagesize. We keep pagesizes in an array by page size bit
 // index. Smallest page size we expect is 4k (2^12), largest pagesize we expect is 16G (powerpc)
@@ -106,7 +106,7 @@ public:
     assert(n >= 0 && n < num_pagesizes, "strange");
     _v[n] += size;
   }
-  void print_on(outputStream* st) {
+  void print_on(outputStream* st) const {
     for (int i = 0; i < num_pagesizes; i++) {
       if (_v[i] > 0) {
         const size_t pagesize = 1 << (log_smallest_pagesize + i);
@@ -148,7 +148,8 @@ public:
     }
   }
 
-  void print_on(outputStream* st, bool detail_mode) {
+  void print_on(const MappingPrintSession& session) const {
+    outputStream* st = session.out();
     st->print_cr("Number of mappings: %u", _num_mappings);
     st->print_cr("             vsize: %zu (" PROPERFMT ")", _vsize, PROPERFMTARGS(_vsize));
     st->print_cr("               rss: %zu (" PROPERFMT ")", _rss, PROPERFMTARGS(_rss));
@@ -169,8 +170,8 @@ public:
     _session(session)
   {}
 
-  void print_single_mapping(const ProcSmapsInfo& info) {
-    assert(_session.detail_mode() == true, "unexpected");
+  void print_single_mapping(const ProcSmapsInfo& info) const {
+    assert(_session.options().detail_mode, "Should be called only for detail mode");
     outputStream* st = _session.out();
     int pos = 0;
   #define INDENT_BY(n) pos += n; st->fill_to(pos);
@@ -232,7 +233,7 @@ public:
     st->print_cr("file:            file mapped, if mapping is not anonymous");
   }
 
-  static void print_header() {
+  void print_header() const {
     outputStream* st = _session.out();
     //            .         .         .         .         .         .         .         .         .         .         .
     //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
@@ -242,26 +243,25 @@ public:
 };
 
 template <class SUMMARY, class PRINTER, class PARSER, class INFO>
-static void print_mappings_helper(FILE* f, MappingPrintSession& session) {
-  PRINTER printer;
+static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
+  PRINTER printer(session);
   SUMMARY summary;
 
-  const bool print_individual_mappings = !session.print_only_summary();
+  const bool print_each_mapping = !session.options().only_summary;
 
-  if (print_individual_mappings) {
+  if (print_each_mapping) {
     printer.print_legend();
     printer.print_header();
   }
 
   INFO info;
-  PARSER parser;
+  PARSER parser(f);
   while (parser.parse_next(info)) {
-    if (print_individual_mappings) {
+    if (print_each_mapping) {
       printer.print_single_mapping(info);
     }
     summary.add_mapping(info);
   }
-
   session.out()->cr();
 
   if (parser.had_error()) {
@@ -269,23 +269,23 @@ static void print_mappings_helper(FILE* f, MappingPrintSession& session) {
     return;
   }
 
-  summary.print_on(session.out());
-
+  summary.print_on(session);
 }
 
-void MemMapPrinter::pd_print_all_mappings(MappingPrintSession& session) {
 
-  const char* filename = session.detail_mode() ? "/proc/self/smaps" : "/proc/self/maps";
+void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
+  const bool is_detail_mode = session.options().detail_mode;
+  const char* filename = is_detail_mode ? "/proc/self/smaps" : "/proc/self/maps";
   FILE* f = os::fopen(filename, "r");
   if (f == nullptr) {
     session.out()->print_cr("Cannot open %s", filename);
     return;
   }
 
-  if (session.detail_mode()) {
+  if (is_detail_mode) {
     print_mappings_helper<ProcSmapsSummary, ProcSmapsPrinter, ProcSmapsParser, ProcSmapsInfo>(f, session);
   } else {
-    print_mappings_helper<ProcSmapsSummary, ProcSmapsPrinter, ProcSmapsParser, ProcSmapsInfo>(f, session);
+    print_mappings_helper<ProcMapsSummary, ProcMapsPrinter, ProcMapsParser, ProcMapsInfo>(f, session);
   }
 
   ::fclose(f);

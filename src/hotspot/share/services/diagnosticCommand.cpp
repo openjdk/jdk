@@ -1241,20 +1241,27 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 #ifdef LINUX
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _summary("summary", "Print only summary", "BOOLEAN", false, "false") {
-  _dcmdparser.add_dcmd_option(&_summary);
+  DCmdWithParser(output, heap),
+  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false"),
+  _detail_mode("detail_mode", "Print more information at a potentially higher cost.", "BOOLEAN", false, "false") {
+  _dcmdparser.add_dcmd_option(&_only_summary);
+  _dcmdparser.add_dcmd_option(&_detail_mode);
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
-  MemMapPrinter::print_all_mappings(output(), _summary.value());
+  MappingPrintOptions options;
+  options.detail_mode = _detail_mode.value();
+  options.only_summary = _only_summary.value();
+  MemMapPrinter::print_all_mappings(output(), options);
 }
 
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
-    DCmdWithParser(output, heap),
-  _summary("summary", "Print only summary", "BOOLEAN", false, "false"),
+  DCmdWithParser(output, heap),
+  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false"),
+  _detail_mode("detail_mode", "Print more information at a potentially higher cost.", "BOOLEAN", false, "false"),
   _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
-  _dcmdparser.add_dcmd_option(&_summary);
+  _dcmdparser.add_dcmd_option(&_only_summary);
+  _dcmdparser.add_dcmd_option(&_detail_mode);
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
@@ -1267,7 +1274,10 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
     if (!MemTracker::enabled()) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
-    MemMapPrinter::print_all_mappings(&fs, _summary.value());
+    MappingPrintOptions options;
+    options.detail_mode = _detail_mode.value();
+    options.only_summary = _only_summary.value();
+    MemMapPrinter::print_all_mappings(&fs, options);
     // For the readers convenience, resolve path name.
     char tmp[JVM_MAXPATHLEN];
     const char* absname = os::Posix::realpath(name, tmp, sizeof(tmp));

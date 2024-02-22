@@ -28,6 +28,16 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+// This header exposes two simple parsers for /proc/pid/maps and
+// /proc/pid/smaps.
+//
+// Usage:
+//
+// FILE* f = fopen(...)
+// ProcMapsParser parser(f);
+// ProcMapsInfo info;
+// while (parser.parse_next(info)) { ... }
+
 struct ProcMapsInfo {
   void* from;
   void* to;
@@ -57,11 +67,12 @@ class ProcMapsParserBase {
   FILE* _f;
   bool _had_error;
 protected:
-  static constexpr size_t max_line_len = 2048;
-  char _line[max_line_len];
+  const size_t _linelen;
+  char* _line;
   bool read_line(); // sets had_error in case of error
 public:
   ProcMapsParserBase(FILE* f);
+  ~ProcMapsParserBase();
   bool had_error() const { return _had_error; }
 };
 

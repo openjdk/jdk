@@ -26,20 +26,37 @@
 #include "precompiled.hpp"
 
 #include "procMapsParser.inline.hpp"
+#include "runtime/os.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 static bool is_lowercase_hex(char c) {
   return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f');
 }
 
-ProcMapsParserBase::ProcMapsParserBase(FILE* f) : _f(f), _had_error(false) {
-  _line[0] = '\0';
+static size_t max_mapping_line_len() {
+  return 100 + // everything but the file name
+         os::vm_page_size() // the file name (kernel limits /proc/pid/cmdline to 1 page
+         ;
+}
+
+ProcMapsParserBase::ProcMapsParserBase(FILE* f) :
+  _f(f), _had_error(false),
+  _linelen(max_mapping_line_len()), _line(nullptr)
+{
   assert(_f != nullptr, "Invalid file handle given");
+  _line = NEW_C_HEAP_ARRAY(char, max_mapping_line_len(), mtInternal);
+  _line[0] = '\0';
+}
+
+ProcMapsParserBase::~ProcMapsParserBase() {
+  FREE_C_HEAP_ARRAY(char, _line);
 }
 
 bool ProcMapsParserBase::read_line() {
   assert(!_had_error, "Don't call in error state");
-  if (::fgets(_line, sizeof(_line), _f) == nullptr) {
+  char* rc = ::fgets(_line, _linelen, _f);
+  if (rc == nullptr) {
+    _line[0] = '\0';
     _had_error = (::ferror(_f) != 0);
     return false;
   }
@@ -113,7 +130,7 @@ bool ProcSmapsParser::parse_next(ProcSmapsInfo& out) {
       return false;
     }
   }
-  assert(is_header_line(), "Not a header line?");
+  assert(is_header_line(), "Not a header line: \"%s\".", _line);
   scan_header_line(out);
   // Now read until we encounter the next header line or EOF or an error.
   bool stop = false;

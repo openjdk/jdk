@@ -35,25 +35,32 @@
 class outputStream;
 class CachedNMTInformation;
 
+struct MappingPrintOptions {
+  // Depending the the platform specifics, prints
+  // more information at higher costs (e.g. on Linux,
+  // scans /proc/pid/smaps instead of /proc/pid/maps)
+  bool detail_mode;
+  // Don't print individual mappings. Only
+  // print accumulated summary.
+  bool only_summary;
+};
+
 class MappingPrintSession {
   outputStream* const _out;
-  const bool _detail_mode;
-  const bool _print_only_summary;
+  const MappingPrintOptions _options;
   const CachedNMTInformation& _nmt_info;
 public:
-  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info,
-                      bool detail_mode, bool print_only_summary);
+  MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, MappingPrintOptions options);
   void print_nmt_info_for_region(const void* from, const void* to) const;
   void print_nmt_flag_legend(int indent) const;
+  const MappingPrintOptions& options() const { return _options; }
   outputStream* out() const { return _out; }
-  bool print_only_summary() const { return _print_only_summary; }
-  bool detail_mode() const { return _detail_mode; }
 };
 
 class MemMapPrinter : public AllStatic {
-  static void pd_print_all_mappings(MappingPrintSession& session);
+  static void pd_print_all_mappings(const MappingPrintSession& session);
 public:
-  static void print_all_mappings(outputStream* st, bool summary_only);
+  static void print_all_mappings(outputStream* st, MappingPrintOptions options);
 };
 
 #endif // LINUX

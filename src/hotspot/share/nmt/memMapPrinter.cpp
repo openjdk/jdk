@@ -226,9 +226,8 @@ static void print_thread_details_for_supposed_stack_address(const void* from, co
 
 ///////////////
 
-MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info,
-                                         bool detail_mode, bool print_only_summary) :
-    _out(st), _detail_mode(detail_mode), _print_only_summary(print_only_summary), _nmt_info(nmt_info)
+MappingPrintSession::MappingPrintSession(outputStream* st, const CachedNMTInformation& nmt_info, MappingPrintOptions options) :
+    _out(st), _options(options), _nmt_info(nmt_info)
 {}
 
 void MappingPrintSession::print_nmt_flag_legend(int indent) const {
@@ -263,20 +262,20 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
   }
 }
 
-void MemMapPrinter::print_all_mappings(outputStream* st, bool detail_mode, bool print_only_summary) {
+void MemMapPrinter::print_all_mappings(outputStream* st, MappingPrintOptions options) {
   CachedNMTInformation nmt_info;
   st->print_cr("Memory mappings:");
-  // If we only print summary
-  if (!summary_only) {
+  if (!options.only_summary) {
+    // Prepare NMT info cache. But only do so if we print individual mappings,
+    // otherwise, we won't need it and can save that work.
     if (MemTracker::enabled()) {
-      // Prepare NMT mapping information.
       nmt_info.fill_from_nmt();
       DEBUG_ONLY(nmt_info.print_on(st);)
     } else {
       st->print_cr("NMT is disabled. VM info not available.");
     }
   }
-  MappingPrintSession session(st, nmt_info, summary_only);
+  MappingPrintSession session(st, nmt_info, options);
   pd_print_all_mappings(session);
 }
 
