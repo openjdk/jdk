@@ -21,27 +21,30 @@
  * questions.
  */
 
-import java.awt.Button;
 import java.awt.Frame;
 import java.awt.Graphics;
-import java.awt.Panel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.InputStream;
 import java.io.Reader;
+
 import javax.print.Doc;
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
+import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.SheetCollate;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 
 /*
  * @test
@@ -53,26 +56,52 @@ import javax.print.attribute.standard.SheetCollate;
  * @run main/manual Collate2DPrintingTest
  */
 public class Collate2DPrintingTest
-        extends Frame implements Doc, Printable, ActionListener {
+        extends Frame implements Doc, Printable {
 
-    Button print2D = new Button("2D Print");
-    Button printMerlin = new Button("PrintService");
-    PrinterJob pj = PrinterJob.getPrinterJob();
-    PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
-    HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
-
-    public Collate2DPrintingTest() {
-        Panel butPanel = new Panel();
-        butPanel.add(print2D);
-        butPanel.add(printMerlin);
-        print2D.addActionListener(this);
-        printMerlin.addActionListener(this);
-        add("South", butPanel);
-
+    private static JComponent createTestUI() {
+        HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
+        PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
         prSet.add(SheetCollate.COLLATED);
         prSet.add(new Copies(2));
-        pj.setPrintable(Collate2DPrintingTest.this);
-        setSize(300, 200);
+
+        JButton print2D = new JButton("2D Print");
+        print2D.addActionListener((ae) -> {
+            try {
+                PrinterJob pj = PrinterJob.getPrinterJob();
+                pj.setPrintable(new Collate2DPrintingTest());
+                if (pj.printDialog(prSet)) {
+                    pj.print(prSet);
+                }
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(print2D, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
+        });
+
+        JButton printMerlin = new JButton("PrintService");
+        printMerlin.addActionListener((ae) -> {
+            try {
+                DocPrintJob pj = defService.createPrintJob();
+                pj.print(new Collate2DPrintingTest(), prSet);
+            } catch (PrintException ex) {
+                ex.printStackTrace();
+                String msg = "PrintException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(printMerlin, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
+        });
+
+        Box main = Box.createVerticalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createVerticalGlue());
+        main.add(print2D);
+        main.add(printMerlin);
+        main.add(Box.createVerticalGlue());
+        return main;
     }
 
     public int print(Graphics g, PageFormat pf, int pageIndex)
@@ -82,22 +111,6 @@ public class Collate2DPrintingTest
             return Printable.NO_SUCH_PAGE;
         } else {
             return Printable.PAGE_EXISTS;
-        }
-    }
-
-    public void actionPerformed(ActionEvent ae) {
-        try {
-            if (ae.getSource() == print2D) {
-                if (pj.printDialog(prSet)) {
-                    pj.print(prSet);
-                }
-            } else {
-                DocPrintJob pj = defService.createPrintJob();
-                pj.print(this, prSet);
-            }
-        } catch (Exception e) {
-            PassFailJFrame.forceFail( "Test Failed");
-            e.printStackTrace();
         }
     }
 
@@ -138,7 +151,7 @@ public class Collate2DPrintingTest
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .testUI(Collate2DPrintingTest::new)
+                .splitUI(Collate2DPrintingTest::createTestUI)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()

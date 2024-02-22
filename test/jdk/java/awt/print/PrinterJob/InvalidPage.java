@@ -21,18 +21,21 @@
  * questions.
  */
 
-import java.awt.Button;
 import java.awt.Color;
-import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Panel;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 
 /*
  * @test InvalidPage.java
@@ -45,33 +48,34 @@ import java.awt.print.PrinterJob;
  */
 public class InvalidPage extends Frame implements Printable {
 
-    PrinterJob pJob;
-    PageFormat pf;
-
-    public InvalidPage() {
-        super("Validate Page Test");
-        pJob = PrinterJob.getPrinterJob();
-        pf = pJob.defaultPage();
-        Paper p = pf.getPaper();
-        p.setImageableArea(0, 0, p.getWidth(), p.getHeight());
-        pf.setPaper(p);
-        setLayout(new FlowLayout());
-        Panel panel = new Panel();
-        Button printButton = new Button("Print");
-        printButton.addActionListener(e -> {
-            if (pJob.printDialog()) {
-                pJob.setPrintable(InvalidPage.this, pf);
-                try {
-                    pJob.print();
-                } catch (PrinterException pe) {
-                    PassFailJFrame.forceFail("Test Failed");
-                    pe.printStackTrace();
+    private static JComponent createTestUI() {
+        JButton b = new JButton("Print");
+        b.addActionListener((ae) -> {
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+                PageFormat pf = job.defaultPage();
+                Paper p = pf.getPaper();
+                p.setImageableArea(0, 0, p.getWidth(), p.getHeight());
+                pf.setPaper(p);
+                job.setPrintable(new InvalidPage(), pf);
+                if (job.printDialog()) {
+                    job.print();
                 }
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                        JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
             }
         });
-        panel.add(printButton);
-        add(panel);
-        pack();
+
+        Box main = Box.createHorizontalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createHorizontalGlue());
+        main.add(b);
+        main.add(Box.createHorizontalGlue());
+        return main;
     }
 
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
@@ -130,7 +134,7 @@ public class InvalidPage extends Frame implements Printable {
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
-                .testUI(InvalidPage::new)
+                .splitUI(InvalidPage::createTestUI)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build()
