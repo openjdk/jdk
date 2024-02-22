@@ -31,9 +31,6 @@
         .globl  SpinPause
         .hidden  SpinPause
         .type SpinPause, %function
-        .globl _Copy_conjoint_bytes
-        .hidden _Copy_conjoint_bytes
-        .type _Copy_conjoint_bytes, %function
         .globl _Copy_arrayof_conjoint_bytes
         .hidden _Copy_arrayof_conjoint_bytes
         .type _Copy_arrayof_conjoint_bytes, %function
