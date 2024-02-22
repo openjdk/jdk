@@ -128,8 +128,6 @@ public class TestStylesheet extends JavadocTester {
                     .summary-table > div, .details-table > div {
                         text-align:left;
                         padding: 8px 3px 3px 7px;
-                        overflow: auto hidden;
-                        scrollbar-width: thin;
                     }""",
                 "@import url('fonts/dejavu.css');",
                 """
