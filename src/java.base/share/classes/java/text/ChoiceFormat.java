@@ -240,6 +240,7 @@ public class ChoiceFormat extends NumberFormat {
      * @see #ChoiceFormat(String)
      */
     public void applyPattern(String newPattern) {
+        Objects.requireNonNull(newPattern, "newPattern must not be null");
         applyPatternImpl(newPattern);
     }
 
@@ -251,8 +252,6 @@ public class ChoiceFormat extends NumberFormat {
      * further understanding of certain special characters: "#", "<", "\u2264", "|".
      */
     private void applyPatternImpl(String newPattern) {
-        Objects.requireNonNull(newPattern, "newPattern must not be null");
-
         // Set up components
         ArrayList<Double> limits = new ArrayList<>();
         ArrayList<String> formats = new ArrayList<>();
@@ -265,7 +264,7 @@ public class ChoiceFormat extends NumberFormat {
         // Parse the string, swapping between the LIMIT and FORMAT enum mode values
         for (int i = 0; i < newPattern.length(); ++i) {
             char ch = newPattern.charAt(i);
-            switch(ch) {
+            switch (ch) {
                 case '\'':
                     // Check for "''" indicating a literal quote
                     if ((i + 1) < newPattern.length() && newPattern.charAt(i + 1) == ch) {
@@ -428,6 +427,7 @@ public class ChoiceFormat extends NumberFormat {
      * @see #applyPattern
      */
     public ChoiceFormat(String newPattern)  {
+        Objects.requireNonNull(newPattern, "newPattern must not be null");
         applyPatternImpl(newPattern);
     }
 
