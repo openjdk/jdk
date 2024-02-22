@@ -169,12 +169,12 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
             POST_LIST_INDENT(
                     """
                          1.  list item
-                        
+
                              second paragraph
-                             
+
                             {@code CODE}
                             @Anno
-                            
+
                         end""",
                     """
                         <ol>
