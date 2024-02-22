@@ -1203,11 +1203,11 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count = load_array_length(tgt);
 
   Node* result = nullptr;
-  bool do_intrinsic =
+  bool call_opt_stub =
       (StubRoutines::string_indexof() != nullptr) &&
       ((ae == StrIntrinsicNode::LL) || (ae == StrIntrinsicNode::UU));
 
-  if (!do_intrinsic) {
+  if (!call_opt_stub) {
     if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
       // Divide src size by 2 if String is UTF16 encoded
       src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
@@ -1218,7 +1218,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
     }
   }
 
-  if (do_intrinsic) {
+  if (call_opt_stub) {
     Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
                                    StubRoutines::string_indexof(),
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,

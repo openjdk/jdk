@@ -1341,10 +1341,10 @@ const TypeFunc* OptoRuntime::string_IndexOf_Type() {
 
   const Type** fields = TypeTuple::fields(argcnt);
   int argp = TypeFunc::Parms;
-  fields[argp++] = TypePtr::NOTNULL;    // needle array
-  fields[argp++] = TypeInt::INT;        // needle length
   fields[argp++] = TypePtr::NOTNULL;    // haystack array
   fields[argp++] = TypeInt::INT;        // haystack length
+  fields[argp++] = TypePtr::NOTNULL;    // needle array
+  fields[argp++] = TypeInt::INT;        // needle length
   assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
   const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
 

@@ -79,23 +79,23 @@
 //   char *start = (char *)s;
 //   char *end = (char *)&s[(n)]; // & ~0x1f];
 //   long long incr = (n <= 32) ? 32 : (n - k - 31) % 32;
-
+//
 //   const __m256i first = _mm256_set1_epi8(needle[0]);
 //   const __m256i last = _mm256_set1_epi8(needle[k - 1]);
-
+//
 //   while (s < end)
 //   {
-
+//
 //     const __m256i block_first = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s));
 //     CHECK_BOUNDS(s, 32, start);
 //     const __m256i block_last = _mm256_loadu_si256(reinterpret_cast<const __m256i *>(s + k - 1));
 //     CHECK_BOUNDS(s + k - 1, 32, start);
-
+//
 //     const __m256i eq_first = _mm256_cmpeq_epi8(first, block_first);
 //     const __m256i eq_last = _mm256_cmpeq_epi8(last, block_last);
-
+//
 //     uint32_t mask = _mm256_movemask_epi8(_mm256_and_si256(eq_first, eq_last));
-
+//
 //     while (mask != 0)
 //     {
 ////////////////  Helper code ends here, before comparing full needle
@@ -104,13 +104,13 @@
 //       {
 //         return s - start + bitpos;
 //       }
-
+//
 //       mask = bits::clear_leftmost_set(mask);
 //     }
 //     s += incr;
 //     incr = 32;
 //   }
-
+//
 //   return std::string::npos;
 // }
 /******************************************************************************/
@@ -118,36 +118,51 @@
 void StubGenerator::string_indexof_big_loop_helper(int size, Label& bailout, Label& loop_top) {
   Label temp;
 
+  const Register haystack     = rbx;
+  const Register hs_temp      = rcx;
+  const Register needle       = r14;
+  const Register termAddr     = rax;
+  const Register length       = rsi;
+  const Register eq_mask      = rsi;
+  const Register incr         = rdx;
+  const Register r_temp       = rcx;
+
+  const XMMRegister byte_0    = xmm0;
+  const XMMRegister byte_k    = xmm1;
+  const XMMRegister cmp_0     = xmm2;
+  const XMMRegister cmp_k     = xmm3;
+  const XMMRegister result    = xmm2;
+
   __ movq(r11, -1);
-  __ testq(rsi, rsi);
+  __ testq(length, length);
   __ jle(bailout);
   // Load ymm0 with copies of first byte of needle and ymm1 with copies of last byte of needle
-  __ vpbroadcastb(xmm0, Address(r14, 0), Assembler::AVX_256bit);
-  __ vpbroadcastb(xmm1, Address(r14, size - 1), Assembler::AVX_256bit);
-  __ leaq(rax, Address(r14, rsi, Address::times_1));
+  __ vpbroadcastb(byte_0, Address(needle, 0), Assembler::AVX_256bit);
+  __ vpbroadcastb(byte_k, Address(needle, size - 1), Assembler::AVX_256bit);
+  __ leaq(termAddr, Address(needle, rsi, Address::times_1));
   // Calculate first increment to ensure last read is exactly 32 bytes
-  __ leal(rcx, Address(rsi, 33 - size));
-  __ andl(rcx, 0x1f);
-  __ cmpl(rsi, 0x21);
-  __ movl(rdx, 0x20);
-  __ cmovl(Assembler::aboveEqual, rdx, rcx);
-  __ movq(rcx, rbx);
+  __ leal(r_temp, Address(length, 33 - size));
+  __ andl(r_temp, 0x1f);
+  __ cmpl(length, 0x21);
+  __ movl(incr, 0x20);
+  __ cmovl(Assembler::aboveEqual, incr, r_temp);
+  __ movq(hs_temp, haystack);
   __ jmpb(temp);
 
   __ bind(loop_top);
-  __ addq(rcx, rdx);
-  __ movl(rdx, 0x20);
-  __ cmpq(rcx, rax);
+  __ addq(hs_temp, incr);
+  __ movl(incr, 0x20);
+  __ cmpq(hs_temp, termAddr);
   __ jae(bailout);
 
   __ bind(temp);
   // Compare first byte of needle to haystack
-  __ vpcmpeqb(xmm2, xmm0, Address(rcx, 0), Assembler::AVX_256bit);
+  __ vpcmpeqb(cmp_0, byte_0, Address(hs_temp, 0), Assembler::AVX_256bit);
   // Compare last byte of needle to haystack at proper position
-  __ vpcmpeqb(xmm3, xmm1, Address(rcx, size - 1), Assembler::AVX_256bit);
-  __ vpand(xmm2, xmm3, xmm2, Assembler::AVX_256bit);
-  __ vpmovmskb(rsi, xmm2, Assembler::AVX_256bit);
-  __ testl(rsi, rsi);
+  __ vpcmpeqb(cmp_k, byte_k, Address(hs_temp, size - 1), Assembler::AVX_256bit);
+  __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
+  __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
+  __ testl(eq_mask, eq_mask);
   __ je_b(loop_top);
   // At this point, we have at least one "match" where first and last bytes
   // of the needle are found the correct distance apart.
@@ -171,30 +186,34 @@ void StubGenerator::string_indexof_big_loop_helper(int size, Label& bailout, Lab
 //       }
 //     }
 //   }
-
+//
 //   return std::string::npos;
 // }
 /******************************************************************************/
 
 void StubGenerator::string_indexof_small_loop_helper(int size, Label& bailout, Label& loop_top) {
   Label temp;
+  const Register haystack     = rbx;
+  const Register needle       = r14;
+  const Register index        = rax;
+  const Register length       = rsi;
 
-  __ addq(rsi, -(size - 1));
+  __ addq(length, -(size - 1));
   __ je(bailout);
-  __ movzbl(rcx, Address(r14, 0));
-  __ xorq(rax, rax);
+  __ movzbl(rcx, Address(needle, 0));
+  __ xorq(index, index);
   __ jmpb(temp);
 
   __ bind(loop_top);
-  __ incq(rax);
-  __ cmpq(rsi, rax);
+  __ incq(index);
+  __ cmpq(length, index);
   __ je(bailout);
 
   __ bind(temp);
-  __ cmpb(Address(rbx, rax, Address::times_1), rcx);
+  __ cmpb(Address(haystack, index, Address::times_1), rcx);
   __ jne(loop_top);
-  __ movzbl(rdx, Address(rbx, rax, Address::times_1, size - 1));
-  __ cmpb(rdx, Address(r14, size - 1));
+  __ movzbl(rdx, Address(haystack, index, Address::times_1, size - 1));
+  __ cmpb(rdx, Address(needle, size - 1));
   __ jne(loop_top);
 }
 
@@ -206,6 +225,24 @@ address StubGenerator::generate_string_indexof() {
   __ align(CodeEntryAlignment);
   address start = __ pc();
   __ enter();  // required for proper stackwalking of RuntimeStub frame
+
+  const Register haystack     = rdi;
+  const Register haystack_len = rsi;
+  const Register needle       = rdx;
+  const Register needle_len   = rcx;
+
+  const Register save_ndl_len = r12;
+
+  const XMMRegister save_r12  = xmm4;
+  const XMMRegister save_r13  = xmm5;
+  const XMMRegister save_r14  = xmm6;
+  const XMMRegister save_r15  = xmm7;
+  const XMMRegister save_rbx  = xmm8;
+  const XMMRegister save_rsi  = xmm9;
+  const XMMRegister save_rdi  = xmm10;
+  const XMMRegister save_rcx  = xmm11;
+  const XMMRegister save_r8   = xmm12;
+  const XMMRegister save_r9   = xmm13;
 
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
@@ -308,97 +345,104 @@ address StubGenerator::generate_string_indexof() {
       __ jmp(L_returnRBP);
     }
 // Small case 2:
-    small_hs_jmp_table[1] = __ pc();
     {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(2, L_checkRangeAndReturn, L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 3:
-    small_hs_jmp_table[2] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
-      __ movzbl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpb(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 4:
-    small_hs_jmp_table[3] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
-      __ movzwl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpw(Address(r14, 1), rdx);
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 5:
-    small_hs_jmp_table[4] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpl(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 6:
-    small_hs_jmp_table[5] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpl(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 7:
-    small_hs_jmp_table[6] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpl(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ movzbl(rdx, Address(rbx, rax, Address::times_1, 5));
-      __ cmpb(rdx, Address(r14, 5));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 8:
-    small_hs_jmp_table[7] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpl(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ movzwl(rdx, Address(rbx, rax, Address::times_1, 5));
-      __ cmpw(Address(r14, 5), rdx);
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 9:
-    small_hs_jmp_table[8] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
-      __ movq(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpq(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
-    }
-// Small case 10:
-    small_hs_jmp_table[9] = __ pc();
-    {
-      Label L_loopTop;
-      string_indexof_small_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
-      __ movq(rdx, Address(rbx, rax, Address::times_1, 1));
-      __ cmpq(rdx, Address(r14, 1));
-      __ jne(L_loopTop);
-      __ jmp(L_returnRAX);
+    const Register haystack     = rbx;
+    const Register needle       = r14;
+    const Register index        = rax;
+    const Register r_temp       = rdx;
+
+      small_hs_jmp_table[1] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(2, L_checkRangeAndReturn, L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 3:
+      small_hs_jmp_table[2] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
+        __ movzbl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpb(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 4:
+      small_hs_jmp_table[3] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
+        __ movzwl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpw(Address(needle, 1), r_temp);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 5:
+      small_hs_jmp_table[4] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
+        __ movl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpl(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 6:
+      small_hs_jmp_table[5] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
+        __ movl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpl(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 7:
+      small_hs_jmp_table[6] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
+        __ movl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpl(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ movzbl(r_temp, Address(haystack, index, Address::times_1, 5));
+        __ cmpb(r_temp, Address(needle, 5));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 8:
+      small_hs_jmp_table[7] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
+        __ movl(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpl(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ movzwl(r_temp, Address(haystack, index, Address::times_1, 5));
+        __ cmpw(Address(needle, 5), r_temp);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 9:
+      small_hs_jmp_table[8] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
+        __ movq(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpq(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
+  // Small case 10:
+      small_hs_jmp_table[9] = __ pc();
+      {
+        Label L_loopTop;
+        string_indexof_small_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
+        __ movq(r_temp, Address(haystack, index, Address::times_1, 1));
+        __ cmpq(r_temp, Address(needle, 1));
+        __ jne(L_loopTop);
+        __ jmp(L_returnRAX);
+      }
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////
@@ -497,168 +541,188 @@ address StubGenerator::generate_string_indexof() {
     }
 
 
-
-// Big case 3:
-    large_hs_jmp_table[2] = __ pc();
     {
-      Label L_loopTop, L_innerLoop;
+      const Register haystack     = rbx;
+      const Register hs_ptr       = rcx;
+      const Register needle       = r14;
+      const Register needle_val   = rdi;
+      const Register eq_mask      = rsi;
+      const Register set_bit      = r8;
+      const Register hs_val       = r9;
 
-      string_indexof_big_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
-      __ movzbl(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpb(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
-    }
+  // Big case 3:
+      large_hs_jmp_table[2] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
 
+        string_indexof_big_loop_helper(3, L_checkRangeAndReturn, L_loopTop);
+        __ movzbl(needle_val, Address(needle, 1));
 
-
-// Big case 4:
-    large_hs_jmp_table[3] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop;
-
-      string_indexof_big_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
-      __ movzwl(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpw(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
-    }
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpb(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
 
 
 
-// Big case 5:
-    large_hs_jmp_table[4] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop;
+  // Big case 4:
+      large_hs_jmp_table[3] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
-    }
+        string_indexof_big_loop_helper(4, L_checkRangeAndReturn, L_loopTop);
+        __ movzwl(needle_val, Address(needle, 1));
 
-
-
-// Big case 6:
-    large_hs_jmp_table[5] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop;
-
-      string_indexof_big_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
-    }
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpw(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
 
 
 
-// Big case 7:
-    large_hs_jmp_table[6] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop, L_tmp;
+  // Big case 5:
+      large_hs_jmp_table[4] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdi, Address(r14, 1));
-      __ jmpb(L_tmp);
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ blsrl(rsi, rsi);
-      __ je(L_loopTop);
-      __ bind(L_tmp);
-      __ tzcntl(r8, rsi);
-      __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ jne(L_innerLoop);
-      __ movzbl(r9, Address(rcx, r8, Address::times_1, 5));
-      __ cmpb(r9, Address(r14, 5));
-      __ jne(L_innerLoop);
-      __ jmp(L_small7_8_fixup);
-    }
+        string_indexof_big_loop_helper(5, L_checkRangeAndReturn, L_loopTop);
+        __ movl(needle_val, Address(needle, 1));
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
 
 
 
-// Big case 8:
-    large_hs_jmp_table[7] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop, L_tmp;
+  // Big case 6:
+      large_hs_jmp_table[5] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
 
-      string_indexof_big_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
-      __ movl(rdi, Address(r14, 1));
-      __ jmpb(L_tmp);
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ blsrl(rsi, rsi);
-      __ je(L_loopTop);
-      __ bind(L_tmp);
-      __ tzcntl(r8, rsi);
-      __ cmpl(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ jne(L_innerLoop);
-      __ movzwl(r9, Address(rcx, r8, Address::times_1, 5));
-      __ cmpw(Address(r14, 5), r9);
-      __ jne(L_innerLoop);
-      __ bind(L_small7_8_fixup);
-      __ subq(rcx, rbx);
-      __ addq(rcx, r8);
-      __ jmp(L_checkRangeAndReturnRCX);
-    }
+        string_indexof_big_loop_helper(6, L_checkRangeAndReturn, L_loopTop);
+        __ movl(needle_val, Address(needle, 1));
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
 
 
 
-// Big case 9:
-    large_hs_jmp_table[8] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop;
+  // Big case 7:
+      large_hs_jmp_table[6] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-      string_indexof_big_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
-      __ movq(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpq(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
-    }
+        string_indexof_big_loop_helper(7, L_checkRangeAndReturn, L_loopTop);
+        __ movl(needle_val, Address(needle, 1));
+        __ jmpb(L_tmp);
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ blsrl(eq_mask, eq_mask);
+        __ je(L_loopTop);
+
+        __ bind(L_tmp);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ jne(L_innerLoop);
+        __ movzbl(hs_val, Address(hs_ptr, set_bit, Address::times_1, 5));
+        __ cmpb(hs_val, Address(needle, 5));
+        __ jne(L_innerLoop);
+        __ jmp(L_small7_8_fixup);
+      }
 
 
 
-// Big case 10:
-    large_hs_jmp_table[9] = __ pc();
-    {
-      Label L_loopTop, L_innerLoop;
+  // Big case 8:
+      large_hs_jmp_table[7] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-      string_indexof_big_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
-      __ movq(rdi, Address(r14, 1));
-      __ align(16);
-      __ bind(L_innerLoop);
-      __ tzcntl(r8, rsi);
-      __ cmpq(Address(rcx, r8, Address::times_1, 1), rdi);
-      __ je(L_bigCaseFixupAndReturn);
-      __ blsrl(rsi, rsi);
-      __ jne(L_innerLoop);
-      __ jmp(L_loopTop);
+        string_indexof_big_loop_helper(8, L_checkRangeAndReturn, L_loopTop);
+        __ movl(needle_val, Address(needle, 1));
+        __ jmpb(L_tmp);
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ blsrl(eq_mask, eq_mask);
+        __ je(L_loopTop);
+
+        __ bind(L_tmp);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ jne(L_innerLoop);
+        __ movzwl(hs_val, Address(hs_ptr, set_bit, Address::times_1, 5));
+        __ cmpw(Address(needle, 5), hs_val);
+        __ jne(L_innerLoop);
+
+        __ bind(L_small7_8_fixup);
+        __ subq(hs_ptr, haystack);
+        __ addq(hs_ptr, set_bit);
+        __ jmp(L_checkRangeAndReturnRCX);
+      }
+
+
+
+  // Big case 9:
+      large_hs_jmp_table[8] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
+
+        string_indexof_big_loop_helper(9, L_checkRangeAndReturn, L_loopTop);
+        __ movq(needle_val, Address(needle, 1));
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpq(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
+
+
+
+  // Big case 10:
+      large_hs_jmp_table[9] = __ pc();
+      {
+        Label L_loopTop, L_innerLoop;
+
+        string_indexof_big_loop_helper(10, L_checkRangeAndReturn, L_loopTop);
+        __ movq(needle_val, Address(needle, 1));
+
+        __ align(16);
+        __ bind(L_innerLoop);
+        __ tzcntl(set_bit, eq_mask);
+        __ cmpq(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        __ je(L_bigCaseFixupAndReturn);
+        __ blsrl(eq_mask, eq_mask);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
+      }
     }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -837,18 +901,33 @@ address StubGenerator::generate_string_indexof() {
     __ movq(rax, rbp);
     __ addptr(rsp, 0xf0);
 #ifdef _WIN64
+#ifdef PUSH_REGS
     __ pop(r9);
     __ pop(r8);
     __ pop(rcx);
     __ pop(rdi);
     __ pop(rsi);
+#else
+    __ movdq(rsi, save_rsi);
+    __ movdq(rdi, save_rdi);
+    __ movdq(rcx, save_rcx);
+    __ movdq(r8, save_r8);
+    __ movdq(r9, save_r9);
 #endif
-    __ pop(rbp);
+#endif
+#ifdef PUSH_REGS
     __ pop(rbx);
     __ pop(r12);
     __ pop(r13);
     __ pop(r14);
     __ pop(r15);
+#else
+    __ movdq(r12, save_r12);
+    __ movdq(r13, save_r13);
+    __ movdq(r14, save_r14);
+    __ movdq(r15, save_r15);
+    __ movdq(rbx, save_rbx);
+#endif
     __ vzeroupper();
 
     __ leave();  // required for proper stackwalking of RuntimeStub frame
@@ -860,18 +939,33 @@ address StubGenerator::generate_string_indexof() {
 
     __ align(16);
     __ bind(L_begin);
+#ifdef PUSH_REGS
     __ push(r15);
     __ push(r14);
     __ push(r13);
     __ push(r12);
     __ push(rbx);
-    __ push(rbp);
+#else
+    __ movdq(save_r12, r12);
+    __ movdq(save_r13, r13);
+    __ movdq(save_r14, r14);
+    __ movdq(save_r15, r15);
+    __ movdq(save_rbx, rbx);
+#endif
 #ifdef _WIN64
+#ifdef PUSH_REGS
     __ push(rsi);
     __ push(rdi);
     __ push(rcx);
     __ push(r8);
     __ push(r9);
+#else
+    __ movdq(save_rsi, rsi);
+    __ movdq(save_rdi, rdi);
+    __ movdq(save_rcx, rcx);
+    __ movdq(save_r8, r8);
+    __ movdq(save_r9, r9);
+#endif
 
     __ movq(rdi, rcx);
     __ movq(rsi, rdx);
@@ -884,23 +978,22 @@ address StubGenerator::generate_string_indexof() {
     // if (n < k) {
     //   return -1;
     // }
-    __ movq(r10, rsi);
-    __ subq(r10, rcx);
+    __ movq(r10, haystack_len);
+    __ subq(r10, needle_len);
     __ jb(L_returnRBP);
-    __ movq(r12, rcx);
-    __ testq(rcx, rcx);
+    __ movq(save_ndl_len, needle_len);
+    __ testq(needle_len, needle_len);
     __ je_b(L_returnZero);
-    __ movq(r14, rdx);
-    __ movq(rbx, rdi);
-    __ cmpq(rsi, 0x20);
+    __ movq(r14, needle);
+    __ movq(rbx, haystack);
+    __ cmpq(haystack_len, 0x20);
     __ jae_b(L_haystackGreaterThan31);
 
-    __ cmpq(r10, 0xb);      // ASGASG
+    __ cmpq(r10, 0xb);      // Only copy to stack when loop iteration is less than 11
     __ jae_b(L_copyToStack);
-    // __ jmpb(L_copyToStack);
 
     __ bind(L_smallSwitchTop);
-    __ leaq(r13, Address(r12, -1));
+    __ leaq(r13, Address(save_ndl_len, -1));
     __ cmpq(r13, 0x9);
     __ ja(L_smallCaseDefault);
     __ mov64(r15, (int64_t)jump_table_1);
@@ -911,19 +1004,19 @@ address StubGenerator::generate_string_indexof() {
     __ jmp(L_returnRBP);
 
     __ bind(L_haystackGreaterThan31);
-    __ leaq(rax, Address(r12, 0x1f));
-    __ cmpq(rax, rsi);
+    __ leaq(rax, Address(save_ndl_len, 0x1f));
+    __ cmpq(rax, haystack_len);
     __ jle(L_bigSwitchTop);
-    __ cmpq(rsi, 0x20);
+    __ cmpq(haystack_len, 0x20);
     __ ja(L_smallSwitchTop);
 
-    __ cmpq(r10, 0xa);
+    __ cmpq(r10, 0xa);      // Only copy to stack when loop iteration is less than 11
     __ jbe(L_smallSwitchTop);
 
     __ bind(L_copyToStack);
-    __ leal(rdx, Address(rsi, -1));
+    __ leal(rdx, Address(haystack_len, -1));
     __ andl(rdx, 0x10);
-    __ movl(rax, rsi);
+    __ movl(rax, haystack_len);
     __ subl(rax, rdx);
     __ movslq(rcx, rax);
     __ movl(rax, 0x10);
@@ -940,8 +1033,9 @@ address StubGenerator::generate_string_indexof() {
     __ cdqe();
     __ leaq(rbx, Address(rsp, rax, Address::times_1));
     __ addq(rbx, 0x70);
+
     __ bind(L_bigSwitchTop);
-    __ leaq(rax, Address(r12, -1));
+    __ leaq(rax, Address(save_ndl_len, -1));
     __ cmpq(rax, 0x9);
     __ ja(L_bigCaseDefault);
     __ mov64(r15, (int64_t)jump_table);
