@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "classfile/vmClasses.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1289,7 +1288,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
-bool is_pointer_bad(intptr_t* ptr) {
+static bool is_pointer_bad(intptr_t* ptr) {
   return !is_aligned(ptr, sizeof(uintptr_t)) || !os::is_readable_pointer(ptr);
 }
 
@@ -2157,13 +2156,6 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
     MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC, flags);
   }
   return result;
-}
-
-char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec) {
-  return pd_remap_memory(fd, file_name, file_offset, addr, bytes,
-                    read_only, allow_exec);
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {

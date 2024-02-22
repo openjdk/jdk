@@ -113,6 +113,11 @@ runtime/cds/appcds/customLoader/HelloCustom_JFR.java 8241075 linux-all,windows-x
 runtime/os/TestTransparentHugePageUsage.java 8324776 linux-all
 runtime/Thread/TestAlwaysPreTouchStacks.java 8324781 linux-all
 
+applications/jcstress/accessAtomic.java 8325984 generic-all
+applications/jcstress/acqrel.java 8325984 generic-all
+applications/jcstress/atomicity.java 8325984 generic-all
+applications/jcstress/coherence.java 8325984 generic-all
+
 applications/jcstress/copy.java 8229852 linux-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
@@ -173,6 +178,7 @@ vmTestbase/vm/mlvm/meth/stress/jdi/breakpointInCompiledCode/Test.java 8257761 ge
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2none_a/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_b/TestDescription.java 8013267 generic-all
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 8013267 generic-all
+vmTestbase/vm/mlvm/meth/stress/compiler/deoptimize/Test.java#id1 8325905 generic-all
 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 

@@ -1380,7 +1380,7 @@ C2V_END
 /*
  * Used by matches() to convert a ResolvedJavaMethod[] to an array of Method*.
  */
-GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
+static GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
   GrowableArray<Method*>* resolved_methods = new GrowableArray<Method*>(methods_oop->length());
   for (int i = 0; i < methods_oop->length(); i++) {
@@ -1399,7 +1399,7 @@ GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JV
  * The ResolvedJavaMethod[] array is converted to a Method* array that is then cached in the resolved_methods_ref in/out parameter.
  * In case of a match, the matching ResolvedJavaMethod is returned in matched_jvmci_method_ref.
  */
-bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
+static bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
   GrowableArray<Method*>* resolved_methods = *resolved_methods_ref;
   if (resolved_methods == nullptr) {
     resolved_methods = init_resolved_methods(methods, JVMCIENV);
@@ -1420,7 +1420,7 @@ bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** reso
 /*
  * Resolves an interface call to a concrete method handle.
  */
-methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
+static methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   Handle receiver = args->receiver();
   Klass* recvrKlass = receiver.is_null() ? (Klass*)nullptr : receiver->klass();
@@ -1435,7 +1435,7 @@ methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* sig
 /*
  * Used by c2v_iterateFrames to make a new vframeStream at the given compiled frame id (stack pointer) and vframe id.
  */
-void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
+static void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
   vfst = vframeStream(thread);
   while (vfst.frame_id() != stack_pointer && !vfst.at_end()) {
     vfst.next();
@@ -1458,7 +1458,7 @@ void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_p
 /*
  * Used by c2v_iterateFrames. Returns an array of any unallocated scope objects or null if none.
  */
-GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
+static GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
   GrowableArray<ScopeValue*>* unallocated = nullptr;
   for (int i = 0; i < scope_objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) scope_objects->at(i);

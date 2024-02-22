@@ -862,6 +862,9 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
       handle_promotion_failure(old);
       return old;
     }
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     new_obj_is_tenured = true;
   } else {
     // Prefetch beyond obj

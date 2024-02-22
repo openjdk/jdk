@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,30 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
+package org.openjdk.bench.vm.gc.systemgc;
 
-package sun.jvm.hotspot.gc.shared;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.OutputTimeUnit;
 
-import sun.jvm.hotspot.debugger.*;
+import java.util.concurrent.TimeUnit;
 
-/** Should only be used once */
+@BenchmarkMode(Mode.SingleShotTime)
+@Fork(value=25, jvmArgsAppend={"-Xmx5g", "-Xms5g", "-Xmn3g", "-XX:+AlwaysPreTouch"})
+@OutputTimeUnit(TimeUnit.MILLISECONDS)
+public class NoObjects {
 
-class GenerationIsInClosure implements SpaceClosure {
-  private Address p;
-  private Space sp;
+    /*
+     * Test the System GC when there are no additionally allocate
+     * objects.
+     *
+     * The heap settings provided are the same as for the other
+     * test for consistency.
+     */
 
-  GenerationIsInClosure(Address p) {
-    this.p = p;
-  }
-
-  public void doSpace(Space s) {
-    if (s.contains(p)) {
-      sp = s;
+    @Benchmark
+    public void gc() {
+        System.gc();
     }
-  }
 
-  Space space() {
-    return sp;
-  }
 }

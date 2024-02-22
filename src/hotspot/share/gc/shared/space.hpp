@@ -77,8 +77,8 @@ class Space: public CHeapObj<mtGC> {
   // Accessors
   HeapWord* bottom() const         { return _bottom; }
   HeapWord* end() const            { return _end;    }
-  virtual void set_bottom(HeapWord* value) { _bottom = value; }
-  virtual void set_end(HeapWord* value)    { _end = value; }
+  void set_bottom(HeapWord* value) { _bottom = value; }
+  void set_end(HeapWord* value)    { _end = value; }
 
   HeapWord* saved_mark_word() const  { return _saved_mark_word; }
 
@@ -132,11 +132,6 @@ class Space: public CHeapObj<mtGC> {
   // some heaps may not pack objects densely; a chunk may either be an
   // object or a non-object.  If "p" is not in the space, return null.
   virtual HeapWord* block_start_const(const void* p) const = 0;
-
-  // Requires "addr" to be the start of a chunk, and returns its size.
-  // "addr + size" is required to be the start of a new chunk, or the end
-  // of the active area of the heap.
-  virtual size_t block_size(const HeapWord* addr) const = 0;
 
   // Allocation (return null if full).  Assumes the caller has established
   // mutually exclusive access to the space.
@@ -258,7 +253,6 @@ protected:
 
   // Very inefficient implementation.
   HeapWord* block_start_const(const void* p) const override;
-  size_t block_size(const HeapWord* p) const override;
 
   // Addresses for inlined allocation
   HeapWord** top_addr() { return &_top; }
