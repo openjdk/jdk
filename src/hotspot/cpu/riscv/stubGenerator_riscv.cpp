@@ -4859,9 +4859,8 @@ class StubGenerator: public StubCodeGenerator {
     if ((round % 2) == 0) {
       int idx = 16;
       // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-      __ mv(t0, ws[(idx-3)/2]);
       __ srli(t1, ws[(idx-8)/2], 32);
-      __ xorr(t0, t0, t1);
+      __ xorr(t0, ws[(idx-3)/2], t1);
 
       __ srli(t1, ws[(idx-14)/2], 32);
       __ srli(cur_w, ws[(idx-16)/2], 32);
@@ -4883,12 +4882,9 @@ class StubGenerator: public StubCodeGenerator {
     int idx = 17;
     // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
     __ srli(t0, ws[(idx-3)/2], 32);
-    __ mv(t1, ws[(idx-8)/2]);
-    __ xorr(t0, t0, t1);
+    __ xorr(t0, t0, ws[(idx-8)/2]);
 
-    __ mv(t1, ws[(idx-14)/2]);
-    __ mv(cur_w, ws[(idx-16)/2]);
-    __ xorr(cur_w, cur_w, t1);
+    __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
 
     __ xorr(cur_w, cur_w, t0);
     __ rolw_imm(cur_w, cur_w, 1, t0);
