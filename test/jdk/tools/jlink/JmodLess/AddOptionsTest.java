@@ -52,7 +52,7 @@ public class AddOptionsTest extends AbstractLinkableRuntimeTest {
 
     @Override
     void runTest(Helper helper) throws Exception {
-        Path finalImage = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path finalImage = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
                 .addExtraOption("--add-options")
                 .addExtraOption("-Xlog:gc=info:stderr -XX:+UseParallelGC")
                 .name("java-base-with-opts")

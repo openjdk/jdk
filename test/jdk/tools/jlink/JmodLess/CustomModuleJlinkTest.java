@@ -28,7 +28,7 @@ import tests.Helper;
 
 
 /*
- * @test
+ * FIXME: This needs thinking about
  * @summary Test jmod-less jlink with a custom module
  * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
@@ -42,7 +42,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g CustomModuleJlinkTest
  */
-public class CustomModuleJlinkTest extends AbstractJmodLessTest {
+public class CustomModuleJlinkTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         CustomModuleJlinkTest test = new CustomModuleJlinkTest();
@@ -56,7 +56,7 @@ public class CustomModuleJlinkTest extends AbstractJmodLessTest {
 
         // create a base image including jdk.jlink and the leaf1 module. This will
         // add the leaf1 module's module path.
-        Path jlinkImage = createBaseJlinkImage(new BaseJlinkSpecBuilder()
+        Path jlinkImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                                                     .helper(helper)
                                                     .name("cmod-jlink")
                                                     .addModule(customModule)

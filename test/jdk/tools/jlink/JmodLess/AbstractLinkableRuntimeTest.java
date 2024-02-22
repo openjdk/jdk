@@ -103,7 +103,7 @@ public abstract class AbstractLinkableRuntimeTest {
         return out;
     }
 
-    protected Path createJavaImageJmodLess(BaseJlinkSpec baseSpec) throws Exception {
+    protected Path createJavaImageRuntimeLink(BaseJlinkSpec baseSpec) throws Exception {
         // create a base image only containing the jdk.jlink module and its transitive closure
         Path runtimeJlinkImage = createRuntimeLinkImage(baseSpec);
 

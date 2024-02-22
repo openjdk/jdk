@@ -38,8 +38,9 @@ import tests.JImageHelper;
 
 /*
  * @test
- * @summary Compare packaged-modules jlink with a jmod-less jlink to produce the same result
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Compare packaged-modules jlink with a run-time image based jlink to
+ *          produce the same result
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -51,7 +52,7 @@ import tests.JImageHelper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g PackagedModulesVsJmodLessTest
  */
-public class PackagedModulesVsJmodLessTest extends AbstractJmodLessTest {
+public class PackagedModulesVsJmodLessTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         PackagedModulesVsJmodLessTest test = new PackagedModulesVsJmodLessTest();
@@ -61,13 +62,11 @@ public class PackagedModulesVsJmodLessTest extends AbstractJmodLessTest {
     @Override
     void runTest(Helper helper) throws Exception {
         // create a java.se using jmod-less approach
-        Path javaSEJmodLess = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path javaSEruntimeLink = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
                                                             .helper(helper)
                                                             .name("java-se-jmodless")
                                                             .addModule("java.se")
                                                             .validatingModule("java.se")
-                                                            .addExtraOption("--exclude-resources")
-                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
 
         // create a java.se using packaged modules (jmod-full)
@@ -75,7 +74,7 @@ public class PackagedModulesVsJmodLessTest extends AbstractJmodLessTest {
                 .output(helper.createNewImageDir("java-se-jmodfull"))
                 .addMods("java.se").call().assertSuccess();
 
-        compareRecursively(javaSEJmodLess, javaSEJmodFull);
+        compareRecursively(javaSEruntimeLink, javaSEJmodFull);
     }
 
     // Visit all files in the given directories checking that they're byte-by-byte identical

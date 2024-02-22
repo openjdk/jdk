@@ -28,8 +28,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test reproducibility of jmod-less jlink of java.se
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Test reproducibility of runtime image based jlink of java.se
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -41,7 +41,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g JavaSEReproducibleTest
  */
-public class JavaSEReproducibleTest extends AbstractJmodLessTest {
+public class JavaSEReproducibleTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         JavaSEReproducibleTest test = new JavaSEReproducibleTest();
@@ -52,7 +52,7 @@ public class JavaSEReproducibleTest extends AbstractJmodLessTest {
     void runTest(Helper helper) throws Exception {
         String javaSeModule = "java.se";
         // create a java.se using jmod-less approach
-        Path javaSEJmodLess1 = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path javaSEJmodLess1 = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
                                                                    .helper(helper)
                                                                    .name("java-se-repro1")
                                                                    .addModule(javaSeModule)
@@ -60,7 +60,7 @@ public class JavaSEReproducibleTest extends AbstractJmodLessTest {
                                                                    .build());
 
         // create another java.se version using jmod-less approach
-        Path javaSEJmodLess2 = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path javaSEJmodLess2 = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
                                                                    .helper(helper)
                                                                    .name("java-se-repro2")
                                                                    .addModule(javaSeModule)

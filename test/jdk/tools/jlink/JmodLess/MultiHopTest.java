@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Verify that a jlink unsing the run-image only is single-hop only
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Verify that a jlink using the run-time image cannot include jdk.jlink
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -42,7 +42,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g MultiHopTest
  */
-public class MultiHopTest extends AbstractJmodLessTest {
+public class MultiHopTest extends AbstractLinkableRuntimeTest {
 
     @Override
     void runTest(Helper helper) throws Exception {
@@ -59,15 +59,14 @@ public class MultiHopTest extends AbstractJmodLessTest {
                                 .helper(helper)
                                 .imagePath(jdkJlinkJmodless)
                                 .name("jdk-jlink-multi-hop1-target")
-                                .addModule("java.base")
+                                .addModule("jdk.jlink")
                                 .validatingModule("java.base")
                                 .build(), handler, exitFailPred);
         OutputAnalyzer analyzer = handler.analyzer();
         if (analyzer.getExitValue() == 0) {
-            throw new AssertionError("Expected jlink to fail due to multi-hop (hop 2)");
+            throw new AssertionError("Expected jlink to fail due to including jdk.jlink");
         }
-        String expectedMsg = "Module path to the JDK packaged modules must be specified. " +
-                "Run-time image based linking is not supported as $java.home was already created from a run-time image.";
+        String expectedMsg = "Including jdk.jlink module for run-time image based links is not allowed.";
         analyzer.stdoutShouldContain(expectedMsg);
         analyzer.stdoutShouldNotContain("Exception"); // ensure error message is sane
     }
@@ -78,7 +77,7 @@ public class MultiHopTest extends AbstractJmodLessTest {
                .name(name)
                .addModule("jdk.jlink")
                .validatingModule("java.base");
-        return createJavaImageJmodLess(builder.build());
+        return createRuntimeLinkImage(builder.build());
     }
 
     public static void main(String[] args) throws Exception {

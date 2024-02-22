@@ -31,7 +31,7 @@ import tests.JImageValidator;
 /*
  * @test
  * @summary Test appropriate handling of generated SystemModules* classes in run-time image link mode
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -43,7 +43,7 @@ import tests.JImageValidator;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g SystemModulesTest
  */
-public class SystemModulesTest extends AbstractJmodLessTest {
+public class SystemModulesTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         SystemModulesTest test = new SystemModulesTest();
@@ -60,34 +60,19 @@ public class SystemModulesTest extends AbstractJmodLessTest {
         // create an image with a module containing a main entrypoint (jdk.httpserver),
         // thus producing the SystemModules$0.class. Add jdk.jdwp.agent as a module which
         // isn't resolved by default, so as to generate SystemModules$default.class
-        Path javaseJmodless = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path javaseJmodless = createJavaImageRuntimeLink(new BaseJlinkSpecBuilder()
                                                             .helper(helper)
                                                             .name("httpserver-jlink-jmodless-derived")
                                                             .addModule("jdk.httpserver")
                                                             .addModule("jdk.jdwp.agent")
-                                                            .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption("--exclude-resources")
-                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
-        // Verify that SystemModules$0.class etc. are there
+        // Verify that SystemModules$0.class etc. are there, due to httpserver and jdwp.agent
         JImageValidator.validate(javaseJmodless.resolve("lib").resolve("modules"),
                                     List.of("/java.base/jdk/internal/module/SystemModules$default.class",
-                                            "/java.base/jdk/internal/module/SystemModules$0.class"), Collections.emptyList());
-        // Finally attempt another jmodless link reducing modules to java.base only,
-        // no longer expecting SystemModules$0.class
-        jlinkUsingImage(new JlinkSpecBuilder()
-                                .helper(helper)
-                                .imagePath(javaseJmodless)
-                                .name("java.base-from-jdk-httpserver-derived")
-                                .addModule("java.base")
-                                .expectedLocation("/java.base/jdk/internal/module/SystemModulesMap.class")
-                                .expectedLocation("/java.base/jdk/internal/module/SystemModules.class")
-                                .expectedLocation("/java.base/jdk/internal/module/SystemModules$all.class")
-                                .unexpectedLocation("/java.base/jdk/internal/module/SystemModules$0.class")
-                                .unexpectedLocation("/java.base/jdk/internal/module/SystemModules$default.class")
-                                .validatingModule("java.base")
-                                .build());
+                                            "/java.base/jdk/internal/module/SystemModules$0.class",
+                                            "/java.base/jdk/internal/module/SystemModules$all.class"),
+                                    Collections.emptyList());
     }
 
 }

@@ -23,7 +23,7 @@
 
 import jdk.test.lib.process.OutputAnalyzer;
 
-class CapturingHandler extends AbstractJmodLessTest.OutputAnalyzerHandler {
+class CapturingHandler extends AbstractLinkableRuntimeTest.OutputAnalyzerHandler {
 
     private OutputAnalyzer output;
 

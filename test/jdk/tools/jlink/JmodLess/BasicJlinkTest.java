@@ -29,8 +29,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test basic jmod-less jlinking
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Test basic runtime-image-based jlinking
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -42,21 +42,21 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g BasicJlinkTest
  */
-public class BasicJlinkTest extends AbstractJmodLessTest {
+public class BasicJlinkTest extends AbstractLinkableRuntimeTest {
 
     @Override
     public void runTest(Helper helper) throws Exception {
-        Path finalImage = createJavaBaseJmodLess(helper, "java-base");
+        Path finalImage = createJavaBaseRuntimeLink(helper, "java-base");
         verifyListModules(finalImage, List.of("java.base"));
     }
 
-    private Path createJavaBaseJmodLess(Helper helper, String name) throws Exception {
+    private Path createJavaBaseRuntimeLink(Helper helper, String name) throws Exception {
         BaseJlinkSpecBuilder builder = new BaseJlinkSpecBuilder();
         builder.helper(helper)
                .name(name)
                .addModule("java.base")
                .validatingModule("java.base");
-        return createJavaImageJmodLess(builder.build());
+        return createJavaImageRuntimeLink(builder.build());
     }
 
     public static void main(String[] args) throws Exception {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,22 +30,18 @@ import java.util.Properties;
 
 import tests.Helper;
 
-public abstract class ModifiedFilesTest extends AbstractJmodLessTest {
+public abstract class ModifiedFilesTest extends AbstractLinkableRuntimeTest {
 
     abstract String initialImageName();
     abstract void testAndAssert(Path modifiedFile, Helper helper, Path initialImage) throws Exception;
 
     @Override
     void runTest(Helper helper) throws Exception {
-        Path initialImage = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path initialImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                 //.name("java-base-jlink-with-mod")
                 .name(initialImageName())
                 .addModule("java.base")
-                .addModule("jdk.jlink")
                 .validatingModule("java.base")
-                // avoid producing the runtime image stamp file
-                .addExtraOption("--exclude-resources")
-                .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                 .helper(helper)
                 .build());
 

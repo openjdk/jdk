@@ -30,7 +30,7 @@ import tests.Helper;
 /*
  * @test
  * @summary Verify JLI class generation in run-time image link mode
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -42,7 +42,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g GenerateJLIClassesTest
  */
-public class GenerateJLIClassesTest extends AbstractJmodLessTest {
+public class GenerateJLIClassesTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         GenerateJLIClassesTest test = new GenerateJLIClassesTest();
@@ -57,27 +57,20 @@ public class GenerateJLIClassesTest extends AbstractJmodLessTest {
      */
     @Override
     void runTest(Helper helper) throws Exception {
-        // create an image with a module containing a main entrypoint (jdk.httpserver),
-        // thus producing the SystemModules$0.class. Add jdk.jdwp.agent as a module which
-        // isn't resolved by default, so as to generate SystemModules$default.class
-
         Path baseFile = Files.createTempFile("base", "trace");
         String species = "LLLLLLLLLLLLLLLLLLL";
         String fileString = "[SPECIES_RESOLVE] java.lang.invoke.BoundMethodHandle$Species_" + species + " (salvaged)\n";
         Files.write(baseFile, fileString.getBytes(StandardCharsets.UTF_8));
-        Path jmodLessImage = createJavaImageJmodLess(new BaseJlinkSpecBuilder()
+        Path runtimeLinkableImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                                                             .helper(helper)
                                                             .name("jlink.jli-jmodless")
-                                                            .addModule("jdk.jlink")
                                                             .validatingModule("java.base")
-                                                            .addExtraOption("--exclude-resources")
-                                                            .addExtraOption(EXCLUDE_RESOURCE_GLOB_STAMP)
                                                             .build());
         // Finally attempt another jmodless link reducing modules to java.base only,
         // and asking for specific jli classes.
         jlinkUsingImage(new JlinkSpecBuilder()
                                 .helper(helper)
-                                .imagePath(jmodLessImage)
+                                .imagePath(runtimeLinkableImage)
                                 .name("java.base-jli-derived")
                                 .addModule("java.base")
                                 .extraJlinkOpt("--generate-jli-classes=@" + baseFile.toString())
