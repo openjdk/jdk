@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 8267361
- * @summary JavaTokenizer reads octal numbers mistakenly
+ * @bug 8267361 8325440
+ * @summary Verify meaniningfull errors for broken octal literals.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
@@ -62,6 +62,9 @@ public class OctalNumberTest extends TestRunner {
                     int c = 02389;
                     int d = 028a;
                     int e = 02a8;
+                    int f = 0b;
+                    int g = 0b2;
+                    int h = 0b12;
                 }""";
         List<String> output = new JavacTask(tb)
                 .sources(code)
@@ -70,13 +73,17 @@ public class OctalNumberTest extends TestRunner {
                 .writeAll()
                 .getOutputLines(Task.OutputKind.DIRECT);
         List<String> expected = Arrays.asList(
-                "Digit.java:3:14: compiler.err.expected: ';'",
-                "Digit.java:4:16: compiler.err.expected: ';'",
-                "Digit.java:5:15: compiler.err.expected: ';'",
+                "Digit.java:3:14: compiler.err.illegal.digit.in.octal.literal",
+                "Digit.java:4:16: compiler.err.illegal.digit.in.octal.literal",
+                "Digit.java:5:15: compiler.err.illegal.digit.in.octal.literal",
+                "Digit.java:5:16: compiler.err.expected: ';'",
                 "Digit.java:5:17: compiler.err.expected: token.identifier",
                 "Digit.java:6:15: compiler.err.expected: ';'",
                 "Digit.java:6:17: compiler.err.expected: token.identifier",
-                "6 errors");
+                "Digit.java:7:13: compiler.err.invalid.binary.number",
+                "Digit.java:8:13: compiler.err.illegal.digit.in.binary.literal",
+                "Digit.java:9:14: compiler.err.illegal.digit.in.binary.literal",
+                "10 errors");
         tb.checkEqual(expected, output);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ callbackVMDeath(jvmtiEnv* jvmti, JNIEnv* jni) {
 
     NSK_DISPLAY0("Disable VM_DEATH event in VM_DEATH callback\n");
     if (!NSK_JVMTI_VERIFY(
-            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VM_DEATH, NULL))) {
+            jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VM_DEATH, nullptr))) {
         success = NSK_FALSE;
     } else {
         NSK_DISPLAY0("  ... disabled\n");
@@ -79,13 +79,13 @@ JNIEXPORT jint JNI_OnLoad_disposeenv002(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -99,7 +99,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
         NSK_DISPLAY0("Enable VM_DEATH event in JVM_OnLoad()\n");
         if (!NSK_JVMTI_VERIFY(
-                jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_DEATH, nullptr))) {
             return JNI_ERR;
         }
         NSK_DISPLAY0("  ... enabled\n");

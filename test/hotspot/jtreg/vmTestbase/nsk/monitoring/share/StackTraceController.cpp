@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ extern "C" {
 
 #define GET_OBJECT_CLASS(_class, _obj)\
     if (!NSK_JNI_VERIFY(env, (_class = \
-            env->GetObjectClass(_obj)) != NULL))\
+            env->GetObjectClass(_obj)) != nullptr))\
         return 2
 
 #define CALL_STATIC_VOID_NOPARAM(_class, _methodName)\
@@ -39,12 +39,12 @@ extern "C" {
 
 #define GET_STATIC_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetStaticMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetStaticMethodID(_class, _methodName, _sig)) != nullptr))\
         return 2
 
 #define GET_METHOD_ID(_methodID, _class, _methodName, _sig)\
     if (!NSK_JNI_VERIFY(env, (_methodID = \
-            env->GetMethodID(_class, _methodName, _sig)) != NULL))\
+            env->GetMethodID(_class, _methodName, _sig)) != nullptr))\
         return 2
 
 #define CALL_VOID_NOPARAM(_obj, _class, _methodName)\

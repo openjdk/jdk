@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,11 @@
 #include <string.h>
 #include "jvmti.h"
 #include "jvmti_common.h"
-#include "../get_stack_trace.h"
+#include "../get_stack_trace.hpp"
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jmethodID mid;
 static frame_info expected_platform_frames[] = {
     {"Lgetstacktr04$TestThread;", "checkPoint", "()V"},
@@ -80,7 +80,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -108,12 +108,12 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_getstacktr04_getReady(JNIEnv *jni, jclass cls, jclass clazz) {
   mid = jni->GetMethodID(clazz, "checkPoint", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     jni->FatalError("Cannot find Method ID for method checkPoint\n");
   }
 
   check_jvmti_status(jni, jvmti->SetBreakpoint(mid, 0), "SetBreakpoint failed.");
-  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE,JVMTI_EVENT_BREAKPOINT, NULL);
+  set_event_notification_mode(jvmti, jni, JVMTI_ENABLE,JVMTI_EVENT_BREAKPOINT, nullptr);
 }
 
 }

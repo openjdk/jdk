@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -857,20 +857,18 @@ public class FileChannelImpl
             if (position > sz)
                 return 0;
 
-            // Now position <= sz so remaining >= 0 and
-            // remaining == 0 if and only if sz == 0
-            long remaining = sz - position;
-
-            // Adjust count only if remaining > 0, i.e.,
-            // sz > position which means sz > 0
-            if (remaining > 0 && remaining < count)
-                count = remaining;
-
             // System calls supporting fast transfers might not work on files
             // which advertise zero size such as those in Linux /proc
             if (sz > 0) {
-                // Attempt a direct transfer, if the kernel supports it, limiting
-                // the number of bytes according to which platform
+                // Now sz > 0 and position <= sz so remaining >= 0 and
+                // remaining == 0 if and only if sz == position
+                long remaining = sz - position;
+
+                if (remaining >= 0 && remaining < count)
+                    count = remaining;
+
+                // Attempt a direct transfer, if the kernel supports it,
+                // limiting the number of bytes according to which platform
                 int icount = (int) Math.min(count, nd.maxDirectTransferSize());
                 long n;
                 if ((n = transferToDirect(position, icount, target)) >= 0)

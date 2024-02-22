@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,6 @@
 #include "nio_util.h"
 #include "sun_nio_ch_FileKey.h"
 
-#ifdef _ALLBSD_SOURCE
-#define stat64 stat
-
-#define fstat64 fstat
-#endif
-
 static jfieldID key_st_dev;    /* id for FileKey.st_dev */
 static jfieldID key_st_ino;    /* id for FileKey.st_ino */
 
@@ -51,12 +45,12 @@ Java_sun_nio_ch_FileKey_initIDs(JNIEnv *env, jclass clazz)
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_FileKey_init(JNIEnv *env, jobject this, jobject fdo)
 {
-    struct stat64 fbuf;
+    struct stat fbuf;
     int res;
 
-    RESTARTABLE(fstat64(fdval(env, fdo), &fbuf), res);
+    RESTARTABLE(fstat(fdval(env, fdo), &fbuf), res);
     if (res < 0) {
-        JNU_ThrowIOExceptionWithLastError(env, "fstat64 failed");
+        JNU_ThrowIOExceptionWithLastError(env, "fstat failed");
     } else {
         (*env)->SetLongField(env, this, key_st_dev, (jlong)fbuf.st_dev);
         (*env)->SetLongField(env, this, key_st_ino, (jlong)fbuf.st_ino);
