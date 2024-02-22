@@ -96,6 +96,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
 
         String msgPrefix = "return code: ";
+        String errorMsg = "Failed to load agent library";
         try {
             InputStream in = execute("load",
                                      agentLibrary,
@@ -110,16 +111,15 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                     throw new AgentInitializationException("Agent_OnAttach failed", retCode);
                 }
             } else {
-                String msg = "Failed to load agent library";
                 if (!result.isEmpty()) {
-                    msg += ": " + result;
+                    errorMsg += ": " + result;
                 }
-                throw new AgentLoadException(msg);
+                throw new AgentLoadException(errorMsg);
             }
         } catch (AttachOperationFailedException ex) {
             // execute() throws AttachOperationFailedException if attach agent reported error.
             // Convert it to AgentLoadException.
-            throw new AgentLoadException("Failed to load agent library: " + ex.getMessage());
+            throw new AgentLoadException(errorMsg + ": " + ex.getMessage());
         }
     }
 
