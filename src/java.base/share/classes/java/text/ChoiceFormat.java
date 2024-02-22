@@ -235,7 +235,7 @@ public class ChoiceFormat extends NumberFormat {
      * throw an exception or succeed and discard the incorrect portion. A {@code
      * NumberFormatException} is thrown if a {@code limit} can not be
      * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
-     * if there are not ascending intervals, or missing {@code SubPatterns}.
+     * if a {@code SubPattern} is missing, or the intervals are not ascending.
      * Discarding the incorrect portion may result in a ChoiceFormat with
      * empty {@code limits} and {@code formats}.
      *
@@ -407,7 +407,7 @@ public class ChoiceFormat extends NumberFormat {
      * throw an exception or succeed and discard the incorrect portion. A {@code
      * NumberFormatException} is thrown if a {@code limit} can not be
      * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
-     * if there are not ascending intervals, or missing {@code SubPatterns}.
+     * if a {@code SubPattern} is missing, or the intervals are not ascending.
      * Discarding the incorrect portion may result in a ChoiceFormat with
      * empty {@code limits} and {@code formats}.
      *
