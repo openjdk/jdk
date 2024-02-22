@@ -114,8 +114,10 @@
  * the reference is removed from the queue ("dequeued") by {@link ReferenceQueue#poll} or
  * {@link ReferenceQueue#remove}.</li>
  *
- * <li>The Cleaner thread dequeues a reference to a registered object before
- * running the cleaning action for that object.</li>
+ * <li>The dequeuing of a reference to a
+ * {@linkplain Cleaner#register(Object object, Runnable action) registered}
+ * object, by the Cleaner thread, <i>happens-before</i> the Cleaner thread runs
+ * the cleaning action for that object.</li>
  *
  * </ul>
  *
