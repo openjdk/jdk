@@ -2939,20 +2939,23 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
   return use_store;
 }
 
-// TODO description of structure
-// TODO why ok to take constant out of ConvI2L?
-//
 // Class to parse array pointers of the form:
 // pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
 //
 // The goal is to check if two such ArrayPointers are adjacent for a load or store.
-// Note: we accumulate all constant offsets into constant_offset, even the int constant
-//       behind the LShiftL(ConvI2L(...)) pattern. TODO overflow
-// TODO only works for arrays?
+//
+// Note: we accumulate all constant offsets into constant_offset, even the int constant behind
+//       the LShiftL(ConvI2L(...)) pattern. For this, we convert "ConvI2L(x + int_con)" to
+//       "ConvI2L(x) + int_con", which is only safe if we can assume that either all compared
+//       addresses have an overflow for "x + int_con" or none.
+//       For loads and stores on arrays, we know that if one overflows and the other not, then
+//       the two addresses lay almost max_int indices apart, but the maximal array size is
+//       only about half of that. Therefore, the RangeCheck on at least one of them must have
+//       failed.
 class ArrayPointer {
 private:
   const bool _is_valid;          // The parsing succeeded
-  const AddPNode* _pointer;      // The final pointer to the position in the array
+  const Node* _pointer;          // The final pointer to the position in the array
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
   const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
@@ -2960,7 +2963,7 @@ private:
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
 
   ArrayPointer(const bool is_valid,
-               const AddPNode* pointer,
+               const Node* pointer,
                const Node* base,
                const jlong constant_offset,
                const Node* int_offset,
@@ -2974,13 +2977,13 @@ private:
       _int_offset_shift(int_offset_shift),
       _other_offsets(other_offsets)
   {
-    assert(is_valid == (_pointer != nullptr), "have pointer exactly if valid");
+    assert(_pointer != nullptr, "must always have pointer");
     assert(is_valid == (_base != nullptr), "have base exactly if valid");
     assert(is_valid == (_other_offsets != nullptr), "have other_offsets exactly if valid");
   }
 
-  static ArrayPointer make_invalid() {
-    return ArrayPointer(false, nullptr, nullptr, 0, nullptr, 0, nullptr);
+  static ArrayPointer make_invalid(const Node* pointer) {
+    return ArrayPointer(false, pointer, nullptr, 0, nullptr, 0, nullptr);
   }
 
   static bool parse_int_offset(Node* offset, Node*& int_offset, jint& int_offset_shift) {
@@ -3006,18 +3009,18 @@ private:
 
 public:
   // Parse the structure above the pointer
-  static ArrayPointer make(const AddPNode* pointer) {
-    if (pointer == nullptr) { return ArrayPointer::make_invalid(); }
+  static ArrayPointer make(const Node* pointer) {
+    if (!pointer->is_AddP()) { return ArrayPointer::make_invalid(pointer); }
 
     const Node* base = pointer->in(AddPNode::Base);
-    if (base == nullptr) { return ArrayPointer::make_invalid(); }
+    if (base == nullptr) { return ArrayPointer::make_invalid(pointer); }
 
     const int search_depth = 5;
     Node* offsets[search_depth];
-    int count = pointer->unpack_offsets(offsets, search_depth);
+    int count = pointer->as_AddP()->unpack_offsets(offsets, search_depth);
 
     // We expect at least a constant each
-    if (count <= 0) { return ArrayPointer::make_invalid(); }
+    if (count <= 0) { return ArrayPointer::make_invalid(pointer); }
 
     // We extract the form:
     // pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
@@ -3052,6 +3055,8 @@ public:
   }
 
   bool is_adjacent_to(const ArrayPointer& other, const jlong data_size) const {
+    if (!_is_valid || !other._is_valid) { return false; }
+
     // Offset adjacent?
     if (this->_constant_offset + data_size != other._constant_offset) { return false; }
 
@@ -3074,6 +3079,10 @@ public:
 
 #ifndef PRODUCT
   void dump() {
+    if (!_is_valid) {
+      tty->print("ArrayPointer[%d %s, invalid]", _pointer->_idx, _pointer->Name());
+      return;
+    }
     tty->print("ArrayPointer[%d %s, base[%d %s] + %ld",
                _pointer->_idx, _pointer->Name(),
                _base->_idx, _base->Name(),
@@ -3159,28 +3168,10 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
     // both load from same value with correct shift
   }
 
-  // Check address compatibility. We expect patterns like this:
-  //
-  //   AddP(AddP(AddP(AddP(base, o2), o2), o1), con)
-  //
-  // Two addresses are adjacent, if they share a base and all offsets (o1, o2, ...)
-  // are the same, and the constants have an exact difference of the memory_size.
-  AddPNode* adr_s1 = s1->in(MemNode::Address)->isa_AddP();
-  AddPNode* adr_s2 = s2->in(MemNode::Address)->isa_AddP();
-
-  // TODO remove
-  //tty->print_cr("Check:");
-  //adr_s1->dump_bfs(5,0,"#d");
-  //adr_s2->dump_bfs(5,0,"#d");
-
-  ArrayPointer ap1 = ArrayPointer::make(adr_s1);
-  ArrayPointer ap2 = ArrayPointer::make(adr_s2);
-  // TODO remove
-  //ap1.dump();
-  //ap2.dump();
-  //tty->print_cr("is_adjacent_to: %d", ap2.is_adjacent_to(ap1, s1->memory_size()));
-  //tty->print_cr("is_adjacent_to: %d", ap1.is_adjacent_to(ap2, s1->memory_size()));
-  if (!ap2.is_adjacent_to(ap1, s1->memory_size())) {
+  // Check address adjacency
+  ArrayPointer array_pointer1 = ArrayPointer::make(s1->in(MemNode::Address));
+  ArrayPointer array_pointer2 = ArrayPointer::make(s2->in(MemNode::Address));
+  if (!array_pointer2.is_adjacent_to(array_pointer1, s1->memory_size())) {
     return nullptr;
   }
 
