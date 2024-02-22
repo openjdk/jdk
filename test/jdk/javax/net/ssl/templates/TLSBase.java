@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,8 +67,8 @@ abstract public class TLSBase {
             System.getProperty("test.src", "./") + "/" + pathToStores +
                 "/" + keyStoreFile;
         String trustFilename =
-                System.getProperty("test.src", "./") + "/" + pathToStores +
-                    "/" + trustStoreFile;
+            System.getProperty("test.src", "./") + "/" + pathToStores +
+                "/" + trustStoreFile;
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
         System.setProperty("javax.net.ssl.trustStore", trustFilename);
@@ -201,10 +201,8 @@ abstract public class TLSBase {
             super();
             name = "server";
             try {
-                //sslContext = SSLContext.getDefault();
                 sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(TLSBase.getKeyManager(km), TLSBase.getTrustManager(tm), null);
-                //sslContext.init(null, null, null);
                 fac = sslContext.getServerSocketFactory();
                 ssock = (SSLServerSocket) fac.createServerSocket(0);
                 ssock.setNeedClientAuth(true);
@@ -258,7 +256,7 @@ abstract public class TLSBase {
         }
 
         // Write to the client
-        void write(Client client, byte[] data)  throws Exception {
+        void write(Client client, byte[] data) throws Exception {
             write(clientMap.get(client.getPort()), data);
         }
 
@@ -295,7 +293,7 @@ abstract public class TLSBase {
         }
 
         ServerBuilder setTM(boolean b) {
-            km = b;
+            tm = b;
             return this;
         }
 

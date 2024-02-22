@@ -123,13 +123,13 @@ enum Alert {
         }
 
         if (cause instanceof IOException) {
-            return new SSLException("("+ description + ") " + reason, cause);
+            return new SSLException("(" + description + ") " + reason, cause);
         } else if ((this == UNEXPECTED_MESSAGE)) {
-            return new SSLProtocolException("("+ description + ") " + reason, cause);
+            return new SSLProtocolException("(" + description + ") " + reason, cause);
         } else if (handshakeOnly) {
-            return new SSLHandshakeException("("+ description + ") " + reason, cause);
+            return new SSLHandshakeException("(" + description + ") " + reason, cause);
         } else {
-            return new SSLException("("+ description + ") " + reason, cause);
+            return new SSLException("(" + description + ") " + reason, cause);
         }
     }
 

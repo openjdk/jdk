@@ -55,8 +55,7 @@ public class CheckSessionContext {
         SSLSession ss = server.getSession(client1);
         System.out.println(ss);
         byte[] id = ss.getId();
-        System.out.print("id = ");
-        System.out.println(hex.formatHex(id));
+        System.out.println("id = " + hex.formatHex(id));
         System.out.println("ss.getSessionContext().getSession(id) = " + ss.getSessionContext().getSession(id));
         if (ss.getSessionContext().getSession(id) != null) {
             id = ss.getSessionContext().getSession(id).getId();
