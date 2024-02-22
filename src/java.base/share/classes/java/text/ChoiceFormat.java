@@ -256,8 +256,8 @@ public class ChoiceFormat extends NumberFormat {
         ArrayList<Double> limits = new ArrayList<>();
         ArrayList<String> formats = new ArrayList<>();
         Segment seg = Segment.LIMIT;
-        Segment.LIMIT.bldr.setLength(0);
-        Segment.FORMAT.bldr.setLength(0);
+        Segment.LIMIT.patternBldr.setLength(0);
+        Segment.FORMAT.patternBldr.setLength(0);
         double limit = 0;
         boolean inQuote = false;
 
@@ -268,7 +268,7 @@ public class ChoiceFormat extends NumberFormat {
                 case '\'':
                     // Check for "''" indicating a literal quote
                     if ((i + 1) < newPattern.length() && newPattern.charAt(i + 1) == ch) {
-                        seg.bldr.append(ch);
+                        seg.patternBldr.append(ch);
                         ++i;
                     } else {
                         inQuote = !inQuote;
@@ -277,15 +277,15 @@ public class ChoiceFormat extends NumberFormat {
                 case '<', '#', '\u2264':
                     if (inQuote || seg == Segment.FORMAT) {
                         // Don't interpret relational symbols if parsing the format
-                        seg.bldr.append(ch);
+                        seg.patternBldr.append(ch);
                     } else {
                         // Build the numerical value of the limit
                         // and switch to parsing format
-                        if (Segment.LIMIT.bldr.isEmpty()) {
+                        if (Segment.LIMIT.patternBldr.isEmpty()) {
                             throw new IllegalArgumentException("Each interval must" +
                                     " contain a number before a format");
                         }
-                        limit = stringToNum(Segment.LIMIT.bldr.toString());
+                        limit = stringToNum(Segment.LIMIT.patternBldr.toString());
                         if (ch == '<' && Double.isFinite(limit)) {
                             limit = nextDouble(limit);
                         }
@@ -293,13 +293,13 @@ public class ChoiceFormat extends NumberFormat {
                             throw new IllegalArgumentException("Incorrect order " +
                                     "of intervals, must be in ascending order");
                         }
-                        Segment.LIMIT.bldr.setLength(0);
+                        Segment.LIMIT.patternBldr.setLength(0);
                         seg = Segment.FORMAT;
                     }
                     break;
                 case '|':
                     if (inQuote) {
-                        seg.bldr.append(ch);
+                        seg.patternBldr.append(ch);
                     } else {
                         if (seg != Segment.FORMAT) {
                             // Discard incorrect portion and finish building cFmt
@@ -308,20 +308,20 @@ public class ChoiceFormat extends NumberFormat {
                         // Insert an entry into the format and limit arrays
                         // and switch to parsing limit
                         limits.add(limit);
-                        formats.add(Segment.FORMAT.bldr.toString());
-                        Segment.FORMAT.bldr.setLength(0);
+                        formats.add(Segment.FORMAT.patternBldr.toString());
+                        Segment.FORMAT.patternBldr.setLength(0);
                         seg = Segment.LIMIT;
                     }
                     break;
                 default:
-                    seg.bldr.append(ch);
+                    seg.patternBldr.append(ch);
             }
         }
 
         // clean up last one (SubPattern without trailing '|')
         if (seg == Segment.FORMAT) {
             limits.add(limit);
-            formats.add(Segment.FORMAT.bldr.toString());
+            formats.add(Segment.FORMAT.patternBldr.toString());
         }
         choiceLimits = limits.stream().mapToDouble(d -> d).toArray();
         choiceFormats = formats.toArray(new String[0]);
@@ -332,10 +332,10 @@ public class ChoiceFormat extends NumberFormat {
         LIMIT(new StringBuilder()),
         FORMAT(new StringBuilder());
 
-        private final StringBuilder bldr;
+        private final StringBuilder patternBldr;
 
-        Segment(StringBuilder bldr) {
-            this.bldr = bldr;
+        Segment(StringBuilder patternBldr) {
+            this.patternBldr = patternBldr;
         }
     }
 
