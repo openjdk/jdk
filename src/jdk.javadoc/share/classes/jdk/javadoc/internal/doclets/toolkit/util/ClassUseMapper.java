@@ -97,12 +97,17 @@ public class ClassUseMapper {
     /**
      * Mapping of TypeElements to list of TypeElements which uses this class in a superclass type parameter
      */
-    public final Map<TypeElement, List<TypeElement>> classToSuperclassTypeParam = new HashMap<>();
+    public final Map<TypeElement, List<TypeElement>> classToSubclassTypeParam = new HashMap<>();
+
+    /**
+     * Mapping of TypeElements to list of TypeElements which uses this class in a superclass type parameter
+     */
+    public final Map<TypeElement, List<TypeElement>> classToSubinterfaceTypeParam = new HashMap<>();
 
     /**
      * Mapping of TypeElements to list of TypeElements which uses this interface in a superinterface type parameter
      */
-    public final Map<TypeElement, List<TypeElement>> classToInterfaceTypeParam = new HashMap<>();
+    public final Map<TypeElement, List<TypeElement>> classToImplementsTypeParam = new HashMap<>();
 
     /**
      * Mapping of TypeElements to list of VariableElements declared as that class.
@@ -224,10 +229,18 @@ public class ClassUseMapper {
             PackageElement pkg = elementUtils.getPackageOf(aClass);
             mapAnnotations(classToPackageAnnotations, pkg, pkg);
             mapTypeParameters(classToClassTypeParam, aClass, aClass);
-            mapTypeParameters(classToSuperclassTypeParam, aClass.getSuperclass(), aClass);
-            for (var superinterface : aClass.getInterfaces()) {
-                mapTypeParameters(classToInterfaceTypeParam, superinterface, aClass);
+            mapTypeParameters(classToSubclassTypeParam, aClass.getSuperclass(), aClass);
+
+            if (utils.isInterface(aClass)) {
+                for (var superinterface : aClass.getInterfaces()) {
+                    mapTypeParameters(classToSubinterfaceTypeParam, superinterface, aClass);
+                }
+            } else {
+                for (var superinterface : aClass.getInterfaces()) {
+                    mapTypeParameters(classToImplementsTypeParam, superinterface, aClass);
+                }
             }
+
             mapAnnotations(classToClassAnnotations, aClass, aClass);
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(aClass);
 

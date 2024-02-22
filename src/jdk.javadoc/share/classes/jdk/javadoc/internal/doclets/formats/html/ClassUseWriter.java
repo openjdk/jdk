@@ -60,8 +60,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final TypeElement typeElement;
     Set<PackageElement> pkgToPackageAnnotations = null;
     final Map<PackageElement, List<Element>> pkgToClassTypeParameter;
-    final Map<PackageElement, List<Element>> pkgToSuperclassTypeParameter;
-    final Map<PackageElement, List<Element>> pkgToInterfaceTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubclassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubinterfaceTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToImplementsTypeParameter;
     final Map<PackageElement, List<Element>> pkgToClassAnnotations;
     final Map<PackageElement, List<Element>> pkgToMethodTypeParameter;
     final Map<PackageElement, List<Element>> pkgToMethodArgTypeParameter;
@@ -107,8 +108,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         configuration.currentTypeElement = typeElement;
         this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
-        this.pkgToSuperclassTypeParameter = pkgDivide(mapper.classToSuperclassTypeParam);
-        this.pkgToInterfaceTypeParameter = pkgDivide(mapper.classToInterfaceTypeParam);
+        this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
+        this.pkgToSubinterfaceTypeParameter = pkgDivide(mapper.classToSubinterfaceTypeParam);
+        this.pkgToImplementsTypeParameter = pkgDivide(mapper.classToImplementsTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
         this.pkgToMethodArgTypeParameter = pkgDivide(mapper.classToMethodArgTypeParam);
@@ -342,11 +344,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         classSubWriter.addUseInfo(pkgToImplementingClass.get(pkg),
                 contents.getContent("doclet.ClassUse_ImplementingClass", classLink,
                 pkgLink), content);
-        classSubWriter.addUseInfo(pkgToSuperclassTypeParameter.get(pkg),
-                contents.getContent("doclet.ClassUse_SuperclassTypeParameter", classLink,
+        classSubWriter.addUseInfo(pkgToSubclassTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubclassTypeParameter", classLink,
                 pkgLink), content);
-        classSubWriter.addUseInfo(pkgToInterfaceTypeParameter.get(pkg),
-                contents.getContent("doclet.ClassUse_InterfaceTypeParameter", classLink,
+        classSubWriter.addUseInfo(pkgToSubinterfaceTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubinterfaceTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToImplementsTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_ImplementsTypeParameter", classLink,
                 pkgLink), content);
         fieldSubWriter.addUseInfo(pkgToField.get(pkg),
                 contents.getContent("doclet.ClassUse_Field", classLink,

@@ -212,21 +212,27 @@ public class TestUseOption extends JavadocTester {
                     import java.util.*;
                     public class Two extends ArrayList<One> implements Comparator<One> {
                     }
+                    """,
+                """
+                    import java.util.*;
+                    public interface Three extends Comparator<One> {
+                    }
                     """);
 
         javadoc(
                 "-use",
                 "-d", base.resolve("out").toString(),
                 src.resolve("One.java").toString(),
-                src.resolve("Two.java").toString()
+                src.resolve("Two.java").toString(),
+                src.resolve("Three.java").toString()
         );
         checkExit(Exit.OK);
 
         checkOrder("class-use/One.html",
                 """
-                    <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                    that extend classes with type arguments of type <a href="../One.html" title="class in Unnamed Package">\
-                    One</a></span></div>
+                    <div class="caption"><span>Subclasses with type arguments of \
+                    type <a href="../One.html" title="class in Unnamed Package">One</a> \
+                    in <a href="../package-summary.html">Unnamed Package</a></span></div>
                     """,
                 """
                     <div class="summary-table three-column-summary">
@@ -240,9 +246,24 @@ public class TestUseOption extends JavadocTester {
                     </div>
                     """,
                 """
-                    <div class="caption"><span>Classes in <a href="../package-summary.html">Unnamed Package</a> \
-                    that implement interfaces with type arguments of type <a href="../One.html" title="class in Unnamed \
-                    Package">One</a></span></div>
+                    <div class="caption"><span>Subinterfaces with type arguments of \
+                    type <a href="../One.html" title="class in Unnamed Package">One</a> \
+                    in <a href="../package-summary.html">Unnamed Package</a></span></div>
+                    """,
+                """
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first">Modifier and Type</div>
+                    <div class="table-header col-second">Interface</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-first even-row-color"><code>interface&nbsp;</code></div>
+                    <div class="col-second even-row-color"><code><a href="../Three.html" class="type-name-link" title="interface in Unnamed Package">Three</a></code></div>
+                    <div class="col-last even-row-color">&nbsp;</div>
+                    </div>
+                    """,
+                """
+                    <div class="caption"><span>Classes in <a href="../package-summary.html">\
+                    Unnamed Package</a> that implement interfaces with type arguments of type \
+                    <a href="../One.html" title="class in Unnamed Package">One</a></span></div>
                     """,
                 """
                     <div class="summary-table three-column-summary">
