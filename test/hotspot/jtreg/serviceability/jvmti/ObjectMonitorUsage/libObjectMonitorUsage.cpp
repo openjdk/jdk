@@ -34,16 +34,11 @@ extern "C" {
 static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
-static jboolean printdump = JNI_FALSE;
-static int count = 0;
+static int check_idx = 0;
 
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
-
-  if (options != nullptr && strcmp(options, "printdump") == 0) {
-    printdump = JNI_TRUE;
-  }
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == nullptr) {
@@ -90,72 +85,59 @@ Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-Java_ObjectMonitorUsage_check(JNIEnv *env,
-        jclass cls, jobject obj, jthread owner,
+Java_ObjectMonitorUsage_check(JNIEnv *jni, jclass cls, jobject obj, jthread owner,
         jint entryCount, jint waiterCount, jint notifyWaiterCount) {
   jvmtiError err;
   jvmtiMonitorUsage inf;
   jvmtiThreadInfo tinf;
-  int j;
 
-  count++;
+  check_idx++;
 
   err = jvmti->GetObjectMonitorUsage(obj, &inf);
-  if (err == JVMTI_ERROR_MUST_POSSESS_CAPABILITY && !caps.can_get_monitor_info) {
-    return; /* Ok, it's expected */
-  } else if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetMonitorInfo#%d) unexpected error: %s (%d)\n",
-        count, TranslateError(err), err);
-    result = STATUS_FAILED;
-    return;
-  }
+  check_jvmti_status(jni, err, "error in JVMTI GetObjectMonitorUsage");
 
-  if (printdump == JNI_TRUE) {
-    if (inf.owner == nullptr) {
-      LOG(">>> [%2d]    owner: none (0x0)\n", count);
-    } else {
-      err = jvmti->GetThreadInfo(inf.owner, &tinf);
-      LOG(">>> [%2d]    owner: %s (0x%p)\n",
-          count, tinf.name, inf.owner);
-    }
-    LOG(">>>   entry_count: %d\n", inf.entry_count);
-    LOG(">>>  waiter_count: %d\n", inf.waiter_count);
-    if (inf.waiter_count > 0) {
-        LOG(">>>       waiters:\n");
-        for (j = 0; j < inf.waiter_count; j++) {
-          err = jvmti->GetThreadInfo(inf.waiters[j], &tinf);
-          LOG(">>>                %2d: %s (0x%p)\n",
-              j, tinf.name, inf.waiters[j]);
-        }
+  if (inf.owner == nullptr) {
+    LOG(">>> [%2d]    owner: none (0x0)\n", check_idx);
+  } else {
+    err = jvmti->GetThreadInfo(inf.owner, &tinf);
+    check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
+    LOG(">>> [%2d]    owner: %s (0x%p)\n",
+        check_idx, tinf.name, inf.owner);
+  }
+  LOG(">>>   entry_count: %d\n", inf.entry_count);
+  LOG(">>>  waiter_count: %d\n", inf.waiter_count);
+  if (inf.waiter_count > 0) {
+    LOG(">>>       waiters:\n");
+    for (int j = 0; j < inf.waiter_count; j++) {
+      err = jvmti->GetThreadInfo(inf.waiters[j], &tinf);
+      check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
+      LOG(">>>                %2d: %s (0x%p)\n",
+          j, tinf.name, inf.waiters[j]);
     }
   }
-
-  if (!env->IsSameObject(owner, inf.owner)) {
-    LOG("(%d) unexpected owner: 0x%p\n", count, inf.owner);
+  if (!jni->IsSameObject(owner, inf.owner)) {
+    LOG("(%d) unexpected owner: 0x%p\n", check_idx, inf.owner);
     result = STATUS_FAILED;
   }
-
   if (inf.entry_count != entryCount) {
     LOG("(%d) entry_count expected: %d, actually: %d\n",
-        count, entryCount, inf.entry_count);
+        check_idx, entryCount, inf.entry_count);
     result = STATUS_FAILED;
   }
-
   if (inf.waiter_count != waiterCount) {
     LOG("(%d) waiter_count expected: %d, actually: %d\n",
-        count, waiterCount, inf.waiter_count);
+        check_idx, waiterCount, inf.waiter_count);
     result = STATUS_FAILED;
   }
-
   if (inf.notify_waiter_count != notifyWaiterCount) {
     LOG("(%d) notify_waiter_count expected: %d, actually: %d\n",
-        count, notifyWaiterCount, inf.notify_waiter_count);
+        check_idx, notifyWaiterCount, inf.notify_waiter_count);
     result = STATUS_FAILED;
   }
 }
 
 JNIEXPORT jint JNICALL
-Java_ObjectMonitorUsage_getRes(JNIEnv *env, jclass cls) {
+Java_ObjectMonitorUsage_getRes(JNIEnv *jni, jclass cls) {
   return result;
 }
 

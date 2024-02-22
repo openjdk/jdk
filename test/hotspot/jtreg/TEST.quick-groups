@@ -969,7 +969,6 @@ vmTestbase_nsk_jvmti_quick = \
   vmTestbase/nsk/jvmti/GetMethodName/methname003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage001/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage002/TestDescription.java \
-  vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage003/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage004/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectMonitorUsage/objmonusage005/TestDescription.java \
   vmTestbase/nsk/jvmti/GetObjectSize/objsize001/TestDescription.java \
