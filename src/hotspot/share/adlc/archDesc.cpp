@@ -738,6 +738,14 @@ bool ArchDesc::check_usage() {
   callback.do_form_by_name("stackSlotF");
   callback.do_form_by_name("stackSlotL");
 
+  // sReg* are initial created by adlc in ArchDesc::initBaseOpTypes()
+  // In ARM, no definition or usage in adfile, but they are reported as unused
+  callback.do_form_by_name("sRegI");
+  callback.do_form_by_name("sRegP");
+  callback.do_form_by_name("sRegD");
+  callback.do_form_by_name("sRegF");
+  callback.do_form_by_name("sRegL");
+
   // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
 #if defined(AARCH64)
   callback.do_form_by_name("vecA");
