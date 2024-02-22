@@ -703,11 +703,58 @@ TEST_VM(os_windows, reserve_memory_special) {
   TestReserveMemorySpecial_test();
 }
 
+TEST_VM(os_windows, large_page_init_multiple_sizes) {
+    // Enable large pages and set conditions for the test
+    UseLargePages = true;
+    bool schedules_all_processor_groups = true; // Simulate OS version 11 or higher
+    EnableAllLargePageSizes = true; // Assume this flag enables support for all large page sizes
+
+    // Determine the minimum page size
+    const size_t min_size = os::GetLargePageMinimum();
+
+    // Scenario 1: Set LargePageSizeInBytes to 4 times the minimum page size
+    LargePageSizeInBytes = 4 * min_size; // Set a value for multiple page sizes
+
+    // Initialize large page settings for the first scenario
+    os::large_page_init();
+
+    // Verify that large pages are enabled
+    EXPECT_TRUE(UseLargePages) << "UseLargePages should be true after initialization for 4*min_size";
+
+    // Verify that _large_page_size is greater than the default page size
+    const size_t default_page_size = os::vm_page_size();
+    EXPECT_GT(os::_large_page_size, default_page_size) << "Large page size should be greater than the default page size for 4*min_size";
+
+#if !defined(IA32)
+    if (schedules_all_processor_groups && EnableAllLargePageSizes) {
+        EXPECT_GT(os::_page_sizes.size(), 1u) << "There should be multiple large page sizes available for 4*min_size";
+
+        for (size_t page_size : os::_page_sizes) {
+            EXPECT_TRUE(page_size % min_size == 0) << "Each page size should be a multiple of the minimum large page size for 4*min_size";
+            EXPECT_LE(page_size, os::_large_page_size) << "Page size should not exceed the determined large page size for 4*min_size";
+        }
+    }
+#endif
+
+    // Scenario 2: Test with LargePageSizeInBytes set to 4 times min page size + 1
+    LargePageSizeInBytes = 4 * min_size + 1; // Set a value that is likely not supported
+    os::large_page_init(); // Re-initialize large page settings for the new scenario
+
+    // Verify that the system defaults to the minimum large page size if LargePageSizeInBytes is not a multiple of the minimum page size
+    EXPECT_EQ(os::_large_page_size, min_size) << "The system should default to the minimum page size when LargePageSizeInBytes is not a multiple of the minimum page size or represents an unsupported value.";
+
+    // Reset test conditions
+    UseLargePages = false;
+    schedules_all_processor_groups = false;
+    EnableAllLargePageSizes = false;
+}
+
+
 TEST_VM(os_windows, large_page_init_decide_size) {
     // Initial setup
     UseLargePages = true;
     bool schedules_all_processor_groups = true;
-    size_t LargePageSizeInBytes = 0; // Reset to default
+    LargePageSizeInBytes = 0; // Reset to default
 
     // Test for large page support
     size_t decided_size = os::large_page_init_decide_size();

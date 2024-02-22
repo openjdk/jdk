@@ -3229,7 +3229,7 @@ static size_t large_page_init_decide_size() {
   }
 
   // Check if OS version is 11 or greater
-  if (schedules_all_processor_groups) {
+  if (win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater()) {
       // OS-specific logic for versions 11 or greater
       // You can implement specific checks or logic here for newer OS versions
 }
@@ -3258,6 +3258,7 @@ static size_t large_page_init_decide_size() {
   }
 
 #undef WARN
+#undef WARN1
 
   return size;
 }
@@ -3272,12 +3273,12 @@ void os::large_page_init() {
   if (_large_page_size > default_page_size) {
  #if !defined(IA32)
       // Check if the OS version is 11 or higher
-      if (schedules_all_processor_groups && EnableAllLargePageSizes) {
+      if ((win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater()) && EnableAllLargePageSizes) {
 
           // Additional logic needed for ARM architecture
           size_t min_size = GetLargePageMinimum();
 
-          // Populate _page_sizes with large page sizes less than or equal to _large_page_size.
+          // Populate _page_sizes with large page sizes less than or equal to _large_page_size, ensuring each page size is double the size of the previous one.
           for (size_t page_size = min_size; page_size < _large_page_size; page_size *= 2) {
               _page_sizes.add(page_size);
           }
