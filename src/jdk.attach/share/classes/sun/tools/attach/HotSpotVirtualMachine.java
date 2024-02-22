@@ -372,6 +372,9 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         StringBuilder message = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         while ((s = br.readLine()) != null) {
+            if (message.length() > 0) {
+                message.append(' ');
+            }
             message.append(s);
         }
         return message.toString();
