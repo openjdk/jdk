@@ -2443,6 +2443,18 @@ void Compile::Optimize() {
 
   C->clear_major_progress(); // ensure that major progress is now clear
 
+#ifdef VM_LITTLE_ENDIAN
+  if (MergeStores && UseUnalignedAccesses) {
+    assert(!C->merge_stores_phase(), "merge store phase not yet set");
+    C->gather_nodes_for_merge_stores(igvn);
+    C->set_merge_stores_phase(true);
+    igvn.optimize();
+    C->set_merge_stores_phase(false);
+  }
+#endif
+
+  if (failing())  return;
+
   process_for_post_loop_opts_igvn(igvn);
 
   if (failing())  return;
@@ -2475,16 +2487,6 @@ void Compile::Optimize() {
     igvn.optimize();
     if (failing()) return;
   }
-
-#ifdef VM_LITTLE_ENDIAN
-  if (MergeStores && UseUnalignedAccesses) {
-    assert(!C->merge_stores_phase(), "merge store phase not yet set");
-    C->gather_nodes_for_merge_stores(igvn);
-    C->set_merge_stores_phase(true);
-    igvn.optimize();
-    C->set_merge_stores_phase(false);
-  }
-#endif
 
   DEBUG_ONLY( _modified_nodes = nullptr; )
 

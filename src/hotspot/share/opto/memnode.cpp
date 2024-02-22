@@ -2939,6 +2939,151 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
   return use_store;
 }
 
+// TODO description of structure
+// TODO why ok to take constant out of ConvI2L?
+class ArrayPointer {
+private:
+  const bool _is_valid;          // The parsing succeeded
+  const AddPNode* _pointer;      // The final pointer to the position in the array
+  const Node* _base;             // Base address of the array
+  const jlong _constant_offset;  // Sum of collected constant offsets
+  const Node* _int_offset; // Offset behind LShiftL and ConvI2L
+  const jint _int_offset_shift;  // Shift value for int_offset
+  const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
+
+  ArrayPointer(const bool is_valid,
+               const AddPNode* pointer,
+               const Node* base,
+               const jlong constant_offset,
+               const Node* int_offset,
+               const jint int_offset_shift,
+               const GrowableArray<Node*>* other_offsets) :
+      _is_valid(is_valid),
+      _pointer(pointer),
+      _base(base),
+      _constant_offset(constant_offset),
+      _int_offset(int_offset),
+      _int_offset_shift(int_offset_shift),
+      _other_offsets(other_offsets)
+  {
+    assert(is_valid == (_pointer != nullptr), "have pointer exactly if valid");
+    assert(is_valid == (_base != nullptr), "have base exactly if valid");
+    assert(is_valid == (_int_offset != nullptr), "have int_offset exactly if valid");
+    assert(is_valid == (_other_offsets != nullptr), "have other_offsets exactly if valid");
+  }
+
+  static ArrayPointer make_invalid() {
+    return ArrayPointer(false, nullptr, nullptr, 0, nullptr, 0, nullptr);
+  }
+
+  static bool parse_int_offset(Node* offset, Node*& int_offset, jint& int_offset_shift) {
+    // offset = LShiftL( ConvI2L(int_offset), int_offset_shift)
+    if (offset->Opcode() == Op_LShiftL &&
+        offset->in(1)->Opcode() == Op_ConvI2L &&
+        offset->in(2)->Opcode() == Op_ConI) {
+      int_offset = offset->in(1)->in(1); // LShiftL -> ConvI2L -> int_offset
+      int_offset_shift = offset->in(2)->get_int(); // LShiftL -> int_offset_shift
+      return true;
+    }
+
+    // offset = ConvI2L(int_offset) = LShiftL( ConvI2L(int_offset), 0)
+    if (offset->Opcode() == Op_ConvI2L) {
+      int_offset = offset->in(1);
+      int_offset_shift = 0;
+      return true;
+    }
+
+    // parse failed
+    return false;
+  }
+
+public:
+  // Parse the structure above the pointer
+  static ArrayPointer make(const AddPNode* pointer) {
+    if (pointer == nullptr) { return ArrayPointer::make_invalid(); }
+
+    const Node* base = pointer->in(AddPNode::Base);
+    if (base == nullptr) { return ArrayPointer::make_invalid(); }
+
+    const int search_depth = 5;
+    Node* offsets[search_depth];
+    int count = pointer->unpack_offsets(offsets, search_depth);
+
+    // We expect at least a constant each
+    if (count <= 0) { return ArrayPointer::make_invalid(); }
+
+    // We extract the form:
+    // pointer = base + const_offset + (int_offset << int_offset_shift) + sum(other_offsets)
+    jlong constant_offset = 0;
+    Node* int_offset = nullptr;
+    jint int_offset_shift = 0;
+    GrowableArray<Node*>* other_offsets = new GrowableArray<Node*>(count);
+
+    for (int i = 0; i < count; i++) {
+      Node* offset = offsets[i];
+      if (offset->Opcode() == Op_ConI) {
+        // Constant int offset
+        constant_offset += offset->get_int();
+      } else if (offset->Opcode() == Op_ConL) {
+        // Constant long offset
+        constant_offset += offset->get_long();
+      } else if(int_offset == nullptr && parse_int_offset(offset, int_offset, int_offset_shift)) {
+        // LShiftL( ConvI2L(int_offset), int_offset_shift)
+        int_offset = int_offset->uncast();
+        if (int_offset->Opcode() == Op_AddI && int_offset->in(2)->Opcode() == Op_ConI) {
+          // LShiftL( ConvI2L(int_offset + int_con), int_offset_shift)
+          constant_offset += ((jlong)int_offset->in(2)->get_int()) << int_offset_shift;
+          int_offset = int_offset->in(1);
+        }
+      } else {
+        // All others
+        other_offsets->append(offset);
+      }
+    }
+
+    return ArrayPointer(true, pointer, base, constant_offset, int_offset, int_offset_shift, other_offsets);
+  }
+
+  bool is_adjacent_to(const ArrayPointer& other, const jlong data_size) const {
+    // Offset adjacent?
+    if (this->_constant_offset + data_size != other._constant_offset) { return false; }
+
+    // All other components identical?
+    if (this->_base != other._base ||
+        this->_int_offset != other._int_offset ||
+        this->_int_offset_shift != other._int_offset_shift ||
+        this->_other_offsets->length() != other._other_offsets->length()) {
+      return false;
+    }
+
+    for (int i = 0; i < this->_other_offsets->length(); i++) {
+      Node* o1 = this->_other_offsets->at(i);
+      Node* o2 = other._other_offsets->at(i);
+      if (o1 != o2) { return false; }
+    }
+
+    return true;
+  }
+
+#ifndef PRODUCT
+  void dump() {
+    tty->print("ArrayPointer[%d %s, base[%d %s] + %ld",
+               _pointer->_idx, _pointer->Name(),
+               _base->_idx, _base->Name(),
+               _constant_offset);
+    if (_int_offset != 0) {
+      tty->print(" + I2L[%d %s] << %d",
+                 _int_offset->_idx, _int_offset->Name(), _int_offset_shift);
+    }
+    for (int i = 0; i < _other_offsets->length(); i++) {
+      Node* n = _other_offsets->at(i);
+      tty->print(" + [%d %s]", n->_idx, n->Name());
+    }
+    tty->print_cr("]");
+  }
+#endif
+};
+
 StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   int opc = Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
@@ -3016,58 +3161,19 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   AddPNode* adr_s1 = s1->in(MemNode::Address)->isa_AddP();
   AddPNode* adr_s2 = s2->in(MemNode::Address)->isa_AddP();
 
-  // Must have the same base
-  if (adr_s1 == nullptr ||
-      adr_s2 == nullptr ||
-      adr_s1->in(AddPNode::Base) != adr_s2->in(AddPNode::Base)) {
-    return nullptr;
-  }
+  // TODO remove
+  //tty->print_cr("Check:");
+  //adr_s1->dump_bfs(5,0,"#d");
+  //adr_s2->dump_bfs(5,0,"#d");
 
-  const int search_depth = 5;
-  Node* adr_offsets_s1[search_depth];
-  Node* adr_offsets_s2[search_depth];
-  int count_s1 = adr_s1->unpack_offsets(adr_offsets_s1, search_depth);
-  int count_s2 = adr_s2->unpack_offsets(adr_offsets_s2, search_depth);
-
-  // Must have same number of offsets, and at least a constant each
-  if (count_s1 != count_s2 || count_s1 <= 0 ||
-      !adr_offsets_s1[0]->is_Con() ||
-      !adr_offsets_s2[0]->is_Con()) {
-    return nullptr;
-  }
-
-  // Constants must have correct offset
-  const Type* c1_t = phase->type(adr_offsets_s1[0]);
-  const Type* c2_t = phase->type(adr_offsets_s2[0]);
-  assert(c1_t->isa_int() || c1_t->isa_long(), "int or long");
-  assert(c2_t->isa_int() || c2_t->isa_long(), "int or long");
-  jlong c1 = c1_t->isa_int() ? c1_t->is_int()->get_con() : c1_t->is_long()->get_con();
-  jlong c2 = c2_t->isa_int() ? c2_t->is_int()->get_con() : c2_t->is_long()->get_con();
-  if (c2 + s2->memory_size() != c1) {
-    return nullptr;
-  }
-
-  // All other offsets must be the same
-  for (int i = 1; i < count_s1; i++) {
-    Node* o1 = adr_offsets_s1[i];
-    Node* o2 = adr_offsets_s2[i];
-    if (o1 == o2) { continue; }
-    // Sometimes the same values hide behind ConvI2L that are only different in
-    // their internal type. This can happen if they come from range checks with
-    // different offsets. This prevents commoning of the use nodes.
-    // Additionally, for array accesses with memory_size larger than 1, we may
-    // have a LShiftL node on that path.
-    if (o1->Opcode() == Op_LShiftL &&
-        o2->Opcode() == Op_LShiftL &&
-        o1->in(2) == o2->in(2)) {
-      o1 = o1->in(1);
-      o2 = o2->in(1);
-    }
-    if (o1->Opcode() == Op_ConvI2L &&
-        o2->Opcode() == Op_ConvI2L &&
-        o1->in(1) == o2->in(1)) {
-      continue;
-    }
+  ArrayPointer ap1 = ArrayPointer::make(adr_s1);
+  ArrayPointer ap2 = ArrayPointer::make(adr_s2);
+  // TODO remove
+  //ap1.dump();
+  //ap2.dump();
+  //tty->print_cr("is_adjacent_to: %d", ap2.is_adjacent_to(ap1, s1->memory_size()));
+  //tty->print_cr("is_adjacent_to: %d", ap1.is_adjacent_to(ap2, s1->memory_size()));
+  if (!ap2.is_adjacent_to(ap1, s1->memory_size())) {
     return nullptr;
   }
 
