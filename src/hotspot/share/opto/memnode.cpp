@@ -2941,14 +2941,22 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
 
 // TODO description of structure
 // TODO why ok to take constant out of ConvI2L?
+//
+// Class to parse array pointers of the form:
+// pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
+//
+// The goal is to check if two such ArrayPointers are adjacent for a load or store.
+// Note: we accumulate all constant offsets into constant_offset, even the int constant
+//       behind the LShiftL(ConvI2L(...)) pattern. TODO overflow
+// TODO only works for arrays?
 class ArrayPointer {
 private:
   const bool _is_valid;          // The parsing succeeded
   const AddPNode* _pointer;      // The final pointer to the position in the array
   const Node* _base;             // Base address of the array
   const jlong _constant_offset;  // Sum of collected constant offsets
-  const Node* _int_offset; // Offset behind LShiftL and ConvI2L
-  const jint _int_offset_shift;  // Shift value for int_offset
+  const Node* _int_offset;       // (optional) Offset behind LShiftL and ConvI2L
+  const jint _int_offset_shift;  // (optional) Shift value for int_offset
   const GrowableArray<Node*>* _other_offsets; // List of other AddP offsets
 
   ArrayPointer(const bool is_valid,
@@ -2968,7 +2976,6 @@ private:
   {
     assert(is_valid == (_pointer != nullptr), "have pointer exactly if valid");
     assert(is_valid == (_base != nullptr), "have base exactly if valid");
-    assert(is_valid == (_int_offset != nullptr), "have int_offset exactly if valid");
     assert(is_valid == (_other_offsets != nullptr), "have other_offsets exactly if valid");
   }
 
@@ -3013,7 +3020,7 @@ public:
     if (count <= 0) { return ArrayPointer::make_invalid(); }
 
     // We extract the form:
-    // pointer = base + const_offset + (int_offset << int_offset_shift) + sum(other_offsets)
+    // pointer = base + constant_offset + (int_offset << int_offset_shift) + sum(other_offsets)
     jlong constant_offset = 0;
     Node* int_offset = nullptr;
     jint int_offset_shift = 0;

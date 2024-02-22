@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ public class TestMergeStores {
         Object[] run();
     }
 
-    Map<String, Map<String, TestFunction>> test_groups = new HashMap<String, Map<String, TestFunction>>();
+    Map<String, Map<String, TestFunction>> testGroups = new HashMap<String, Map<String, TestFunction>>();
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base",
@@ -78,67 +78,68 @@ public class TestMergeStores {
     }
 
     public TestMergeStores() {
-        test_groups.put("test1", new HashMap<String,TestFunction>());
-        test_groups.get("test1").put("test1R", () -> { return test1R(aB.clone()); });
-        test_groups.get("test1").put("test1a", () -> { return test1a(aB.clone()); });
-        test_groups.get("test1").put("test1b", () -> { return test1b(aB.clone()); });
-        test_groups.get("test1").put("test1c", () -> { return test1c(aB.clone()); });
-        test_groups.get("test1").put("test1d", () -> { return test1d(aB.clone()); });
-        test_groups.get("test1").put("test1e", () -> { return test1e(aB.clone()); });
-        test_groups.get("test1").put("test1f", () -> { return test1f(aB.clone()); });
-        test_groups.get("test1").put("test1g", () -> { return test1g(aB.clone()); });
-        test_groups.get("test1").put("test1h", () -> { return test1h(aB.clone()); });
-        test_groups.get("test1").put("test1i", () -> { return test1i(aB.clone()); });
+        testGroups.put("test1", new HashMap<String,TestFunction>());
+        testGroups.get("test1").put("test1R", () -> { return test1R(aB.clone()); });
+        testGroups.get("test1").put("test1a", () -> { return test1a(aB.clone()); });
+        testGroups.get("test1").put("test1b", () -> { return test1b(aB.clone()); });
+        testGroups.get("test1").put("test1c", () -> { return test1c(aB.clone()); });
+        testGroups.get("test1").put("test1d", () -> { return test1d(aB.clone()); });
+        testGroups.get("test1").put("test1e", () -> { return test1e(aB.clone()); });
+        testGroups.get("test1").put("test1f", () -> { return test1f(aB.clone()); });
+        testGroups.get("test1").put("test1g", () -> { return test1g(aB.clone()); });
+        testGroups.get("test1").put("test1h", () -> { return test1h(aB.clone()); });
+        testGroups.get("test1").put("test1i", () -> { return test1i(aB.clone()); });
 
-        test_groups.put("test2", new HashMap<String,TestFunction>());
-        test_groups.get("test2").put("test2R", () -> { return test2R(aB.clone(), offset1, vL1); });
-        test_groups.get("test2").put("test2a", () -> { return test2a(aB.clone(), offset1, vL1); });
-        test_groups.get("test2").put("test2b", () -> { return test2b(aB.clone(), offset1, vL1); });
-        test_groups.get("test2").put("test2c", () -> { return test2c(aB.clone(), offset1, vL1); });
-        test_groups.get("test2").put("test2d", () -> { return test2d(aB.clone(), offset1, vL1); });
-        test_groups.get("test2").put("test2e", () -> { return test2d(aB.clone(), offset1, vL1); });
+        testGroups.put("test2", new HashMap<String,TestFunction>());
+        testGroups.get("test2").put("test2R", () -> { return test2R(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2a", () -> { return test2a(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2b", () -> { return test2b(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2c", () -> { return test2c(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2d", () -> { return test2d(aB.clone(), offset1, vL1); });
+        testGroups.get("test2").put("test2e", () -> { return test2d(aB.clone(), offset1, vL1); });
 
-        test_groups.put("test3", new HashMap<String,TestFunction>());
-        test_groups.get("test3").put("test3R", () -> { return test3R(aB.clone(), offset1, vL1); });
-        test_groups.get("test3").put("test3a", () -> { return test3a(aB.clone(), offset1, vL1); });
+        testGroups.put("test3", new HashMap<String,TestFunction>());
+        testGroups.get("test3").put("test3R", () -> { return test3R(aB.clone(), offset1, vL1); });
+        testGroups.get("test3").put("test3a", () -> { return test3a(aB.clone(), offset1, vL1); });
 
-        test_groups.put("test4", new HashMap<String,TestFunction>());
-        test_groups.get("test4").put("test4R", () -> { return test4R(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
-        test_groups.get("test4").put("test4a", () -> { return test4a(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
+        testGroups.put("test4", new HashMap<String,TestFunction>());
+        testGroups.get("test4").put("test4R", () -> { return test4R(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
+        testGroups.get("test4").put("test4a", () -> { return test4a(aB.clone(), offset1, vL1, vI1, vS1, vB1); });
 
-        test_groups.put("test5", new HashMap<String,TestFunction>());
-        test_groups.get("test5").put("test5R", () -> { return test5R(aB.clone(), offset1); });
-        test_groups.get("test5").put("test5a", () -> { return test5a(aB.clone(), offset1); });
+        testGroups.put("test5", new HashMap<String,TestFunction>());
+        testGroups.get("test5").put("test5R", () -> { return test5R(aB.clone(), offset1); });
+        testGroups.get("test5").put("test5a", () -> { return test5a(aB.clone(), offset1); });
 
-        test_groups.put("test6", new HashMap<String,TestFunction>());
-        test_groups.get("test6").put("test6R", () -> { return test6R(aB.clone(), bB.clone(), offset1, offset2); });
-        test_groups.get("test6").put("test6a", () -> { return test6a(aB.clone(), bB.clone(), offset1, offset2); });
+        testGroups.put("test6", new HashMap<String,TestFunction>());
+        testGroups.get("test6").put("test6R", () -> { return test6R(aB.clone(), bB.clone(), offset1, offset2); });
+        testGroups.get("test6").put("test6a", () -> { return test6a(aB.clone(), bB.clone(), offset1, offset2); });
 
-        test_groups.put("test100", new HashMap<String,TestFunction>());
-        test_groups.get("test100").put("test100R", () -> { return test100R(aS.clone(), offset1); });
-        test_groups.get("test100").put("test100a", () -> { return test100a(aS.clone(), offset1); });
+        testGroups.put("test100", new HashMap<String,TestFunction>());
+        testGroups.get("test100").put("test100R", () -> { return test100R(aS.clone(), offset1); });
+        testGroups.get("test100").put("test100a", () -> { return test100a(aS.clone(), offset1); });
 
-        test_groups.put("test101", new HashMap<String,TestFunction>());
-        test_groups.get("test101").put("test101R", () -> { return test101R(aS.clone(), offset1); });
-        test_groups.get("test101").put("test101a", () -> { return test101a(aS.clone(), offset1); });
+        testGroups.put("test101", new HashMap<String,TestFunction>());
+        testGroups.get("test101").put("test101R", () -> { return test101R(aS.clone(), offset1); });
+        testGroups.get("test101").put("test101a", () -> { return test101a(aS.clone(), offset1); });
 
-        test_groups.put("test102", new HashMap<String,TestFunction>());
-        test_groups.get("test102").put("test102R", () -> { return test102R(aS.clone(), offset1, vL1, vI1, vS1); });
-        test_groups.get("test102").put("test102a", () -> { return test102a(aS.clone(), offset1, vL1, vI1, vS1); });
+        testGroups.put("test102", new HashMap<String,TestFunction>());
+        testGroups.get("test102").put("test102R", () -> { return test102R(aS.clone(), offset1, vL1, vI1, vS1); });
+        testGroups.get("test102").put("test102a", () -> { return test102a(aS.clone(), offset1, vL1, vI1, vS1); });
 
-        test_groups.put("test200", new HashMap<String,TestFunction>());
-        test_groups.get("test200").put("test200R", () -> { return test200R(aI.clone(), offset1); });
-        test_groups.get("test200").put("test200a", () -> { return test200a(aI.clone(), offset1); });
+        testGroups.put("test200", new HashMap<String,TestFunction>());
+        testGroups.get("test200").put("test200R", () -> { return test200R(aI.clone(), offset1); });
+        testGroups.get("test200").put("test200a", () -> { return test200a(aI.clone(), offset1); });
 
-        test_groups.put("test201", new HashMap<String,TestFunction>());
-        test_groups.get("test201").put("test201R", () -> { return test201R(aI.clone(), offset1); });
-        test_groups.get("test201").put("test201a", () -> { return test201a(aI.clone(), offset1); });
+        testGroups.put("test201", new HashMap<String,TestFunction>());
+        testGroups.get("test201").put("test201R", () -> { return test201R(aI.clone(), offset1); });
+        testGroups.get("test201").put("test201a", () -> { return test201a(aI.clone(), offset1); });
 
-        test_groups.put("test202", new HashMap<String,TestFunction>());
-        test_groups.get("test202").put("test202R", () -> { return test202R(aI.clone(), offset1, vL1, vI1); });
-        test_groups.get("test202").put("test202a", () -> { return test202a(aI.clone(), offset1, vL1, vI1); });
+        testGroups.put("test202", new HashMap<String,TestFunction>());
+        testGroups.get("test202").put("test202R", () -> { return test202R(aI.clone(), offset1, vL1, vI1); });
+        testGroups.get("test202").put("test202a", () -> { return test202a(aI.clone(), offset1, vL1, vI1); });
     }
 
+    @Warmup(100)
     @Run(test = {"test1a",
                  "test1b",
                  "test1c",
@@ -186,7 +187,7 @@ public class TestMergeStores {
         vL2 = RANDOM.nextLong();
 
         // Run all tests
-        for (Map.Entry<String, Map<String,TestFunction>> group_entry : test_groups.entrySet()) {
+        for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
             String group_name = group_entry.getKey();
             Map<String, TestFunction> group = group_entry.getValue();
             Object[] gold = null;
