@@ -79,22 +79,32 @@ void Klass::set_is_cloneable() {
 
 void Klass::set_name(Symbol* n) {
   _name = n;
-  if (_name != nullptr) _name->increment_refcount();
+
+  if (_name != nullptr) {
+    _name->increment_refcount();
+  }
+  // Special cases for the two superclasses of all Array instances.
+  if (n == vmSymbols::java_lang_Cloneable()) {
+    _hash = 0;
+  } else if (n == vmSymbols::java_io_Serializable()) {
+    _hash = 1 << secondary_shift();
+  } else {
+    ResourceMark rm;
+    const char *s
+      = (n == nullptr) ? "The Klass with no name" : n->as_C_string();
+    unsigned int hash_code = java_lang_String::hash_code(s, strlen(s));
+    // This constant is magic: see Knuth, "Fibonacci Hashing".
+    _hash = hash_code * 2654435769;
+    if (StressSecondarySuperHash) {
+      // Generate many hash collisions in order to stress-test the
+      // linear search fallback.
+      _hash %= 3;
+    }
+  }
 
   if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
     SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
   }
-  ResourceMark rm;
-  const char *s = n->as_C_string();
-  int l = strlen(s);
-  uint64_t hash = 1;
-  for (int i = 0; i < l; i++) {
-    hash *= 17;
-    hash += (u1)s[i];
-  }
-  _hash = hash * 11400714819323198485llu; // (2 / (1 + sqrt(5.0))) * 0x1.0p64
-  // TESTING
-  // _hash = _hash & (uint64_t(15) << (64-6));
 }
 
 bool Klass::is_subclass_of(const Klass* k) const {
@@ -211,8 +221,7 @@ Klass::Klass() : _kind(UnknownKlassKind) {
 // The constructor is also used from CppVtableCloner,
 // which doesn't zero out the memory before calling the constructor.
 Klass::Klass(KlassKind kind) : _kind(kind),
-                               _hash(uintptr_t(this) * 11400714819323198485llu), // (2 / (1 + sqrt(5.0))) * 0x1.0p64
-                               _shared_class_path_index(-1) {
+                           _shared_class_path_index(-1) {
   CDS_ONLY(_shared_class_flags = 0;)
   CDS_JAVA_HEAP_ONLY(_archived_mirror_index = -1;)
   _primary_supers[0] = this;
@@ -248,23 +257,12 @@ bool Klass::can_be_primary_super_slow() const {
     return true;
 }
 
-// extern "C" {
-//   static int compare_secondary_supers(const void* void_a, const void* void_b) {
-//     const Klass** a = (const Klass**)void_a;
-//     const Klass** b = (const Klass**)void_b;
-//     return (*a)->hash() > (*b)->hash() ? 1
-//       : (*a)->hash() < (*b)->hash() ? -1
-//       : 0;
-//   }
-// }
-
 void Klass::set_secondary_supers(Array<Klass*>* secondaries, uint64_t bitmap) {
   _bitmap = bitmap;
   set_secondary_supers(secondaries);
 }
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
-  _secondary_supers = secondaries;
 #ifdef ASSERT
   if (secondaries) {
     uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
@@ -273,19 +271,44 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
     assert(_bitmap == 0, "must be");
   }
 #endif
+  _secondary_supers = secondaries;
 }
 
 uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
+  if (secondaries->length() == 0)
+    return 0;
+
   ResourceMark rm;
   uint64_t bitmap = 0;
+  const int length = secondaries->length();
   GrowableArray<Klass*>* hashed_secondaries
-    = new GrowableArray<Klass*>(MAX(64, secondaries->length()));
+    = new GrowableArray<Klass*>(MAX(64, length));
 
   for (int i = 0; i < hashed_secondaries->capacity(); i++)   hashed_secondaries->push(nullptr);
 
-  for (int j = 0; j < secondaries->length(); j++) {
-    Klass *k = secondaries->at(j);
-    unsigned int slot = k->hash() >> (64 - 6);
+#ifdef ASSERT
+  GrowableArray<Klass*>* sorted_secondaries = new GrowableArray<Klass*>(length);
+  for (int i = 0; i < length; i++) {
+    sorted_secondaries->push(secondaries->at(i));
+  }
+  // Sort the secondaries in order for the hash table to be
+  // deterministic.
+  qsort(sorted_secondaries->adr_at(0),
+        length,
+        sizeof sorted_secondaries->at(0),
+        [](const void* void_a, const void* void_b) {
+          const Klass* a = *(const Klass**)void_a;
+          const Klass* b = *(const Klass**)void_b;
+          return a<b ? -1 : a==b ? 0 : 1;
+        });
+  Klass **s = sorted_secondaries->adr_at(0);
+#else
+  Klass **s = secondaries->adr_at(0);
+#endif
+
+  for (int j = 0; j < length; j++) {
+    Klass *k = s[j];
+    unsigned int slot = k->hash() >> secondary_shift();
 
     if (j >= 64) {
       hashed_secondaries->at_put(j, k);
@@ -300,7 +323,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
       }
       assert(false, "shouldn't happen");
     stashed:
-      asm("nop");
+      do {} while (0);
     }
   }
 
@@ -315,7 +338,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
   } else {
 #ifdef ASSERT
     int i = 0;
-    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+    for (int slot = 0; slot < length; slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
         assert(secondaries->at(i) == hashed_secondaries->at(slot), "must be");
         i++;
@@ -339,12 +362,6 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     assert(super() == nullptr || super() == vmClasses::Object_klass(),
            "initialize this only once to a non-trivial value");
     set_super(k);
-
-    if (Verbose) {
-      const char *name = external_name();
-      fprintf(stderr, "init supers: %s (hash 0x%llx)\n", name, (unsigned long long)hash());
-    }
-
     Klass* sup = k;
     int sup_depth = sup->super_depth();
     juint my_depth  = MIN2(sup_depth + 1, (int)primary_super_limit());
@@ -438,7 +455,9 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       s2->at_put(j+fill_p, secondaries->at(j));  // add secondaries on the end.
     }
 
-    _bitmap = hash_secondary_supers(s2, /*rewrite*/true);
+    if (HashSecondarySupers) {
+      _bitmap = hash_secondary_supers(s2, /*rewrite*/true);
+    }
 
   #ifdef ASSERT
       // We must not copy any null placeholders left over from bootstrap.

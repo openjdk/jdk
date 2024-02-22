@@ -2010,22 +2010,22 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, ProfileExceptionHandlers, true,                             \
           "Profile exception handlers")                                     \
                                                                             \
-  product_pd(uint, SecondarySuperMissBackoff, DIAGNOSTIC,                   \
-          "How many misses to accept before updating the secondary super "  \
-          "cache slot. This mitigates cache slot contention in "            \
-          "pathological cases. Use 0 to disable.")                          \
-          range(0, UINT32_MAX)                                              \
-                                                                            \
   product(bool, AlwaysRecordEvolDependencies, true, EXPERIMENTAL,           \
                 "Unconditionally record nmethod dependencies on class "     \
                 "rewriting/transformation independently of the JVMTI "      \
                 "can_{retransform/redefine}_classes capabilities.")         \
                                                                             \
-  product(bool, UseNewSecondaryAlgorithm,  true, EXPERIMENTAL,              \
+  product(bool, HashSecondarySupers,  true, EXPERIMENTAL,                   \
                 "Use new algorithm to scan secondary supers.")              \
                                                                             \
   product(bool, UseSecondarySuperCache, true, EXPERIMENTAL,                 \
           "Use secondary super cache during subtype checks")                \
+                                                                            \
+  product(bool, VerifySecondarySupers, true, DIAGNOSTIC,                    \
+          "Use secondary super cache during subtype checks")                \
+                                                                            \
+  product(bool, StressSecondarySuperHash, false, DIAGNOSTIC,                \
+          "Use a terrible hash in order to generate many collisions")       \
                                                                             \
 
 // end of RUNTIME_FLAGS

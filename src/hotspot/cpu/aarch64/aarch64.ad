@@ -3674,6 +3674,7 @@ encode %{
 
      Label miss;
      C2_MacroAssembler _masm(&cbuf);
+     __ mov(result_reg, 1);
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
                                      nullptr, &miss,
                                      /*set_cond_codes:*/ true);
@@ -16686,7 +16687,6 @@ instruct ShouldNotReachHere() %{
 instruct partialSubtypeCheck(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, iRegP_R5 result, rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
-  predicate(trueReturner());
   effect(KILL cr, KILL temp);
 
   ins_cost(1100);  // slightly larger than the next version
@@ -16704,7 +16704,7 @@ instruct partialSubtypeCheckI(iRegP_R4 sub, immP super, vRegD vtemp, iRegP_R5 re
                               rFlagsReg cr)
 %{
   match(Set result (PartialSubtypeCheck sub super));
-  predicate(trueReturner());
+  predicate(HashSecondarySupers);
   effect(KILL cr, TEMP temp, TEMP temp2, TEMP temp3, TEMP temp4, TEMP vtemp);
 
   ins_cost(700);  // smaller than the next version

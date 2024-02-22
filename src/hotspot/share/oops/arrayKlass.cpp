@@ -109,13 +109,6 @@ ArrayKlass::ArrayKlass(Symbol* name, KlassKind kind) :
 // Initialization of vtables and mirror object is done separately from base_create_array_klass,
 // since a GC can happen. At this point all instance variables of the ArrayKlass must be setup.
 void ArrayKlass::complete_create_array_klass(ArrayKlass* k, Klass* super_klass, ModuleEntry* module_entry, TRAPS) {
-  {
-    ResourceMark rm;
-    // fprintf(stderr, "%s\n", k->external_name());
-    if (strcmp("[Ljava.lang.reflect.GenericDeclaration;", k->external_name()) == 0) {
-      asm("nop");
-    }
-  }
   k->initialize_supers(super_klass, nullptr, CHECK);
   k->vtable().initialize_vtable();
 

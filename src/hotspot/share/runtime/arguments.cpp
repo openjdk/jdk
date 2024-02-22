@@ -3069,8 +3069,8 @@ jint Arguments::parse_options_environment_variable(const char* name,
     return JNI_ENOMEM;
   }
 
-  jio_fprintf(defaultStream::error_stream(),
-              "Picked up %s: %s\n", name, buffer);
+  // jio_fprintf(defaultStream::error_stream(),
+  //             "Picked up %s: %s\n", name, buffer);
 
   int retcode = parse_options_buffer(name, buffer, strlen(buffer), vm_args);
 

@@ -1433,7 +1433,7 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array());
     return nullptr;
-  } else if (! UseNewSecondaryAlgorithm && num_extra_slots == 0) {
+  } else if (! HashSecondarySupers && num_extra_slots == 0) {
     // The secondary super list is exactly the same as the transitive interfaces, so
     // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
@@ -3621,7 +3621,8 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
-  st->print(BULLET"hash:              0x%lx (hash=%ld)", hash(), hash() >> (64-6));    st->cr();
+  st->print(BULLET"hash:              0x%lx (slot=%ld)", hash(), hash() >> secondary_shift());
+                                                                                       st->cr();
   st->print(BULLET"bitmap:            0x%lx", _bitmap);                                st->cr();
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
@@ -3704,7 +3705,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   if (_secondary_supers) {
     st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
     for (int i = 0; i < _secondary_supers->length(); i++) {
-      st->print_cr("  %d:  %p (hash=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> (64-6));
+      st->print_cr("  %d:  %p (slot=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> secondary_shift());
     }
   }
 

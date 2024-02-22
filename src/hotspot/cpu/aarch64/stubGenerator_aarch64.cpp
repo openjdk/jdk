@@ -6772,6 +6772,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  // Used by HashSecondarySupers.
   address generate_klass_subtype_fallback_stub() {
     StubCodeMark mark(this, "StubRoutines", "klass_subtype_fallback");
 

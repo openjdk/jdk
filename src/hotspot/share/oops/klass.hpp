@@ -155,12 +155,13 @@ class Klass : public Metadata {
   // All klasses loaded by a class loader are chained through these links
   Klass*      _next_link;
 
-  uintptr_t _hash;
-  uintptr_t _bitmap;
-
   // The VM's representation of the ClassLoader used to load this class.
   // Provide access the corresponding instance java.lang.ClassLoader.
   ClassLoaderData* _class_loader_data;
+
+  // Bitmap and hash code used by hashed secondary supers.
+  uintptr_t _bitmap;
+  juint _hash;
 
   int _vtable_len;              // vtable length. This field may be read very often when we
                                 // have lots of itable dispatches (e.g., lambdas and streams).
@@ -238,6 +239,9 @@ protected:
   void set_secondary_supers(Array<Klass*>* k, uint64_t bitmap);
   static uint64_t hash_secondary_supers(Array<Klass*>* k, bool rewrite = true);
 
+  // Hash coding used by HashSecondarySupers.
+  static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
+  static constexpr int secondary_shift() { return hash_size_in_bits() - 6; }
   uintptr_t hash() const { return _hash; }
 
   // Return the element of the _super chain of the given depth.

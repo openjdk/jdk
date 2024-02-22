@@ -380,8 +380,10 @@ void Universe::genesis(TRAPS) {
       _the_array_interfaces_array->at_put(1, vmClasses::Serializable_klass());
     }
 
-    Universe::_the_array_interfaces_bitmap
-      = Klass::hash_secondary_supers(_the_array_interfaces_array, /*rewrite*/false);
+    if (HashSecondarySupers) {
+      Universe::_the_array_interfaces_bitmap
+        = Klass::hash_secondary_supers(_the_array_interfaces_array, /*rewrite*/false);
+    }
 
     initialize_basic_type_klass(_fillerArrayKlassObj, CHECK);
 
