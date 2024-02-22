@@ -3621,8 +3621,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
-  st->print(BULLET"hash:              0x%lx (slot=%ld)", hash(), hash() >> secondary_shift());
-                                                                                       st->cr();
+  st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash() >> secondary_shift()); st->cr();
   st->print(BULLET"bitmap:            0x%lx", _bitmap);                                st->cr();
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
@@ -3705,7 +3704,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   if (_secondary_supers) {
     st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
     for (int i = 0; i < _secondary_supers->length(); i++) {
-      st->print_cr("  %d:  %p (slot=%ld)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> secondary_shift());
+      st->print_cr("  %d:  %p (slot=%d)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> secondary_shift());
     }
   }
 

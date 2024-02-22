@@ -1160,6 +1160,13 @@ inline int build_int_from_shorts( u2 low, u2 high ) {
   return ((int)((unsigned int)high << 16) | (unsigned int)low);
 }
 
+template<typename T>
+T rotate_right(T t, int shift) {
+  const size_t size_in_bits = sizeof t * 8;
+  assert(shift >= 0 && (size_t)shift < size_in_bits, "shift is undefined");
+  return (t >> shift) | (t << (size_in_bits - shift));
+}
+
 // swap a & b
 template<class T> static void swap(T& a, T& b) {
   T tmp = a;

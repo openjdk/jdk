@@ -242,7 +242,7 @@ protected:
   // Hash coding used by HashSecondarySupers.
   static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
   static constexpr int secondary_shift() { return hash_size_in_bits() - 6; }
-  uintptr_t hash() const { return _hash; }
+  juint hash() const { return _hash; }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.
@@ -385,6 +385,9 @@ protected:
     CDS_ONLY(_shared_class_flags |= _is_shared_class;)
   }
 
+  bool hashed_search_secondary_supers(Klass* k) const;
+  bool linear_search_secondary_supers(Klass* k) const;
+
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
@@ -525,7 +528,21 @@ protected:
     }
   }
 
-  bool search_secondary_supers(Klass* k) const;
+  bool search_secondary_supers(Klass* k) const {
+    if (HashSecondarySupers && VerifySecondarySupers) {
+      bool opinion1 = hashed_search_secondary_supers(k);
+      bool opinion2 = linear_search_secondary_supers(k);
+      guarantee(opinion1 == opinion2, "VerifySecondarySupers failed");
+      return opinion1;
+    }
+
+    if (HashSecondarySupers) {
+      return hashed_search_secondary_supers(k);
+    } else {
+      return linear_search_secondary_supers(k);
+    }
+  }
+
 
   // Find LCA in class hierarchy
   Klass *LCA( Klass *k );

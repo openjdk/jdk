@@ -83,22 +83,32 @@ void Klass::set_name(Symbol* n) {
   if (_name != nullptr) {
     _name->increment_refcount();
   }
-  // Special cases for the two superclasses of all Array instances.
-  if (n == vmSymbols::java_lang_Cloneable()) {
-    _hash = 0;
-  } else if (n == vmSymbols::java_io_Serializable()) {
-    _hash = 1 << secondary_shift();
-  } else {
-    ResourceMark rm;
-    const char *s
-      = (n == nullptr) ? "The Klass with no name" : n->as_C_string();
-    unsigned int hash_code = java_lang_String::hash_code(s, strlen(s));
-    // This constant is magic: see Knuth, "Fibonacci Hashing".
-    _hash = hash_code * 2654435769;
-    if (StressSecondarySuperHash) {
-      // Generate many hash collisions in order to stress-test the
-      // linear search fallback.
-      _hash %= 3;
+
+  if (HashSecondarySupers) {
+    // Special cases for the two superclasses of all Array instances.
+    if (n == vmSymbols::java_lang_Cloneable()) {
+      _hash = 0;
+    } else if (n == vmSymbols::java_io_Serializable()) {
+      _hash = 1 << secondary_shift();
+    } else {
+      ResourceMark rm;
+      const char *s
+        = (n == nullptr) ? "The Klass with no name" : n->as_C_string();
+
+      unsigned int hash_code = java_lang_String::hash_code(s, strlen(s));
+      // FIXME: We use String::hash_code here (rather than e.g.
+      // Symbol::identity_hash()) in order to have a hash code that
+      // does not change from run to run. We want that because the
+      // hash value for a secondary superclass appears in generated
+      // code as a constant.
+
+      // This constant is magic: see Knuth, "Fibonacci Hashing".
+      _hash = hash_code * 2654435769;
+      if (StressSecondarySuperHash) {
+        // Generate many hash collisions in order to stress-test the
+        // linear search fallback.
+        _hash %= 3;
+      }
     }
   }
 
@@ -124,7 +134,7 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::search_secondary_supers(Klass* k) const {
+bool Klass::linear_search_secondary_supers(Klass* k) const {
   // Put some extra logic here out-of-line, before the search proper.
   // This cuts down the size of the inline method.
 
@@ -135,6 +145,48 @@ bool Klass::search_secondary_supers(Klass* k) const {
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
+      ((Klass*)this)->set_secondary_super_cache(k);
+      return true;
+    }
+  }
+  return false;
+}
+
+bool Klass::hashed_search_secondary_supers(Klass* k) const {
+  // This is necessary, since I am never in my own secondary_super list.
+  if (this == k)
+    return true;
+
+  u8 bitmap = _bitmap;
+  const auto bitpos = k->hash() >> Klass::secondary_shift();
+  if (((bitmap >> bitpos) & 1) == 0) {
+    return false;
+  }
+
+  int index = population_count(bitmap << (63 - bitpos)) - 1;
+  if (secondary_supers()->at(index) == k) {
+    ((Klass*)this)->set_secondary_super_cache(k);
+    return true;
+  }
+
+  if (bitmap == ~(u8)0) {
+    // Hash table is full, fall back to linear search
+    return linear_search_secondary_supers(k);
+  }
+
+  int length = secondary_supers()->length();
+  bitmap = rotate_right(bitmap, bitpos);
+
+  // Linear probe for hash collisions.
+  for (;;) {
+    bitmap = rotate_right(bitmap, 1);
+    if ((bitmap & 1) == 0) {
+      return false;
+    }
+    if (++index == length) {
+      index = 0;
+    }
+    if (secondary_supers()->at(index) == k) {
       ((Klass*)this)->set_secondary_super_cache(k);
       return true;
     }
@@ -304,7 +356,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
   Klass **s = sorted_secondaries->adr_at(0);
 #else
   Klass **s = secondaries->adr_at(0);
-#endif
+#endif // ASSERT
 
   for (int j = 0; j < length; j++) {
     Klass *k = s[j];
@@ -337,6 +389,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
     }
   } else {
 #ifdef ASSERT
+    // Check that the secondary_supers array is sorted by hash order
     int i = 0;
     for (int slot = 0; slot < length; slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
@@ -344,7 +397,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
         i++;
       }
     }
-#endif
+#endif // ASSERT
   }
   if (secondaries->length() > 16) {
     asm("nop");

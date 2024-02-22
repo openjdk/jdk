@@ -2016,7 +2016,7 @@ const int ObjectAlignmentInBytes = 8;
                 "can_{retransform/redefine}_classes capabilities.")         \
                                                                             \
   product(bool, HashSecondarySupers,  true, EXPERIMENTAL,                   \
-                "Use new algorithm to scan secondary supers.")              \
+                "Use hash table to scan secondary supers.")                 \
                                                                             \
   product(bool, UseSecondarySuperCache, true, EXPERIMENTAL,                 \
           "Use secondary super cache during subtype checks")                \
@@ -2025,7 +2025,7 @@ const int ObjectAlignmentInBytes = 8;
           "Use secondary super cache during subtype checks")                \
                                                                             \
   product(bool, StressSecondarySuperHash, false, DIAGNOSTIC,                \
-          "Use a terrible hash in order to generate many collisions")       \
+          "Use a terrible hash function in order to generate many collisions") \
                                                                             \
 
 // end of RUNTIME_FLAGS
