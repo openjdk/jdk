@@ -44,7 +44,6 @@
 
 class VirtualMemoryView {
   friend class VirtualMemoryViewTest;
-  friend class NmtVirtualMemoryViewTest;
 
   using Id = int32_t;
 public:
