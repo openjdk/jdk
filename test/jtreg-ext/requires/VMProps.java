@@ -23,6 +23,9 @@
 
 package requires;
 
+import java.lang.module.ModuleFinder;
+import java.lang.module.ModuleReader;
+import java.lang.module.ModuleReference;
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,6 +42,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -140,6 +144,7 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("jdk.containerized", this::jdkContainerized);
         map.put("vm.flagless", this::isFlagless);
         map.put("jdk.foreign.linker", this::jdkForeignLinker);
+        map.put("jlink.runtime.linkable", this::runtimeLinkable);
         map.putAll(xOptFlags()); // -Xmx4g -> @requires vm.opt.x.Xmx == "4g" )
         vmGC(map); // vm.gc.X = true/false
         vmGCforCDS(map); // may set vm.gc
@@ -652,6 +657,31 @@ public class VMProps implements Callable<Map<String, String>> {
     private String jdkContainerized() {
         String isEnabled = System.getenv("TEST_JDK_CONTAINERIZED");
         return "" + "true".equalsIgnoreCase(isEnabled);
+    }
+
+    private String runtimeLinkable() {
+        // jdk.jlink module has the following resource listing native libs
+        // belonging to the java.base module for runtime linkable jimages.
+        String linkableRuntimeResource = "jdk/tools/jlink/internal/fs_java.base_files";
+        try {
+            ModuleFinder finder = ModuleFinder.ofSystem();
+            Optional<ModuleReference> ref = finder.find("jdk.jlink");
+            if (ref.isEmpty()) {
+                // No jdk.jlink in the current image
+                return Boolean.FALSE.toString();
+            }
+            try (ModuleReader reader = ref.get().open()) {
+                Optional<InputStream> inOpt = reader.open(linkableRuntimeResource);
+                if (inOpt.isPresent()) {
+                    inOpt.get().close();
+                    return Boolean.TRUE.toString();
+                } else {
+                    return Boolean.FALSE.toString();
+                }
+            }
+        } catch (Throwable t) {
+            return Boolean.FALSE.toString();
+        }
     }
 
     /**

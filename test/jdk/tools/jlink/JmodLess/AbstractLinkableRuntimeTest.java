@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Red Hat, Inc.
+ * Copyright (c) 2024, Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,18 @@
  * questions.
  */
 
+import java.io.IOException;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -34,14 +40,10 @@ import java.util.stream.Collectors;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import tests.Helper;
-import tests.JImageGenerator;
-import tests.JImageGenerator.JLinkTask;
 import tests.JImageValidator;
 
-public abstract class AbstractJmodLessTest {
+public abstract class AbstractLinkableRuntimeTest {
 
-    protected static final String EXCLUDE_RESOURCE_GLOB_STAMP = "/" + jdk.tools.jlink.internal.JlinkTask.class.getModule().getName() +
-                                                                "/" + jdk.tools.jlink.internal.JlinkTask.RUNIMAGE_LINK_STAMP;
     protected static final boolean DEBUG = true;
 
     public void run() throws Exception {
@@ -103,7 +105,7 @@ public abstract class AbstractJmodLessTest {
 
     protected Path createJavaImageJmodLess(BaseJlinkSpec baseSpec) throws Exception {
         // create a base image only containing the jdk.jlink module and its transitive closure
-        Path jlinkJmodlessImage = createBaseJlinkImage(baseSpec);
+        Path runtimeJlinkImage = createRuntimeLinkImage(baseSpec);
 
         // On Windows jvm.dll is in 'bin' after the jlink
         Path libjvm = Path.of((isWindows() ? "bin" : "lib"), "server", System.mapLibraryName("jvm"));
@@ -113,7 +115,7 @@ public abstract class AbstractJmodLessTest {
                .helper(baseSpec.getHelper())
                .name(baseSpec.getName())
                .validatingModule(baseSpec.getValidatingModule())
-               .imagePath(jlinkJmodlessImage)
+               .imagePath(runtimeJlinkImage)
                .expectedLocation("/java.base/java/lang/String.class");
         for (String m: baseSpec.getModules()) {
             builder.addModule(m);
@@ -185,31 +187,55 @@ public abstract class AbstractJmodLessTest {
         return targetImageDir;
     }
 
-    protected Path createBaseJlinkImage(BaseJlinkSpec baseSpec) throws Exception {
-        // Jlink an image including jdk.jlink (i.e. the jlink tool). The
-        // result must not contain a jmods directory.
-        Path jlinkJmodlessImage = baseSpec.getHelper().createNewImageDir(baseSpec.getName() + "-jlink");
-        JLinkTask task = JImageGenerator.getJLinkTask();
-        if (baseSpec.getModules().contains("leaf1")) {
-            task.modulePath(baseSpec.getHelper().getJmodDir().toString());
-        }
-        task.output(jlinkJmodlessImage);
-        for (String module: baseSpec.getModules()) {
-            task.addMods(module);
-        }
-        if (!baseSpec.getModules().contains("ALL-MODULE-PATH")) {
-            task.addMods("jdk.jlink"); // needed for the recursive jlink
-        }
-        for (String opt: baseSpec.getExtraOptions()) {
-            task.option(opt);
-        }
-        task.option("--verbose")
-            .call().assertSuccess();
-        // Verify the base image is actually jmod-less
-        if (Files.exists(jlinkJmodlessImage.resolve("jmods"))) {
+    /**
+     * Prepares the test for execution. This assumes the current jimage is
+     * runtime-linkable. However, since the 'jmods' dir is present (default jmods
+     * module path), it needs to get removed to provoke a runtime link.
+     *
+     * @param baseSpec
+     * @return A path to a JDK image which is prepared for runtime linking.
+     * @throws Exception
+     */
+    protected Path createRuntimeLinkImage(BaseJlinkSpec baseSpec) throws Exception {
+        Path runtimeJlinkImage = baseSpec.getHelper().createNewImageDir(baseSpec.getName() + "-jlink");
+        copyJDKTreeWithoutJmods(runtimeJlinkImage);
+        // Verify the base image is actually without packaged modules
+        if (Files.exists(runtimeJlinkImage.resolve("jmods"))) {
             throw new AssertionError("Must not contain 'jmods' directory");
         }
-        return jlinkJmodlessImage;
+        return runtimeJlinkImage;
+    }
+
+    private void copyJDKTreeWithoutJmods(Path runtimeJlinkImage) throws Exception {
+        Files.createDirectory(runtimeJlinkImage);
+        String javaHome = System.getProperty("java.home");
+        Path root = Path.of(javaHome);
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir,
+                    BasicFileAttributes attrs) throws IOException {
+                Objects.requireNonNull(dir);
+                Path relative = root.relativize(dir);
+                if (relative.getFileName().equals(Path.of("jmods"))) {
+                    return FileVisitResult.SKIP_SUBTREE;
+                }
+                // Create dir in destination location
+                Path targetDir = runtimeJlinkImage.resolve(relative);
+                if (!Files.exists(targetDir)) {
+                    Files.createDirectory(targetDir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+                    throws IOException {
+                Path relative = root.relativize(file);
+                Files.copy(file, runtimeJlinkImage.resolve(relative), StandardCopyOption.REPLACE_EXISTING);
+                return FileVisitResult.CONTINUE;
+            }
+        });
+
     }
 
     private List<String> parseListMods(String output) throws Exception {

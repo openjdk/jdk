@@ -14,6 +14,7 @@ public class JimageDiffGenerator {
 
     private static final boolean DEBUG = false;
 
+    @SuppressWarnings("try")
     public interface ImageResource extends AutoCloseable {
         public List<String> getEntries();
         public byte[] getResourceBytes(String name);

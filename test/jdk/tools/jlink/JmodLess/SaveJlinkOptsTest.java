@@ -47,6 +47,7 @@ import tests.Helper;
  */
 public class SaveJlinkOptsTest extends AbstractJmodLessTest {
 
+    @SuppressWarnings("try")
     public static void main(String[] args) throws Exception {
         SaveJlinkOptsTest test = new SaveJlinkOptsTest();
         test.run();

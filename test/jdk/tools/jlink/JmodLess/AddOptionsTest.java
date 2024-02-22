@@ -30,8 +30,8 @@ import tests.Helper;
 
 /*
  * @test
- * @summary Test --add-options jlink plugin in jmod-less mode
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @summary Test --add-options jlink plugin in runtime image link mode
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -43,7 +43,7 @@ import tests.Helper;
  *        jdk.test.lib.process.ProcessTools
  * @run main/othervm -Xmx1g AddOptionsTest
  */
-public class AddOptionsTest extends AbstractJmodLessTest {
+public class AddOptionsTest extends AbstractLinkableRuntimeTest {
 
     public static void main(String[] args) throws Exception {
         AddOptionsTest test = new AddOptionsTest();

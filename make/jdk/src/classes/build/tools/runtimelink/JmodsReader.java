@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 import jdk.internal.module.ModulePath;
 
+@SuppressWarnings("try")
 public class JmodsReader implements JimageDiffGenerator.ImageResource {
 
     private final ModuleFinder finder;
