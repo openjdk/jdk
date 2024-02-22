@@ -127,9 +127,9 @@ void JNICALL jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jboolean for
 
 jlong JNICALL jfr_get_unloaded_event_classes_count(JNIEnv* env, jclass jvm);
 
-jboolean JNICALL jfr_set_cutoff(JNIEnv* env, jclass jvm, jlong event_type_id, jlong cutoff_ticks);
-
 jboolean JNICALL jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms);
+
+void JNICALL jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong id, jlong value);
 
 void JNICALL jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean, jboolean);
 
@@ -156,6 +156,8 @@ jboolean JNICALL jfr_is_class_instrumented(JNIEnv* env, jclass jvm, jclass clazz
 jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
+
+jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
 
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 

@@ -27,8 +27,6 @@
 # ##########################################################
 #
 class name java/util/logging/ErrorManager
-header extends java/lang/Object flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name error descriptor (Ljava/lang/String;Ljava/lang/Exception;I)V
 method name error descriptor (Ljava/lang/String;Ljava/lang/Exception;I)V flags 1
 
@@ -50,16 +48,7 @@ method name setFilter descriptor (Ljava/util/logging/Filter;)V thrownTypes java/
 method name setErrorManager descriptor (Ljava/util/logging/ErrorManager;)V flags 1
 method name setLevel descriptor (Ljava/util/logging/Level;)V thrownTypes java/lang/SecurityException flags 1
 
-class name java/util/logging/LoggingMXBean
-header extends java/lang/Object flags 601 deprecated true runtimeAnnotations @Ljava/lang/Deprecated;(since="9")
-
-class name java/util/logging/LoggingPermission
-header extends java/security/BasicPermission flags 31
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/util/logging/MemoryHandler
-header extends java/util/logging/Handler flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name publish descriptor (Ljava/util/logging/LogRecord;)V
 -method name push descriptor ()V
 -method name setPushLevel descriptor (Ljava/util/logging/Level;)V
@@ -67,13 +56,7 @@ method name publish descriptor (Ljava/util/logging/LogRecord;)V flags 1
 method name push descriptor ()V flags 1
 method name setPushLevel descriptor (Ljava/util/logging/Level;)V thrownTypes java/lang/SecurityException flags 1
 
-class name java/util/logging/SimpleFormatter
-header extends java/util/logging/Formatter flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
-
 class name java/util/logging/SocketHandler
-header extends java/util/logging/StreamHandler flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 -method name close descriptor ()V
 -method name publish descriptor (Ljava/util/logging/LogRecord;)V
 method name close descriptor ()V thrownTypes java/lang/SecurityException flags 1
@@ -90,8 +73,4 @@ method name setEncoding descriptor (Ljava/lang/String;)V thrownTypes java/lang/S
 method name publish descriptor (Ljava/util/logging/LogRecord;)V flags 1
 method name flush descriptor ()V flags 1
 method name close descriptor ()V thrownTypes java/lang/SecurityException flags 1
-
-class name java/util/logging/XMLFormatter
-header extends java/util/logging/Formatter flags 21
-innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 

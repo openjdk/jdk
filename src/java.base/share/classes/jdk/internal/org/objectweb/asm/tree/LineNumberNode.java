@@ -104,4 +104,3 @@ public class LineNumberNode extends AbstractInsnNode {
         return new LineNumberNode(line, clone(start, clonedLabels));
     }
 }
-

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -699,14 +699,16 @@ compare_bin_file() {
         unset _NT_SYMBOL_PATH
         if [ "$(uname -o)" = "Cygwin" ]; then
             THIS=$(cygpath -msa $THIS)
-            OTHER=$(cygpath -msa $OTHER)
+            if [ -n "$OTHER" ]; then
+              OTHER=$(cygpath -msa $OTHER)
+            fi
         fi
         # Build an _NT_SYMBOL_PATH that contains all known locations for
         # pdb files.
         PDB_DIRS="$(ls -d \
             {$OTHER,$THIS}/support/modules_{cmds,libs}/{*,*/*} \
             {$OTHER,$THIS}/support/native/jdk.jpackage/* \
-            )"
+            2> /dev/null )"
         export _NT_SYMBOL_PATH="$(echo $PDB_DIRS | tr ' ' ';')"
     fi
 

@@ -113,6 +113,16 @@ void ShenandoahArguments::initialize() {
     }
   }
 
+  // Disable support for dynamic number of GC threads. We do not let the runtime
+  // heuristics to misjudge how many threads we need during the heavy concurrent phase
+  // or a GC pause.
+  if (UseDynamicNumberOfGCThreads) {
+    if (FLAG_IS_CMDLINE(UseDynamicNumberOfGCThreads)) {
+      warning("Shenandoah does not support UseDynamicNumberOfGCThreads, disabling");
+    }
+    FLAG_SET_DEFAULT(UseDynamicNumberOfGCThreads, false);
+  }
+
   if (ShenandoahRegionSampling && FLAG_IS_DEFAULT(PerfDataMemorySize)) {
     // When sampling is enabled, max out the PerfData memory to get more
     // Shenandoah data in, including Matrix.

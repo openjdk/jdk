@@ -1,6 +1,6 @@
 <?xml version="1.0"?> 
 <!--
- Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ JvmtiEnv::</xsl:text>
     return JVMTI_ERROR_MUST_POSSESS_CAPABILITY;
   }
   Klass* k_oop = java_lang_Class::as_Klass(k_mirror);
-  if (k_oop == NULL) {
+  if (k_oop == nullptr) {
     return JVMTI_ERROR_INVALID_CLASS;
   }</xsl:text>
     </xsl:if>
@@ -136,7 +136,7 @@ JvmtiEnv::</xsl:text>
 <xsl:template match="jmethodID" mode="advice">
   <xsl:param name="name"/>
   <xsl:text>
-// method - pre-checked for validity, but may be NULL meaning obsolete method</xsl:text>
+// method - pre-checked for validity, but may be nullptr meaning obsolete method</xsl:text>
 </xsl:template>
 
 <xsl:template match="jfieldID" mode="advice">
@@ -166,13 +166,13 @@ JvmtiEnv::</xsl:text>
       <xsl:text>
 // </xsl:text>
       <xsl:value-of select="$name"/>
-      <xsl:text> - pre-checked for NULL</xsl:text>
+      <xsl:text> - pre-checked for nullptr</xsl:text>
     </xsl:when>
     <xsl:otherwise>
       <xsl:text>
 // </xsl:text>
       <xsl:value-of select="$name"/>
-      <xsl:text> - NULL is a valid value, must be checked</xsl:text>
+      <xsl:text> - nullptr is a valid value, must be checked</xsl:text>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@
 #include "gc/g1/g1MonotonicArenaFreePool.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/barrierSet.hpp"
@@ -178,8 +178,6 @@ private:
 
   Ticks _collection_pause_end;
 
-  SoftRefPolicy      _soft_ref_policy;
-
   static size_t _humongous_object_threshold_in_words;
 
   // These sets keep track of old and humongous regions respectively.
@@ -220,7 +218,7 @@ private:
   // Manages all allocations with regions except humongous object allocations.
   G1Allocator* _allocator;
 
-  G1YoungGCEvacFailureInjector _evac_failure_injector;
+  G1YoungGCAllocationFailureInjector _allocation_failure_injector;
 
   // Manages all heap verification.
   G1HeapVerifier* _verifier;
@@ -264,6 +262,7 @@ public:
   void set_collection_set_candidates_stats(G1MonotonicArenaMemoryStats& stats);
   void set_young_gen_card_set_stats(const G1MonotonicArenaMemoryStats& stats);
 
+  void update_parallel_gc_threads_cpu_time();
 private:
 
   G1HRPrinter _hr_printer;
@@ -549,7 +548,7 @@ public:
     return _allocator;
   }
 
-  G1YoungGCEvacFailureInjector* evac_failure_injector() { return &_evac_failure_injector; }
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() { return &_allocation_failure_injector; }
 
   G1HeapVerifier* verifier() {
     return _verifier;
@@ -774,6 +773,10 @@ public:
 
   void retire_tlabs();
 
+  // Update all region's pin counts from the per-thread caches and resets them.
+  // Must be called before any decision based on pin counts.
+  void flush_region_pin_cache();
+
   void expand_heap_after_young_collection();
   // Update object copying statistics.
   void record_obj_copy_mem_stats();
@@ -921,8 +924,6 @@ public:
   G1CollectionSet* collection_set() { return &_collection_set; }
 
   inline bool is_collection_set_candidate(const HeapRegion* r) const;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   void initialize_serviceability() override;
   MemoryUsage memory_usage() override;
@@ -1266,6 +1267,10 @@ public:
 
   // Performs cleaning of data structures after class unloading.
   void complete_cleaning(bool class_unloading_occurred);
+
+  void unload_classes_and_code(const char* description, BoolObjectClosure* cl, GCTimer* timer);
+
+  void bulk_unregister_nmethods();
 
   // Verification
 

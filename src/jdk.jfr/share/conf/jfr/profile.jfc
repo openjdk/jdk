@@ -678,6 +678,11 @@
       <setting name="period">everyChunk</setting>
     </event>
 
+    <event name="jdk.SwapSpace">
+      <setting name="enabled">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.ObjectAllocationInNewTLAB">
       <setting name="enabled" control="gc-enabled-high">false</setting>
       <setting name="stackTrace">true</setting>
@@ -762,6 +767,10 @@
       <setting name="stackTrace">true</setting>
     </event>
 
+    <event name="jdk.SerializationMisdeclaration">
+        <setting name="enabled">true</setting>
+    </event>
+
     <event name="jdk.InitialSecurityProperty">
       <setting name="enabled">true</setting>
       <setting name="period">beginChunk</setting>
@@ -830,6 +839,7 @@
 
     <event name="jdk.ZAllocationStall">
       <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
 
@@ -921,6 +931,11 @@
       <setting name="period">endChunk</setting>
     </event>
 
+    <event name="jdk.DeprecatedInvocation">
+      <setting name="enabled">true</setting>
+      <setting name="stackTrace">true</setting>
+      <setting name="level">forRemoval</setting>
+    </event>
 
 
 
