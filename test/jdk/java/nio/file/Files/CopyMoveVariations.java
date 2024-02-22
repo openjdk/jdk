@@ -72,7 +72,7 @@ public class CopyMoveVariations {
     static {
         Path tmp = null;
         try {
-            tmp = Files.createTempFile("this", "that");
+            tmp = Files.createTempFile(Path.of("."), "this", "that");
             SUPPORTS_POSIX_PERMISSIONS =
                 Files.getFileStore(tmp).supportsFileAttributeView("posix");
         } catch (IOException cause) {
@@ -142,15 +142,15 @@ public class CopyMoveVariations {
         Path source = null;
         Path target = null;
         Path linkTarget = null;
-        Path dir = Path.of(".");
+        Path current = Path.of(".");
         try {
             switch (type) {
                 case FILE ->
-                    source = Files.createTempFile(dir, "file", "dat");
+                    source = Files.createTempFile(current, "file", "dat");
                 case DIR ->
-                    source = Files.createTempDirectory(dir, "dir");
+                    source = Files.createTempDirectory(current, "dir");
                 case LINK -> {
-                    linkTarget = Files.createTempFile(dir, "link", "target");
+                    linkTarget = Files.createTempFile(current, "link", "target");
                     Path link = Path.of("link");
                     source = Files.createSymbolicLink(link, linkTarget);
                 }
@@ -164,7 +164,7 @@ public class CopyMoveVariations {
                 Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
-                target = Files.createTempFile(dir, "file", "target");
+                target = Files.createTempFile(current, "file", "target");
             else
                 target = Path.of("target");
 
