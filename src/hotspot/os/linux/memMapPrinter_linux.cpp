@@ -68,8 +68,10 @@ public:
     st->print("%s ", info.prot);
     INDENT_BY(5);
     _session.print_nmt_info_for_region(info.from, info.to);
+    INDENT_BY(10);
     st->print_raw(info.filename);
 #undef INDENT
+    st->cr();
   }
 
   void print_legend() const {
@@ -85,8 +87,8 @@ public:
     outputStream* st = _session.out();
     //            .         .         .         .         .         .         .         .         .         .         .
     //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p JAVAHEAP /shared/tmp.txt
-    st->print_cr("from                 to                      vsize prot vm-info file");
+    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p JAVAHEAP  /shared/tmp.txt
+    st->print_cr("from                 to                      vsize prot vm-info   file");
   }
 };
 
@@ -179,13 +181,13 @@ public:
     INDENT_BY(40);
     st->print("%10zu", info.vsize());
     INDENT_BY(11);
+    st->print("%s ", info.prot);
+    INDENT_BY(5);
     st->print("%10zu", info.rss);
     INDENT_BY(11);
     st->print("%10zu", info.private_hugetlb);
     INDENT_BY(11);
     st->print(EXACTFMT " ", EXACTFMTARGS(info.kernelpagesize));
-    INDENT_BY(5);
-    st->print("%s ", info.prot);
     INDENT_BY(5);
 
     bool comma = false;
@@ -208,6 +210,7 @@ public:
   #undef PRINTIF
     INDENT_BY(17);
     _session.print_nmt_info_for_region(info.from, info.to);
+    INDENT_BY(10);
     st->print_raw(info.filename);
   #undef INDENT_BY
     st->cr();
@@ -218,6 +221,7 @@ public:
     st->print_cr("from, to, vsize: address range and size");
     st->print_cr("prot:            protection");
     st->print_cr("rss:             resident set size");
+    st->print_cr("hugetlb:         size of private hugetlb pages");
     st->print_cr("pgsz:            page size");
     st->print_cr("notes:           mapping information  (detail mode only)");
     st->print_cr("                    shared: mapping is shared");
@@ -235,10 +239,10 @@ public:
 
   void print_header() const {
     outputStream* st = _session.out();
-    //            .         .         .         .         .         .         .         .         .         .         .
-    //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p 1234567890 1234567890 16g  rw-p thp,thpadv       JAVAHEAP /shared/tmp.txt
-    st->print_cr("from                 to                      vsize prot        rss    hugetlb pgsz prot notes            vm-info file");
+    //            .         .         .         .         .         .         .         .         .         .         .         .
+    //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
+    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p 1234567890 1234567890 16g  thp,thpadv       JAVAHEAP  /shared/tmp.txt
+    st->print_cr("from                 to                      vsize prot        rss    hugetlb pgsz notes            vm-info   file");
   }
 };
 
@@ -248,9 +252,11 @@ static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
   SUMMARY summary;
 
   const bool print_each_mapping = !session.options().only_summary;
+  outputStream* const st = session.out();
 
   if (print_each_mapping) {
     printer.print_legend();
+    st->cr();
     printer.print_header();
   }
 
@@ -262,7 +268,7 @@ static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
     }
     summary.add_mapping(info);
   }
-  session.out()->cr();
+  st->cr();
 
   if (parser.had_error()) {
     session.out()->print_cr("Error while reading mappings");
@@ -270,6 +276,7 @@ static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
   }
 
   summary.print_on(session);
+  st->cr();
 }
 
 

@@ -54,6 +54,7 @@ struct ProcSmapsInfo : public ProcMapsInfo {
   size_t shared_hugetlb;
   size_t anonhugepages;
   size_t swap;
+  bool rd, wr, ex;
   bool sh; // shared
   bool nr; // no reserve
   bool hg; // thp-advised

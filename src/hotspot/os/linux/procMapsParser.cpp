@@ -108,12 +108,15 @@ void ProcSmapsParser::scan_additional_line(ProcSmapsInfo& out) {
 #undef SCAN
   // scan some flags too
   if (strncmp(_line, "VmFlags:", 8) == 0) {
-#define SCAN(flag) flag = (::strstr(_line + 8, " " #flag) != nullptr);
-    SCAN(out.nr);
-    SCAN(out.sh);
-    SCAN(out.hg);
-    SCAN(out.ht);
-    SCAN(out.nh);
+#define SCAN(flag) { out.flag = (::strstr(_line + 8, " " #flag) != nullptr); }
+    SCAN(rd);
+    SCAN(wr);
+    SCAN(ex);
+    SCAN(nr);
+    SCAN(sh);
+    SCAN(hg);
+    SCAN(ht);
+    SCAN(nh);
 #undef SCAN
     return;
   }
