@@ -370,7 +370,7 @@ public class ClassWriter extends BasicWriter {
                 case Signature.TypeArg.Unbounded _ -> sb.append('?');
                 case Signature.TypeArg.Bounded bta -> {
                     switch (bta.wildcardIndicator()) {
-                        case DEFAULT -> print(sb, bta.boundType());
+                        case NONE -> print(sb, bta.boundType());
                         case EXTENDS -> {
                             sb.append("? extends ");
                             print(sb, bta.boundType());

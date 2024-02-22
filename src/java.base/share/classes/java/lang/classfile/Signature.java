@@ -214,17 +214,20 @@ public sealed interface Signature {
             public enum WildcardIndicator {
 
                 /**
-                 * no wildcard (empty), an exact type
+                 * No wildcard (empty), an exact type. Also known as
+                 * {@index invariant}.
                  */
-                DEFAULT,
+                NONE,
 
                 /**
-                 * upper-bounded indicator {@code +}
+                 * Upper-bound indicator {@code +}. Also known as
+                 * {@index covariant}.
                  */
                 EXTENDS,
 
                 /**
-                 * lower-bounded indicator {@code -}
+                 * Lower-bound indicator {@code -}. Also known as
+                 * {@index contravariant}.
                  */
                 SUPER;
             }
@@ -242,7 +245,7 @@ public sealed interface Signature {
          */
         public static TypeArg.Bounded of(RefTypeSig boundType) {
             requireNonNull(boundType);
-            return bounded(Bounded.WildcardIndicator.DEFAULT, boundType);
+            return bounded(Bounded.WildcardIndicator.NONE, boundType);
         }
 
         /**
