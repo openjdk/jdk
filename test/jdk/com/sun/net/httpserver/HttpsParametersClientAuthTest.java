@@ -41,19 +41,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class HttpsParametersClientAuthTest {
 
     /**
-     * verifies that {@link HttpsParameters#setNeedClientAuth(boolean)}
-     * and {@link HttpsParameters#setWantClientAuth(boolean)} methods work
-     * as expected
+     * verifies default values of {@link HttpsParameters#setNeedClientAuth(boolean)}
+     * and {@link HttpsParameters#setWantClientAuth(boolean)} methods
      */
     @Test
-    public void testClientAuth() throws Exception {
+    public void testDefaultClientAuth() throws Exception {
         // test default values
         HttpsParameters defaultParams = new Params();
         assertFalse(defaultParams.getNeedClientAuth(),
                 "needClientAuth was expected to be false but wasn't");
         assertFalse(defaultParams.getWantClientAuth(),
                 "wantClientAuth was expected to be false but wasn't");
+    }
 
+    /**
+     * sets {@link HttpsParameters#setNeedClientAuth(boolean)} to true and verifies
+     * that subsequent calls to {@link HttpsParameters#getNeedClientAuth()} returns
+     * true and {@link HttpsParameters#getWantClientAuth()} returns false
+     */
+    @Test
+    public void testNeedClientAuth() throws Exception {
         // needClientAuth = true and thus wantClientAuth = false
         HttpsParameters needClientAuthParams = new Params();
         needClientAuthParams.setNeedClientAuth(true);
@@ -61,7 +68,15 @@ public class HttpsParametersClientAuthTest {
                 "needClientAuth was expected to be true but wasn't");
         assertFalse(needClientAuthParams.getWantClientAuth(),
                 "wantClientAuth was expected to be false but wasn't");
+    }
 
+    /**
+     * sets {@link HttpsParameters#setWantClientAuth(boolean)} to true and verifies
+     * that subsequent calls to {@link HttpsParameters#getWantClientAuth()} returns
+     * true and {@link HttpsParameters#getNeedClientAuth()} returns false
+     */
+    @Test
+    public void testWantClientAuth() throws Exception {
         // wantClientAuth = true and thus needClientAuth = false
         HttpsParameters wantClientAuthParams = new Params();
         wantClientAuthParams.setWantClientAuth(true);
@@ -70,7 +85,6 @@ public class HttpsParametersClientAuthTest {
         assertFalse(wantClientAuthParams.getNeedClientAuth(),
                 "needClientAuth was expected to be false but wasn't");
     }
-
 
     private static final class Params extends HttpsParameters {
 
