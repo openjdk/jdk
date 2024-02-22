@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,12 +581,15 @@ extern uint64_t OopEncodingHeapMax;
 
 // Machine dependent stuff
 
+#include CPU_HEADER(globalDefinitions)
+
 // The maximum size of the code cache.  Can be overridden by targets.
+#ifndef CODE_CACHE_SIZE_LIMIT
 #define CODE_CACHE_SIZE_LIMIT (2*G)
+#endif
+
 // Allow targets to reduce the default size of the code cache.
 #define CODE_CACHE_DEFAULT_LIMIT CODE_CACHE_SIZE_LIMIT
-
-#include CPU_HEADER(globalDefinitions)
 
 // To assure the IRIW property on processors that are not multiple copy
 // atomic, sync instructions must be issued between volatile reads to
@@ -1025,19 +1028,20 @@ enum LockingMode {
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 
-const jint     badInt           = -3;                       // generic "bad int" value
-const intptr_t badAddressVal    = -2;                       // generic "bad address" value
-const intptr_t badOopVal        = -1;                       // generic "bad oop" value
-const intptr_t badHeapOopVal    = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
-const int      badStackSegVal   = 0xCA;                     // value used to zap stack segments
-const int      badHandleValue   = 0xBC;                     // value used to zap vm handle area
-const int      badResourceValue = 0xAB;                     // value used to zap resource area
-const int      freeBlockPad     = 0xBA;                     // value used to pad freed blocks.
-const int      uninitBlockPad   = 0xF1;                     // value used to zap newly malloc'd blocks.
-const juint    uninitMetaWordVal= 0xf7f7f7f7;               // value used to zap newly allocated metachunk
-const juint    badHeapWordVal   = 0xBAADBABE;               // value used to zap heap after GC
-const juint    badMetaWordVal   = 0xBAADFADE;               // value used to zap metadata heap after GC
-const int      badCodeHeapNewVal= 0xCC;                     // value used to zap Code heap at allocation
+const jint     badInt             = -3;                     // generic "bad int" value
+const intptr_t badAddressVal      = -2;                     // generic "bad address" value
+const intptr_t badOopVal          = -1;                     // generic "bad oop" value
+const intptr_t badHeapOopVal      = (intptr_t) CONST64(0x2BAD4B0BBAADBABE); // value used to zap heap after GC
+const int      badStackSegVal     = 0xCA;                   // value used to zap stack segments
+const int      badHandleValue     = 0xBC;                   // value used to zap vm handle area
+const int      badResourceValue   = 0xAB;                   // value used to zap resource area
+const int      freeBlockPad       = 0xBA;                   // value used to pad freed blocks.
+const int      uninitBlockPad     = 0xF1;                   // value used to zap newly malloc'd blocks.
+const juint    uninitMetaWordVal  = 0xf7f7f7f7;             // value used to zap newly allocated metachunk
+const jubyte   heapPaddingByteVal = 0xBD;                   // value used to zap object padding in the heap
+const juint    badHeapWordVal     = 0xBAADBABE;             // value used to zap heap after GC
+const juint    badMetaWordVal     = 0xBAADFADE;             // value used to zap metadata heap after GC
+const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization
 const intptr_t badDispHeaderOSR   = 0xDEAD05A0;             // value to fill unused displaced header during OSR
