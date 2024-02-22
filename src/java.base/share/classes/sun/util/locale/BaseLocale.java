@@ -91,8 +91,9 @@ public final class BaseLocale {
         }
     }
 
-    // Non-normalized to normalized BaseLocale cache for saving costly normalizations
-    private static final ReferencedKeySet<BaseLocale> CACHE = ReferencedKeySet.create(true, ConcurrentHashMap::new);
+    // Interned BaseLocale cache
+    private static final ReferencedKeySet<BaseLocale> CACHE =
+            ReferencedKeySet.create(true, ConcurrentHashMap::new);
 
     public static final String SEP = "_";
 
