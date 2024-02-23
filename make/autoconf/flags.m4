@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -364,24 +364,12 @@ AC_DEFUN([FLAGS_SETUP_TOOLCHAIN_CONTROL],
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
-    LD_OUT_OPTION=-out:
-    AR_OUT_OPTION=-out:
   else
     # The option used to specify the target .o,.a or .so file.
     # When compiling, how to specify the to be created object file.
     CC_OUT_OPTION='-o$(SPACE)'
-    # When linking, how to specify the output
-    LD_OUT_OPTION='-o$(SPACE)'
-    # When archiving, how to specify the destination static archive.
-    if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      AR_OUT_OPTION='-r -cs$(SPACE)'
-    else
-      AR_OUT_OPTION='-rcs$(SPACE)'
-    fi
   fi
   AC_SUBST(CC_OUT_OPTION)
-  AC_SUBST(LD_OUT_OPTION)
-  AC_SUBST(AR_OUT_OPTION)
 
   # Generate make dependency files
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
@@ -423,6 +411,7 @@ AC_DEFUN([FLAGS_SETUP_FLAGS],
   FLAGS_SETUP_LDFLAGS
 
   FLAGS_SETUP_ARFLAGS
+  FLAGS_SETUP_LIBFLAGS
   FLAGS_SETUP_STRIPFLAGS
   FLAGS_SETUP_RCFLAGS
   FLAGS_SETUP_NMFLAGS
