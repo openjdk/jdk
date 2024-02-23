@@ -22,6 +22,7 @@
  *
  */
 
+#include "precompiled.hpp"
 #include "runtime/orderAccess.hpp"
 #include "compiler/cHeapStringHolder.hpp"
 
