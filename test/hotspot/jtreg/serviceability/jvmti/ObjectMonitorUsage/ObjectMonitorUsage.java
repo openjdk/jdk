@@ -39,18 +39,17 @@
  *       - owned object with N waitings to enter, from 0 to N waitings to re-enter,
  *         from N to 0 waitings to be notified
  *       - all the above scenarios are executed with platform and virtual threads
+ * @requires vm.continuations
  * @requires vm.jvmti
  * @run main/othervm/native -agentlib:ObjectMonitorUsage ObjectMonitorUsage
  */
 
 public class ObjectMonitorUsage {
-
     final static int NUMBER_OF_ENTERING_THREADS = 4;
     final static int NUMBER_OF_WAITING_THREADS  = 4;
     final static int NUMBER_OF_THREADS = NUMBER_OF_ENTERING_THREADS + NUMBER_OF_WAITING_THREADS;
 
     static Object lockCheck = new Object();
-    static Thread[] thr = new Thread[NUMBER_OF_THREADS];
 
     native static int getRes();
     native static void check(Object obj, Thread owner,
@@ -71,6 +70,34 @@ public class ObjectMonitorUsage {
         return thread;
     }
 
+    static Thread[] startWaitingThreads(boolean isVirtual) {
+        Thread[] threads = new Thread[NUMBER_OF_WAITING_THREADS];
+        for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
+            // the WaitingTask has to wait to be notified in lockCheck.wait()
+            threads[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
+        }
+        return threads;
+    }
+
+    static Thread[] startEnteringThreads(boolean isVirtual) {
+        Thread[] threads = new Thread[NUMBER_OF_ENTERING_THREADS];
+        for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
+            // the EnteringTask has to be blocked at the lockCheck enter
+            threads[i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
+        }
+        return threads;
+    }
+
+    static void joinThreads(Thread[] threads) {
+        try {
+            for (Thread t : threads) {
+                t.join();
+            }
+        } catch (InterruptedException e) {
+            throw new Error("Unexpected " + e);
+        }
+    }
+
     /* Scenario #0:
      * - owning:         0
      * - entering:       0
@@ -81,10 +108,8 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test0: started " + vtag);
 
-        for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
-            // the WaitingTask has to wait to be notified in a lockCheck.wait()
-            thr[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
-        }
+        Thread[] wThreads = startWaitingThreads(isVirtual);
+
         // entry count: 0
         // count of threads waiting to enter:       0
         // count of threads waiting to re-enter:    0
@@ -96,13 +121,7 @@ public class ObjectMonitorUsage {
         synchronized (lockCheck) {
             lockCheck.notifyAll();
         }
-        for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
-            try {
-                thr[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected " + e);
-            }
-        }
+        joinThreads(wThreads);
         log("###test0: finished " + vtag);
     }
 
@@ -116,6 +135,8 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test1: started " + vtag);
 
+        Thread[] eThreads = null;
+
         synchronized (lockCheck) {
             // entry count: 1
             // count of threads waiting to enter: 0
@@ -123,10 +144,8 @@ public class ObjectMonitorUsage {
             // count of threads waiting to be notified: 0
             check(lockCheck, Thread.currentThread(), 1, 0, 0);
 
-            for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
-                // this EnteringTask has to be blocked on the lockCheck enter
-                thr[i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
-            }
+            eThreads = startEnteringThreads(isVirtual);
+
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
@@ -134,14 +153,9 @@ public class ObjectMonitorUsage {
             check(lockCheck, Thread.currentThread(), 1,
                   NUMBER_OF_ENTERING_THREADS,
                   0 /* count of threads waiting to be notified: 0 */);
+
         }
-        for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
-            try {
-                thr[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected " + e);
-            }
-        }
+        joinThreads(eThreads);
         log("###test1: finished " + vtag);
     }
 
@@ -155,15 +169,12 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test2: started " + vtag);
 
-        for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
-            // the WaitingTask has to wait to be notified in a lockCheck.wait()
-            thr[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
-        }
+        Thread[] wThreads = startWaitingThreads(isVirtual);
+        Thread[] eThreads = null;
+
         synchronized (lockCheck) {
-            for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
-                // this EnteringTask has to be blocked on the lockCheck enter
-                thr[NUMBER_OF_WAITING_THREADS + i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
-            }
+            eThreads = startEnteringThreads(isVirtual);
+
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
             // count of threads waiting to re-enter:    0
@@ -174,13 +185,8 @@ public class ObjectMonitorUsage {
 
             lockCheck.notifyAll();
         }
-        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-            try {
-                thr[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected " + e);
-            }
-        }
+        joinThreads(wThreads);
+        joinThreads(eThreads);
         log("###test2: finished " + vtag);
     }
 
@@ -200,10 +206,9 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test3: started " + vtag);
 
-        for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
-            // the WaitingTask has to wait to be notified in a lockCheck.wait()
-            thr[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
-        }
+        Thread[] wThreads = startWaitingThreads(isVirtual);
+        Thread[] eThreads = null;
+
         synchronized (lockCheck) {
             // entry count: 1
             // count of threads waiting to enter:       0
@@ -213,10 +218,7 @@ public class ObjectMonitorUsage {
                   0, // number of threads waiting to enter or re-enter
                   NUMBER_OF_WAITING_THREADS);
 
-            for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
-                // this EnteringTask has to be blocked on the lockCheck enter
-                thr[NUMBER_OF_WAITING_THREADS + i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
-            }
+            eThreads = startEnteringThreads(isVirtual);
 
             // entry count: 1
             // count of threads waiting to enter:       NUMBER_OF_ENTERING_THREADS
@@ -227,7 +229,7 @@ public class ObjectMonitorUsage {
                   NUMBER_OF_WAITING_THREADS);
 
             for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
-                lockCheck.notify();
+                lockCheck.notify(); // notify waiting threads one by one
                 // now the notified WaitingTask has to be blocked on the lockCheck re-enter
 
                 // entry count: 1
@@ -239,31 +241,24 @@ public class ObjectMonitorUsage {
                       NUMBER_OF_WAITING_THREADS  - i - 1);
             }
         }
-        for (int i = 0; i < NUMBER_OF_THREADS; i++) {
-            try {
-                thr[i].join();
-            } catch (InterruptedException e) {
-                throw new Error("Unexpected " + e);
-            }
-        }
+        joinThreads(wThreads);
+        joinThreads(eThreads);
         log("###test3: finished " + vtag);
+    }
+
+    static void test(boolean isVirtual) {
+        test0(isVirtual);
+        test1(isVirtual);
+        test2(isVirtual);
+        test3(isVirtual);
     }
 
     public static void main(String args[]) {
         log("\n###main: started\n");
         check(lockCheck, null, 0, 0, 0);
 
-        // test platform threads
-        test0(false);
-        test1(false);
-        test2(false);
-        test3(false);
-
-        // test virtual threads
-        test0(true);
-        test1(true);
-        test2(true);
-        test3(true);
+        test(false); // test platform threads
+        test(true);  // test virtual threads
 
         check(lockCheck, null, 0, 0, 0);
         if (getRes() > 0) {
