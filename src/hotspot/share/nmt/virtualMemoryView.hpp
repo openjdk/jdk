@@ -117,8 +117,7 @@ public:
 
   struct VirtualMemory : public CHeapObj<mtNMT> {
     // Reserved memory within this process' memory map.
-    // Separated by PhysicalMemorySpace to see who allocated where.
-    GrowableArrayCHeap<RegionStorage, mtNMT> reserved_regions;
+    RegionStorage reserved_regions;
     // Committed memory per PhysicalMemorySpace
     GrowableArrayCHeap<RegionStorage, mtNMT> committed_regions;
     // Mappings from virtual memory space to committed memory, per PhysicalMemorySpace.
@@ -137,8 +136,7 @@ public:
     // Deep copying of VirtualMemory
     VirtualMemory& operator=(const VirtualMemory& other) {
       if (this != &other) {
-        this->reserved_regions =
-            GrowableArrayCHeap<RegionStorage, mtNMT>{other.reserved_regions.length()};
+        this->reserved_regions = RegionStorage{other.reserved_regions.length()};
         this->mapped_regions =
             GrowableArrayCHeap<OffsetRegionStorage, mtNMT>{other.mapped_regions.length()};
         this->committed_regions =
@@ -146,13 +144,8 @@ public:
         this->summary = GrowableArrayCHeap<VirtualMemorySnapshot, mtNMT>(other.summary.length());
 
         for (int i = 0; i < other.reserved_regions.length(); i++) {
-          const GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& ith =
-              other.reserved_regions.at(i);
+          const TrackedRange& ith = other.reserved_regions.at(i);
           this->reserved_regions.push(ith);
-          GrowableArrayCHeap<TrackedRange, MEMFLAGS::mtNMT>& vith = this->reserved_regions.at(i);
-          for (int j = 0; j < ith.length(); j++) {
-            vith.push(ith.at(j));
-          }
         }
 
         for (int i = 0; i < other.mapped_regions.length(); i++) {
@@ -255,7 +248,6 @@ private:
   // Data and API
   VirtualMemory _virt_mem;
   GrowableArrayCHeap<Range, mtNMT> _thread_stacks; // Committed thread stacks are handled specially
-  GrowableArrayCHeap<const char*, mtNMT> _names; // Map memory space to name
 
   NativeCallStackStorage _stack_storage;
 
@@ -270,17 +262,11 @@ private:
                      const VirtualMemoryView::OffsetRegionStorage& map,
                      VirtualMemoryView::RegionStorage& mapping);
 
-    // A default PhysicalMemorySpace for when allocating to the heap.
-  PhysicalMemorySpace _heap;
   void initialize(bool is_detailed_mode);
-
-  PhysicalMemorySpace register_space(const char* descriptive_name);
 
   void reserve_memory(address base_addr, size_t size, MEMFLAGS flag,
                              const NativeCallStack& stack);
   void release_memory(address base_addr, size_t size);
-  void commit_memory(address base_addr, size_t size, const NativeCallStack& stack);
-  void uncommit_memory(address base_addr, size_t size);
 
   void add_view_into_space(const PhysicalMemorySpace& space, address base_addr, size_t size,
                                   address offset, MEMFLAGS flag, const NativeCallStack& stack);
@@ -308,6 +294,7 @@ public:
     // A default PhysicalMemorySpace for when allocating to the heap.
     static PhysicalMemorySpace _heap;
     static VirtualMemoryView* _instance;
+    static GrowableArrayCHeap<const char*, mtNMT>* _names; // Map memory space to name
   public:
     static void initialize(bool is_detailed_mode);
 
