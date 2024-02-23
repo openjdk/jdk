@@ -191,7 +191,7 @@ jint SerialHeap::initialize() {
   ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
   ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
 
-  _rem_set = create_rem_set(heap_rs.region());
+  _rem_set = new CardTableRS(heap_rs.region());
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -204,11 +204,6 @@ jint SerialHeap::initialize() {
   GCInitLogger::print();
 
   return JNI_OK;
-}
-
-
-CardTableRS* SerialHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region);
 }
 
 ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
