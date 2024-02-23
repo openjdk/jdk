@@ -102,7 +102,7 @@ class InterruptHangTarg {
             boolean wasInterrupted = false;
             try {
                 // Give other thread a chance to interrupt
-                Thread.sleep(1000);
+                Thread.sleep(100);
             } catch (InterruptedException ee) {
                 answer++;
                 wasInterrupted = true;
@@ -200,8 +200,8 @@ class InterruptHangTarg {
     /********** test program **********/
 
 public class InterruptHangTest extends TestScaffold {
-        static int interruptsSent;
     class RemoteInterruptor extends Thread {
+        static int interruptsSent;
         ThreadReference interruptee;
 
         RemoteInterruptor(ThreadReference interruptee) {
@@ -211,9 +211,9 @@ public class InterruptHangTest extends TestScaffold {
         public void run() {
             try {
                 while (true) {
-                    Thread.sleep(200);
                     interruptee.interrupt();
                     interruptsSent++;
+                    Thread.sleep(5);
                 }
             } catch (InterruptedException ee) {
                 println("RemoteInterruptor thread: Unexpected Interrupt");
@@ -256,7 +256,6 @@ public class InterruptHangTest extends TestScaffold {
                 event.location().lineNumber());
         if (nSteps == 1) {
             timerThread.start();
-            interruptsSent = 0;
         }
     }
 
