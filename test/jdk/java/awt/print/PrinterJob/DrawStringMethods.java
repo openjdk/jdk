@@ -39,12 +39,11 @@ import java.text.AttributedString;
  * @key printer
  * @summary Confirm that all of the drawString methods on Graphics2D
  *          work for printer graphics objects.
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DrawStringMethods
  */
 public class DrawStringMethods implements Printable {
-
     private static final String INSTRUCTIONS =
             " This test will automatically initiate a print\n" +
             "\n" +
@@ -53,7 +52,6 @@ public class DrawStringMethods implements Printable {
             " For Graphics2D: drawString, drawString, drawGlyphVector";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -79,6 +77,7 @@ public class DrawStringMethods implements Printable {
         return new AttributedString(s).getIterator();
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex) {
         int ix = (int) pf.getImageableX();
         int iy = (int) pf.getImageableY();

@@ -33,21 +33,18 @@ import java.awt.print.PrinterJob;
  * @bug 4258003
  * @summary Checks the right number of copies are printed
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual NumCopies
  */
 public class NumCopies implements Printable {
-
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
             "This test should print four pages, which are \n" +
             "two copies of each page with the text :-\n" +
             "'This is page number N', where N is 0 and 1.\n" +
             "The pages should be uncollated.";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -65,9 +62,9 @@ public class NumCopies implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex)
             throws PrinterException {
-
         if (pageIndex > 1) {
             return NO_SUCH_PAGE;
         }

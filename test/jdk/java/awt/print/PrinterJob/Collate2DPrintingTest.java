@@ -144,7 +144,6 @@ public class Collate2DPrintingTest
             "test failed";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }

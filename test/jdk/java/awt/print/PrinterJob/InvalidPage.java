@@ -42,12 +42,11 @@ import javax.swing.JOptionPane;
  * @bug 4671634 6506286
  * @summary Invalid page format can crash win32 JRE
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual InvalidPage
  */
 public class InvalidPage extends Frame implements Printable {
-
     private static JComponent createTestUI() {
         JButton b = new JButton("Print");
         b.addActionListener((ae) -> {
@@ -78,14 +77,13 @@ public class InvalidPage extends Frame implements Printable {
         return main;
     }
 
+    @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
-
         if (pageIndex > 1) {
             return Printable.NO_SUCH_PAGE;
         }
 
         Graphics2D g2d = (Graphics2D) graphics;
-
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
         g2d.drawString("ORIGIN", 30, 30);
         g2d.drawString("X THIS WAY", 200, 50);
@@ -101,7 +99,6 @@ public class InvalidPage extends Frame implements Printable {
         g2d.drawRect(1, 1,
                 (int) pageFormat.getImageableWidth() - 2,
                 (int) pageFormat.getImageableHeight() - 2);
-
         g2d.drawLine(0, 0,
                 (int) pageFormat.getImageableWidth(),
                 (int) pageFormat.getImageableHeight());
@@ -112,7 +109,6 @@ public class InvalidPage extends Frame implements Printable {
     }
 
     private static final String INSTRUCTIONS =
-            " You must have a printer available to perform this test\n" +
             " Press the print button, which brings up a print dialog.\n" +
             " In the dialog select a printer and press the print button.\n" +
             " Repeat for all the printers as you have installed\n" +
@@ -127,7 +123,6 @@ public class InvalidPage extends Frame implements Printable {
             " pages of a job is aligned differently";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }

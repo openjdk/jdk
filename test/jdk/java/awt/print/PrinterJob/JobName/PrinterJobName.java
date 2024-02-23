@@ -32,21 +32,17 @@ import java.awt.print.PrinterJob;
  * @bug 4205601
  * @summary setJobName should be used by PrinterJob
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrinterJobName
  */
 public class PrinterJobName implements Printable {
-
     private static final String THE_NAME = "Testing the Jobname setting";
-
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
-            "This test prints a page with a banner/job name of\n" +
+            "This test prints a page with a banner/job name of\n\n" +
             THE_NAME;
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -64,6 +60,7 @@ public class PrinterJobName implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 
+    @Override
     public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
         if (pgIndex > 0) {
             return Printable.NO_SUCH_PAGE;

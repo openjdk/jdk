@@ -40,7 +40,7 @@ import java.awt.print.PrinterJob;
  * @bug 4329866
  * @key printer
  * @summary Confirm that no printing exception is generated.
- * @library /java/awt/regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual DrawImage
  */
@@ -92,13 +92,10 @@ public class DrawImage {
     }
 
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test.\n" +
-            "\n" +
             "The test passes if you get a printout of a gray rectangle\n" +
             "with white text without any exception.";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -131,7 +128,6 @@ public class DrawImage {
 
         g2D.setColor(Color.gray);
         g2D.fill(new Rectangle(0, 0, w, h));
-
         g2D.setColor(Color.white);
 
         AffineTransform originXform = AffineTransform.getTranslateInstance(
