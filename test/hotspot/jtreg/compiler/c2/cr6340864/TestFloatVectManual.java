@@ -27,71 +27,106 @@
  * @summary Test vector intrinsic for Math.round(float) in full 32 bits range
  *          This is an extension of test cases in TestFloatVect
  *
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic compiler.c2.cr6340864.TestFloatVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestFloatVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestFloatVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestFloatVectManual
+ * @requires vm.compiler2.enabled
+ * @requires (vm.cpu.features ~= ".*avx.*" & os.simpleArch == "x64") |
+ *           os.simpleArch == "aarch64"
+ *
+ * @library /test/lib /
+ * @run driver compiler.c2.cr6340864.TestFloatVectManual
  */
 
 package compiler.c2.cr6340864;
 
+import java.util.Random;
+import compiler.lib.ir_framework.DontCompile;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunInfo;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.Warmup;
+
 public class TestFloatVectManual {
-  private static final int ARRLEN = 997;
   private static final int ITERS  = 11000;
+  private static final int ARRLEN = 997;
   private static final float ADD_INIT = -7500.f;
 
+  private static final float[] input = new float[ARRLEN];
+  private static final int[] res = new int[ARRLEN];
+  private static final Random rand = new Random();
+
   public static void main(String args[]) {
-    System.out.println("Testing Float vectors");
-    int errn = test();
-    if (errn > 0) {
-      System.err.println("FAILED: " + errn + " errors");
-      System.exit(97);
-    }
-    System.out.println("PASSED");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=8");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=16");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=32");
   }
 
-  static int test() {
-    int[] res = new int[ARRLEN];
-    float[] input = new float[ARRLEN];
+  @DontCompile
+  int golden_round(float f) {
+    return Math.round(f);
+  }
 
+  @Test
+  @IR(counts = {IRNode.ROUND_VF, "> 0"})
+  void test_round(int[] a0, float[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.round(a1[i]);
+    }
+  }
+
+  @Run(test = "test_round")
+  @Warmup(ITERS)
+  void test_rounds(RunInfo runInfo) {
     // Initialize
-    for (int i=0; i<ARRLEN; i++) {
+    for (int i = 0; i < ARRLEN; i++) {
       float val = ADD_INIT+(float)i;
       input[i] = val;
     }
 
-    // Warmup
-    System.out.println("Warmup");
-    for (int i=0; i<ITERS; i++) {
-      test_round(res, input);
+    test_round(res, input);
+    // skip test/verify when warming up
+    if (runInfo.isWarmUp()) {
+      return;
     }
 
-    // Test and verify results
-    System.out.println("Verification");
     int errn = 0;
-
     final int e_start = 0;
     final int e_shift = 23;
     final int e_width = 8;
-    final int e_max = (1 << e_width) - 1;
-    final int f_start = 0;
-    final int f_max = (1 << e_shift) - 1;
+    final int e_bound = 1 << e_width;
+    final int f_width = e_shift;
+    final int f_bound = 1 << f_width;
+    final int f_num = 128;
 
-    for (int fi = f_start; fi <= f_max; fi++) {
-      for (int ei = e_start; ei <= e_max; ei++) {
+    // prepare test data
+    int fis[] = new int[f_num];
+    int fidx = 0;
+    for (; fidx < f_width; fidx++) {
+      fis[fidx] = 1 << fidx;
+    }
+    fis[fidx++] = 0;
+    for (; fidx < f_num; fidx++) {
+      fis[fidx] = rand.nextInt(f_bound);
+    }
+
+    // run test & verify
+    for (int fi : fis) {
+      for (int ei = e_start; ei < e_bound; ei++) {
         int bits = (ei << e_shift) + fi;
         input[ei*2] = Float.intBitsToFloat(bits);
         bits = bits | (1 << 31);
         input[ei*2+1] = Float.intBitsToFloat(bits);
       }
 
-      // run tests
+      // test
       test_round(res, input);
 
       // verify results
-      for (int ei = e_start; ei <= e_max; ei++) {
+      for (int ei = e_start; ei < e_bound; ei++) {
         for (int sign = 0; sign < 2; sign++) {
-          int idx = ei*2+sign;
+          int idx = ei * 2 + sign;
           if (res[idx] != Math.round(input[idx])) {
             errn++;
             System.err.println("round error, input: " + input[idx] +
@@ -99,18 +134,11 @@ public class TestFloatVectManual {
                                ", input hex: " + Float.floatToIntBits(input[idx]) +
                                ", fi: " + fi + ", ei: " + ei + ", sign: " + sign);
           }
-          if (errn > 100) {
-            return errn;
-          }
         }
       }
     }
-    return errn;
-  }
-
-  static void test_round(int[] a0, float[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = Math.round(a1[i]);
+    if (errn > 0) {
+      throw new RuntimeException("There are some round error detected!");
     }
   }
 }

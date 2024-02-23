@@ -27,96 +27,121 @@
  * @summary Test vector intrinsic for Math.round(double) in full 64 bits range.
  *          This is an extension of test cases in TestDoubleVect
  *
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic compiler.c2.cr6340864.TestDoubleVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=8 compiler.c2.cr6340864.TestDoubleVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=16 compiler.c2.cr6340864.TestDoubleVectManual
- * @run main/manual/othervm -Xbatch -XX:CompileCommand=exclude,*::test() -Xmx128m -XX:+UnlockDiagnosticVMOptions -XX:+UseSignumIntrinsic -XX:MaxVectorSize=32 compiler.c2.cr6340864.TestDoubleVectManual
+ * @requires vm.compiler2.enabled
+ * @requires (vm.cpu.features ~= ".*avx512dq.*" & os.simpleArch == "x64") |
+ *           os.simpleArch == "aarch64"
+ *
+ * @library /test/lib /
+ * @run driver compiler.c2.cr6340864.TestDoubleVectManual
  */
 
 package compiler.c2.cr6340864;
 
+import java.util.Random;
+import compiler.lib.ir_framework.DontCompile;
+import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.Run;
+import compiler.lib.ir_framework.RunInfo;
+import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.Warmup;
+
 public class TestDoubleVectManual {
-  private static final int ARRLEN = 997;
   private static final int ITERS  = 11000;
+  private static final int ARRLEN = 997;
   private static final double ADD_INIT = -7500.;
 
+  private static final double[] input = new double[ARRLEN];
+  private static final long [] res = new long[ARRLEN];
+  private static final Random rand = new Random();
+
   public static void main(String args[]) {
-    System.out.println("Testing Double vectors");
-    int errn = test();
-    if (errn > 0) {
-      System.err.println("FAILED: " + errn + " errors");
-      System.exit(97);
-    }
-    System.out.println("PASSED");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=8");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=16");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=32");
   }
 
-  static int test() {
-    double[] input = new double[ARRLEN];
-    long  [] res = new long[ARRLEN];
+  @DontCompile
+  long golden_round(double d) {
+    return Math.round(d);
+  }
 
-    double[] a1 = new double[ARRLEN];
+  @Test
+  @IR(counts = {IRNode.ROUND_VD, "> 0"})
+  void test_round(long[] a0, double[] a1) {
+    for (int i = 0; i < a0.length; i+=1) {
+      a0[i] = Math.round(a1[i]);
+    }
+  }
+
+  @Run(test = "test_round")
+  @Warmup(ITERS)
+  void test_rounds(RunInfo runInfo) {
     // Initialize
-    for (int i=0; i<ARRLEN; i++) {
+    for (int i = 0; i < ARRLEN; i++) {
       double val = ADD_INIT+(double)i;
-      a1[i] = val;
+      input[i] = val;
     }
 
-    // Warmup
-    System.out.println("Warmup");
-    for (int i=0; i<ITERS; i++) {
-      test_round(res, a1);
+    test_round(res, input);
+    // skip test/verify when warming up
+    if (runInfo.isWarmUp()) {
+      return;
     }
 
-    // Test and verify results
-    System.out.println("Verification");
     int errn = 0;
-
-    final int e_start = 0;
     final int e_shift = 52;
     final int e_width = 11;
-    final int e_max = (1 << e_width) - 1;
-    final long f_start = 0;
-    final long f_max = (1 << e_shift) - 1;
-    final int group = 448;
+    final int e_bound = 1 << e_width;
+    final int f_width = e_shift;
+    final int f_bound = 1 << f_width;
+    final int f_num = 256;
 
-    for (long fi = f_start; fi <= f_max; fi++) {
-      for (int eg = e_start; eg <= e_max; eg+=group) {
-        for (int ei = 0; ei < group; ei++) {
-          int e = eg + ei;
-          long bits = (e << e_shift) + fi;
-          input[ei*2] = Double.longBitsToDouble(bits);
-          bits = bits | (1 << 31);
-          input[ei*2+1] = Double.longBitsToDouble(bits);
-        }
+    // prepare test data
+    int fis[] = new int[f_num];
+    int fidx = 0;
+    for (; fidx < f_width; fidx++) {
+      fis[fidx] = 1 << fidx;
+    }
+    fis[fidx++] = 0;
+    for (; fidx < f_num; fidx++) {
+      fis[fidx] = rand.nextInt(f_bound);
+    }
 
-        // run tests
-        test_round(res, input);
+    // run test & verify
+    for (int fi : fis) {
+      final int e_start = rand.nextInt(9);
+      final int e_step = (1 << 3) + rand.nextInt(3);
+      for (int ei = e_start; ei < e_bound; ei += e_step) {
+        int ei_idx = ei/e_step;
+        int bits = (ei << e_shift) + fi;
+        input[ei_idx*2] = Double.longBitsToDouble(bits);
+        bits = bits | (1 << 63);
+        input[ei_idx*2+1] = Double.longBitsToDouble(bits);
+      }
 
-        // verify results
-        for (int ei = 0; ei <= group; ei++) {
-          int e = eg + ei;
-          for (int sign = 0; sign < 2; sign++) {
-            int idx = ei*2+sign;
-            if (res[idx] != Math.round(input[idx])) {
-              errn++;
-              System.err.println("round error, input: " + input[idx] +
-                                ", res: " + res[idx] + "expected: " + Math.round(input[idx]) +
-                                ", input hex: " + Double.doubleToLongBits(input[idx]) +
-                                ", fi: " + fi + ", ei: " + ei + ", e: " + e + ", sign: " + sign);
-            }
-            if (errn > 100) {
-              return errn;
-            }
+      // test
+      test_round(res, input);
+
+      // verify results
+      for (int ei = e_start; ei < e_bound; ei += e_step) {
+        int ei_idx = ei/e_step;
+        for (int sign = 0; sign < 2; sign++) {
+          int idx = ei_idx * 2 + sign;
+          if (res[idx] != Math.round(input[idx])) {
+            errn++;
+            System.err.println("round error, input: " + input[idx] +
+                               ", res: " + res[idx] + "expected: " + Math.round(input[idx]) +
+                               ", input hex: " + Double.doubleToLongBits(input[idx]) +
+                               ", fi: " + fi + ", ei: " + ei + ", sign: " + sign);
           }
         }
       }
     }
-    return errn;
-  }
-
-  static void test_round(long[] a0, double[] a1) {
-    for (int i = 0; i < a0.length; i+=1) {
-      a0[i] = Math.round(a1[i]);
+    if (errn > 0) {
+      throw new RuntimeException("There are some round error detected!");
     }
   }
 }
