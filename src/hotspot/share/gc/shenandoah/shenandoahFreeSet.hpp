@@ -347,7 +347,7 @@ public:
   //     }
   //   if the set has no empty regions, leftmost_empty equals max and rightmost_empty equals 0
   //   Otherwise (the region has empty regions):
-  //     0 <= lefmost_empty < max and 0 <= rightmost_empty < max
+  //     0 <= leftmost_empty < max and 0 <= rightmost_empty < max
   //     rightmost_empty >= leftmost_empty
   //     for every idx that is in the set and is empty {
   //       idx >= leftmost &&
@@ -384,6 +384,9 @@ class ShenandoahFreeSet : public CHeapObj<mtGC> {
 private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
+
+  ssize_t _alloc_bias_weight;
+  bool _right_to_left_bias;
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 
