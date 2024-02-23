@@ -117,7 +117,7 @@ static void print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
 
   LOG(">>> [%d]\n", check_idx);
   if (inf.owner == nullptr) {
-    LOG(">>>          owner:               none (0x0)\n", check_idx);
+    LOG(">>>          owner:               none (0x0)\n");
   } else {
     err = jvmti->GetThreadInfo(inf.owner, &tinf);
     check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
