@@ -151,7 +151,7 @@ LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LANG := C++, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \
