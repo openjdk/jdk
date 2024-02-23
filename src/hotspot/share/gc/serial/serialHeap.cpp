@@ -191,7 +191,7 @@ jint SerialHeap::initialize() {
   ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
   ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
 
-  _rem_set = create_rem_set(heap_rs.region());
+  _rem_set = new CardTableRS(heap_rs.region());
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -204,11 +204,6 @@ jint SerialHeap::initialize() {
   GCInitLogger::print();
 
   return JNI_OK;
-}
-
-
-CardTableRS* SerialHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region);
 }
 
 ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
@@ -521,7 +516,7 @@ void SerialHeap::do_collection(bool full,
 
     print_heap_before_gc();
 
-    if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
+    if (run_verification && VerifyBeforeGC) {
       prepare_for_verify();
       prepared_for_verification = true;
     }
@@ -533,7 +528,7 @@ void SerialHeap::do_collection(bool full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 0,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     if (size > 0 && (!is_tlab || _young_gen->supports_tlab_allocation()) &&
@@ -571,8 +566,7 @@ void SerialHeap::do_collection(bool full,
 
     print_heap_before_gc();
 
-    if (!prepared_for_verification && run_verification &&
-        VerifyGCLevel <= 1 && VerifyBeforeGC) {
+    if (!prepared_for_verification && run_verification && VerifyBeforeGC) {
       prepare_for_verify();
     }
 
@@ -598,7 +592,7 @@ void SerialHeap::do_collection(bool full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 1,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     CodeCache::on_gc_marking_cycle_finish();
@@ -951,19 +945,9 @@ void SerialHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
 }
 
-void SerialHeap::generation_iterate(GenClosure* cl,
-                                    bool old_to_young) {
-  if (old_to_young) {
-    cl->do_generation(_old_gen);
-    cl->do_generation(_young_gen);
-  } else {
-    cl->do_generation(_young_gen);
-    cl->do_generation(_old_gen);
-  }
-}
-
 bool SerialHeap::is_maximal_no_gc() const {
-  return _young_gen->is_maximal_no_gc() && _old_gen->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return _old_gen->is_maximal_no_gc();
 }
 
 void SerialHeap::save_marks() {
@@ -1058,18 +1042,10 @@ void SerialHeap::gc_epilogue(bool full) {
 };
 
 #ifndef PRODUCT
-class GenGCSaveTopsBeforeGCClosure: public SerialHeap::GenClosure {
- private:
- public:
-  void do_generation(Generation* gen) {
-    gen->record_spaces_top();
-  }
-};
-
 void SerialHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {
-    GenGCSaveTopsBeforeGCClosure blk;
-    generation_iterate(&blk, false);  // not old-to-young.
+    _young_gen->record_spaces_top();
+    _old_gen->record_spaces_top();
   }
 }
 #endif  // not PRODUCT

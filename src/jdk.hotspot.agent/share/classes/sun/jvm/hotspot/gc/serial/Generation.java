@@ -22,11 +22,12 @@
  *
  */
 
-package sun.jvm.hotspot.gc.shared;
+package sun.jvm.hotspot.gc.serial;
 
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
@@ -105,14 +106,6 @@ public abstract class Generation extends VMObject {
     return reserved();
   }
 
-  /* Returns "TRUE" iff "p" points into an allocated object in the
-     generation. */
-  public boolean isIn(Address p) {
-    GenerationIsInClosure blk = new GenerationIsInClosure(p);
-    spaceIterate(blk);
-    return (blk.space() != null);
-  }
-
   /** Returns "TRUE" iff "p" points into the reserved area of the
      generation. */
   public boolean isInReserved(Address p) {
@@ -125,13 +118,7 @@ public abstract class Generation extends VMObject {
 
   public abstract String name();
 
-  /** Equivalent to spaceIterate(blk, false) */
-  public void spaceIterate(SpaceClosure blk) {
-    spaceIterate(blk, false);
-  }
-
   /** Iteration - do not use for time critical operations */
-  public abstract void spaceIterate(SpaceClosure blk, boolean usedOnly);
   public abstract void liveRegionsIterate(LiveRegionsClosure closure);
 
   public void print() { printOn(System.out); }
