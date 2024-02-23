@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import jdk.test.lib.process.ProcessTools;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -56,6 +58,7 @@ import static java.util.Collections.singletonMap;
 /*
  * @test
  * @bug 8064925
+ * @library /test/lib
  * @summary Basic test for ContentHandler. Ensures discovery paths for content
  *          handlers follow a particular order.
  */
@@ -268,14 +271,10 @@ public class ContentHandlersTest {
                                Collection<Path> classpath,
                                String classname, String... args) {
 
-        String java = getJDKTool("java");
-
-        List<String> commands = new ArrayList<>();
-        commands.add(java);
-        commands.addAll(properties.entrySet()
+        List<String> commands = properties.entrySet()
                 .stream()
                 .map(e -> "-D" + e.getKey() + "=" + e.getValue())
-                .collect(Collectors.toList()));
+                .collect(Collectors.toList());
 
         String cp = classpath.stream()
                 .map(Path::toString)
@@ -285,7 +284,7 @@ public class ContentHandlersTest {
         commands.add(classname);
         commands.addAll(Arrays.asList(args));
 
-        return run(new ProcessBuilder(commands));
+        return run(ProcessTools.createTestJavaProcessBuilder(commands));
     }
 
     private static Result run(ProcessBuilder b) {

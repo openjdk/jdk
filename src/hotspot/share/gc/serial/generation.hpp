@@ -105,12 +105,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC. Override as appropriate.
-  virtual bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */

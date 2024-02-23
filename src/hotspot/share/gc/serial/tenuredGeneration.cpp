@@ -29,7 +29,6 @@
 #include "gc/serial/serialHeap.hpp"
 #include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
-#include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -436,10 +435,6 @@ oop TenuredGeneration::promote(oop obj, size_t obj_size) {
   // Copy to new location.
   Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
   oop new_obj = cast_to_oop<HeapWord*>(result);
-
-  // Transform object if it is a stack chunk.
-  ContinuationGCSupport::transform_stack_chunk(new_obj);
-
   return new_obj;
 }
 
