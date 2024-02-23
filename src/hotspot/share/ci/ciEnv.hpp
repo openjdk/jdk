@@ -33,9 +33,9 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/compilerThread.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "oops/methodData.hpp"
 #include "runtime/javaThread.hpp"
-#include "utilities/cHeapStringHolder.hpp"
 
 class CompileTask;
 class OopMapSet;

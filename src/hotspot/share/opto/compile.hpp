@@ -32,6 +32,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -45,7 +46,6 @@
 #include "runtime/timerTrace.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ticks.hpp"
-#include "utilities/cHeapStringHolder.hpp"
 
 class AbstractLockNode;
 class AddPNode;
@@ -364,7 +364,7 @@ class Compile : public Phase {
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
-  CHeapStringHolder     _failure_reason;       // for record_failure/failing pattern
+  CHeapStringHolder     _failure_reason;        // for record_failure/failing pattern
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.

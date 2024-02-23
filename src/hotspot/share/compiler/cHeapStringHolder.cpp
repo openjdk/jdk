@@ -22,31 +22,22 @@
  *
  */
 
-#ifndef SHARE_UTILITIES_CHEAPSTRINGHOLDER_HPP
-#define SHARE_UTILITIES_CHEAPSTRINGHOLDER_HPP
+#include "runtime/orderAccess.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 
-#include "memory/allocation.hpp"
+void CHeapStringHolder::set(const char* string) {
+  clear();
+  if (string != nullptr) {
+    size_t len = strlen(string);
+    _string = NEW_C_HEAP_ARRAY(char, len + 1, _memflags);
+    ::memcpy(_string, string, len);
+    _string[len] = 0; // terminating null
+  }
+}
 
-// Holder for a C-Heap allocated String
-// The user must ensure that the destructor is called, or at least clear.
-class CHeapStringHolder : public StackObj {
-private:
-  const MEMFLAGS _memflags;
-  char* _string;
-
-public:
-  CHeapStringHolder(MEMFLAGS memflags) :
-    _memflags(memflags), _string(nullptr) {}
-  ~CHeapStringHolder() { clear(); };
-  NONCOPYABLE(CHeapStringHolder);
-
-  // Allocate memory to hold a copy of string
-  void set(const char* string);
-
-  // Release allocated memory
-  void clear();
-
-  const char* get() const { return _string; };
-};
-
-#endif // SHARE_UTILITIES_CHEAPSTRINGHOLDER_HPP
+void CHeapStringHolder::clear() {
+  if (_string != nullptr) {
+    FREE_C_HEAP_ARRAY(char, _string);
+    _string = nullptr;
+  }
+}
