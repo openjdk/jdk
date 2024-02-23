@@ -137,6 +137,10 @@ public class TestMergeStores {
         testGroups.put("test202", new HashMap<String,TestFunction>());
         testGroups.get("test202").put("test202R", () -> { return test202R(aI.clone(), offset1, vL1, vI1); });
         testGroups.get("test202").put("test202a", () -> { return test202a(aI.clone(), offset1, vL1, vI1); });
+
+        testGroups.put("test300", new HashMap<String,TestFunction>());
+        testGroups.get("test300").put("test300R", () -> { return test300R(aI.clone()); });
+        testGroups.get("test300").put("test300a", () -> { return test300a(aI.clone()); });
     }
 
     @Warmup(100)
@@ -163,7 +167,8 @@ public class TestMergeStores {
                  "test102a",
                  "test200a",
                  "test201a",
-                 "test202a"})
+                 "test202a",
+                 "test300a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -977,4 +982,24 @@ public class TestMergeStores {
         return new Object[]{ a };
     }
 
+    @DontCompile
+    static Object[] test300R(int[] a) {
+        a[2] = 42;
+        a[3] = 42;
+        a[4] = 42;
+        a[5] = 42;
+        int x = a[3]; // dependent load
+        return new Object[]{ a, new int[]{ x } };
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "2"})
+    static Object[] test300a(int[] a) {
+        a[2] = 42;
+        a[3] = 42;
+        a[4] = 42;
+        a[5] = 42;
+        int x = a[3]; // dependent load
+        return new Object[]{ a, new int[]{ x } };
+    }
 }
