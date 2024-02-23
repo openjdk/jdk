@@ -124,31 +124,21 @@ of proxies.</P>
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
-	<LI><P>SOCKS<BR>This is another type of proxy. It allows for lower-level
-	type of tunneling since it works at the TCP level. In effect,
-	in the Java(tm) platform setting a SOCKS proxy server will result in
-	all TCP connections to go through that proxy, unless other proxies
-	are specified. If SOCKS is supported by a Java SE implementation, the
-	following properties will be used:</P>
+	<LI><P>SOCKS<BR>The SOCKS proxy enables a lower-level type of tunneling
+	because it works at the TCP level. Specifying a SOCKS proxy server
+	results in all java.net TCP connections going through that proxy server
+	unless other proxies are specified. The following proxy settings
+	are used by the SOCKS protocol handler.</P>
 	<UL>
 		<LI><P><B>{@systemProperty socksProxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
 		<LI><P><B>{@systemProperty socksProxyPort}</B> (default: {@code 1080})<BR>
 	        The port number of the proxy server.</P>
-                <LI><P><B>{@systemProperty socksProxyVersion}</B> (default: {@code 5})<BR>
+		<LI><P><B>{@systemProperty socksProxyVersion}</B> (default: {@code 5})<BR>
                 The version of the SOCKS protocol supported by the server. The
                 default is {@code 5} indicating SOCKS V5. Alternatively,
                 {@code 4} can be specified for SOCKS V4. Setting the property
                 to values other than these leads to unspecified behavior.</P>
-		<LI><P><B>{@systemProperty java.net.socks.username}</B> (default: &lt;none&gt;)<BR>
-	        Username to use if the SOCKSv5 server asks for authentication
-	        and no {@link java.net.Authenticator java.net.Authenticator} instance was found.</P>
-		<LI><P><B>{@systemProperty java.net.socks.password}</B> (default: &lt;none&gt;)<BR>
-	        Password to use if the SOCKSv5 server asks for authentication
-	        and no {@code java.net.Authenticator} instance was found.</P>
-		<P>Note that if no authentication is provided with either the above
-		properties or an Authenticator, and the proxy requires one, then
-		the <B>user.name</B> property will be used with no password.</P>
 	</UL>
 	<LI><P><B>{@systemProperty java.net.useSystemProxies}</B> (default: {@code false})<BR>
 	On Windows systems, macOS systems, and Gnome systems it is possible to
@@ -192,20 +182,13 @@ of proxies.</P>
 	protocol handler.</P>
 	<LI><P><B>{@systemProperty http.auth.digest.validateServer}</B> (default: {@code false})</P>
 	<LI><P><B>{@systemProperty http.auth.digest.validateProxy}</B> (default: {@code false})</P>
-	<LI><P><B>{@systemProperty http.auth.digest.cnonceRepeat}</B> (default: {@code 5})</P>
-	<P>These 3 properties modify the behavior of the HTTP digest
+	<P>These properties modify the behavior of the HTTP digest
 	authentication mechanism. Digest authentication provides a limited
 	ability for the server  to authenticate itself to the client (i.e.
 	By proving it knows the user's password). However, not all HTTP
 	servers support this capability and by default it is turned off. The
-	first two properties can be set to true to enforce this check for
+	properties can be set to true to enforce this check for
 	authentication with either an origin or proxy server, respectively.</P>
-	<P>It is usually not necessary to change the third property. It
-	determines how many times a cnonce value is re-used. This can be
-	useful when the MD5-sess algorithm is being used. Increasing this
-	value reduces the computational overhead on both client and server
-	by reducing the amount of material that has to be hashed for each
-	HTTP request.</P>
 	<LI><P><B>{@systemProperty http.auth.ntlm.domain}</B> (default: &lt;none&gt;)<BR>
 	NTLM is another authentication scheme. It uses the
 	{@code java.net.Authenticator} class to acquire usernames and passwords when
