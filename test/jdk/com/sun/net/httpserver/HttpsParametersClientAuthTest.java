@@ -103,11 +103,12 @@ public class HttpsParametersClientAuthTest {
      * that subsequent calls to {@link HttpsParameters#getNeedClientAuth()} returns
      * true and {@link HttpsParameters#getWantClientAuth()} returns false
      */
-    @Test
-    public void testNeedClientAuth() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testNeedClientAuth(final boolean initialWantClientAuth) throws Exception {
         HttpsParameters needClientAuthParams = new Params();
-        // first set wantClientAuth = true to verify that it later gets reset
-        needClientAuthParams.setWantClientAuth(true);
+        // first set wantClientAuth to an initial value to verify that it later gets reset
+        needClientAuthParams.setWantClientAuth(initialWantClientAuth);
         // needClientAuth = true and thus wantClientAuth = false
         needClientAuthParams.setNeedClientAuth(true);
         assertTrue(needClientAuthParams.getNeedClientAuth(),
@@ -121,11 +122,12 @@ public class HttpsParametersClientAuthTest {
      * that subsequent calls to {@link HttpsParameters#getWantClientAuth()} returns
      * true and {@link HttpsParameters#getNeedClientAuth()} returns false
      */
-    @Test
-    public void testWantClientAuth() throws Exception {
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void testWantClientAuth(final boolean initialNeedClientAuth) throws Exception {
         HttpsParameters wantClientAuthParams = new Params();
-        // first set needClientAuth = true to verify that it later gets reset
-        wantClientAuthParams.setNeedClientAuth(true);
+        // first set needClientAuth to an initial value to verify that it later gets reset
+        wantClientAuthParams.setNeedClientAuth(initialNeedClientAuth);
         // wantClientAuth = true and thus needClientAuth = false
         wantClientAuthParams.setWantClientAuth(true);
         assertTrue(wantClientAuthParams.getWantClientAuth(),
