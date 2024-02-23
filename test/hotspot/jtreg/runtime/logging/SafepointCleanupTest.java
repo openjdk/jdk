@@ -40,7 +40,6 @@ public class SafepointCleanupTest {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("[safepoint,cleanup]");
         output.shouldContain("safepoint cleanup tasks");
-        output.shouldContain("updating inline caches");
         output.shouldHaveExitValue(0);
     }
 
