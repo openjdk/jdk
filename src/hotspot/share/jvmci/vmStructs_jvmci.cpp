@@ -1023,14 +1023,6 @@ int JVMCIVMStructs::localHotSpotVMAddresses_count() {
   return (sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry)) - 1;
 }
 
-extern "C" {
-VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
-VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
-VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
-VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
-VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
-}
-
 #ifdef ASSERT
 // This is used both to check the types of referenced fields and
 // to ensure that all of the field types are present.
