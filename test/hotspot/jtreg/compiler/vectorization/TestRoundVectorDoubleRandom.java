@@ -23,19 +23,19 @@
 
 /**
  * @test
+ * @key randomness
  * @bug 8321011
  * @summary Test vector intrinsic for Math.round(double) in full 64 bits range.
- *          This is an extension of test cases in TestDoubleVect
  *
  * @requires vm.compiler2.enabled
  * @requires (vm.cpu.features ~= ".*avx512dq.*" & os.simpleArch == "x64") |
  *           os.simpleArch == "aarch64"
  *
  * @library /test/lib /
- * @run driver compiler.c2.cr6340864.TestDoubleVectManual
+ * @run driver compiler.vectorization.TestRoundVectorDoubleRandom
  */
 
-package compiler.c2.cr6340864;
+package compiler.vectorization;
 
 import java.util.Random;
 import compiler.lib.ir_framework.DontCompile;
@@ -47,7 +47,7 @@ import compiler.lib.ir_framework.Test;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.Warmup;
 
-public class TestDoubleVectManual {
+public class TestRoundVectorDoubleRandom {
   private static final int ITERS  = 11000;
   private static final int ARRLEN = 997;
   private static final double ADD_INIT = -7500.;
