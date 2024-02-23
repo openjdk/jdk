@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,8 @@ public class PlatformGraphicsInfo {
     }
 
     public static boolean getDefaultHeadlessProperty() {
-        // On Windows, we assume we can always create headful apps.
-        // Here is where we can add code that would actually check.
-        return false;
+        // If we don't find usable displays, we run headless.
+        return !Win32GraphicsEnvironment.hasDisplays();
     }
 
     /*

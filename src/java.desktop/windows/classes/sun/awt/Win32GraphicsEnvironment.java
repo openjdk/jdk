@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,15 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     static final float debugScaleX;
     static final float debugScaleY;
 
+    static final boolean hasDisplays;
+
     static {
         // Ensure awt is loaded already.  Also, this forces static init
         // of WToolkit and Toolkit, which we depend upon
         WToolkit.loadLibraries();
         // setup flags before initializing native layer
         WindowsFlags.initFlags();
-        initDisplayWrapper();
+        hasDisplays = initDisplay();
 
         // Install correct surface manager factory.
         SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
@@ -86,14 +88,10 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
      * includes everything from the native GraphicsDevice elements to
      * the DirectX rendering layer.
      */
-    private static native void initDisplay();
+    private static native boolean initDisplay();
 
-    private static boolean displayInitialized;      // = false;
-    public static void initDisplayWrapper() {
-        if (!displayInitialized) {
-            displayInitialized = true;
-            initDisplay();
-        }
+    static boolean hasDisplays() {
+        return hasDisplays;
     }
 
     public Win32GraphicsEnvironment() {
