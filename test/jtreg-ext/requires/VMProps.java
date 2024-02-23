@@ -664,8 +664,9 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     private String isFlagless() {
         boolean result = true;
-        if (System.getenv("TEST_VM_FLAGLESS") != null) {
-            return "" + "true".equalsIgnoreCase(System.getenv("TEST_VM_FLAGLESS"));
+        String flagless = System.getenv("TEST_VM_FLAGLESS");
+        if (flagless != null) {
+            return "" + "true".equalsIgnoreCase(flagless);
         }
 
         List<String> allFlags = allFlags().toList();
