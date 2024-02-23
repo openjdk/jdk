@@ -1915,15 +1915,11 @@ private:
   void vpmaddwd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpmaddubsw(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
-  void vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
   void vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
-  void vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, bool merge, int vector_len);
   void evpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
   void vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
-  void vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
   void vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
-  void vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, bool merge, int vector_len);
   void evpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len);
   void evpmadd52huq(XMMRegister dst, KRegister mask, XMMRegister src1, XMMRegister src2, bool merge, int vector_len);
 

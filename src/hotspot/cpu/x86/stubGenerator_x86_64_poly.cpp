@@ -1249,7 +1249,6 @@ void StubGenerator::poly1305_process_blocks_avx2(
   __ vpxor(YTMP6, YTMP6, YTMP6, Assembler::AVX_256bit);
 
   // Calculate R^2
-  __ movq(t0, c1); // c1 = R1 + (R1 >> 2)
   // a ← R
   __ movq(a0, r0);
   __ movq(a1, r1);
@@ -1360,8 +1359,7 @@ void StubGenerator::poly1305_process_blocks_avx2(
 
   // Get the number of multiples of 4 message blocks (64 bytes) for vectorization
   __ movq(t0, length);
-  __ mov64(t1, 0xffffffffffffffc0);
-  __ andq(t0, t1);
+  __ andq(t0, 0xffffffc0); // 0xffffffffffffffc0 after sign extension
 
   // VECTOR LOOP: process 4 * 16-byte message blocks at a time
   __ bind(L_process256Loop);
