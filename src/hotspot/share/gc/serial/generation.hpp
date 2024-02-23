@@ -58,9 +58,6 @@ class GCStats;
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
  private:
-  MemRegion _prev_used_region; // for collectors that want to "remember" a value for
-                               // used region at some specific point during collection.
-
   GCMemoryManager* _gc_manager;
 
  protected:
@@ -108,42 +105,12 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Return an estimate of the maximum allocation that could be performed
-  // in the generation without triggering any collection or expansion
-  // activity.  It is "unsafe" because no locks are taken; the result
-  // should be treated as an approximation, not a guarantee, for use in
-  // heuristic resizing decisions.
-  virtual size_t unsafe_max_alloc_nogc() const = 0;
-
-  // Returns true if this generation cannot be expanded further
-  // without a GC. Override as appropriate.
-  virtual bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   MemRegion reserved() const { return _reserved; }
-
-  // Returns a region guaranteed to contain all the objects in the
-  // generation.
-  virtual MemRegion used_region() const { return _reserved; }
-
-  MemRegion prev_used_region() const { return _prev_used_region; }
-  virtual void  save_used_region()   { _prev_used_region = used_region(); }
-
-  // Returns "TRUE" iff "p" points into the committed areas in the generation.
-  // For some kinds of generations, this may be an expensive operation.
-  // To avoid performance problems stemming from its inadvertent use in
-  // product jvm's, we restrict its use to assertion checking or
-  // verification only.
-  virtual bool is_in(const void* p) const;
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
   bool is_in_reserved(const void* p) const {
     return _reserved.contains(p);
   }
-
-  // Iteration - do not use for time critical operations
-  virtual void space_iterate(SpaceClosure* blk, bool usedOnly = false) = 0;
 
   // Returns "true" iff this generation should be used to allocate an
   // object of the given size.  Young generations might
@@ -168,15 +135,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
-
-  // "obj" is the address of an object in a younger generation.  Allocate space
-  // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or null if
-  // the allocation failed).
-  //
-  // The "obj_size" argument is just obj->size(), passed along so the caller can
-  // avoid repeating the virtual call to retrieve it.
-  virtual oop promote(oop obj, size_t obj_size);
 
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
@@ -225,18 +183,6 @@ class Generation: public CHeapObj<mtGC> {
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
-
-  // Block abstraction.
-
-  // Returns the address of the start of the "block" that contains the
-  // address "addr".  We say "blocks" instead of "object" since some heaps
-  // may not pack objects densely; a chunk may either be an object or a
-  // non-object.
-  virtual HeapWord* block_start(const void* addr) const;
-
-  // Requires "addr" to be the start of a block, and returns "TRUE" iff
-  // the block is an object.
-  virtual bool block_is_obj(const HeapWord* addr) const;
 
   virtual void print() const;
   virtual void print_on(outputStream* st) const;

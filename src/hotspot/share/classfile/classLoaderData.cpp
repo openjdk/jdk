@@ -838,10 +838,10 @@ OopHandle ClassLoaderData::add_handle(Handle h) {
 
 void ClassLoaderData::remove_handle(OopHandle h) {
   assert(!is_unloading(), "Do not remove a handle for a CLD that is unloading");
-  oop* ptr = h.ptr_raw();
-  if (ptr != nullptr) {
-    assert(_handles.owner_of(ptr), "Got unexpected handle " PTR_FORMAT, p2i(ptr));
-    NativeAccess<>::oop_store(ptr, oop(nullptr));
+  if (!h.is_empty()) {
+    assert(_handles.owner_of(h.ptr_raw()),
+           "Got unexpected handle " PTR_FORMAT, p2i(h.ptr_raw()));
+    h.replace(oop(nullptr));
   }
 }
 

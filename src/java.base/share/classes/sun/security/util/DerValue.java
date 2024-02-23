@@ -340,6 +340,7 @@ public class DerValue {
      *
      * This is a public constructor.
      */
+    @SuppressWarnings("this-escape")
     public DerValue(byte[] encoding) throws IOException {
         this(encoding.clone(), 0, encoding.length, true, false);
     }
@@ -487,6 +488,7 @@ public class DerValue {
      * @param in the input stream holding a single DER datum,
      *  which may be followed by additional data
      */
+    @SuppressWarnings("this-escape")
     public DerValue(InputStream in) throws IOException {
         this(in, true);
     }
