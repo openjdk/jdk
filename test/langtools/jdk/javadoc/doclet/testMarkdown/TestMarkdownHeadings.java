@@ -184,7 +184,6 @@ public class TestMarkdownHeadings extends JavadocTester {
                 "--source-path", src.toString(),
                 "p");
 
-
         checkOutput("p/package-summary.html", true,
                 """
                     <div class="block"><p>First sentence.</p>

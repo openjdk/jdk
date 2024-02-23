@@ -338,7 +338,6 @@ public class TestMarkdownCodeSpans extends JavadocTester {
             }
         }
 
-
         StringBuilder sb = new StringBuilder();
         sb.append("""
                     package p;
