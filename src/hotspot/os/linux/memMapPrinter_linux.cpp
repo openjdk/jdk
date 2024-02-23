@@ -262,11 +262,15 @@ static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
 
   INFO info;
   PARSER parser(f);
+unsigned i = 0;
   while (parser.parse_next(info)) {
     if (print_each_mapping) {
       printer.print_single_mapping(info);
     }
     summary.add_mapping(info);
+if ((++i % 1000) == 0) {printf("*");
+if ((i%100000) == 0) {printf("\n%u", i); }
+}
   }
   st->cr();
 
