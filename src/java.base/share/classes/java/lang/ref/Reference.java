@@ -488,7 +488,7 @@ public abstract sealed class Reference<T>
      * <b><i>successful</i></b> and returns true.
      * If this reference is not registered with a queue, or was already enqueued
      * (by the garbage collector, or a previous call to {@code enqueue}), this
-     * method is <b><i>unnsuccessful</i></b> and returns false.
+     * method is <b><i>unsuccessful</i></b> and returns false.
      *
      * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
      * Actions in a thread prior to calling
@@ -547,8 +547,8 @@ public abstract sealed class Reference<T>
      * Ensures that the given object remains
      * <a href="package-summary.html#reachability"><em>strongly reachable</em></a>.
      * This reachability is assured regardless of any optimizing transformations
-     * the VM may perform that might otherwise allow the object to become
-     * unreachable (see {@jls 12.6.1}). Thus, the given object is not
+     * the virtual machine may perform that might otherwise allow the object to
+     * become unreachable (see {@jls 12.6.1}). Thus, the given object is not
      * reclaimable by garbage collection at least until after the invocation of
      * this method. References to the given object will not be cleared (or
      * enqueued, if applicable) by the garbage collector until after invocation
