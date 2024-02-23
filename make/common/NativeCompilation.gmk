@@ -39,8 +39,8 @@ endif
 include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk
-include native/LinkUnix.gmk
-include native/LinkWindows.gmk
+include native/Link.gmk
+include native/LinkMicrosoft.gmk
 include native/Paths.gmk
 include native/ToolchainDefinitions.gmk
 
@@ -200,19 +200,19 @@ define SetupNativeCompilationBody
 
   # Prepare for linking
   $$(eval $$(call SetupLinkerFlags,$1))
-  ifeq ($(call isTargetOsType, unix), true)
-    $$(eval $$(call SetupLinkingUnix,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call SetupLinking,$1))
   else
-    $$(eval $$(call SetupLinkingWindows,$1))
+    $$(eval $$(call SetupLinkingMicrosoft,$1))
   endif
 
   $$(eval $$(call SetupObjectFileList,$1))
 
   # Link the individually compiled files into a single unit
-  ifeq ($(call isTargetOsType, unix), true)
-    $$(eval $$(call CreateLinkedResultUnix,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call CreateLinkedResult,$1))
   else
-    $$(eval $$(call CreateLinkedResultWindows,$1))
+    $$(eval $$(call CreateLinkedResultMicrosoft,$1))
   endif
 
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)

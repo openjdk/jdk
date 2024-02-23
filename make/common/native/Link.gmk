@@ -48,7 +48,7 @@ GetEntitlementsFile = \
     )
 
 ################################################################################
-define SetupLinkingUnix
+define SetupLinking
   ifneq ($(DISABLE_MAPFILES), true)
     $1_REAL_MAPFILE := $$($1_MAPFILE)
   endif
@@ -70,16 +70,16 @@ define SetupLinkingUnix
 endef
 
 ################################################################################
-define CreateLinkedResultUnix
+define CreateLinkedResult
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
-    $$(eval $$(call CreateStaticLibraryUnix,$1))
+    $$(eval $$(call CreateStaticLibrary,$1))
   else
-    $$(eval $$(call CreateDynamicLibraryOrExecutableUnix,$1))
+    $$(eval $$(call CreateDynamicLibraryOrExecutable,$1))
   endif
 endef
 
 ################################################################################
-define CreateStaticLibraryUnix
+define CreateStaticLibrary
   # Include partial linking when building the static library with clang on linux
   ifeq ($(call isTargetOs, linux), true)
     ifneq ($(findstring $(TOOLCHAIN_TYPE), clang), )
@@ -162,7 +162,7 @@ define CreateStaticLibraryUnix
 endef
 
 ################################################################################
-define CreateDynamicLibraryOrExecutableUnix
+define CreateDynamicLibraryOrExecutable
   # A shared dynamic library or an executable binary has been specified
   ifeq ($$($1_TYPE), LIBRARY)
     # Generating a dynamic library.

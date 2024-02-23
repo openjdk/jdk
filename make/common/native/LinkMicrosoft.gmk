@@ -29,7 +29,7 @@
 
 
 ################################################################################
-define SetupLinkingWindows
+define SetupLinkingMicrosoft
   ifneq ($(DISABLE_MAPFILES), true)
     $1_REAL_MAPFILE := $$($1_MAPFILE)
   endif
@@ -40,16 +40,16 @@ define SetupLinkingWindows
 endef
 
 ################################################################################
-define CreateLinkedResultWindows
+define CreateLinkedResultMicrosoft
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
-    $$(eval $$(call CreateStaticLibraryWindows,$1))
+    $$(eval $$(call CreateStaticLibraryMicrosoft,$1))
   else
-    $$(eval $$(call CreateDynamicLibraryOrExecutableWindows,$1))
+    $$(eval $$(call CreateDynamicLibraryOrExecutableMicrosoft,$1))
   endif
 endef
 
 ################################################################################
-define CreateStaticLibraryWindows
+define CreateStaticLibraryMicrosoft
   $1_VARDEPS := $$($1_LIB) $$(LIBFLAGS) $$($1_LIBFLAGS) $$($1_LIBS) \
       $$($1_EXTRA_LIBS)
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
@@ -67,7 +67,7 @@ define CreateStaticLibraryWindows
 endef
 
 ################################################################################
-define CreateDynamicLibraryOrExecutableWindows
+define CreateDynamicLibraryOrExecutableMicrosoft
   ifeq ($$($1_EMBED_MANIFEST), true)
     $1_EXTRA_LDFLAGS += -manifest:embed
   endif
