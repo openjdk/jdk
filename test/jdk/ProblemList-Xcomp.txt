@@ -27,5 +27,6 @@
 #
 #############################################################################
 
-java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
+java/lang/invoke/MethodHandles/CatchExceptionTest.java          8146623 generic-all
 java/lang/management/MemoryMXBean/CollectionUsageThreshold.java 8318668 generic-all
+com/sun/jdi/InterruptHangTest.java                              8306679,8043571 generic-all
