@@ -65,7 +65,7 @@ public class CPUInfoTest {
                     "avx512_vbmi2", "avx512_vbmi",      "rdtscp",            "rdpid",
                     "hv",           "fsrm",             "avx512_bitalg",     "gfni",
                     "f16c",         "pku",              "ospke",             "cet_ibt",
-                    "cet_ss",       "avx512_ifma",      "serialize"
+                    "cet_ss",       "avx512_ifma",      "serialize",         "avx_ifma"
                     );
             // @formatter:on
             // Checkstyle: resume
