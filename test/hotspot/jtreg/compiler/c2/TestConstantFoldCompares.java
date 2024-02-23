@@ -239,7 +239,7 @@ public class TestConstantFoldCompares {
     @Arguments(setup = "setup")
     @IR(failOn = {IRNode.ADD})
     public boolean foldAddLtLong(int x) {
-        return 42 + Long.min(x, NARROW) < 100;
+        return 42 + (long)x < 100;
     }
 
     @Check(test = "foldAddLtLong")
@@ -251,7 +251,7 @@ public class TestConstantFoldCompares {
     @Arguments(setup = "setup")
     @IR(failOn = {IRNode.SUB})
     public boolean foldSubLtLong(int x) {
-        return 100 - Long.max(x, -NARROW) < 42;
+        return 100 - (long)x < 42;
     }
 
     @Check(test = "foldSubLtLong")
