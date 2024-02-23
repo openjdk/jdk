@@ -84,37 +84,65 @@ Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
   return Agent_Initialize(jvm, options, reserved);
 }
 
+static void dealloc(JNIEnv *jni, char* mem) {
+  jvmtiError err = jvmti->Deallocate((unsigned char*)mem);
+  check_jvmti_status(jni, err, "error in JVMTI Deallocate");
+}
+
+static void
+print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
+  jvmtiError err;
+  jvmtiThreadInfo tinf;
+
+  LOG(">>> [%d]\n", check_idx);
+  if (inf.owner == nullptr) {
+    LOG(">>>          owner:               none (0x0)\n", check_idx);
+  } else {
+    err = jvmti->GetThreadInfo(inf.owner, &tinf);
+    check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
+    LOG(">>>          owner:               %s (0x%p)\n",
+        tinf.name, inf.owner);
+    dealloc(jni, tinf.name);
+  }
+  LOG(">>>          entry_count:         %d\n", inf.entry_count);
+  LOG(">>>          waiter_count:        %d\n", inf.waiter_count);
+  LOG(">>>          notify_waiter_count: %d\n", inf.notify_waiter_count);
+
+  if (inf.waiter_count > 0) {
+    LOG(">>>  waiters:\n");
+    for (int j = 0; j < inf.waiter_count; j++) {
+      err = jvmti->GetThreadInfo(inf.waiters[j], &tinf);
+      check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
+      LOG(">>>                %2d: %s (0x%p)\n",
+          j, tinf.name, inf.waiters[j]);
+      dealloc(jni, tinf.name);
+    }
+  }
+  if (inf.notify_waiter_count > 0) {
+    LOG(">>>  notify_waiters:\n");
+    for (int j = 0; j < inf.notify_waiter_count; j++) {
+      err = jvmti->GetThreadInfo(inf.notify_waiters[j], &tinf);
+      check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
+      LOG(">>>                %2d: %s (0x%p)\n",
+          j, tinf.name, inf.notify_waiters[j]);
+      dealloc(jni, tinf.name);
+    }
+  }
+}
+
 JNIEXPORT void JNICALL
 Java_ObjectMonitorUsage_check(JNIEnv *jni, jclass cls, jobject obj, jthread owner,
         jint entryCount, jint waiterCount, jint notifyWaiterCount) {
   jvmtiError err;
   jvmtiMonitorUsage inf;
-  jvmtiThreadInfo tinf;
 
   check_idx++;
 
   err = jvmti->GetObjectMonitorUsage(obj, &inf);
   check_jvmti_status(jni, err, "error in JVMTI GetObjectMonitorUsage");
 
-  if (inf.owner == nullptr) {
-    LOG(">>> [%2d]    owner: none (0x0)\n", check_idx);
-  } else {
-    err = jvmti->GetThreadInfo(inf.owner, &tinf);
-    check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
-    LOG(">>> [%2d]    owner: %s (0x%p)\n",
-        check_idx, tinf.name, inf.owner);
-  }
-  LOG(">>>   entry_count: %d\n", inf.entry_count);
-  LOG(">>>  waiter_count: %d\n", inf.waiter_count);
-  if (inf.waiter_count > 0) {
-    LOG(">>>       waiters:\n");
-    for (int j = 0; j < inf.waiter_count; j++) {
-      err = jvmti->GetThreadInfo(inf.waiters[j], &tinf);
-      check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
-      LOG(">>>                %2d: %s (0x%p)\n",
-          j, tinf.name, inf.waiters[j]);
-    }
-  }
+  print_monitor_info(jni, inf);
+
   if (!jni->IsSameObject(owner, inf.owner)) {
     LOG("(%d) unexpected owner: 0x%p\n", check_idx, inf.owner);
     result = STATUS_FAILED;
