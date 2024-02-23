@@ -2949,15 +2949,15 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_VZEROUPPER;
     if (std_cpuid1_ecx.bits.f16c != 0)
       result |= CPU_F16C;
-    if (sef_cpuid7_ebx.bits.avx2 != 0)
+    if (sef_cpuid7_ebx.bits.avx2 != 0) {
       result |= CPU_AVX2;
-      if (_cpuid_info.sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
+      if (sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
         result |= CPU_AVX_IFMA;
     }
-    if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.opmask != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.zmm512 != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.zmm32 != 0) {
+    if (sef_cpuid7_ebx.bits.avx512f != 0 &&
+        xem_xcr0_eax.bits.opmask != 0 &&
+        xem_xcr0_eax.bits.zmm512 != 0 &&
+        xem_xcr0_eax.bits.zmm32 != 0) {
       result |= CPU_AVX512F;
       if (sef_cpuid7_ebx.bits.avx512cd != 0)
         result |= CPU_AVX512CD;
