@@ -515,10 +515,32 @@ static void addCertificatesToKeystoreRoot(JNIEnv *env, jobject keyStore,
                                         jclass jc_arrayListClass,
                                         jmethodID jm_arrayListCons,
                                         jmethodID jm_listAdd) {
+    SecKeychainRef keychain = NULL;
+    CFMutableArrayRef keychainList = NULL;
+    CFDictionaryRef search = NULL;
     CFArrayRef currAnchors = NULL;
 
-    // Read Trust Anchors
-    if (SecTrustCopyAnchorCertificates(&currAnchors) == errSecSuccess) {
+    // Load predefined root certificates from SystemRootCertificates keychain
+    // SecTrustCopyAnchorCertificates includes extra root certificates and can not be used here
+    if( SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain", &keychain) != errSecSuccess ) {
+        return;
+    }
+
+    keychainList = CFArrayCreateMutable(kCFAllocatorDefault, 1, &kCFTypeArrayCallBacks);
+    if (keychainList == NULL) {
+        goto errOut;
+    }
+    CFArrayAppendValue(keychainList, keychain);
+
+    CFTypeRef searchKeys[] = { kSecClass, kSecMatchLimit, kSecReturnRef, kSecMatchSearchList };
+    CFTypeRef searchValues[] = { kSecClassCertificate, kSecMatchLimitAll, kCFBooleanTrue, keychainList };
+    search = CFDictionaryCreate(kCFAllocatorDefault,
+                              searchKeys, searchValues, 4, &kCFTypeDictionaryKeyCallBacks, &kCFTypeDictionaryValueCallBacks);
+    if (search == NULL) {
+        goto errOut;
+    }
+
+    if( SecItemCopyMatching( search, (CFTypeRef *)&currAnchors ) == errSecSuccess ){
         CFIndex nAnchors = CFArrayGetCount(currAnchors);
 
         for (CFIndex i = 0; i < nAnchors; i++) {
@@ -560,6 +582,15 @@ static void addCertificatesToKeystoreRoot(JNIEnv *env, jobject keyStore,
 errOut:
     if (currAnchors != NULL) {
         CFRelease(currAnchors);
+    }
+    if (search != NULL) {
+        CFRelease(search);
+    }
+    if (keychainList != NULL) {
+        CFRelease(keychainList);
+    }
+    if (keychain != NULL) {
+        CFRelease(keychain);
     }
 }
 
