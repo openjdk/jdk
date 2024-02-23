@@ -1040,7 +1040,6 @@ const int      uninitBlockPad     = 0xF1;                   // value used to zap
 const juint    uninitMetaWordVal  = 0xf7f7f7f7;             // value used to zap newly allocated metachunk
 const jubyte   heapPaddingByteVal = 0xBD;                   // value used to zap object padding in the heap
 const juint    badHeapWordVal     = 0xBAADBABE;             // value used to zap heap after GC
-const juint    badMetaWordVal     = 0xBAADFADE;             // value used to zap metadata heap after GC
 const int      badCodeHeapNewVal  = 0xCC;                   // value used to zap Code heap at allocation
 const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap Code heap at deallocation
 const intptr_t badDispHeaderDeopt = 0xDE0BD000;             // value to fill unused displaced header during deoptimization

@@ -145,7 +145,7 @@ private:
     // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
-    // Illustration of the Growable Array data structure.
+    // Illustration of the growable array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
@@ -174,7 +174,7 @@ private:
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket -1));
+              _min_capacity * ( 1ULL << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -225,7 +225,9 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    bool expand();
+    // Expand the mark stack doubling its size.
+    bool try_expand();
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
