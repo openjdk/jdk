@@ -95,17 +95,17 @@ public class ClassUseMapper {
     public final Map<TypeElement, List<TypeElement>> classToImplementingClass = new HashMap<>();
 
     /**
-     * Mapping of TypeElements to list of TypeElements which use this class in a superclass type parameter.
+     * Mapping of TypeElements to list of TypeElements which use them in superclass type parameters.
      */
     public final Map<TypeElement, List<TypeElement>> classToSubclassTypeParam = new HashMap<>();
 
     /**
-     * Mapping of TypeElements to list of TypeElements which use this class in a superclass type parameter.
+     * Mapping of TypeElements to list of TypeElements which use them in superinterface type parameters.
      */
     public final Map<TypeElement, List<TypeElement>> classToSubinterfaceTypeParam = new HashMap<>();
 
     /**
-     * Mapping of TypeElements to list of TypeElements which use this interface in a superinterface type parameter.
+     * Mapping of TypeElements to list of TypeElements which use them in implemented interface type parameters.
      */
     public final Map<TypeElement, List<TypeElement>> classToImplementsTypeParam = new HashMap<>();
 
