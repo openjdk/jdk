@@ -21,8 +21,10 @@
  * questions.
  */
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
@@ -31,11 +33,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.security.KeyManagementException;
+import java.nio.file.Path;
+import java.security.AccessController;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
+import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -315,30 +316,32 @@ public class HttpsParametersClientAuthTest {
      * Creates and returns a {@link SSLContext} which only has trust material
      * and doesn't have any test specific keys.
      */
-    private static SSLContext onlyTrustStoreContext() throws IOException {
-        final SimpleSSLContext trustStoreOnly = new SimpleSSLContext() {
-            @Override
-            protected SSLContext init(final InputStream i, final String protocol)
-                    throws IOException {
-                try {
-                    final char[] passphrase = "passphrase".toCharArray();
-                    final KeyStore ks = KeyStore.getInstance("PKCS12");
-                    ks.load(i, passphrase);
-                    final TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
-                    tmf.init(ks);
-                    final SSLContext ctx = SSLContext.getInstance(protocol);
-                    // initialize with only trust managers
-                    ctx.init(null, tmf.getTrustManagers(), null);
-                    return ctx;
-                } catch (KeyManagementException | KeyStoreException | CertificateException |
-                         NoSuchAlgorithmException e) {
-                    throw new IOException(e.getMessage());
-                }
-            }
-        };
-        final SSLContext ctx = trustStoreOnly.get();
-        assertNotNull(ctx, "could not create a SSLContext");
+    private static SSLContext onlyTrustStoreContext() throws Exception {
+        final KeyStore keyStore = loadTestKeyStore();
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        tmf.init(keyStore);
+        final SSLContext ctx = SSLContext.getInstance("TLS");
+        // initialize with only trust managers
+        ctx.init(null, tmf.getTrustManagers(), null);
         return ctx;
+    }
+
+    private static KeyStore loadTestKeyStore() throws Exception {
+        return AccessController.doPrivileged(
+                new PrivilegedExceptionAction<KeyStore>() {
+                    @Override
+                    public KeyStore run() throws Exception {
+                        final String testKeys = System.getProperty("test.src")
+                                + "/"
+                                + "../../../../../../test/lib/jdk/test/lib/net/testkeys";
+                        try (final FileInputStream fis = new FileInputStream(testKeys)) {
+                            final char[] passphrase = "passphrase".toCharArray();
+                            final KeyStore ks = KeyStore.getInstance("PKCS12");
+                            ks.load(fis, passphrase);
+                            return ks;
+                        }
+                    }
+                });
     }
 
     // no-op implementations of the abstract methods of HttpsParameters
