@@ -53,7 +53,7 @@ public:
     clear_all();
   }
 #endif
-  
+
   ShenandoahSimpleBitMap(size_t num_bits) :
       _num_bits(num_bits),
       _num_words((num_bits + (_bits_per_array_element - 1)) / _bits_per_array_element),
@@ -121,7 +121,7 @@ public:
     size_t the_bit = ((size_t) 0x01) << bit_number;
     _bitmap[array_idx] &= ~the_bit;
   }
-  
+
   inline bool is_set(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
@@ -134,7 +134,7 @@ public:
   // Return the index of the first set bit which is greater or equal to start_idx.  If not found, return _num_bits.
   inline ssize_t find_next_set_bit(ssize_t start_idx) const;
 
-  // Return the index of the first set bit which is greater or equal to start_idx and less than boundary_idx. 
+  // Return the index of the first set bit which is greater or equal to start_idx and less than boundary_idx.
   // If not found, return boundary_idx
   inline ssize_t find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const;
 

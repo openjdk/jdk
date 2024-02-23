@@ -232,7 +232,7 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssiz
     } else {
       // Next bit is not here.  Try the next array element
       start_idx += _bits_per_array_element - bit_number;
-    }      
+    }
   } while (start_idx < boundary_idx);
   return boundary_idx;
 }
@@ -284,7 +284,7 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize
     } else {
       // Next bit is not here.  Try the previous array element
       last_idx -= (bit_number + 1);
-    }      
+    }
   } while (last_idx > boundary_idx);
   return boundary_idx;
 }
@@ -1273,7 +1273,7 @@ HeapWord* ShenandoahFreeSet::allocate_contiguous(ShenandoahAllocRequest& req) {
       // region[end] is not empty, so we restart our search after region[end]
       ssize_t slide_delta = end + 1 - beg;
       if (beg + slide_delta > last_possible_start) {
-        // no room to slide 
+        // no room to slide
         return nullptr;
       }
       for (ssize_t span_end = beg + num; slide_delta > 0; slide_delta--) {
