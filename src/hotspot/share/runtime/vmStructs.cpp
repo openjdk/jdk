@@ -40,6 +40,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "code/compressedStream.hpp"
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
@@ -63,7 +64,6 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
@@ -211,8 +211,6 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
-  nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
-  nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
@@ -1162,7 +1160,6 @@
   /* MetadataOopDesc hierarchy (NOTE: some missing) */                    \
   /**************************************************/                    \
                                                                           \
-  declare_toplevel_type(CompiledICHolder)                                 \
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \

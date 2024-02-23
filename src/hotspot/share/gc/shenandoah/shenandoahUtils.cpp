@@ -44,6 +44,7 @@ ShenandoahGCSession::ShenandoahGCSession(GCCause::Cause cause) :
   _tracer(_heap->tracer()) {
   assert(!ShenandoahGCPhase::is_current_phase_valid(), "No current GC phase");
 
+  _heap->shenandoah_policy()->record_collection_cause(cause);
   _heap->set_gc_cause(cause);
   _timer->register_gc_start();
   _tracer->report_gc_start(cause, _timer->gc_start());

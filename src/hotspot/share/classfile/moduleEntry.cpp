@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -481,7 +481,7 @@ void ModuleEntry::init_as_archived_entry() {
   if (_location != nullptr) {
     _location = ArchiveBuilder::get_buffered_symbol(_location);
   }
-  JFR_ONLY(set_trace_id(0));// re-init at runtime
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)&_reads);
   ArchivePtrMarker::mark_pointer((address*)&_version);
