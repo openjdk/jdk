@@ -95,7 +95,7 @@ public class PrintLatinCJKTest implements Printable {
             return Printable.NO_SUCH_PAGE;
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
-        g.setFont(new Font("Dialog", Font.PLAIN, 36));
+        g.setFont(new Font(Font.DIALOG, Font.PLAIN, 36));
         g.drawString(TEXT, 20, 100);
         return Printable.PAGE_EXISTS;
     }
