@@ -50,12 +50,15 @@ public class PrintLatinCJKTest implements Printable {
     private static final String TEXT = "\u4e00\u4e01\u4e02\u4e03\u4e04English";
 
     private static final String INFO = """
-            You need a printer for this test. If you have none, let
-            the test pass. If there is a printer, press Print, send
-            the output to the printer, and examine it. It should have
-            text looking like this:
+            Press Print, send the output to the printer and examine it.
+            The printout should have text looking like this:
+
             """
             + TEXT + """
+
+
+            Press Pass if the text is printed correctly.
+            If Japanese and English text overlap, press Fail.
 
 
             To test 8022536, if a remote printer is the system default,
@@ -101,12 +104,16 @@ public class PrintLatinCJKTest implements Printable {
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
+
         PassFailJFrame.builder()
                       .title("Print Latin CJK Test")
                       .instructions(INFO)
                       .testTimeOut(10)
-                      .rows(10)
-                      .columns(35)
+                      .rows(12)
+                      .columns(30)
                       .splitUI(PrintLatinCJKTest::createTestUI)
                       .build()
                       .awaitAndCheck();
