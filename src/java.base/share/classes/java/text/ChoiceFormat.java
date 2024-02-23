@@ -255,7 +255,8 @@ public class ChoiceFormat extends NumberFormat {
         // Set up components
         ArrayList<Double> limits = new ArrayList<>();
         ArrayList<String> formats = new ArrayList<>();
-        StringBuilder[] segments = new StringBuilder[]{new StringBuilder(), new StringBuilder()};
+        StringBuilder[] segments = new StringBuilder[]{new StringBuilder(),
+                new StringBuilder()};
         int part = 0; // 0 denotes LIMIT. 1 denotes FORMAT.
         double limit = 0;
         boolean inQuote = false;
@@ -332,15 +333,11 @@ public class ChoiceFormat extends NumberFormat {
      * Handles "\u221E", as specified by the pattern syntax.
      */
     private static double stringToNum(String str) {
-        double num;
-        if (str.equals("\u221E")) {
-            num = Double.POSITIVE_INFINITY;
-        } else if (str.equals("-\u221E")) {
-            num = Double.NEGATIVE_INFINITY;
-        } else {
-            num = Double.parseDouble(str);
-        }
-        return num;
+        return switch (str) {
+            case "\u221E" -> Double.POSITIVE_INFINITY;
+            case "-\u221E" -> Double.NEGATIVE_INFINITY;
+            default -> Double.parseDouble(str);
+        };
     }
 
     /**
