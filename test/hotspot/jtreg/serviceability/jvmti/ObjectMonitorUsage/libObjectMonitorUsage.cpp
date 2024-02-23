@@ -32,44 +32,71 @@ extern "C" {
 #define STATUS_FAILED 2
 
 static jvmtiEnv *jvmti = nullptr;
-static jvmtiCapabilities caps;
+static jrawMonitorID event_lock = nullptr;
 static jint result = PASSED;
 static int check_idx = 0;
+static int waits_to_enter = 0;
+static jobject tested_monitor = nullptr;
+
+static bool is_tested_monitor(JNIEnv *jni, jobject monitor) {
+  if (tested_monitor == nullptr) {
+    return false; // tested_monitor was not set yet
+  }
+  return jni->IsSameObject(monitor, tested_monitor) == JNI_TRUE;
+}
+
+JNIEXPORT void JNICALL
+MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  if (is_tested_monitor(jni, monitor)) {
+    waits_to_enter++;
+  }
+}
+
+JNIEXPORT void JNICALL
+MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  if (is_tested_monitor(jni, monitor)) {
+    waits_to_enter--;
+  }
+}
+
 
 jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
+  jvmtiCapabilities caps;
+  jvmtiEventCallbacks callbacks;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
   if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv !\n");
     return JNI_ERR;
   }
-
   err = jvmti->GetPotentialCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetPotentialCapabilities) unexpected error: %s (%d)\n",
-        TranslateError(err), err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(err, "Agent_Initialize: error in JVMTI GetPotentialCapabilities");
 
   err = jvmti->AddCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("(AddCapabilities) unexpected error: %s (%d)\n",
-        TranslateError(err), err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(err, "Agent_Initialize: error in JVMTI AddCapabilities");
 
   err = jvmti->GetCapabilities(&caps);
-  if (err != JVMTI_ERROR_NONE) {
-    LOG("(GetCapabilities) unexpected error: %s (%d)\n",
-        TranslateError(err), err);
-    return JNI_ERR;
-  }
+  check_jvmti_error(err, "Agent_Initialize: error in JVMTI GetCapabilities");
 
   if (!caps.can_get_monitor_info) {
     LOG("Warning: GetObjectMonitorUsage is not implemented\n");
   }
+  if (!caps.can_generate_monitor_events) {
+    LOG("Warning: Monitor events are not implemented\n");
+    return JNI_ERR;
+  }
+  memset(&callbacks, 0, sizeof(callbacks));
+  callbacks.MonitorContendedEnter   = &MonitorContendedEnter;
+  callbacks.MonitorContendedEntered = &MonitorContendedEntered;
+
+  err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
+  check_jvmti_error(err, "Agent_Initialize: error in JVMTI SetEventCallbacks");
+
+  event_lock = create_raw_monitor(jvmti, "Events Monitor");
 
   return JNI_OK;
 }
@@ -84,13 +111,7 @@ Agent_OnAttach(JavaVM *jvm, char *options, void *reserved) {
   return Agent_Initialize(jvm, options, reserved);
 }
 
-static void dealloc(JNIEnv *jni, char* mem) {
-  jvmtiError err = jvmti->Deallocate((unsigned char*)mem);
-  check_jvmti_status(jni, err, "error in JVMTI Deallocate");
-}
-
-static void
-print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
+static void print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
   jvmtiError err;
   jvmtiThreadInfo tinf;
 
@@ -102,7 +123,7 @@ print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
     check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
     LOG(">>>          owner:               %s (0x%p)\n",
         tinf.name, inf.owner);
-    dealloc(jni, tinf.name);
+    deallocate(jvmti, jni, tinf.name);
   }
   LOG(">>>          entry_count:         %d\n", inf.entry_count);
   LOG(">>>          waiter_count:        %d\n", inf.waiter_count);
@@ -115,7 +136,7 @@ print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
       check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
       LOG(">>>                %2d: %s (0x%p)\n",
           j, tinf.name, inf.waiters[j]);
-      dealloc(jni, tinf.name);
+      deallocate(jvmti, jni, tinf.name);
     }
   }
   if (inf.notify_waiter_count > 0) {
@@ -125,7 +146,7 @@ print_monitor_info(JNIEnv *jni, jvmtiMonitorUsage &inf) {
       check_jvmti_status(jni, err, "error in JVMTI GetThreadInfo");
       LOG(">>>                %2d: %s (0x%p)\n",
           j, tinf.name, inf.notify_waiters[j]);
-      dealloc(jni, tinf.name);
+      deallocate(jvmti, jni, tinf.name);
     }
   }
 }
@@ -162,6 +183,32 @@ Java_ObjectMonitorUsage_check(JNIEnv *jni, jclass cls, jobject obj, jthread owne
         check_idx, notifyWaiterCount, inf.notify_waiter_count);
     result = STATUS_FAILED;
   }
+}
+
+JNIEXPORT void JNICALL
+Java_ObjectMonitorUsage_setTestedMonitor(JNIEnv *jni, jclass cls, jobject monitor) {
+  jvmtiError err;
+  jvmtiEventMode event_mode = (monitor != nullptr) ? JVMTI_ENABLE : JVMTI_DISABLE;
+
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+
+  if (tested_monitor != nullptr) {
+    jni->DeleteGlobalRef(tested_monitor);
+  }
+  tested_monitor = (monitor != nullptr) ? jni->NewGlobalRef(monitor) : nullptr;
+  waits_to_enter = 0;
+
+  err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
+  check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #1");
+
+  err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr);
+  check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #2");
+}
+
+JNIEXPORT jint JNICALL
+Java_ObjectMonitorUsage_waitsToEnter(JNIEnv *jni, jclass cls) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  return waits_to_enter;
 }
 
 JNIEXPORT jint JNICALL

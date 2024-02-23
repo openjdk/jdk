@@ -52,6 +52,8 @@ public class ObjectMonitorUsage {
     static Object lockCheck = new Object();
 
     native static int getRes();
+    native static int waitsToEnter();
+    native static int setTestedMonitor(Object monitor);
     native static void check(Object obj, Thread owner,
                              int entryCount, int waiterCount, int notifyWaiterCount);
 
@@ -61,6 +63,14 @@ public class ObjectMonitorUsage {
 
     static String vtag(boolean isVirtual) {
         return isVirtual ? "virtual" : "platform";
+    }
+
+    static void sleep(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            // ignore
+        }
     }
 
     static Thread startTask(int idx, TestTask task, boolean isVirtual, String kind) {
@@ -84,6 +94,9 @@ public class ObjectMonitorUsage {
         for (int i = 0; i < NUMBER_OF_ENTERING_THREADS; i++) {
             // the EnteringTask has to be blocked at the lockCheck enter
             threads[i] = startTask(i, new EnteringTask(), isVirtual, "Entering");
+        }
+        while (waitsToEnter() < NUMBER_OF_ENTERING_THREADS) {
+            sleep(1);
         }
         return threads;
     }
@@ -135,6 +148,7 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test1: started " + vtag);
 
+        setTestedMonitor(lockCheck);
         Thread[] eThreads = null;
 
         synchronized (lockCheck) {
@@ -155,6 +169,7 @@ public class ObjectMonitorUsage {
                   0 /* count of threads waiting to be notified: 0 */);
 
         }
+        setTestedMonitor(null);
         joinThreads(eThreads);
         log("###test1: finished " + vtag);
     }
@@ -169,6 +184,7 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test2: started " + vtag);
 
+        setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
         Thread[] eThreads = null;
 
@@ -185,6 +201,7 @@ public class ObjectMonitorUsage {
 
             lockCheck.notifyAll();
         }
+        setTestedMonitor(null);
         joinThreads(wThreads);
         joinThreads(eThreads);
         log("###test2: finished " + vtag);
@@ -206,6 +223,7 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test3: started " + vtag);
 
+        setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
         Thread[] eThreads = null;
 
@@ -241,6 +259,7 @@ public class ObjectMonitorUsage {
                       NUMBER_OF_WAITING_THREADS  - i - 1);
             }
         }
+        setTestedMonitor(null);
         joinThreads(wThreads);
         joinThreads(eThreads);
         log("###test3: finished " + vtag);
