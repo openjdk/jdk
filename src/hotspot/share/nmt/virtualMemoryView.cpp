@@ -545,6 +545,10 @@ void VirtualMemoryView::map_it(const VirtualMemoryView::RegionStorage& res,
         continue;
       } else if (res == OverlappingResult::EntirelyEnclosed) {
         front.push(TrackedRange{mapped.physical_address, mapped.size, range.stack_idx, range.flag});
+        // Replace original range with now empty range.
+        back.at_put(i, TrackedRange{0,0, range.stack_idx, range.flag});
+        // For the mercy of the CPU, break as there can be no more mappings
+        break;
       } else if (res == OverlappingResult::ShortenedFromLeft) {
         TrackedOffsetRange& R = out[0];
         size_t offset = range.start - mapped.start;
@@ -570,7 +574,9 @@ void VirtualMemoryView::map_it(const VirtualMemoryView::RegionStorage& res,
       }
     }
     // OK, done with mapping this range, push it and remove it
-    front.push(range);
+    if (!is_empty(range)) {
+      front.push(range);
+    }
     // O(n^2) here also.
     back.remove_at(i);
   }

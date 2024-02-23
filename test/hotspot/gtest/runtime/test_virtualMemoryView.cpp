@@ -25,9 +25,11 @@ public:
     vmv._virt_mem.committed_regions.at_put_grow(space.id, to_copy_committed);
     vmv._virt_mem.summary.at_put_grow(space.id, to_copy_snapshot);
   }
+
   static address addr(size_t x) {
     return (address)x;
   }
+
   static void sort_n_merge() {
     auto& reserved_ranges = vmv._virt_mem.reserved_regions;
     vmv.merge_memregions(reserved_ranges);
@@ -55,14 +57,26 @@ public:
     vmv.commit_memory_into_space(space, addr(address), size, stack);
   }
 
+  static void v(size_t address, size_t size, size_t offs, MEMFLAGS flag = mtTest, const NativeCallStack& stack = CURRENT_PC) {
+    vmv.add_view_into_space(space, addr(address), size, addr(offs), flag, stack);
+  }
+
   static void test_summary_computation() {
     clear();
     VirtualMemorySnapshot& snap = vmv._virt_mem.summary.at(space.id);
     r(0, 100);
     c(0, 25);
+    // Outside of reserved zone => shouldn't be accounted for
+    c(100, 25);
     vmv.compute_summary_snapshot(vmv._virt_mem);
     EXPECT_EQ(snap.by_type(mtTest)->committed(), (size_t)25);
     EXPECT_EQ(snap.by_type(mtTest)->reserved(), (size_t)100);
+    // Map the reserved memory to an uncommitted place and re-compute the summary snapshot
+    v(0, 100, 200);
+    vmv.compute_summary_snapshot(vmv._virt_mem);
+    EXPECT_EQ(snap.by_type(mtTest)->reserved(), (size_t)100);
+    EXPECT_EQ(snap.by_type(mtTest)->committed(), (size_t)0);
+    EXPECT_EQ(snap.by_type(mtTest)->peak_size(), (size_t)25);
   }
 
   static void test_reserve_commit_release() {
