@@ -66,6 +66,7 @@ package jdk.dynalink;
  * set of standard namespaces with the {@link StandardNamespace} enum. Operations
  * that need to specify a namespace they operate on can be expressed using
  * {@link NamespaceOperation}.
+ * @since 9
  */
 public interface Namespace {
 }

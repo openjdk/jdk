@@ -52,6 +52,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/instanceKlass.inline.hpp"
@@ -88,7 +89,6 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vmOperations.hpp"
-#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/dtrace.hpp"
@@ -928,6 +928,11 @@ static void jni_invoke_nonstatic(JNIEnv *env, JavaValue* result, jobject receive
       Klass* k = h_recv->klass();
       selected_method = InstanceKlass::cast(k)->method_at_itable(holder, itbl_index, CHECK);
     }
+  }
+
+  if (selected_method->is_abstract()) {
+    ResourceMark rm(THREAD);
+    THROW_MSG(vmSymbols::java_lang_AbstractMethodError(), selected_method->name()->as_C_string());
   }
 
   methodHandle method(THREAD, selected_method);

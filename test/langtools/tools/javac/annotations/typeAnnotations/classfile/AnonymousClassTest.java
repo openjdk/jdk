@@ -26,13 +26,9 @@
  * @bug 8198945 8207018 8207017
  * @summary Invalid RuntimeVisibleTypeAnnotations for annotation on anonymous class type parameter
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.ToolBox toolbox.JavapTask
@@ -42,9 +38,9 @@
 
 import static java.util.stream.Collectors.toSet;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -102,7 +98,7 @@ public class AnonymousClassTest {
     }
 
     static void testAnonymousClassDeclaration() throws Exception {
-        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$1.class"));
+        ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$1.class"));
         RuntimeVisibleTypeAnnotationsAttribute rvta =
                 cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
         assert rvta != null;
@@ -116,7 +112,7 @@ public class AnonymousClassTest {
     }
 
     static void testTopLevelMethod() throws Exception {
-        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+        ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
         MethodModel method = findMethod(cm, "f");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
         CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
@@ -127,7 +123,7 @@ public class AnonymousClassTest {
 
     static void testInnerClassMethod() throws Exception {
         ClassModel cm =
-                Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$Inner.class"));
+                ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$Inner.class"));
         MethodModel method = findMethod(cm, "g");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
         CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
@@ -142,7 +138,7 @@ public class AnonymousClassTest {
     static void testQualifiedSuperType() throws Exception {
         {
             ClassModel cm =
-                    Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+                    ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
             MethodModel method = findMethod(cm, "g");
             Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
             CodeAttribute cAttr = method.findAttribute(Attributes.CODE).orElse(null);
@@ -154,7 +150,7 @@ public class AnonymousClassTest {
 
         {
             ClassModel cm =
-                    Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$2.class"));
+                    ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest$2.class"));
             RuntimeVisibleTypeAnnotationsAttribute rvta =
                     cm.findAttribute(Attributes.RUNTIME_VISIBLE_TYPE_ANNOTATIONS).orElse(null);
             assert rvta != null;
@@ -169,7 +165,7 @@ public class AnonymousClassTest {
     }
 
     static void testInstanceAndClassInit() throws Exception {
-        ClassModel cm = Classfile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
+        ClassModel cm = ClassFile.of().parse(Paths.get(ToolBox.testClasses, "AnonymousClassTest.class"));
         MethodModel method = findMethod(cm, "<init>");
         Set<TypeAnnotation> annotations = getRuntimeVisibleTypeAnnotations(method);
         CodeAttribute cAttr1 = method.findAttribute(Attributes.CODE).orElse(null);

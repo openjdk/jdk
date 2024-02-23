@@ -45,7 +45,7 @@ import jdk.test.lib.process.ProcessTools;
 // This test was adapted from SafeFetchInErrorHandlingTest.java.
 public class BadNativeStackInErrorHandlingTest {
   public static void main(String[] args) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+    ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
         "-XX:+UnlockDiagnosticVMOptions",
         "-Xmx100M",
         "-XX:ErrorHandlerTest=14",

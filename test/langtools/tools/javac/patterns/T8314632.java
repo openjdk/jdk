@@ -2,9 +2,9 @@
  * @test /nodynamiccopyright/
  * @bug 8314632
  * @summary Intra-case dominance check fails in the presence of a guard
- * @enablePreview
  * @compile/fail/ref=T8314632.out -XDrawDiagnostics T8314632.java
  */
+
 public class T8314632 {
     void test1(Object obj) {
         switch (obj) {

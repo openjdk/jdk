@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestSpliterator
  */
 
@@ -44,8 +43,6 @@ import static org.testng.Assert.*;
 
 public class TestSpliterator {
 
-    static final VarHandle INT_HANDLE = ValueLayout.JAVA_INT.arrayElementVarHandle();
-
     final static int CARRIER_SIZE = 4;
 
     @Test(dataProvider = "splits")
@@ -56,7 +53,7 @@ public class TestSpliterator {
         try (Arena arena = Arena.ofShared()) {
             MemorySegment segment = arena.allocate(layout);;
             for (int i = 0; i < layout.elementCount(); i++) {
-                INT_HANDLE.set(segment, (long) i, i);
+                segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
             }
             long expected = LongStream.range(0, layout.elementCount()).sum();
             //serial
@@ -83,7 +80,7 @@ public class TestSpliterator {
         Arena scope = Arena.ofAuto();
         MemorySegment segment = scope.allocate(layout);
         for (int i = 0; i < layout.elementCount(); i++) {
-            INT_HANDLE.set(segment, (long) i, i);
+            segment.setAtIndex(ValueLayout.JAVA_INT, i, i);
         }
         long expected = LongStream.range(0, layout.elementCount()).sum();
 
@@ -160,14 +157,14 @@ public class TestSpliterator {
     }
 
     static long sumSingle(long acc, MemorySegment segment) {
-        return acc + (int)INT_HANDLE.get(segment, 0L);
+        return acc + segment.getAtIndex(ValueLayout.JAVA_INT, 0);
     }
 
     static long sum(long start, MemorySegment segment) {
         long sum = start;
         int length = (int)segment.byteSize();
         for (int i = 0 ; i < length / CARRIER_SIZE ; i++) {
-            sum += (int)INT_HANDLE.get(segment, (long)i);
+            sum += segment.getAtIndex(ValueLayout.JAVA_INT, i);
         }
         return sum;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,13 @@ public class GetMousePositionWithPopup {
             robot.mouseMove(MOUSE_POS3, MOUSE_POS3);
             syncLocationToWindowManager();
         } finally {
-            SwingUtilities.invokeLater(() -> {
-                frame1.dispose();
-                frame2.dispose();
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame1 != null) {
+                    frame1.dispose();
+                }
+                if (frame2 != null) {
+                    frame2.dispose();
+                }
             });
         }
     }

@@ -22,7 +22,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[𐑐 𐑑 𐑒 𐑓 𐑔 𐑕 𐑖 𐑗 𐑘 𐑙 𐑚 𐑛 𐑜 𐑝 𐑞 𐑟 𐑠 𐑡 𐑢 𐑣 𐑤 𐑥 𐑦 𐑧 𐑨 𐑩 𐑪 𐑫 𐑬 𐑭 𐑮 𐑯 𐑰 𐑱 𐑲 𐑳 𐑴 𐑵 𐑶 𐑷 𐑸 𐑹 𐑺 𐑻 𐑼 𐑽 𐑾 𐑿]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[𐑐 𐑑 𐑒 𐑓 𐑔 𐑕 𐑖 𐑗 𐑘 𐑙 𐑚 𐑛 𐑜 𐑝 𐑞 𐑟 𐑠 𐑡 𐑢 𐑣 𐑤 𐑥 𐑦 𐑧 𐑨 𐑩 𐑪 𐑫 𐑬 𐑭 𐑮 𐑯 𐑰 𐑱 𐑲 𐑳 𐑴 𐑵 𐑶 𐑷 𐑸 𐑹 𐑺 𐑻 𐑼 𐑽 𐑾 𐑿]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -133,12 +132,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="pm">𐑐𐑥</dayPeriod>
 							<dayPeriod type="pm" alt="variant">𐑐.𐑥.</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">𐑨𐑥</dayPeriod>
-							<dayPeriod type="am" alt="variant">𐑨.𐑥.</dayPeriod>
-							<dayPeriod type="pm">𐑐𐑥</dayPeriod>
-							<dayPeriod type="pm" alt="variant">𐑐.𐑥.</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
@@ -172,11 +165,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day">
 				<displayName>𐑛𐑱</displayName>
-				<relative type="-2">𐑞 𐑛𐑱 𐑚𐑰𐑓𐑹 𐑘𐑧𐑕𐑑𐑸𐑛𐑱</relative>
-				<relative type="-1">𐑘𐑧𐑕𐑑𐑸𐑛𐑱</relative>
-				<relative type="0">𐑑𐑭𐑛𐑱</relative>
-				<relative type="1">tomorrow</relative>
-				<relative type="2">𐑞 𐑛𐑱 𐑨𐑓𐑑𐑸 𐑑𐑭𐑥𐑸𐑴</relative>
 			</field>
 			<field type="weekday">
 				<displayName>𐑛𐑱 𐑝 𐑞 𐑢𐑰𐑒</displayName>

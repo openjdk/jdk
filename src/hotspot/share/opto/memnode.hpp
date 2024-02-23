@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,6 +125,9 @@ public:
     return 0;
 #endif
   }
+
+  // Return the barrier data of n, if available, or 0 otherwise.
+  static uint8_t barrier_data(const Node* n);
 
   // Map a load or store opcode to its corresponding store opcode.
   // (Return -1 if unknown.)
@@ -292,6 +295,8 @@ public:
   bool has_unknown_control_dependency() const  { return _control_dependency == UnknownControl; }
   bool has_pinned_control_dependency() const   { return _control_dependency == Pinned; }
 
+  LoadNode* pin_array_access_node() const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
 #endif
@@ -317,6 +322,8 @@ protected:
   virtual bool depends_only_on_test() const {
     return adr_type() != TypeRawPtr::BOTTOM && _control_dependency == DependsOnlyOnTest;
   }
+
+  LoadNode* clone_pinned() const;
 };
 
 //------------------------------LoadBNode--------------------------------------
@@ -788,7 +795,7 @@ public:
     StoreNode(c, mem, adr, at, val, oop_store, MemNode::release),
     _oop_alias_idx(oop_alias_idx) {
     assert(_oop_alias_idx >= Compile::AliasIdxRaw ||
-           _oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing(),
+           (_oop_alias_idx == Compile::AliasIdxBot && !Compile::current()->do_aliasing()),
            "bad oop alias idx");
   }
   virtual int Opcode() const;

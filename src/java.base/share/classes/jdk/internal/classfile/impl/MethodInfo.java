@@ -25,9 +25,9 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.constantpool.Utf8Entry;
 
-import static jdk.internal.classfile.Classfile.ACC_STATIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
 
 public interface MethodInfo {
     Utf8Entry methodName();

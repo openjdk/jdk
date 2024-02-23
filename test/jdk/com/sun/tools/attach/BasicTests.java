@@ -101,7 +101,7 @@ public class BasicTests {
             testClassDir + "Agent.jar",
             testClassDir + "BadAgent.jar",
             testClassDir + "RedefineAgent.jar" };
-        OutputAnalyzer output = ProcessTools.executeTestJvm(args);
+        OutputAnalyzer output = ProcessTools.executeTestJava(args);
         output.shouldHaveExitValue(0);
     }
 

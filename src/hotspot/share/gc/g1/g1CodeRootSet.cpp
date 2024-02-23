@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,8 +84,10 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
 
 public:
   G1CodeRootSetHashTable() :
-    _table(Log2DefaultNumBuckets,
-           HashTable::DEFAULT_MAX_SIZE_LOG2),
+    _table(Mutex::service-1,
+           nullptr,
+           Log2DefaultNumBuckets,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize), _num_entries(0) {
     clear();
   }
@@ -143,8 +145,11 @@ public:
   }
 
   void clear() {
-    _table.unsafe_reset();
-    Atomic::store(&_num_entries, (size_t)0);
+    // Remove all entries.
+    auto always_true = [] (nmethod** value) {
+                         return true;
+                       };
+    clean(always_true);
   }
 
   void iterate_at_safepoint(CodeBlobClosure* blk) {
@@ -182,6 +187,15 @@ public:
       size_t current_size = Atomic::sub(&_num_entries, num_deleted);
       shrink_to_match(current_size);
     }
+  }
+
+  // Removes dead/unlinked entries.
+  void bulk_remove() {
+    auto delete_check = [&] (nmethod** value) {
+      return (*value)->is_unlinked();
+    };
+
+    clean(delete_check);
   }
 
   // Calculate the log2 of the table size we want to shrink to.
@@ -250,6 +264,11 @@ G1CodeRootSet::~G1CodeRootSet() {
 bool G1CodeRootSet::remove(nmethod* method) {
   assert(!_is_iterating, "should not mutate while iterating the table");
   return _table->remove(method);
+}
+
+void G1CodeRootSet::bulk_remove() {
+  assert(!_is_iterating, "should not mutate while iterating the table");
+  _table->bulk_remove();
 }
 
 bool G1CodeRootSet::contains(nmethod* method) {

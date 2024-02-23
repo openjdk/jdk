@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/metaspace/chunkManager.hpp"
 #include "memory/metaspace/metaspaceArena.hpp"
 #include "memory/metaspace/metaspaceArenaGrowthPolicy.hpp"
 #include "memory/metaspace/metaspaceContext.hpp"
@@ -44,15 +45,20 @@ MetaspaceTestArena::MetaspaceTestArena(Mutex* lock, MetaspaceArena* arena) :
 {}
 
 MetaspaceTestArena::~MetaspaceTestArena() {
-  delete _arena;
+  {
+    MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
+    delete _arena;
+  }
   delete _lock;
 }
 
 MetaWord* MetaspaceTestArena::allocate(size_t word_size) {
+  MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
   return _arena->allocate(word_size);
 }
 
 void MetaspaceTestArena::deallocate(MetaWord* p, size_t word_size) {
+  MutexLocker fcl(_lock, Mutex::_no_safepoint_check_flag);
   return _arena->deallocate(p, word_size);
 }
 
@@ -97,7 +103,7 @@ MetaspaceTestArena* MetaspaceTestContext::create_arena(Metaspace::MetaspaceType 
   MetaspaceArena* arena = nullptr;
   {
     MutexLocker ml(lock,  Mutex::_no_safepoint_check_flag);
-    arena = new MetaspaceArena(_context->cm(), growth_policy, lock, &_used_words_counter, _name);
+    arena = new MetaspaceArena(_context->cm(), growth_policy, &_used_words_counter, _name);
   }
   return new MetaspaceTestArena(lock, arena);
 }

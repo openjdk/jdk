@@ -39,18 +39,6 @@ ShenandoahReentrantLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
-int ShenandoahNMethod::oop_count() const {
-  return _oops_count + static_cast<int>(nm()->oops_end() - nm()->oops_begin());
-}
-
-bool ShenandoahNMethod::has_oops() const {
-  return oop_count() > 0;
-}
-
-void ShenandoahNMethod::mark_unregistered() {
-  _unregistered = true;
-}
-
 bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }

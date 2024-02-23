@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
@@ -82,17 +82,17 @@ void JNICALL Breakpoint(jvmtiEnv *jvmti_env, JNIEnv *env,
         printf(">>>     method: \"%s%s\"\n", name, sig);
         printf(">>>   location: 0x%x%08x\n", (jint)(loc >> 32), (jint)loc);
     }
-    if (name == NULL || strcmp(cls_sig, exp_csig) != 0) {
+    if (name == nullptr || strcmp(cls_sig, exp_csig) != 0) {
         printf("(bp#%d) wrong class: \"%s\"", eventsCount, cls_sig);
         printf(", expected: \"%s\"\n", exp_csig);
         result = STATUS_FAILED;
     }
-    if (name == NULL || strcmp(name, exp_name) != 0) {
+    if (name == nullptr || strcmp(name, exp_name) != 0) {
         printf("(bp#%d) wrong method name: \"%s\"", eventsCount, name);
         printf(", expected: \"%s\"\n", exp_name);
         result = STATUS_FAILED;
     }
-    if (sig == NULL || strcmp(sig, exp_sig) != 0) {
+    if (sig == nullptr || strcmp(sig, exp_sig) != 0) {
         printf("(bp#%d) wrong method sig: \"%s\"", eventsCount, sig);
         printf(", expected: \"%s\"\n", exp_sig);
         result = STATUS_FAILED;
@@ -119,12 +119,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
     jvmtiError err;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -171,7 +171,7 @@ Java_nsk_jvmti_SetBreakpoint_setbrk008_getReady(JNIEnv *env,
     jvmtiError err;
     jmethodID mid;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -182,7 +182,7 @@ Java_nsk_jvmti_SetBreakpoint_setbrk008_getReady(JNIEnv *env,
     }
 
     mid = env->GetStaticMethodID(cls, exp_name, exp_sig);
-    if (mid == NULL) {
+    if (mid == nullptr) {
         printf("Cannot find Method ID for method checkPoint\n");
         result = STATUS_FAILED;
         return;
@@ -201,7 +201,7 @@ Java_nsk_jvmti_SetBreakpoint_setbrk008_getReady(JNIEnv *env,
     }
 
     err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-        JVMTI_EVENT_BREAKPOINT, NULL);
+        JVMTI_EVENT_BREAKPOINT, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                TranslateError(err), err);

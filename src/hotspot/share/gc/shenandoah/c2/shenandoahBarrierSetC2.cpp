@@ -530,7 +530,7 @@ Node* ShenandoahBarrierSetC2::store_at_resolved(C2Access& access, C2AccessValue&
 Node* ShenandoahBarrierSetC2::load_at_resolved(C2Access& access, const Type* val_type) const {
   // 1: non-reference load, no additional barrier is needed
   if (!access.is_oop()) {
-    return BarrierSetC2::load_at_resolved(access, val_type);;
+    return BarrierSetC2::load_at_resolved(access, val_type);
   }
 
   Node* load = BarrierSetC2::load_at_resolved(access, val_type);
@@ -1104,7 +1104,7 @@ Node* ShenandoahBarrierSetC2::ideal_node(PhaseGVN* phase, Node* n, bool can_resh
       return nullptr;
     }
 
-    return n->as_If()->dominated_by(prev_dom, phase->is_IterGVN());
+    return n->as_If()->dominated_by(prev_dom, phase->is_IterGVN(), false);
   }
 
   return nullptr;

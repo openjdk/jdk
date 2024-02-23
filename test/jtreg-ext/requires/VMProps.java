@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,9 +47,9 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import jdk.internal.foreign.CABI;
-
 import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.cpuinfo.CPUInfo;
 import jdk.test.whitebox.gc.GC;
@@ -602,9 +602,10 @@ public class VMProps implements Callable<Map<String, String>> {
 
     private boolean checkDockerSupport() throws IOException, InterruptedException {
         log("checkDockerSupport(): entering");
-        ProcessBuilder pb = new ProcessBuilder(Container.ENGINE_COMMAND, "ps");
-        Map<String, String> logFileNames = redirectOutputToLogFile("checkDockerSupport(): <container> ps",
-                                                      pb, "container-ps");
+        ProcessBuilder pb = new ProcessBuilder("which", Container.ENGINE_COMMAND);
+        Map<String, String> logFileNames =
+            redirectOutputToLogFile("checkDockerSupport(): which " + Container.ENGINE_COMMAND,
+                                                      pb, "which-container");
         Process p = pb.start();
         p.waitFor(10, TimeUnit.SECONDS);
         int exitValue = p.exitValue();
@@ -661,9 +662,7 @@ public class VMProps implements Callable<Map<String, String>> {
             return "" + result;
         }
 
-        List<String> allFlags = new ArrayList<String>();
-        Collections.addAll(allFlags, System.getProperty("test.vm.opts", "").trim().split("\\s+"));
-        Collections.addAll(allFlags, System.getProperty("test.java.opts", "").trim().split("\\s+"));
+        List<String> allFlags = allFlags().toList();
 
         // check -XX flags
         var ignoredXXFlags = Set.of(
@@ -708,6 +707,10 @@ public class VMProps implements Callable<Map<String, String>> {
                           .isEmpty();
 
         return "" + result;
+    }
+
+    private Stream<String> allFlags() {
+        return Stream.of((System.getProperty("test.vm.opts", "") + " " + System.getProperty("test.java.opts", "")).trim().split("\\s+"));
     }
 
     /*

@@ -123,9 +123,9 @@ public class Flags {
      */
     public static final int HASINIT          = 1<<18;
 
-    /** Class is a unnamed top level class.
+    /** Class is an implicitly declared top level class.
      */
-    public static final int UNNAMED_CLASS    = 1<<19;
+    public static final int IMPLICIT_CLASS    = 1<<19;
 
     /** Flag is set for compiler-generated anonymous method symbols
      *  that `own' an initializer block.
@@ -390,12 +390,17 @@ public class Flags {
     public static final long SEALED = 1L<<62; // ClassSymbols
 
     /**
+     * Flag to indicate restricted method declaration.
+     */
+    public static final long RESTRICTED = 1L<<62; // MethodSymbols
+
+    /**
      * Flag to indicate that the class/interface was declared with the non-sealed modifier.
      */
     public static final long NON_SEALED = 1L<<63; // ClassSymbols
 
     /**
-     * Describe modifier flags as they migh appear in source code, i.e.,
+     * Describe modifier flags as they might appear in source code, i.e.,
      * separated by spaces and in the order suggested by JLS 8.1.1.
      */
     public static String toSource(long flags) {
@@ -494,7 +499,7 @@ public class Flags {
         ANNOTATION(Flags.ANNOTATION),
         DEPRECATED(Flags.DEPRECATED),
         HASINIT(Flags.HASINIT),
-        UNNAMED_CLASS(Flags.UNNAMED_CLASS),
+        IMPLICIT_CLASS(Flags.IMPLICIT_CLASS),
         BLOCK(Flags.BLOCK),
         FROM_SOURCE(Flags.FROM_SOURCE),
         ENUM(Flags.ENUM),

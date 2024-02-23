@@ -13,11 +13,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="kgp"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">afar</language>
 			<language type="ab">amekaso</language>
@@ -143,7 +138,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="el">gregu</language>
 			<language type="elx">eramĩte</language>
 			<language type="en">ĩnhgrej</language>
-			<language type="en_US" alt="short">ĩnhgrej (EUA)</language>
 			<language type="enm">ĩnhgrej kuju</language>
 			<language type="eo">enhperỹtu</language>
 			<language type="es">enhpỹjór</language>
@@ -841,7 +835,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Isihaé</territory>
 			<territory type="IM">Mỹn Goj-vẽso</territory>
 			<territory type="IN">Ĩnija</territory>
-			<territory type="IO">Osiỹno Ĩniko tỹ Tehitórijo Mritỹnĩku</territory>
+			<territory type="IO" draft="provisional">Osiỹno Ĩniko tỹ Tehitórijo Mritỹnĩku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irỹ</territory>
 			<territory type="IS">Inhrỹnija</territory>
@@ -1077,9 +1071,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Papa Gregorju Prỹg-kurã-kar</type>
 			<type key="calendar" type="hebrew">Emrajko Prỹg-kurã-kar</type>
 			<type key="calendar" type="indian">Ĩnija Prỹg-kurã-kar pẽ</type>
-			<type key="calendar" type="islamic">Isirỹ Prỹg-kurã-kar</type>
-			<type key="calendar" type="islamic-civil">Isirỹ Prỹg-kurã-kar Siviv</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Isirỹ Prỹg-kurã-kar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Isirỹ Prỹg-kurã-kar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Isirỹ Prỹg-kurã-kar Siviv</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Isirỹ Prỹg-kurã-kar (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Prỹg-kurã-kar ISO-8601</type>
 			<type key="calendar" type="japanese">Japonẽj Prỹg-kurã-kar</type>
 			<type key="calendar" type="persian">Pérsa Prỹg-kurã-kar</type>
@@ -1210,22 +1204,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á ã e é ẽ f g h i ĩ j k m n o ó p r s t u ũ v y ỹ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª à ă â å ä ā æ b c ç d ᵉ è ĕ ê ë ē ᵍ ʰ í ì ĭ î ï ī l ⁿ ñ º ò ŏ ô ö õ ø ō œ q ú ù ŭ û ü ū w x ÿ z]</exemplarCharacters>
+		<exemplarCharacters>[aáã eéẽ f g h iĩ j k m n oó p r s t uũ v yỹ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªàăâåäā æ b cç d ᵉèĕêëē ᵍ ʰ íìĭîïī l ⁿñ ºòŏôöõøō œ q úùŭûüū w x ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E F G H I J K M N O P R S T U V Y]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
 		<ellipsis type="word-final">{0}…</ellipsis>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -1235,9 +1227,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<eraNames>
 						<era type="0" draft="contributed">EB</era>
 					</eraNames>
-					<eraAbbr>
-						<era type="0">BE</era>
-					</eraAbbr>
 					<eraNarrow>
 						<era type="0" draft="contributed">EB</era>
 					</eraNarrow>
@@ -1260,20 +1249,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11Ky.</month>
 							<month type="12">12Ky.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1K</month>
-							<month type="2">2K</month>
-							<month type="3">3K</month>
-							<month type="4">4K</month>
-							<month type="5">5K</month>
-							<month type="6">6K</month>
-							<month type="7">7K</month>
-							<month type="8">8K</month>
-							<month type="9">9K</month>
-							<month type="10">10K</month>
-							<month type="11">11K</month>
-							<month type="12">12K</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">1-Kysã</month>
 							<month type="2">2-Kysã</month>
@@ -1290,20 +1265,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">1Ky.</month>
-							<month type="2">2Ky.</month>
-							<month type="3">3Ky.</month>
-							<month type="4">4Ky.</month>
-							<month type="5">5Ky.</month>
-							<month type="6">6Ky.</month>
-							<month type="7">7Ky.</month>
-							<month type="8">8Ky.</month>
-							<month type="9">9Ky.</month>
-							<month type="10">10Ky.</month>
-							<month type="11">11Ky.</month>
-							<month type="12">12Ky.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">1K</month>
 							<month type="2">2K</month>
@@ -1317,20 +1278,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">10K</month>
 							<month type="11">11K</month>
 							<month type="12">12K</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">1-Kysã</month>
-							<month type="2">2-Kysã</month>
-							<month type="3">3-Kysã</month>
-							<month type="4">4-Kysã</month>
-							<month type="5">5-Kysã</month>
-							<month type="6">6-Kysã</month>
-							<month type="7">7-Kysã</month>
-							<month type="8">8-Kysã</month>
-							<month type="9">9-Kysã</month>
-							<month type="10">10-Kysã</month>
-							<month type="11">11-Kysã</month>
-							<month type="12">12-Kysã</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -1402,37 +1349,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d 'ne' MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d 'ne' MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d 'ne' MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d 'ne' MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ne' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d 'ne' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">MM/y GGGGG</dateFormatItem>
@@ -1448,7 +1380,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yyyyQQQQ">G, y QQQQ</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -1457,9 +1388,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="B">h:mm B – h:mm B</greatestDifference>
 							<greatestDifference id="h">h:mm – h:mm B</greatestDifference>
 							<greatestDifference id="m">h:mm – h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G">G, y – G, y</greatestDifference>
@@ -1511,18 +1439,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="h">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m">h:mm–h:mm a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">h a – h a v</greatestDifference>
@@ -1608,20 +1528,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11Ky.</month>
 							<month type="12">12Ky.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1K</month>
-							<month type="2">2K</month>
-							<month type="3">3K</month>
-							<month type="4">4K</month>
-							<month type="5">5K</month>
-							<month type="6">6K</month>
-							<month type="7">7K</month>
-							<month type="8">8K</month>
-							<month type="9">9K</month>
-							<month type="10">10K</month>
-							<month type="11">11K</month>
-							<month type="12">12K</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">1-Kysã</month>
 							<month type="2">2-Kysã</month>
@@ -1638,20 +1544,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">1Ky.</month>
-							<month type="2">2Ky.</month>
-							<month type="3">3Ky.</month>
-							<month type="4">4Ky.</month>
-							<month type="5">5Ky.</month>
-							<month type="6">6Ky.</month>
-							<month type="7">7Ky.</month>
-							<month type="8">8Ky.</month>
-							<month type="9">9Ky.</month>
-							<month type="10">10Ky.</month>
-							<month type="11">11Ky.</month>
-							<month type="12">12Ky.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">1K</month>
 							<month type="2">2K</month>
@@ -1666,20 +1558,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">11K</month>
 							<month type="12">12K</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">1-Kysã</month>
-							<month type="2">2-Kysã</month>
-							<month type="3">3-Kysã</month>
-							<month type="4">4-Kysã</month>
-							<month type="5">5-Kysã</month>
-							<month type="6">6-Kysã</month>
-							<month type="7">7-Kysã</month>
-							<month type="8">8-Kysã</month>
-							<month type="9">9-Kysã</month>
-							<month type="10">10-Kysã</month>
-							<month type="11">11-Kysã</month>
-							<month type="12">12-Kysã</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -1692,15 +1570,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">vẽn.</day>
 							<day type="fri">pén.</day>
 							<day type="sat">sav.</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">N.</day>
-							<day type="mon">P.</day>
-							<day type="tue">R.</day>
-							<day type="wed">T.</day>
-							<day type="thu">V.</day>
-							<day type="fri">P.</day>
-							<day type="sat">S.</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">N.</day>
@@ -1722,15 +1591,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">num.</day>
-							<day type="mon">pir.</day>
-							<day type="tue">rég.</day>
-							<day type="wed">tẽg.</day>
-							<day type="thu">vẽn.</day>
-							<day type="fri">pén.</day>
-							<day type="sat">sav.</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">N.</day>
 							<day type="mon">P.</day>
@@ -1739,24 +1599,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">V.</day>
 							<day type="fri">P.</day>
 							<day type="sat">S.</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">N.</day>
-							<day type="mon">1kh.</day>
-							<day type="tue">2kh.</day>
-							<day type="wed">3kh.</day>
-							<day type="thu">4kh.</day>
-							<day type="fri">5kh.</day>
-							<day type="sat">S.</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">numĩggu</day>
-							<day type="mon">pir-kurã-há</day>
-							<day type="tue">régre-kurã-há</day>
-							<day type="wed">tẽgtũ-kurã-há</day>
-							<day type="thu">vẽnhkãgra-kurã-há</day>
-							<day type="fri">pénkar-kurã-há</day>
-							<day type="sat">savnu</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1767,32 +1609,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="2">T2</quarter>
 							<quarter type="3">T3</quarter>
 							<quarter type="4">T4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">1ⁿ kysã-tẽgtũ</quarter>
-							<quarter type="2">2ᵍᵉ kysã-tẽgtũ</quarter>
-							<quarter type="3">3ⁿʰ kysã-tẽgtũ</quarter>
-							<quarter type="4">4ⁿ kysã-tẽgtũ</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">T1</quarter>
-							<quarter type="2">T2</quarter>
-							<quarter type="3">T3</quarter>
-							<quarter type="4">T4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">1ⁿ kysã-tẽgtũ</quarter>
@@ -1806,61 +1622,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kusãg ki</dayPeriod>
-							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
-							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
-							<dayPeriod type="night1">kurã ge</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kusãg ki</dayPeriod>
-							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
-							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
-							<dayPeriod type="night1">kurã ge</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kusãg ki</dayPeriod>
-							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
-							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
-							<dayPeriod type="night1">kurã ge</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kusãg ki</dayPeriod>
-							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
-							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
-							<dayPeriod type="night1">kurã ge</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-							<dayPeriod type="morning1">kusãg ki</dayPeriod>
-							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
-							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
-							<dayPeriod type="night1">kurã ge</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">kuty-si</dayPeriod>
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="noon">kurã-kuju</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
 							<dayPeriod type="morning1">kusãg ki</dayPeriod>
 							<dayPeriod type="afternoon1">rãkãnh kỹ</dayPeriod>
 							<dayPeriod type="evening1">kuty kỹ</dayPeriod>
@@ -1948,13 +1710,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E, HH:mm</dateFormatItem>
@@ -1965,28 +1720,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="GyMMMd">d 'ne' MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d 'ne' MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd/MM</dateFormatItem>
 						<dateFormatItem id="MMdd">dd/MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d 'ne' MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d 'ne' MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d 'ne' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMEd">E, d 'ne' MMMM</dateFormatItem>
-						<dateFormatItem id="MMMMW" count="one">'simỹnỹ' W 'ne' MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'simỹnỹ' W 'ne' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM/y</dateFormatItem>
 						<dateFormatItem id="yMd">dd/MM/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd/MM/y</dateFormatItem>
@@ -1999,14 +1744,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yMMMMEd">E, d 'ne' MMMM, y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ, y</dateFormatItem>
 						<dateFormatItem id="yQQQQ">QQQQ, y</dateFormatItem>
-						<dateFormatItem id="yw" count="one">'simỹnỹ' w, Y</dateFormatItem>
 						<dateFormatItem id="yw" count="other">'simỹnỹ' w, Y</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B">h B – h B</greatestDifference>
 							<greatestDifference id="h">h – h B</greatestDifference>
@@ -2178,51 +1918,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="era">
 				<displayName>vãsỹ</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>vãsỹ</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>vãsỹ</displayName>
-			</field>
 			<field type="year">
 				<displayName>prỹg</displayName>
 				<relative type="-1">prỹg tĩ mũnh kã</relative>
 				<relative type="0">prỹg tag kã</relative>
 				<relative type="1">prỹg ũ kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">prỹg {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">prỹg {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">prỹg {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">prỹg {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-short">
-				<displayName>prỹg</displayName>
-				<relative type="-1">prỹg tĩ mũnh kã</relative>
-				<relative type="0">prỹg tag kã</relative>
-				<relative type="1">prỹg ũ kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">prỹg {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">prỹg {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">prỹg {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">prỹg {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
-				<displayName>prỹg</displayName>
-				<relative type="-1">prỹg tĩ mũnh kã</relative>
-				<relative type="0">prỹg tag kã</relative>
-				<relative type="1">prỹg ũ kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">prỹg {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">prỹg {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">prỹg {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">prỹg {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2232,39 +1936,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kysã tẽgtũ tag</relative>
 				<relative type="1">kysã tẽgtũ ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kysã-tẽgtũ {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-short">
-				<displayName>kysã-tẽgtũ</displayName>
-				<relative type="-1">kysã tẽgtũ ẽg no</relative>
-				<relative type="0">kysã tẽgtũ tag</relative>
-				<relative type="1">kysã tẽgtũ ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kysã-tẽgtũ {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>kysã-tẽgtũ</displayName>
-				<relative type="-1">kysã tẽgtũ ẽg no</relative>
-				<relative type="0">kysã tẽgtũ tag</relative>
-				<relative type="1">kysã tẽgtũ ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kysã-tẽgtũ {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã-tẽgtũ {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">kysã-tẽgtũ {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2274,39 +1948,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">kysã tag kã</relative>
 				<relative type="1">kysã ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">kysã {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kysã {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName>kysã</displayName>
-				<relative type="-1">kysã tĩ mũn kã</relative>
-				<relative type="0">kysã tag kã</relative>
-				<relative type="1">kysã ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kysã {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kysã {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
-				<displayName>kysã</displayName>
-				<relative type="-1">kysã tĩ mũn kã</relative>
-				<relative type="0">kysã tag kã</relative>
-				<relative type="1">kysã ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kysã {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kysã {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kysã {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">kysã {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2316,35 +1960,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">simỹnỹ tag kã</relative>
 				<relative type="1">simỹnỹ ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">simỹnỹ {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">simỹnỹ {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">simỹnỹ {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">simỹnỹ {0} si ser</relativeTimePattern>
 				</relativeTime>
 				<relativePeriod>simỹnỹ tỹ {0}</relativePeriod>
 			</field>
 			<field type="week-short">
 				<displayName>sim.</displayName>
-				<relative type="-1">simỹnỹ tĩ mũn kã</relative>
-				<relative type="0">simỹnỹ tag kã</relative>
-				<relative type="1">simỹnỹ ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sim. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">sim. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">sim. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">sim. {0} si ser</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>sim. tỹ {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>sim.</displayName>
-				<relative type="-1">simỹnỹ tĩ mũn kã</relative>
-				<relative type="0">simỹnỹ tag kã</relative>
-				<relative type="1">simỹnỹ ũn kã</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">sim. {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">sim. {0} kar kỹ</relativeTimePattern>
@@ -2372,53 +1996,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1">vajkỹ</relative>
 				<relative type="2">vaj ũn ka</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">kurã {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">kurã {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">kurã {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kurã {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName>kurã</displayName>
-				<relative type="-2">rãké ũn tá</relative>
-				<relative type="-1">rãketá</relative>
-				<relative type="0">uri</relative>
-				<relative type="1">vajkỹ</relative>
-				<relative type="2">vaj ũn ka</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kurã {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kurã {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kurã {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">kurã {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>kurã</displayName>
-				<relative type="-2">rãké ũn tá</relative>
-				<relative type="-1">rãketá</relative>
-				<relative type="0">uri</relative>
-				<relative type="1">vajkỹ</relative>
-				<relative type="2">vaj ũn ka</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">kurã {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">kurã {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">kurã {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">kurã {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="dayOfYear">
-				<displayName>prỹg kurã ũ kã</displayName>
-			</field>
-			<field type="dayOfYear-short">
-				<displayName>prỹg kurã ũ kã</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName>prỹg kurã ũ kã</displayName>
 			</field>
 			<field type="weekday">
@@ -2427,16 +2011,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="weekday-short">
 				<displayName>sim. kurã ũ kã</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName>sim. kurã ũ kã</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName>simỹnỹ kurã ũ kã kysã tag kã</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>sim. kurã ũ kã kysã tag kã</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>sim. kurã ũ kã kysã tag kã</displayName>
 			</field>
 			<field type="sun">
@@ -2444,28 +2022,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">numĩggu tag kã</relative>
 				<relative type="1">numĩggu ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">numĩggu {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">numĩggu {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">numĩggu {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">numĩggu {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-short">
-				<relative type="-1">num. tĩ mũn kã</relative>
-				<relative type="0">num. tag kã</relative>
-				<relative type="1">num. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">num. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">num. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">num. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">num. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1">num. tĩ mũn kã</relative>
 				<relative type="0">num. tag kã</relative>
 				<relative type="1">num. ũn kã</relative>
@@ -2483,28 +2046,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">pir-kurã-há tag kã</relative>
 				<relative type="1">pir-kurã-há ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">pir-kurã-há {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">pir-kurã-há {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">pir-kurã-há {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">pir-kurã-há {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-short">
-				<relative type="-1">pir. tĩ mũn kã</relative>
-				<relative type="0">pir. tag kã</relative>
-				<relative type="1">pir. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">pir. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">pir. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">pir. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">pir. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
 				<relative type="-1">pir. tĩ mũn kã</relative>
 				<relative type="0">pir. tag kã</relative>
 				<relative type="1">pir. ũn kã</relative>
@@ -2522,28 +2070,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">régre-kurã-há tag kã</relative>
 				<relative type="1">régre-kurã-há ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">régre-kurã-há {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">régre-kurã-há {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">régre-kurã-há {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">régre-kurã-há {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-short">
-				<relative type="-1">rég. tĩ mũn kã</relative>
-				<relative type="0">rég. tag kã</relative>
-				<relative type="1">rég. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">rég. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">rég. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">rég. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">rég. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1">rég. tĩ mũn kã</relative>
 				<relative type="0">rég. tag kã</relative>
 				<relative type="1">rég. ũn kã</relative>
@@ -2561,28 +2094,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">tẽgtũ-kurã-há tag kã</relative>
 				<relative type="1">tẽgtũ-kurã-há ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">tẽgtũ-kurã-há {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">tẽgtũ-kurã-há {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">tẽgtũ-kurã-há {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">tẽgtũ-kurã-há {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-short">
-				<relative type="-1">tẽg. tĩ mũn kã</relative>
-				<relative type="0">tẽg. tag kã</relative>
-				<relative type="1">tẽg. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">tẽg. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">tẽg. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">tẽg. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">tẽg. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
 				<relative type="-1">tẽg. tĩ mũn kã</relative>
 				<relative type="0">tẽg. tag kã</relative>
 				<relative type="1">tẽg. ũn kã</relative>
@@ -2600,28 +2118,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">vẽnhkãgra-kurã-há tag kã</relative>
 				<relative type="1">vẽnhkãgra-kurã-há ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">vẽnhkãgra-kurã-há {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">vẽnhkãgra-kurã-há {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">vẽnhkãgra-kurã-há {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">vẽnhkãgra-kurã-há {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">vẽn. tĩ mũn kã</relative>
-				<relative type="0">vẽn. tag kã</relative>
-				<relative type="1">vẽn. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">vẽn. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">vẽn. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">vẽn. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">vẽn. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1">vẽn. tĩ mũn kã</relative>
 				<relative type="0">vẽn. tag kã</relative>
 				<relative type="1">vẽn. ũn kã</relative>
@@ -2639,28 +2142,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">pénkar-kurã-há tag kã</relative>
 				<relative type="1">pénkar-kurã-há ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">pénkar-kurã-há {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">pénkar-kurã-há {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">pénkar-kurã-há {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">pénkar-kurã-há {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1">pén. tĩ mũn kã</relative>
-				<relative type="0">pén. tag kã</relative>
-				<relative type="1">pén. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">pén. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">pén. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">pén. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">pén. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
 				<relative type="-1">pén. tĩ mũn kã</relative>
 				<relative type="0">pén. tag kã</relative>
 				<relative type="1">pén. ũn kã</relative>
@@ -2678,11 +2166,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0">savnu tag kã</relative>
 				<relative type="1">savnu ũn kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">savnu {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">savnu {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">savnu {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">savnu {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2699,37 +2185,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">sav. {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-narrow">
-				<relative type="-1">sav. tĩ mũn kã</relative>
-				<relative type="0">sav. tag kã</relative>
-				<relative type="1">sav. ũn kã</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">sav. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">sav. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">sav. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">sav. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>AM/PM</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>AM/PM</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>AM/PM</displayName>
 			</field>
 			<field type="hour">
 				<displayName>óra</displayName>
 				<relative type="0">óra tag kã</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">óra {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">óra {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">óra {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">óra {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2744,26 +2209,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} h si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="hour-narrow">
-				<displayName>h</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} h kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">{0} h kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} h si ser</relativeTimePattern>
-					<relativeTimePattern count="other">{0} h si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="minute">
 				<displayName>mĩnũtu</displayName>
 				<relative type="0">mĩnũtu tag</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">mĩnũtu {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">mĩnũtu {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">mĩnũtu {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">mĩnũtu {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
@@ -2778,41 +2230,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">mĩn. {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-narrow">
-				<displayName>mĩn.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">mĩn. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">mĩn. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">mĩn. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">mĩn. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
 				<displayName>segũno</displayName>
 				<relative type="0">ha</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="one">segũno {0} kar kỹ</relativeTimePattern>
 					<relativeTimePattern count="other">segũno {0} kar kỹ</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="one">segũno {0} si ser</relativeTimePattern>
 					<relativeTimePattern count="other">segũno {0} si ser</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-short">
-				<displayName>seg.</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">seg. {0} kar kỹ</relativeTimePattern>
-					<relativeTimePattern count="other">seg. {0} kar kỹ</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">seg. {0} si ser</relativeTimePattern>
-					<relativeTimePattern count="other">seg. {0} si ser</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
 				<displayName>seg.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">seg. {0} kar kỹ</relativeTimePattern>
@@ -2829,18 +2257,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="zone-short">
 				<displayName>tá óra</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>tá óra</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>Óra kar {0}</regionFormat>
 			<regionFormat type="daylight">Prỹg kã óra kar {0}</regionFormat>
 			<regionFormat type="standard">Óra pẽ {0}</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>Sỹta Isamé</exemplarCity>
 			</zone>
@@ -2938,9 +2359,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Buenos_Aires">
 				<exemplarCity>Muenũsairi</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pago_Pago">
-				<exemplarCity>Pago Pago</exemplarCity>
 			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity>Vienỹ</exemplarCity>
@@ -3305,9 +2723,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<zone type="Europe/Helsinki">
 				<exemplarCity>Hérsĩgke</exemplarCity>
 			</zone>
-			<zone type="Pacific/Fiji">
-				<exemplarCity>Fiji</exemplarCity>
-			</zone>
 			<zone type="Atlantic/Stanley">
 				<exemplarCity>Sitỹrej</exemplarCity>
 			</zone>
@@ -3400,9 +2815,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity>Munapenhte</exemplarCity>
-			</zone>
-			<zone type="Asia/Jakarta">
-				<exemplarCity>Jakarta</exemplarCity>
 			</zone>
 			<zone type="Asia/Pontianak">
 				<exemplarCity>Pãntiỹnỹki</exemplarCity>
@@ -3535,9 +2947,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="Europe/Luxembourg">
 				<exemplarCity>Rusẽgmurgo</exemplarCity>
-			</zone>
-			<zone type="Europe/Riga">
-				<exemplarCity>Riga</exemplarCity>
 			</zone>
 			<zone type="Africa/Tripoli">
 				<exemplarCity>Tripori</exemplarCity>
@@ -5092,27 +4501,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<minimumGroupingDigits draft="contributed">1</minimumGroupingDigits>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign draft="contributed">+</plusSign>
-			<minusSign draft="contributed">-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
 		</symbols>
 		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="contributed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
 			<decimalFormatLength type="long">
 				<decimalFormat>
 					<pattern type="1000" count="one">0 mil</pattern>
@@ -5170,56 +4563,20 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<currencyFormatLength type="short">
 				<currencyFormat type="standard">
-					<pattern type="1000" count="one">¤ 0 mil</pattern>
 					<pattern type="1000" count="other">¤ 0 mil</pattern>
-					<pattern type="10000" count="one">¤ 00 mil</pattern>
 					<pattern type="10000" count="other">¤ 00 mil</pattern>
-					<pattern type="100000" count="one">¤ 000 mil</pattern>
 					<pattern type="100000" count="other">¤ 000 mil</pattern>
-					<pattern type="1000000" count="one">¤ 0 mi</pattern>
 					<pattern type="1000000" count="other">¤ 0 mi</pattern>
-					<pattern type="10000000" count="one">¤ 00 mi</pattern>
 					<pattern type="10000000" count="other">¤ 00 mi</pattern>
-					<pattern type="100000000" count="one">¤ 000 mi</pattern>
 					<pattern type="100000000" count="other">¤ 000 mi</pattern>
-					<pattern type="1000000000" count="one">¤ 0 bi</pattern>
 					<pattern type="1000000000" count="other">¤ 0 bi</pattern>
-					<pattern type="10000000000" count="one">¤ 00 bi</pattern>
 					<pattern type="10000000000" count="other">¤ 00 bi</pattern>
-					<pattern type="100000000000" count="one">¤ 000 bi</pattern>
 					<pattern type="100000000000" count="other">¤ 000 bi</pattern>
-					<pattern type="1000000000000" count="one">¤ 0 tri</pattern>
 					<pattern type="1000000000000" count="other">¤ 0 tri</pattern>
-					<pattern type="10000000000000" count="one">¤ 00 tri</pattern>
 					<pattern type="10000000000000" count="other">¤ 00 tri</pattern>
-					<pattern type="100000000000000" count="one">¤ 000 tri</pattern>
 					<pattern type="100000000000000" count="other">¤ 000 tri</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
@@ -5236,7 +4593,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ẽmĩrano Arame Jãnkamu</displayName>
 				<displayName count="one">EAU Jãnkamu</displayName>
 				<displayName count="other">EAU Jãnkamu ag</displayName>
-				<symbol draft="contributed">AED</symbol>
 			</currency>
 			<currency type="AFA">
 				<displayName>Afeganĩ (1927–2002)</displayName>
@@ -5247,7 +4603,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Afeganĩ afegỹv</displayName>
 				<displayName count="one">Afeganĩ afegỹv</displayName>
 				<displayName count="other">Afeganĩ ag afegỹv</displayName>
-				<symbol draft="contributed">AFN</symbol>
 			</currency>
 			<currency type="ALK">
 				<displayName draft="contributed">Arámánja Rég (1946–1965)</displayName>
@@ -5258,26 +4613,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Arámánja Rég</displayName>
 				<displayName count="one">Arámánja Rég</displayName>
 				<displayName count="other">Arámánja Rég ag</displayName>
-				<symbol draft="contributed">ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>Arámẽnja Daram</displayName>
 				<displayName count="one">Arámẽnja Daram</displayName>
 				<displayName count="other">Arámẽnja Daram ag</displayName>
-				<symbol draft="contributed">AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>Ỹtiria Orỹnesa Kafejsĩ</displayName>
 				<displayName count="one">Ỹtiria Orỹnesa Kafejsĩ</displayName>
 				<displayName count="other">Ỹtiria Orỹnesa Kafejsĩ ag</displayName>
-				<symbol draft="contributed">ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>Ỹgora Kwanza</displayName>
 				<displayName count="one">Ỹgora Kwanza</displayName>
 				<displayName count="other">Ỹgora Kwanza ag</displayName>
-				<symbol draft="contributed">AOA</symbol>
-				<symbol alt="narrow" draft="contributed">Kz</symbol>
 			</currency>
 			<currency type="AOK">
 				<displayName>Ỹgora Cuanza (1977–1990)</displayName>
@@ -5318,8 +4668,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Arjẽtinỹ Kufy // Arjẽntĩnỹ Kufy</displayName>
 				<displayName count="one">Arjẽtinỹ Kufy</displayName>
 				<displayName count="other">Arjẽtinỹ Kufy ag</displayName>
-				<symbol draft="contributed">ARS</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="ATS">
 				<displayName>Agtirija Serĩm</displayName>
@@ -5331,13 +4679,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Awotyraria Nórar Si</displayName>
 				<displayName count="other">Awotyraria Nórar Si ag</displayName>
 				<symbol>AU$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>Aruma Kafejsĩ</displayName>
 				<displayName count="one">Aruma Kafejsĩ</displayName>
 				<displayName count="other">Aruma Kafejsĩ ag</displayName>
-				<symbol draft="contributed">AWG</symbol>
 			</currency>
 			<currency type="AZM">
 				<displayName>Ajermajjáv Manati (1993–2006)</displayName>
@@ -5348,7 +4694,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Manati aseri</displayName>
 				<displayName count="one">Manati aseri</displayName>
 				<displayName count="other">Manati aseri ag</displayName>
-				<symbol draft="contributed">AZN</symbol>
 			</currency>
 			<currency type="BAD">
 				<displayName>Mósinĩja-Hersegovĩna Ninỹ (1992–1994)</displayName>
@@ -5359,8 +4704,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mósinĩja Hersegovĩna-mré Mỹrko ta ũn há</displayName>
 				<displayName count="one">Mósinĩja Hersegovĩna-mré Mỹrko ta ũn há</displayName>
 				<displayName count="other">Mósinĩja Hersegovĩna-mré Mỹrko ag ta ũn há</displayName>
-				<symbol draft="contributed">BAM</symbol>
-				<symbol alt="narrow" draft="contributed">KM</symbol>
 			</currency>
 			<currency type="BAN">
 				<displayName>Mósinĩja-Hersegovĩna Ninỹ Tãg (1994–1997)</displayName>
@@ -5371,15 +4714,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Juvã-mág Nórar</displayName>
 				<displayName count="one">Juvã-mág Nórar</displayName>
 				<displayName count="other">Juvã-mág Nórar ag</displayName>
-				<symbol draft="contributed">BBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>Mágranési Taka</displayName>
 				<displayName count="one">Mágranési Taka</displayName>
 				<displayName count="other">Mágranési Taka ag</displayName>
-				<symbol draft="contributed">BDT</symbol>
-				<symbol alt="narrow" draft="contributed">৳</symbol>
 			</currency>
 			<currency type="BEC">
 				<displayName>Mérjika Vĩpir (conv)</displayName>
@@ -5410,7 +4749,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mugarja Rev</displayName>
 				<displayName count="one">Mugarja Rev</displayName>
 				<displayName count="other">Mugarja Rev ag</displayName>
-				<symbol draft="contributed">BGN</symbol>
 			</currency>
 			<currency type="BGO">
 				<displayName>Mugarja Rev (1879–1952)</displayName>
@@ -5421,34 +4759,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Marẽnh Ninỹ</displayName>
 				<displayName count="one">Marẽnh Ninỹ</displayName>
 				<displayName count="other">Marẽnh Ninỹ ag</displayName>
-				<symbol draft="contributed">BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>Murũni Vĩpir</displayName>
 				<displayName count="one">Murũni Vĩpir</displayName>
 				<displayName count="other">Murũni Vĩpir ag</displayName>
-				<symbol draft="contributed">BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>Karsa-ror-ag Nórar</displayName>
 				<displayName count="one">Karsa-ror-ag Nórar</displayName>
 				<displayName count="other">Karsa-ror-ag Nórar ag</displayName>
-				<symbol draft="contributed">BMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>Mrunẽj Nórar</displayName>
 				<displayName count="one">Mrunẽj Nórar</displayName>
 				<displayName count="other">Mrunẽj Nórar ag</displayName>
-				<symbol draft="contributed">BND</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>Morivija Jãnkamu</displayName>
 				<displayName count="one">Morivija Jãnkamu</displayName>
 				<displayName count="other">Morivija Jãnkamu ag</displayName>
-				<symbol draft="contributed">BOB</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="BOL">
 				<displayName>Morivijanũ (1863–1963)</displayName>
@@ -5484,8 +4814,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mrasir Rejar</displayName>
 				<displayName count="one">Mrasir Rejar</displayName>
 				<displayName count="other">Mrasir Rejar ag</displayName>
-				<symbol draft="contributed">R$</symbol>
-				<symbol alt="narrow" draft="contributed">R$</symbol>
 			</currency>
 			<currency type="BRN">
 				<displayName>Mrasir Krusanu Tãg (1989–1990)</displayName>
@@ -5506,14 +4834,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mahamỹ Nórar</displayName>
 				<displayName count="one">Mahamỹ Nórar</displayName>
 				<displayName count="other">Mahamỹ Nórar ag</displayName>
-				<symbol draft="contributed">BSD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>Butỹ Guturũm</displayName>
 				<displayName count="one">Butỹ Guturũm</displayName>
 				<displayName count="other">Butỹ Guturũm ag</displayName>
-				<symbol draft="contributed">BTN</symbol>
 			</currency>
 			<currency type="BUK">
 				<displayName>Mirmỹnja Kyate</displayName>
@@ -5524,8 +4849,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Monsuvỹnỹ Pura</displayName>
 				<displayName count="one">Monsuvỹnỹ Pura</displayName>
 				<displayName count="other">Monsuvỹnỹ Pura ag</displayName>
-				<symbol draft="contributed">BWP</symbol>
-				<symbol alt="narrow" draft="contributed">P</symbol>
 			</currency>
 			<currency type="BYB">
 				<displayName>Miero-Husija Humro Tãg (1994–1999)</displayName>
@@ -5536,34 +4859,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Miero-Husija Humro</displayName>
 				<displayName count="one">Miero-Husija Humro</displayName>
 				<displayName count="other">Miero-Husija Humro ag</displayName>
-				<symbol draft="contributed">BYN</symbol>
 				<symbol alt="narrow" draft="contributed">p.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>Miero-Husija Humro (2000–2016)</displayName>
 				<displayName count="one">Miero-Husija Humro (2000–2016)</displayName>
 				<displayName count="other">Miero-Husija Humro ag (2000–2016)</displayName>
-				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>Merise Nórar</displayName>
 				<displayName count="one">Merise Nórar</displayName>
 				<displayName count="other">Merise Nórar ag</displayName>
-				<symbol draft="contributed">BZD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>Kanỹna Nórar</displayName>
 				<displayName count="one">Kanỹna Nórar</displayName>
 				<displayName count="other">Kanỹna Nórar ag</displayName>
-				<symbol draft="contributed">CA$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>Kãgu Vĩpir</displayName>
 				<displayName count="one">Kãgu Vĩpir</displayName>
 				<displayName count="other">Kãgu Vĩpir ag</displayName>
-				<symbol draft="contributed">CDF</symbol>
 			</currency>
 			<currency type="CHE">
 				<displayName>WIR Evoro</displayName>
@@ -5574,7 +4890,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Suvisa Vĩpir</displayName>
 				<displayName count="one">Suvisa Vĩpir</displayName>
 				<displayName count="other">Suvisa Vĩpir ag</displayName>
-				<symbol draft="contributed">CHF</symbol>
 			</currency>
 			<currency type="CHW">
 				<displayName>WIR Vĩpir</displayName>
@@ -5595,14 +4910,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sire Kufy</displayName>
 				<displayName count="one">Sire Kufy</displayName>
 				<displayName count="other">Sire Kufy ag</displayName>
-				<symbol draft="contributed">CLP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>Sĩnỹ Yvỹn (offshore)</displayName>
 				<displayName count="one">Sĩnỹ Yuãn (offshore)</displayName>
 				<displayName count="other">Sĩnỹ Yuãn ag (offshore)</displayName>
-				<symbol draft="contributed">CNH</symbol>
 			</currency>
 			<currency type="CNX">
 				<displayName>Nórar vẽnhkar mỹ máko mĩ Sĩnỹ tá</displayName>
@@ -5613,15 +4925,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sĩnỹ Yvỹn</displayName>
 				<displayName count="one">Sĩnỹ Yvỹn</displayName>
 				<displayName count="other">Sĩnỹ Yvỹn ag</displayName>
-				<symbol draft="contributed">CN¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>Kolãmja Kufy</displayName>
 				<displayName count="one">Kolãmja Kufy</displayName>
 				<displayName count="other">Kolãmja Kufy ag</displayName>
-				<symbol draft="contributed">COP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="COU">
 				<displayName>Vẽnhkãmun ũ kaja uri</displayName>
@@ -5632,8 +4940,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kotahika Korãn</displayName>
 				<displayName count="one">Kotahika Korãn</displayName>
 				<displayName count="other">Kotahika Korãn ag</displayName>
-				<symbol draft="contributed">CRC</symbol>
-				<symbol alt="narrow" draft="contributed">₡</symbol>
 			</currency>
 			<currency type="CSD">
 				<displayName>Sérvija Ninỹ (2002–2006)</displayName>
@@ -5649,21 +4955,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuma Kufy conv</displayName>
 				<displayName count="one">Kuma Kufy conv</displayName>
 				<displayName count="other">Kuma Kufy ag conv</displayName>
-				<symbol draft="contributed">CUC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>Kuma Kufy</displayName>
 				<displayName count="one">Kuma Kufy</displayName>
 				<displayName count="other">Kuma Kufy ag</displayName>
-				<symbol draft="contributed">CUP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>Pu-Tánh Vẽjuven</displayName>
 				<displayName count="one">Pu-Tánh Vẽjuven</displayName>
 				<displayName count="other">Pu-Tánh Vẽjuven ag</displayName>
-				<symbol draft="contributed">CVE</symbol>
 			</currency>
 			<currency type="CYP">
 				<displayName>Sipre Rimra</displayName>
@@ -5674,8 +4975,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Séka Rãgre</displayName>
 				<displayName count="one">Séka Rãgre</displayName>
 				<displayName count="other">Séka Rãgre ag</displayName>
-				<symbol draft="contributed">CZK</symbol>
-				<symbol alt="narrow" draft="contributed">Kč</symbol>
 			</currency>
 			<currency type="DDM">
 				<displayName>Aremỹja Rãjur tá Jãnkamu</displayName>
@@ -5691,27 +4990,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Nhimuti Vĩpir</displayName>
 				<displayName count="one">Nhimuti Vĩpir</displayName>
 				<displayName count="other">Nhimuti Vĩpir ag</displayName>
-				<symbol draft="contributed">DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>Ninỹmỹrka Rãgre</displayName>
 				<displayName count="one">Ninỹmỹrka Rãgre</displayName>
 				<displayName count="other">Ninỹmỹrka Rãgre ag</displayName>
-				<symbol draft="contributed">DKK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>Nomĩnĩka Kufy</displayName>
 				<displayName count="one">Nomĩnĩka Kufy</displayName>
 				<displayName count="other">Nomĩnĩka Kufy ag</displayName>
-				<symbol draft="contributed">DOP</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>Argerija Ninỹ</displayName>
 				<displayName count="one">Argerija Ninỹ</displayName>
 				<displayName count="other">Argerija Ninỹ ag</displayName>
-				<symbol draft="contributed">DZD</symbol>
 			</currency>
 			<currency type="ECS">
 				<displayName>Ekuvanor Sukri</displayName>
@@ -5732,14 +5025,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ejimto Rimra</displayName>
 				<displayName count="one">Ejimto Rimra</displayName>
 				<displayName count="other">Ejimto Rimra ag</displayName>
-				<symbol draft="contributed">EGP</symbol>
-				<symbol alt="narrow" draft="contributed">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>Eriteréja Nagfa</displayName>
 				<displayName count="one">Eriteréja Nagfa</displayName>
 				<displayName count="other">Eriteréja Nagfa ag</displayName>
-				<symbol draft="contributed">ERN</symbol>
 			</currency>
 			<currency type="ESA">
 				<displayName>Esipỹnja Kufy-sĩ (kãtá A)</displayName>
@@ -5760,14 +5050,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Etiópija Mir</displayName>
 				<displayName count="one">Etiópija Mir</displayName>
 				<displayName count="other">Etiópija Mir ag</displayName>
-				<symbol draft="contributed">ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>Evoro</displayName>
 				<displayName count="one">Evoro</displayName>
 				<displayName count="other">Evoro ag</displayName>
-				<symbol draft="contributed">€</symbol>
-				<symbol alt="narrow" draft="contributed">€</symbol>
 			</currency>
 			<currency type="FIM">
 				<displayName>Fĩrỹnija Mỹrka</displayName>
@@ -5779,14 +5066,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Fiji Nórar</displayName>
 				<displayName count="other">Fiji Nórar ag</displayName>
 				<symbol draft="contributed">FJC</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>Mỹrvinỹ Rimra</displayName>
 				<displayName count="one">Mỹrvinỹ Rimra</displayName>
 				<displayName count="other">Mỹrvinỹ Rimra ag</displayName>
-				<symbol draft="contributed">FKP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="FRF">
 				<displayName>Frỹsa Vĩpir</displayName>
@@ -5797,8 +5081,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rimra Eterĩnỹ</displayName>
 				<displayName count="one">Rimra Eterĩnỹ</displayName>
 				<displayName count="other">Rimra Eterĩnỹ asg</displayName>
-				<symbol draft="contributed">£</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GEK">
 				<displayName>Jiórja Kupãni Rari</displayName>
@@ -5809,8 +5091,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jiórja Rari</displayName>
 				<displayName count="one">Jiórja Rari</displayName>
 				<displayName count="other">Jiórja Rari ag</displayName>
-				<symbol draft="contributed">GEL</symbol>
-				<symbol alt="narrow" draft="contributed">₾</symbol>
 			</currency>
 			<currency type="GHC">
 				<displayName>Gỹnỹ Senhi (1979–2007)</displayName>
@@ -5821,27 +5101,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Gỹnỹ Senhi</displayName>
 				<displayName count="one">Gỹnỹ Senhi</displayName>
 				<displayName count="other">Gỹnỹ Senhi ag</displayName>
-				<symbol draft="contributed">GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>Nhimratar Rimra</displayName>
 				<displayName count="one">Nhimratar Rimra</displayName>
 				<displayName count="other">Nhimratar Rimra ag</displayName>
-				<symbol draft="contributed">GIP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>Gỹmija Narasi</displayName>
 				<displayName count="one">Gỹmija Narasi</displayName>
 				<displayName count="other">Gỹmija Narasi ag</displayName>
-				<symbol draft="contributed">GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>Ginẽ Vĩpir</displayName>
 				<displayName count="one">Ginẽ Vĩpir</displayName>
 				<displayName count="other">Ginẽ Vĩpir ag</displayName>
-				<symbol draft="contributed">GNF</symbol>
-				<symbol alt="narrow" draft="contributed">FG</symbol>
 			</currency>
 			<currency type="GNS">
 				<displayName>Ginẽ Syri</displayName>
@@ -5862,8 +5136,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Guvỹtemỹra Kensav</displayName>
 				<displayName count="one">Guvỹtemỹra Kensav</displayName>
 				<displayName count="other">Guvỹtemỹra Kensav ag</displayName>
-				<symbol draft="contributed">GTQ</symbol>
-				<symbol alt="narrow" draft="contributed">Q</symbol>
 			</currency>
 			<currency type="GWE">
 				<displayName>Fóg tỹ Ginẽ Vẽjuven</displayName>
@@ -5879,22 +5151,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Gijỹnỹ Nórar</displayName>
 				<displayName count="one">Gijỹnỹ Nórar</displayName>
 				<displayName count="other">Gijỹnỹ Nórar ag</displayName>
-				<symbol draft="contributed">GYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>Hãg-Kãg Nórar</displayName>
 				<displayName count="one">Hãg-Kãg Nórar</displayName>
 				<displayName count="other">Hãg-Kãg Nórar ag</displayName>
-				<symbol draft="contributed">HK$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>Ãnura Rẽpirá</displayName>
 				<displayName count="one">Ãnura Rẽpirá</displayName>
 				<displayName count="other">Ãnura Rẽpirá ag</displayName>
-				<symbol draft="contributed">HNL</symbol>
-				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="HRD">
 				<displayName>Krovasija Ninỹ</displayName>
@@ -5905,28 +5171,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Krovasija Kuna</displayName>
 				<displayName count="one">Krovasija Kuna</displayName>
 				<displayName count="other">Krovasija Kuna ag</displayName>
-				<symbol draft="contributed">HRK</symbol>
-				<symbol alt="narrow" draft="contributed">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>Ajti Runja</displayName>
 				<displayName count="one">Ajti Runja</displayName>
 				<displayName count="other">Ajti Runja ag</displayName>
-				<symbol draft="contributed">HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>Ũgrija Kafejsĩ</displayName>
 				<displayName count="one">Ũgrija Kafejsĩ</displayName>
 				<displayName count="other">Ũgrija Kafejsĩ ag</displayName>
-				<symbol draft="contributed">HUF</symbol>
-				<symbol alt="narrow" draft="contributed">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>Ĩnonẽsija Rupija</displayName>
 				<displayName count="one">Ĩnonẽsija Rupija</displayName>
 				<displayName count="other">Ĩnonẽsija Rupija ag</displayName>
-				<symbol draft="contributed">IDR</symbol>
-				<symbol alt="narrow" draft="contributed">Rp</symbol>
 			</currency>
 			<currency type="IEP">
 				<displayName>Irỹna Rimra</displayName>
@@ -5947,27 +5206,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Isihaé Sekév Tãg</displayName>
 				<displayName count="one">Isihaé Sekév Tãg</displayName>
 				<displayName count="other">Isihaé Sekév Tãg ag</displayName>
-				<symbol draft="contributed">₪</symbol>
-				<symbol alt="narrow" draft="contributed">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>Ĩnija Rupija</displayName>
 				<displayName count="one">Ĩnija Rupija</displayName>
 				<displayName count="other">Ĩnija Rupija ag</displayName>
-				<symbol draft="contributed">₹</symbol>
-				<symbol alt="narrow" draft="contributed">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>Iraki Ninỹ</displayName>
 				<displayName count="one">Iraki Ninỹ</displayName>
 				<displayName count="other">Iraki Ninỹ ag</displayName>
-				<symbol draft="contributed">IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>Irỹ Hi’av</displayName>
 				<displayName count="one">Irỹ Hi’av</displayName>
 				<displayName count="other">Irỹ Hi’av ag</displayName>
-				<symbol draft="contributed">IRR</symbol>
 			</currency>
 			<currency type="ISJ">
 				<displayName>Kukryr-ga Rãgre Si</displayName>
@@ -5978,8 +5231,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kukryr-ga Rãgre</displayName>
 				<displayName count="one">Kukryr-ga Rãgre</displayName>
 				<displayName count="other">Kukryr-ga Rãgre ag</displayName>
-				<symbol draft="contributed">ISK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="ITL">
 				<displayName>Itarija Rira</displayName>
@@ -5990,54 +5241,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jamỹjka Nórar</displayName>
 				<displayName count="one">Jamỹjka Nórar</displayName>
 				<displayName count="other">Jamỹjka Nórar ag</displayName>
-				<symbol draft="contributed">JMD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>Jornánĩja Ninỹ</displayName>
 				<displayName count="one">Jornánĩja Ninỹ</displayName>
 				<displayName count="other">Jornánĩja Ninỹ ag</displayName>
-				<symbol draft="contributed">JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>Japã Jenẽ</displayName>
 				<displayName count="one">Japã Jenẽ</displayName>
 				<displayName count="other">Japã Jenẽ ag</displayName>
-				<symbol draft="contributed">JP¥</symbol>
-				<symbol alt="narrow" draft="contributed">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>Kẽnja Serĩm</displayName>
 				<displayName count="one">Kẽnja Serĩm</displayName>
 				<displayName count="other">Kẽnja Serĩm ag</displayName>
-				<symbol draft="contributed">KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>Kirgi-Ga Kyr</displayName>
 				<displayName count="one">Kirgi-Ga Kyr</displayName>
 				<displayName count="other">Kirgi-Ga Kyr ag</displayName>
-				<symbol draft="contributed">KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>Kỹmósa Hijév</displayName>
 				<displayName count="one">Kỹmósa Hijév</displayName>
 				<displayName count="other">Kỹmósa Hijév ag</displayName>
-				<symbol draft="contributed">KHR</symbol>
-				<symbol alt="narrow" draft="contributed">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>Komor Vĩpir</displayName>
 				<displayName count="one">Komor Vĩpir</displayName>
 				<displayName count="other">Komor Vĩpir ag</displayName>
-				<symbol draft="contributed">KMF</symbol>
-				<symbol alt="narrow" draft="contributed">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>Nãrti-Koréja Vãn</displayName>
 				<displayName count="one">Nãrti-Koréja Vãn</displayName>
 				<displayName count="other">Nãrti-Koréja Vãn sag</displayName>
-				<symbol draft="contributed">KPW</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KRH">
 				<displayName>Koréja Sur Huvỹ (1953–1962)</displayName>
@@ -6053,56 +5291,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Koréja Sur Vãn</displayName>
 				<displayName count="one">Koréja Sur Vãn</displayName>
 				<displayName count="other">Koréja Sur Vãn ag</displayName>
-				<symbol draft="contributed">₩</symbol>
-				<symbol alt="narrow" draft="contributed">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>Kuvajti Ninỹ</displayName>
 				<displayName count="one">Kuvajti Ninỹ</displayName>
 				<displayName count="other">Kuvajti Ninỹ ag</displayName>
-				<symbol draft="contributed">KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>Kanhmỹ Vãsogso Nórar</displayName>
 				<displayName count="one">Kanhmỹ Vãsogso Nórar</displayName>
 				<displayName count="other">Kanhmỹ Vãsogso Nórar ag</displayName>
-				<symbol draft="contributed">KYD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>Kajakinhtỹv Tẽge</displayName>
 				<displayName count="one">Kajakinhtỹv Tẽge</displayName>
 				<displayName count="other">Kajakinhtỹv Tẽge ag</displayName>
-				<symbol draft="contributed">KZT</symbol>
-				<symbol alt="narrow" draft="contributed">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>Ravusi Kim</displayName>
 				<displayName count="one">Ravusi Kim</displayName>
 				<displayName count="other">Ravusi Kim ag</displayName>
-				<symbol draft="contributed">LAK</symbol>
-				<symbol alt="narrow" draft="contributed">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>Rimanũ Rimra</displayName>
 				<displayName count="one">Rimanũ Rimra</displayName>
 				<displayName count="other">Rimanũ Rimra ag</displayName>
-				<symbol draft="contributed">LBP</symbol>
-				<symbol alt="narrow" draft="contributed">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>Sirijỹká Rupija</displayName>
 				<displayName count="one">Sirijỹká Rupija</displayName>
 				<displayName count="other">Sirijỹká Rupija ag</displayName>
-				<symbol draft="contributed">LKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>Rimérijỹ Nórar</displayName>
 				<displayName count="one">Rimérijỹ Nórar</displayName>
 				<displayName count="other">Rimérijỹ Nórar ag</displayName>
-				<symbol draft="contributed">LRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>Resotu Roti</displayName>
@@ -6148,13 +5371,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Rimija Ninỹ</displayName>
 				<displayName count="one">Rimija Ninỹ</displayName>
 				<displayName count="other">Rimija Ninỹ ag</displayName>
-				<symbol draft="contributed">LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>Ar-Magrim Nirham</displayName>
 				<displayName count="one">Ar-Magrim Nirham</displayName>
 				<displayName count="other">Ar-Magrim Nirham ag</displayName>
-				<symbol draft="contributed">MAD</symbol>
 			</currency>
 			<currency type="MAF">
 				<displayName>Ar-Magrim Vĩpir</displayName>
@@ -6175,14 +5396,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mãrnova Revu</displayName>
 				<displayName count="one">Mãrnova Revu</displayName>
 				<displayName count="other">Mãrnova Revu ag</displayName>
-				<symbol draft="contributed">MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>Mỹna-Gasikar Ari-ary</displayName>
 				<displayName count="one">Mỹna-Gasikar Ari-ary</displayName>
 				<displayName count="other">Mỹna-Gasikar Ari-ary ag</displayName>
-				<symbol draft="contributed">MGA</symbol>
-				<symbol alt="narrow" draft="contributed">Ar</symbol>
 			</currency>
 			<currency type="MGF">
 				<displayName>Mỹna-Gasikar Vĩpir</displayName>
@@ -6193,7 +5411,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mỹsenonĩja Ninỹ</displayName>
 				<displayName count="one">Mỹsenonĩja Ninỹ</displayName>
 				<displayName count="other">Mỹsenonĩja Ninỹ ag</displayName>
-				<symbol draft="contributed">MKD</symbol>
 			</currency>
 			<currency type="MKN">
 				<displayName>Mỹsenonĩja Ninỹ (1992–1993)</displayName>
@@ -6209,33 +5426,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mijẽn-Mỹ Kijate</displayName>
 				<displayName count="one">Mijẽn-Mỹ Kijate</displayName>
 				<displayName count="other">Mijẽn-Mỹ Kijate ag</displayName>
-				<symbol draft="contributed">MMK</symbol>
-				<symbol alt="narrow" draft="contributed">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>Mãgórija Tugrig</displayName>
 				<displayName count="one">Mãgórija Tugrig</displayName>
 				<displayName count="other">Mãgórija Tugrig ag</displayName>
-				<symbol draft="contributed">MNT</symbol>
-				<symbol alt="narrow" draft="contributed">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>Mỹkav Pataka</displayName>
 				<displayName count="one">Mỹkav Pataka</displayName>
 				<displayName count="other">Mỹkav Pataka ag</displayName>
-				<symbol draft="contributed">MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>Mũritỹni Ov-Gija (1973–2017)</displayName>
 				<displayName count="one">Mũritỹni Ov-Gija (1973–2017)</displayName>
 				<displayName count="other">Mũritỹni Ov-Gija ag (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>Mũritỹni Ov-Gija</displayName>
 				<displayName count="one">Mũritỹni Ov-Gija</displayName>
 				<displayName count="other">Mũritỹni Ov-Gija ag</displayName>
-				<symbol draft="contributed">MRU</symbol>
 			</currency>
 			<currency type="MTL">
 				<displayName>Mỹrta Rirá</displayName>
@@ -6251,27 +5461,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mãriso Rupija</displayName>
 				<displayName count="one">Mãriso Rupija</displayName>
 				<displayName count="other">Mãriso Rupija ag</displayName>
-				<symbol draft="contributed">MUR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>Mỹrniva Rupija</displayName>
 				<displayName count="one">Mỹrniva Rupija</displayName>
 				<displayName count="other">Mỹrniva Rupija ag</displayName>
-				<symbol draft="contributed">MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>Mỹravi Kuvasa</displayName>
 				<displayName count="one">Mỹravi Kuvasa</displayName>
 				<displayName count="other">Mỹravi Kuvasa ag</displayName>
-				<symbol draft="contributed">MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>Mẽsiku Kufy</displayName>
 				<displayName count="one">Mẽsiku Kufy</displayName>
 				<displayName count="other">Mẽsiku Kufy ag</displayName>
-				<symbol draft="contributed">MX$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="MXP">
 				<displayName>Mẽsiku Kufy Kupri (1861–1992)</displayName>
@@ -6287,8 +5491,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mỹraja Rĩggin</displayName>
 				<displayName count="one">Mỹraja Rĩggin</displayName>
 				<displayName count="other">Mỹraja Rĩggin ag</displayName>
-				<symbol draft="contributed">MYR</symbol>
-				<symbol alt="narrow" draft="contributed">RM</symbol>
 			</currency>
 			<currency type="MZE">
 				<displayName>Mãsỹmiki Vẽjuven</displayName>
@@ -6304,21 +5506,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Mãsỹmiki Mẽtikar</displayName>
 				<displayName count="one">Mãsỹmiki Mẽtikar</displayName>
 				<displayName count="other">Mãsỹmiki Mẽtikar ag</displayName>
-				<symbol draft="contributed">MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>Nỹmĩmija Nórar</displayName>
 				<displayName count="one">Nỹmĩmija Nórar</displayName>
 				<displayName count="other">Nỹmĩmija Nórar ag</displayName>
-				<symbol draft="contributed">NAD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>Nĩjérija Nỹjra</displayName>
 				<displayName count="one">Nĩjérija Nỹjra</displayName>
 				<displayName count="other">Nĩjérija Nỹjra ag</displayName>
-				<symbol draft="contributed">NGN</symbol>
-				<symbol alt="narrow" draft="contributed">₦</symbol>
 			</currency>
 			<currency type="NIC">
 				<displayName>Nĩkaraguva Kórnoma (1988–1991)</displayName>
@@ -6329,8 +5526,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Nĩkaraguva Kórnoma</displayName>
 				<displayName count="one">Nĩkaraguva Kórnoma</displayName>
 				<displayName count="other">Nĩkaraguva Kórnoma ag</displayName>
-				<symbol draft="contributed">NIO</symbol>
-				<symbol alt="narrow" draft="contributed">C$</symbol>
 			</currency>
 			<currency type="NLG">
 				<displayName>Orỹna Kafejsĩ</displayName>
@@ -6341,34 +5536,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Nãrovéga Rãgre</displayName>
 				<displayName count="one">Nãrovéga Rãgre</displayName>
 				<displayName count="other">Nãrovéga Rãgre ag</displayName>
-				<symbol draft="contributed">NOK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>Nẽpar Rupija</displayName>
 				<displayName count="one">Nẽpar Rupija</displayName>
 				<displayName count="other">Nẽpar Rupija ag</displayName>
-				<symbol draft="contributed">NPR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>Zirỹnija Tãg Nórar</displayName>
 				<displayName count="one">Zirỹnija Tãg Nórar</displayName>
 				<displayName count="other">Zirỹnija Tãg Nórar ag</displayName>
-				<symbol draft="contributed">NZ$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>Omỹ Hijar</displayName>
 				<displayName count="one">Omỹ Hijar</displayName>
 				<displayName count="other">Omỹ Hijar ag</displayName>
-				<symbol draft="contributed">OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>Panỹmỹ Mavo-Mova</displayName>
 				<displayName count="one">Panỹmỹ Mavo-Mova</displayName>
 				<displayName count="other">Panỹmỹ Mavo-Mova ag</displayName>
-				<symbol draft="contributed">PAB</symbol>
 			</currency>
 			<currency type="PEI">
 				<displayName>Peru Ĩnti</displayName>
@@ -6379,7 +5566,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Peru Rã Tãg</displayName>
 				<displayName count="one">Peru Rã Tãg</displayName>
 				<displayName count="other">Peru Rã Tãg ag</displayName>
-				<symbol draft="contributed">PEN</symbol>
 			</currency>
 			<currency type="PES">
 				<displayName>Peru Rã (1863–1965)</displayName>
@@ -6390,28 +5576,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Papuva Kinỹ</displayName>
 				<displayName count="one">Papuva Kinỹ</displayName>
 				<displayName count="other">Papuva Kinỹ ag</displayName>
-				<symbol draft="contributed">PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>Firipinỹ Kufy</displayName>
 				<displayName count="one">Firipinỹ Kufy</displayName>
 				<displayName count="other">Firipinỹ Kufy ag</displayName>
 				<symbol draft="contributed">PHP</symbol>
-				<symbol alt="narrow" draft="contributed">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>Pakinhtỹv Rupiya</displayName>
 				<displayName count="one">Pakinhtỹv Rupiya</displayName>
 				<displayName count="other">Pakinhtỹv Rupiya ag</displayName>
-				<symbol draft="contributed">PKR</symbol>
-				<symbol alt="narrow" draft="contributed">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>Poronĩja Rẽrĩr</displayName>
 				<displayName count="one">Poronĩja Rẽrĩr</displayName>
 				<displayName count="other">Poronĩja Rẽrĩr ag</displayName>
-				<symbol draft="contributed">PLN</symbol>
-				<symbol alt="narrow" draft="contributed">zł</symbol>
 			</currency>
 			<currency type="PLZ">
 				<displayName>Poronĩja Rẽrĩr (1950–1995)</displayName>
@@ -6428,14 +5608,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Paraguvaj Garnĩ</displayName>
 				<displayName count="one">Paraguvaj Garnĩ</displayName>
 				<displayName count="other">Paraguvaj Garnĩ ag</displayName>
-				<symbol draft="contributed">PYG</symbol>
-				<symbol alt="narrow" draft="contributed">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>Katar Hijar</displayName>
 				<displayName count="one">Katar Hijar</displayName>
 				<displayName count="other">Katar Hijar ag</displayName>
-				<symbol draft="contributed">QAR</symbol>
 			</currency>
 			<currency type="RHD">
 				<displayName>Ronésija Nórar</displayName>
@@ -6451,21 +5628,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Romẽnija Rev</displayName>
 				<displayName count="one">Romẽnija Rev</displayName>
 				<displayName count="other">Romẽnija Rev ag</displayName>
-				<symbol draft="contributed">RON</symbol>
 				<symbol alt="narrow" draft="contributed">L</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>Séruvija Ninỹ</displayName>
 				<displayName count="one">Séruvija Ninỹ</displayName>
 				<displayName count="other">Séruvija Ninỹ ag</displayName>
-				<symbol draft="contributed">RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>Husija Humro</displayName>
 				<displayName count="one">Husija Humro</displayName>
 				<displayName count="other">Husija Humro ag</displayName>
-				<symbol draft="contributed">RUB</symbol>
-				<symbol alt="narrow" draft="contributed">₽</symbol>
 			</currency>
 			<currency type="RUR">
 				<displayName>Husija Humro (1991–1998)</displayName>
@@ -6476,27 +5649,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Huvỹna Vĩpir</displayName>
 				<displayName count="one">Huvỹna Vĩpir</displayName>
 				<displayName count="other">Huvỹna Vĩpir ag</displayName>
-				<symbol draft="contributed">RWF</symbol>
-				<symbol alt="narrow" draft="contributed">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>Aramija Savnita Hijar</displayName>
 				<displayName count="one">Aramija Savnita Hijar</displayName>
 				<displayName count="other">Aramija Savnita Hijar ag</displayName>
-				<symbol draft="contributed">SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>Saromỹ Vẽsogso Nórar</displayName>
 				<displayName count="one">Saromỹ Vẽsogso Nórar</displayName>
 				<displayName count="other">Saromỹ Vẽsogso Nórar ag</displayName>
-				<symbol draft="contributed">SBD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>Sejséri Rupija</displayName>
 				<displayName count="one">Sejséri Rupija</displayName>
 				<displayName count="other">Sejséri Rupija ag</displayName>
-				<symbol draft="contributed">SCR</symbol>
 			</currency>
 			<currency type="SDD">
 				<displayName>Suná Ninỹ (1992–2007)</displayName>
@@ -6507,7 +5674,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Suná Rimbra</displayName>
 				<displayName count="one">Suná Rimbra</displayName>
 				<displayName count="other">Suná Rimbra ag</displayName>
-				<symbol draft="contributed">SDG</symbol>
 			</currency>
 			<currency type="SDP">
 				<displayName>Suná Rimbra (1957–1998)</displayName>
@@ -6518,22 +5684,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Suvésija Rãgre</displayName>
 				<displayName count="one">Suvésija Rãgre</displayName>
 				<displayName count="other">Suvésija Rãgre ag</displayName>
-				<symbol draft="contributed">SEK</symbol>
-				<symbol alt="narrow" draft="contributed">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>Sĩgapur Nórar</displayName>
 				<displayName count="one">Sĩgapur Nórar</displayName>
 				<displayName count="other">Sĩgapur Nórar ag</displayName>
-				<symbol draft="contributed">SGD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>Sỹta Herenỹ Rimra</displayName>
 				<displayName count="one">Sỹta Herenỹ Rimra</displayName>
 				<displayName count="other">Sỹta Herenỹ Rimra ag</displayName>
-				<symbol draft="contributed">SHP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="SIT">
 				<displayName>Enhrovenĩja Torar Há</displayName>
@@ -6545,24 +5705,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName count="one">Enhrovakija Rãgre</displayName>
 				<displayName count="other">Enhrovakija Rãgre ag</displayName>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>Krĩ Mĩgkusũg-fi Re’onĩ</displayName>
 				<displayName count="one">Krĩ Mĩgkusũg-fi Re’onĩ</displayName>
 				<displayName count="other">Krĩ Mĩgkusũg-fi Re’onĩ ag</displayName>
-				<symbol draft="contributed">SLL</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>Krĩ Mĩgkusũg-fi Re’onĩ (1964—2022)</displayName>
+				<displayName count="one">Krĩ Mĩgkusũg-fi Re’onĩ (1964—2022)</displayName>
+				<displayName count="other">Krĩ Mĩgkusũg-fi Re’onĩ ag (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>Somỹrija Serĩm</displayName>
 				<displayName count="one">Somỹrija Serĩm</displayName>
 				<displayName count="other">Somỹrija Serĩm ag</displayName>
-				<symbol draft="contributed">SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>Surinỹm Nórar</displayName>
 				<displayName count="one">Surinỹm Nórar</displayName>
 				<displayName count="other">Surinỹm Nórar ag</displayName>
-				<symbol draft="contributed">SRD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="SRG">
 				<displayName>Surinỹm Kafejsĩ</displayName>
@@ -6573,21 +5734,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Suná-Sur Rimra</displayName>
 				<displayName count="one">Suná-Sur Rimra</displayName>
 				<displayName count="other">Suná-Sur Rimra ag</displayName>
-				<symbol draft="contributed">SSP</symbol>
-				<symbol alt="narrow" draft="contributed">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>Sỹtomẽ Prĩsipi-mré Nómra (1977–2017)</displayName>
 				<displayName count="one">Sỹtomẽ Prĩsipi-mré Nómra (1977–2017)</displayName>
 				<displayName count="other">Sỹtomẽ Prĩsipi-mré Nómra ag (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>Sỹtomẽ Prĩsipi-mré Nómra</displayName>
 				<displayName count="one">Sỹtomẽ Prĩsipi-mré Nómra</displayName>
 				<displayName count="other">Sỹtomẽ Prĩsipi-mré Nómra ag</displayName>
-				<symbol draft="contributed">STN</symbol>
-				<symbol alt="narrow" draft="contributed">Db</symbol>
 			</currency>
 			<currency type="SUR">
 				<displayName>Sovijéti Humro</displayName>
@@ -6603,21 +5759,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Sirija Rimra</displayName>
 				<displayName count="one">Sirija Rimra</displayName>
 				<displayName count="other">Sirija Rimra ag</displayName>
-				<symbol draft="contributed">SYP</symbol>
 				<symbol alt="narrow">S£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>Suvasi-Ga Rirỹgenĩ</displayName>
 				<displayName count="one">Suvasi-Ga Rirỹgenĩ</displayName>
 				<displayName count="other">Suvasi-Ga Rirỹgenĩ ag</displayName>
-				<symbol draft="contributed">SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>Taj-Ga Mati</displayName>
 				<displayName count="one">Taj-Ga Mati</displayName>
 				<displayName count="other">Taj-Ga Mati ag</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow" draft="contributed">฿</symbol>
 			</currency>
 			<currency type="TJR">
 				<displayName>Tanijikinhtỹv Humro</displayName>
@@ -6628,7 +5781,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Tanijikinhtỹv Somãnĩ</displayName>
 				<displayName count="one">Tanijikinhtỹv Somãnĩ</displayName>
 				<displayName count="other">Tanijikinhtỹv Somãnĩ ag</displayName>
-				<symbol draft="contributed">TJS</symbol>
 			</currency>
 			<currency type="TMM">
 				<displayName>Turkomẽnisitỹ Manati (1993–2009)</displayName>
@@ -6639,20 +5791,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Tukomẽnũ Manati</displayName>
 				<displayName count="one">Tukomẽnũ Manati</displayName>
 				<displayName count="other">Tukomẽnũ Manati ag</displayName>
-				<symbol draft="contributed">TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>Tunĩsija Ninỹ</displayName>
 				<displayName count="one">Tunĩsija Ninỹ</displayName>
 				<displayName count="other">Tunĩsija Ninỹ ag</displayName>
-				<symbol draft="contributed">TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>Tãga Pa’ỹga</displayName>
 				<displayName count="one">Tãga Pa’ỹga</displayName>
 				<displayName count="other">Tãga Pa’ỹga ag</displayName>
-				<symbol draft="contributed">TOP</symbol>
-				<symbol alt="narrow" draft="contributed">T$</symbol>
 			</currency>
 			<currency type="TPE">
 				<displayName>Timor Vẽjuven</displayName>
@@ -6668,36 +5816,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Turkija Rira</displayName>
 				<displayName count="one">Turkija Rira</displayName>
 				<displayName count="other">Turkija Rira ag</displayName>
-				<symbol draft="contributed">TRY</symbol>
-				<symbol alt="narrow" draft="contributed">₺</symbol>
-				<symbol alt="variant" draft="contributed">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>Tirinĩna Tomago-mré Nórar</displayName>
 				<displayName count="one">Tirinĩna Tomago-mré Nórar</displayName>
 				<displayName count="other">Tirinĩna Tomago-mré Nórar ag</displayName>
-				<symbol draft="contributed">TTD</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>Tajvỹ Nórar Tãg</displayName>
 				<displayName count="one">Tajvỹ Nórar Tãg</displayName>
 				<displayName count="other">Tajvỹ Nórar Tãg ag</displayName>
-				<symbol draft="contributed">NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>Tỹnjỹnĩja Serĩm</displayName>
 				<displayName count="one">Tỹnjỹnĩja Serĩm</displayName>
 				<displayName count="other">Tỹnjỹnĩja Serĩm ag</displayName>
-				<symbol draft="contributed">TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>Ukrỹnĩja Hyryvinja</displayName>
 				<displayName count="one">Ukrỹnĩja Hyryvinja</displayName>
 				<displayName count="other">Ukrỹnĩja Hyryvinja ag</displayName>
-				<symbol draft="contributed">UAH</symbol>
-				<symbol alt="narrow" draft="contributed">₴</symbol>
 			</currency>
 			<currency type="UAK">
 				<displayName>Ukrỹnĩja Karbovanẽ</displayName>
@@ -6713,14 +5852,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ugỹna Serĩm</displayName>
 				<displayName count="one">Ugỹna Serĩm</displayName>
 				<displayName count="other">Ugỹna Serĩm ag</displayName>
-				<symbol draft="contributed">UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>Nãrti-Amẽrikỹ Nórar</displayName>
 				<displayName count="one">Nãrti-Amẽrikỹ Nórar</displayName>
 				<displayName count="other">Nãrti-Amẽrikỹ Nórar ag</displayName>
-				<symbol draft="contributed">US$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="USN">
 				<displayName>Nãrti-Amẽrikỹ Nórar (kurã ũ kã)</displayName>
@@ -6746,14 +5882,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Uruguvaj Kufy</displayName>
 				<displayName count="one">Uruguvaj Kufy</displayName>
 				<displayName count="other">Uruguvaj Kufy ag</displayName>
-				<symbol draft="contributed">UYU</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>Unhmekinhtỹv Kyr</displayName>
 				<displayName count="one">Unhmekinhtỹv Kyr</displayName>
 				<displayName count="other">Unhmekinhtỹv Kyr ag</displayName>
-				<symbol draft="contributed">UZS</symbol>
 			</currency>
 			<currency type="VEB">
 				<displayName>Venẽjuvéra Morivar (1871–2008)</displayName>
@@ -6764,21 +5897,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Venẽjuvéra Morivar (2008–2018)</displayName>
 				<displayName count="one">Venẽjuvéra Morivar (2008–2018)</displayName>
 				<displayName count="other">Venẽjuvéra Morivar ag (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>Venẽjuvéra Morivar</displayName>
 				<displayName count="one">Venẽjuvéra Morivar</displayName>
 				<displayName count="other">Venẽjuvéra Morivar ag</displayName>
-				<symbol draft="contributed">VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>Vijétinỹm Nãg</displayName>
 				<displayName count="one">Vijétinỹm Nãg</displayName>
 				<displayName count="other">Vijétinỹm Nãg ag</displayName>
-				<symbol draft="contributed">₫</symbol>
-				<symbol alt="narrow" draft="contributed">₫</symbol>
 			</currency>
 			<currency type="VNN">
 				<displayName>Vijétinỹm Nãg (1978–1985)</displayName>
@@ -6789,29 +5917,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Vanũvatu Vatu</displayName>
 				<displayName count="one">Vanũvatu Vatu</displayName>
 				<displayName count="other">Vanũvatu Vatu ag</displayName>
-				<symbol draft="contributed">VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>Samãva Tara</displayName>
 				<displayName count="one">Samãva Tara</displayName>
 				<displayName count="other">Samãva Tara ag</displayName>
-				<symbol draft="contributed">WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>Vĩpir CFA tỹ BEAC</displayName>
 				<displayName count="one">Vĩpir CFA tỹ BEAC</displayName>
 				<displayName count="other">Vĩpir CFA tỹ BEAC ag</displayName>
-				<symbol draft="contributed">FCFA</symbol>
 			</currency>
 			<currency type="XAG">
 				<displayName>Kyfé Kupri</displayName>
-				<displayName count="one">Kyfé Kupri</displayName>
-				<displayName count="other">Kyfé Kupri</displayName>
 			</currency>
 			<currency type="XAU">
 				<displayName>Kyfé Mỹrér</displayName>
-				<displayName count="one">Kyfé Mỹrér</displayName>
-				<displayName count="other">Kyfé Mỹrér</displayName>
 			</currency>
 			<currency type="XBA">
 				<displayName>Orópa Vẽnhkãmur ũ ‘e</displayName>
@@ -6837,12 +5958,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Karime Rãjur Nórar</displayName>
 				<displayName count="one">Karime Rãjur Nórar</displayName>
 				<displayName count="other">Karime Rãjur Nórar ag</displayName>
-				<symbol draft="contributed">EC$</symbol>
-				<symbol alt="narrow" draft="contributed">$</symbol>
 			</currency>
 			<currency type="XDR">
 				<displayName>Kuryj há ty Jiro</displayName>
-				<displayName count="one">Kuryj ty Vẽnhkãgán há</displayName>
 				<displayName count="other">Kuryj ty Vẽnhkãgán há</displayName>
 			</currency>
 			<currency type="XEU">
@@ -6875,7 +5993,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Vĩpir CFP</displayName>
 				<displayName count="one">Vĩpir CFP</displayName>
 				<displayName count="other">Vĩpir CFP ag</displayName>
-				<symbol draft="contributed">CFPF</symbol>
 			</currency>
 			<currency type="XPT">
 				<displayName>Pratinỹ</displayName>
@@ -6906,7 +6023,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Jemẽn Hijar</displayName>
 				<displayName count="one">Jemẽn Hijar</displayName>
 				<displayName count="other">Jemẽn Hijar ag</displayName>
-				<symbol draft="contributed">YER</symbol>
 			</currency>
 			<currency type="YUD">
 				<displayName>Jugusiravija Ninỹ Tar (1966–1990)</displayName>
@@ -6937,8 +6053,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Ran surafrikỹnũ</displayName>
 				<displayName count="one">Ran surafrikỹnũ</displayName>
 				<displayName count="other">Ran surafrikỹnũ ag</displayName>
-				<symbol draft="contributed">ZAR</symbol>
-				<symbol alt="narrow" draft="contributed">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>Kuvasa Jỹmijanũ (1968–2012)</displayName>
@@ -6950,8 +6064,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>Kuvasa jỹmijanũ</displayName>
 				<displayName count="one">Kuvasa jỹmijanũ</displayName>
 				<displayName count="other">Kuvasa jỹmijanũ ag</displayName>
-				<symbol draft="contributed">ZMW</symbol>
-				<symbol alt="narrow" draft="contributed">ZK</symbol>
 			</currency>
 			<currency type="ZRN">
 				<displayName>Jajre Tãg Sajrẽse</displayName>
@@ -6960,7 +6072,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="ZRZ">
 				<displayName>Jajre Sajrẽse (1971–1993)</displayName>
-				<displayName count="one">Jajre tá Jajre</displayName>
 				<displayName count="other">Jajre tá Jajre</displayName>
 			</currency>
 			<currency type="ZWD">
@@ -6980,10 +6091,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">+{0}</pattern>
-			<pattern type="atMost">≤{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">kurã {0}</pluralMinimalPairs>
@@ -6996,11 +6104,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0} por {1}</compoundUnitPattern>
 			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName>tar g</displayName>
 				<unitPattern count="one">tar g {0}</unitPattern>
 				<unitPattern count="other">tar g {0}</unitPattern>
 			</unit>
@@ -7015,12 +6119,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tĩn 'e</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>radiano ag</displayName>
 				<unitPattern count="one">{0} radiano</unitPattern>
 				<unitPattern count="other">{0} radiano</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>grav ag</displayName>
 				<unitPattern count="one">{0} grav</unitPattern>
 				<unitPattern count="other">{0} grav</unitPattern>
 			</unit>
@@ -7041,7 +6143,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} kiromẽturo pénogno ki</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>hegtar ag</displayName>
 				<unitPattern count="one">{0} hegtar</unitPattern>
 				<unitPattern count="other">{0} hegtar</unitPattern>
 			</unit>
@@ -7064,7 +6165,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} milha pénogno ki</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>akre ag</displayName>
 				<unitPattern count="one">{0} akre</unitPattern>
 				<unitPattern count="other">{0} akre ag</unitPattern>
 			</unit>
@@ -7085,12 +6185,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} poregana pénogno ki</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName>dunam ag</displayName>
-				<unitPattern count="one">{0} dunam</unitPattern>
 				<unitPattern count="other">dunam {0}</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
-				<displayName>kirate ag</displayName>
 				<unitPattern count="one">{0} kirate</unitPattern>
 				<unitPattern count="other">{0} kirate ag</unitPattern>
 			</unit>
@@ -7110,24 +6207,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kupar 'e milhão ki</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>sẽnto ki</displayName>
 				<unitPattern count="one">{0} sẽnto ki</unitPattern>
 				<unitPattern count="other">{0} sẽnto ki</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>mil ki</displayName>
 				<unitPattern count="one">{0} mil ki</unitPattern>
 				<unitPattern count="other">{0} mil ki</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName>pãntu mase</displayName>
 				<unitPattern count="one">{0} pãntu mase</unitPattern>
 				<unitPattern count="other">{0} pãntu mase ag</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>mol ag</displayName>
-				<unitPattern count="one">{0} mol</unitPattern>
-				<unitPattern count="other">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ritru ag kiromẽturo ki</displayName>
@@ -7196,12 +6288,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="digital-byte">
 				<displayName>byte ag</displayName>
-				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="other">{0} byte</unitPattern>
 			</unit>
 			<unit type="digital-bit">
 				<displayName>bit ag</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
 				<unitPattern count="other">{0} bit ag</unitPattern>
 			</unit>
 			<unit type="duration-century">
@@ -7215,31 +6304,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} nékana ag</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>prỹg ag</displayName>
-				<unitPattern count="one">{0} prỹg</unitPattern>
-				<unitPattern count="other">{0} prỹg ag</unitPattern>
 				<perUnitPattern>{0} prỹg ki</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
-				<displayName>kysã ag</displayName>
 				<unitPattern count="one">kysã {0}</unitPattern>
 				<unitPattern count="other">kysã ag {0}</unitPattern>
 				<perUnitPattern>kysã {0} ki</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName>simỹnỹ ag</displayName>
 				<unitPattern count="one">{0} simỹnỹ</unitPattern>
 				<unitPattern count="other">{0} simỹnỹ ag</unitPattern>
 				<perUnitPattern>{0} simỹnỹ ki</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>kurã ag</displayName>
 				<unitPattern count="one">kurã {0}</unitPattern>
 				<unitPattern count="other">kurã {0}</unitPattern>
 				<perUnitPattern>kurã {0} ki</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName>óra ag</displayName>
 				<unitPattern count="one">óra {0}</unitPattern>
 				<unitPattern count="other">óra ag {0}</unitPattern>
 				<perUnitPattern>óra {0} ki</perUnitPattern>
@@ -7257,7 +6339,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>sigũnu {0} ki</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName>mĩrisigũnu ag</displayName>
 				<unitPattern count="one">mĩrisigũnu {0}</unitPattern>
 				<unitPattern count="other">mĩrisigũnu {0}</unitPattern>
 			</unit>
@@ -7302,9 +6383,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} karorija ag</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Karoria ag</displayName>
-				<unitPattern count="one">{0} Karorija</unitPattern>
-				<unitPattern count="other">{0} Karorija ag</unitPattern>
+				<displayName draft="provisional">Karoria ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} Karorija</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Karorija ag</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirojoule ag</displayName>
@@ -7312,7 +6393,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kirojoule ag</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>joule ag</displayName>
 				<unitPattern count="one">{0} joule</unitPattern>
 				<unitPattern count="other">{0} joule ag</unitPattern>
 			</unit>
@@ -7368,11 +6448,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="graphics-em">
 				<displayName>tipografiko em</displayName>
-				<unitPattern count="one">{0} em</unitPattern>
-				<unitPattern count="other">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>pixel ag</displayName>
 				<unitPattern count="one">{0} pixel</unitPattern>
 				<unitPattern count="other">{0} pixel ag</unitPattern>
 			</unit>
@@ -7392,14 +6469,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel ag poregana ki</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>sẽntimẽturo ki pãntu ag</displayName>
-				<unitPattern count="one">{0} pãntu sẽntimẽturo ki</unitPattern>
-				<unitPattern count="other">{0} pãntu ag sẽntimẽturo ki</unitPattern>
+				<displayName draft="provisional">sẽntimẽturo ki pãntu ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} pãntu sẽntimẽturo ki</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pãntu ag sẽntimẽturo ki</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>poregana ki pãntu ag</displayName>
-				<unitPattern count="one">{0} pãntu poregana ki</unitPattern>
-				<unitPattern count="other">{0} pãntu ag poregana ki</unitPattern>
+				<displayName draft="provisional">poregana ki pãntu ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} pãntu poregana ki</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pãntu ag poregana ki</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kiromẽturo ag</displayName>
@@ -7445,19 +6522,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pikomẽturo ag</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>milha ag</displayName>
 				<unitPattern count="one">{0} milha</unitPattern>
 				<unitPattern count="other">{0} milha ag</unitPattern>
 			</unit>
 			<unit type="length-yard">
-				<displayName>jarda ag</displayName>
 				<unitPattern count="one">{0} jarda</unitPattern>
 				<unitPattern count="other">{0} jarda ag</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName>tipẽn ag</displayName>
-				<unitPattern count="one">{0} tipẽn</unitPattern>
-				<unitPattern count="other">{0} tipẽn ag</unitPattern>
 				<perUnitPattern>{0} tipẽn ki</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
@@ -7467,13 +6539,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} poregana ki</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>parsec ag</displayName>
 				<unitPattern count="one">{0} parsec</unitPattern>
 				<unitPattern count="other">{0} parsec ag</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName>prỹg-jẽngrẽ ag</displayName>
-				<unitPattern count="one">{0} prỹg-jẽngrẽ</unitPattern>
 				<unitPattern count="other">{0} prỹg-jẽngrẽ ag</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
@@ -7482,12 +6551,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kanhkã vẽnhkãmur ag</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName draft="contributed">furlong ag</displayName>
 				<unitPattern count="one" draft="contributed">{0} furlong</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} furlong ag</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName draft="contributed">mrasa ag</displayName>
 				<unitPattern count="one" draft="contributed">{0} mrasa</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} mrasa ag</unitPattern>
 			</unit>
@@ -7502,22 +6569,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} milha enhkỹninỹva ag</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>pãntu ag</displayName>
 				<unitPattern count="one">{0} pãntu</unitPattern>
 				<unitPattern count="other">{0} pãntu ag</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName>rã nogno</displayName>
 				<unitPattern count="one">{0} rã no</unitPattern>
 				<unitPattern count="other">{0} rã no ag</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>jẽngrẽ ag</displayName>
 				<unitPattern count="one">{0} jẽngrẽ</unitPattern>
 				<unitPattern count="other">{0} jẽngrẽ ag</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>rã jẽngrẽ ag</displayName>
 				<unitPattern count="one">{0} rã jẽngrẽ</unitPattern>
 				<unitPattern count="other">{0} rã jẽngrẽ ag</unitPattern>
 			</unit>
@@ -7533,7 +6596,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} kirogrỹmỹ ki</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>grỹmỹ ag</displayName>
 				<unitPattern count="one">{0} grỹmỹ</unitPattern>
 				<unitPattern count="other">{0} grỹmỹ ag</unitPattern>
 				<perUnitPattern>{0} grỹmỹ ki</perUnitPattern>
@@ -7554,12 +6616,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} tãnẽrada ag</unitPattern>
 			</unit>
 			<unit type="mass-stone">
-				<displayName draft="contributed">pó ag</displayName>
 				<unitPattern count="one" draft="contributed">{0} pó</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} pó ag</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName>rimra ag</displayName>
 				<unitPattern count="one">{0} rimra</unitPattern>
 				<unitPattern count="other">{0} rimra ag</unitPattern>
 				<perUnitPattern>{0} rimra ki</perUnitPattern>
@@ -7576,22 +6636,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} mĩgfi troy ag</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>kirate ag</displayName>
 				<unitPattern count="one">{0} kirate</unitPattern>
 				<unitPattern count="other">{0} kirate ag</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName>dalton ag</displayName>
 				<unitPattern count="one">{0} dalton</unitPattern>
 				<unitPattern count="other">{0} dalton ag</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName>ga-pãgoj ag</displayName>
 				<unitPattern count="one">{0} ga-pãgoj</unitPattern>
 				<unitPattern count="other">{0} ga-pãgoj</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName>rã-pãgoj ag</displayName>
 				<unitPattern count="one">{0} rã-pãgoj</unitPattern>
 				<unitPattern count="other">{0} rã-pãgoj</unitPattern>
 			</unit>
@@ -7611,7 +6667,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kirowatt ag</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName>watt ag</displayName>
 				<unitPattern count="one">{0} watt</unitPattern>
 				<unitPattern count="other">{0} watt ag</unitPattern>
 			</unit>
@@ -7642,8 +6697,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-bar">
 				<displayName>bar ag</displayName>
-				<unitPattern count="one">{0} bar</unitPattern>
-				<unitPattern count="other">{0} bar ag</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>mĩribar ag</displayName>
@@ -7692,13 +6745,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-knot">
 				<displayName>kagje ag</displayName>
-				<unitPattern count="one">{0} kagje</unitPattern>
-				<unitPattern count="other">{0} kagje ag</unitPattern>
-			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>grav Celsius ag</displayName>
@@ -7773,7 +6819,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} hegtoritru ag</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>ritru ag</displayName>
 				<unitPattern count="one">{0} ritru</unitPattern>
 				<unitPattern count="other">{0} ritru ag</unitPattern>
 				<perUnitPattern>{0} ritru ki</perUnitPattern>
@@ -7826,12 +6871,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kãgrán ag</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName>pint ag</displayName>
 				<unitPattern count="one">{0} pint</unitPattern>
 				<unitPattern count="other">{0} pint ag</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>sikara ag</displayName>
 				<unitPattern count="one">{0} sikara</unitPattern>
 				<unitPattern count="other">{0} sikara ag</unitPattern>
 			</unit>
@@ -7871,184 +6914,116 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<unitLength type="short">
 			<unit type="acceleration-g-force">
 				<displayName>tar g</displayName>
-				<unitPattern count="one">{0} G</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>mẽturo/seg²</displayName>
-				<unitPattern count="one">{0} m/s²</unitPattern>
-			</unit>
-			<unit type="angle-revolution">
-				<unitPattern count="one">{0} rev</unitPattern>
 			</unit>
 			<unit type="angle-radian">
 				<displayName>radiano ag</displayName>
-				<unitPattern count="one">{0} rad</unitPattern>
 			</unit>
 			<unit type="angle-degree">
 				<displayName>grav ag</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
 				<displayName>arcmin ag</displayName>
-				<unitPattern count="one">arcmin {0}</unitPattern>
 				<unitPattern count="other">arcmin {0}</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
 				<displayName>arcseg ag</displayName>
-				<unitPattern count="one">{0} arcseg</unitPattern>
 				<unitPattern count="other">{0} arcseg</unitPattern>
-			</unit>
-			<unit type="area-square-kilometer">
-				<unitPattern count="one">{0} km²</unitPattern>
 			</unit>
 			<unit type="area-hectare">
 				<displayName>hegtar ag</displayName>
-				<unitPattern count="one">{0} ha</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<displayName>mẽturo² ag</displayName>
-				<unitPattern count="one">{0} m²</unitPattern>
-			</unit>
-			<unit type="area-square-centimeter">
-				<unitPattern count="one">{0} cm²</unitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>milha² ag</displayName>
-				<unitPattern count="one">{0} mi²</unitPattern>
 			</unit>
 			<unit type="area-acre">
 				<displayName>akre ag</displayName>
-				<unitPattern count="one">{0} ac</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>jarda² ag</displayName>
-				<unitPattern count="one">{0} yd²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
 				<displayName>tipẽn² ag</displayName>
-				<unitPattern count="one">{0} ft²</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>poregana² ag</displayName>
-				<unitPattern count="one">{0} pol²</unitPattern>
 				<unitPattern count="other">{0} pol²</unitPattern>
 				<perUnitPattern>pol² ki {0}</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
 				<displayName>dunam ag</displayName>
-				<unitPattern count="one">{0} dunam</unitPattern>
-				<unitPattern count="other">{0} dunam</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>kirate ag</displayName>
-				<unitPattern count="one">{0} k</unitPattern>
 				<unitPattern count="other">{0} k</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
 				<displayName>mg/dl</displayName>
-				<unitPattern count="one">{0} mg/dl</unitPattern>
 				<unitPattern count="other">{0} mg/dl</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
 				<displayName>mĩrimol/ritru</displayName>
-				<unitPattern count="one">{0} mmol/l</unitPattern>
 				<unitPattern count="other">{0} mmol/l</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
 				<displayName>kupar ‘e/milhão ki</displayName>
-				<unitPattern count="one">{0} ppm</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>sẽnto ki</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>mil ki</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>pãntu mase</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<unitPattern count="one">{0} mol</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName>ritru ag/km ki</displayName>
-				<unitPattern count="one">{0} l/km</unitPattern>
 				<unitPattern count="other">{0} l/km</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>l/100 km ki</displayName>
-				<unitPattern count="one">{0} l/100 km ki</unitPattern>
 				<unitPattern count="other">{0} l/100 km ki</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>milha ag/garỹv ki</displayName>
-				<unitPattern count="one">{0} mpg</unitPattern>
 				<unitPattern count="other">{0} mpg</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<displayName>milha ag/gar. ĩmp. ki</displayName>
-				<unitPattern count="one">{0} mpg imp.</unitPattern>
 				<unitPattern count="other">{0} mpg imp.</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PByte</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TByte</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tbit</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GByte</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gbit</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>MByte</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mbit</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kByte</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kbit</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
-			</unit>
-			<unit type="digital-byte">
-				<displayName>byte</displayName>
-				<unitPattern count="one">{0} byte</unitPattern>
-				<unitPattern count="other">{0} byte</unitPattern>
-			</unit>
-			<unit type="digital-bit">
-				<displayName>bit</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="other">{0} bit</unitPattern>
 			</unit>
 			<unit type="duration-century">
 				<displayName>sék.</displayName>
@@ -8057,7 +7032,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-decade">
 				<displayName>nék.</displayName>
-				<unitPattern count="one">{0} nék.</unitPattern>
 				<unitPattern count="other">{0} nék.</unitPattern>
 			</unit>
 			<unit type="duration-year">
@@ -8074,7 +7048,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-week">
 				<displayName>simỹnỹ ag</displayName>
-				<unitPattern count="one">{0} sim.</unitPattern>
 				<unitPattern count="other">{0} sim.</unitPattern>
 				<perUnitPattern>{0}/sim. Ki</perUnitPattern>
 			</unit>
@@ -8086,160 +7059,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra ag</displayName>
-				<unitPattern count="one">{0} h</unitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>mĩn</displayName>
-				<unitPattern count="one">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>sig</displayName>
-				<unitPattern count="one">{0} sig</unitPattern>
 				<unitPattern count="other">{0} sig</unitPattern>
 				<perUnitPattern>{0}/s ki</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>mĩrisigũnu ag</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<unitPattern count="one">{0} μs</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<unitPattern count="one">{0} ns</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>amps</displayName>
-				<unitPattern count="one">{0} A</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
 				<displayName>mĩriamps</displayName>
-				<unitPattern count="one">{0} mA</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ohms</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>volts</displayName>
-				<unitPattern count="one">{0} V</unitPattern>
-			</unit>
-			<unit type="energy-kilocalorie">
-				<unitPattern count="one">{0} kcal</unitPattern>
-			</unit>
-			<unit type="energy-calorie">
-				<unitPattern count="one">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirojoule</displayName>
-				<unitPattern count="one">{0} kJ</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>joule ag</displayName>
-				<unitPattern count="one">{0} J</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
 				<displayName>kW-óra</displayName>
-				<unitPattern count="one">{0} kWh</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>elétron-volt</displayName>
-				<unitPattern count="one">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>BTU</displayName>
-				<unitPattern count="one">{0} BTU</unitPattern>
 				<unitPattern count="other">{0} BTU</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName>thm EUA</displayName>
-				<unitPattern count="one">{0} thm EUA</unitPattern>
 				<unitPattern count="other">{0} thm EUA</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
 				<displayName>rimra-tar</displayName>
-				<unitPattern count="one">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName>newton</displayName>
-				<unitPattern count="one">{0} N</unitPattern>
-			</unit>
-			<unit type="frequency-gigahertz">
-				<unitPattern count="one">{0} GHz</unitPattern>
-			</unit>
-			<unit type="frequency-megahertz">
-				<unitPattern count="one">{0} MHz</unitPattern>
-			</unit>
-			<unit type="frequency-kilohertz">
-				<unitPattern count="one">{0} kHz</unitPattern>
-			</unit>
-			<unit type="frequency-hertz">
-				<unitPattern count="one">{0} Hz</unitPattern>
-			</unit>
-			<unit type="graphics-em">
-				<unitPattern count="one">{0} em</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>pixel ag</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>megapixel ag</displayName>
-				<unitPattern count="one">{0} MP</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-centimeter">
-				<unitPattern count="one">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-pixel-per-inch">
-				<unitPattern count="one">{0} ppi</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
-			</unit>
-			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<unitPattern count="one">{0} km</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<unitPattern count="one">{0} dm</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<unitPattern count="one">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<unitPattern count="one">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-micrometer">
-				<unitPattern count="one">{0} μm</unitPattern>
-			</unit>
-			<unit type="length-nanometer">
-				<unitPattern count="one">{0} nm</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<unitPattern count="one">{0} pm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName>milha ag</displayName>
-				<unitPattern count="one">{0} mi</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>jarda ag</displayName>
-				<unitPattern count="one">{0} yd</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<displayName>tipẽn ag</displayName>
@@ -8249,22 +7137,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-inch">
 				<displayName>pol.</displayName>
-				<unitPattern count="one">{0} pol.</unitPattern>
 				<unitPattern count="other">{0} pol.</unitPattern>
 				<perUnitPattern>{0}/pol. ki</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>parsec ag</displayName>
-				<unitPattern count="one">{0} pc</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>prỹg-jẽngrẽ ag</displayName>
-				<unitPattern count="one">{0} prỹg-jẽngrẽ</unitPattern>
 				<unitPattern count="other">{0} prỹg-jẽngrẽ</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName>ua k.v.</displayName>
-				<unitPattern count="one">{0} ua</unitPattern>
 				<unitPattern count="other">{0} ua</unitPattern>
 			</unit>
 			<unit type="length-furlong">
@@ -8272,153 +7156,72 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-fathom">
 				<displayName draft="contributed">mrasa ag</displayName>
-				<unitPattern count="one" draft="contributed">{0} bça. mrs</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} bça. mrs</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
 				<displayName>mn</displayName>
-				<unitPattern count="one">{0} mn</unitPattern>
 				<unitPattern count="other">{0} mn</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<unitPattern count="one">{0} smi</unitPattern>
 			</unit>
 			<unit type="length-point">
 				<displayName>pãntu ag</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>rã nogno</displayName>
-				<unitPattern count="one">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>jẽngrẽ ag</displayName>
-				<unitPattern count="one">{0} lx</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>rã jẽngrẽ ag</displayName>
-				<unitPattern count="one">{0} L☉</unitPattern>
-			</unit>
-			<unit type="mass-tonne">
-				<displayName>t</displayName>
-				<unitPattern count="one">{0} t</unitPattern>
-				<unitPattern count="other">{0} t</unitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<unitPattern count="one">{0} kg</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>grỹmỹ ag</displayName>
-				<unitPattern count="one">{0} g</unitPattern>
-			</unit>
-			<unit type="mass-milligram">
-				<unitPattern count="one">{0} mg</unitPattern>
-			</unit>
-			<unit type="mass-microgram">
-				<unitPattern count="one">{0} μg</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName>tãnẽrana</displayName>
-				<unitPattern count="one">{0} tn</unitPattern>
-				<unitPattern count="other">{0} tn</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName draft="contributed">pó ag</displayName>
 			</unit>
 			<unit type="mass-pound">
 				<displayName>rimra ag</displayName>
-				<unitPattern count="one">{0} lb</unitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<unitPattern count="one">{0} oz</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>oz troy</displayName>
-				<unitPattern count="one">{0} oz t</unitPattern>
 			</unit>
 			<unit type="mass-carat">
 				<displayName>kirate ag</displayName>
-				<unitPattern count="one">{0} ct</unitPattern>
 				<unitPattern count="other">{0} ct</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
 				<displayName>dalton ag</displayName>
-				<unitPattern count="one">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>ga-pãgoj ag</displayName>
-				<unitPattern count="one">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>rã-pãgoj ag</displayName>
-				<unitPattern count="one">{0} M☉</unitPattern>
-			</unit>
-			<unit type="power-gigawatt">
-				<unitPattern count="one">{0} GW</unitPattern>
-			</unit>
-			<unit type="power-megawatt">
-				<unitPattern count="one">{0} MW</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<unitPattern count="one">{0} kW</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName>watt ag</displayName>
-				<unitPattern count="one">{0} W</unitPattern>
-			</unit>
-			<unit type="power-milliwatt">
-				<unitPattern count="one">{0} mW</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
 				<displayName>cv</displayName>
-				<unitPattern count="one">{0} cv</unitPattern>
 				<unitPattern count="other">{0} cv</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>mmHg</displayName>
-				<unitPattern count="one">{0} mmHg</unitPattern>
 				<unitPattern count="other">{0} mmHg</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<unitPattern count="one">{0} psi</unitPattern>
-			</unit>
-			<unit type="pressure-inch-ofhg">
-				<unitPattern count="one">{0} inHg</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
 				<unitPattern count="one">{0} bar</unitPattern>
 				<unitPattern count="other">{0} bar ag</unitPattern>
 			</unit>
-			<unit type="pressure-millibar">
-				<unitPattern count="one">{0} mbar</unitPattern>
-			</unit>
-			<unit type="pressure-atmosphere">
-				<displayName>atm</displayName>
-				<unitPattern count="one">{0} atm</unitPattern>
-				<unitPattern count="other">{0} atm</unitPattern>
-			</unit>
-			<unit type="pressure-pascal">
-				<unitPattern count="one">{0} Pa</unitPattern>
-			</unit>
-			<unit type="pressure-hectopascal">
-				<unitPattern count="one">{0} hPa</unitPattern>
-			</unit>
-			<unit type="pressure-kilopascal">
-				<unitPattern count="one">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<unitPattern count="one">{0} MPa</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<unitPattern count="one">{0} km/h</unitPattern>
-			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName>mẽturo ag/seg</displayName>
-				<unitPattern count="one">{0} m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>milha ag/óra</displayName>
-				<unitPattern count="one">{0} mph</unitPattern>
 				<unitPattern count="other">{0} mph</unitPattern>
 			</unit>
 			<unit type="speed-knot">
@@ -8426,90 +7229,53 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} kagje</unitPattern>
 				<unitPattern count="other">{0} kagje ag</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<unitPattern count="one">{0}°</unitPattern>
-			</unit>
 			<unit type="temperature-celsius">
 				<displayName>grav C ag</displayName>
-				<unitPattern count="one">{0} °C</unitPattern>
 				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>grav F ag</displayName>
-				<unitPattern count="one">{0} °F</unitPattern>
 				<unitPattern count="other">{0} °F</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<unitPattern count="one">{0} K</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<unitPattern count="one">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<unitPattern count="one">{0} N⋅m</unitPattern>
-			</unit>
-			<unit type="volume-cubic-kilometer">
-				<unitPattern count="one">{0} km³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-meter">
-				<unitPattern count="one">{0} m³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-centimeter">
-				<unitPattern count="one">{0} cm³</unitPattern>
-			</unit>
-			<unit type="volume-cubic-mile">
-				<unitPattern count="one">{0} mi³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>jarda³ ag</displayName>
-				<unitPattern count="one">{0} yd³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName>tipẽn3 ag</displayName>
-				<unitPattern count="one">{0} ft³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>poregana³ ag</displayName>
-				<unitPattern count="one">{0} pol³</unitPattern>
 				<unitPattern count="other">{0} pol³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
 				<displayName>Ml</displayName>
-				<unitPattern count="one">{0} Ml</unitPattern>
 				<unitPattern count="other">{0} Ml</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>hl</displayName>
-				<unitPattern count="one">{0} hl</unitPattern>
 				<unitPattern count="other">{0} hl</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>ritru ag</displayName>
-				<unitPattern count="one">{0} l</unitPattern>
 			</unit>
 			<unit type="volume-deciliter">
 				<displayName>dl</displayName>
-				<unitPattern count="one">{0} dl</unitPattern>
 				<unitPattern count="other">{0} dl</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<displayName>cl</displayName>
-				<unitPattern count="one">{0} cl</unitPattern>
 				<unitPattern count="other">{0} cl</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<displayName>ml</displayName>
-				<unitPattern count="one">{0} ml</unitPattern>
 				<unitPattern count="other">{0} ml</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<displayName>ptm</displayName>
-				<unitPattern count="one">{0} ptm</unitPattern>
 				<unitPattern count="other">{0} ptm</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
 				<displayName>xícm</displayName>
-				<unitPattern count="one">{0} xícm</unitPattern>
 				<unitPattern count="other">{0} xícm</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
@@ -8519,50 +7285,38 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="volume-gallon">
 				<displayName>gar</displayName>
-				<unitPattern count="one">{0} gar</unitPattern>
 				<unitPattern count="other">{0} gar</unitPattern>
 				<perUnitPattern>{0}/gar</perUnitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
 				<displayName>gar. imp.</displayName>
-				<unitPattern count="one">{0} gar. imp.</unitPattern>
 				<unitPattern count="other">{0} gar. imp.</unitPattern>
 				<perUnitPattern>{0}/gar. imp.</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
 				<displayName>qts</displayName>
-				<unitPattern count="one">{0} qt</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>pint ag</displayName>
-				<unitPattern count="one">{0} pt</unitPattern>
 			</unit>
 			<unit type="volume-cup">
 				<displayName>sikara ag</displayName>
-				<unitPattern count="one">{0} sik.</unitPattern>
 				<unitPattern count="other">{0} sik.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
 				<displayName>fl oz</displayName>
-				<unitPattern count="one">{0} fl oz</unitPattern>
 				<unitPattern count="other">{0} fl oz</unitPattern>
-			</unit>
-			<unit type="volume-fluid-ounce-imperial">
-				<unitPattern count="one">{0} fl oz Imp.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
 				<displayName>kume k.</displayName>
-				<unitPattern count="one">{0} kume k.</unitPattern>
 				<unitPattern count="other">{0} kume k.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<displayName>sa k.</displayName>
-				<unitPattern count="one">{0} sa k.</unitPattern>
 				<unitPattern count="other">{0} sa k.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>marir</displayName>
-				<unitPattern count="one">{0} bbl</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>kãtá</displayName>
@@ -8573,15 +7327,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<displayName draft="contributed">tar g</displayName>
-			</unit>
 			<unit type="angle-arc-minute">
 				<unitPattern count="one">{0}'</unitPattern>
 				<unitPattern count="other">{0}'</unitPattern>
@@ -8596,139 +7341,65 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>l/100 km ki</displayName>
-				<unitPattern count="one">{0} l/100 km ki</unitPattern>
-				<unitPattern count="other">{0} l/100 km ki</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<displayName>PB</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
 				<displayName>TB</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
 				<displayName>Tb</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>GB</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>Gb</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>MB</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>Mb</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>kB</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>kb</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
 				<unitPattern count="one">{0} B</unitPattern>
 				<unitPattern count="other">{0} B</unitPattern>
 			</unit>
-			<unit type="digital-bit">
-				<displayName>bit</displayName>
-				<unitPattern count="one">{0} bit</unitPattern>
-				<unitPattern count="other">{0} bit</unitPattern>
-			</unit>
-			<unit type="duration-century">
-				<displayName>sék.</displayName>
-				<unitPattern count="one">{0} sék.</unitPattern>
-				<unitPattern count="other">{0} sék. ag</unitPattern>
-			</unit>
 			<unit type="duration-year">
 				<displayName>prỹg</displayName>
-				<unitPattern count="one">{0} prỹg</unitPattern>
-				<unitPattern count="other">{0} prỹg ag</unitPattern>
-				<perUnitPattern>{0}/prỹg ki</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>kysã</displayName>
-				<unitPattern count="one">{0} kysã</unitPattern>
-				<unitPattern count="other">{0} kysã ag</unitPattern>
 				<perUnitPattern>{0}/kysã</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>sim.</displayName>
-				<unitPattern count="one">{0} sim.</unitPattern>
 				<unitPattern count="other">{0} sim. Ag</unitPattern>
 				<perUnitPattern>{0}/sim.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>kurã</displayName>
-				<unitPattern count="one">{0} kurã</unitPattern>
-				<unitPattern count="other">{0} kurã ag</unitPattern>
 				<perUnitPattern>{0}/kurã</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>óra</displayName>
-				<unitPattern count="one">{0} h</unitPattern>
-				<unitPattern count="other">{0} h</unitPattern>
-			</unit>
-			<unit type="duration-minute">
-				<displayName>mĩn</displayName>
-				<unitPattern count="one">{0} min</unitPattern>
-				<unitPattern count="other">{0} min</unitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>sig</displayName>
 				<unitPattern count="one">{0} s</unitPattern>
 				<unitPattern count="other">{0} s</unitPattern>
 				<perUnitPattern draft="contributed">{0}/sig</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>ms</displayName>
-				<unitPattern count="one">{0} ms</unitPattern>
-				<unitPattern count="other">{0} ms</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName>km</displayName>
-				<unitPattern count="one">{0} km</unitPattern>
-				<unitPattern count="other">{0} km</unitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName>m</displayName>
-				<unitPattern count="one">{0} m</unitPattern>
-				<unitPattern count="other">{0} m</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName>cm</displayName>
-				<unitPattern count="one">{0} cm</unitPattern>
-				<unitPattern count="other">{0} cm</unitPattern>
-				<perUnitPattern draft="contributed">{0}/cm</perUnitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName>mm</displayName>
-				<unitPattern count="one">{0} mm</unitPattern>
-				<unitPattern count="other">{0} mm</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="contributed">mil</displayName>
@@ -8736,9 +7407,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} milha ag</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="contributed">tipẽn ag</displayName>
-				<unitPattern count="one">{0} tipẽn</unitPattern>
-				<unitPattern count="other">{0} tipẽn ag</unitPattern>
 				<perUnitPattern draft="contributed">{0}/tipẽn</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
@@ -8751,30 +7419,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="contributed">parsec</displayName>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">prỹg-jẽngrẽ ag</displayName>
 				<unitPattern count="one">prỹg-jẽngrẽ {0}</unitPattern>
 				<unitPattern count="other">prỹg-jẽngrẽ {0}</unitPattern>
-			</unit>
-			<unit type="length-astronomical-unit">
-				<displayName draft="contributed">ua k.v.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ua</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ua</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName draft="contributed">furlong</displayName>
 			</unit>
 			<unit type="length-fathom">
 				<displayName draft="contributed">mrasa</displayName>
-				<unitPattern count="one" draft="contributed">{0} bça. mrs</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} bça. mrs</unitPattern>
-			</unit>
-			<unit type="length-nautical-mile">
-				<displayName draft="contributed">mn</displayName>
-				<unitPattern count="one" draft="contributed">{0} mn</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mn</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>kg</displayName>
 				<unitPattern count="one">{0}kg</unitPattern>
 				<unitPattern count="other">{0}kg</unitPattern>
 			</unit>
@@ -8794,15 +7448,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" draft="contributed">{0} ql</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} ql</unitPattern>
 			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="one">{0} cv</unitPattern>
-				<unitPattern count="other">{0} cv</unitPattern>
-			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">mmHg</displayName>
-				<unitPattern count="one" draft="contributed">{0} mmHg</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} mmHg</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<unitPattern count="one">{0}″ Hg</unitPattern>
 				<unitPattern count="other">{0}″ Hg</unitPattern>
@@ -8811,25 +7456,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} mb</unitPattern>
 				<unitPattern count="other">{0} mb</unitPattern>
 			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<displayName>km/h</displayName>
-				<unitPattern count="one">{0} km/h</unitPattern>
-				<unitPattern count="other">{0} km/h</unitPattern>
-			</unit>
 			<unit type="speed-knot">
-				<displayName draft="contributed">kagje</displayName>
-				<unitPattern count="one" draft="contributed">{0} kagje</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} kagje</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
-				<unitPattern count="one">{0} °C</unitPattern>
-				<unitPattern count="other">{0} °C</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName>°F</displayName>
-				<unitPattern count="one">{0} °F</unitPattern>
-				<unitPattern count="other">{0} °F</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
 				<displayName draft="contributed">ft³</displayName>
@@ -8845,22 +7479,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} fl. oz.</unitPattern>
 			</unit>
 			<coordinateUnit>
-				<displayName>kãtá</displayName>
 				<coordinateUnitPattern type="east">{0}L</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0} N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0} S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west">{0}O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -8871,47 +7493,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
 			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
-			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} ketũmỹr {1}</listPatternPart>
-			<listPatternPart type="2">{0} ketũmỹr {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} kar {1}</listPatternPart>
-			<listPatternPart type="2">{0} kar {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} kar {1}</listPatternPart>
-			<listPatternPart type="2">{0} kar {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
 			<listPatternPart type="middle">{0} {1}</listPatternPart>
 			<listPatternPart type="end">{0} {1}</listPatternPart>
 			<listPatternPart type="2">{0} {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} kar {1}</listPatternPart>
-			<listPatternPart type="2">{0} kar {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -8922,7 +7512,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — kar</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} — jagnẽ ki há</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — nĩfe</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — kãvir</characterLabelPattern>
@@ -8940,7 +7529,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="arrows">nosĩ</characterLabel>
 		<characterLabel type="body">tihá</characterLabel>
 		<characterLabel type="box_drawing">tãpér kãgrá</characterLabel>
-		<characterLabel type="braille">braille</characterLabel>
 		<characterLabel type="building">ĩn téj</characterLabel>
 		<characterLabel type="bullets_stars">jónh kej fẽ / krĩg</characterLabel>
 		<characterLabel type="consonantal_jamo">jamũ kãsãnỹtar</characterLabel>
@@ -8965,7 +7553,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<characterLabel type="half_width_form_variant">tãpér kuju hẽjge</characterLabel>
 		<characterLabel type="han_characters">Han rár</characterLabel>
 		<characterLabel type="han_radicals">Han jé pẽ</characterLabel>
-		<characterLabel type="hanja">hanja</characterLabel>
 		<characterLabel type="hanzi_simplified">Hanzi (sĩprifikano)</characterLabel>
 		<characterLabel type="hanzi_traditional">Hanzi (pẽ)</characterLabel>
 		<characterLabel type="heart">fe</characterLabel>
@@ -9069,7 +7656,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">ge pẽ</styleName>
 		<styleName type="wght" subtype="500">ve</styleName>
 		<styleName type="wght" subtype="600">vẽnhrá kãnho ve</styleName>
-		<styleName type="wght" subtype="600" alt="demi">vẽnhrá kãnho ve</styleName>
 		<styleName type="wght" subtype="700">vẽnhrá kãnho</styleName>
 		<styleName type="wght" subtype="800">vẽnhrá kãnho tỹvĩ</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">vẽnhrá kãnho tỹvĩ-tỹvĩ</styleName>

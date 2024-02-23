@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package java.lang;
 import java.io.*;
 import java.util.*;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.event.ThrowableTracer;
 import jdk.internal.misc.InternalLock;
 
 /**
@@ -117,6 +118,11 @@ public class Throwable implements Serializable {
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     @java.io.Serial
     private static final long serialVersionUID = -3042686055658047285L;
+
+    /**
+     * Flag that determines if exceptions should be traced by JFR
+     */
+    static volatile boolean jfrTracing;
 
     /**
      * The JVM saves some indication of the stack backtrace in this slot.
@@ -254,8 +260,12 @@ public class Throwable implements Serializable {
      * <p>The {@link #fillInStackTrace()} method is called to initialize
      * the stack trace data in the newly created throwable.
      */
+    @SuppressWarnings("this-escape")
     public Throwable() {
         fillInStackTrace();
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), null);
+        }
     }
 
     /**
@@ -269,9 +279,13 @@ public class Throwable implements Serializable {
      * @param   message   the detail message. The detail message is saved for
      *          later retrieval by the {@link #getMessage()} method.
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message) {
         fillInStackTrace();
         detailMessage = message;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**
@@ -291,10 +305,14 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(String message, Throwable cause) {
         fillInStackTrace();
         detailMessage = message;
         this.cause = cause;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**
@@ -314,10 +332,14 @@ public class Throwable implements Serializable {
      *         unknown.)
      * @since  1.4
      */
+    @SuppressWarnings("this-escape")
     public Throwable(Throwable cause) {
         fillInStackTrace();
         detailMessage = (cause==null ? null : cause.toString());
         this.cause = cause;
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), null);
+        }
     }
 
     /**
@@ -360,6 +382,7 @@ public class Throwable implements Serializable {
      * @see ArithmeticException
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     protected Throwable(String message, Throwable cause,
                         boolean enableSuppression,
                         boolean writableStackTrace) {
@@ -370,8 +393,12 @@ public class Throwable implements Serializable {
         }
         detailMessage = message;
         this.cause = cause;
-        if (!enableSuppression)
+        if (!enableSuppression) {
             suppressedExceptions = null;
+        }
+        if (jfrTracing) {
+            ThrowableTracer.traceThrowable(getClass(), message);
+        }
     }
 
     /**

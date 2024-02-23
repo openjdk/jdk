@@ -64,20 +64,23 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        // not used
+        // not used, but required for interim javac to not warn.
         VIRTUAL_THREADS,
-        @JEP(number=442, title="Foreign Function & Memory API", status="Third Preview")
         FOREIGN,
-        @JEP(number=430, title="String Templates")
+        @JEP(number=459, title="String Templates", status="Second Preview")
         STRING_TEMPLATES,
-        @JEP(number=443, title="Unnamed Patterns and Variables")
-        UNNAMED,
-        @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
         UNNAMED_CLASSES,
-        @JEP(number=446, title="Scoped Values", status="Preview")
+        @JEP(number=463, title="Implicitly Declared Classes and Instance Main Methods", status="Preview")
+        IMPLICIT_CLASSES,
+        @JEP(number=464, title="Scoped Values", status="Second Preview")
         SCOPED_VALUES,
-        @JEP(number=453, title="Structured Concurrency", status="Preview")
+        @JEP(number=462, title="Structured Concurrency", status="Second Preview")
         STRUCTURED_CONCURRENCY,
+        @JEP(number=457, title="ClassFile API", status="Preview")
+        CLASSFILE_API,
+        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        STREAM_GATHERERS,
         /**
          * A key for testing.
          */

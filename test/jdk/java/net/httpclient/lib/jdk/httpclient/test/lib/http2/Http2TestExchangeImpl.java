@@ -23,6 +23,7 @@
 
 package jdk.httpclient.test.lib.http2;
 
+import jdk.httpclient.test.lib.http2.Http2TestServerConnection.ResponseHeaders;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.frame.HeaderFrame;
 import jdk.internal.net.http.frame.HeadersFrame;
@@ -145,15 +146,15 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
         rspheadersBuilder.setHeader(":status", Integer.toString(rCode));
         HttpHeaders headers = rspheadersBuilder.build();
 
-        Http2TestServerConnection.ResponseHeaders response
-                = new Http2TestServerConnection.ResponseHeaders(headers);
+        ResponseHeaders response
+                = new ResponseHeaders(headers);
         response.streamid(streamid);
         response.setFlag(HeaderFrame.END_HEADERS);
 
 
         if (responseLength < 0 || rCode == 204) {
             response.setFlag(HeadersFrame.END_STREAM);
-            conn.outputQ.put(response);
+            sendResponseHeaders(response);
             // Put a reset frame on the outputQ if there is still unconsumed data in the input stream and output stream
             // is going to be marked closed.
             if (is instanceof BodyInputStream bis && bis.unconsumed()) {
@@ -161,10 +162,14 @@ public class Http2TestExchangeImpl implements Http2TestExchange {
             }
             os.markClosed();
         } else {
-            conn.outputQ.put(response);
+            sendResponseHeaders(response);
         }
         os.goodToGo();
         System.err.println("Sent response headers " + rCode);
+    }
+
+    public void sendResponseHeaders(ResponseHeaders response) throws IOException {
+        conn.outputQ.put(response);
     }
 
     @Override

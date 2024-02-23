@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,6 +253,22 @@ AddNode* AddNode::make(Node* in1, Node* in2, BasicType bt) {
   return nullptr;
 }
 
+bool AddNode::is_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  return n->Opcode() == Op_Xor(bt) && phase->type(n->in(2)) == TypeInteger::minus_1(bt);
+}
+
+AddNode* AddNode::make_not(PhaseGVN* phase, Node* n, BasicType bt) {
+  switch (bt) {
+    case T_INT:
+      return new XorINode(n, phase->intcon(-1));
+    case T_LONG:
+      return new XorLNode(n, phase->longcon(-1L));
+    default:
+      fatal("Not implemented for %s", type2name(bt));
+  }
+  return nullptr;
+}
+
 //=============================================================================
 //------------------------------Idealize---------------------------------------
 Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
@@ -280,8 +296,26 @@ Node* AddNode::IdealIL(PhaseGVN* phase, bool can_reshape, BasicType bt) {
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddINode::Ideal" );
       Node* sub = SubNode::make(nullptr, nullptr, bt);
-      sub->init_req(1, phase->transform(AddNode::make(in1->in(1), in2->in(1), bt)));
-      sub->init_req(2, phase->transform(AddNode::make(in1->in(2), in2->in(2), bt)));
+      Node* sub_in1;
+      PhaseIterGVN* igvn = phase->is_IterGVN();
+      // During IGVN, if both inputs of the new AddNode are a tree of SubNodes, this same transformation will be applied
+      // to every node of the tree. Calling transform() causes the transformation to be applied recursively, once per
+      // tree node whether some subtrees are identical or not. Pushing to the IGVN worklist instead, causes the transform
+      // to be applied once per unique subtrees (because all uses of a subtree are updated with the result of the
+      // transformation). In case of a large tree, this can make a difference in compilation time.
+      if (igvn != nullptr) {
+        sub_in1 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(1), in2->in(1), bt));
+      } else {
+        sub_in1 = phase->transform(AddNode::make(in1->in(1), in2->in(1), bt));
+      }
+      Node* sub_in2;
+      if (igvn != nullptr) {
+        sub_in2 = igvn->register_new_node_with_optimizer(AddNode::make(in1->in(2), in2->in(2), bt));
+      } else {
+        sub_in2 = phase->transform(AddNode::make(in1->in(2), in2->in(2), bt));
+      }
+      sub->init_req(1, sub_in1);
+      sub->init_req(2, sub_in2);
       return sub;
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
@@ -730,7 +764,7 @@ Node* OrINode::Identity(PhaseGVN* phase) {
 }
 
 // Find shift value for Integer or Long OR.
-Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
+static Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   // val << norm_con_shift | val >> ({32|64} - norm_con_shift) => rotate_left val, norm_con_shift
   const TypeInt* lshift_t = phase->type(lshift)->isa_int();
   const TypeInt* rshift_t = phase->type(rshift)->isa_int();
@@ -771,6 +805,13 @@ Node* OrINode::Ideal(PhaseGVN* phase, bool can_reshape) {
     if (shift != nullptr) {
       return new RotateRightNode(in(1)->in(1), shift, TypeInt::INT);
     }
+  }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* and_a_b = new AndINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
   }
   return nullptr;
 }
@@ -838,6 +879,14 @@ Node* OrLNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return new RotateRightNode(in(1)->in(1), shift, TypeLong::LONG);
     }
   }
+
+  // Convert "~a | ~b" into "~(a & b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* and_a_b = new AndLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(and_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
+  }
+
   return nullptr;
 }
 
@@ -1031,7 +1080,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+static Node* build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
@@ -1263,7 +1312,7 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
 //
 // Note: we assume that SubL was already replaced by an AddL, and that the stride
 // has its sign flipped: SubL(limit, stride) -> AddL(limit, -stride).
-Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
+static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
   assert(n->Opcode() == Op_MaxL || n->Opcode() == Op_MinL, "sanity");
   // Check that the two clamps have the correct values.
   jlong clamp = (n->Opcode() == Op_MaxL) ? min_jint : max_jint;

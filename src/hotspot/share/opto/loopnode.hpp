@@ -42,8 +42,8 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
-class CountedLoopReserveKit;
 class VectorSet;
+class VSharedData;
 class Invariance;
 struct small_cache;
 
@@ -232,14 +232,11 @@ class CountedLoopNode : public BaseCountedLoopNode {
   // vector mapped unroll factor here
   int _slp_maximum_unroll_factor;
 
-  // Cached CountedLoopEndNode of pre loop for main loops
-  CountedLoopEndNode* _pre_loop_end;
-
 public:
   CountedLoopNode(Node *entry, Node *backedge)
     : BaseCountedLoopNode(entry, backedge), _main_idx(0), _trip_count(max_juint),
       _unrolled_count_log2(0), _node_count_before_unroll(0),
-      _slp_maximum_unroll_factor(0), _pre_loop_end(nullptr) {
+      _slp_maximum_unroll_factor(0) {
     init_class_id(Class_CountedLoop);
     // Initialize _trip_count to the largest possible value.
     // Will be reset (lower) if the loop's trip count is known.
@@ -331,9 +328,6 @@ public:
 
   Node* is_canonical_loop_entry();
   CountedLoopEndNode* find_pre_loop_end();
-  CountedLoopNode* pre_loop_head() const;
-  CountedLoopEndNode* pre_loop_end();
-  void set_pre_loop_end(CountedLoopEndNode* pre_loop_end);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -818,7 +812,6 @@ public:
 class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
-  friend class CountedLoopReserveKit;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
@@ -1105,6 +1098,7 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1119,6 +1113,7 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1196,7 +1191,7 @@ public:
     if (!C->failing()) {
       // Cleanup any modified bits
       igvn.optimize();
-
+      if (C->failing()) { return; }
       v.log_loop_tree();
     }
   }
@@ -1348,6 +1343,8 @@ public:
   void rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl, const Node_List& nodes_with_same_ctrl,
                                    const Dict& old_new_mapping);
   void rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping, const Node* next);
+  bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
+                                       Node* loop_entry);
 
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
@@ -1415,16 +1412,6 @@ public:
                                         IfNode* unswitch_iff,
                                         CloneLoopMode mode);
 
-  // Clone a loop and return the clone head (clone_loop_head).
-  // Added nodes include int(1), int(0) - disconnected, If, IfTrue, IfFalse,
-  // This routine was created for usage in CountedLoopReserveKit.
-  //
-  //    int(1) -> If -> IfTrue -> original_loop_head
-  //              |
-  //              V
-  //           IfFalse -> clone_loop_head (returned by function pointer)
-  //
-  LoopNode* create_reserve_version_of_loop(IdealLoopTree *loop, CountedLoopReserveKit* lk);
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
@@ -1446,6 +1433,14 @@ public:
   // Partially peel loop up through last_peel node.
   bool partial_peel( IdealLoopTree *loop, Node_List &old_new );
   bool duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old_new);
+
+  // AutoVectorize the loop: replace scalar ops with vector ops.
+  enum AutoVectorizeStatus {
+    Impossible,      // This loop has the wrong shape to even try vectorization.
+    Success,         // We just successfully vectorized the loop.
+    TriedAndFailed,  // We tried to vectorize, but failed.
+  };
+  AutoVectorizeStatus auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared);
 
   // Move UnorderedReduction out of loop if possible
   void move_unordered_reduction_out_of_loop(IdealLoopTree* loop);
@@ -1519,7 +1514,7 @@ public:
   Node *has_local_phi_input( Node *n );
   // Mark an IfNode as being dominated by a prior test,
   // without actually altering the CFG (and hence IDOM info).
-  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool exclude_loop_predicate = false);
+  void dominated_by(IfProjNode* prevdom, IfNode* iff, bool flip = false, bool pin_array_access_nodes = false);
 
   // Split Node 'n' through merge point
   RegionNode* split_thru_region(Node* n, RegionNode* region);
@@ -1747,6 +1742,10 @@ public:
   Node* similar_subtype_check(const Node* x, Node* r_in);
 
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
+
+  bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+
+  void pin_array_access_nodes_dependent_on(Node* ctrl);
 };
 
 
@@ -1793,69 +1792,6 @@ private:
   bool _check_at_final;
   uint _nodes_at_begin;
 };
-
-
-// This kit may be used for making of a reserved copy of a loop before this loop
-//  goes under non-reversible changes.
-//
-// Function create_reserve() creates a reserved copy (clone) of the loop.
-// The reserved copy is created by calling
-// PhaseIdealLoop::create_reserve_version_of_loop - see there how
-// the original and reserved loops are connected in the outer graph.
-// If create_reserve succeeded, it returns 'true' and _has_reserved is set to 'true'.
-//
-// By default the reserved copy (clone) of the loop is created as dead code - it is
-// dominated in the outer loop by this node chain:
-//   intcon(1)->If->IfFalse->reserved_copy.
-// The original loop is dominated by the same node chain but IfTrue projection:
-//   intcon(0)->If->IfTrue->original_loop.
-//
-// In this implementation of CountedLoopReserveKit the ctor includes create_reserve()
-// and the dtor, checks _use_new value.
-// If _use_new == false, it "switches" control to reserved copy of the loop
-// by simple replacing of node intcon(1) with node intcon(0).
-//
-// Here is a proposed example of usage (see also SuperWord::output in superword.cpp).
-//
-// void CountedLoopReserveKit_example()
-// {
-//    CountedLoopReserveKit lrk((phase, lpt, DoReserveCopy = true); // create local object
-//    if (DoReserveCopy && !lrk.has_reserved()) {
-//      return; //failed to create reserved loop copy
-//    }
-//    ...
-//    //something is wrong, switch to original loop
-///   if(something_is_wrong) return; // ~CountedLoopReserveKit makes the switch
-//    ...
-//    //everything worked ok, return with the newly modified loop
-//    lrk.use_new();
-//    return; // ~CountedLoopReserveKit does nothing once use_new() was called
-//  }
-//
-// Keep in mind, that by default if create_reserve() is not followed by use_new()
-// the dtor will "switch to the original" loop.
-// NOTE. You you modify outside of the original loop this class is no help.
-//
-class CountedLoopReserveKit {
-  private:
-    PhaseIdealLoop* _phase;
-    IdealLoopTree*  _lpt;
-    LoopNode*       _lp;
-    IfNode*         _iff;
-    LoopNode*       _lp_reserved;
-    bool            _has_reserved;
-    bool            _use_new;
-    const bool      _active; //may be set to false in ctor, then the object is dummy
-
-  public:
-    CountedLoopReserveKit(PhaseIdealLoop* phase, IdealLoopTree *loop, bool active);
-    ~CountedLoopReserveKit();
-    void use_new()                {_use_new = true;}
-    void set_iff(IfNode* x)       {_iff = x;}
-    bool has_reserved()     const { return _active && _has_reserved;}
-  private:
-    bool create_reserve();
-};// class CountedLoopReserveKit
 
 inline Node* IdealLoopTree::tail() {
   // Handle lazy update of _tail field.

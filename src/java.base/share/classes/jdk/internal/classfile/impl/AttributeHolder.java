@@ -27,9 +27,9 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.BufWriter;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.BufWriter;
 
 public class AttributeHolder {
     private final List<Attribute<?>> attributes = new ArrayList<>();

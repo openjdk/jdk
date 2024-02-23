@@ -26,7 +26,7 @@
   @bug 5045936 5055171
   @summary Tests that there is no ClassCastException thrown in printing
    checkbox and scrollbar with XAWT
-  @author art@sparc.spb.su
+  @key printer
   @run applet/manual=yesno PrintCheckboxManualTest.html
 */
 

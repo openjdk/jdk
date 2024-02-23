@@ -52,7 +52,7 @@ public class WindowsAArch64CallArranger extends CallArranger {
     //
     // Although the AAPCS64 says r0-7 and v0-7 are all valid return
     // registers, it's not possible to generate a C function that uses
-    // r2-7 and v4-7 so they are omitted here.
+    // r2-7 and v4-7 so, they are omitted here.
     private static final ABIDescriptor WindowsAArch64AbiDescriptor = abiFor(
         new VMStorage[] { r0, r1, r2, r3, r4, r5, r6, r7, INDIRECT_RESULT},
         new VMStorage[] { v0, v1, v2, v3, v4, v5, v6, v7 },
