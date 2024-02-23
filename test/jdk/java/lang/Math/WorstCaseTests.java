@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@
  * sinh and cosh.
  *
  * Additional worst-case observed error inputs for the FDLIBM-derived
- * OpenLibm 0.8.1 added from
+ * OpenLibm 0.8.1 and other math libraries added from
  * "Accuracy of Mathematical Functions in Single, Double, Double
  * Extended, and Quadruple Precision"
  * by Brian Gladman, Vincenzo Innocente and Paul Zimmermann
@@ -123,8 +123,16 @@ public class WorstCaseTests {
             {+0x1.1D5C2DAEBE367p4,      0x1.A8C02E974C314p25},
             {+0x1.C44CE0D716A1Ap4,      0x1.B890CA8637AE1p40},
 
-            // Worst-case observed error
+            // Worst-case observed error for FDLIBM
             {+0x1.2e8f20cf3cbe7p+8,     0x1.6a2a59cc78bf7p436},
+            // Other worst-case observed errors
+            {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
+            {+0x1.fce66609f7428p+5,     0x1.b59724cb0bc4cp91},
+            {+0x1.b97dc8345c55p+5,      0x1.88ab482dafdd8p79},    // check
+            {-0x1.18209ecd19a8cp+6,     0x1.f3dcee4c90dfap-102},  // check
+            {-0x1.4133f4fd79c1cp-13,    0x1.ffebed256fadp-1},     // check
+            {-0x1.74046dfefd9d1p+9,     0x0.0000000000001p-1022}, // check
+            {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
         };
 
         for(double[] testCase: testCases) {
@@ -161,8 +169,18 @@ public class WorstCaseTests {
             {+0x1AC.50B409C8AEEp0,      +0x6.0F52F37AECFCCp+0},
             {+0x1.DE7CD6751029Ap16,     +0x1.76E7E5D7B6EABp+3},
 
-            // Worst-case observed error
+            // Worst-case observed error for FDLIBM
             {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
+            // Other worst-case observed errors
+            {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f85p-4},  // check
+            {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10}, // check
+            {+0x1.0ffea3878db6bp+0,     +0x1.f07a0cca521efp-5},
+            {+0x1.dc0b586f2b26p-1,      -0x1.2a3eaaa6e8d73p-4},  // check
+            {+0x1.490af72a25a81p-1,     -0x1.c4bf7ae48f078p-2},
+            {+0x1.5b6e7e4e96f86p+2,     +0x1.b11240cba290ep0},   // check
+            {+0x1.0ffc349469a2fp+0,     +0x1.f030c2507cd81p-5},  // check
+            {+0x1.69e7aa6da2df5p-1,     -0x1.634508c9adfp-2},
+            {+0x1.5556123e8a2bp-1,      -0x1.9f300810f7d7dp-2}, // check
         };
 
         for(double[] testCase: testCases) {
@@ -327,7 +345,7 @@ public class WorstCaseTests {
     }
 
     /*
-     * 1 ulp stated error bound
+     * 1.25 ulp stated error bound
      */
     private static int testWorstTan() {
         int failures = 0;

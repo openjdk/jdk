@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,6 +79,9 @@ public class ExpTests {
             {Math.nextUp(EXP_OVERFLOW_THRESH),    Double.POSITIVE_INFINITY},
             {Math.nextDown(EXP_UNDERFLOW_THRESH), +0.0},
             {EXP_UNDERFLOW_THRESH,                +Double.MIN_VALUE},
+
+            // FDLIBM exp(1.0) does *not* return Math.E
+            {1.0,                                  Math.nextUp(Math.E)},
         };
 
         for(double[] testCase: testCases)
