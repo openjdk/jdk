@@ -63,6 +63,8 @@ public class HsErrFileUtils {
      * if patterns are missing, or if the END marker is missing.
      * @param f Input file
      * @param patterns An array of patterns that need to match, in that order
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
+     *               information are printed.
      * @throws RuntimeException, {@link IOException}
      */
     public static void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose) throws IOException {
