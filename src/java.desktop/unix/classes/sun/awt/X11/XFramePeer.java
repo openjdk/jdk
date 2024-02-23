@@ -328,6 +328,15 @@ class XFramePeer extends XDecoratedPeer implements FramePeer {
         XWM.getWM().setExtendedState(this, newState);
     }
 
+    @Override
+    public void toFront() {
+        if ((state & Frame.ICONIFIED) != 0) {
+            changeState(state & ~Frame.ICONIFIED);
+        }
+
+        super.toFront();
+    }
+
     public void handlePropertyNotify(XEvent xev) {
         super.handlePropertyNotify(xev);
         XPropertyEvent ev = xev.get_xproperty();
