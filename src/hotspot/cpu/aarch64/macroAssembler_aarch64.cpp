@@ -2403,7 +2403,7 @@ int MacroAssembler::pop(unsigned int bitset, Register stack) {
 
 // Push lots of registers in the bit set supplied.  Don't push sp.
 // Return the number of dwords pushed
-int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -2426,8 +2426,15 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  // SVE
-  if (use_sve && sve_vector_size_in_bytes > 16) {
+  if (mode == PushPopFull) {
+    if (use_sve && sve_vector_size_in_bytes > 16) {
+      mode = PushPopSVE;
+    } else {
+      mode = PushPopNeon;
+    }
+  }
+
+  if (mode == PushPopSVE) {
     sub(stack, stack, sve_vector_size_in_bytes * count);
     for (int i = 0; i < count; i++) {
       sve_str(as_FloatRegister(regs[i]), Address(stack, i));
@@ -2435,35 +2442,67 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack) {
     return count * sve_vector_size_in_bytes / 8;
   }
 
-  // NEON
-  if (count == 1) {
-    strq(as_FloatRegister(regs[0]), Address(pre(stack, -wordSize * 2)));
-    return 2;
-  }
+  if (mode == PushPopNeon) {
+    if (count == 1) {
+      strq(as_FloatRegister(regs[0]), Address(pre(stack, -wordSize * 2)));
+      return 2;
+    }
 
-  bool odd = (count & 1) == 1;
-  int push_slots = count + (odd ? 1 : 0);
+    bool odd = (count & 1) == 1;
+    int push_slots = count + (odd ? 1 : 0);
 
-  // Always pushing full 128 bit registers.
-  stpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -push_slots * wordSize * 2)));
-  words_pushed += 2;
-
-  for (int i = 2; i + 1 < count; i += 2) {
-    stpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+    // Always pushing full 128 bit registers.
+    stpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -push_slots * wordSize * 2)));
     words_pushed += 2;
+
+    for (int i = 2; i + 1 < count; i += 2) {
+      stpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+      words_pushed += 2;
+    }
+
+    if (odd) {
+      strq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
+      words_pushed++;
+    }
+
+    assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
+    return count * 2;
   }
 
-  if (odd) {
-    strq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
-    words_pushed++;
+  if (mode == PushPopFp) {
+    bool odd = (count & 1) == 1;
+    int push_slots = count + (odd ? 1 : 0);
+
+    if (count == 1) {
+      // Stack pointer must be 16 bytes aligned
+      strd(as_FloatRegister(regs[0]), Address(pre(stack, -push_slots * wordSize)));
+      return 1;
+    }
+
+    stpd(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(pre(stack, -push_slots * wordSize)));
+    words_pushed += 2;
+
+    for (int i = 2; i + 1 < count; i += 2) {
+      stpd(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize));
+      words_pushed += 2;
+    }
+
+    if (odd) {
+      // Stack pointer must be 16 bytes aligned
+      strd(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize));
+      words_pushed++;
+    }
+
+    assert(words_pushed == count, "oops, pushed != count");
+
+    return count;
   }
 
-  assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
-  return count * 2;
+  return 0;
 }
 
 // Return the number of dwords popped
-int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
+int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mode) {
   int words_pushed = 0;
   bool use_sve = false;
   int sve_vector_size_in_bytes = 0;
@@ -2485,8 +2524,15 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
     return 0;
   }
 
-  // SVE
-  if (use_sve && sve_vector_size_in_bytes > 16) {
+  if (mode == PushPopFull) {
+    if (use_sve && sve_vector_size_in_bytes > 16) {
+      mode = PushPopSVE;
+    } else {
+      mode = PushPopNeon;
+    }
+  }
+
+  if (mode == PushPopSVE) {
     for (int i = count - 1; i >= 0; i--) {
       sve_ldr(as_FloatRegister(regs[i]), Address(stack, i));
     }
@@ -2494,31 +2540,61 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack) {
     return count * sve_vector_size_in_bytes / 8;
   }
 
-  // NEON
-  if (count == 1) {
-    ldrq(as_FloatRegister(regs[0]), Address(post(stack, wordSize * 2)));
-    return 2;
-  }
+  if (mode == PushPopNeon) {
+    if (count == 1) {
+      ldrq(as_FloatRegister(regs[0]), Address(post(stack, wordSize * 2)));
+      return 2;
+    }
 
-  bool odd = (count & 1) == 1;
-  int push_slots = count + (odd ? 1 : 0);
+    bool odd = (count & 1) == 1;
+    int push_slots = count + (odd ? 1 : 0);
 
-  if (odd) {
-    ldrq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
-    words_pushed++;
-  }
+    if (odd) {
+      ldrq(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize * 2));
+      words_pushed++;
+    }
 
-  for (int i = 2; i + 1 < count; i += 2) {
-    ldpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+    for (int i = 2; i + 1 < count; i += 2) {
+      ldpq(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize * 2));
+      words_pushed += 2;
+    }
+
+    ldpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, push_slots * wordSize * 2)));
     words_pushed += 2;
+
+    assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
+
+    return count * 2;
   }
 
-  ldpq(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, push_slots * wordSize * 2)));
-  words_pushed += 2;
+  if (mode == PushPopFp) {
+    bool odd = (count & 1) == 1;
+    int push_slots = count + (odd ? 1 : 0);
 
-  assert(words_pushed == count, "oops, pushed(%d) != count(%d)", words_pushed, count);
+    if (count == 1) {
+      ldrd(as_FloatRegister(regs[0]), Address(post(stack, push_slots * wordSize)));
+      return 1;
+    }
 
-  return count * 2;
+    if (odd) {
+      ldrd(as_FloatRegister(regs[count - 1]), Address(stack, (count - 1) * wordSize));
+      words_pushed++;
+    }
+
+    for (int i = 2; i + 1 < count; i += 2) {
+      ldpd(as_FloatRegister(regs[i]), as_FloatRegister(regs[i+1]), Address(stack, i * wordSize));
+      words_pushed += 2;
+    }
+
+    ldpd(as_FloatRegister(regs[0]), as_FloatRegister(regs[1]), Address(post(stack, push_slots * wordSize)));
+    words_pushed += 2;
+
+    assert(words_pushed == count, "oops, pushed != count");
+
+    return count;
+  }
+
+  return 0;
 }
 
 // Return the number of dwords pushed
