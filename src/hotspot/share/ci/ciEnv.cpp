@@ -110,10 +110,7 @@ static bool firstEnv = true;
 
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
-ciEnv::ciEnv(CompileTask* task) :
-    _ciEnv_arena(mtCompiler),
-    _failure_reason(mtCompiler)
-{
+ciEnv::ciEnv(CompileTask* task) : _ciEnv_arena(mtCompiler) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -239,10 +236,7 @@ public:
   }
 };
 
-ciEnv::ciEnv(Arena* arena) :
-    _ciEnv_arena(mtCompiler),
-    _failure_reason(mtCompiler)
-{
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.

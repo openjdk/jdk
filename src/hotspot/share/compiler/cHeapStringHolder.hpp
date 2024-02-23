@@ -31,12 +31,10 @@
 // The user must ensure that the destructor is called, or at least clear.
 class CHeapStringHolder : public StackObj {
 private:
-  const MEMFLAGS _memflags;
   char* _string;
 
 public:
-  CHeapStringHolder(MEMFLAGS memflags) :
-    _memflags(memflags), _string(nullptr) {}
+  CHeapStringHolder() : _string(nullptr) {}
   ~CHeapStringHolder() { clear(); };
   NONCOPYABLE(CHeapStringHolder);
 

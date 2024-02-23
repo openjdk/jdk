@@ -29,7 +29,7 @@ void CHeapStringHolder::set(const char* string) {
   clear();
   if (string != nullptr) {
     size_t len = strlen(string);
-    _string = NEW_C_HEAP_ARRAY(char, len + 1, _memflags);
+    _string = NEW_C_HEAP_ARRAY(char, len + 1, mtCompiler);
     ::memcpy(_string, string, len);
     _string[len] = 0; // terminating null
   }
