@@ -207,8 +207,6 @@ void VirtualMemoryView::remove_view_into_space(const PhysicalMemorySpace& space,
       }
     }
   }
-  VirtualMemoryView::sort_regions(range_array);
-  VirtualMemoryView::merge_mapped(range_array);
 }
 
 void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
@@ -247,8 +245,6 @@ void VirtualMemoryView::add_view_into_space(const PhysicalMemorySpace& space,
   // or no overlap. Then we must add the original region
   rngs.push(TrackedOffsetRange{base_addr, size, offset, stack_idx, flag});
   // And now we're done.
-  VirtualMemoryView::sort_regions(rngs);
-  VirtualMemoryView::merge_mapped(rngs);
 }
 
 VirtualMemoryView::VirtualMemoryView(bool is_detailed_mode)

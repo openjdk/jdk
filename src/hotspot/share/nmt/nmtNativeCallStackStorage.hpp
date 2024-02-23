@@ -43,9 +43,6 @@ private:
     NativeCallStack stacks[static_chunk_size];
   };
   GrowableArrayCHeap<NCSChunk*, mtNMT> stack_chunks;
-
-  // If we actually run out of possible NCSChunks we need an escape hatch to not be forced to crash the VM.
-  GrowableArrayCHeap<NativeCallStack, mtNMT> emergency;
   bool is_detailed_mode;
 
 public:
@@ -82,15 +79,6 @@ public:
       }
     }
     int old_len = stack_chunks.length();
-    assert(old_len != emergency_chunk, "should never happen");
-    if (old_len == emergency_chunk) {
-      // We have run out of chunks in StackIndex.
-      // Just push it to the emergency array.
-      int chunk = emergency_chunk + 1;
-      int index = emergency.length();
-      emergency.push(stack);
-      return StackIndex(chunk, index);
-    }
 
     NCSChunk* new_chunk = new NCSChunk();
     new_chunk->stacks[index] = stack;
@@ -100,15 +88,11 @@ public:
   }
 
   const inline NativeCallStack& get(StackIndex si) {
-    if (si.chunk() == is_in_emergency) {
-      return emergency.at(si.index());
-    }
     return stack_chunks.at(si.chunk())->stacks[si.index()];
   }
 
   NativeCallStackStorage(bool is_detailed_mode)
   : stack_chunks{1},
-    emergency(0),
     is_detailed_mode(is_detailed_mode) {
     NCSChunk* chunk = new NCSChunk();
     stack_chunks.push(chunk);
