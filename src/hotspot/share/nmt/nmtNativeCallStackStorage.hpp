@@ -36,8 +36,6 @@
 class NativeCallStackStorage : public CHeapObj<mtNMT> {
 private:
   static constexpr int      static_chunk_size = 256;
-  static constexpr uint16_t is_in_emergency = 65535;
-  static constexpr uint32_t emergency_chunk = 65535 - 1;
 
   struct NCSChunk : public CHeapObj<mtNMT> {
     NativeCallStack stacks[static_chunk_size];
