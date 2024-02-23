@@ -437,7 +437,11 @@ C2V_VMENTRY_NULL(jobject, getResolvedJavaType0, (JNIEnv* env, jobject, jobject b
 
   const char* base_desc = nullptr;
   JVMCIKlassHandle klass(THREAD);
-  if (offset == oopDesc::klass_offset_in_bytes()) {
+
+  // With compact object headers, we can test for the explicit offset within
+  // the header to figure out if compiler code is accessing the class.
+  int klass_offset = UseCompactObjectHeaders ? 4 : oopDesc::klass_offset_in_bytes();
+  if (offset == klass_offset) {
     if (JVMCIENV->isa_HotSpotObjectConstantImpl(base_object)) {
       Handle base_oop = JVMCIENV->asConstant(base_object, JVMCI_CHECK_NULL);
       klass = base_oop->klass();

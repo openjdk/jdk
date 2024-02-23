@@ -621,7 +621,6 @@ private:
   zaddress try_relocate_object_inner(zaddress from_addr) {
     ZForwardingCursor cursor;
 
-    const size_t size = ZUtils::object_size(from_addr);
     ZPage* const to_page = target(_forwarding->to_age());
 
     // Lookup forwarding
@@ -629,12 +628,14 @@ private:
       const zaddress to_addr = forwarding_find(_forwarding, from_addr, &cursor);
       if (!is_null(to_addr)) {
         // Already relocated
+        const size_t size = ZUtils::object_size(to_addr);
         increase_other_forwarded(size);
         return to_addr;
       }
     }
 
     // Allocate object
+    const size_t size = ZUtils::object_size(from_addr);
     const zaddress allocated_addr = _allocator->alloc_object(to_page, size);
     if (is_null(allocated_addr)) {
       // Allocation failed

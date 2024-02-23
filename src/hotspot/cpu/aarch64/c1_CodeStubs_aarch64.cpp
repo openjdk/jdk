@@ -32,6 +32,7 @@
 #include "c1/c1_Runtime1.hpp"
 #include "classfile/javaClasses.hpp"
 #include "nativeInst_aarch64.hpp"
+#include "runtime/objectMonitor.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_aarch64.inline.hpp"
 
@@ -233,6 +234,13 @@ void MonitorExitStub::emit_code(LIR_Assembler* ce) {
   __ far_jump(RuntimeAddress(Runtime1::entry_for(exit_id)));
 }
 
+void LoadKlassStub::emit_code(LIR_Assembler* ce) {
+  assert(UseCompactObjectHeaders, "Only use with compact object headers");
+  __ bind(_entry);
+  Register d = _result->as_register();
+  __ ldr(d, Address(d, OM_OFFSET_NO_MONITOR_VALUE_TAG(header)));
+  __ b(_continuation);
+}
 
 // Implementation of patching:
 // - Copy the code at given offset to an inlined buffer (first the bytes, then the number of bytes)
