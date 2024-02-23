@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -34,31 +33,27 @@ import java.awt.print.PrinterJob;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+
 /*
  * @test
  * @bug 4223328
  * @summary Printer graphics must behave the same as screen graphics
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrintNullString
  */
 public class PrintNullString extends Frame {
-    private final TextCanvas c;
-
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
             "This test should print a page which contains the same\n" +
             "text messages as in the test window on the screen\n" +
             "The messages should contain only 'OK' and 'expected' messages\n" +
-            "There should be no FAILURE messages.\n" +
-            "You should also monitor the command line to see if any exceptions\n" +
-            "were thrown\n" +
             "If the page fails to print, but there were no exceptions\n" +
             "then the problem is likely elsewhere (ie your printer)";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -73,26 +68,28 @@ public class PrintNullString extends Frame {
     }
 
     public PrintNullString() {
-        super("JDK 1.2 drawString Printing");
+        super("PrintNullString");
 
-        c = new TextCanvas();
+        TextCanvas c = new TextCanvas();
         add("Center", c);
 
-        Button printButton = new Button("Print");
-        add("South", printButton);
-        printButton.addActionListener(e -> {
+        JButton b = new JButton("Print");
+        add("South", b);
+        b.addActionListener(e -> {
             PrinterJob pj = PrinterJob.getPrinterJob();
             if (pj.printDialog()) {
                 pj.setPrintable(c);
                 try {
                     pj.print();
-                } catch (PrinterException pe) {
-                    PassFailJFrame.forceFail("Print Failed");
-                    pe.printStackTrace();
+                } catch (PrinterException ex) {
+                    ex.printStackTrace();
+                    String msg = "PrinterException: " + ex.getMessage();
+                    JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                            JOptionPane.ERROR_MESSAGE);
+                    PassFailJFrame.forceFail(msg);
                 }
             }
         });
-
         pack();
     }
 
@@ -103,20 +100,26 @@ public class PrintNullString extends Frame {
         AttributedCharacterIterator nullIterator = null;
         AttributedCharacterIterator emptyIterator = emptyAttStr.getIterator();
 
-        public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g;
+            paint(g2d);
+        }
 
-            if (pgIndex > 0)
-                return Printable.NO_SUCH_PAGE;
+        @Override
+        public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
+            if (pgIndex > 0) {
+                return NO_SUCH_PAGE;
+            }
 
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
             paint(g2d);
 
-            return Printable.PAGE_EXISTS;
+            return PAGE_EXISTS;
         }
 
         public void paint(Graphics2D g2d) {
-
             // API 1: null & empty drawString(String, int, int);
             try {
                 g2d.drawString(nullStr, 20, 40);

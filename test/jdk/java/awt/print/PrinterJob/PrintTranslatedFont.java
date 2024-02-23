@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -35,20 +34,20 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
+import javax.swing.JButton;
+import javax.swing.JOptionPane;
+
 /*
  * @test
  * @bug 6359734
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test that fonts with a translation print where they should.
  * @run main/manual PrintTranslatedFont
  */
 public class PrintTranslatedFont extends Frame {
-    private final TextCanvas c;
-
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test\n" +
             "This test should print a page which contains the same\n" +
             "content as the test window on the screen, in particular the lines\n" +
             "should be immediately under the text\n" +
@@ -58,7 +57,6 @@ public class PrintTranslatedFont extends Frame {
             "then the test fails";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -73,22 +71,25 @@ public class PrintTranslatedFont extends Frame {
     }
 
     public PrintTranslatedFont() {
-        super("JDK 1.2 drawString Printing");
+        super("PrintTranslatedFont");
 
-        c = new TextCanvas();
+        TextCanvas c = new TextCanvas();
         add("Center", c);
 
-        Button printButton = new Button("Print");
-        add("South", printButton);
-        printButton.addActionListener(e -> {
+        JButton b = new JButton("Print");
+        add("South", b);
+        b.addActionListener(e -> {
             PrinterJob pj = PrinterJob.getPrinterJob();
             if (pj.printDialog()) {
                 pj.setPrintable(c);
                 try {
                     pj.print();
-                } catch (PrinterException pe) {
-                    PassFailJFrame.forceFail("Print Failed");
-                    pe.printStackTrace();
+                } catch (PrinterException ex) {
+                    ex.printStackTrace();
+                    String msg = "PrinterException: " + ex.getMessage();
+                    JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                            JOptionPane.ERROR_MESSAGE);
+                    PassFailJFrame.forceFail(msg);
                 }
             }
         });
@@ -97,15 +98,20 @@ public class PrintTranslatedFont extends Frame {
     }
 
     static class TextCanvas extends Panel implements Printable {
+        @Override
+        public void paint(Graphics g) {
+            Graphics2D g2d = (Graphics2D) g;
+            paint(g2d);
+        }
 
+        @Override
         public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
-
-            if (pgIndex > 0)
+            if (pgIndex > 0) {
                 return Printable.NO_SUCH_PAGE;
+            }
 
             Graphics2D g2d = (Graphics2D) g;
             g2d.translate(pgFmt.getImageableX(), pgFmt.getImageableY());
-
             paint(g2d);
             return Printable.PAGE_EXISTS;
         }

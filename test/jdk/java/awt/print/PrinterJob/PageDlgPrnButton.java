@@ -34,22 +34,20 @@ import java.awt.print.PrinterJob;
  * @bug 4956397
  * @key printer
  * @requires os.family=="windows"
- * @library /test/lib /java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PageDlgPrnButton
  */
 public class PageDlgPrnButton implements Printable
 {
     private static final String INSTRUCTIONS =
-            "For non-windows OS, this test PASSes.\n" +
             "You must have at least 2 printers available to perform this test.\n" +
             "This test brings up a native Windows page dialog.\n" +
             "Click on the Printer... button and change the selected printer. \n" +
             "Test passes if the printout comes from the new selected printer.";
 
     public static void main(String[] args) throws Exception {
-
-        if (PrinterJob.lookupPrintServices().length == 0) {
+        if (PrinterJob.lookupPrintServices().length < 2) {
             throw new RuntimeException("Printer not configured or available.");
         }
 
@@ -70,22 +68,28 @@ public class PageDlgPrnButton implements Printable
         PageFormat originalPageFormat = job.defaultPage();
         PageFormat pageFormat = job.pageDialog(originalPageFormat);
 
-        if (originalPageFormat == pageFormat) return;
+        if (originalPageFormat == pageFormat) {
+            throw new RuntimeException("OriginalPageFormat equals pageFormat");
+        }
 
         job.setPrintable(new PageDlgPrnButton(), pageFormat);
-        job.print();
+        if (job.printDialog()) {
+            job.print();
+        }
     }
 
+    @Override
     public int print(Graphics g, PageFormat pageFormat, int pageIndex) {
         final int boxWidth = 100;
         final int boxHeight = 100;
         final Rectangle rect = new Rectangle(0, 0, boxWidth, boxHeight);
         final double pageH = pageFormat.getImageableHeight();
         final double pageW = pageFormat.getImageableWidth();
-
-        if (pageIndex > 0) return (NO_SUCH_PAGE);
-
         final Graphics2D g2d = (Graphics2D) g;
+
+        if (pageIndex > 0) {
+            return NO_SUCH_PAGE;
+        }
 
         // Move the (x,y) origin to account for the left-hand and top margins
         g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
@@ -97,11 +101,13 @@ public class PageDlgPrnButton implements Printable
         // fits on the page in both dimensions
         final double scale = Math.min((pageW / boxWidth), (pageH / boxHeight));
 
-        if (scale < 1.0) g2d.scale(scale, scale);
+        if (scale < 1.0) {
+            g2d.scale(scale, scale);
+        }
 
         // Paint the scaled component on the printer
         g2d.fillRect(rect.x, rect.y, rect.width, rect.height);
 
-        return (PAGE_EXISTS);
+        return PAGE_EXISTS;
     }
 }

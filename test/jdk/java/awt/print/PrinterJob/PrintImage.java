@@ -38,11 +38,12 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
 /*
- * @test %I %W
+ * @test
  * @bug 4298489
  * @summary Confirm that output is same as screen.
  * @key printer
- * @library /test/lib /java/awt/regtesthelpers
+ * @requires os.family=="windows"
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual PrintImage
  */
@@ -50,17 +51,14 @@ public class PrintImage extends Frame implements ActionListener {
     private final PrintImageCanvas printImageCanvas = new PrintImageCanvas();
     private final MenuItem print1Menu = new MenuItem("PrintTest1");
     private final MenuItem print2Menu = new MenuItem("PrintTest2");
-
     private static final String INSTRUCTIONS =
-            "You must have a printer available to perform this test,\n" +
-            "prefererably Canon LaserShot A309GII.\n" +
-            "Printing must be done in Win 98 Japanese 2nd Edition.\n" +
+            "Printing must be done in Japanese 2nd Edition.\n" +
+            "Preferably Canon LaserShot A309GII.\n" +
             "\n" +
-            "Passing test : Output of text image for PrintTest1 and PrintTest2 should be " +
+            "Passing test : Output of text image for PrintTest1 and PrintTest2 should be\n" +
             "same as that on the screen.";
 
     public static void main(String[] argv) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -83,8 +81,7 @@ public class PrintImage extends Frame implements ActionListener {
         initMenu();
         setLayout(new BorderLayout());
         add(printImageCanvas, BorderLayout.CENTER);
-        pack();
-        setSize(500, 500);
+        setSize(500, 300);
     }
 
     private void initMenu() {
@@ -118,11 +115,12 @@ public class PrintImage extends Frame implements ActionListener {
             try {
                 printerJob.print();
             } catch (PrinterException e) {
-                PassFailJFrame.forceFail(" Print Failed");
+                PassFailJFrame.forceFail("Print Failed");
                 e.printStackTrace();
             }
-        } else
+        } else {
             printerJob.cancel();
+        }
     }
 
     private void printMain2() {
@@ -138,30 +136,28 @@ public class PrintImage extends Frame implements ActionListener {
                 PassFailJFrame.forceFail("Print Failed");
                 e.printStackTrace();
             }
-        } else
+        } else {
             printerJob.cancel();
+        }
     }
 }
 
 class PrintImageCanvas extends Canvas implements Printable {
-
+    @Override
     public void paint(Graphics g) {
         Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
         g.setFont(drawFont);
+        g.setColor(new Color(0, 0, 0, 200));
         g.drawString("PrintSample!", 100, 150);
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pi)
             throws PrinterException {
-
-        if (pi >= 1)
+        if (pi > 0) {
             return NO_SUCH_PAGE;
-        else {
-            g.setColor(new Color(0, 0, 0, 200));
-            Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
-            g.setFont(drawFont);
-            g.drawString("PrintSample!", 100, 150);
-            return PAGE_EXISTS;
         }
+        paint(g);
+        return PAGE_EXISTS;
     }
 }
