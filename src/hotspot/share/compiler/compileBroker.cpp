@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -582,7 +582,7 @@ CompilerCounters::CompilerCounters() {
 // c2 uses explicit CompilerPhaseType idToPhase mapping in opto/phasetype.hpp,
 // so if c2 is used, it should be always registered first.
 // This function is called during vm initialization.
-void register_jfr_phasetype_serializer(CompilerType compiler_type) {
+static void register_jfr_phasetype_serializer(CompilerType compiler_type) {
   ResourceMark rm;
   static bool first_registration = true;
   if (compiler_type == compiler_jvmci) {

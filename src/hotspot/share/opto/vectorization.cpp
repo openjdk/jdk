@@ -1272,7 +1272,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-void print_con_or_idx(const Node* n) {
+static void print_con_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");
   } else if (n->is_ConI()) {
