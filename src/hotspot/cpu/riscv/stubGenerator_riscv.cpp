@@ -4829,7 +4829,7 @@ class StubGenerator: public StubCodeGenerator {
   // W't =
   //    M't,                                      0 <=  t <= 15
   //    ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-  void sha1_prepare_w(int round, Register cur_w, Register ws[], Register buf) {
+  void sha1_prepare_w(Register cur_w, Register ws[], Register buf, int round) {
     assert(round >= 0 && round < 80, "must be");
 
     if (round < 16) {
@@ -4908,9 +4908,9 @@ class StubGenerator: public StubCodeGenerator {
   //    Parity(x, y, z) = x ^ y ^ z                     , 20 <= t <= 39
   //    Maj(x, y, z)    = (x & y) ^ (x & z) ^ (y & z)   , 40 <= t <= 59
   //    Parity(x, y, z) = x ^ y ^ z                     , 60 <= t <= 79
-  void sha1_f(int round, Register dst, Register x, Register y, Register z) {
+  void sha1_f(Register dst, Register x, Register y, Register z, int round) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(dst, x, y, z);
+    assert_different_registers(dst, x, y, z, t0, t1);
 
     if (round < 20) {
       // (x & y) ^ (~x & z)
@@ -4937,10 +4937,10 @@ class StubGenerator: public StubCodeGenerator {
   // c = ROTL'30(b)
   // b = a
   // a = T
-  void sha1_process_round(int round, Register a, Register b, Register c, Register d, Register e,
-                          Register cur_k, Register cur_w, Register tmp) {
+  void sha1_process_round(Register a, Register b, Register c, Register d, Register e,
+                          Register cur_k, Register cur_w, Register tmp, int round) {
     assert(round >= 0 && round < 80, "must be");
-    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp);
+    assert_different_registers(a, b, c, d, e, cur_w, cur_k, tmp, t0);
 
     // T = ROTL'5(a) + f't(b, c, d) + e + K't + W't
 
@@ -4954,7 +4954,7 @@ class StubGenerator: public StubCodeGenerator {
       __ add(tmp3, tmp3, tmp2);
       __ rolw_imm(tmp2, a, 5, t0);
 
-      sha1_f(round, tmp, b, c, d);
+      sha1_f(tmp, b, c, d, round);
 
       __ add(tmp2, tmp2, tmp);
       __ add(tmp2, tmp2, tmp3);
@@ -4995,7 +4995,7 @@ class StubGenerator: public StubCodeGenerator {
 
   void sha1_preserve_prev_abcde(Register a, Register b, Register c, Register d, Register e,
                                 Register prev_ab, Register prev_cd, Register prev_e) {
-    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e);
+    assert_different_registers(a, b, c, d, e, prev_ab, prev_cd, prev_e, t0);
 
     __ slli(t0, b, 32);
     __ zero_extend(prev_ab, a, 32);
@@ -5115,10 +5115,10 @@ class StubGenerator: public StubCodeGenerator {
       sha1_prepare_k(cur_k, round);
 
       // prepare W't value
-      sha1_prepare_w(round, cur_w, ws, buf);
+      sha1_prepare_w(cur_w, ws, buf, round);
 
       // one round process
-      sha1_process_round(round, a, b, c, d, e, cur_k, cur_w, t2);
+      sha1_process_round(a, b, c, d, e, cur_k, cur_w, t2, round);
     }
 
     // compute the intermediate hash value
