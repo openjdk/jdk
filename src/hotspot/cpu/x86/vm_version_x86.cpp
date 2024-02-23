@@ -1358,7 +1358,7 @@ void VM_Version::get_processor_features() {
 #endif // COMPILER2 && ASSERT
 
 #ifdef _LP64
-  if ((supports_avx512ifma() && supports_avx512vlbw() && MaxVectorSize >= 64) || (supports_avxifma() && MaxVectorSize >= 32))  {
+  if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
