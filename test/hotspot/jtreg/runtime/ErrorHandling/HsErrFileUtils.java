@@ -63,8 +63,8 @@ public class HsErrFileUtils {
      * if patterns are missing, or if the END marker is missing.
      * @param f Input file
      * @param patterns An array of patterns that need to match, in that order
-     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
-     *               information are printed.
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
      * @throws RuntimeException, {@link IOException}
      */
     public static void checkHsErrFileContent(File f, Pattern[] patterns, boolean verbose) throws IOException {
@@ -80,8 +80,8 @@ public class HsErrFileUtils {
      *                        Order is irrelevant.
      * @param checkEndMarker If true, we check for the final "END" in an hs-err file; if it is missing it indicates
      *                        that hs-err file printing did not complete successfully.
-     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
-     *               information are printed.
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
      * @throws RuntimeException, {@link IOException}
      */
     public static void checkHsErrFileContent(File f, Pattern[] positivePatterns, Pattern[] negativePatterns, boolean checkEndMarker, boolean verbose) throws IOException {
@@ -111,8 +111,8 @@ public class HsErrFileUtils {
      *                        Order is irrelevant.
      * @param checkEndMarker If true, we check for the final "END" in an hs-err file; if it is missing it indicates
      *                        that hs-err file printing did not complete successfully.
-     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only important
-     *               information are printed.
+     * @param verbose If true, the content of the hs-err file is printed while matching. If false, only the matched patterns
+     *                are printed.
      * @param printHserrOnError If true, the content of the hs-err file is printed in case of a failing check
      * @throws RuntimeException, {@link IOException}
      */
@@ -188,11 +188,11 @@ public class HsErrFileUtils {
                 BufferedReader br = new BufferedReader(new InputStreamReader(fis));
         ) {
             String line;
-            System.out.println("------------------------ hs error file ------------------------");
+            System.out.println("------------------------ hs-err file ------------------------");
             while ((line = br.readLine()) != null) {
                 System.out.println(line);
             }
-            System.out.println("---------------------------------------------------------------");
+            System.out.println("-------------------------------------------------------------");
         }
     }
 
