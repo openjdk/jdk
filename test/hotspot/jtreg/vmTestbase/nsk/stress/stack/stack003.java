@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,43 +52,34 @@
 
 package nsk.stress.stack;
 
-
-import java.io.PrintStream;
-
 public class stack003 {
     final static int ITERATIONS = 100;
     final static int INCREMENT = 100;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
+     
         int depth;
-        for (depth = 1; ; depth += INCREMENT)
+        for (depth = 1; ; depth += INCREMENT) {
             try {
                 recurse(depth);
-            } catch (StackOverflowError soe) {
-                break;
-            } catch (OutOfMemoryError oome) {
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
-        out.println("Max. depth: " + depth);
-        for (int i = 0; i < ITERATIONS; i++)
+        }
+        System.out.println("Max. depth: " + depth);
+        for (int i = 0; i < ITERATIONS; i++) {
             try {
                 recurse(2 * depth);
-                out.println("?");
-            } catch (StackOverflowError soe) {
+                System.out.println("?");
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
-            } catch (OutOfMemoryError oome) {
-                // Also OK.
             }
-        return 0;
+        }
     }
 
     static void recurse(int depth) {
-        if (depth > 0)
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
 }

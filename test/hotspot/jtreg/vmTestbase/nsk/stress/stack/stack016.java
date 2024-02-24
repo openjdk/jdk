@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,6 @@ package nsk.stress.stack;
 
 import nsk.share.Terminator;
 
-import java.io.PrintStream;
-
 public class stack016 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
@@ -71,37 +69,31 @@ public class stack016 extends Thread {
     private final static int PROBES = STEP * RESERVE;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
         verbose = false;
         boolean eager = false;
-        for (int i = 0; i < args.length; i++)
+        for (int i = 0; i < args.length; i++) {
             if (args[i].toLowerCase().equals("-verbose"))
                 verbose = true;
             else if (args[i].toLowerCase().equals("-eager"))
                 eager = true;
-        if (!eager)
+        }
+        if (!eager) {
             Terminator.appoint(Terminator.parseAppointment(args));
-        stack016.out = out;
+        }
         stack016 test = new stack016();
-        return test.doRun();
+        test.doRun();
     }
 
     private static boolean verbose;
-    private static PrintStream out;
 
     private void display(Object message) {
-        if (!verbose)
+        if (!verbose) {
             return;
-        synchronized (out) {
-            out.println(message.toString());
         }
+        System.out.println(message.toString());
     }
 
-    private int doRun() {
+    private void doRun() {
         //
         // Measure recursive depth before stack overflow:
         //
@@ -114,7 +106,7 @@ public class stack016 extends Thread {
                 break;
             }
         }
-        out.println("Maximal recursion depth: " + maxDepth);
+        System.out.println("Maximal recursion depth: " + maxDepth);
 
         //
         // Run the tested threads:
@@ -131,8 +123,7 @@ public class stack016 extends Thread {
                 try {
                     threads[i].join();
                 } catch (InterruptedException exception) {
-                    exception.printStackTrace(out);
-                    return 2;
+                    throw new RuntimeException(exception);
                 }
             }
         }
@@ -140,16 +131,12 @@ public class stack016 extends Thread {
         //
         // Check if unexpected exceptions were thrown:
         //
-        int exitCode = 0;
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
-                threads[i].thrown.printStackTrace(out);
-                exitCode = 2;
+                threads[i].thrown.printStackTrace();
+                throw new RuntimeException("Exception in the thread " + threads[i], threads[i].thrown);
             }
         }
-        if (exitCode != 0)
-            out.println("# TEST FAILED");
-        return exitCode;
     }
 
     private int stackTop = 0;
@@ -161,11 +148,7 @@ public class stack016 extends Thread {
         if (depth > 0) {
             try {
                 trickyRecurse(depth - 1);
-            } catch (Error error) {
-                if (!(error instanceof StackOverflowError) &&
-                        !(error instanceof OutOfMemoryError))
-                    throw error;
-
+            } catch (StackOverflowError | OutOfMemoryError error) {
                 //
                 // Provoke more stack overflow,
                 // if current stack is deep enough:
@@ -180,8 +163,9 @@ public class stack016 extends Thread {
     }
 
     private static void recurse(int depth) {
-        if (depth > 0)
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
 
     public void run() {
@@ -194,14 +178,9 @@ public class stack016 extends Thread {
                 throw new Error(
                         "TEST_BUG: trickyRecursion() must throw an error anyway!");
 
-            } catch (StackOverflowError error) {
-                // It's OK: stack overflow was expected.
-            } catch (OutOfMemoryError oome) {
-                // Also OK, if there is no memory for stack expansion.
-
+            } catch (StackOverflowError | OutOfMemoryError err) {
+                // It's OK
             } catch (Throwable throwable) {
-                if (throwable instanceof ThreadDeath)
-                    throw (ThreadDeath) throwable;
                 thrown = throwable;
                 break;
             }

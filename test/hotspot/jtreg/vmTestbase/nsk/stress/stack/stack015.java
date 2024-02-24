@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@
 
 package nsk.stress.stack;
 
-
-import java.io.PrintStream;
-
 public class stack015 extends stack015i {
     final static int THREADS = 10;
     final static int CYCLES = 10;
@@ -63,11 +60,6 @@ public class stack015 extends stack015i {
     final static int RESERVE = 10;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
         //
         // The test will invoke the particular stack015.recurse()
         // method via abstract test.recurse() invocations.
@@ -79,16 +71,15 @@ public class stack015 extends stack015i {
         // Measure maximal recursion depth until stack overflow:
         //
         int maxDepth = 0;
-        for (int depth = 0; ; depth += STEP)
+        for (int depth = 0; ; depth += STEP) {
             try {
                 test.recurse(depth);
                 maxDepth = depth;
-            } catch (StackOverflowError soe) {
-                break;
-            } catch (OutOfMemoryError oome) {
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
-        out.println("Max. depth: " + maxDepth);
+        }
+        System.out.println("Max. depth: " + maxDepth);
 
         //
         // Execute multiple threads repeatedly provoking stack overflows:
@@ -99,33 +90,30 @@ public class stack015 extends stack015i {
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
         }
-        for (int i = 0; i < threads.length; i++)
-            if (threads[i].isAlive())
+        for (int i = 0; i < threads.length; i++) {
+            if (threads[i].isAlive()) {
                 try {
                     threads[i].join();
                 } catch (InterruptedException exception) {
-                    exception.printStackTrace(out);
-                    return 2;
+                    throw new RuntimeException(exception);
                 }
-
+            }
+        }
         //
         // Check if unexpected exceptions were thrown:
         //
-        int exitCode = 0;
-        for (int i = 0; i < threads.length; i++)
+        for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
-                threads[i].thrown.printStackTrace(out);
-                exitCode = 2;
+                threads[i].thrown.printStackTrace();
+                throw new RuntimeException("Exception in the thread " + threads[i], threads[i].thrown);
             }
-
-        if (exitCode != 0)
-            out.println("# TEST FAILED");
-        return exitCode;
+        }
     }
 
     synchronized void syncRecurse(int depth) {
-        if (depth > 0)
+        if (depth > 0) {
             syncRecurse(depth - 1);
+        }
     }
 }
 
@@ -143,8 +131,9 @@ abstract class stack015i extends Thread {
         //
         // If no stack overflow occured, try again with deeper stack:
         //
-        if (depth > 0)
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
 
     Throwable thrown = null;
@@ -156,7 +145,7 @@ abstract class stack015i extends Thread {
         //
         // Provoke multiple stack overflows:
         //
-        for (int i = 0; i < stack015.CYCLES; i++)
+        for (int i = 0; i < stack015.CYCLES; i++) {
             try {
                 //
                 // All threads invoke the same synchronized method:
@@ -167,17 +156,13 @@ abstract class stack015i extends Thread {
                         "TEST_RFE: no stack overflow thrown" +
                                 ", need to try deeper recursion?");
 
-            } catch (StackOverflowError error) {
-                // It's OK: stack overflow was expected.
-            } catch (OutOfMemoryError oome) {
-                // Also OK: there may be no memory for stack expansion.
-
+            } catch (StackOverflowError | OutOfMemoryError err) {
+                // It's OK
             } catch (Throwable throwable) {
-                if (throwable instanceof ThreadDeath)
-                    throw (ThreadDeath) throwable;
                 // It isn't OK!
                 thrown = throwable;
                 break;
             }
+        }
     }
 }

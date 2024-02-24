@@ -52,56 +52,36 @@ package nsk.stress.stack;
 
 import nsk.share.Terminator;
 
-import java.io.PrintStream;
-
 public class stack017 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int PROBES = 100;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        verbose = false;
         boolean eager = false;
-        for (int i = 0; i < args.length; i++)
-            if (args[i].toLowerCase().equals("-verbose"))
-                verbose = true;
-            else if (args[i].toLowerCase().equals("-eager"))
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].toLowerCase().equals("-eager")) {
                 eager = true;
-        if (!eager)
-            Terminator.appoint(Terminator.parseAppointment(args));
-        stack017.out = out;
-        stack017 test = new stack017();
-        return test.doRun();
-    }
-
-    private static boolean verbose;
-    private static PrintStream out;
-
-    private void display(Object message) {
-        if (!verbose)
-            return;
-        synchronized (out) {
-            out.println(message.toString());
+            }
         }
+        if (!eager) {
+            Terminator.appoint(Terminator.parseAppointment(args));
+        }
+        stack017 test = new stack017();
+        test.doRun();
     }
 
     private static int depthToTry;
 
-    private int doRun() {
+    private void doRun() {
         //
         // Measure recursive depth before stack overflow:
         //
         try {
             recurse(0);
-        } catch (StackOverflowError soe) {
-        } catch (OutOfMemoryError oome) {
+        } catch (StackOverflowError | OutOfMemoryError err) {
         }
-        out.println("Maximal recursion depth: " + maxDepth);
+        System.out.println("Maximal recursion depth: " + maxDepth);
         depthToTry = maxDepth;
 
         //
@@ -113,28 +93,24 @@ public class stack017 extends Thread {
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].start();
         }
-        for (int i = 0; i < threads.length; i++)
-            if (threads[i].isAlive())
+        for (int i = 0; i < threads.length; i++) {
+            if (threads[i].isAlive()) {
                 try {
                     threads[i].join();
                 } catch (InterruptedException exception) {
-                    exception.printStackTrace(out);
-                    return 2;
+                    throw new RuntimeException(exception);
                 }
-
+            }
+        }
         //
         // Check if unexpected exceptions were thrown:
         //
-        int exitCode = 0;
-        for (int i = 0; i < threads.length; i++)
+        for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
-                threads[i].thrown.printStackTrace(out);
-                exitCode = 2;
+                threads[i].thrown.printStackTrace();
+                throw new RuntimeException("Exception in the thread " + threads[i], threads[i].thrown);
             }
-
-        if (exitCode != 0)
-            out.println("# TEST FAILED");
-        return exitCode;
+        }
     }
 
     private int maxDepth = 0;
@@ -148,11 +124,7 @@ public class stack017 extends Thread {
         try {
             maxDepth = depth;
             trickyRecurse(depth + 1);
-        } catch (Error error) {
-            if (!(error instanceof StackOverflowError) &&
-                    !(error instanceof OutOfMemoryError))
-                throw error;
-
+        } catch (StackOverflowError | OutOfMemoryError error) {
             //
             // Stack problem caught: provoke it again,
             // if current stack is enough deep:
@@ -169,19 +141,14 @@ public class stack017 extends Thread {
         String threadName = Thread.currentThread().getName();
         for (int i = 1; i <= CYCLES; i++)
             try {
-                display(threadName + ", iteration: " + i + "/" + CYCLES);
+                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES);
                 trickyRecurse(0);
                 throw new Exception(
                         "TEST_BUG: stack overflow was expected!");
 
-            } catch (StackOverflowError oome) {
-                // It's OK: stack overflow was expected.
-            } catch (OutOfMemoryError oome) {
-                // Also OK, if there is no memory for stack expansion.
-
+            } catch (StackOverflowError | OutOfMemoryError err) {
+                // It's OK
             } catch (Throwable throwable) {
-                if (throwable instanceof ThreadDeath)
-                    throw (ThreadDeath) throwable;
                 // It isn't OK!
                 thrown = throwable;
                 break;

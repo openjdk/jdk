@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,20 +57,11 @@
 
 package nsk.stress.stack;
 
-
-import java.io.PrintStream;
-
 public class stack001 {
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
         stack001 test = new stack001();
         test.recurse(0);
-        out.println("Maximal depth: " + test.maxdepth);
-        return 0;
+        System.out.println("Maximal depth: " + test.maxdepth);
     }
 
     private int maxdepth;
@@ -79,13 +70,10 @@ public class stack001 {
         maxdepth = depth;
         try {
             recurse(depth + 1);
-        } catch (Error error) {
-            if (!(error instanceof StackOverflowError) &&
-                    !(error instanceof OutOfMemoryError))
-                throw error;
-
-            if (maxdepth == depth)
+        } catch (StackOverflowError | OutOfMemoryError e) {
+            if (maxdepth == depth) {
                 recurse(depth + 1);
+            }
         }
     }
 }

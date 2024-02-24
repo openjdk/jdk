@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,23 +53,16 @@
 
 package nsk.stress.stack;
 
-
-import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class stack008 {
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
         int depth;
         //
         // Measure maximal recursion depth until stack overflow:
         //
-        for (depth = 100; ; depth += 100)
+        for (depth = 100; ; depth += 100) {
             try {
                 invokeRecurse(depth);
             } catch (Throwable exception) {
@@ -77,30 +70,27 @@ public class stack008 {
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     break; // OK.
-                target.printStackTrace(out);
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
-                return 2;
+                target.printStackTrace();
+                throw new RuntimeException(exception);
             }
-        out.println("Max. depth: " + depth);
+        }
+        System.out.println("Max. depth: " + depth);
         //
         // Provoke stack overflow multiple times:
         //
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             try {
                 invokeRecurse(2 * depth);
-//              out.println("?");
+//              System.out.println("?");
             } catch (Throwable exception) {
                 Throwable target = getTargetException(exception);
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     continue; // OK.
-                target.printStackTrace(out);
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
-                return 2;
+                target.printStackTrace();
+                throw new RuntimeException(exception);
             }
-        return 0;
+        }
     }
 
     private static Throwable getTargetException(Throwable exception) {
@@ -140,10 +130,11 @@ public class stack008 {
     int depth = 0;
 
     public void recurse() throws Exception {
-        if (depth > 0)
+        if (depth > 0) {
             //
             // Self-invoke via reflection:
             //
             invokeRecurse(depth - 1);
+        }
     }
 }
