@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -252,7 +252,7 @@ void PackageEntry::init_as_archived_entry() {
   _module = ModuleEntry::get_archived_entry(_module);
   _qualified_exports = (GrowableArray<ModuleEntry*>*)archived_qualified_exports;
   _defined_by_cds_in_class_path = 0;
-  JFR_ONLY(set_trace_id(0)); // re-init at runtime
+  JFR_ONLY(set_trace_id(0);) // re-init at runtime
 
   ArchivePtrMarker::mark_pointer((address*)&_name);
   ArchivePtrMarker::mark_pointer((address*)&_module);

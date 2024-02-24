@@ -119,4 +119,3 @@ public class AnalyzerException extends Exception {
         this.node = insn;
     }
 }
-

@@ -927,6 +927,11 @@
     <Field type="ulong" contentType="bytes" name="usedSize" label="Used Size" description="Total amount of physical memory in use" />
   </Event>
 
+  <Event name="SwapSpace" category="Operating System, Memory" label="Swap Space" description="OS Swap Space" period="everyChunk">
+    <Field type="long" contentType="bytes" name="totalSize" label="Total Size" description="Total swap space available to the OS" />
+    <Field type="long" contentType="bytes" name="freeSize" label="Free Size" description="Free swap space" />
+  </Event>
+
   <Event name="ExecutionSample" category="Java Virtual Machine, Profiling" label="Method Profiling Sample" description="Snapshot of a threads state"
     period="everyChunk">
     <Field type="Thread" name="sampledThread" label="Thread" />
@@ -1133,7 +1138,7 @@
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
   </Event>
 
-  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true">
+  <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true" stackTrace="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
   </Event>

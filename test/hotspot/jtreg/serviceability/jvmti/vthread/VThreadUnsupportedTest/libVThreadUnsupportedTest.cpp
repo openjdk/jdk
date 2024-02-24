@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 static std::atomic<bool> is_completed_test_in_event;
 
@@ -68,7 +68,7 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
   jvmtiError err;
   jboolean is_vthread;
   jvmtiCapabilities caps;
-  void* local_storage_data = NULL;
+  void* local_storage_data = nullptr;
   jlong nanos;
 
   LOG("test_unsupported_jvmti_functions: started\n");
@@ -98,7 +98,7 @@ test_unsupported_jvmti_functions(jvmtiEnv *jvmti, JNIEnv *jni, jthread vthread) 
     check_jvmti_error_unsupported_operation(jni, "GetCurrentThreadCpuTime", err);
   }
 
-  err = jvmti->RunAgentThread(vthread, agent_proc, (const void*)NULL, JVMTI_THREAD_NORM_PRIORITY);
+  err = jvmti->RunAgentThread(vthread, agent_proc, nullptr, JVMTI_THREAD_NORM_PRIORITY);
   check_jvmti_error_unsupported_operation(jni, "RunAgentThread", err);
 
   LOG("test_unsupported_jvmti_functions: finished\n");
@@ -121,8 +121,8 @@ Java_VThreadUnsupportedTest_testJvmtiFunctionsInJNICall(JNIEnv *jni, jobject obj
 static void JNICALL
 VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -175,7 +175,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;

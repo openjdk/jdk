@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ typedef struct {
   jlocation loc;
 } pop_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static volatile jboolean isVirtualExpected = JNI_FALSE;
@@ -111,17 +111,17 @@ void JNICALL FramePop(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread_obj, jmethodI
   LOG(">>> ... done\n");
 
   if (eventsCount < sizeof(pops)/sizeof(pop_info)) {
-    if (cls_sig == NULL || strcmp(cls_sig, pops[eventsCount].cls_sig) != 0) {
+    if (cls_sig == nullptr || strcmp(cls_sig, pops[eventsCount].cls_sig) != 0) {
       LOG("(pop#%" PRIuPTR ") wrong class: \"%s\"", eventsCount, cls_sig);
       LOG(", expected: \"%s\"\n", pops[eventsCount].cls_sig);
       result = STATUS_FAILED;
     }
-    if (name == NULL || strcmp(name, pops[eventsCount].name) != 0) {
+    if (name == nullptr || strcmp(name, pops[eventsCount].name) != 0) {
       LOG("(pop#%" PRIuPTR ") wrong method name: \"%s\"", eventsCount, name);
       LOG(", expected: \"%s\"\n", pops[eventsCount].name);
       result = STATUS_FAILED;
     }
-    if (sig == NULL || strcmp(sig, pops[eventsCount].sig) != 0) {
+    if (sig == nullptr || strcmp(sig, pops[eventsCount].sig) != 0) {
       LOG("(pop#%" PRIuPTR ") wrong method sig: \"%s\"", eventsCount, sig);
       LOG(", expected: \"%s\"\n", pops[eventsCount].sig);
       result = STATUS_FAILED;
@@ -152,7 +152,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -203,7 +203,7 @@ Java_framepop01_check(JNIEnv *jni, jclass cls) {
     return STATUS_FAILED;
   }
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -218,19 +218,19 @@ Java_framepop01_check(JNIEnv *jni, jclass cls) {
     LOG("Failed to SetBreakpoint: %s (%d)\n", TranslateError(err), err);
     return STATUS_FAILED;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable JVMTI_EVENT_FRAME_POP event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable BREAKPOINT event: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
   }
 
   clz = jni->FindClass("framepop01a");
-  if (clz == NULL) {
+  if (clz == nullptr) {
     LOG("Cannot find framepop01a class!\n");
     result = STATUS_FAILED;
     return STATUS_FAILED;

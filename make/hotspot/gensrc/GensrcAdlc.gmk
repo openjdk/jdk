@@ -51,7 +51,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   endif
 
   # Set the C++ standard
-  ADLC_CFLAGS += $(ADLC_LANGSTD_CXXFLAG)
+  ADLC_CFLAGS += $(ADLC_LANGSTD_CXXFLAGS)
 
   # NOTE: The old build didn't set -DASSERT for windows but it doesn't seem to
   # hurt.
