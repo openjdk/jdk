@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Alibaba Group Holding Limited. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,11 +35,12 @@ import java.util.Formatter.FormatSpecifier;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.util.FormatConcatItem;
+import jdk.internal.util.DecimalDigits;
 import jdk.internal.util.HexDigits;
 import jdk.internal.util.OctalDigits;
-import jdk.internal.vm.annotation.Stable;
+
+import static java.lang.invoke.MethodType.methodType;
 
 /**
  * A specialized objects used by FormatterBuilder that knows how to insert
@@ -54,25 +54,66 @@ import jdk.internal.vm.annotation.Stable;
 class FormatItem {
     private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
+    private static final MethodHandle CHAR_MIX =
+            JLA.stringConcatHelper("mix",
+                    MethodType.methodType(long.class, long.class,char.class));
+
+    private static final MethodHandle STRING_PREPEND =
+            JLA.stringConcatHelper("prepend",
+                    MethodType.methodType(long.class, long.class, byte[].class,
+                            String.class, String.class));
+
+    private static final MethodHandle SELECT_GETCHAR_MH =
+            JLA.stringConcatHelper("selectGetChar",
+                    MethodType.methodType(MethodHandle.class, long.class));
+
+    private static final MethodHandle SELECT_PUTCHAR_MH =
+            JLA.stringConcatHelper("selectPutChar",
+                    MethodType.methodType(MethodHandle.class, long.class));
+
     private static long charMix(long lengthCoder, char value) {
-        return JLA.stringConcatMix(lengthCoder, value);
+        try {
+            return (long)CHAR_MIX.invokeExact(lengthCoder, value);
+        } catch (Error | RuntimeException ex) {
+            throw ex;
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
     }
 
     private static long stringMix(long lengthCoder, String value) {
         return JLA.stringConcatMix(lengthCoder, value);
     }
 
-    private static long stringPrepend(long lengthCoder, byte[] buffer, String value) {
-        return JLA.stringConcatHelperPrepend(lengthCoder, buffer, value,
+    private static long stringPrepend(long lengthCoder, byte[] buffer,
+                                            String value) throws Throwable {
+        return (long)STRING_PREPEND.invokeExact(lengthCoder, buffer, value,
                 (String)null);
     }
 
-    private static void putCharUTF16(byte[] buffer, int index, int ch) {
-        JLA.putCharUTF16(buffer, index, ch);
+    private static MethodHandle selectGetChar(long indexCoder) throws Throwable {
+        return (MethodHandle)SELECT_GETCHAR_MH.invokeExact(indexCoder);
     }
 
-    private static boolean isLatin1(long lengthCoder) {
-        return JLA.stringConcatHelpeIsLatin1(lengthCoder);
+    private static MethodHandle selectPutChar(long indexCoder) throws Throwable {
+        return (MethodHandle)SELECT_PUTCHAR_MH.invokeExact(indexCoder);
+    }
+
+    private static final MethodHandle PUT_CHAR_DIGIT;
+
+    static {
+        try {
+            Lookup lookup = MethodHandles.lookup();
+            PUT_CHAR_DIGIT = lookup.findStatic(FormatItem.class, "putByte",
+                    MethodType.methodType(void.class,
+                            byte[].class, int.class, int.class));
+        } catch (ReflectiveOperationException ex) {
+            throw new AssertionError("putByte lookup failed", ex);
+        }
+    }
+
+    private static void putByte(byte[] buffer, int index, int ch) {
+        buffer[index] = (byte)ch;
     }
 
     private FormatItem() {
@@ -87,6 +128,7 @@ class FormatItem {
         private final char zeroDigit;
         private final char minusSign;
         private final int digitOffset;
+        private final byte[] digits;
         private final int length;
         private final boolean isNegative;
         private final int width;
@@ -96,12 +138,14 @@ class FormatItem {
         private final boolean parentheses;
 
         FormatItemDecimal(DecimalFormatSymbols dfs, int width, char sign,
-                          boolean parentheses, int groupSize, long value) {
+                          boolean parentheses, int groupSize, long value) throws Throwable {
             this.groupingSeparator = dfs.getGroupingSeparator();
             this.zeroDigit = dfs.getZeroDigit();
             this.minusSign = dfs.getMinusSign();
             this.digitOffset = this.zeroDigit - '0';
-            int length = JLA.stringSize(value);
+            int length = DecimalDigits.INSTANCE.size(value);
+            this.digits = new byte[length];
+            DecimalDigits.INSTANCE.digits(value, this.digits, length, PUT_CHAR_DIGIT);
             this.isNegative = value < 0L;
             this.length = this.isNegative ? length - 1 : length;
             this.width = width;
@@ -127,91 +171,42 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            if (isLatin1(lengthCoder)) {
-                return prependLatin1(lengthCoder, buffer);
-            } else {
-                return prependUTF16(lengthCoder, buffer);
-            }
-        }
-
-        private long prependLatin1(long lengthCoder, byte[] buffer) {
-            int lengthCoderLatin1 = (int) lengthCoder;
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
 
             if (parentheses) {
-                buffer[--lengthCoderLatin1] = ')';
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)')');
             }
 
             if (0 < groupSize) {
                 int groupIndex = groupSize;
 
-                int digitLength = this.length + (isNegative ? 1 : 0);
-                byte[] digits = new byte[digitLength];
-                JLA.getCharsLatin1(value, digitLength, digits);
-
                 for (int i = 1; i <= length; i++) {
                     if (groupIndex-- == 0) {
-                        buffer[--lengthCoderLatin1] = (byte) groupingSeparator;
+                        putCharMH.invokeExact(buffer, (int)--lengthCoder,
+                                (int)groupingSeparator);
                         groupIndex = groupSize - 1;
                     }
 
-                    buffer[--lengthCoderLatin1] = (byte) (digits[digits.length - i] + digitOffset);
+                    putCharMH.invokeExact(buffer, (int)--lengthCoder,
+                            digits[digits.length - i] + digitOffset);
                 }
             } else {
-                JLA.getCharsLatin1(value, lengthCoderLatin1, buffer);
-                lengthCoderLatin1 -= length;
-            }
-
-            for (int i = length + signLength() + groupLength(); i < width; i++) {
-                buffer[--lengthCoderLatin1] = '0';
-            }
-
-            if (parentheses) {
-                buffer[--lengthCoderLatin1] = '(';
-            }
-
-            if (prefixSign != '\0') {
-                buffer[--lengthCoderLatin1] = prefixSign;
-            }
-
-            return lengthCoderLatin1;
-        }
-
-        private long prependUTF16(long lengthCoder, byte[] buffer) {
-            if (parentheses) {
-                putCharUTF16(buffer, (int)--lengthCoder, (int)')');
-            }
-
-            if (0 < groupSize) {
-                int groupIndex = groupSize;
-
-                int digitLength = this.length + (isNegative ? 1 : 0);
-                byte[] digits = new byte[digitLength];
-                JLA.getCharsLatin1(value, digitLength, digits);
-
                 for (int i = 1; i <= length; i++) {
-                    if (groupIndex-- == 0) {
-                        putCharUTF16(buffer, (int) --lengthCoder, (int) groupingSeparator);
-                        groupIndex = groupSize - 1;
-                    }
-
-                    putCharUTF16(buffer, (int) --lengthCoder, digits[digits.length - i] + digitOffset);
+                    putCharMH.invokeExact(buffer, (int)--lengthCoder,
+                            digits[digits.length - i] + digitOffset);
                 }
-            } else {
-                JLA.getCharsUTF16(value, (int)lengthCoder, buffer);
-                lengthCoder -= length;
             }
 
             for (int i = length + signLength() + groupLength(); i < width; i++) {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) '0');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
             }
 
             if (parentheses) {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) '(');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'(');
             }
-
             if (prefixSign != '\0') {
-                putCharUTF16(buffer, (int) --lengthCoder, (int) prefixSign);
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)prefixSign);
             }
 
             return lengthCoder;
@@ -231,7 +226,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = HexDigits.stringSize(value);
+            this.length = HexDigits.INSTANCE.size(value);
         }
 
         private int prefixLength() {
@@ -248,38 +243,18 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            if (isLatin1(lengthCoder)) {
-                return prependLatin1(lengthCoder, buffer);
-            } else {
-                return prependUTF16(lengthCoder, buffer);
-            }
-        }
-
-        protected long prependLatin1(long lengthCoder, byte[] buffer) {
-            int lengthCoderLatin1 = (int) lengthCoder;
-            HexDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
-            lengthCoderLatin1 -= length;
-
-            if (hasPrefix && value != 0) {
-                buffer[--lengthCoderLatin1] = 'x';
-                buffer[--lengthCoderLatin1] = '0';
-            }
-
-            return lengthCoderLatin1;
-        }
-
-        protected long prependUTF16(long lengthCoder, byte[] buffer) {
-            HexDigits.getCharsUTF16(value, (int)lengthCoder, buffer);
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
+            HexDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
             lengthCoder -= length;
 
             for (int i = 0; i < zeroesLength(); i++) {
-                putCharUTF16(buffer, (int)--lengthCoder, '0');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
             }
 
-            if (hasPrefix && value != 0) {
-                putCharUTF16(buffer, (int)--lengthCoder, 'x');
-                putCharUTF16(buffer, (int)--lengthCoder, '0');
+            if (hasPrefix) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'x');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
             }
 
             return lengthCoder;
@@ -299,7 +274,7 @@ class FormatItem {
             this.width = width;
             this.hasPrefix = hasPrefix;
             this.value = value;
-            this.length = OctalDigits.stringSize(value);
+            this.length = OctalDigits.INSTANCE.size(value);
         }
 
         private int prefixLength() {
@@ -316,41 +291,17 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            if (isLatin1(lengthCoder)) {
-                return prependLatin1(lengthCoder, buffer);
-            } else {
-                return prependUTF16(lengthCoder, buffer);
-            }
-        }
-
-        protected long prependLatin1(long lengthCoder, byte[] buffer) {
-            int lengthCoderLatin1 = (int) lengthCoder;
-            OctalDigits.getCharsLatin1(value, lengthCoderLatin1, buffer);
-            lengthCoderLatin1 -= length;
-
-            int zeroesLength = zeroesLength();
-            if (hasPrefix && value != 0) {
-                zeroesLength++;
-            }
-
-            for (int i = 0; i < zeroesLength; i++) {
-                buffer[--lengthCoderLatin1] = '0';
-            }
-
-            return lengthCoderLatin1;
-        }
-
-        protected long prependUTF16(long lengthCoder, byte[] buffer) {
-            OctalDigits.getCharsUTF16(value, (int) lengthCoder, buffer);
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
+            OctalDigits.INSTANCE.digits(value, buffer, (int)lengthCoder, putCharMH);
             lengthCoder -= length;
 
-            int zeroesLength = zeroesLength();
-            if (hasPrefix && value != 0) {
-                zeroesLength++;
+            for (int i = 0; i < zeroesLength(); i++) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
             }
-            for (int i = 0; i < zeroesLength; i++) {
-                putCharUTF16(buffer, (int)--lengthCoder, '0');
+
+            if (hasPrefix && value != 0) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'0');
             }
 
             return lengthCoder;
@@ -361,33 +312,7 @@ class FormatItem {
      * Boolean format item.
      */
     static final class FormatItemBoolean implements FormatConcatItem {
-        static final int TRUE_LATIN1;
-        static final long TRUE_UTF16;
-
-        static final int FALS_LATIN1;
-        static final long FALS_UTF16;
-
         private final boolean value;
-
-        static {
-            byte[] bytes4 = new byte[] {'t', 'r', 'u', 'e'};
-            byte[] bytes8 = new byte[8];
-            TRUE_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            for (int i = 0; i < bytes4.length; i++) {
-                JLA.putCharUTF16(bytes8, i, bytes4[i]);
-            }
-            TRUE_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-
-            bytes4[0] = 'f';
-            bytes4[1] = 'a';
-            bytes4[2] = 'l';
-            bytes4[3] = 's';
-            FALS_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            for (int i = 0; i < bytes4.length; i++) {
-                JLA.putCharUTF16(bytes8, i, bytes4[i]);
-            }
-            FALS_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-        }
 
         FormatItemBoolean(boolean value) {
             this.value = value;
@@ -395,28 +320,28 @@ class FormatItem {
 
         @Override
         public long mix(long lengthCoder) {
-            return lengthCoder + (value ? 4 : 5);
+            return lengthCoder + (value ? "true".length() : "false".length());
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            boolean latin1 = isLatin1(lengthCoder);
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
 
-            lengthCoder -= (value ? 4 : 5);
-            int off = ((int) lengthCoder) << (latin1 ? 0 : 1);
-            if (latin1) {
-                ByteArrayLittleEndian.setInt(buffer, off, value ? TRUE_LATIN1 : FALS_LATIN1);
-                if (!value) {
-                    buffer[off + 4] = 'e';
-                }
+            if (value) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'e');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'u');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'r');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'t');
             } else {
-                ByteArrayLittleEndian.setLong(buffer, off, value ? TRUE_UTF16 : FALS_UTF16);
-                if (!value) {
-                    JLA.putCharUTF16(buffer, (off >> 1) + 4, 'e');
-                }
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'e');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'s');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'l');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'a');
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'f');
             }
+
             return lengthCoder;
-        }
+         }
     }
 
     /**
@@ -435,12 +360,10 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            if (isLatin1(lengthCoder)) {
-                buffer[(int) --lengthCoder] = (byte) value;
-            } else {
-                putCharUTF16(buffer, (int) --lengthCoder, value);
-            }
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
+            putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)value);
+
             return lengthCoder;
         }
     }
@@ -461,7 +384,7 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             return stringPrepend(lengthCoder, buffer, value);
         }
     }
@@ -497,14 +420,14 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
             return JLA.stringBuilderConcatPrepend(lengthCoder, buffer, sb);
         }
     }
 
     static abstract sealed class FormatItemModifier implements FormatConcatItem
-            permits FormatItemFillLeft,
-            FormatItemFillRight
+        permits FormatItemFillLeft,
+                FormatItemFillRight
     {
         private final long itemLengthCoder;
         protected final FormatConcatItem item;
@@ -526,7 +449,7 @@ class FormatItem {
         public abstract long mix(long lengthCoder);
 
         @Override
-        public abstract long prepend(long lengthCoder, byte[] buffer);
+        public abstract long prepend(long lengthCoder, byte[] buffer) throws Throwable;
     }
 
     /**
@@ -547,17 +470,12 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
             lengthCoder = item.prepend(lengthCoder, buffer);
 
-            if (isLatin1(lengthCoder)) {
-                for (int i = length(); i < width; i++) {
-                    buffer[(int) --lengthCoder] = ' ';
-                }
-            } else {
-                for (int i = length(); i < width; i++) {
-                    putCharUTF16(buffer, (int) --lengthCoder, (int) ' ');
-                }
+            for (int i = length(); i < width; i++) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)' ');
             }
 
             return lengthCoder;
@@ -582,16 +500,11 @@ class FormatItem {
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            int length = length();
-            if (isLatin1(lengthCoder)) {
-                for (int i = length; i < width; i++) {
-                    buffer[(int)--lengthCoder] = ' ';
-                }
-            } else {
-                for (int i = length; i < width; i++) {
-                    putCharUTF16(buffer, (int)--lengthCoder, ' ');
-                }
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
+
+            for (int i = length(); i < width; i++) {
+                putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)' ');
             }
 
             lengthCoder = item.prepend(lengthCoder, buffer);
@@ -605,38 +518,23 @@ class FormatItem {
      * Null format item.
      */
     static final class FormatItemNull implements FormatConcatItem {
-        static final int NULL_LATIN1;
-        static final long NULL_UTF16;
-
-        static {
-            byte[] bytes4 = new byte[] {'n', 'u', 'l', 'l'};
-            byte[] bytes8 = new byte[8];
-            NULL_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            for (int i = 0; i < bytes4.length; i++) {
-                JLA.putCharUTF16(bytes8, i, bytes4[i]);
-            }
-            NULL_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-        }
-
         FormatItemNull() {
         }
 
         @Override
         public long mix(long lengthCoder) {
-            return lengthCoder + 4;
+            return lengthCoder + "null".length();
         }
 
         @Override
-        public long prepend(long lengthCoder, byte[] buffer) {
-            boolean latin1 = isLatin1(lengthCoder);
+        public long prepend(long lengthCoder, byte[] buffer) throws Throwable {
+            MethodHandle putCharMH = selectPutChar(lengthCoder);
 
-            lengthCoder -= 4;
-            int off = ((int) lengthCoder) << (latin1 ? 0 : 1);
-            if (latin1) {
-                ByteArrayLittleEndian.setInt(buffer, off, NULL_LATIN1);
-            } else {
-                ByteArrayLittleEndian.setLong(buffer, off, NULL_UTF16);
-            }
+            putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'l');
+            putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'l');
+            putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'u');
+            putCharMH.invokeExact(buffer, (int)--lengthCoder, (int)'n');
+
             return lengthCoder;
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 #include "utilities/ostream.hpp"
 #include <math.h>
 
-const char* strchrnul_(const char *s, int c) {
+static const char* strchrnul_(const char *s, int c) {
   const char* tmp = strchr(s, c);
   return tmp == nullptr ? s + strlen(s) : tmp;
 }
@@ -580,7 +580,7 @@ u_char JSON::skip_line_comment() {
     return 0;
   }
   next();
-  return next();
+  return peek();
 }
 
 /*

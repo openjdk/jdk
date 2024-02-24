@@ -454,9 +454,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="TL" alt="variant" draft="provisional">Тымор-Лешці</territory>
 			<territory type="TM" draft="provisional">Туркмэністан</territory>
 			<territory type="TR" draft="provisional">Турэччына</territory>
-			<territory type="TR" alt="variant">Турэччына</territory>
 			<territory type="UM" draft="provisional">Зьнешнія малыя астравы ЗША</territory>
 			<territory type="UN" draft="provisional">Арганізацыя Аб’яднаных Нацыяў</territory>
+			<territory type="US" draft="provisional">Злучаныя Штаты</territory>
 			<territory type="UZ" draft="provisional">Узбэкістан</territory>
 			<territory type="VC" draft="provisional">Сьвяты Вінцэнт і Грэнадзіны</territory>
 			<territory type="VE" draft="provisional">Вэнэсуэла</territory>
@@ -478,6 +478,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="dangi" draft="provisional">дангійскі каляндар</type>
 			<type key="calendar" type="ethiopic" draft="provisional">этыёпскі каляндар</type>
 			<type key="calendar" type="hebrew" draft="provisional">габрэйскі каляндар</type>
+			<type key="calendar" type="islamic" draft="provisional">мусульманскі каляндар</type>
 			<type key="calendar" type="islamic-civil" draft="provisional">мусульманскі сьвецкі каляндар</type>
 			<type key="calendar" type="persian" draft="provisional">пэрсыдзкі каляндар</type>
 			<type key="cf" type="account" draft="provisional">бухгальтарскі фармат валюты</type>
@@ -507,8 +508,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="provisional">[а б в г ґ д {дж} {дз} е ё ж з і й к л м н о п р с т у ў ф х ц ч ш ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="provisional">[А Б В Г Ґ Д Е Ё Ж З І Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters draft="provisional">[а б в гґ д {дж} {дз} е ё ж з і й к л м н о п р с т у ў ф х ц ч ш ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="provisional">[А Б В ГҐ Д Е Ё Ж З І Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="provisional">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -541,20 +542,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10" draft="provisional">кас</month>
 							<month type="11" draft="provisional">ліс</month>
 							<month type="12" draft="provisional">сьн</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="provisional">с</month>
-							<month type="2" draft="provisional">л</month>
-							<month type="3" draft="provisional">с</month>
-							<month type="4" draft="provisional">к</month>
-							<month type="5" draft="provisional">т</month>
-							<month type="6" draft="provisional">ч</month>
-							<month type="7" draft="provisional">л</month>
-							<month type="8" draft="provisional">ж</month>
-							<month type="9" draft="provisional">в</month>
-							<month type="10" draft="provisional">к</month>
-							<month type="11" draft="provisional">л</month>
-							<month type="12" draft="provisional">с</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="provisional">студзеня</month>
@@ -627,44 +614,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="fri" draft="provisional">пят</day>
 							<day type="sat" draft="provisional">суб</day>
 						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="provisional">няд</day>
-							<day type="mon" draft="provisional">пан</day>
-							<day type="tue" draft="provisional">аўт</day>
-							<day type="wed" draft="provisional">сер</day>
-							<day type="thu" draft="provisional">чац</day>
-							<day type="fri" draft="provisional">пят</day>
-							<day type="sat" draft="provisional">суб</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="provisional">нядзеля</day>
-							<day type="mon" draft="provisional">панядзелак</day>
-							<day type="tue" draft="provisional">аўторак</day>
-							<day type="wed" draft="provisional">серада</day>
-							<day type="thu" draft="provisional">чацьвер</day>
-							<day type="fri" draft="provisional">пятніца</day>
-							<day type="sat" draft="provisional">субота</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="provisional">няд</day>
-							<day type="mon" draft="provisional">пан</day>
-							<day type="tue" draft="provisional">аўт</day>
-							<day type="wed" draft="provisional">сер</day>
-							<day type="thu" draft="provisional">чац</day>
-							<day type="fri" draft="provisional">пят</day>
-							<day type="sat" draft="provisional">суб</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="provisional">няд</day>
-							<day type="mon" draft="provisional">пан</day>
-							<day type="tue" draft="provisional">аўт</day>
-							<day type="wed" draft="provisional">сер</day>
-							<day type="thu" draft="provisional">чац</day>
-							<day type="fri" draft="provisional">пят</day>
-							<day type="sat" draft="provisional">суб</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun" draft="provisional">нядзеля</day>
 							<day type="mon" draft="provisional">панядзелак</day>
@@ -686,23 +635,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="am" draft="provisional">апн</dayPeriod>
 							<dayPeriod type="pm" draft="provisional">апд</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="provisional">апоўначы</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">апоўдні</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="provisional">апоўначы</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">апоўдні</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="am" draft="provisional">апн</dayPeriod>
 							<dayPeriod type="pm" draft="provisional">апд</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="provisional">апоўначы</dayPeriod>
-							<dayPeriod type="pm" draft="provisional">апоўдні</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -786,11 +723,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0" draft="provisional">у гэт. годзе</relative>
 				<relative type="1" draft="provisional">у наст. годзе</relative>
 			</field>
-			<field type="year-narrow">
-				<relative type="-1" draft="provisional">у мін. годзе</relative>
-				<relative type="0" draft="provisional">у гэт. годзе</relative>
-				<relative type="1" draft="provisional">у наст. годзе</relative>
-			</field>
 			<field type="quarter">
 				<relativeTime type="future">
 					<relativeTimePattern count="one" draft="provisional">праз {0} квартал</relativeTimePattern>
@@ -810,34 +742,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0" draft="provisional">у гэт. мес.</relative>
 				<relative type="1" draft="provisional">у наст. мес.</relative>
 			</field>
-			<field type="month-narrow">
-				<relative type="-1" draft="provisional">у мін. мес.</relative>
-				<relative type="0" draft="provisional">у гэт. мес.</relative>
-				<relative type="1" draft="provisional">у наст. мес.</relative>
-			</field>
 			<field type="week">
 				<displayName draft="provisional">тыд.</displayName>
 			</field>
 			<field type="week-short">
-				<displayName draft="provisional">тыд.</displayName>
-				<relative type="-1" draft="provisional">на мін. тыд.</relative>
-				<relative type="0" draft="provisional">на гэт. тыд.</relative>
-				<relative type="1" draft="provisional">на наст. тыд.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">праз {0} тыд.</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">праз {0} тыд.</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">праз {0} тыд.</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">праз {0} тыд.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">{0} тыд. таму</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">{0} тыд. таму</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">{0} тыд. таму</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">{0} тыд. таму</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="week-narrow">
-				<displayName draft="provisional">тыд.</displayName>
 				<relative type="-1" draft="provisional">на мін. тыд.</relative>
 				<relative type="0" draft="provisional">на гэт. тыд.</relative>
 				<relative type="1" draft="provisional">на наст. тыд.</relative>
@@ -859,14 +767,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="0" draft="provisional">сёньня</relative>
 				<relative type="1" draft="provisional">заўтра</relative>
 			</field>
-			<field type="day-short">
-				<relative type="0">сёньня</relative>
-			</field>
-			<field type="day-narrow">
-				<relative type="0">сёньня</relative>
-			</field>
 			<field type="dayOfYear">
 				<displayName draft="provisional">дзень году</displayName>
+			</field>
+			<field type="dayOfYear-short">
+				<displayName draft="provisional">дзень года</displayName>
 			</field>
 			<field type="dayOfYear-narrow">
 				<displayName draft="provisional">дзень году</displayName>
@@ -894,9 +799,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sun-narrow">
-				<relative type="-1" draft="provisional">у мінулую няд</relative>
-				<relative type="0" draft="provisional">у гэтую няд</relative>
-				<relative type="1" draft="provisional">у наступную няд</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="one" draft="provisional">праз {0} нд</relativeTimePattern>
+					<relativeTimePattern count="few" draft="provisional">праз {0} нядзелі</relativeTimePattern>
+					<relativeTimePattern count="many" draft="provisional">праз {0} нядзель</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">праз {0} нд</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="one" draft="provisional">{0} нд таму</relativeTimePattern>
+					<relativeTimePattern count="few" draft="provisional">{0} нядзелі таму</relativeTimePattern>
+					<relativeTimePattern count="many" draft="provisional">{0} нядзель таму</relativeTimePattern>
+					<relativeTimePattern count="other" draft="provisional">{0} нд таму</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="wed">
 				<relative type="-1" draft="provisional">у мінулую сераду</relative>
@@ -904,23 +818,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relative type="1" draft="provisional">у наступную сераду</relative>
 			</field>
 			<field type="wed-short">
-				<relative type="-1" draft="provisional">у мінулую сер</relative>
-				<relative type="0" draft="provisional">у гэтую сер</relative>
-				<relative type="1" draft="provisional">у наступную сер</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">праз {0} сер</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">праз {0} серады</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">праз {0} серадаў</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">праз {0} сер</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">{0} сер таму</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">{0} серады таму</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">{0} серадаў таму</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">{0} сер таму</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
 				<relative type="-1" draft="provisional">у мінулую сер</relative>
 				<relative type="0" draft="provisional">у гэтую сер</relative>
 				<relative type="1" draft="provisional">у наступную сер</relative>
@@ -971,23 +868,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="provisional">{0} чац таму</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="thu-narrow">
-				<relative type="-1" draft="provisional">у мінулы чац</relative>
-				<relative type="0" draft="provisional">у гэты чац</relative>
-				<relative type="1" draft="provisional">у наступны чац</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">праз {0} чац</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">праз {0} чацьвяргі</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">праз {0} чацьвяргоў</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">праз {0} чац</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">{0} чац таму</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">{0} чацьвяргі таму</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">{0} чацьвяргоў таму</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">{0} чац таму</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="fri">
 				<relative type="-1" draft="provisional">у мінулую пятніцу</relative>
 				<relative type="0" draft="provisional">у гэтую пятніцу</relative>
@@ -1006,23 +886,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="fri-short">
-				<relative type="-1" draft="provisional">у мінулую пят</relative>
-				<relative type="0" draft="provisional">у гэтую пят</relative>
-				<relative type="1" draft="provisional">у наступную пят</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">праз {0} пят</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">праз {0} пятніцы</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">праз {0} пятніцаў</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">праз {0} пят</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">{0} пят таму</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">{0} пятніцы таму</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">{0} пятніцаў таму</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">{0} пят таму</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
 				<relative type="-1" draft="provisional">у мінулую пят</relative>
 				<relative type="0" draft="provisional">у гэтую пят</relative>
 				<relative type="1" draft="provisional">у наступную пят</relative>
@@ -1073,30 +936,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other" draft="provisional">{0} суб таму</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-narrow">
-				<relative type="-1" draft="provisional">у мінулую суб</relative>
-				<relative type="0" draft="provisional">у гэтую суб</relative>
-				<relative type="1" draft="provisional">у наступную суб</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one" draft="provisional">праз {0} суб</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">праз {0} суботы</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">праз {0} суботаў</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">праз {0} суб</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one" draft="provisional">{0} суб таму</relativeTimePattern>
-					<relativeTimePattern count="few" draft="provisional">{0} суботы таму</relativeTimePattern>
-					<relativeTimePattern count="many" draft="provisional">{0} суботаў таму</relativeTimePattern>
-					<relativeTimePattern count="other" draft="provisional">{0} суб таму</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName draft="provisional">апоўначы/апоўдні</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName draft="provisional">апоўначы/апоўдні</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName draft="provisional">апоўначы/апоўдні</displayName>
 			</field>
 			<field type="hour">
@@ -1160,9 +1000,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName draft="provisional">часавы пас</displayName>
 			</field>
 			<field type="zone-short">
-				<displayName draft="provisional">гадзінкавы пояс</displayName>
-			</field>
-			<field type="zone-narrow">
 				<displayName draft="provisional">гадзінкавы пояс</displayName>
 			</field>
 		</fields>
@@ -2371,10 +2208,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="BOB">
 				<displayName draft="provisional">балібіяна</displayName>
-				<displayName count="one" draft="provisional">балібіяна</displayName>
-				<displayName count="few" draft="provisional">балібіяна</displayName>
-				<displayName count="many" draft="provisional">балібіяна</displayName>
-				<displayName count="other" draft="provisional">балібіяна</displayName>
 			</currency>
 			<currency type="BSD">
 				<displayName draft="provisional">багамскі даляр</displayName>
@@ -2434,10 +2267,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="CVE">
 				<displayName draft="provisional">эскуда Каба-Вэрдэ</displayName>
-				<displayName count="one" draft="provisional">эскуда Каба-Вэрдэ</displayName>
-				<displayName count="few" draft="provisional">эскуда Каба-Вэрдэ</displayName>
-				<displayName count="many" draft="provisional">эскуда Каба-Вэрдэ</displayName>
-				<displayName count="other" draft="provisional">эскуда Каба-Вэрдэ</displayName>
 			</currency>
 			<currency type="CZK">
 				<displayName draft="provisional">чэская крона</displayName>
@@ -2468,10 +2297,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</currency>
 			<currency type="EUR">
 				<displayName draft="provisional">эўра</displayName>
-				<displayName count="one" draft="provisional">эўра</displayName>
-				<displayName count="few" draft="provisional">эўра</displayName>
-				<displayName count="many" draft="provisional">эўра</displayName>
-				<displayName count="other" draft="provisional">эўра</displayName>
 			</currency>
 			<currency type="FJD">
 				<displayName draft="provisional">фіджыйскі даляр</displayName>
@@ -2891,6 +2716,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="acceleration-g-force">
 				<displayName draft="provisional">паскарэньне свабоднага падзеньня</displayName>
 			</unit>
+			<unit type="acceleration-meter-per-square-second">
+				<displayName draft="provisional">м/с²</displayName>
+				<unitPattern count="one" draft="provisional">{0} м/с²</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} м/с²</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} м/с²</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} м/с²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName draft="provisional">абарот</displayName>
+			</unit>
 			<unit type="angle-arc-minute">
 				<displayName draft="provisional">кутнія хвіліны</displayName>
 				<unitPattern count="one" draft="provisional">{0} кутняя хвіліна</unitPattern>
@@ -2956,6 +2791,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" draft="provisional">{0} адсоткі</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} адсоткаў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} адсотка</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one" draft="provisional">{0} моль</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} моля</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} моляў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} моля</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="provisional">літары на кілямэтар</displayName>
@@ -3153,13 +2994,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} гэрца</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} гэрцы</unitPattern>
 			</unit>
-			<unit type="graphics-pixel">
-				<displayName draft="provisional">піксэлі</displayName>
-				<unitPattern count="one" draft="provisional">{0} піксэль</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} піксэлі</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} піксэляў</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} піксэля</unitPattern>
-			</unit>
 			<unit type="graphics-megapixel">
 				<displayName draft="provisional">мэгапіксэлі</displayName>
 				<unitPattern count="one" draft="provisional">{0} мэгапіксэль</unitPattern>
@@ -3268,6 +3102,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} сьветлавых гадоў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} сьветлавога года</unitPattern>
 			</unit>
+			<unit type="length-point">
+				<unitPattern count="one" draft="provisional">{0} пункт</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} пункты</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} пунктаў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} пункту</unitPattern>
+			</unit>
 			<unit type="length-solar-radius">
 				<displayName draft="provisional">сонечныя радыюсы</displayName>
 				<unitPattern count="one" draft="provisional">{0} сонечны радыюс</unitPattern>
@@ -3297,6 +3137,30 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName draft="provisional">кіляграмы</displayName>
+				<unitPattern count="one" draft="provisional">{0} кг</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кг</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кг</unitPattern>
+				<perUnitPattern draft="provisional">{0}/кг</perUnitPattern>
+			</unit>
+			<unit type="mass-gram">
+				<unitPattern count="one" draft="provisional">{0} г</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} г</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} г</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} г</unitPattern>
+				<perUnitPattern draft="provisional">{0}/г</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<unitPattern count="one" draft="provisional">{0} мг</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} мг</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} мг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} мг</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<unitPattern count="one" draft="provisional">{0} мкг</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} мкг</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} мкг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} мкг</unitPattern>
 			</unit>
 			<unit type="mass-ton">
 				<displayName draft="provisional">амэрыканскія тоны</displayName>
@@ -3304,6 +3168,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" draft="provisional">{0} амэрыканскія тоны</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} амэрыканскіх тонаў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} амэрыканскай тоны</unitPattern>
+			</unit>
+			<unit type="mass-stone">
+				<unitPattern count="one" draft="provisional">{0} стоўн</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} стоны</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} стонаў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} стона</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<perUnitPattern draft="provisional">{0}/фунт</perUnitPattern>
 			</unit>
 			<unit type="power-gigawatt">
 				<unitPattern count="one" draft="provisional">{0} гігават</unitPattern>
@@ -3386,9 +3259,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName draft="provisional">кілямэтры за гадзіну</displayName>
+				<unitPattern count="one" draft="provisional">{0} км/гадз</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} км/гадз</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} км/гадз</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} км/гадз</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<displayName draft="provisional">мэтры за сэкунду</displayName>
+				<unitPattern count="one" draft="provisional">{0} м/с</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} м/с</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} м/с</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} м/с</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<unitPattern count="one" draft="provisional">{0} міля/гадз</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} мілі/гадз</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} міль/гадз</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} мілі/гадз</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<displayName draft="provisional">градусы Фарэнгайта</displayName>
@@ -3520,26 +3407,64 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} брыт. дэс. л.</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} брытанскай дэсэртнай лыжкі</unitPattern>
 			</unit>
+			<unit type="volume-drop">
+				<displayName draft="provisional">кропля</displayName>
+				<unitPattern count="one" draft="provisional">{0} кропля</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кроплі</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кропляў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кроплі</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName draft="provisional">драхма</displayName>
+			</unit>
 			<unit type="volume-jigger">
 				<displayName draft="provisional">джыгэр</displayName>
-				<unitPattern count="one" draft="provisional">{0} джыгэр</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} джыгэры</unitPattern>
-				<unitPattern count="many" draft="provisional">{0} джыгэраў</unitPattern>
-				<unitPattern count="other" draft="provisional">{0} джыгэра</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName draft="provisional">дробка</displayName>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName draft="provisional">брыт. кварта</displayName>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="provisional">кірунак сьвету</displayName>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="short">
+			<unit type="concentr-karat">
+				<displayName draft="provisional">кар золата</displayName>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName draft="provisional">праміле</displayName>
+			</unit>
+			<unit type="concentr-mole">
+				<unitPattern count="one" draft="provisional">{0} моль</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} моля</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} моляў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} моля</unitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
 				<unitPattern count="one" draft="provisional">{0} міля/імп. гал.</unitPattern>
-				<unitPattern count="few" draft="provisional">{0} мілі/імп. гал.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} мілі/імп. галён</unitPattern>
 				<unitPattern count="many" draft="provisional">{0} міль/імп. галён</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} мілі/імп. галён</unitPattern>
 			</unit>
 			<unit type="duration-decade">
 				<displayName draft="provisional">дзесяцігодзьдзе</displayName>
+			</unit>
+			<unit type="duration-year">
+				<perUnitPattern draft="provisional">{0} у г.</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<perUnitPattern draft="provisional">{0} у мес.</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<displayName draft="provisional">тыдз.</displayName>
+				<unitPattern count="one" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тыдз.</unitPattern>
+				<perUnitPattern draft="provisional">{0} у тыдз.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="provisional">сут.</displayName>
@@ -3599,6 +3524,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} амэр. тэрмаў</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} амэр. тэрма</unitPattern>
 			</unit>
+			<unit type="force-pound-force">
+				<unitPattern count="one" draft="provisional">{0} фунт-сіла</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} фунт-сілы</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} lbf</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} lbf</unitPattern>
+			</unit>
 			<unit type="graphics-pixel">
 				<displayName draft="provisional">піксэлі</displayName>
 				<unitPattern count="one" draft="provisional">{0} піксэль</unitPattern>
@@ -3620,6 +3551,81 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" draft="provisional">{0} піксэляў/цалю</unitPattern>
 				<unitPattern count="other" draft="provisional">{0} піксэля/цалю</unitPattern>
 			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName draft="provisional">футы</displayName>
+				<unitPattern count="one" draft="provisional">{0} фут</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} футы</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} футаў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} фута</unitPattern>
+				<perUnitPattern draft="provisional">{0}/фут</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName draft="provisional">цалі</displayName>
+				<unitPattern count="one" draft="provisional">{0} цаля</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} цалі</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} цаляў</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цалі</unitPattern>
+				<perUnitPattern draft="provisional">{0}/цалю</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName draft="provisional">пс</displayName>
+				<unitPattern count="one" draft="provisional">{0} пс</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} пс</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} пс</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} пс</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName draft="provisional">св. г.</displayName>
+				<unitPattern count="one" draft="provisional">{0} св. г.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} св. г.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} св. г.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} св. г.</unitPattern>
+			</unit>
+			<unit type="length-furlong">
+				<displayName draft="provisional">фурлонгі</displayName>
+				<unitPattern count="one" draft="provisional">{0} фур.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} фур.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} фур.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} фур.</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName draft="provisional">фатамы</displayName>
+				<unitPattern count="one" draft="provisional">{0} фат.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} фат.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} фат.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} фат.</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName draft="provisional">бушалі</displayName>
+				<unitPattern count="one" draft="provisional">{0} буш.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} буш.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} буш.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} буш.</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="one" draft="provisional">{0} імп. гал.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} імп. гал.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} імп. гал.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} імп. гал.</unitPattern>
+				<perUnitPattern draft="provisional">{0}/імп. гал.</perUnitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName draft="provisional">дэс. л.</displayName>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName draft="provisional">брыт. дэс. л.</displayName>
+				<unitPattern count="one" draft="provisional">{0} брыт. дэс. л.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} брыт. дэс. л.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} брыт. дэс. л.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} брыт. дэс. л.</unitPattern>
+			</unit>
 			<unit type="volume-jigger">
 				<displayName draft="provisional">джыгэр</displayName>
 				<unitPattern count="one" draft="provisional">{0} джыгэр</unitPattern>
@@ -3633,46 +3639,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} міль/імп. галён</unitPattern>
 				<unitPattern count="other">{0} мілі/імп. галён</unitPattern>
 			</unit>
-			<unit type="duration-decade">
-				<displayName>дзесяцігодзьдзе</displayName>
+			<unit type="duration-week">
+				<displayName draft="provisional">тыдз.</displayName>
+				<unitPattern count="one" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тыдз.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тыдз.</unitPattern>
 			</unit>
 			<unit type="duration-day">
+				<displayName draft="provisional">сут</displayName>
+				<unitPattern count="one" draft="provisional">{0} сут</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} сут</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} сут</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} сут</unitPattern>
 				<perUnitPattern>{0} сут.</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<perUnitPattern>{0}/гадз.</perUnitPattern>
+				<displayName draft="provisional">гадз</displayName>
+				<unitPattern count="one" draft="provisional">{0} гадз</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} гадз</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} гадз</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} гадз</unitPattern>
 			</unit>
 			<unit type="duration-minute">
+				<displayName draft="provisional">хв</displayName>
+				<unitPattern count="one" draft="provisional">{0} хв</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} хв</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} хв</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} хв</unitPattern>
 				<perUnitPattern>{0}/ хв.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<perUnitPattern>{0}/сэк.</perUnitPattern>
-			</unit>
-			<unit type="duration-microsecond">
-				<displayName>мкс.</displayName>
-				<unitPattern count="one">{0} мкс.</unitPattern>
-				<unitPattern count="few">{0} мкс.</unitPattern>
-				<unitPattern count="many">{0} мкс.</unitPattern>
-				<unitPattern count="other">{0} мкс.</unitPattern>
-			</unit>
-			<unit type="duration-nanosecond">
-				<displayName>нсэк.</displayName>
-				<unitPattern count="one">{0} нсэк.</unitPattern>
-				<unitPattern count="few">{0} нсэк.</unitPattern>
-				<unitPattern count="many">{0} нсэк.</unitPattern>
-				<unitPattern count="other">{0} нсэк.</unitPattern>
-			</unit>
-			<unit type="energy-british-thermal-unit">
-				<unitPattern count="one">{0} БЦА</unitPattern>
-				<unitPattern count="few">{0} БЦА</unitPattern>
-				<unitPattern count="many">{0} БЦА</unitPattern>
-				<unitPattern count="other">{0} БЦА</unitPattern>
-			</unit>
-			<unit type="energy-therm-us">
-				<unitPattern count="one">{0} амэр. тэрм</unitPattern>
-				<unitPattern count="few">{0} амэр. тэрмы</unitPattern>
-				<unitPattern count="many">{0} амэр. тэрмаў</unitPattern>
-				<unitPattern count="other">{0} амэр. тэрма</unitPattern>
+				<displayName draft="provisional">с</displayName>
+				<unitPattern count="one" draft="provisional">{0} с</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} с</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} с</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} с</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
 				<displayName>піксэлі</displayName>
@@ -3694,13 +3696,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} піксэлі/цалю</unitPattern>
 				<unitPattern count="many">{0} піксэляў/цалю</unitPattern>
 				<unitPattern count="other">{0} піксэля/цалю</unitPattern>
-			</unit>
-			<unit type="volume-jigger">
-				<displayName>джыгэр</displayName>
-				<unitPattern count="one">{0} джыгэр</unitPattern>
-				<unitPattern count="few">{0} джыгэры</unitPattern>
-				<unitPattern count="many">{0} джыгэраў</unitPattern>
-				<unitPattern count="other">{0} джыгэра</unitPattern>
 			</unit>
 		</unitLength>
 	</units>

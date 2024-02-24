@@ -43,9 +43,11 @@ import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
 import java.io.CharConversionException;
 import java.io.EOFException;
 import java.io.IOException;
+import javax.xml.XMLConstants;
 import javax.xml.stream.events.XMLEvent;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty.State;
+import jdk.xml.internal.JdkXmlUtils;
 import jdk.xml.internal.SecuritySupport;
 import jdk.xml.internal.XMLSecurityManager.Limit;
 
@@ -69,7 +71,7 @@ import jdk.xml.internal.XMLSecurityManager.Limit;
  * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
  * related to property SupportDTD.
  * @author Joe Wang, Sun Microsystems
- * @LastModified: July 2023
+ * @LastModified: Nov 2023
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{
@@ -281,6 +283,9 @@ public class XMLDocumentScannerImpl
         fLoadExternalDTD = !((Boolean)propertyManager.getProperty(
                 Constants.ZEPHYR_PROPERTY_PREFIX + Constants.IGNORE_EXTERNAL_DTD));
 
+        fUseCatalog = (Boolean)propertyManager.getProperty(XMLConstants.USE_CATALOG);
+        fCatalogFile = (String)propertyManager.getProperty(JdkXmlUtils.CATALOG_FILES);
+
         setScannerState(XMLEvent.START_DOCUMENT);
         setDriver(fXMLDeclDriver);
         fSeenInternalSubset = false;
@@ -327,6 +332,8 @@ public class XMLDocumentScannerImpl
         // xerces features
         fLoadExternalDTD = componentManager.getFeature(LOAD_EXTERNAL_DTD, true);
 
+        fUseCatalog = componentManager.getFeature(XMLConstants.USE_CATALOG, true);
+        fCatalogFile = (String)componentManager.getProperty(JdkXmlUtils.CATALOG_FILES);
         fNamespaces = componentManager.getFeature(NAMESPACES, true);
 
         fSeenInternalSubset = false;

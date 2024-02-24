@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "native_thread.h"
+#include "native_thread.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 
@@ -37,9 +37,9 @@ extern "C" {
  * Now the same source is used to build different agent libs, so these
  * variables are not shared between agents */
 
-static jthread agentThread = NULL;
-static jvmtiStartFunction agentThreadProc = NULL;
-static void* agentThreadArg = NULL;
+static jthread agentThread = nullptr;
+static jvmtiStartFunction agentThreadProc = nullptr;
+static void* agentThreadArg = nullptr;
 
 
 typedef enum { NEW, RUNNABLE, WAITING, SUSPENDED, TERMINATED } thread_state_t;
@@ -52,9 +52,9 @@ typedef struct agent_data_t {
 
 static agent_data_t agent_data;
 
-static jvmtiEnv* jvmti_env = NULL;
-static JavaVM* jvm = NULL;
-static JNIEnv* jni_env = NULL;
+static jvmtiEnv* jvmti_env = nullptr;
+static JavaVM* jvm = nullptr;
+static JNIEnv* jni_env = nullptr;
 
 static volatile int currentAgentStatus = NSK_STATUS_PASSED;
 
@@ -101,12 +101,12 @@ jvmtiEnv* nsk_jvmti_createJVMTIEnv(JavaVM* javaVM, void* reserved) {
     jvm = javaVM;
     if (!NSK_VERIFY(javaVM->GetEnv((void **)&jvmti_env, JVMTI_VERSION_1_1) == JNI_OK)) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JVMTI_VERIFY(init_agent_data(jvmti_env, &agent_data))) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     return jvmti_env;
@@ -114,7 +114,7 @@ jvmtiEnv* nsk_jvmti_createJVMTIEnv(JavaVM* javaVM, void* reserved) {
 
 /** Dispose JVMTI environment */
 static int nsk_jvmti_disposeJVMTIEnv(jvmtiEnv* jvmti_env) {
-    if (jvmti_env != NULL) {
+    if (jvmti_env != nullptr) {
         if (!NSK_JVMTI_VERIFY(jvmti_env->DisposeEnvironment())) {
             nsk_jvmti_setFailStatus();
             return NSK_FALSE;
@@ -153,7 +153,7 @@ agentThreadWrapper(jvmtiEnv* jvmti_env, JNIEnv* agentJNI, void* arg) {
     rawMonitorEnter(jvmti_env, agent_data.monitor);
     agent_data.thread_state = TERMINATED;
     agentJNI->DeleteGlobalRef(agentThread);
-    agentThread = NULL;
+    agentThread = nullptr;
     rawMonitorNotify(jvmti_env, agent_data.monitor);
     rawMonitorExit(jvmti_env, agent_data.monitor);
 
@@ -167,31 +167,31 @@ static jthread startAgentThreadWrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) {
     const char* THREAD_CTOR_NAME = "<init>";
     const char* THREAD_CTOR_SIGNATURE = "(Ljava/lang/String;)V";
 
-    jobject threadName = NULL;
-    jclass threadClass = NULL;
-    jmethodID threadCtor = NULL;
-    jobject threadObject = NULL;
-    jobject threadGlobalRef = NULL;
+    jobject threadName = nullptr;
+    jclass threadClass = nullptr;
+    jmethodID threadCtor = nullptr;
+    jobject threadObject = nullptr;
+    jobject threadGlobalRef = nullptr;
 
-    if (!NSK_JNI_VERIFY(jni_env, (threadClass = jni_env->FindClass(THREAD_CLASS_NAME)) != NULL)) {
-        return NULL;
+    if (!NSK_JNI_VERIFY(jni_env, (threadClass = jni_env->FindClass(THREAD_CLASS_NAME)) != nullptr)) {
+        return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (threadCtor =
-            jni_env->GetMethodID(threadClass, THREAD_CTOR_NAME, THREAD_CTOR_SIGNATURE)) != NULL))
-        return NULL;
+            jni_env->GetMethodID(threadClass, THREAD_CTOR_NAME, THREAD_CTOR_SIGNATURE)) != nullptr))
+        return nullptr;
 
-    if (!NSK_JNI_VERIFY(jni_env, (threadName = jni_env->NewStringUTF(THREAD_NAME)) != NULL))
-        return NULL;
+    if (!NSK_JNI_VERIFY(jni_env, (threadName = jni_env->NewStringUTF(THREAD_NAME)) != nullptr))
+        return nullptr;
 
     if (!NSK_JNI_VERIFY(jni_env, (threadObject =
-            jni_env->NewObject(threadClass, threadCtor, threadName)) != NULL))
-        return NULL;
+            jni_env->NewObject(threadClass, threadCtor, threadName)) != nullptr))
+        return nullptr;
 
     if (!NSK_JNI_VERIFY(jni_env, (threadGlobalRef =
-            jni_env->NewGlobalRef(threadObject)) != NULL)) {
+            jni_env->NewGlobalRef(threadObject)) != nullptr)) {
         jni_env->DeleteLocalRef(threadObject);
-        return NULL;
+        return nullptr;
     }
     agentThread = (jthread)threadGlobalRef;
 
@@ -199,7 +199,7 @@ static jthread startAgentThreadWrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) {
             jvmti_env->RunAgentThread(agentThread, &agentThreadWrapper, agentThreadArg, THREAD_PRIORITY))) {
         jni_env->DeleteGlobalRef(threadGlobalRef);
         jni_env->DeleteLocalRef(threadObject);
-        return NULL;
+        return nullptr;
     }
     return agentThread;
 }
@@ -220,9 +220,9 @@ jthread nsk_jvmti_getAgentThread() {
 static jthread nsk_jvmti_runAgentThread(JNIEnv *jni_env, jvmtiEnv* jvmti_env) {
     /* start agent thread wrapper */
     jthread thread = startAgentThreadWrapper(jni_env, jvmti_env);
-    if (thread == NULL) {
+    if (thread == nullptr) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     return thread;
@@ -247,7 +247,7 @@ static jint syncDebuggeeStatus(JNIEnv* jni_env, jvmtiEnv* jvmti_env, jint debugg
 
     /* we don't enter if-stmt in second call */
     if (agent_data.thread_state == NEW) {
-        if (nsk_jvmti_runAgentThread(jni_env, jvmti_env) == NULL)
+        if (nsk_jvmti_runAgentThread(jni_env, jvmti_env) == nullptr)
             goto monitor_exit_and_return;
 
         /* SP2.2-w - wait for agent thread */
@@ -371,31 +371,31 @@ Java_nsk_share_jvmti_DebugeeClass_resetAgentData(JNIEnv* jni_env, jclass cls) {
 
 /** Find loaded class by signature. */
 jclass nsk_jvmti_classBySignature(const char signature[]) {
-    jclass* classes = NULL;
+    jclass* classes = nullptr;
     jint count = 0;
-    jclass foundClass = NULL;
+    jclass foundClass = nullptr;
     int i;
 
-    if (!NSK_VERIFY(signature != NULL)) {
+    if (!NSK_VERIFY(signature != nullptr)) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetLoadedClasses(&count, &classes))) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     for (i = 0; i < count; i++) {
-        char* sig = NULL;
-        char* generic = NULL;
+        char* sig = nullptr;
+        char* generic = nullptr;
 
         if (!NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(classes[i], &sig, &generic))) {
             nsk_jvmti_setFailStatus();
             break;
         }
 
-        if (sig != NULL && strcmp(signature, sig) == 0) {
+        if (sig != nullptr && strcmp(signature, sig) == 0) {
             foundClass = classes[i];
         }
 
@@ -405,19 +405,19 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
             break;
         }
 
-        if (foundClass != NULL)
+        if (foundClass != nullptr)
             break;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)classes))) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (foundClass = (jclass)
-                jni_env->NewGlobalRef(foundClass)) != NULL)) {
+                jni_env->NewGlobalRef(foundClass)) != nullptr)) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     return foundClass;
@@ -425,19 +425,19 @@ jclass nsk_jvmti_classBySignature(const char signature[]) {
 
 /** Find alive thread by name. */
 jthread nsk_jvmti_threadByName(const char name[]) {
-    jthread* threads = NULL;
+    jthread* threads = nullptr;
     jint count = 0;
-    jthread foundThread = NULL;
+    jthread foundThread = nullptr;
     int i;
 
-    if (!NSK_VERIFY(name != NULL)) {
+    if (!NSK_VERIFY(name != nullptr)) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetAllThreads(&count, &threads))) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     for (i = 0; i < count; i++) {
@@ -448,27 +448,27 @@ jthread nsk_jvmti_threadByName(const char name[]) {
             break;
         }
 
-        if (info.name != NULL && strcmp(name, info.name) == 0) {
+        if (info.name != nullptr && strcmp(name, info.name) == 0) {
             foundThread = threads[i];
         }
         if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)info.name))) {
             nsk_jvmti_setFailStatus();
-            return NULL;
+            return nullptr;
         }
-        if (foundThread != NULL) {
+        if (foundThread != nullptr) {
             break;
         }
     }
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->Deallocate((unsigned char*)threads))) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     if (!NSK_JNI_VERIFY(jni_env, (foundThread = (jthread)
-                jni_env->NewGlobalRef(foundThread)) != NULL)) {
+                jni_env->NewGlobalRef(foundThread)) != nullptr)) {
         nsk_jvmti_setFailStatus();
-        return NULL;
+        return nullptr;
     }
 
     return foundThread;
@@ -507,7 +507,7 @@ int nsk_jvmti_addBreakpointCapabilities() {
 /** Find line location. */
 jlocation nsk_jvmti_getLineLocation(jclass cls, jmethodID method, int line) {
     jint count = 0;
-    jvmtiLineNumberEntry* table = NULL;
+    jvmtiLineNumberEntry* table = nullptr;
     jlocation location = NSK_JVMTI_INVALID_JLOCATION;
     int i;
 
@@ -574,7 +574,7 @@ int nsk_jvmti_enableEvents(jvmtiEventMode enable, int size, jvmtiEvent list[], j
 
 typedef jint (JNICALL *checkStatus_type)(JNIEnv* jni_env, jclass cls, jint debuggeeStatus);
 
-static checkStatus_type checkStatus_func = NULL;
+static checkStatus_type checkStatus_func = nullptr;
 
 /**
  * Proxy function to gain sequential access to checkStatus of each agent
@@ -600,9 +600,9 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
 
     jvmtiPhase phase;
     jclass cls;
-    char *class_sig = NULL;
-    char *name = NULL;
-    char *sig = NULL;
+    char *class_sig = nullptr;
+    char *name = nullptr;
+    char *sig = nullptr;
 
     if (!NSK_JVMTI_VERIFY(jvmti_env->GetPhase(&phase))) {
         nsk_jvmti_setFailStatus();
@@ -612,12 +612,12 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
     if (phase != JVMTI_PHASE_START && phase != JVMTI_PHASE_LIVE)
         return;
 
-    if (NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(mid, &name, &sig, NULL))) {
+    if (NSK_JVMTI_VERIFY(jvmti_env->GetMethodName(mid, &name, &sig, nullptr))) {
         if (strcmp(name, BIND_METHOD_NAME) == 0 &&
                 strcmp(sig, BIND_METHOD_SIGNATURE) == 0) {
 
             if (NSK_JVMTI_VERIFY(jvmti_env->GetMethodDeclaringClass(mid, &cls))
-             && NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(cls, &class_sig, NULL))
+             && NSK_JVMTI_VERIFY(jvmti_env->GetClassSignature(cls, &class_sig, nullptr))
              && strcmp(class_sig, BIND_CLASS_NAME) == 0
              && address != (void*)Java_nsk_share_jvmti_DebugeeClass_checkStatus) {
                 checkStatus_func = (checkStatus_type)address;
@@ -626,13 +626,13 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
         }
     }
 
-    if (name != NULL)
+    if (name != nullptr)
         jvmti_env->Deallocate((unsigned char*)name);
 
-    if (sig != NULL)
+    if (sig != nullptr)
         jvmti_env->Deallocate((unsigned char*)sig);
 
-    if (class_sig != NULL)
+    if (class_sig != nullptr)
         jvmti_env->Deallocate((unsigned char*)class_sig);
 }
 
@@ -642,14 +642,14 @@ static void JNICALL nativeMethodBind(jvmtiEnv* jvmti_env, JNIEnv *jni_env,
  */
 int nsk_jvmti_init_MA(jvmtiEventCallbacks* callbacks) {
 
-    if (callbacks == NULL) {
-        NSK_COMPLAIN0("callbacks should not be NULL\n");
+    if (callbacks == nullptr) {
+        NSK_COMPLAIN0("callbacks should not be null\n");
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
-    if (callbacks->NativeMethodBind != NULL) {
-        NSK_COMPLAIN0("callbacks.NativeMethodBind should be NULL\n");
+    if (callbacks->NativeMethodBind != nullptr) {
+        NSK_COMPLAIN0("callbacks.NativeMethodBind should be null\n");
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
@@ -667,7 +667,7 @@ int nsk_jvmti_init_MA(jvmtiEventCallbacks* callbacks) {
         return NSK_FALSE;
 
     if (!NSK_JVMTI_VERIFY(
-            jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, NULL)))
+            jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_NATIVE_METHOD_BIND, nullptr)))
         return NSK_FALSE;
 
     return NSK_TRUE;

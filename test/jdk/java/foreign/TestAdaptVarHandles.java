@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=true -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestAdaptVarHandles
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=false -Xverify:all TestAdaptVarHandles
@@ -83,11 +82,12 @@ public class TestAdaptVarHandles {
         }
     }
 
-    static final VarHandle intHandleIndexed = ValueLayout.JAVA_INT.arrayElementVarHandle();
+    static final VarHandle intHandleIndexed = MethodHandles.insertCoordinates(
+            ValueLayout.JAVA_INT.arrayElementVarHandle(), 1, 0L);
 
-    static final VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
+    static final VarHandle intHandle = MethodHandles.insertCoordinates(ValueLayout.JAVA_INT.varHandle(), 1, 0L);
 
-    static final VarHandle floatHandle = ValueLayout.JAVA_FLOAT.varHandle();
+    static final VarHandle floatHandle = MethodHandles.insertCoordinates(ValueLayout.JAVA_FLOAT.varHandle(), 1, 0L);
 
     @Test
     public void testFilterValue() throws Throwable {
@@ -96,16 +96,16 @@ public class TestAdaptVarHandles {
         MemorySegment segment = scope.allocate(layout);
         VarHandle intHandle = layout.varHandle();
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, S2I, I2S);
-        i2SHandle.set(segment, "1");
-        String oldValue = (String)i2SHandle.getAndAdd(segment, "42");
+        i2SHandle.set(segment, 0L, "1");
+        String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
         assertEquals(oldValue, "1");
-        String value = (String)i2SHandle.get(segment);
+        String value = (String)i2SHandle.get(segment, 0L);
         assertEquals(value, "43");
-        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, "43", "12");
+        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
-        oldValue = (String)i2SHandle.compareAndExchange(segment, "12", "42");
+        oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
         assertEquals(oldValue, "12");
-        value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment);
+        value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
         assertEquals(value, "42");
     }
 
@@ -117,17 +117,17 @@ public class TestAdaptVarHandles {
         VarHandle intHandle = layout.varHandle();
         MethodHandle CTX_S2I = MethodHandles.dropArguments(S2I, 0, String.class, String.class);
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, CTX_S2I, CTX_I2S);
-        i2SHandle = MethodHandles.insertCoordinates(i2SHandle, 1, "a", "b");
-        i2SHandle.set(segment, "1");
-        String oldValue = (String)i2SHandle.getAndAdd(segment, "42");
+        i2SHandle = MethodHandles.insertCoordinates(i2SHandle, 2, "a", "b");
+        i2SHandle.set(segment, 0L, "1");
+        String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
         assertEquals(oldValue, "ab1");
-        String value = (String)i2SHandle.get(segment);
+        String value = (String)i2SHandle.get(segment, 0L);
         assertEquals(value, "ab43");
-        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, "43", "12");
+        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
-        oldValue = (String)i2SHandle.compareAndExchange(segment, "12", "42");
+        oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
         assertEquals(oldValue, "ab12");
-        value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment);
+        value = (String)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
         assertEquals(value, "ab42");
     }
 
@@ -138,16 +138,16 @@ public class TestAdaptVarHandles {
         MemorySegment segment = scope.allocate(layout);
         VarHandle intHandle = layout.varHandle();
         VarHandle i2SHandle = MethodHandles.filterValue(intHandle, O2I, I2O);
-        i2SHandle.set(segment, "1");
-        String oldValue = (String)i2SHandle.getAndAdd(segment, "42");
+        i2SHandle.set(segment, 0L, "1");
+        String oldValue = (String)i2SHandle.getAndAdd(segment, 0L, "42");
         assertEquals(oldValue, "1");
-        String value = (String)i2SHandle.get(segment);
+        String value = (String)i2SHandle.get(segment, 0L);
         assertEquals(value, "43");
-        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, "43", "12");
+        boolean swapped = (boolean)i2SHandle.compareAndSet(segment, 0L, "43", "12");
         assertTrue(swapped);
-        oldValue = (String)i2SHandle.compareAndExchange(segment, "12", "42");
+        oldValue = (String)i2SHandle.compareAndExchange(segment, 0L, "12", "42");
         assertEquals(oldValue, "12");
-        value = (String)(Object)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment);
+        value = (String)(Object)i2SHandle.toMethodHandle(VarHandle.AccessMode.GET).invokeExact(segment, 0L);
         assertEquals(value, "42");
     }
 
@@ -194,8 +194,8 @@ public class TestAdaptVarHandles {
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I, I2S_EX);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
-            vh.set(seg, "42");
-            String x = (String) vh.get(seg); // should throw
+            vh.set(seg, 0L, "42");
+            String x = (String) vh.get(seg, 0L); // should throw
         }
     }
 
@@ -205,7 +205,7 @@ public class TestAdaptVarHandles {
         VarHandle vh = MethodHandles.filterValue(intHandle, S2I_EX, I2S);
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment seg = arena.allocate(ValueLayout.JAVA_INT);
-            vh.set(seg, "42"); // should throw
+            vh.set(seg, 0L, "42"); // should throw
         }
     }
 

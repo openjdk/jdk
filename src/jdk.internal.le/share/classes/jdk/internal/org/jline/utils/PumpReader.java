@@ -414,7 +414,7 @@ public class PumpReader extends Reader {
                 return EOF;
             }
 
-            return buffer.get();
+            return buffer.get() & 0xFF;
         }
 
         private boolean readUsingBuffer() throws IOException {

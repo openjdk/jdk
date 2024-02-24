@@ -849,19 +849,20 @@ public class LocaleResources {
         ResourceReference data = cache.get(cacheKey);
 
         if (data == null || ((lpArray = (String[]) data.get()) == null)) {
-            ResourceBundle rb = localeData.getDateFormatData(locale);
-            lpArray = rb.getStringArray("ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr));
+            var rbKey = "ListPatterns_" + typeStr + (style == ListFormat.Style.FULL ? "" : "-" + styleStr);
+            lpArray = localeData.getDateFormatData(locale).getStringArray(rbKey);
 
             if (lpArray[0].isEmpty() || lpArray[1].isEmpty() || lpArray[2].isEmpty()) {
-                var adapter = LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR);
-                if (adapter instanceof ResourceBundleBasedAdapter rbba) {
+                if (LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)
+                        instanceof ResourceBundleBasedAdapter rbba) {
                     var candList = rbba.getCandidateLocales("", locale);
-                    // make sure there is at least one parent locale
-                    if (candList.size() >= 2) {
-                        var parentPatterns = adapter.getLocaleResources(candList.get(1)).getListPatterns(type, style);
-                        for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
-                            if (lpArray[i].isEmpty()) {
-                                lpArray[i] = parentPatterns[i];
+                    if (!candList.isEmpty()) {
+                        for (var p : candList.subList(1, candList.size())) {
+                            var parentPatterns = localeData.getDateFormatData(p).getStringArray(rbKey);
+                            for (int i = 0; i < 3; i++) { // exclude optional ones, ie, "two"/"three"
+                                if (lpArray[i].isEmpty()) {
+                                    lpArray[i] = parentPatterns[i];
+                                }
                             }
                         }
                     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,14 +30,13 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 /*
  * @test
  * @bug 8259610
- * @enablePreview
  * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on avx512dq.
  * @requires vm.cpu.features ~= ".*avx512dq.*"
  * @library /test/lib /
- * @run main compiler.vectorapi.reshape.TestVectorCastAVX512DQ
+ * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastAVX512DQ
  */
 public class TestVectorCastAVX512DQ {
     public static void main(String[] args) {

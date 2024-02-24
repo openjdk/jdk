@@ -312,6 +312,7 @@ public interface Opcodes {
     int V20 = 0 << 16 | 64;
     int V21 = 0 << 16 | 65;
     int V22 = 0 << 16 | 66;
+    int V23 = 0 << 16 | 67;
 
     /**
       * Version flag indicating that the class is using 'preview' features.
@@ -587,4 +588,3 @@ public interface Opcodes {
     int IFNULL = 198; // visitJumpInsn
     int IFNONNULL = 199; // -
 }
-

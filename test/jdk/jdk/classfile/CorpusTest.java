@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile on small Corpus.
+ * @summary Testing ClassFile on small Corpus.
  * @build helpers.* testdata.*
  * @run junit/othervm/timeout=480 -Djunit.jupiter.execution.parallel.enabled=true CorpusTest
  */
@@ -52,19 +52,19 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Stream;
-import jdk.internal.classfile.Attributes;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.Attributes;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
 import jdk.internal.classfile.impl.UnboundAttribute;
-import jdk.internal.classfile.instruction.LineNumber;
-import jdk.internal.classfile.instruction.LocalVariable;
-import jdk.internal.classfile.instruction.LocalVariableType;
+import java.lang.classfile.instruction.LineNumber;
+import java.lang.classfile.instruction.LocalVariable;
+import java.lang.classfile.instruction.LocalVariableType;
 
 /**
  * CorpusTest
@@ -77,7 +77,7 @@ class CorpusTest {
 
     static void splitTableAttributes(String sourceClassFile, String targetClassFile) throws IOException, URISyntaxException {
         var root = Paths.get(URI.create(CorpusTest.class.getResource("CorpusTest.class").toString())).getParent();
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         Files.write(root.resolve(targetClassFile), cc.transform(cc.parse(root.resolve(sourceClassFile)), ClassTransform.transformingMethodBodies((cob, coe) -> {
             var dcob = (DirectCodeBuilder)cob;
             var curPc = dcob.curPc();
@@ -144,8 +144,8 @@ class CorpusTest {
 
             try {
                 byte[] transformed = m.shared && m.classTransform != null
-                                     ? Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS)
-                                                .transform(Classfile.of().parse(bytes), m.classTransform)
+                                     ? ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
+                                                .transform(ClassFile.of().parse(bytes), m.classTransform)
                                      : m.transform.apply(bytes);
                 Map<Integer, Integer> newDups = findDups(transformed);
                 oldRecord = m.classRecord(bytes);
@@ -195,7 +195,7 @@ class CorpusTest {
     @MethodSource("corpus")
     void testReadAndTransform(Path path) throws IOException {
         byte[] bytes = Files.readAllBytes(path);
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var classModel = cc.parse(bytes);
         assertEqualsDeep(ClassRecord.ofClassModel(classModel), ClassRecord.ofStreamingElements(classModel),
                          "ClassModel (actual) vs StreamingElements (expected)");
@@ -208,10 +208,10 @@ class CorpusTest {
                 ClassRecord.ofClassModel(classModel, CompatibilityFilter.By_ClassBuilder),
                 "ClassModel[%s] transformed by ClassBuilder (actual) vs ClassModel before transformation (expected)".formatted(path));
 
-        assertEmpty(newModel.verify(null));
+        assertEmpty(cc.verify(newModel));
 
         //testing maxStack and maxLocals are calculated identically by StackMapGenerator and StackCounter
-        byte[] noStackMaps = Classfile.of(Classfile.StackMapsOption.DROP_STACK_MAPS)
+        byte[] noStackMaps = ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS)
                                       .transform(newModel,
                                                          ClassTransform.transformingMethodBodies(CodeTransform.ACCEPT_ALL));
         var noStackModel = cc.parse(noStackMaps);
@@ -244,7 +244,7 @@ class CorpusTest {
 //    }
 
     private void compareCp(byte[] orig, byte[] transformed) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         var cp1 = cc.parse(orig).constantPool();
         var cp2 = cc.parse(transformed).constantPool();
 
@@ -269,7 +269,7 @@ class CorpusTest {
 
     private static Map<Integer, Integer> findDups(byte[] bytes) {
         Map<Integer, Integer> dups = new HashMap<>();
-        var cf = Classfile.of().parse(bytes);
+        var cf = ClassFile.of().parse(bytes);
         var pool = cf.constantPool();
         Set<String> entryStrings = new HashSet<>();
         for (int i = 1; i < pool.size(); i += pool.entryByIndex(i).width()) {

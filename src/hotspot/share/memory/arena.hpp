@@ -86,13 +86,22 @@ public:
 
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
+public:
+
+  enum class Tag {
+    tag_other = 0,
+    tag_ra,   // resource area
+    tag_ha,   // handle area
+    tag_node  // C2 Node arena
+  };
+
 protected:
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
 
   MEMFLAGS    _flags;           // Memory tracking flags
-
+  const Tag _tag;
   Chunk* _first;                // First chunk
   Chunk* _chunk;                // current chunk
   char* _hwm;                   // High water mark
@@ -115,9 +124,8 @@ protected:
  public:
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
-
-  Arena(MEMFLAGS memflag);
-  Arena(MEMFLAGS memflag, size_t init_size);
+  Arena(MEMFLAGS memflag, Tag tag = Tag::tag_other);
+  Arena(MEMFLAGS memflag, Tag tag, size_t init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
@@ -170,6 +178,8 @@ protected:
   // Total # of bytes used
   size_t size_in_bytes() const         {  return _size_in_bytes; };
   void set_size_in_bytes(size_t size);
+
+  Tag get_tag() const { return _tag; }
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary

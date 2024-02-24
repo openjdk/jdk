@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @library /java/text/testlib
  * @summary test International Date Format Symbols
+ * @run junit IntlTestDateFormatSymbols
  */
 /*
 (C) Copyright Taligent, Inc. 1996, 1997 - All Rights Reserved
@@ -41,13 +41,14 @@ attribution to Taligent may not be removed.
 import java.text.*;
 import java.util.*;
 
-public class IntlTestDateFormatSymbols extends IntlTest
-{
-    public static void main(String[] args) throws Exception {
-        new IntlTestDateFormatSymbols().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class IntlTestDateFormatSymbols
+{
     // Test getMonths
+    @Test
     public void TestGetMonths()
     {
         final String[] month;
@@ -58,15 +59,16 @@ public class IntlTestDateFormatSymbols extends IntlTest
         month=symbol.getMonths();
         int cnt = month.length;
 
-        logln("size = " + cnt);
+        System.out.println("size = " + cnt);
 
         for (int i=0; i<cnt; ++i)
         {
-            logln(month[i]);
+            System.out.println(month[i]);
         }
     }
 
     // Test the API of DateFormatSymbols; primarily a simple get/set set.
+    @Test
     public void TestSymbols()
     {
         DateFormatSymbols fr = new DateFormatSymbols(Locale.FRENCH);
@@ -74,7 +76,7 @@ public class IntlTestDateFormatSymbols extends IntlTest
         DateFormatSymbols en = new DateFormatSymbols(Locale.ENGLISH);
 
         if(en.equals(fr)) {
-            errln("ERROR: English DateFormatSymbols equal to French");
+            fail("ERROR: English DateFormatSymbols equal to French");
         }
 
         // just do some VERY basic tests to make sure that get/set work
@@ -85,12 +87,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] eras1 = fr.getEras();
         count = eras.length;
         if( count != eras1.length) {
-            errln("ERROR: setEras() failed (different size array)");
+            fail("ERROR: setEras() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! eras[i].equals(eras1[i])) {
-                    errln("ERROR: setEras() failed (different string values)");
+                    fail("ERROR: setEras() failed (different string values)");
                 }
             }
         }
@@ -101,12 +103,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] months1 = fr.getMonths();
         count = months.length;
         if( count != months1.length) {
-            errln("ERROR: setMonths() failed (different size array)");
+            fail("ERROR: setMonths() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! months[i].equals(months1[i])) {
-                    errln("ERROR: setMonths() failed (different string values)");
+                    fail("ERROR: setMonths() failed (different string values)");
                 }
             }
         }
@@ -116,12 +118,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] shortMonths1 = fr.getShortMonths();
         count = shortMonths.length;
         if( count != shortMonths1.length) {
-            errln("ERROR: setShortMonths() failed (different size array)");
+            fail("ERROR: setShortMonths() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! shortMonths[i].equals(shortMonths1[i])) {
-                    errln("ERROR: setShortMonths() failed (different string values)");
+                    fail("ERROR: setShortMonths() failed (different string values)");
                 }
             }
         }
@@ -131,12 +133,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] weekdays1 = fr.getWeekdays();
         count = weekdays.length;
         if( count != weekdays1.length) {
-            errln("ERROR: setWeekdays() failed (different size array)");
+            fail("ERROR: setWeekdays() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! weekdays[i].equals(weekdays1[i])) {
-                    errln("ERROR: setWeekdays() failed (different string values)");
+                    fail("ERROR: setWeekdays() failed (different string values)");
                 }
             }
         }
@@ -146,12 +148,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] shortWeekdays1 = fr.getShortWeekdays();
         count = shortWeekdays.length;
         if( count != shortWeekdays1.length) {
-            errln("ERROR: setShortWeekdays() failed (different size array)");
+            fail("ERROR: setShortWeekdays() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! shortWeekdays[i].equals(shortWeekdays1[i])) {
-                    errln("ERROR: setShortWeekdays() failed (different string values)");
+                    fail("ERROR: setShortWeekdays() failed (different string values)");
                 }
             }
         }
@@ -161,12 +163,12 @@ public class IntlTestDateFormatSymbols extends IntlTest
         final String[] ampms1 = fr.getAmPmStrings();
         count = ampms.length;
         if( count != ampms1.length) {
-            errln("ERROR: setAmPmStrings() failed (different size array)");
+            fail("ERROR: setAmPmStrings() failed (different size array)");
         }
         else {
             for(int i = 0; i < count; i++) {
                 if(! ampms[i].equals(ampms1[i])) {
-                    errln("ERROR: setAmPmStrings() failed (different string values)");
+                    fail("ERROR: setAmPmStrings() failed (different string values)");
                 }
             }
         }
@@ -180,7 +182,7 @@ public class IntlTestDateFormatSymbols extends IntlTest
             columnCount = strings[i].length;
             for(int j = 0; j < columnCount; j++) {
                 if( strings[i][j] != strings1[i][j] ) {
-                    errln("ERROR: setZoneStrings() failed");
+                    fail("ERROR: setZoneStrings() failed");
                 }
             }
         }
@@ -191,7 +193,7 @@ public class IntlTestDateFormatSymbols extends IntlTest
         localPattern = en.getLocalPatternChars();
         fr.setLocalPatternChars(localPattern);
         if(! en.getLocalPatternChars().equals(fr.getLocalPatternChars())) {
-            errln("ERROR: setLocalPatternChars() failed");
+            fail("ERROR: setLocalPatternChars() failed");
         }
 
 
@@ -200,7 +202,7 @@ public class IntlTestDateFormatSymbols extends IntlTest
         en = (DateFormatSymbols) fr.clone();
 
         if(! en.equals(fr)) {
-            errln("ERROR: Clone failed");
+            fail("ERROR: Clone failed");
         }
     }
 }

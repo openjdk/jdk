@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapWriter.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/systemDictionary.hpp"
@@ -138,7 +139,7 @@ oop ArchiveHeapWriter::requested_obj_from_buffer_offset(size_t offset) {
 }
 
 oop ArchiveHeapWriter::source_obj_to_requested_obj(oop src_obj) {
-  assert(DumpSharedSpaces, "dump-time only");
+  assert(CDSConfig::is_dumping_heap(), "dump-time only");
   HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
   if (p != nullptr) {
     return requested_obj_from_buffer_offset(p->buffer_offset());

@@ -84,12 +84,10 @@ abstract public class JMXStatusTest {
     @BeforeTest
     public final void setup() throws Exception {
         List<String> args = new ArrayList<>();
-        args.add("-cp");
-        args.add(System.getProperty("test.class.path"));
         args.add("-XX:+UsePerfData");
         args.addAll(getCustomVmArgs());
         args.add(TEST_APP_NAME);
-        testAppPb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+        testAppPb = ProcessTools.createTestJavaProcessBuilder(args);
 
         jcmd = new ManagementAgentJcmd(TEST_APP_NAME, false);
     }

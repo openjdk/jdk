@@ -44,9 +44,9 @@ public class ExitOnThrow {
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
-            ProcessTools.executeTestJvm("--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
-                                        "ExitOnThrow",
-                                        "-executeCleaner")
+            ProcessTools.executeTestJava("--add-exports", "java.base/jdk.internal.ref=ALL-UNNAMED",
+                                         "ExitOnThrow",
+                                         "-executeCleaner")
                         .outputTo(System.out)
                         .errorTo(System.out)
                         .shouldHaveExitValue(1)

@@ -260,7 +260,6 @@ jobject JfrJavaEventWriter::new_event_writer(TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(event_writer(THREAD) == nullptr, "invariant");
   JfrThreadLocal* const tl = THREAD->jfr_thread_local();
-  assert(!tl->has_java_buffer(), "invariant");
   JfrBuffer* const buffer = tl->java_buffer();
   if (buffer == nullptr) {
     JfrJavaSupport::throw_out_of_memory_error("OOME for thread local buffer", THREAD);

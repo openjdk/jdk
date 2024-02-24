@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,12 +39,12 @@
 #include "memory/metaspace/rootChunkArea.hpp"
 #include "memory/metaspace/runningCounters.hpp"
 #include "memory/metaspace/virtualSpaceNode.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "sanitizers/address.hpp"
 #include "sanitizers/leak.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -56,12 +56,12 @@ namespace metaspace {
 #define LOGFMT_ARGS    p2i(this), p2i(_base)
 
 #ifdef ASSERT
-void check_pointer_is_aligned_to_commit_granule(const MetaWord* p) {
+static void check_pointer_is_aligned_to_commit_granule(const MetaWord* p) {
   assert(is_aligned(p, Settings::commit_granule_bytes()),
          "Pointer not aligned to commit granule size: " PTR_FORMAT ".",
          p2i(p));
 }
-void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
+static void check_word_size_is_aligned_to_commit_granule(size_t word_size) {
   assert(is_aligned(word_size, Settings::commit_granule_words()),
          "Not aligned to commit granule size: " SIZE_FORMAT ".", word_size);
 }

@@ -87,7 +87,6 @@ static void scavenge_roots_work(ParallelRootType::Value root_type, uint worker_i
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
   PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
-  PSScavengeRootsClosure roots_closure(pm);
   PSPromoteRootsClosure  roots_to_old_closure(pm);
 
   switch (root_type) {
@@ -240,8 +239,7 @@ bool PSScavenge::invoke() {
   IsGCActiveMark mark;
 
   const bool scavenge_done = PSScavenge::invoke_no_policy();
-  const bool need_full_gc = !scavenge_done ||
-    policy->should_full_GC(heap->old_gen()->free_in_bytes());
+  const bool need_full_gc = !scavenge_done;
   bool full_gc_done = false;
 
   if (UsePerfData) {
@@ -301,6 +299,11 @@ public:
       _is_old_gen_empty(old_gen->object_space()->is_empty()),
       _terminator(active_workers, PSPromotionManager::vm_thread_promotion_manager()->stack_array_depth()) {
     assert(_old_gen != nullptr, "Sanity");
+
+    if (!_is_old_gen_empty) {
+      PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
+      card_table->pre_scavenge(active_workers);
+    }
   }
 
   virtual void work(uint worker_id) {
@@ -314,8 +317,9 @@ public:
         PSPromotionManager* pm = PSPromotionManager::gc_thread_promotion_manager(worker_id);
         PSCardTable* card_table = ParallelScavengeHeap::heap()->card_table();
 
+        // The top of the old gen changes during scavenge when objects are promoted.
         card_table->scavenge_contents_parallel(_old_gen->start_array(),
-                                               _old_gen->object_space(),
+                                               _old_gen->object_space()->bottom(),
                                                _gen_top,
                                                pm,
                                                worker_id,
@@ -638,11 +642,7 @@ bool PSScavenge::invoke_no_policy() {
       old_gen->verify_object_start_array();
     }
 
-    // Verify all old -> young cards are now precise
     if (VerifyRememberedSets) {
-      // Precise verification will give false positives. Until this is fixed,
-      // use imprecise verification.
-      // heap->card_table()->verify_all_young_refs_precise();
       heap->card_table()->verify_all_young_refs_imprecise();
     }
 
@@ -702,8 +702,6 @@ bool PSScavenge::should_attempt_scavenge() {
   // Test to see if the scavenge will likely fail.
   PSAdaptiveSizePolicy* policy = heap->size_policy();
 
-  // A similar test is done in the policy's should_full_GC().  If this is
-  // changed, decide if that test should also be changed.
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
   bool result = promotion_estimate < old_gen->free_in_bytes();

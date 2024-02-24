@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@
 #include "runtime/perfDataTypes.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/zipLibrary.hpp"
 
 // The VM class loader.
 #include <sys/stat.h>
@@ -83,19 +84,6 @@ class ClassPathDirEntry: public ClassPathEntry {
   virtual ~ClassPathDirEntry();
   ClassFileStream* open_stream(JavaThread* current, const char* name);
 };
-
-// Type definitions for zip file and zip file entry
-typedef void* jzfile;
-typedef struct {
-  char *name;                   /* entry name */
-  jlong time;                   /* modification time */
-  jlong size;                   /* size of uncompressed data */
-  jlong csize;                  /* size of compressed data (zero if uncompressed) */
-  jint crc;                     /* crc of uncompressed data */
-  char *comment;                /* optional zip file comment */
-  jbyte *extra;                 /* optional extra data */
-  jlong pos;                    /* position of LOC header (if negative) or data */
-} jzentry;
 
 class ClassPathZipEntry: public ClassPathEntry {
  private:
@@ -168,7 +156,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* _perf_classes_linked;
   static PerfCounter* _perf_class_link_time;
   static PerfCounter* _perf_class_link_selftime;
-  static PerfCounter* _perf_sys_class_lookup_time;
   static PerfCounter* _perf_shared_classload_time;
   static PerfCounter* _perf_sys_classload_time;
   static PerfCounter* _perf_app_classload_time;
@@ -228,8 +215,6 @@ class ClassLoader: AllStatic {
   CDS_ONLY(static void add_to_module_path_entries(const char* path,
                                            ClassPathEntry* entry);)
 
-  // cache the zip library handle
-  static void* _zip_handle;
  public:
   CDS_ONLY(static ClassPathEntry* app_classpath_entries() {return _app_classpath_entries;})
   CDS_ONLY(static ClassPathEntry* module_path_entries() {return _module_path_entries;})
@@ -248,16 +233,10 @@ class ClassLoader: AllStatic {
 
   static void* dll_lookup(void* lib, const char* name, const char* path);
   static void load_java_library();
-  static void load_zip_library();
   static void load_jimage_library();
 
- private:
-  static int  _libzip_loaded; // used to sync loading zip.
-  static void release_load_zip_library();
-
  public:
-  static inline void load_zip_library_if_needed();
-  static void* zip_library_handle() { return _zip_handle; }
+  static void* zip_library_handle();
   static jzfile* open_zip_file(const char* canonical_path, char** error_msg, JavaThread* thread);
   static ClassPathEntry* create_class_path_entry(JavaThread* current,
                                                  const char *path, const struct stat* st,
@@ -289,7 +268,6 @@ class ClassLoader: AllStatic {
   static PerfCounter* perf_classes_linked()           { return _perf_classes_linked; }
   static PerfCounter* perf_class_link_time()          { return _perf_class_link_time; }
   static PerfCounter* perf_class_link_selftime()      { return _perf_class_link_selftime; }
-  static PerfCounter* perf_sys_class_lookup_time()    { return _perf_sys_class_lookup_time; }
   static PerfCounter* perf_shared_classload_time()    { return _perf_shared_classload_time; }
   static PerfCounter* perf_sys_classload_time()       { return _perf_sys_classload_time; }
   static PerfCounter* perf_app_classload_time()       { return _perf_app_classload_time; }
@@ -314,14 +292,14 @@ class ClassLoader: AllStatic {
   // Add a module's exploded directory to the boot loader's exploded module build list
   static void add_to_exploded_build_list(JavaThread* current, Symbol* module_name);
 
-  // Attempt load of individual class from either the patched or exploded modules build lists
+  // Search the module list for the class file stream based on the file name and java package
   static ClassFileStream* search_module_entries(JavaThread* current,
                                                 const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                const char* const class_name,
+                                                PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                 const char* const file_name);
 
   // Load individual .class file
-  static InstanceKlass* load_class(Symbol* class_name, bool search_append_only, TRAPS);
+  static InstanceKlass* load_class(Symbol* class_name, PackageEntry* pkg_entry, bool search_append_only, TRAPS);
 
   // If the specified package has been loaded by the system, then returns
   // the name of the directory or ZIP file that the package was loaded from.

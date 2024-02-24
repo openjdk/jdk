@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ public class GetObjectSizeOverflow {
         var jar = new ProcessBuilder(JDKToolFinder.getJDKTool("jar"), "cmf", "MANIFEST.MF", "agent.jar", "GetObjectSizeOverflowAgent.class");
         new OutputAnalyzer(jar.start()).shouldHaveExitValue(0);
 
-        ProcessBuilder pt = ProcessTools.createTestJvm("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
+        ProcessBuilder pt = ProcessTools.createTestJavaProcessBuilder("-Xmx4000m", "-javaagent:agent.jar",  "GetObjectSizeOverflowAgent");
         OutputAnalyzer output = new OutputAnalyzer(pt.start());
         output.stdoutShouldContain("GetObjectSizeOverflow passed");
         output.shouldHaveExitValue(0);

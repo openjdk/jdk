@@ -232,6 +232,7 @@ public class TestOptions extends JavadocTester {
                 """
                     <section class="detail" id="DEFAULT_NAME">
                     <h3>DEFAULT_NAME</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">static final</span>&nbsp;<\
                     span class="return-type">java.lang.String</span>&nbsp;<span class="element-name"><a href\
                     ="../src-html/linksource/AnnotationTypeField.html#line-32">DEFAULT_NAME</a></spa\
@@ -239,6 +240,7 @@ public class TestOptions extends JavadocTester {
                 """
                     <section class="detail" id="name()">
                     <h3>name</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="return-type">java.lang.String</span>&\
                     nbsp;<span class="element-name"><a href="../src-html/linksource/AnnotationTypeField.html\
                     #line-34">name</a></span></div>""");

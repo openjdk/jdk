@@ -149,7 +149,15 @@ class JvmtiExport : public AllStatic {
     JVMTI_ONLY(_can_access_local_variables = (on != 0);)
   }
   inline static void set_can_hotswap_or_post_breakpoint(bool on) {
-    JVMTI_ONLY(_can_hotswap_or_post_breakpoint = (on != 0);)
+#if INCLUDE_JVMTI
+    // Check that _can_hotswap_or_post_breakpoint is not reset once it
+    // was set to true. When _can_hotswap_or_post_breakpoint is set to true
+    // _all_dependencies_are_recorded is also set to true and never
+    // reset so we have to ensure that evol dependencies are always
+    // recorded from that point on.
+    assert(!_can_hotswap_or_post_breakpoint || on, "sanity check");
+    _can_hotswap_or_post_breakpoint = (on != 0);
+#endif
   }
   inline static void set_can_walk_any_space(bool on) {
     JVMTI_ONLY(_can_walk_any_space = (on != 0);)

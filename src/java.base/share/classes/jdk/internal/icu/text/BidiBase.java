@@ -4595,7 +4595,7 @@ public class BidiBase {
                       objectStart + " is out of range 0 to " +
                       (objects.length-1));
         }
-        if (0 > count || objects.length < (objectStart+count)) {
+        if (0 > count || objects.length - count < objectStart) {
             throw new IllegalArgumentException("Value count " +
                       count + " is less than zero, or objectStart + count" +
                       " is beyond objects length " + objects.length);
