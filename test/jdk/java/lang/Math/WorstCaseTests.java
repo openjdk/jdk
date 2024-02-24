@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4900206
+ * @bug 4900206 8316708
  * @summary Test worst case behavior of exp, log, sin, cos, etc.
  * @build Tests
  * @build WorstCaseTests
@@ -32,9 +32,20 @@
  */
 
 /**
- * Use "Table Maker's Dilemma" results from Jean-Michel Muller and
- * Vincent Lef&egrave;vre, to test the math library.  See
- * http://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
+ * This test containst two distinct kinds of worst-case inputs:
+ *
+ * 1) Exact numerical results that are nearly half-way between
+ * representable numbers or very close to a representable
+ * number. (Half-way caess are hardest for round to nearest even;
+ * close to a representable number cases are hard for directed
+ * roundings.)
+ *
+ * 2) Worst-case errors as observed emprically across different
+ * implementations that are not correctly rounded.
+ *
+ * For the first categpory, the "Table Maker's Dilemma" results from
+ * Jean-Michel Muller and Vincent Lef&egrave;vre, are used.
+ * See http://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
  * test vectors from 2000 and see
  * http://perso.ens-lyon.fr/jean-michel.muller/TMDworstcases.pdf with
  * additional test vectors from 2003.  The latter link also contains
@@ -53,11 +64,11 @@
  * values.  Therefore, no addition leeway is afforded when testing
  * sinh and cosh.
  *
- * Additional worst-case observed error inputs for the FDLIBM-derived
- * OpenLibm 0.8.1 and other math libraries added from
- * "Accuracy of Mathematical Functions in Single, Double, Double
- * Extended, and Quadruple Precision"
- * by Brian Gladman, Vincenzo Innocente and Paul Zimmermann
+ * For the second category, worst-case observed error inputs for the
+ * FDLIBM-derived OpenLibm 0.8.1 and other math libraries are added
+ * from "Accuracy of Mathematical Functions in Single, Double, Double
+ * Extended, and Quadruple Precision" by Brian Gladman, Vincenzo
+ * Innocente and Paul Zimmermann.
  */
 public class WorstCaseTests {
     private WorstCaseTests() {throw new AssertionError("No instances for you.");}
@@ -257,7 +268,7 @@ public class WorstCaseTests {
             {+0x1.E264357EA0E29p-1,     +0x1.3AA301F6EBB1Dp+0},
 
             // Worst-case observed error
-            {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28cp-1},
+            {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28bp-1},
         };
 
         for(double[] testCase: testCases) {
@@ -326,7 +337,7 @@ public class WorstCaseTests {
             {+0x1.F10FC61E2C78Fp-1,     +0x1.EFEEF61D39AC1p-3},
 
             // Worst-case observed error
-            {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0727p1},
+            {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
         };
 
         for(double[] testCase: testCases) {
@@ -360,8 +371,8 @@ public class WorstCaseTests {
             {+0x1.46AC372243536p-1,     +0x1.7BA49F739829Ep-1},
             {+0x0.A3561B9121A9Bp+0,     +0x0.BDD24FB9CC14Fp+0},
 
-            // Worst-case observed error
-            {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64935p-1},
+            // Worst-case observed error for FDLIBM, outside of 1 ulp error
+            // {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64934p-1},
         };
 
         for(double[] testCase: testCases) {
