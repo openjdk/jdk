@@ -26,14 +26,18 @@
 package java.security;
 
 import sun.security.pkcs.PKCS8Key;
+import sun.security.rsa.RSAPrivateCrtKeyImpl;
+import sun.security.rsa.RSAUtil;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
+import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
@@ -51,7 +55,7 @@ import java.util.Objects;
  * Base64-formatted binary encoding surrounded by a type identifying header
  * and footer.
 
- * <p> The PEMEncoder returned by {@linkplain #withFactoryFrom} and/or
+ * <p> The PEMEncoder returned by {@linkplain #withFactory} and/or
  * {@linkplain #withDecryption} are immutably configuration.  Configuring an
  * instance for decryption does not prevent decoding with unencrypted PEM. Any
  * encrypted PEM that does not use the configured password will cause an
@@ -107,7 +111,10 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             keyType = Pem.KeyType.CERTIFICATE;
         } else if (Arrays.mismatch(header, Pem.CRLHEADER) == -1 &&
             Arrays.mismatch(footer, Pem.CRLFOOTER) == -1) {
-            keyType = Pem.KeyType.CRL;
+            keyType = Pem.KeyType.PKCS1;
+        } else if (Arrays.mismatch(header, Pem.PKCS1HEADER) == -1 &&
+            Arrays.mismatch(footer, Pem.PKCS1FOOTER) == -1) {
+            keyType = Pem.KeyType.PKCS1;
         } else {
             throw new IOException("Unsupported PEM header/footer");
         }
@@ -183,6 +190,17 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
                     throw new IOException(e);
                 }
             }
+            case PKCS1 -> {
+                try {
+                    KeyFactory kf = (KeyFactory)
+                        getFactory(keyType, "RSA");
+                    yield kf.generatePrivate(
+                        RSAPrivateCrtKeyImpl.getKeySpec(decoder.decode(data)));
+                } catch (Exception e) {
+                    throw new IOException(e);
+                }
+
+            }
             default -> throw new IOException("Unsupported type or not " +
                 "properly formatted PEM");
         };
@@ -243,13 +261,13 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
         // KeySpec's other that EncodedKeySpec's do not differentiate between
         // public or private key via a subclass.  Specifying each class is
         // in this the decoder error-prone and not extensible.
-        if (tClass.isInstance(KeySpec.class) &&
+/*        if (tClass.isInstance(KeySpec.class) &&
             (!tClass.isInstance(X509EncodedKeySpec.class) &&
                 !tClass.isInstance(PKCS8EncodedKeySpec.class))) {
             throw new IOException("Decoder does not support the provided " +
                 "KeySpec.");
         }
-
+*/
         try {
             return tClass.cast(decode(new ByteArrayInputStream(string.getBytes())));
         } catch (ClassCastException e) {
@@ -289,14 +307,15 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
         try {
             if (factory == null) {
                 return switch (type) {
-                    case PUBLIC, PRIVATE -> KeyFactory.getInstance(algorithm);
+                    case PUBLIC, PRIVATE, PKCS1 ->
+                        KeyFactory.getInstance(algorithm);
                     case CERTIFICATE, CRL ->
                         CertificateFactory.getInstance(algorithm);
                     default -> null;  // no possible
                 };
             } else {
                 return switch (type) {
-                    case PUBLIC, PRIVATE ->
+                    case PUBLIC, PRIVATE, PKCS1 ->
                         KeyFactory.getInstance(algorithm, factory);
                     case CERTIFICATE, CRL ->
                         CertificateFactory.getInstance(algorithm, factory);
@@ -315,7 +334,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * @param provider the Factory provider for the new decoder instance.
      * @return a new PEM decoder instance.
      */
-    public PEMDecoder withFactoryFrom(Provider provider) {
+    public PEMDecoder withFactory(Provider provider) {
         return new PEMDecoder(provider, password);
     }
 

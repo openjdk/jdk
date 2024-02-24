@@ -361,6 +361,31 @@ public final class RSAPrivateCrtKeyImpl
     }
 
     /**
+     * With a given PKCS#1/slleay/OpenSSL old default RSA binary encoding,
+     * decode and return the proper RSA encoded KeySpec
+     * @param encoded RSA binary encoding
+     * @return KeySpec
+     * @throws InvalidKeyException on decoding failure
+     */
+
+    public static KeySpec getKeySpec(byte[] encoded) throws
+        InvalidKeyException {
+        try {
+            BigInteger[] comps = parsePKCS1(encoded);
+            if ((comps[1].signum() == 0) || (comps[3].signum() == 0) ||
+                (comps[4].signum() == 0) || (comps[5].signum() == 0) ||
+                (comps[6].signum() == 0) || (comps[7].signum() == 0)) {
+                return new RSAPrivateKeySpec(comps[0], comps[2]);
+            } else {
+                return new RSAPrivateCrtKeySpec(comps[0],
+                    comps[1], comps[2], comps[3], comps[4], comps[5],
+                    comps[6], comps[7]);
+            }
+        } catch (IOException ioe) {
+            throw new InvalidKeyException("Invalid PKCS#1 encoding", ioe);
+        }
+    }
+    /**
      * Restores the state of this object from the stream.
      * <p>
      * Deserialization of this object is not supported.

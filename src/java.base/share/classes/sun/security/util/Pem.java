@@ -80,13 +80,21 @@ public class Pem {
     public static final byte[] CRLFOOTER = "-----END CRL-----"
         .getBytes(StandardCharsets.UTF_8);
 
+    /**
+     * PKCS#1/slleay/OpenSSL RSA PEM header & footer
+     */
+    public static final byte[] PKCS1HEADER = "-----BEGIN RSA PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
+    public static final byte[] PKCS1FOOTER = "-----END RSA PRIVATE KEY-----"
+        .getBytes(StandardCharsets.UTF_8);
+
     public static final byte[] LINESEPARATOR = "\r\n"
         .getBytes(StandardCharsets.UTF_8);
 
     private static final Pem NULLPEM = new Pem(null, null, null);
 
     public enum KeyType {
-        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL
+        UNKNOWN, PRIVATE, PUBLIC, ENCRYPTED_PRIVATE, CERTIFICATE, CRL, PKCS1
     }
 
     public static final String DEFAULT_ALGO;
