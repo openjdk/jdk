@@ -294,7 +294,6 @@ class CodeCache : AllStatic {
   }
 
   static void verify_clean_inline_caches();
-  static void verify_icholder_relocations();
 
   // Deoptimization
  private:
