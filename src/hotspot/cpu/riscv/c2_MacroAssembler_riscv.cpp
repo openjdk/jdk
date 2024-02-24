@@ -97,14 +97,14 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
     assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
 
     // If the compare-and-exchange succeeded, then we found an unlocked
-    // object, will have now locked it will continue at label cont
+    // object, will have now locked it will continue at label locked
     // We did not see an unlocked object so try the fast recursive case.
 
     // Check if the owner is self by comparing the value in the
     // markWord of object (disp_hdr) with the stack pointer.
     sub(disp_hdr, disp_hdr, sp);
     mv(tmp, (intptr_t) (~(os::vm_page_size()-1) | (uintptr_t)markWord::lock_mask_in_place));
-    // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto cont,
+    // If (mark & lock_mask) == 0 and mark - sp < page_size, we are stack-locking and goto label locked,
     // hence we can store 0 as the displaced header in the box, which indicates that it is a
     // recursive lock.
     andr(tmp/*==0?*/, disp_hdr, tmp);
@@ -142,19 +142,19 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flags == 0.
+  // Check that locked label is reached with flag == 0.
   Label flag_correct;
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags != 0.
+  // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
   stop("Fast Lock Flag == 0");
   bind(flag_correct);
 #endif
-  // C2 uses the value of flags (0 vs !0) to determine the continuation.
+  // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
 void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
@@ -236,19 +236,19 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flags == 0.
+  // Check that unlocked label is reached with flag == 0.
   Label flag_correct;
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags != 0.
+  // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
   stop("Fast Lock Flag == 0");
   bind(flag_correct);
 #endif
-  // C2 uses the value of flags (0 vs !0) to determine the continuation.
+  // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
 void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Register tmp2, Register tmp3) {
@@ -347,19 +347,19 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Regis
   increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp3);
 
 #ifdef ASSERT
-  // Check that locked label is reached with flags == 0.
+  // Check that locked label is reached with flag == 0.
   Label flag_correct;
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags != 0.
+  // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
   stop("Fast Lock Flag == 0");
   bind(flag_correct);
 #endif
-  // C2 uses the value of flags (0 vs !0) to determine the continuation.
+  // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
 void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Register tmp2,
@@ -500,19 +500,19 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
   decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2, tmp3);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flags == 0.
+  // Check that unlocked label is reached with flag == 0.
   Label flag_correct;
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags != 0.
+  // Check that slow_path label is reached with flag != 0.
   bnez(flag, flag_correct);
   stop("Fast Lock Flag == 0");
   bind(flag_correct);
 #endif
-  // C2 uses the value of flags (0 vs !0) to determine the continuation.
+  // C2 uses the value of flag (0 vs !0) to determine the continuation.
 }
 
 // short string
