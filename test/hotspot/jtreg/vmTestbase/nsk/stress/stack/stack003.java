@@ -57,7 +57,7 @@ public class stack003 {
     final static int INCREMENT = 100;
 
     public static void main(String[] args) {
-     
+
         int depth;
         for (depth = 1; ; depth += INCREMENT) {
             try {
