@@ -328,7 +328,7 @@ public class ZipFile implements ZipConstants, Closeable {
             // the Zip file comment, return null;
             try {
                 return res.zsrc.zc.toString(res.zsrc.comment);
-            } catch(IllegalArgumentException iae) {
+            } catch (IllegalArgumentException iae) {
                 return null;
             }
         }

@@ -44,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @test
  * @bug 8301873 8321156
- * @summary Validate that a ZipException is thrown when opening a ZIP file via
- * ZipFile, traversing a Zip File via ZipInputStream, with invalid UTF-8
- * byte sequences in the name or comment fields fails with ZipException.
+ * @summary Validate that a ZipException is thrown when a ZIP file with
+ * invalid UTF-8 byte sequences in the name or comment fields is opened via
+ * ZipFile or traversed via ZipInputStream.
  * Also validate that ZipFile::getComment will return null with invalid UTF-8
  * byte sequences in the ZIP file comment
  * @run junit InvalidBytesInEntryNameOrComment
@@ -62,7 +62,7 @@ public class InvalidBytesInEntryNameOrComment {
 
     // Expected error message when an invalid entry name is encountered when
     // accessing a LOC Header
-    private static final String LOC_BAD_ENTRY_NAME_OR_COMMENT = "invalid LOC header (bad entry name)";
+    private static final String LOC_HEADER_BAD_ENTRY_NAME = "invalid LOC header (bad entry name)";
     // Zip file comment starting offset
     private static final int ZIP_FILE_COMMENT_OFFSET = 0x93;
     // CEN Header offset for the entry comment to be modified
@@ -179,7 +179,7 @@ public class InvalidBytesInEntryNameOrComment {
 
     /**
      * Validate that the original Zip file can be opened via ZipFile.
-     * @throws IOException if an entry occurs
+     * @throws IOException if an error occurs
      */
     @Test
     public void testValidEntryNameAndComment() throws IOException {
@@ -193,14 +193,14 @@ public class InvalidBytesInEntryNameOrComment {
     /**
      * Validate that the original Zip file can be opened and traversed via
      * ZipinputStream::getNextEntry.
-     * @throws IOException if an entry occurs
+     * @throws IOException if an error occurs
      */
     @Test
     public void traverseZipWithZipInputStreamTest() throws IOException {
         Files.write(ZIP_FILE, zipArray);
-        try( ZipInputStream zis = new ZipInputStream(new FileInputStream(ZIP_FILE.toFile()))) {
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(ZIP_FILE.toFile()))) {
             ZipEntry ze;
-            while((ze = zis.getNextEntry()) != null ) {
+            while ((ze = zis.getNextEntry()) != null) {
                 System.out.printf("Entry: %s%n", ze.getName());
             }
         }
@@ -240,8 +240,8 @@ public class InvalidBytesInEntryNameOrComment {
     }
 
     /**
-     * Validate that a ZipException is thrown when an entry name is encountered
-     * within a LOC contains an invalid UTF-8 byte sequence.
+     * Validate that a ZipException is thrown when an entry name
+     * within a LOC file header contains an invalid UTF-8 byte sequence.
      * @throws IOException if an error occurs
      */
     @Test
@@ -254,7 +254,7 @@ public class InvalidBytesInEntryNameOrComment {
                         zis.getNextEntry();
                     };
                 });
-        assertEquals(LOC_BAD_ENTRY_NAME_OR_COMMENT, ex.getMessage());
+        assertEquals(LOC_HEADER_BAD_ENTRY_NAME, ex.getMessage());
     }
 
     /**
@@ -295,13 +295,11 @@ public class InvalidBytesInEntryNameOrComment {
     /**
      * Utility method which takes a byte array and converts to byte array
      * declaration.  For example:
-     * <pre>
-     *     {@code
-     *        var fooJar = Files.readAllBytes(Path.of("foo.jar"));
-     *        var result = createByteArray(fooJar, "FOOBYTES");
-     *        System.out.println(result);
-     *      }
-     * </pre>
+     * {@snippet :
+     * var fooJar = Files.readAllBytes(Path.of("foo.jar"));
+     * var result = createByteArray(fooJar,"FOOBYTES");
+     * System.out.println(result);
+     * }
      *
      * @param bytes A byte array used to create a byte array declaration
      * @param name  Name to be used in the byte array declaration
