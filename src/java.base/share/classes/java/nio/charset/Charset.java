@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -706,7 +705,12 @@ public abstract class Charset
      *         If the canonical name or any of the aliases are illegal
      */
     protected Charset(String canonicalName, String[] aliases) {
-        String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
+        String[] as =
+            aliases == null ?
+                zeroAliases :
+                VM.isSystemDomainLoader(getClass().getClassLoader()) ?
+                    aliases :
+                    Arrays.copyOf(aliases, aliases.length);
 
         // Skip checks for the standard, built-in Charsets we always load
         // during initialization.

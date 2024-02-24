@@ -24,8 +24,6 @@
 
 /*
  * @test
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
  */
 
@@ -208,34 +206,34 @@ public class TestNative extends NativeTestHelper {
     @DataProvider(name = "nativeAccessOps")
     public Object[][] nativeAccessOps() {
         Consumer<MemorySegment> byteInitializer =
-                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, pos, (byte)(long)pos));
+                (base) -> initBytes(base, bytes, (addr, pos) -> byteHandle.set(addr, 0L, pos, (byte)(long)pos));
         Consumer<MemorySegment> charInitializer =
-                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, pos, (char)(long)pos));
+                (base) -> initBytes(base, chars, (addr, pos) -> charHandle.set(addr, 0L, pos, (char)(long)pos));
         Consumer<MemorySegment> shortInitializer =
-                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, pos, (short)(long)pos));
+                (base) -> initBytes(base, shorts, (addr, pos) -> shortHandle.set(addr, 0L, pos, (short)(long)pos));
         Consumer<MemorySegment> intInitializer =
-                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, pos, (int)(long)pos));
+                (base) -> initBytes(base, ints, (addr, pos) -> intHandle.set(addr, 0L, pos, (int)(long)pos));
         Consumer<MemorySegment> floatInitializer =
-                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, pos, (float)(long)pos));
+                (base) -> initBytes(base, floats, (addr, pos) -> floatHandle.set(addr, 0L, pos, (float)(long)pos));
         Consumer<MemorySegment> longInitializer =
-                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, pos, (long)pos));
+                (base) -> initBytes(base, longs, (addr, pos) -> longHandle.set(addr, 0L, pos, (long)pos));
         Consumer<MemorySegment> doubleInitializer =
-                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, pos, (double)(long)pos));
+                (base) -> initBytes(base, doubles, (addr, pos) -> doubleHandle.set(addr, 0L, pos, (double)(long)pos));
 
         Consumer<MemorySegment> byteChecker =
-                (base) -> checkBytes(base, bytes, byteHandle::get, bb -> bb, TestNative::getByteBuffer, TestNative::getByteRaw);
+                (base) -> checkBytes(base, bytes, (addr, pos) -> byteHandle.get(addr, 0L, pos), bb -> bb, TestNative::getByteBuffer, TestNative::getByteRaw);
         Consumer<MemorySegment> charChecker =
-                (base) -> checkBytes(base, chars, charHandle::get, ByteBuffer::asCharBuffer, TestNative::getCharBuffer, TestNative::getCharRaw);
+                (base) -> checkBytes(base, chars, (addr, pos) -> charHandle.get(addr, 0L, pos), ByteBuffer::asCharBuffer, TestNative::getCharBuffer, TestNative::getCharRaw);
         Consumer<MemorySegment> shortChecker =
-                (base) -> checkBytes(base, shorts, shortHandle::get, ByteBuffer::asShortBuffer, TestNative::getShortBuffer, TestNative::getShortRaw);
+                (base) -> checkBytes(base, shorts, (addr, pos) -> shortHandle.get(addr, 0L, pos), ByteBuffer::asShortBuffer, TestNative::getShortBuffer, TestNative::getShortRaw);
         Consumer<MemorySegment> intChecker =
-                (base) -> checkBytes(base, ints, intHandle::get, ByteBuffer::asIntBuffer, TestNative::getIntBuffer, TestNative::getIntRaw);
+                (base) -> checkBytes(base, ints, (addr, pos) -> intHandle.get(addr, 0L, pos), ByteBuffer::asIntBuffer, TestNative::getIntBuffer, TestNative::getIntRaw);
         Consumer<MemorySegment> floatChecker =
-                (base) -> checkBytes(base, floats, floatHandle::get, ByteBuffer::asFloatBuffer, TestNative::getFloatBuffer, TestNative::getFloatRaw);
+                (base) -> checkBytes(base, floats, (addr, pos) -> floatHandle.get(addr, 0L, pos), ByteBuffer::asFloatBuffer, TestNative::getFloatBuffer, TestNative::getFloatRaw);
         Consumer<MemorySegment> longChecker =
-                (base) -> checkBytes(base, longs, longHandle::get, ByteBuffer::asLongBuffer, TestNative::getLongBuffer, TestNative::getLongRaw);
+                (base) -> checkBytes(base, longs, (addr, pos) -> longHandle.get(addr, 0L, pos), ByteBuffer::asLongBuffer, TestNative::getLongBuffer, TestNative::getLongRaw);
         Consumer<MemorySegment> doubleChecker =
-                (base) -> checkBytes(base, doubles, doubleHandle::get, ByteBuffer::asDoubleBuffer, TestNative::getDoubleBuffer, TestNative::getDoubleRaw);
+                (base) -> checkBytes(base, doubles, (addr, pos) -> doubleHandle.get(addr, 0L, pos), ByteBuffer::asDoubleBuffer, TestNative::getDoubleBuffer, TestNative::getDoubleRaw);
 
         return new Object[][]{
                 {byteChecker, byteInitializer, bytes},

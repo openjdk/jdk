@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,7 +73,7 @@ static PropertyDesc propDescList[PROPERTIES_COUNT] = {
 static int checkPropertyValue(jvmtiEnv* jvmti, const char phase[],
                                 const char name[], const char* expectedValue) {
     int success = NSK_TRUE;
-    char* value = NULL;
+    char* value = nullptr;
 
     NSK_DISPLAY1("  property: %s\n", name);
     if (!NSK_JVMTI_VERIFY(jvmti->GetSystemProperty(name, &value))) {
@@ -81,7 +81,7 @@ static int checkPropertyValue(jvmtiEnv* jvmti, const char phase[],
     }
     NSK_DISPLAY1("     value: \"%s\"\n", nsk_null_string(value));
 
-    if (value == NULL
+    if (value == nullptr
             || strcmp(value, expectedValue) != 0) {
         NSK_COMPLAIN4("In %s phase GetSystemProperty() returned unexpected value for property:\n"
                       "#   property name: %s\n"
@@ -174,7 +174,7 @@ JNIEXPORT jint JNI_OnLoad_setsysprop002(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
         return JNI_ERR;
@@ -182,7 +182,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     NSK_DISPLAY0(">>> Check setting defined system properties in OnLoad phase\n");
@@ -190,7 +190,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         nsk_jvmti_setFailStatus();
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

@@ -26,7 +26,9 @@
 package org.jcp.xml.dsig.internal.dom;
 
 import java.io.IOException;
+
 import javax.xml.crypto.OctetStreamData;
+
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 
 public class ApacheOctetStreamData extends OctetStreamData
@@ -41,6 +43,7 @@ public class ApacheOctetStreamData extends OctetStreamData
         this.xi = xi;
     }
 
+    @Override
     public XMLSignatureInput getXMLSignatureInput() {
         return xi;
     }

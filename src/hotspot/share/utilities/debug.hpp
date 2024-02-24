@@ -250,7 +250,8 @@ enum VMErrorType : unsigned int {
   OOM_MALLOC_ERROR = 0xe0000001,
   OOM_MMAP_ERROR   = 0xe0000002,
   OOM_MPROTECT_ERROR = 0xe0000003,
-  OOM_JAVA_HEAP_FATAL = 0xe0000004
+  OOM_JAVA_HEAP_FATAL = 0xe0000004,
+  OOM_HOTSPOT_ARENA = 0xe0000005
 };
 
 // error reporting helper functions

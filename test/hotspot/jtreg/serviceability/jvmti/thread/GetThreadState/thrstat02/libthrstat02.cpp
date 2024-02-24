@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@ extern "C" {
 
 #define WAIT_START 100
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jrawMonitorID access_lock, wait_lock;
-static jthread thr_ptr = NULL;
+static jthread thr_ptr = nullptr;
 static jint wait_time = 0;
 static jint state[] = {
     JVMTI_THREAD_STATE_RUNNABLE,
@@ -55,7 +55,7 @@ void printStateFlags(jint flags) {
 
 void JNICALL
 VMInit(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr) {
-  jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  jvmtiError err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
   check_jvmti_status(jni, err, "Failed to enable THREAD_START event");
 }
 
@@ -63,7 +63,7 @@ void JNICALL
 ThreadStart(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thread) {
   RawMonitorLocker rml = RawMonitorLocker(jvmti, jni, access_lock);
   jvmtiThreadInfo thread_info = get_thread_info(jvmti_env, jni, thread);
-  if (thread_info.name != NULL && strcmp(thread_info.name, "tested_thread_thr1") == 0) {
+  if (thread_info.name != nullptr && strcmp(thread_info.name, "tested_thread_thr1") == 0) {
     thr_ptr = jni->NewGlobalRef(thread);
     LOG(">>> ThreadStart: \"%s\", 0x%p\n", thread_info.name, thr_ptr);
   }
@@ -77,7 +77,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -103,7 +103,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_INIT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("Failed to enable VM_INIT event: %s (%d)\n", TranslateError(err), err);
     return JNI_ERR;
@@ -135,12 +135,12 @@ Java_thrstat02_checkStatus0(JNIEnv *jni, jclass cls, jint statInd, jboolean susp
   jboolean timeout_is_reached;
   unsigned int waited_millis;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return JNI_FALSE;
   }
 
-  if (thr_ptr == NULL) {
+  if (thr_ptr == nullptr) {
     LOG("Missing thread \"tested_thread_thr1\" start event\n");
     return JNI_FALSE;
   }

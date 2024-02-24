@@ -49,7 +49,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 3, time = 2)
 @Measurement(iterations = 6, time = 1)
 @Fork(1)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class MethodTypeDescFactories {
 
     private static final ClassDesc DUMMY_CD = ClassDesc.of("Dummy_invalid");

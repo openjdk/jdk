@@ -4,7 +4,8 @@
 register_services ()
 {
   for unit in "$@"; do
-    systemctl enable --now "$unit"
+    local unit_name=`basename "$unit"`
+    systemctl enable --now "$unit_name"
   done
 }
 
@@ -22,17 +23,4 @@ unregister_services ()
       fi
     fi
   done
-}
-
-file_belongs_to_single_package ()
-{
-  if [ ! -e "$1" ]; then
-    false
-  elif [ "$package_type" = rpm ]; then
-    test `rpm -q --whatprovides "$1" | wc -l` = 1
-  elif [ "$package_type" = deb ]; then
-    test `dpkg -S "$1" | wc -l` = 1
-  else
-    exit 1
-  fi
 }

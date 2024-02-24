@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ final class DESedeCrypt extends DESCrypt implements DESConstants {
     private byte[] key1 = null;
     private byte[] key2 = null;
     private byte[] key3 = null;
-    private byte[] buf1, buf2;
+    private final byte[] buf1;
+    private final byte[] buf2;
 
     /*
      * constructor

@@ -23,34 +23,34 @@
 
 /*
  * @test
- * @summary Testing Classfile class building.
+ * @summary Testing ClassFile class building.
  * @run junit WriteTest
  */
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import helpers.TestConstants;
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.Label;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import org.junit.jupiter.api.Test;
 
 import static helpers.TestConstants.MTD_VOID;
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Opcode.*;
-import static jdk.internal.classfile.TypeKind.IntType;
-import static jdk.internal.classfile.TypeKind.ReferenceType;
-import static jdk.internal.classfile.TypeKind.VoidType;
+import static java.lang.classfile.Opcode.*;
+import static java.lang.classfile.TypeKind.IntType;
+import static java.lang.classfile.TypeKind.ReferenceType;
+import static java.lang.classfile.TypeKind.VoidType;
 
 class WriteTest {
 
     @Test
     void testJavapWrite() {
 
-        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -92,7 +92,7 @@ class WriteTest {
     @Test
     void testPrimitiveWrite() {
 
-        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb

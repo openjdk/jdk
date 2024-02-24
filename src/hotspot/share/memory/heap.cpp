@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "memory/heap.hpp"
+#include "nmt/memTracker.hpp"
 #include "oops/oop.inline.hpp"
-#include "runtime/os.hpp"
 #include "runtime/mutexLocker.hpp"
-#include "services/memTracker.hpp"
+#include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -486,18 +486,6 @@ void* CodeHeap::find_start(void* p) const {
 CodeBlob* CodeHeap::find_blob(void* start) const {
   CodeBlob* result = (CodeBlob*)CodeHeap::find_start(start);
   return (result != nullptr && result->blob_contains((address)start)) ? result : nullptr;
-}
-
-size_t CodeHeap::alignment_unit() const {
-  // this will be a power of two
-  return _segment_size;
-}
-
-
-size_t CodeHeap::alignment_offset() const {
-  // The lowest address in any allocated block will be
-  // equal to alignment_offset (mod alignment_unit).
-  return sizeof(HeapBlock) & (_segment_size - 1);
 }
 
 // Returns the current block if available and used.

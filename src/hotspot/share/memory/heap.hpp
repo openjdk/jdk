@@ -174,8 +174,6 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   void* find_start(void* p)     const;   // returns the block containing p or null
   CodeBlob* find_blob(void* start) const;
-  size_t alignment_unit()       const;           // alignment of any block
-  size_t alignment_offset()     const;           // offset of first byte of any block, within the enclosing alignment unit
   static size_t header_size()         { return sizeof(HeapBlock); } // returns the header size for each heap block
 
   size_t segment_size()         const { return _segment_size; }  // for CodeHeapState

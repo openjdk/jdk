@@ -23,13 +23,11 @@
 
 /*
   @test
-  @key headful
   @bug 4199506
   @summary  java.awt.print.PageFormat.setpaper(Paper paper)
                  assertion test fails by not throwing
                  NullPointerException when a null paper instance is
                  passed as argument and this is specified in the doc.
-  @author rbi: area=PageFormat
   @run main NullPaper
 */
 
@@ -46,9 +44,6 @@
 
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
 import java.awt.print.*;
 
 // This test is a "main" test as applets would need Runtime permission
@@ -154,7 +149,6 @@ public class NullPaper {
    public static synchronized void pass()
     {
       System.out.println( "The test passed." );
-      System.out.println( "The test is over, hit  Ctl-C to stop Java VM" );
       //first check if this is executing in main thread
       if ( mainThread == Thread.currentThread() )
        {
@@ -180,7 +174,6 @@ public class NullPaper {
    public static synchronized void fail( String whyFailed )
     {
       System.out.println( "The test failed: " + whyFailed );
-      System.out.println( "The test is over, hit  Ctl-C to stop Java VM" );
       //check if this called from main thread
       if ( mainThread == Thread.currentThread() )
        {

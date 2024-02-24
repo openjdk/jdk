@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,24 +25,24 @@
  * @test
  * @bug 4122840 4135202 4408066 4838107 8008577
  * @summary test NumberFormat
- * @library /java/text/testlib
  * @modules java.base/sun.util.resources
  *          jdk.localedata
  * @compile -XDignore.symbol.file NumberTest.java
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI NumberTest
+ * @run junit/othervm -Djava.locale.providers=COMPAT,SPI NumberTest
  */
 
 import java.util.*;
 import java.text.*;
 import sun.util.resources.LocaleData;
 
-public class NumberTest extends IntlTest
-{
-    public static void main(String[] args) throws Exception {
-        new NumberTest().run(args);
-    }
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class NumberTest
+{
     // Test pattern handling
+    @Test
     public void TestPatterns()
     {
     DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.US);
@@ -54,20 +54,21 @@ public class NumberTest extends IntlTest
         DecimalFormat fmt = new DecimalFormat(pat[i], sym);
         String newp = fmt.toPattern();
         if (!newp.equals(newpat[i]))
-        errln("FAIL: Pattern " + pat[i] + " should transmute to " + newpat[i] +
+        fail("FAIL: Pattern " + pat[i] + " should transmute to " + newpat[i] +
               "; " + newp + " seen instead");
 
         String s = fmt.format(0);
         if (!s.equals(num[i]))
         {
-        errln("FAIL: Pattern " + pat[i] + " should format zero as " + num[i] +
+        fail("FAIL: Pattern " + pat[i] + " should format zero as " + num[i] +
               "; " + s + " seen instead");
-        logln("Min integer digits = " + fmt.getMinimumIntegerDigits());
+        System.out.println("Min integer digits = " + fmt.getMinimumIntegerDigits());
         }
     }
     }
 
     // Test exponential pattern
+    @Test
     public void TestExponential() {
         DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.US);
         String pat[] = { "0.####E0", "00.000E00", "##0.####E000", "0.###E0;[0.###E0]"  };
@@ -100,14 +101,14 @@ public class NumberTest extends IntlTest
         int ival = 0, ilval = 0;
         for (int p=0; p<pat.length; ++p) {
             DecimalFormat fmt = new DecimalFormat(pat[p], sym);
-            logln("Pattern \"" + pat[p] + "\" -toPattern-> \"" +
+            System.out.println("Pattern \"" + pat[p] + "\" -toPattern-> \"" +
                   fmt.toPattern() + '"');
 
             for (int v=0; v<val.length; ++v) {
                 String s = fmt.format(val[v]);
-                logln(" Format " + val[v] + " -> " + escape(s));
+                System.out.println(" Format " + val[v] + " -> " + escape(s));
                 if (!s.equals(valFormat[v+ival])) {
-                    errln("FAIL: Expected " + valFormat[v+ival] +
+                    fail("FAIL: Expected " + valFormat[v+ival] +
                           ", got " + s +
                           ", pattern=" + fmt.toPattern());
                 }
@@ -115,22 +116,22 @@ public class NumberTest extends IntlTest
                 ParsePosition pos = new ParsePosition(0);
                 Number a = fmt.parse(s, pos);
                 if (pos.getIndex() == s.length()) {
-                    logln(" Parse -> " + a);
+                    System.out.println(" Parse -> " + a);
                     if (a.doubleValue() != valParse[v+ival]) {
-                        errln("FAIL: Expected " + valParse[v+ival] +
+                        fail("FAIL: Expected " + valParse[v+ival] +
                               ", got " + a.doubleValue() +
                               ", pattern=" + fmt.toPattern());
                     }
                 } else {
-                    errln(" FAIL: Partial parse (" + pos.getIndex() +
+                    fail(" FAIL: Partial parse (" + pos.getIndex() +
                           " chars) -> " + a);
                 }
             }
             for (int v=0; v<lval.length; ++v) {
                 String s = fmt.format(lval[v]);
-                logln(" Format " + lval[v] + "L -> " + escape(s));
+                System.out.println(" Format " + lval[v] + "L -> " + escape(s));
                 if (!s.equals(lvalFormat[v+ilval])) {
-                    errln("ERROR: Expected " + lvalFormat[v+ilval] +
+                    fail("ERROR: Expected " + lvalFormat[v+ilval] +
                           ", got " + s +
                           ", pattern=" + fmt.toPattern());
                 }
@@ -138,14 +139,14 @@ public class NumberTest extends IntlTest
                 ParsePosition pos = new ParsePosition(0);
                 Number a = fmt.parse(s, pos);
                 if (pos.getIndex() == s.length()) {
-                    logln(" Parse -> " + a);
+                    System.out.println(" Parse -> " + a);
                     if (a.longValue() != lvalParse[v+ilval]) {
-                        errln("FAIL: Expected " + lvalParse[v+ilval] +
+                        fail("FAIL: Expected " + lvalParse[v+ilval] +
                               ", got " + a +
                               ", pattern=" + fmt.toPattern());
                     }
                 } else {
-                    errln(" FAIL: Partial parse (" + pos.getIndex() +
+                    fail(" FAIL: Partial parse (" + pos.getIndex() +
                           " chars) -> " + a);
                 }
             }
@@ -155,24 +156,26 @@ public class NumberTest extends IntlTest
     }
 
     // Test the handling of quotes
+    @Test
     public void TestQuotes()
     {
     String pat;
     DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.US);
     DecimalFormat fmt = new DecimalFormat(pat = "a'fo''o'b#", sym);
     String s = fmt.format(123);
-    logln("Pattern \"" + pat + "\"");
-    logln(" Format 123 -> " + escape(s));
-    if (!s.equals("afo'ob123")) errln("FAIL: Expected afo'ob123");
+    System.out.println("Pattern \"" + pat + "\"");
+    System.out.println(" Format 123 -> " + escape(s));
+    if (!s.equals("afo'ob123")) fail("FAIL: Expected afo'ob123");
 
     fmt = new DecimalFormat(pat = "a''b#", sym);
     s = fmt.format(123);
-    logln("Pattern \"" + pat + "\"");
-    logln(" Format 123 -> " + escape(s));
-    if (!s.equals("a'b123")) errln("FAIL: Expected a'b123");
+    System.out.println("Pattern \"" + pat + "\"");
+    System.out.println(" Format 123 -> " + escape(s));
+    if (!s.equals("a'b123")) fail("FAIL: Expected a'b123");
     }
 
     // Test the use of the currency sign
+    @Test
     public void TestCurrencySign()
     {
     DecimalFormatSymbols sym = DecimalFormatSymbols.getInstance(Locale.US);
@@ -181,21 +184,21 @@ public class NumberTest extends IntlTest
     // DecimalFormatSymbols sym = fmt.getDecimalFormatSymbols();
 
     String s = fmt.format(1234.56);
-    logln("Pattern \"" + fmt.toPattern() + "\"");
-    logln(" Format " + 1234.56 + " -> " + escape(s));
-    if (!s.equals("$1,234.56")) errln("FAIL: Expected $1,234.56");
+    System.out.println("Pattern \"" + fmt.toPattern() + "\"");
+    System.out.println(" Format " + 1234.56 + " -> " + escape(s));
+    if (!s.equals("$1,234.56")) fail("FAIL: Expected $1,234.56");
     s = fmt.format(-1234.56);
-    logln(" Format " + -1234.56 + " -> " + escape(s));
-    if (!s.equals("-$1,234.56")) errln("FAIL: Expected -$1,234.56");
+    System.out.println(" Format " + -1234.56 + " -> " + escape(s));
+    if (!s.equals("-$1,234.56")) fail("FAIL: Expected -$1,234.56");
 
     fmt = new DecimalFormat("\u00A4\u00A4 #,##0.00;\u00A4\u00A4 -#,##0.00", sym);
     s = fmt.format(1234.56);
-    logln("Pattern \"" + fmt.toPattern() + "\"");
-    logln(" Format " + 1234.56 + " -> " + escape(s));
-    if (!s.equals("USD 1,234.56")) errln("FAIL: Expected USD 1,234.56");
+    System.out.println("Pattern \"" + fmt.toPattern() + "\"");
+    System.out.println(" Format " + 1234.56 + " -> " + escape(s));
+    if (!s.equals("USD 1,234.56")) fail("FAIL: Expected USD 1,234.56");
     s = fmt.format(-1234.56);
-    logln(" Format " + -1234.56 + " -> " + escape(s));
-    if (!s.equals("USD -1,234.56")) errln("FAIL: Expected USD -1,234.56");
+    System.out.println(" Format " + -1234.56 + " -> " + escape(s));
+    if (!s.equals("USD -1,234.56")) fail("FAIL: Expected USD -1,234.56");
     }
     static String escape(String s)
     {
@@ -219,25 +222,26 @@ public class NumberTest extends IntlTest
 
     // Test simple currency format
     // Bug 4024941; this code used to throw a NumberFormat exception
+    @Test
     public void TestCurrency() {
         NumberFormat currencyFmt =
                 NumberFormat.getCurrencyInstance(Locale.CANADA_FRENCH);
         String s = currencyFmt.format(1.50);
-        logln("Un pauvre ici a..........." + s);
+        System.out.println("Un pauvre ici a..........." + s);
         if (!s.equals("1,50 $")) {
-            errln("FAIL: Expected 1,50 $; got " + s + "; "+ dumpFmt(currencyFmt));
+            fail("FAIL: Expected 1,50 $; got " + s + "; "+ dumpFmt(currencyFmt));
         }
         currencyFmt = NumberFormat.getCurrencyInstance(Locale.GERMANY);
         s = currencyFmt.format(1.50);
-        logln("Un pauvre en Allemagne a.." + s);
+        System.out.println("Un pauvre en Allemagne a.." + s);
         if (!s.equals("1,50 \u20AC")) {
-            errln("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
+            fail("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
         }
         currencyFmt = NumberFormat.getCurrencyInstance(Locale.FRANCE);
         s = currencyFmt.format(1.50);
-        logln("Un pauvre en France a....." + s);
+        System.out.println("Un pauvre en France a....." + s);
         if (!s.equals("1,50 \u20AC")) {
-            errln("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
+            fail("FAIL: Expected 1,50 \u20AC; got " + s + "; " + dumpFmt(currencyFmt));
         }
     }
 
@@ -254,18 +258,20 @@ public class NumberTest extends IntlTest
 
     // Test numeric parsing
     // Bug 4059870
+    @Test
     public void TestParse()
     {
     String arg = "0";
     java.text.DecimalFormat format = new java.text.DecimalFormat("00");
     try {
         Number n = format.parse(arg);
-        logln("parse(" + arg + ") = " + n);
-        if (n.doubleValue() != 0.0) errln("FAIL: Expected 0");
-    } catch (Exception e) { errln("Exception caught: " + e); }
+        System.out.println("parse(" + arg + ") = " + n);
+        if (n.doubleValue() != 0.0) fail("FAIL: Expected 0");
+    } catch (Exception e) { fail("Exception caught: " + e); }
     }
 
     // Test rounding
+    @Test
     public void TestRounding487() {
         NumberFormat nf = NumberFormat.getInstance(Locale.US);
         roundingTest(nf, 0.00159999, 4, "0.0016");
@@ -278,9 +284,9 @@ public class NumberTest extends IntlTest
     void roundingTest(NumberFormat nf, double x, int maxFractionDigits, String expected) {
         nf.setMaximumFractionDigits(maxFractionDigits);
         String out = nf.format(x);
-        logln("" + x + " formats with " + maxFractionDigits + " fractional digits to " + out);
+        System.out.println("" + x + " formats with " + maxFractionDigits + " fractional digits to " + out);
         if (!out.equals(expected)) {
-            errln("FAIL: Expected " + expected + ", got " + out);
+            fail("FAIL: Expected " + expected + ", got " + out);
         }
     }
 
@@ -292,6 +298,7 @@ public class NumberTest extends IntlTest
      * a couple.
      * @see java.lang.Character#isDigit(char)
      */
+    @Test
     public void TestUnicodeDigits() {
         char[] zeros = {
             0x0030, // ISO-LATIN-1 digits ('0' through '9')
@@ -324,9 +331,9 @@ public class NumberTest extends IntlTest
             }
             catch (ParseException e) { n = -2; }
             if (n != 314)
-                errln("Can't parse Unicode " + Integer.toHexString(zero) + " as digit (" + n + ")");
+                fail("Can't parse Unicode " + Integer.toHexString(zero) + " as digit (" + n + ")");
             else
-                logln("Parse digit " + Integer.toHexString(zero) + " ok");
+                System.out.println("Parse digit " + Integer.toHexString(zero) + " ok");
         }
     }
 
@@ -334,6 +341,7 @@ public class NumberTest extends IntlTest
      * Bug 4122840
      * Make sure that the currency symbol is not hard-coded in any locale.
      */
+    @Test
     public void TestCurrencySubstitution() {
         final String SYM = "<currency>";
         final String INTL_SYM = "<intl.currency>";
@@ -356,36 +364,37 @@ public class NumberTest extends IntlTest
                 String customPos = df.format(1234.5678);
                 String customNeg = df.format(-1234.5678);
                 if (genericPos.equals(customPos) || genericNeg.equals(customNeg)) {
-                    errln("FAIL: " + locales[i] +
+                    fail("FAIL: " + locales[i] +
                           " not using currency symbol substitution: " + genericPos);
                 }
                 else {
                     if (customPos.indexOf(SYM) >= 0) {
                         if (customNeg.indexOf(INTL_SYM) >= 0)
-                            errln("Fail: Positive and negative patterns use different symbols");
+                            fail("Fail: Positive and negative patterns use different symbols");
                         else
-                            logln("Ok: " + locales[i] +
+                            System.out.println("Ok: " + locales[i] +
                                   " uses currency symbol: " + genericPos +
                                   ", " + customPos);
                     }
                     else if (customPos.indexOf(INTL_SYM) >= 0) {
                         if (customNeg.indexOf(SYM) >= 0)
-                            errln("Fail: Positive and negative patterns use different symbols");
+                            fail("Fail: Positive and negative patterns use different symbols");
                         else
-                            logln("Ok: " + locales[i] +
+                            System.out.println("Ok: " + locales[i] +
                                   " uses intl. currency symbol: " + genericPos +
                                   ", " + customPos);
                     }
                     else {
-                        errln("FAIL: " + locales[i] +
+                        fail("FAIL: " + locales[i] +
                               " contains no currency symbol (impossible!)");
                     }
                 }
             }
-            else logln("Skipping " + locales[i] + "; not a DecimalFormat");
+            else System.out.println("Skipping " + locales[i] + "; not a DecimalFormat");
         }
     }
 
+    @Test
     public void TestIntegerFormat() throws ParseException {
         NumberFormat format = NumberFormat.getIntegerInstance(Locale.GERMANY);
 
@@ -395,7 +404,7 @@ public class NumberTest extends IntlTest
         for (int i = 0; i < formatInput.length; i++) {
             String result = format.format(formatInput[i]);
             if (!result.equals(formatExpected[i])) {
-                errln("FAIL: Expected " + formatExpected[i] + ", got " + result);
+                fail("FAIL: Expected " + formatExpected[i] + ", got " + result);
             }
         }
 
@@ -405,7 +414,7 @@ public class NumberTest extends IntlTest
         for (int i = 0; i < parseInput.length; i++) {
             float result = format.parse(parseInput[i]).floatValue();
             if (result != parseExpected[i]) {
-                errln("FAIL: Expected " + parseExpected[i] + ", got " + result);
+                fail("FAIL: Expected " + parseExpected[i] + ", got " + result);
             }
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,9 +207,11 @@ public class GlyphView extends View implements TabableView, Cloneable {
     }
 
     /**
-     * Determine if the glyphs should be underlined.  If true,
-     * an underline should be drawn through the baseline.
-     * @return if the glyphs should be underlined
+     * Determine if the glyphs should be underlined. If {@code true}, an
+     * underline should be drawn through the baseline.
+     *
+     * @return {@code true} if the glyphs should be underlined, otherwise
+     *         {@code false}
      */
     public boolean isUnderline() {
         AttributeSet attr = getAttributes();
@@ -217,10 +219,11 @@ public class GlyphView extends View implements TabableView, Cloneable {
     }
 
     /**
-     * Determine if the glyphs should have a strikethrough
-     * line.  If true, a line should be drawn through the center
-     * of the glyphs.
-     * @return if the glyphs should have a strikethrough line
+     * Determine if the glyphs should have a strikethrough line. If
+     * {@code true}, a line should be drawn through the center of the glyphs.
+     *
+     * @return {@code true} if the glyphs should have a strikethrough line,
+     *         otherwise {@code false}
      */
     public boolean isStrikeThrough() {
         AttributeSet attr = getAttributes();
@@ -229,7 +232,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Determine if the glyphs should be rendered as superscript.
-     * @return if the glyphs should be rendered as superscript
+     *
+     * @return {@code true} if the glyphs should be rendered as superscript,
+     *         otherwise {@code false}
      */
     public boolean isSubscript() {
         AttributeSet attr = getAttributes();
@@ -238,7 +243,9 @@ public class GlyphView extends View implements TabableView, Cloneable {
 
     /**
      * Determine if the glyphs should be rendered as subscript.
-     * @return if the glyphs should be rendered as subscript
+     *
+     * @return {@code true} if the glyphs should be rendered as subscript,
+     *         otherwise {@code false}
      */
     public boolean isSuperscript() {
         AttributeSet attr = getAttributes();

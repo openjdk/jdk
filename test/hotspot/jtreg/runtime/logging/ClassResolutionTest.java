@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,17 +60,17 @@ public class ClassResolutionTest {
     public static void main(String... args) throws Exception {
 
         // (1) class+resolve should turn on.
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
-                                                                  ClassResolutionTestMain.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+resolve=debug",
+                                                                             ClassResolutionTestMain.class.getName());
         OutputAnalyzer o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldContain("[class,resolve] ClassResolutionTest$ClassResolutionTestMain$Thing1Handler ClassResolutionTest$ClassResolutionTestMain$Thing1");
         o.shouldContain("[class,resolve] resolve JVM_CONSTANT_MethodHandle");
 
         // (2) class+resolve should turn off.
-        pb = ProcessTools.createJavaProcessBuilder("-Xlog:class+resolve=debug",
-                                                   "-Xlog:class+resolve=off",
-                                                   ClassResolutionTestMain.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:class+resolve=debug",
+                                                              "-Xlog:class+resolve=off",
+                                                              ClassResolutionTestMain.class.getName());
         o = new OutputAnalyzer(pb.start());
         o.shouldHaveExitValue(0);
         o.shouldNotContain("[class,resolve]");

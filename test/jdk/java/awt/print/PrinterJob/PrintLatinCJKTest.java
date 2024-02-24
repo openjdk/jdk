@@ -27,6 +27,7 @@
  * @library ../../regtesthelpers
  * @build PassFailJFrame
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
+ * @key printer
  * @run main/manual PrintLatinCJKTest
  */
 

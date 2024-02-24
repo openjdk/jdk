@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,18 @@
  * @test
  * @library /java/text/testlib
  * @summary test Supplementary Character Collation
+ * @run junit SurrogatesTest
  */
 
 import java.text.Collator;
 import java.text.RuleBasedCollator;
 
-// Quick dummy program for printing out test results
-public class SurrogatesTest extends CollatorTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new SurrogatesTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+// Quick dummy program for printing out test results
+public class SurrogatesTest {
 
     /*
      * Data for TestPrimary()
@@ -83,13 +84,15 @@ public class SurrogatesTest extends CollatorTest {
         -1,  1,  1,  1, -1, -1, -1, -1,  1
     };
 
+    @Test
     public void TestPrimary() {
-        doTest(myCollation, Collator.PRIMARY,
+        TestUtils.doCollatorTest(myCollation, Collator.PRIMARY,
                primarySourceData, primaryTargetData, primaryResults);
     }
 
+    @Test
     public void TestTertiary() {
-        doTest(myCollation, Collator.TERTIARY,
+        TestUtils.doCollatorTest(myCollation, Collator.TERTIARY,
                tertiarySourceData, tertiaryTargetData, tertiaryResults);
     }
 
@@ -108,7 +111,7 @@ public class SurrogatesTest extends CollatorTest {
                                      + "&\ud800\udc0a < x, X"
                                      + "&A < \ud800\udc04\ud800\udc05");
         } catch (Exception e) {
-            errln("Failed to create new RulebasedCollator object");
+            fail("Failed to create new RulebasedCollator object");
             return null;
         }
     }

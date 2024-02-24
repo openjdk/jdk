@@ -27,10 +27,9 @@
   @summary tests that DropTargetDragEvent.getDropAction() returns correct value
            after DropTargetDragEvent.rejectDrag()
   @key headful
-  @run main RejectDragDropActionTest
+  @run main/timeout=300 RejectDragDropActionTest
 */
 
-import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Point;
@@ -46,14 +45,13 @@ import java.awt.dnd.DropTargetDragEvent;
 import java.awt.dnd.DropTargetDropEvent;
 import java.awt.dnd.DropTargetListener;
 import java.awt.event.InputEvent;
-import java.lang.reflect.InvocationTargetException;
 
 
 public class RejectDragDropActionTest {
 
     private static volatile boolean incorrectActionDetected = false;
 
-    private static final int FRAME_ACTIVATION_TIMEOUT = 3000;
+    private static final int DELAY_TIME = 500;
 
     private static Frame frame;
     private static DragSource ds;
@@ -74,21 +72,23 @@ public class RejectDragDropActionTest {
         };
     private final DropTarget dt = new DropTarget(frame, dtl);
 
-    public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException, AWTException {
+    public static void main(String[] args) throws Exception {
         EventQueue.invokeAndWait(() -> {
             frame = new Frame("RejectDragDropActionTest");
             ds = DragSource.getDefaultDragSource();
             dgl = dge -> dge.startDrag(null, new StringSelection("OOKK"));
-            dgr = ds.createDefaultDragGestureRecognizer(frame, DnDConstants.ACTION_COPY, dgl);
-            frame.setBounds(100, 100, 200, 200);
+            dgr = ds.createDefaultDragGestureRecognizer(frame,
+                    DnDConstants.ACTION_COPY, dgl);
+            frame.setSize(200, 200);
+            frame.setLocationRelativeTo(null);
             frame.setVisible(true);
         });
 
         try {
             Robot robot = new Robot();
+            robot.setAutoWaitForIdle(true);
             robot.waitForIdle();
-            robot.delay(FRAME_ACTIVATION_TIMEOUT);
+            robot.delay(DELAY_TIME);
 
             Point startPoint = frame.getLocationOnScreen();
             Point endPoint = new Point(startPoint);
@@ -97,11 +97,11 @@ public class RejectDragDropActionTest {
 
             robot.mouseMove(startPoint.x, startPoint.y);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-            for (Point p = new Point(startPoint); !p.equals(endPoint);
+            for (Point p = new Point(startPoint);
+                 !p.equals(endPoint) && !incorrectActionDetected;
                  p.translate(sign(endPoint.x - p.x),
-                         sign(endPoint.y - p.y))) {
+                             sign(endPoint.y - p.y))) {
                 robot.mouseMove(p.x, p.y);
-                robot.delay(50);
             }
 
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);

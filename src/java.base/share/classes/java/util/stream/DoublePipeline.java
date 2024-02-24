@@ -388,7 +388,7 @@ abstract class DoublePipeline<E_IN>
     public final DoubleStream limit(long maxSize) {
         if (maxSize < 0)
             throw new IllegalArgumentException(Long.toString(maxSize));
-        return SliceOps.makeDouble(this, (long) 0, maxSize);
+        return SliceOps.makeDouble(this, 0L, maxSize);
     }
 
     @Override
@@ -422,7 +422,7 @@ abstract class DoublePipeline<E_IN>
     public final DoubleStream distinct() {
         // While functional and quick to implement, this approach is not very efficient.
         // An efficient version requires a double-specific map/set implementation.
-        return boxed().distinct().mapToDouble(i -> (double) i);
+        return boxed().distinct().mapToDouble(i -> i);
     }
 
     // Terminal ops from DoubleStream

@@ -25,25 +25,25 @@
  * @test
  * @bug 8186046
  * @summary Stress test ldc to ensure HotSpot correctly manages oop maps
- * @library /lib/testlibrary/bytecode /java/lang/invoke/common
- * @build jdk.experimental.bytecode.BasicClassBuilder test.java.lang.invoke.lib.InstructionHelper
+ * @library /java/lang/invoke/common
+ * @build test.java.lang.invoke.lib.InstructionHelper
+ * @enablePreview
  * @run testng CondyWithGarbageTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyWithGarbageTest
  */
 
 
-import jdk.experimental.bytecode.BasicClassBuilder;
-import jdk.experimental.bytecode.Flag;
-import jdk.experimental.bytecode.TypedCodeBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.lang.constant.*;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 
 import static java.lang.invoke.MethodType.methodType;
-import static test.java.lang.invoke.lib.InstructionHelper.cref;
-import static test.java.lang.invoke.lib.InstructionHelper.csym;
+import static test.java.lang.invoke.lib.InstructionHelper.classDesc;
 
 public class CondyWithGarbageTest {
     static final MethodHandles.Lookup L = MethodHandles.lookup();
@@ -65,46 +65,65 @@ public class CondyWithGarbageTest {
     }
 
     static MethodHandle lcdStringBasher() throws Exception {
-        byte[] byteArray = new BasicClassBuilder(csym(L.lookupClass()) + "$Code$String", 55, 0)
-                .withSuperclass("java/lang/Object")
-                .withMethod("<init>", "()V", M ->
-                        M.withFlags(Flag.ACC_PUBLIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.aload_0().invokespecial("java/lang/Object", "<init>", "()V", false).return_()
-                                ))
-                .withMethod("m", "()" + cref(String.class), M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C -> {
-                                              C.new_(csym(StringBuilder.class))
-                                                      .dup()
-                                                      .invokespecial(csym(StringBuilder.class), "<init>", "()V", false)
-                                                      .astore_0();
+        ClassDesc cd = classDesc(L.lookupClass(), "$Code$String");
+        byte[] bytes = ClassFile.of().build(cd, classBuilder -> classBuilder
+                .withVersion(55, 0)
+                .withSuperclass(ConstantDescs.CD_Object)
+                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC,
+                        methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .aload(0)
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                ConstantDescs.MTD_void, false)
+                                        .return_()))
+                .withMethod("m", MethodTypeDesc.of(ConstantDescs.CD_String),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> {
+                                            codeBuilder
+                                                    .new_(classDesc(StringBuilder.class))
+                                                    .dup()
+                                                    .invokespecial(classDesc(StringBuilder.class), ConstantDescs.INIT_NAME,
+                                                            ConstantDescs.MTD_void, false)
+                                                    .astore(0);
 
-                                              for (int i = 10; i < 100; i++) {
-                                                  ldcString(C, Integer.toString(i));
-                                                  C.astore_1().aload_0().aload_1();
-                                                  C.invokevirtual(csym(StringBuilder.class), "append", methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
-                                                  C.pop();
-                                              }
+                                            for (int i = 10; i < 100; i++) {
+                                                ldcString(codeBuilder, Integer.toString(i));
+                                                codeBuilder
+                                                        .astore(1)
+                                                        .aload(0)
+                                                        .aload(1)
+                                                        .invokevirtual(
+                                                                classDesc(StringBuilder.class),
+                                                                "append",
+                                                                MethodTypeDesc.of(
+                                                                        classDesc(StringBuilder.class),
+                                                                        classDesc(String.class)))
+                                                        .pop();
+                                            }
 
-                                              C.aload_0();
-                                              C.invokevirtual(csym(StringBuilder.class), "toString", methodType(String.class).toMethodDescriptorString(), false);
-                                              C.areturn();
-                                          }
-                                ))
-                .build();
-
-        Class<?> gc = L.defineClass(byteArray);
+                                            codeBuilder
+                                                    .aload(0)
+                                                    .invokevirtual(
+                                                            classDesc(StringBuilder.class),
+                                                            "toString",
+                                                            MethodTypeDesc.of(classDesc(String.class)))
+                                                    .areturn();
+                                        }
+                                )));
+        Class<?> gc = L.defineClass(bytes);
         return L.findStatic(gc, "m", methodType(String.class));
     }
 
-    static void ldcString(TypedCodeBuilder<String, String, byte[], ?> C, String name) {
-        C.ldc(name, cref(String.class),
-              csym(L.lookupClass()),
-              "bsmString",
-              methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString(),
-              S -> {
-              });
+    private static void ldcString(CodeBuilder codeBuilder, String name) {
+        codeBuilder.ldc(DynamicConstantDesc.ofNamed(
+                MethodHandleDesc.of(
+                        DirectMethodHandleDesc.Kind.STATIC,
+                        classDesc(L.lookupClass()),
+                        "bsmString",
+                        methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString()),
+                name,
+                classDesc(String.class)
+        ));
     }
 
 
@@ -125,46 +144,67 @@ public class CondyWithGarbageTest {
     }
 
     static MethodHandle lcdStringArrayBasher() throws Exception {
-        byte[] byteArray = new BasicClassBuilder(csym(L.lookupClass()) + "$Code$StringArray", 55, 0)
-                .withSuperclass("java/lang/Object")
-                .withMethod("<init>", "()V", M ->
-                        M.withFlags(Flag.ACC_PUBLIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.aload_0().invokespecial("java/lang/Object", "<init>", "()V", false).return_()
-                                ))
-                .withMethod("m", "()" + cref(String.class), M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C -> {
-                                              C.new_(csym(StringBuilder.class))
-                                                      .dup()
-                                                      .invokespecial(csym(StringBuilder.class), "<init>", "()V", false)
-                                                      .astore_0();
+        ClassDesc cd = classDesc(L.lookupClass(), "$Code$StringArray");
+        byte[] bytes = ClassFile.of().build(cd, classBuilder -> classBuilder
+                .withVersion(55, 0)
+                .withSuperclass(ConstantDescs.CD_Object)
+                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC,
+                        methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .aload(0)
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                ConstantDescs.MTD_void, false)
+                                        .return_()))
+                .withMethod("m", MethodTypeDesc.of(classDesc(String.class)),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> {
+                                            codeBuilder
+                                                    .new_(classDesc(StringBuilder.class))
+                                                    .dup()
+                                                    .invokespecial(classDesc(StringBuilder.class),
+                                                            ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, false)
+                                                    .astore(0);
 
-                                              for (int i = 10; i < 100; i++) {
-                                                  ldcStringArray(C, Integer.toString(i));
-                                                  C.bipush(0).aaload().astore_1();
-                                                  C.aload_0().aload_1();
-                                                  C.invokevirtual(csym(StringBuilder.class), "append", methodType(StringBuilder.class, String.class).toMethodDescriptorString(), false);
-                                                  C.pop();
-                                              }
+                                            for (int i = 10; i < 100; i++) {
+                                                ldcStringArray(codeBuilder, Integer.toString(i));
+                                                codeBuilder
+                                                        .bipush(0)
+                                                        .aaload()
+                                                        .astore(1)
+                                                        .aload(0)
+                                                        .aload(1)
+                                                        .invokevirtual(
+                                                                classDesc(StringBuilder.class),
+                                                                "append",
+                                                                MethodTypeDesc.of(
+                                                                        classDesc(StringBuilder.class),
+                                                                        classDesc(String.class)))
+                                                        .pop();
+                                            }
 
-                                              C.aload_0();
-                                              C.invokevirtual(csym(StringBuilder.class), "toString", methodType(String.class).toMethodDescriptorString(), false);
-                                              C.areturn();
-                                          }
-                                ))
-                .build();
-
-        Class<?> gc = L.defineClass(byteArray);
+                                            codeBuilder
+                                                    .aload(0)
+                                                    .invokevirtual(
+                                                            classDesc(StringBuilder.class),
+                                                            "toString",
+                                                            MethodTypeDesc.of(classDesc(String.class)))
+                                                    .areturn();
+                                        }
+                                )));
+        Class<?> gc = L.defineClass(bytes);
         return L.findStatic(gc, "m", methodType(String.class));
     }
 
-    static void ldcStringArray(TypedCodeBuilder<String, String, byte[], ?> C, String name) {
-        C.ldc(name, cref(String[].class),
-              csym(L.lookupClass()),
-              "bsmStringArray",
-              methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString(),
-              S -> {
-              });
+    static void ldcStringArray(CodeBuilder codeBuilder, String name) {
+        codeBuilder.ldc(DynamicConstantDesc.ofNamed(
+                MethodHandleDesc.of(
+                        DirectMethodHandleDesc.Kind.STATIC,
+                        classDesc(L.lookupClass()),
+                        "bsmStringArray",
+                        methodType(Object.class, MethodHandles.Lookup.class, String.class, Class.class).toMethodDescriptorString()
+                ),
+                name,
+                classDesc(String[].class)
+        ));
     }
 }

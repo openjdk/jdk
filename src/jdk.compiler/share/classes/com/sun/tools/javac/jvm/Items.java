@@ -590,15 +590,6 @@ public class Items {
                     throw new UnsupportedOperationException("unsupported tag: " + typecode);
             }
         }
-
-        private void ldc() {
-            if (typecode == LONGcode || typecode == DOUBLEcode) {
-                code.emitop2(ldc2w, value, PoolWriter::putConstant);
-            } else {
-                code.emitLdc(value);
-            }
-        }
-
         private Number numericValue() {
             return (Number)((BasicConstant)value).data;
         }
@@ -614,21 +605,21 @@ public class Items {
                 else if (Short.MIN_VALUE <= ival && ival <= Short.MAX_VALUE)
                     code.emitop2(sipush, ival);
                 else
-                    ldc();
+                    code.emitLdc(value);
                 break;
             case LONGcode:
                 long lval = numericValue().longValue();
                 if (lval == 0 || lval == 1)
                     code.emitop0(lconst_0 + (int)lval);
                 else
-                    ldc();
+                    code.emitLdc(value);
                 break;
             case FLOATcode:
                 float fval = numericValue().floatValue();
                 if (isPosZero(fval) || fval == 1.0 || fval == 2.0)
                     code.emitop0(fconst_0 + (int)fval);
                 else {
-                    ldc();
+                    code.emitLdc(value);
                 }
                 break;
             case DOUBLEcode:
@@ -636,10 +627,10 @@ public class Items {
                 if (isPosZero(dval) || dval == 1.0)
                     code.emitop0(dconst_0 + (int)dval);
                 else
-                    ldc();
+                    code.emitLdc(value);
                 break;
             case OBJECTcode:
-                ldc();
+                code.emitLdc(value);
                 break;
             default:
                 Assert.error();

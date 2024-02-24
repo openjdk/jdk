@@ -55,6 +55,7 @@ struct JfrCheckpointContext {
 
 class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   friend class JfrCheckpointManager;
+  friend class JfrDeprecationManager;
   friend class JfrSerializerRegistration;
   friend class JfrTypeManager;
  private:
@@ -69,8 +70,8 @@ class JfrCheckpointWriter : public JfrCheckpointWriterBase {
   void increment();
   const u1* session_data(size_t* size, bool move = false, const JfrCheckpointContext* ctx = nullptr);
   void release();
-  JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type = GENERIC);
-public:
+ public:
+  JfrCheckpointWriter(bool previous_epoch, Thread* thread, bool header = true, JfrCheckpointType type = GENERIC);
   JfrCheckpointWriter(bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   JfrCheckpointWriter(Thread* thread, bool header = true, JfrCheckpointType mode = GENERIC, JfrCheckpointBufferKind kind = JFR_GLOBAL);
   ~JfrCheckpointWriter();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -40,12 +40,12 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
-  if (options != NULL && strcmp(options, "printdump") == 0) {
+  if (options != nullptr && strcmp(options, "printdump") == 0) {
     printdump = JNI_TRUE;
   }
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -58,7 +58,7 @@ Java_thrinfo02_check(JNIEnv *env, jclass cls, jthread thr, jthreadGroup group) {
   jvmtiError err;
   jvmtiThreadInfo inf;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }
@@ -66,14 +66,14 @@ Java_thrinfo02_check(JNIEnv *env, jclass cls, jthread thr, jthreadGroup group) {
   if (printdump == JNI_TRUE) {
     LOG(">>> invalid thread check ...\n");
   }
-  err = jvmti->GetThreadInfo(NULL, &inf);
+  err = jvmti->GetThreadInfo(nullptr, &inf);
   if (err != JVMTI_ERROR_NONE) {
       LOG("Error expected: JVMTI_ERROR_NONE,\n");
       LOG("           got: %s (%d)\n", TranslateError(err), err);
       result = STATUS_FAILED;
   }
 
-  if (inf.name == NULL || strcmp(inf.name, "main")) {
+  if (inf.name == nullptr || strcmp(inf.name, "main")) {
     LOG("Thread %s: incorrect name: %s\n", "main", inf.name);
     result = STATUS_FAILED;
   }
@@ -93,7 +93,7 @@ Java_thrinfo02_check(JNIEnv *env, jclass cls, jthread thr, jthreadGroup group) {
   if (printdump == JNI_TRUE) {
     LOG(">>> null pointer check ...\n");
   }
-  err = jvmti->GetThreadInfo(thr, NULL);
+  err = jvmti->GetThreadInfo(thr, nullptr);
   if (err != JVMTI_ERROR_NULL_POINTER) {
     LOG("Error expected: JVMTI_ERROR_NULL_POINTER,\n");
     LOG("           got: %s (%d)\n", TranslateError(err), err);
