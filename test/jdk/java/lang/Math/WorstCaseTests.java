@@ -333,7 +333,15 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
             // Other worst-case observed errors
-
+            {-0x1.7120161c92674p+0,     +0x1.0741fb7683849p-3},
+            {-0x1.d19ebc5567dcdp+311,   -0x1.b5d2f45f68958p-2},
+            {+0x1.91e60af551108p-1,     +0x1.6a32aaa34b119p-1}, // check
+            {-0x1.4ae182c1ab422p+21,    -0x1.6c9c3831b6e3bp-1},
+            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1}, // check
+            {+0x1.2f29eb4e99fa2p+7,     +0x1.6a0751dc5d2bbp-1}, // check
+            {-0x1.9200634d4471fp-1,     +0x1.6a200b493230dp-1}, // check
+            {+0x1.25133ca3904dfp+20,    -0x1.fb399cd6fe564p-3}, // check
+            {+0x1.2a33ae49ab15dp+1,     -0x1.60524e89bbcb3p-1}, // check
         };
 
         for(double[] testCase: testCases) {
