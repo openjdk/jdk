@@ -135,11 +135,11 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   bne(tmp3Reg, xthread, slow_path); // Check for recursive locking
 
   // Recursive lock case
-  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, t0, tmp);
+  increment(Address(disp_hdr, in_bytes(ObjectMonitor::recursions_offset()) - markWord::monitor_value), 1, tmp2Reg, tmp3Reg);
 
   bind(locked);
   mv(flag, zr);
-  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
+  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2Reg, tmp3Reg);
 
 #ifdef ASSERT
   // Check that locked label is reached with flag == 0.
@@ -147,6 +147,7 @@ void C2_MacroAssembler::fast_lock(Register objectReg, Register boxReg,
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
+
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
@@ -233,7 +234,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
 
   bind(unlocked);
   mv(flag, zr);
-  decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp);
+  decrement(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp1Reg, tmp2Reg);
 
 #ifdef ASSERT
   // Check that unlocked label is reached with flag == 0.
@@ -241,6 +242,7 @@ void C2_MacroAssembler::fast_unlock(Register objectReg, Register boxReg,
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
+
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
@@ -300,7 +302,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Regis
     bnez(tmp3_t, inflated);
 
     // Not inflated
-    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a lea");
+    assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
 
     // Try to lock. Transition lock-bits 0b01 => 0b00
     ori(tmp1_mark, tmp1_mark, markWord::unlocked_value);
@@ -339,12 +341,12 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Regis
     bne(tmp3_owner, xthread, slow_path);
 
     // Recursive.
-    increment(Address(tmp1_tagged_monitor, in_bytes(ObjectMonitor::recursions_offset()) - monitor_tag), 1, t0, tmp3);
+    increment(Address(tmp1_tagged_monitor, in_bytes(ObjectMonitor::recursions_offset()) - monitor_tag), 1, tmp2, tmp3);
   }
 
   bind(locked);
   mv(flag, zr);
-  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, t0, tmp3);
+  increment(Address(xthread, JavaThread::held_monitor_count_offset()), 1, tmp2, tmp3);
 
 #ifdef ASSERT
   // Check that locked label is reached with flag == 0.
@@ -352,6 +354,7 @@ void C2_MacroAssembler::fast_lock_lightweight(Register obj, Register tmp1, Regis
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
+
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
@@ -465,7 +468,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
     beqz(tmp2_recursions, not_recursive);
 
     // Recursive unlock.
-    sub(tmp2_recursions, tmp2_recursions, 1u);
+    addi(tmp2_recursions, tmp2_recursions, -1);
     sd(tmp2_recursions, Address(tmp1_monitor, ObjectMonitor::recursions_offset()));
     j(unlocked);
 
@@ -505,6 +508,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register tmp1, Reg
   beqz(flag, flag_correct);
   stop("Fast Lock Flag != 0");
 #endif
+
   bind(slow_path);
 #ifdef ASSERT
   // Check that slow_path label is reached with flag != 0.
