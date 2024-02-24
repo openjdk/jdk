@@ -50,7 +50,7 @@ public class PEMDecoderTest {
         test(PEMCerts.getEntry("privpem"), RSAKey.class);
         PEMCerts.failureEntryList.stream().forEach(entry -> testFailure(entry));
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class);
-        testFailure(PEMCerts.getEntry(PEMCerts.failureEntryList, "rsaOpenSSL"), RSAPublicKey.class);
+        testFailure(PEMCerts.getEntry(PEMCerts.privList, "rsaOpenSSL"), RSAPublicKey.class);
     }
 
     static void testFailure(PEMCerts.Entry entry) {
