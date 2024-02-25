@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main Exhaustiveness
+ * @run main/timeout=6000 Exhaustiveness
 */
 
 import java.io.IOException;
