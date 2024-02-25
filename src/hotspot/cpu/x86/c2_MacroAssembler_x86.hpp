@@ -502,15 +502,9 @@ public:
                        Register midx, Register length, int vector_len, int vlen_enc);
 
 #ifdef _LP64
-  void vgather8b_masked(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
-                        Register mask, Register midx, Register rtmp, int vlen_enc);
-
   void vgather8b_masked_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                                Register offset, Register mask, Register midx, Register rtmp, int vlen_enc);
 #endif
-
-  void vgather8b(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base, Register rtmp, int vlen_enc);
-
   void vgather8b_offset(BasicType elem_bt, XMMRegister dst, Register base, Register idx_base,
                               Register offset, Register rtmp, int vlen_enc);
 
