@@ -24,12 +24,13 @@
 /*
  * @test
  * @bug 8324969
- * @summary C2 incorrectly marks unbalanced nested locks for elimination.
+ * @summary C2 incorrectly marks unbalanced (after coarsened locks were eliminated)
+ *          nested locks for elimination.
  * @requires vm.compMode != "Xint"
- * @run main/othervm -XX:-BackgroundCompilation TestNestedLocksElimination
+ * @run main/othervm -XX:-BackgroundCompilation TestCoarsenedAndNestedLocksElimination
  */
 
-public class TestNestedLocksElimination {
+public class TestCoarsenedAndNestedLocksElimination {
 
     public static void main(String[] strArr) {
         for (int i = 0; i < 12000; ++i) {

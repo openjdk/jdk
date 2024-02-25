@@ -33,17 +33,37 @@ class RTMLockingCounters;
 
 //------------------------------BoxLockNode------------------------------------
 class BoxLockNode : public Node {
+private:
   const int     _slot; // stack slot
   RegMask     _inmask; // OptoReg corresponding to stack slot
   enum {
     Regular = 0,       // Normal locking region
-    Unbalanced,        // Some lock/unlock in region were coarsened,
-                       // as result this region become unbalanced
+    Local,             // EA found that local not escaping object is used for locking
+    Nested,            // This region is inside other region which use the same object
+    Coarsened,         // Some lock/unlock in region were marked as coarsened
+    Unbalanced,        // This region become unbalanced after coarsened lock/unlock were eliminated
+                       // or it is locking region from OSR when locking is done in Interpreter
     Eliminated         // All lock/unlock in region were eliminated
   } _kind;
 
-  // In debug VM verify correctness of unbalanced marking
-  DEBUG_ONLY(bool _marked_unbalanced;)
+#ifdef ASSERT
+  const char* _kind_name[6] = {
+   "Regular",
+   "Local",
+   "Nested",
+   "Coarsened",
+   "Unbalanced",
+   "Eliminated"
+  };
+#endif
+
+  // Allowed transitions of _kind:
+  //   Regular -> Local, Nested, Coarsened
+  //   Local   -> Eliminated
+  //   Nested  -> Eliminated
+  //   Coarsened -> Local, Nested, Unbalanced
+  // EA and nested lock elimination can overwrite Coarsened kind.
+  // Also allow transition to the same kind.
 
 public:
   BoxLockNode( int lock );
@@ -57,6 +77,7 @@ public:
   virtual bool cmp( const Node &n ) const;
   virtual const class Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
   virtual uint ideal_reg() const { return Op_RegP; }
+  virtual Node* Identity(PhaseGVN* phase);
 
   static OptoReg::Name reg(Node* box_node);
   static BoxLockNode* box_node(Node* box_node);
@@ -65,15 +86,38 @@ public:
   }
   int stack_slot() const { return _slot; }
 
+  bool is_regular()    const { return _kind == Regular; }
+  bool is_local()      const { return _kind == Local; }
+  bool is_nested()     const { return _kind == Nested; }
+  bool is_coarsened()  const { return _kind == Coarsened; }
   bool is_eliminated() const { return _kind == Eliminated; }
   bool is_unbalanced() const { return _kind == Unbalanced; }
-  void set_eliminated()      { _kind = Eliminated; }
-  void set_unbalanced()      { _kind = Unbalanced; }
 
-#ifdef ASSERT
-  void mark_unbalanced()            { _marked_unbalanced = true; }
-  bool is_marked_unbalanced() const { return _marked_unbalanced; }
-#endif
+  void set_local()      {
+    assert((_kind == Regular || _kind == Local || _kind == Coarsened),
+           "incorrect kind for Local transitioni: %s", _kind_name[(int)_kind]);
+    _kind = Local;
+  }
+  void set_nested()     {
+    assert((_kind == Regular || _kind == Nested || _kind == Coarsened),
+           "incorrect kind for Nested transition: %s", _kind_name[(int)_kind]);
+    _kind = Nested;
+  }
+  void set_coarsened()  {
+    assert((_kind == Regular || _kind == Coarsened),
+           "incorrect kind for Coarsened transition: %s", _kind_name[(int)_kind]);
+    _kind = Coarsened;
+  }
+  void set_eliminated() {
+    assert((_kind == Local || _kind == Nested),
+           "incorrect kind for Eliminated transition: %s", _kind_name[(int)_kind]);
+    _kind = Eliminated;
+  }
+  void set_unbalanced() {
+    assert((_kind == Coarsened || _kind == Unbalanced),
+           "incorrect kind for Unbalanced transition: %s", _kind_name[(int)_kind]);
+    _kind = Unbalanced;
+  }
 
   // Is BoxLock node used for one simple lock region?
   bool is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock);

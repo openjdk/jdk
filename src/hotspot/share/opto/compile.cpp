@@ -4868,21 +4868,25 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
   if (length > 0) {
     // Have to keep this list until locks elimination during Macro nodes elimination.
     Lock_List* locks_list = new (comp_arena()) Lock_List(comp_arena(), length);
-#ifdef ASSERT
     AbstractLockNode* alock = locks.at(0);
     BoxLockNode* box = alock->box_node()->as_BoxLock();
-#endif
     for (int i = 0; i < length; i++) {
       AbstractLockNode* lock = locks.at(i);
       assert(lock->is_coarsened(), "expecting only coarsened AbstractLock nodes, but got '%s'[%d] node", lock->Name(), lock->_idx);
       locks_list->push(lock);
-#ifdef ASSERT
       BoxLockNode* this_box = lock->box_node()->as_BoxLock();
       if (this_box != box) {
-        this_box->mark_unbalanced();
-        box->mark_unbalanced();
+        // Locking regions (BoxLock) could be Unbalanced here:
+        //  - its coarsened locks were eliminated in earlier
+        //    macro nodes elimination followed by loop unroll
+        // Preserve Unbalanced status in such cases.
+        if (!this_box->is_unbalanced()) {
+          this_box->set_coarsened();
+        }
+        if (!box->is_unbalanced()) {
+          box->set_coarsened();
+        }
       }
-#endif
     }
     _coarsened_locks.append(locks_list);
   }
@@ -4981,14 +4985,12 @@ void Compile::mark_unbalanced_boxes() {
         for (uint j = 1; j < size; j++) {
           assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
           BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
-          assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
           if (box != this_box) {
+            assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
             box->set_unbalanced();
             this_box->set_unbalanced();
-            assert(this_box->is_marked_unbalanced(),"inconsistency");
           }
         }
-        assert(box->is_unbalanced() == box->is_marked_unbalanced(),"inconsistency");
       }
     }
   }
