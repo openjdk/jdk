@@ -520,8 +520,8 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
             entryName = ((flag & USE_UTF8) != 0) ?
                     ZipCoder.toStringUTF8(b, len)
                     : zc.toString(b, len);
-        } catch(Exception ex) {
-            throw  (ZipException) new ZipException(
+        } catch (Exception ex) {
+            throw (ZipException) new ZipException(
                     "invalid LOC header (bad entry name)").initCause(ex);
         }
         ZipEntry e = createZipEntry(entryName);

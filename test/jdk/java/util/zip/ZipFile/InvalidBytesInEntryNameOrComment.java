@@ -71,6 +71,12 @@ public class InvalidBytesInEntryNameOrComment {
     private static final int CEN_FILE_HEADER_FILENAME_STARTING_OFFSET = 0x66;
     // LOC Header offset for the entry name to be modified
     private static final int LOC_FILE_HEADER_FILENAME_STARTING_OFFSET = 0x1e;
+    // CEN Entry comment
+    public static final String ENTRY_COMMENT = "entryComment";
+    // Entry name to be modified/validated
+    public static final String ENTRY_NAME = "entryName";
+    // Zip file comment to be modified/validated
+    public static final String ZIP_FILE_COMMENT = "ZipFileComment";
     // Buffer used to massage the byte array containing the Zip File
     private ByteBuffer buffer;
     // Array used to copy VALID_ZIP into prior to each test run
@@ -186,7 +192,7 @@ public class InvalidBytesInEntryNameOrComment {
         Files.write(ZIP_FILE, zipArray);
         try (ZipFile zf = new ZipFile(ZIP_FILE.toFile())) {
             var comment = zf.getComment();
-            System.out.printf("Comment= %s%n", comment);
+            assertEquals(ZIP_FILE_COMMENT, comment);
         }
     }
 
@@ -201,7 +207,7 @@ public class InvalidBytesInEntryNameOrComment {
         try (ZipInputStream zis = new ZipInputStream(new FileInputStream(ZIP_FILE.toFile()))) {
             ZipEntry ze;
             while ((ze = zis.getNextEntry()) != null) {
-                System.out.printf("Entry: %s%n", ze.getName());
+                assertEquals(ENTRY_NAME, ze.getName());
             }
         }
     }
@@ -279,9 +285,9 @@ public class InvalidBytesInEntryNameOrComment {
     private void createZipByteArray() throws IOException {
         ZipOutputStream zos = new ZipOutputStream(
                 new FileOutputStream(ZIP_FILE.toFile()));
-        zos.setComment("ZipFileComment");
-        ZipEntry entry = new ZipEntry("entryName");
-        entry.setComment("entryComment");
+        zos.setComment(ZIP_FILE_COMMENT);
+        ZipEntry entry = new ZipEntry(ENTRY_NAME);
+        entry.setComment(ENTRY_COMMENT);
         zos.putNextEntry(entry);
         zos.write(new byte[1]);
         zos.closeEntry();
