@@ -777,7 +777,7 @@ void SuperWord::dependence_graph() {
     MemNode* tail = mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
-    _vloop_analyzer.memory_slices().get_slice(head, tail, slice_nodes);
+    _vloop_analyzer.memory_slices().get_slice_in_reverse_order(head, tail, slice_nodes);
 
     // Make the slice dependent on the root
     DepMem* slice = _dg.dep(head);
@@ -861,8 +861,8 @@ void VLoopMemorySlices::print() const {
 #endif
 
 // Get all memory nodes of a slice, in reverse order
-void VLoopMemorySlices::get_slice(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const {
-  assert(slice.length() == 0, "start empty");
+void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const {
+  assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
   while (true) {
@@ -897,7 +897,7 @@ void VLoopMemorySlices::get_slice(PhiNode* head, MemNode* tail, GrowableArray<No
 
 #ifndef PRODUCT
   if (_vloop.is_trace_memory_slices()) {
-    tty->print_cr("\nVLoopMemorySlices::get_slice:");
+    tty->print_cr("\nVLoopMemorySlices::get_slice_in_reverse_order:");
     head->dump();
     for (int j = slice.length() - 1; j >= 0 ; j--) {
       slice.at(j)->dump();
@@ -2274,7 +2274,7 @@ void SuperWord::schedule_reorder_memops(Node_List &memops_schedule) {
   // loop we may have a different last store, and we need to adjust the uses accordingly.
   GrowableArray<Node*> old_last_store_in_slice(max_slices, max_slices, nullptr);
 
-  const GrowableArray<PhiNode*> &mem_slice_head = _vloop_analyzer.memory_slices().heads();
+  const GrowableArray<PhiNode*>& mem_slice_head = _vloop_analyzer.memory_slices().heads();
 
   // (1) Set up the initial memory state from Phi. And find the old last store.
   for (int i = 0; i < mem_slice_head.length(); i++) {
@@ -2931,7 +2931,7 @@ bool SuperWord::is_vector_use(Node* use, int u_idx) {
 
 // Return nullptr if success, else failure message
 VStatus VLoopBody::construct() {
-  assert(_body.length() == 0, "body is empty");
+  assert(_body.is_empty(), "body is empty");
 
   // First pass over loop body:
   //  (1) Check that there are no unwanted nodes (LoadStore, MergeMem, data Proj).
@@ -3202,7 +3202,7 @@ void VLoopTypes::compute_vector_element_type() {
     }
     if (nn->is_Cmp() && nn->in(0) == nullptr) {
       assert(_vloop.in_bb(nn->in(1)) || _vloop.in_bb(nn->in(2)),
-             "one of the inputs must be in the loop too");
+             "one of the inputs must be in the loop, too");
       if (_vloop.in_bb(nn->in(1))) {
         set_velt_type(n, velt_type(nn->in(1)));
       } else {

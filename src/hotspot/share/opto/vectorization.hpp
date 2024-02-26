@@ -303,11 +303,11 @@ public:
 
   void find_memory_slices();
 
-  const GrowableArray<PhiNode*> &heads() const { return _heads; }
-  const GrowableArray<MemNode*> &tails() const { return _tails; }
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+  const GrowableArray<MemNode*>& tails() const { return _tails; }
 
   // Get all memory nodes of a slice, in reverse order
-  void get_slice(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const;
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*>& slice) const;
 
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
@@ -331,7 +331,7 @@ private:
 
   // Mapping node->_idx -> body_idx
   // Can be very large, and thus lives in VSharedData
-  GrowableArray<int>&  _body_idx;
+  GrowableArray<int>& _body_idx;
 
 public:
   VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
@@ -463,7 +463,7 @@ private:
   VLoopTypes           _types;
 
 public:
-  VLoopAnalyzer(const VLoop& vloop, VSharedData &vshared) :
+  VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
     _vloop(vloop),
     _arena(mtCompiler),
     _success(false),

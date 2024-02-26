@@ -149,7 +149,7 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   // If there is no memory slice detected, it means there is no store.
   // If there is no reduction and no store, then we give up, because
   // vectorization is not possible anyway (given current limitations).
-  if (!reductions().is_marked_reduction_loop() &&
+  if (!_reductions.is_marked_reduction_loop() &&
       _memory_slices.heads().is_empty()) {
     return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
   }
