@@ -2027,7 +2027,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
   __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
@@ -2044,7 +2047,10 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == nullptr) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
@@ -2766,15 +2772,16 @@ encode %{
     intptr_t val = $src$$constant;
     relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
     address const_toc_addr;
+    RelocationHolder r; // Initializes type to none.
     if (constant_reloc == relocInfo::oop_type) {
       // Create an oop constant and a corresponding relocation.
-      AddressLiteral a = __ allocate_oop_address((jobject)val);
+      AddressLiteral a = __ constant_oop_address((jobject)val);
       const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
+      r = a.rspec();
     } else if (constant_reloc == relocInfo::metadata_type) {
+      // Notify OOP recorder (don't need the relocation)
       AddressLiteral a = __ constant_metadata_address((Metadata *)val);
       const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
     } else {
       // Create a non-oop constant, no relocation needed.
       const_toc_addr = __ long_constant((jlong)$src$$constant);
@@ -2784,6 +2791,7 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
+    __ relocate(r); // If set above.
     // Get the constant's TOC offset.
     toc_offset = __ offset_to_method_toc(const_toc_addr);
 
@@ -2797,15 +2805,16 @@ encode %{
       intptr_t val = $src$$constant;
       relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
       address const_toc_addr;
+      RelocationHolder r; // Initializes type to none.
       if (constant_reloc == relocInfo::oop_type) {
         // Create an oop constant and a corresponding relocation.
-        AddressLiteral a = __ allocate_oop_address((jobject)val);
+        AddressLiteral a = __ constant_oop_address((jobject)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
+        r = a.rspec();
       } else if (constant_reloc == relocInfo::metadata_type) {
+        // Notify OOP recorder (don't need the relocation)
         AddressLiteral a = __ constant_metadata_address((Metadata *)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
       } else {  // non-oop pointers, e.g. card mark base, heap top
         // Create a non-oop constant, no relocation needed.
         const_toc_addr = __ long_constant((jlong)$src$$constant);
@@ -2815,6 +2824,7 @@ encode %{
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
+      __ relocate(r); // If set above.
       // Get the constant's TOC offset.
       const int toc_offset = __ offset_to_method_toc(const_toc_addr);
       // Store the toc offset of the constant.

@@ -93,7 +93,7 @@ class HugePageConfiguration {
         if (pageSize != 0) {
             return pageSize;
         }
-        pageSize = getStaticDefaultHugePageSize();
+        pageSize = getExplicitDefaultHugePageSize();
         if (pageSize != 0) {
             return Math.min(pageSize, 16 * 1024 * 1024);
         }

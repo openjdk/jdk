@@ -39,6 +39,7 @@
 #   CXX - The C++ compiler
 #   LD - The Linker
 #   AR - Static linker
+#   LIB - lib, a Windows for creating static libraries
 #   AS - Assembler
 #   MT - Windows MT tool
 #   RC - Windows RC tool
@@ -56,6 +57,7 @@ define DefineNativeToolchainBody
     $$(call SetIfEmpty, $1_CXX, $$($$($1_EXTENDS)_CXX))
     $$(call SetIfEmpty, $1_LD, $$($$($1_EXTENDS)_LD))
     $$(call SetIfEmpty, $1_AR, $$($$($1_EXTENDS)_AR))
+    $$(call SetIfEmpty, $1_LIB, $$($$($1_EXTENDS)_LIB))
     $$(call SetIfEmpty, $1_AS, $$($$($1_EXTENDS)_AS))
     $$(call SetIfEmpty, $1_MT, $$($$($1_EXTENDS)_MT))
     $$(call SetIfEmpty, $1_RC, $$($$($1_EXTENDS)_RC))
@@ -72,6 +74,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_DEFAULT, \
     CXX := $(CXX), \
     LD := $(LD), \
     AR := $(AR), \
+    LIB := $(LIB), \
     AS := $(AS), \
     MT := $(MT), \
     RC := $(RC), \
@@ -94,6 +97,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD, \
     CXX := $(BUILD_CXX), \
     LD := $(BUILD_LD), \
     AR := $(BUILD_AR), \
+    LIB := $(BUILD_LIB), \
     AS := $(BUILD_AS), \
     OBJCOPY := $(BUILD_OBJCOPY), \
     STRIP := $(BUILD_STRIP), \
@@ -115,6 +119,7 @@ define SetupToolchain
   $$(call SetIfEmpty, $1_CXX, $$($$($1_TOOLCHAIN)_CXX))
   $$(call SetIfEmpty, $1_LD, $$($$($1_TOOLCHAIN)_LD))
   $$(call SetIfEmpty, $1_AR, $$($$($1_TOOLCHAIN)_AR))
+  $$(call SetIfEmpty, $1_LIB, $$($$($1_TOOLCHAIN)_LIB))
   $$(call SetIfEmpty, $1_AS, $$($$($1_TOOLCHAIN)_AS))
   $$(call SetIfEmpty, $1_MT, $$($$($1_TOOLCHAIN)_MT))
   $$(call SetIfEmpty, $1_RC, $$($$($1_TOOLCHAIN)_RC))
