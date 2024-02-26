@@ -26,7 +26,7 @@
 #include <jni.h>
 #include <jvmti.h>
 #include <aod.h>
-#include <jvmti_aod.h>
+#include <jvmti_aod.hpp>
 #include "ExceptionCheckingJniEnv.hpp"
 
 extern "C" {
