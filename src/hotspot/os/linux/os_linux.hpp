@@ -93,6 +93,8 @@ class os::Linux {
     bool     has_steal_ticks;
   };
 
+  static void kernel_version(long* major, long* minor);
+
   // which_logical_cpu=-1 returns accumulated ticks for all cpus.
   static bool get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu);
   static bool _stack_is_executable;
