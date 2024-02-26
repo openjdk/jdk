@@ -765,7 +765,7 @@ public class CLDRConverter {
         Map<String, Object> names = new TreeMap<>(KeyComparator.INSTANCE);
         var availableIds = getAvailableZoneIds();
 
-        availableIds.stream().forEach(tzid -> {
+        availableIds.forEach(tzid -> {
             // If the tzid is deprecated, get the data for the replacement id
             String tzKey = Optional.ofNullable((String)handlerSupplMeta.get(tzid))
                                    .orElse(tzid);
