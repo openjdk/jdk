@@ -29,7 +29,7 @@
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
 
-class Space;
+class OldGenScanClosure;
 class TenuredGeneration;
 class TenuredSpace;
 
@@ -55,15 +55,12 @@ class CardTableRS : public CardTable {
   template<typename Func>
   CardValue* find_first_clean_card(CardValue* start_card,
                                    CardValue* end_card,
-                                   CardTableRS* ct,
                                    Func& object_start);
 
 public:
   CardTableRS(MemRegion whole_heap);
 
-  void younger_refs_in_space_iterate(TenuredSpace* sp, OopIterateClosure* cl);
-
-  virtual void verify_used_region_at_save_marks(Space* sp) const NOT_DEBUG_RETURN;
+  void scan_old_to_young_refs(TenuredSpace* sp);
 
   void inline_write_ref_field_gc(void* field) {
     CardValue* byte = byte_for(field);
@@ -88,8 +85,7 @@ public:
   // of mr. Clears the dirty cards as they are processed.
   void non_clean_card_iterate(TenuredSpace* sp,
                               MemRegion mr,
-                              OopIterateClosure* cl,
-                              CardTableRS* ct);
+                              OldGenScanClosure* cl);
 
   bool is_in_young(const void* p) const override;
 };
