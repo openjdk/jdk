@@ -76,9 +76,9 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
     /*
      * The credentials from the KeyStore as
-     * Map: String(alias) -> X509Credentials(credentials)
+     * Map: String(builderIndex.entryAlias) -> X509Credentials(credentials)
      */
-    private final Map<String,X509Credentials> credentialsMap;
+    private final Map<String, X509Credentials> credentialsMap;
 
     private static class X509Credentials {
         final PrivateKey privateKey;
@@ -121,8 +121,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                         continue;
                     }
 
-                    PrivateKeyEntry privateKeyEntry =
-                            (PrivateKeyEntry) newEntry;
+                    PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
                     PrivateKey privateKey = privateKeyEntry.getPrivateKey();
                     Certificate[] certs = keyStore.getCertificateChain(alias);
                     if ((certs == null) || (certs.length == 0) ||
@@ -163,12 +162,16 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         if (builderAlias == null) {
             return null;
         }
+
         X509Credentials cred = credentialsMap.get(builderAlias);
-        if (cred == null) {
+        if (cred == null || isCertificateExpired(cred.certificates)) {
+            if (updateCredentialsMap(builderAlias)) {
+                cred = credentialsMap.get(builderAlias);
+                return cred.privateKey;
+            }
             return null;
-        } else {
-            return cred.privateKey;
         }
+        return cred.privateKey;
     }
 
     @Override
@@ -177,12 +180,16 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         if (builderAlias == null) {
             return null;
         }
+
         X509Credentials cred = credentialsMap.get(builderAlias);
-        if (cred == null) {
+        if (cred == null || isCertificateExpired(cred.certificates)) {
+            if (updateCredentialsMap(builderAlias)) {
+                cred = credentialsMap.get(builderAlias);
+                return cred.certificates.clone();
+            }
             return null;
-        } else {
-            return cred.certificates.clone();
         }
+        return cred.certificates.clone();
     }
 
     @Override
@@ -261,6 +268,60 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             return null;
         }
         return alias.substring(firstDot + 1);
+    }
+
+    // Check if the certificate associated with the alias is expired
+    private boolean isCertificateExpired(X509Certificate[] certificates) {
+        Date currentDate = new Date();
+        for (X509Certificate certificate : certificates) {
+            if (currentDate.after(certificate.getNotAfter())) {
+                // At least one certificate in the chain is expired
+                return true;
+            }
+        }
+        // None of the certificates in the chain are expired
+        return false;
+    }
+
+    // Update the credentialsMap with the up-to-date key and certificates
+    private boolean updateCredentialsMap(String builderAlias) {
+        int aDot = builderAlias.indexOf('.');
+        int builderIndex = Integer.parseInt(builderAlias.substring(0, aDot));
+        String entryAlias = builderAlias.substring(aDot + 1);
+        Builder builder = builders.get(builderIndex);
+
+        try {
+            KeyStore keyStore = builder.getKeyStore();
+            if (keyStore == null) {
+                return false;
+            }
+            Entry newEntry = keyStore.getEntry(entryAlias,
+                    builder.getProtectionParameter(entryAlias));
+            if (!(newEntry instanceof PrivateKeyEntry)) {
+                return false;
+            }
+
+            PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
+            PrivateKey privateKey = privateKeyEntry.getPrivateKey();
+            Certificate[] certs = keyStore.getCertificateChain(entryAlias);
+            if ((certs == null) || (certs.length == 0) ||
+                    !(certs[0] instanceof X509Certificate)) {
+                return false;
+            }
+
+            if (!(certs instanceof X509Certificate[])) {
+                Certificate[] tmp = new X509Certificate[certs.length];
+                System.arraycopy(certs, 0, tmp, 0, certs.length);
+                certs = tmp;
+            }
+
+            X509Credentials cred = new X509Credentials(privateKey,
+                    (X509Certificate[]) certs);
+            credentialsMap.put(builderAlias, cred);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     // Gets algorithm constraints of the socket.
