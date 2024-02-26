@@ -456,7 +456,7 @@ public class WorstCaseTests {
             {0x1.62ff6a1682c25p-1,      +0x1.3666b15c8756ap-1},
             // Other worst-case observed errors
             {+0x1.f9004c4fef9eap-4,  0x1.f67727f5618f2p-4},
-            {-0x1.ffff8020d3d1dp-7,  0x1.fff4d5e4886c7p-7}
+            {-0x1.ffff8020d3d1dp-7, -0x1.fff4d5e4886c7p-7},
             {+0x1.0103fc4ebaaa8p+1,  0x1.1bd5c375c97b5p0},
             {+0x1.01e0be37af68fp+1,  0x1.1c2d45ec82765p0},
             {-0x1.60370d15396b7p-1, -0x1.348461c347fd9p-1},
