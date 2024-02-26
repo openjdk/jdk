@@ -169,6 +169,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
+    DISABLED_WARNINGS_gcc_shenandoahLock.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_synchronizer.cpp := stringop-overflow, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
