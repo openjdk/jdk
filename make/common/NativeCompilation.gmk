@@ -96,7 +96,7 @@ include native/Paths.gmk
 #   CXX the C++ compiler to use
 #   LD the Linker to use
 #   AR the static linker to use
-#   LIB - lib, a Windows for creating static libraries
+#   LIB the Windows lib tool to use for creating static libraries
 #   AS the assembler to use
 #   MT the Windows MT tool to use
 #   RC the Windows RC tool to use
