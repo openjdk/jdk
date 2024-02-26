@@ -317,7 +317,7 @@ public class T6888367 {
                 case Signature.TypeArg.Bounded b -> switch (b.wildcardIndicator()) {
                     case EXTENDS -> "W{e," + print(b.boundType()) + "}";
                     case SUPER -> "W{s," + print(b.boundType()) + "}";
-                    case DEFAULT -> print(b.boundType());
+                    case NONE -> print(b.boundType());
                 };
             };
         }

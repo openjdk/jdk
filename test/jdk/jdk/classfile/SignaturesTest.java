@@ -185,7 +185,7 @@ class SignaturesTest {
         var sig = observerCf.findAttribute(Attributes.SIGNATURE).orElseThrow().asClassSignature();
         var arrayListSig = sig.superclassSignature(); // ArrayList
         var arrayListTypeArg = (TypeArg.Bounded) arrayListSig.typeArgs().getFirst(); // Outer<String>.Inner<Long>
-        assertEquals(TypeArg.Bounded.WildcardIndicator.DEFAULT, arrayListTypeArg.wildcardIndicator());
+        assertEquals(TypeArg.Bounded.WildcardIndicator.NONE, arrayListTypeArg.wildcardIndicator());
         var innerSig = (ClassTypeSig) arrayListTypeArg.boundType();
         assertEquals("Inner", innerSig.className(), "simple name in signature");
         assertEquals(Outer.Inner.class.describeConstable().orElseThrow(), innerSig.classDesc(),
