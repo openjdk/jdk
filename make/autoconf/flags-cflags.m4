@@ -122,6 +122,8 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
             # Add debug prefix map gcc system include paths, as they cause
             # non-deterministic debug paths depending on gcc path location.
             DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
+            DEBUG_PREFIX_CFLAGS="$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=\$(SUPPORT_OUTPUTDIR)/="
+            DEBUG_PREFIX_CFLAGS="$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=\$(HOTSPOT_OUTPUTDIR)/="
         ]
       )
     fi
