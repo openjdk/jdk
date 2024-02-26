@@ -56,7 +56,7 @@ public class DisposeInActionEventTest {
         String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
                        "  don't see a tray icon, please, make sure that the tray area\n" +
                        "  (also called Taskbar Status Area on MS Windows, Notification\n\n" +
-                       "  Area on Gnome or System Tray on KDE) is visible.\n" +
+                       "  Area on Gnome or System Tray on KDE) is visible.\n\n" +
                         clickInstruction + " the button on the tray icon to trigger the\n" +
                        "  action event. Brief information about action events is printed\n" +
                        "  in the frame. After each action event the tray icon is removed from\n" +
