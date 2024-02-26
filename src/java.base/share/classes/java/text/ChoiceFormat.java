@@ -261,7 +261,7 @@ public class ChoiceFormat extends NumberFormat {
         double limit = 0;
         boolean inQuote = false;
 
-        // Parse the string, swapping between the LIMIT and FORMAT enum mode values
+        // Parse the string, alternating the value of part
         for (int i = 0; i < newPattern.length(); ++i) {
             char ch = newPattern.charAt(i);
             switch (ch) {
