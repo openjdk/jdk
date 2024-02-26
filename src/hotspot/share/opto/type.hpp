@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -216,15 +216,15 @@ public:
   // Create a new hash-consd type
   static const Type *make(enum TYPES);
   // Test for equivalence of types
-  static int cmp( const Type *const t1, const Type *const t2 );
+  static bool cmp(const Type* t1, const Type* t2);
   // Test for higher or equal in lattice
   // Variant that drops the speculative part of the types
-  bool higher_equal(const Type *t) const {
-    return !cmp(meet(t),t->remove_speculative());
+  bool higher_equal(const Type* t) const {
+    return cmp(meet(t), t->remove_speculative());
   }
   // Variant that keeps the speculative part of the types
-  bool higher_equal_speculative(const Type *t) const {
-    return !cmp(meet_speculative(t),t);
+  bool higher_equal_speculative(const Type* t) const {
+    return cmp(meet_speculative(t), t);
   }
 
   // MEET operation; lower in lattice.
