@@ -4840,7 +4840,7 @@ class StubGenerator: public StubCodeGenerator {
       //   in ws[7], high part contains W't-14, low part contains W't-15.
 
       if ((round % 2) == 0) {
-        __ ld(ws[round/2], Address(buf, round * 4));
+        __ ld(ws[round/2], Address(buf, (round/2) * 8));
         // reverse bytes, as SHA-1 is defined in big-endian.
         __ revb(ws[round/2], ws[round/2]);
         __ srli(cur_w, ws[round/2], 32);
@@ -4849,11 +4849,6 @@ class StubGenerator: public StubCodeGenerator {
       }
 
       return;
-    }
-
-    if (round == 16) {
-      int64_t block_bytes = round * 4;
-      __ addi(buf, buf, block_bytes);
     }
 
     if ((round % 2) == 0) {
@@ -4881,8 +4876,8 @@ class StubGenerator: public StubCodeGenerator {
 
     int idx = 17;
     // W't = ROTL'1(W't-3 ^ W't-8 ^ W't-14 ^ W't-16),  16 <= t <= 79
-    __ srli(t0, ws[(idx-3)/2], 32);
-    __ xorr(t0, t0, ws[(idx-8)/2]);
+    __ srli(t1, ws[(idx-3)/2], 32);
+    __ xorr(t0, t1, ws[(idx-8)/2]);
 
     __ xorr(cur_w, ws[(idx-16)/2], ws[(idx-14)/2]);
 
@@ -4947,18 +4942,17 @@ class StubGenerator: public StubCodeGenerator {
     // cur_w will be recalculated at the beginning of each round,
     // so, we can reuse it as a temp register here.
     Register tmp2 = cur_w;
-    {
-      // reuse e as a temporary register, as we will mv new value into it later
-      Register tmp3 = e;
-      __ add(tmp2, cur_k, tmp2);
-      __ add(tmp3, tmp3, tmp2);
-      __ rolw_imm(tmp2, a, 5, t0);
 
-      sha1_f(tmp, b, c, d, round);
+    // reuse e as a temporary register, as we will mv new value into it later
+    Register tmp3 = e;
+    __ add(tmp2, cur_k, tmp2);
+    __ add(tmp3, tmp3, tmp2);
+    __ rolw_imm(tmp2, a, 5, t0);
 
-      __ add(tmp2, tmp2, tmp);
-      __ add(tmp2, tmp2, tmp3);
-    }
+    sha1_f(tmp, b, c, d, round);
+
+    __ add(tmp2, tmp2, tmp);
+    __ add(tmp2, tmp2, tmp3);
 
     // e = d
     // d = c
@@ -5021,7 +5015,7 @@ class StubGenerator: public StubCodeGenerator {
   //   c_rarg2: int     offset
   //   c_rarg3: int     limit
   //
-  // Outpus:
+  // Outputs:
   //   - - - - - - below are only for implCompressMultiBlock0 - - - - - -
   //   c_rarg0: int offset, when (multi_block == true)
   //
@@ -5125,6 +5119,9 @@ class StubGenerator: public StubCodeGenerator {
     sha1_calculate_im_hash(a, b, c, d, e, prev_ab, prev_cd, prev_e);
 
     if (multi_block) {
+      int64_t block_bytes = 16 * 4;
+      __ addi(buf, buf, block_bytes);
+
       __ bge(limit, buf, L_sha1_loop, true);
     }
 
