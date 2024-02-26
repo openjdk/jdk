@@ -1534,25 +1534,25 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Fold cmp(add(X, C1), C2) into cmp(X, sub(C2, C1))
+  // Fold cmp(add(x, c1), c2) into cmp(x, sub(c2, c1))
   if ((cop == Op_CmpI && cmp1_op == Op_AddI && cmp2_op == Op_ConI) ||
       (cop == Op_CmpL && cmp1_op == Op_AddL && cmp2_op == Op_ConL)) {
     Node* x = cmp1->in(1);
     Node* c1 = cmp1->in(2);
     if ((c1->Opcode() == Op_ConI || c1->Opcode() == Op_ConL) &&
         !is_cloop_condition(this)) {
+      // Do not modify loop exit conditions because it may prevent CountedLoop's
+      // recognition of induction variables and strides.
       BasicType bt = cmp1_op == Op_AddI ? T_INT : T_LONG;
       const TypeInteger* x_type = phase->type(x)->isa_integer(bt);
       if (x_type != nullptr) { // x_type can be TOP
         const TypeInteger* c1_type = phase->type(c1)->is_integer(bt);
         const TypeInteger* c2_type = phase->type(cmp2)->is_integer(bt);
         bool add_no_overflow = !x_type->can_overflow(cmp1_op, c1_type);
-        bool cons_no_overflow =
-            !c2_type->can_overflow(bt == T_INT ? Op_SubI : Op_SubL, c1_type);
+        bool cons_no_overflow = !c2_type->can_overflow(bt == T_INT ? Op_SubI : Op_SubL, c1_type);
         if ((add_no_overflow && cons_no_overflow && _test.is_less()) ||
             _test._test == BoolTest::eq || _test._test == BoolTest::ne) {
-          cmp =
-              CmpNode::make(x, phase->transform(SubNode::make(cmp2, c1, bt)), bt);
+          cmp = CmpNode::make(x, phase->transform(SubNode::make(cmp2, c1, bt)), bt);
           cmp = phase->transform(cmp);
           BoolNode* bn = new BoolNode(cmp, _test._test);
           return bn;
@@ -1561,7 +1561,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  // Fold cmp(sub(C1, X), C2) into cmp(sub(C1, C2), X)
+  // Fold cmp(sub(c1, x), c2) into cmp(sub(c1, c2), x)
   if ((cop == Op_CmpI && cmp1_op == Op_SubI && cmp2_op == Op_ConI) ||
       (cop == Op_CmpL && cmp1_op == Op_SubL && cmp2_op == Op_ConL)) {
     Node* x = cmp1->in(2);
@@ -1576,8 +1576,7 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         bool cons_no_overflow = !c1_type->can_overflow(cmp1_op, c2_type);
         if ((sub_no_overflow && cons_no_overflow && _test.is_less()) ||
             _test._test == BoolTest::eq || _test._test == BoolTest::ne) {
-          cmp = CmpNode::make(phase->transform(SubNode::make(c1, cmp2, bt)), x,
-                              bt);
+          cmp = CmpNode::make(phase->transform(SubNode::make(c1, cmp2, bt)), x, bt);
           cmp = phase->transform(cmp);
           BoolNode* bn = new BoolNode(cmp, _test._test);
           return bn;
