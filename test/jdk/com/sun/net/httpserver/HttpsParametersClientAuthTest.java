@@ -21,32 +21,37 @@
  * questions.
  */
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.KeyStore;
+import java.security.Principal;
+import java.security.PrivateKey;
 import java.security.PrivilegedExceptionAction;
+import java.security.cert.X509Certificate;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509ExtendedKeyManager;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -62,6 +67,7 @@ import static java.net.http.HttpClient.Builder.NO_PROXY;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -175,10 +181,10 @@ public class HttpsParametersClientAuthTest {
                 // we construct a SSLContext which has both key and trust material.
                 // otherwise we construct a SSLContext that only has trust material
                 // and thus won't present certificates during TLS handshake
-                final SSLContext clientSSLCtx = presentClientCerts
-                        ? serverSSLCtx : onlyTrustStoreContext();
+                final SSLCtx clientSSLCtx = presentClientCerts
+                        ? keyAndTrustStoreContext() : onlyTrustStoreContext();
                 // construct the client using the SSLContext
-                try (final HttpClient client = builder.sslContext(clientSSLCtx)
+                try (final HttpClient client = builder.sslContext(clientSSLCtx.sslContext)
                         .build()) {
                     // issue a request
                     final URI reqURI = URIBuilder.newBuilder()
@@ -199,11 +205,17 @@ public class HttpsParametersClientAuthTest {
                             fail("request was expected to fail, but didn't");
                         }
                         assertEquals(200, resp.statusCode(), "unexpected response code");
+                        // verify that the server asked the client to present the certificates
+                        assertTrue(clientSSLCtx.keyManager.clientAuthInitiated,
+                                "server was expected to request client certs, but didn't");
                     } catch (IOException ioe) {
                         if (presentClientCerts) {
                             // wasn't expected to fail, just let the exception propagate
                             throw ioe;
                         }
+                        // verify that the server asked the client to present the certificates
+                        assertTrue(clientSSLCtx.keyManager.clientAuthInitiated,
+                                "server was expected to request client certs, but didn't");
                         // verify it failed due to right reason
                         Throwable cause = ioe;
                         while (cause != null) {
@@ -271,10 +283,10 @@ public class HttpsParametersClientAuthTest {
                 // we construct a SSLContext which has both key and trust material.
                 // otherwise we construct a SSLContext that only has trust material
                 // and thus won't present certificates during TLS handshake
-                final SSLContext clientSSLCtx = presentClientCerts
-                        ? serverSSLCtx : onlyTrustStoreContext();
+                final SSLCtx clientSSLCtx = presentClientCerts ?
+                        keyAndTrustStoreContext() : onlyTrustStoreContext();
                 // construct the client using the SSLContext
-                try (final HttpClient client = builder.sslContext(clientSSLCtx)
+                try (final HttpClient client = builder.sslContext(clientSSLCtx.sslContext)
                         .build()) {
                     // issue a request
                     final URI reqURI = URIBuilder.newBuilder()
@@ -287,6 +299,9 @@ public class HttpsParametersClientAuthTest {
                     final HttpResponse<Void> resp = client.send(
                             HttpRequest.newBuilder(reqURI).build(), BodyHandlers.discarding());
                     assertEquals(200, resp.statusCode(), "unexpected response code");
+                    // verify that the server asked the client to present the certificates
+                    assertTrue(clientSSLCtx.keyManager.clientAuthInitiated,
+                            "server was expected to request client certs, but didn't");
                 }
             } finally {
                 System.out.println("Stopping server at " + server.getAddress());
@@ -313,19 +328,41 @@ public class HttpsParametersClientAuthTest {
     }
 
     /**
-     * Creates and returns a {@link SSLContext} which only has trust material
-     * and doesn't have any test specific keys.
+     * Creates and returns a SSLContext which only has trust material sourced from
+     * {@link #loadTestKeyStore() test keystore} and doesn't have any keys.
      */
-    private static SSLContext onlyTrustStoreContext() throws Exception {
+    private static SSLCtx onlyTrustStoreContext() throws Exception {
         final KeyStore keyStore = loadTestKeyStore();
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
         tmf.init(keyStore);
         final SSLContext ctx = SSLContext.getInstance("TLS");
-        // initialize with only trust managers
-        ctx.init(null, tmf.getTrustManagers(), null);
-        return ctx;
+        // KeyManager with no keys
+        final DelegatingKeyManager keyManager = new DelegatingKeyManager(null);
+        ctx.init(new KeyManager[]{keyManager}, tmf.getTrustManagers(), null);
+        return new SSLCtx(ctx, keyManager);
     }
 
+    /**
+     * Creates and returns a SSLContext which has both key and trust material
+     * sourced from {@link #loadTestKeyStore() test keystore}
+     */
+    private static SSLCtx keyAndTrustStoreContext() throws Exception {
+        final KeyStore keyStore = loadTestKeyStore();
+        final KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
+        kmf.init(keyStore, "passphrase".toCharArray());
+        final TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        tmf.init(keyStore);
+        final SSLContext ctx = SSLContext.getInstance("TLS");
+        final X509ExtendedKeyManager x509km = assertInstanceOf(X509ExtendedKeyManager.class,
+                kmf.getKeyManagers()[0]);
+        final DelegatingKeyManager keyManager = new DelegatingKeyManager(x509km);
+        ctx.init(new KeyManager[]{keyManager}, tmf.getTrustManagers(), null);
+        return new SSLCtx(ctx, keyManager);
+    }
+
+    /**
+     * loads a test specific keystore from {@code test/lib/jdk/test/lib/net/testkeys}
+     */
     private static KeyStore loadTestKeyStore() throws Exception {
         return AccessController.doPrivileged(
                 new PrivilegedExceptionAction<KeyStore>() {
@@ -374,6 +411,89 @@ public class HttpsParametersClientAuthTest {
         public void handle(final HttpExchange exchange) throws IOException {
             System.out.println("responding to request: " + exchange.getRequestURI());
             exchange.sendResponseHeaders(200, NO_RESPONSE_BODY);
+        }
+    }
+
+    private record SSLCtx(SSLContext sslContext, DelegatingKeyManager keyManager) {
+    }
+
+    private static final class DelegatingKeyManager extends X509ExtendedKeyManager {
+
+        private final X509ExtendedKeyManager underlying;
+        private boolean clientAuthInitiated;
+
+        // km can be null
+        private DelegatingKeyManager(final X509ExtendedKeyManager km) {
+            this.underlying = km;
+        }
+
+        @Override
+        public String chooseEngineClientAlias(String[] keyType, Principal[] issuers,
+                                              SSLEngine engine) {
+            clientAuthInitiated = true; // keep track that client alias selection was requested
+            if (this.underlying != null) {
+                return this.underlying.chooseEngineClientAlias(keyType, issuers, engine);
+            }
+            return null;
+        }
+
+        @Override
+        public String chooseEngineServerAlias(String keyType, Principal[] issuers,
+                                              SSLEngine engine) {
+            if (this.underlying != null) {
+                return this.underlying.chooseEngineServerAlias(keyType, issuers, engine);
+            }
+            return null;
+        }
+
+        @Override
+        public String[] getClientAliases(String keyType, Principal[] issuers) {
+            if (this.underlying != null) {
+                return this.underlying.getClientAliases(keyType, issuers);
+            }
+            return null;
+        }
+
+        @Override
+        public String chooseClientAlias(String[] keyType, Principal[] issuers, Socket socket) {
+            clientAuthInitiated = true; // keep track that client alias selection was requested
+            if (this.underlying != null) {
+                return this.underlying.chooseClientAlias(keyType, issuers, socket);
+            }
+            return null;
+        }
+
+        @Override
+        public String[] getServerAliases(String keyType, Principal[] issuers) {
+            if (this.underlying != null) {
+                return this.underlying.getServerAliases(keyType, issuers);
+            }
+            return null;
+        }
+
+        @Override
+        public String chooseServerAlias(String keyType, Principal[] issuers, Socket socket) {
+            if (this.underlying != null) {
+                return this.underlying.chooseServerAlias(keyType, issuers, socket);
+            }
+            return null;
+        }
+
+        @Override
+        public X509Certificate[] getCertificateChain(String alias) {
+            clientAuthInitiated = true; // keep track that client certs was requested
+            if (this.underlying != null) {
+                return this.underlying.getCertificateChain(alias);
+            }
+            return null;
+        }
+
+        @Override
+        public PrivateKey getPrivateKey(String alias) {
+            if (this.underlying != null) {
+                return this.underlying.getPrivateKey(alias);
+            }
+            return null;
         }
     }
 }
