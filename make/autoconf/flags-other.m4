@@ -42,7 +42,7 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
 
 AC_DEFUN([FLAGS_SETUP_LIBFLAGS],
 [
-    # LIB is used to create static libraries on Windows
+  # LIB is used to create static libraries on Windows
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
     LIBFLAGS="-nodefaultlib:msvcrt"
   else
