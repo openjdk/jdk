@@ -49,6 +49,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
@@ -406,12 +407,52 @@ public class JlinkTask {
             }
             finder = newModuleFinder(options.modulePath, options.limitMods, roots);
         }
+        boolean isLinkFromRuntime = options.modulePath.isEmpty();
+        // In case of custom modules outside the JDK we may
+        // have a non-empty module path, which doesn't include
+        // java.base. In that case take the JDK modules from the
+        // current run-time image.
+        if (finder.find("java.base").isEmpty()) {
+            isLinkFromRuntime = true;
+            ModuleFinder runtimeImageFinder = ModuleFinder.ofSystem();
+            finder = combinedFinders(finder, runtimeImageFinder, options.limitMods, roots);
+        }
+
 
         return new JlinkConfiguration(options.output,
                                       roots,
                                       finder,
-                                      options.modulePath.isEmpty(),
+                                      isLinkFromRuntime,
                                       options.ignoreModifiedRuntime);
+    }
+
+    private ModuleFinder combinedFinders(ModuleFinder finder,
+            ModuleFinder runtimeImageFinder, Set<String> limitMods,
+            Set<String> roots) {
+        ModuleFinder combined = new ModuleFinder() {
+
+            @Override
+            public Optional<ModuleReference> find(String name) {
+                Optional<ModuleReference> basic = runtimeImageFinder.find(name);
+                if (basic.isEmpty()) {
+                    return finder.find(name);
+                }
+                return basic;
+            }
+
+            @Override
+            public Set<ModuleReference> findAll() {
+                Set<ModuleReference> all = new HashSet<>();
+                all.addAll(runtimeImageFinder.findAll());
+                all.addAll(finder.findAll());
+                return Collections.unmodifiableSet(all);
+            }
+        };
+        // if limitmods is specified then limit the universe
+        if (limitMods != null && !limitMods.isEmpty()) {
+            return limitFinder(combined, limitMods, Objects.requireNonNull(roots));
+        }
+        return combined;
     }
 
     private void createImage(JlinkConfiguration config) throws Exception {
@@ -633,14 +674,13 @@ public class JlinkTask {
                         .orElse(Runtime.version());
 
         Set<Archive> archives = mods.entrySet().stream()
-                .map(e -> config.linkFromRuntimeImage() ? new JRTArchive(e.getKey(), e.getValue(), !config.ignoreModifiedRuntime())
-                                                        : newArchive(e.getKey(), e.getValue(), version, ignoreSigning))
+                .map(e -> newArchive(e.getKey(), e.getValue(), version, ignoreSigning, config))
                 .collect(Collectors.toSet());
 
         return new ImageHelper(archives, targetPlatform, retainModulesPath);
     }
 
-    private static Archive newArchive(String module, Path path, Runtime.Version version, boolean ignoreSigning) {
+    private static Archive newArchive(String module, Path path, Runtime.Version version, boolean ignoreSigning, JlinkConfiguration config) {
         if (path.toString().endsWith(".jmod")) {
             return new JmodArchive(module, path);
         } else if (path.toString().endsWith(".jar")) {
@@ -667,6 +707,12 @@ public class JlinkTask {
                 }
             }
             return modularJarArchive;
+        } else if (config.linkFromRuntimeImage()) {
+            // This is after jmod and modular jar branches, since, in runtime link
+            // mode custom - JDK external modules - are only supported via the
+            // module path. Directory module paths are not supported since those
+            // clash with JRT-FS based archives of JRTArchive.
+            return new JRTArchive(module, path, !config.ignoreModifiedRuntime());
         } else if (Files.isDirectory(path)) {
             Path modInfoPath = path.resolve("module-info.class");
             if (Files.isRegularFile(modInfoPath)) {

@@ -28,9 +28,9 @@ import tests.Helper;
 
 
 /*
- * FIXME: This needs thinking about
+ * @test
  * @summary Test jmod-less jlink with a custom module
- * @requires (vm.compMode != "Xcomp" & os.maxMemory >= 2g)
+ * @requires (jlink.runtime.linkable & vm.compMode != "Xcomp" & os.maxMemory >= 2g)
  * @library ../../lib /test/lib
  * @enablePreview
  * @modules java.base/jdk.internal.classfile
@@ -54,22 +54,21 @@ public class CustomModuleJlinkTest extends AbstractLinkableRuntimeTest {
         String customModule = "leaf1";
         helper.generateDefaultJModule(customModule);
 
-        // create a base image including jdk.jlink and the leaf1 module. This will
-        // add the leaf1 module's module path.
+        // create a base image for runtime linking
         Path jlinkImage = createRuntimeLinkImage(new BaseJlinkSpecBuilder()
                                                     .helper(helper)
                                                     .name("cmod-jlink")
-                                                    .addModule(customModule)
-                                                    .validatingModule("java.base") // not used
+                                                    .addModule("java.base")
+                                                    .validatingModule("java.base")
                                                     .build());
 
-        // Now that the base image already includes the 'leaf1' module, it should
-        // be possible to jlink it again, asking for *only* the 'leaf1' plugin even
-        // though we won't have any jmods directories present.
+        // Next jlink using the current runtime image for java.base, but take
+        // the custom module from the module path.
         Path finalImage = jlinkUsingImage(new JlinkSpecBuilder()
                                                 .imagePath(jlinkImage)
                                                 .helper(helper)
                                                 .name(customModule)
+                                                .addModulePath(helper.defaultModulePath(false))
                                                 .expectedLocation(String.format("/%s/%s/com/foo/bar/X.class", customModule, customModule))
                                                 .addModule(customModule)
                                                 .validatingModule(customModule)

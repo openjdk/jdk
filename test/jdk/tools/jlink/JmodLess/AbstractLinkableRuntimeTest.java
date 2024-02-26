@@ -149,6 +149,12 @@ public abstract class AbstractLinkableRuntimeTest {
         if (spec.getExtraJlinkOpts() != null && !spec.getExtraJlinkOpts().isEmpty()) {
             jlinkCmd.addAll(spec.getExtraJlinkOpts());
         }
+        if (spec.getModulePath() != null) {
+            for (String mp: spec.getModulePath()) {
+                jlinkCmd.add("--module-path");
+                jlinkCmd.add(mp);
+            }
+        }
         jlinkCmd = Collections.unmodifiableList(jlinkCmd); // freeze
         System.out.println("DEBUG: jmod-less jlink command: " + jlinkCmd.stream().collect(
                                                     Collectors.joining(" ")));
@@ -360,11 +366,13 @@ public abstract class AbstractLinkableRuntimeTest {
         final List<String> unexpectedLocations;
         final String[] expectedFiles;
         final List<String> extraJlinkOpts;
+        final List<String> modulePath;
 
         JlinkSpec(Path imageToUse, Helper helper, String name, List<String> modules,
                 String validatingModule, List<String> expectedLocations,
                 List<String> unexpectedLocations, String[] expectedFiles,
-                List<String> extraJlinkOpts) {
+                List<String> extraJlinkOpts,
+                List<String> modulePath) {
             this.imageToUse = imageToUse;
             this.helper = helper;
             this.name = name;
@@ -374,6 +382,7 @@ public abstract class AbstractLinkableRuntimeTest {
             this.unexpectedLocations = unexpectedLocations;
             this.expectedFiles = expectedFiles;
             this.extraJlinkOpts = extraJlinkOpts;
+            this.modulePath = modulePath;
         }
 
         public Path getImageToUse() {
@@ -411,6 +420,10 @@ public abstract class AbstractLinkableRuntimeTest {
         public List<String> getExtraJlinkOpts() {
             return extraJlinkOpts;
         }
+
+        public List<String> getModulePath() {
+            return modulePath;
+        }
     }
 
     static class JlinkSpecBuilder {
@@ -423,6 +436,7 @@ public abstract class AbstractLinkableRuntimeTest {
         List<String> unexpectedLocations = new ArrayList<>();
         List<String> expectedFiles = new ArrayList<>();
         List<String> extraJlinkOpts = new ArrayList<>();
+        List<String> modulePath = new ArrayList<>();
 
         JlinkSpec build() {
             if (imageToUse == null) {
@@ -437,7 +451,16 @@ public abstract class AbstractLinkableRuntimeTest {
             if (validatingModule == null) {
                 throw new IllegalStateException("No module specified for after generation validation!");
             }
-            return new JlinkSpec(imageToUse, helper, name, modules, validatingModule, expectedLocations, unexpectedLocations, expectedFiles.toArray(new String[0]), extraJlinkOpts);
+            return new JlinkSpec(imageToUse,
+                                 helper,
+                                 name,
+                                 modules,
+                                 validatingModule,
+                                 expectedLocations,
+                                 unexpectedLocations,
+                                 expectedFiles.toArray(new String[0]),
+                                 extraJlinkOpts,
+                                 modulePath);
         }
 
         JlinkSpecBuilder imagePath(Path image) {
@@ -462,6 +485,11 @@ public abstract class AbstractLinkableRuntimeTest {
 
         JlinkSpecBuilder validatingModule(String module) {
             this.validatingModule = module;
+            return this;
+        }
+
+        JlinkSpecBuilder addModulePath(String modulePath) {
+            this.modulePath.add(modulePath);
             return this;
         }
 
