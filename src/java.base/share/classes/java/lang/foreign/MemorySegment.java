@@ -305,8 +305,7 @@ import jdk.internal.vm.annotation.ForceInline;
  * and/or garbage collection behavior).
  * <p>
  * In practice, the Java runtime lays out arrays in memory so that each n-byte element
- * occurs at an n-byte aligned physical address (except for {@code long[]} and
- * {@code double[]}, where alignment is platform-dependent, as explained below). The
+ * occurs at an n-byte aligned physical address. The
  * runtime preserves this invariant even if the array is relocated during garbage
  * collection. Access operations rely on this invariant to determine if the specified
  * offset in a heap segment refers to an aligned address in physical memory.
@@ -335,7 +334,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *     1000, 1002, 1004, 1006) are 2-byte aligned.</li>
  * </ul>
  * <p>
- * In other words, heap segments feature a (platform-dependent) <em>maximum</em>
+ * In other words, heap segments feature a <em>maximum</em>
  * alignment which is derived from the size of the elements of the Java array backing the
  * segment, as shown in the following table:
  *
