@@ -46,7 +46,6 @@ public class TestBaseCountedEndLoopUnswitchCandidate {
         }
     }
 
-
     public static void testLongCountedLoopEnd() {
         long limit = lFld;
         for (int i = 0; i < 100; i++) {
