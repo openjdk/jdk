@@ -166,8 +166,6 @@ public:
 
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
-  // Used to save the address in a space for later use during mangling.
-  void set_top_for_allocations(HeapWord* v) PRODUCT_RETURN;
   // Used to save the space's current top for later use during mangling.
   void set_top_for_allocations() PRODUCT_RETURN;
 

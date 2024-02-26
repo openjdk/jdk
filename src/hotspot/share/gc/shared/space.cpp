@@ -77,9 +77,6 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
 void ContiguousSpace::set_top_for_allocations() {
   mangler()->set_top_for_allocations(top());
 }
