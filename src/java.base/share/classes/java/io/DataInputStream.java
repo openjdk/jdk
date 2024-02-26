@@ -619,7 +619,7 @@ loop:   while (true) {
                         throw new UTFDataFormatException(
                             "malformed input around byte " + count);
                     chararr[chararr_count++]=(char)(((c & 0x1F) << 6) |
-                                                     (char2 & 0x3F));
+                                                    (char2 & 0x3F));
                 }
                 case 14 -> {
                     /* 1110 xxxx  10xx xxxx  10xx xxxx */
