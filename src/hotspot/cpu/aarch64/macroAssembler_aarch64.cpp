@@ -1795,16 +1795,16 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     ldr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
     // Load the array length.
-    ldrw(r2, Address(r5, Array<Klass*>::length_offset_in_bytes()));
-    // Skip to start of data.
-    add(r5, r5, Array<Klass*>::base_offset_in_bytes());
+    ldrw(r_array_length, Address(r_array_base, Array<Klass*>::length_offset_in_bytes()));
+    // And adjust the array base to point to the data.
+    add(r_array_base, r_array_base, Array<Klass*>::base_offset_in_bytes());
 
     mov_metadata(r_super_klass, super_klass);
 
     cmp(sp, zr); // Clear Z flag; SP is never zero
     // Scan R2 words at [R5] for an occurrence of R0.
     // Set NZ/Z based on last compare.
-    repne_scan(r5, r0, r2, rscratch2);
+    repne_scan(r_array_base, r_super_klass, r_sub_klass, rscratch2);
     // rscratch1 == 0 iff we got a match.
     cset(rscratch1, NE);
 
