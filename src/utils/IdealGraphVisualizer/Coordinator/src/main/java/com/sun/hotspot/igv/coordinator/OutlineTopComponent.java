@@ -347,8 +347,8 @@ public final class OutlineTopComponent extends TopComponent implements ExplorerM
         workspacePath = path;
     }
 
-    static public String WORKSPACE_XML_FILE = "graphs.xml";
-    static public String WORKSPACE_STATE_FILE = "state.igv";
+    public static String WORKSPACE_XML_FILE = "graphs.xml";
+    public static String WORKSPACE_STATE_FILE = "state.igv";
 
     private String getWorkspaceGraphsPath() {
         return workspacePath + "/" + WORKSPACE_XML_FILE;
