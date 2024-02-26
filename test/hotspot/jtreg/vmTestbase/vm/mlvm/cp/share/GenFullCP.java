@@ -48,7 +48,6 @@ public abstract class GenFullCP extends ClassfileGenerator {
     /**
      * Generate field description for object type from class name:
      * return "L" + className + ";";
-     * 
      * @param className Class name
      * @return field descriptor representing the class type
      */
@@ -215,7 +214,6 @@ public abstract class GenFullCP extends ClassfileGenerator {
     }
 
     protected void createBootstrapMethod(ClassModel cm, boolean isStatic, String methodName, String methodSignature) {
-        
         int argShift = isStatic ? 0 : 1;
 
         ClassFile.of().transform(cm,
