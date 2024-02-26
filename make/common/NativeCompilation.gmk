@@ -40,6 +40,7 @@ include native/CompileFile.gmk
 include native/DebugSymbols.gmk
 include native/Flags.gmk
 include native/Link.gmk
+include native/LinkMicrosoft.gmk
 include native/Paths.gmk
 include native/ToolchainDefinitions.gmk
 
@@ -72,7 +73,8 @@ include native/ToolchainDefinitions.gmk
 #       used both for C and C++.
 #   LIBS_<toolchain>_<OS> the libraries to link to for the specified target
 #       OS and toolchain, used both for C and C++.
-#   ARFLAGS the archiver flags to be used
+#   ARFLAGS the archiver flags to be used on unix platforms
+#   LIBFLAGS the flags for the lib tool used on windows
 #   OBJECT_DIR the directory where we store the object files
 #   OUTPUT_DIR the directory where the resulting binary is put
 #   SYMBOLS_DIR the directory where the debug symbols are put, defaults to OUTPUT_DIR
@@ -198,12 +200,20 @@ define SetupNativeCompilationBody
 
   # Prepare for linking
   $$(eval $$(call SetupLinkerFlags,$1))
-  $$(eval $$(call SetupLinking,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call SetupLinking,$1))
+  else
+    $$(eval $$(call SetupLinkingMicrosoft,$1))
+  endif
 
   $$(eval $$(call SetupObjectFileList,$1))
 
   # Link the individually compiled files into a single unit
-  $$(eval $$(call CreateLinkedResult,$1))
+  ifneq ($(TOOLCHAIN_TYPE), microsoft)
+    $$(eval $$(call CreateLinkedResult,$1))
+  else
+    $$(eval $$(call CreateLinkedResultMicrosoft,$1))
+  endif
 
   ifeq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
     # Override all targets (this is a hack)
