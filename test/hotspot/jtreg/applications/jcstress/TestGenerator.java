@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class TestGenerator {
         BufferedReader reader = Files.newBufferedReader(output);
 
         reader.lines()
-                .skip(4) // skip first 4 lines: name, -{80}, revision and empty line
+                .filter(s -> s.startsWith("org.openjdk.jcstress.tests"))
                 .map(s -> s.split("\\.")[4]) // group by the package name following "org.openjdk.jcstress.tests."
                 .distinct()
                 .filter(s -> !s.startsWith("sample")) // skip sample test
