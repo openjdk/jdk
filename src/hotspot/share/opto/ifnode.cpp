@@ -1026,6 +1026,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     return false;
   }
 
+  assert(lo != nullptr && hi != nullptr, "sanity");
   Node* hook = new Node(lo); // Add a use to lo to prevent him from dying
   // Merge the two compares into a single unsigned compare by building (CmpU (n - lo) (hi - lo))
   Node* adjusted_val = igvn->transform(new SubINode(n,  lo));
