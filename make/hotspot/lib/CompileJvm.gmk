@@ -151,10 +151,10 @@ ifeq ($(call isTargetOs, windows), true)
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
 endif
 
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  GCC_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
+ifeq ($(call isTargetOs, linux), true)
+  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
 
-  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(GCC_VERSION_SCRIPT)
+  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif
 
 ################################################################################
