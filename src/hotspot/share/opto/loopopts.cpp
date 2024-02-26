@@ -4290,7 +4290,12 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   // Ensure the shared data is cleared before each use
   vshared.clear();
 
-  SuperWord sw(vloop, vshared);
+  const VLoopAnalyzer vloop_analyzer(vloop, vshared);
+  if (!vloop_analyzer.success()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  SuperWord sw(vloop_analyzer);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }
