@@ -306,7 +306,14 @@ void IR::eliminate_null_checks() {
   }
 }
 
-
+// The functionality of this class is to insert a new block between
+// the 'from' and 'to' block of a critical edge.
+// It first collects the block pairs, and then processes them.
+//
+// Some instructions may introduce more than one edge between two blocks.
+// By checking if the current 'to' block sets critical_edge_split_flag
+// (all new blocks set this flag) to avoid repeated processing.
+// This is why BlockPair contains the index rather than the original 'to' block.
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
 
