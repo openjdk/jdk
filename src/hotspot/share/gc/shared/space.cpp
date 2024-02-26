@@ -115,14 +115,6 @@ void ContiguousSpace::print_on(outputStream* st) const {
                 p2i(bottom()), p2i(top()), p2i(end()));
 }
 
-#if INCLUDE_SERIALGC
-void TenuredSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(end()));
-}
-#endif
-
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();
