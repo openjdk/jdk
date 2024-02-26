@@ -23,6 +23,16 @@
 
 package vm.mlvm.cp.share;
 
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
+
+import jdk.internal.classfile.ClassTransform;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.org.objectweb.asm.ByteVector;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ClassWriterExt;
@@ -87,6 +97,8 @@ public abstract class GenFullCP extends ClassfileGenerator {
     protected static final String TEST_METHOD_NAME = "test";
     protected static final String TEST_METHOD_SIGNATURE = VOID_NO_ARG_METHOD_SIGNATURE;
 
+    protected static final MethodTypeDesc TEST_METHOD_TYPE_DESC = MethodTypeDesc.of(ClassDesc.ofDescriptor("V"));
+
     protected static final String STATIC_FIELD_NAME = "testStatic";
     protected static final String STATIC_FIELD_SIGNATURE = "Z";
 
@@ -121,139 +133,124 @@ public abstract class GenFullCP extends ClassfileGenerator {
         return DummyInterface.class.getName().replace('.', '/');
     }
 
-    protected static void createLogMsgCode(MethodVisitor mv, String msg) {
-        mv.visitLdcInsn(msg);
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "vm/mlvm/share/Env", "traceVerbose", "(Ljava/lang/String;)V");
-    }
-
-    protected static void createThrowRuntimeExceptionCode(MethodVisitor mv, String msg) {
-        createThrowRuntimeExceptionCodeHelper(mv, msg, false);
-    }
-
-    // Expects a throwable (the cause) to be on top of the stack when called.
-    protected static void createThrowRuntimeExceptionCodeWithCause(MethodVisitor mv, String msg) {
-        createThrowRuntimeExceptionCodeHelper(mv, msg, true);
-    }
 
     // If set_cause is true it expects a Throwable (the cause) to be on top of the stack when called.
-    protected static void createThrowRuntimeExceptionCodeHelper(MethodVisitor mv, String msg, boolean set_cause) {
-        mv.visitTypeInsn(Opcodes.NEW, JL_RUNTIMEEXCEPTION);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitLdcInsn(msg);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, JL_RUNTIMEEXCEPTION,
-                INIT_METHOD_NAME, "(" + fd(JL_STRING) + ")V");
-        if (set_cause) {
-          mv.visitInsn(Opcodes.SWAP);
-          mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JL_RUNTIMEEXCEPTION,
-                  "initCause", "(" + fd(JL_THROWABLE) + ")"+ fd(JL_THROWABLE));
-        }
-        mv.visitInsn(Opcodes.ATHROW);
+    protected static void createThrowRuntimeExceptionCodeHelper(ClassModel cm, String msg, boolean set_cause) {
+
+        ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod("throwRuntimeException", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;Z)V"),
+                ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                mb -> mb.withCode(
+                        cob -> {
+                            cob.new_(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION))
+                                    .dup()
+                                    .ldc(msg)
+                                    .invokespecial(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION), INIT_METHOD_NAME, MethodTypeDesc.ofDescriptor("(" + fd(JL_STRING) + ")V"));
+                            if (set_cause) {
+                                cob.dup_x1()
+                                        .aload(0)
+                                        .invokevirtual(ClassDesc.ofInternalName(JL_THROWABLE), "initCause", MethodTypeDesc.ofDescriptor("(" + fd(JL_THROWABLE) + ")" + fd(JL_THROWABLE)));
+                            }
+                            cob.athrow();
+                        }))));
     }
 
-    protected static void createThrowRuntimeExceptionMethod(ClassWriter cw, boolean isStatic, String methodName, String methodSignature) {
-        MethodVisitor mv = cw.visitMethod(
-                Opcodes.ACC_PUBLIC | (isStatic ? Opcodes.ACC_STATIC : 0),
-                methodName, methodSignature,
-                null,
-                new String[0]);
+    protected static void createThrowRuntimeExceptionMethod(ClassModel cm, boolean isStatic, String methodName, String methodSignature) {
+        ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod(methodName, MethodTypeDesc.ofDescriptor(methodSignature),
+                                    ClassFile.ACC_PUBLIC | (isStatic ? ClassFile.ACC_STATIC : 0),
+                                    mb -> mb.withCode( cb -> cb
+                                        .aload(cob.receiverSlot())
+                                        .ldc("Method " + methodName + methodSignature + " should not be called!")
+                                        .invokestatic(ClassDesc.of("vm/mlvm/share/GenFullCP"), "createThrowRuntimeExceptionCode",MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"))
+                                        .return_()
+                                    ))));
 
-        createThrowRuntimeExceptionCode(mv, "Method " + methodName + methodSignature + " should not be called!");
-
-        mv.visitMaxs(-1,  -1);
-        mv.visitEnd();
+        createThrowRuntimeExceptionCode(cm, "Method " + methodName + methodSignature + " should not be called!", false);
     }
 
-    protected static void finishMethodCode(MethodVisitor mv) {
-        finishMethodCode(mv, Opcodes.RETURN);
+    protected void createClassInitMethod(ClassModel cm) {
     }
 
-    protected static void finishMethodCode(MethodVisitor mv, int returnOpcode) {
-        mv.visitInsn(returnOpcode);
-        mv.visitMaxs(-1, -1);
-        mv.visitEnd();
+    protected void createInitMethod(ClassModel cm) {
+        ClassFile.of().transform(cm,
+            ClassTransform.endHandler(cb -> cb.withMethod(INIT_METHOD_NAME, MethodTypeDesc.ofDescriptor(VOID_NO_ARG_METHOD_SIGNATURE),
+                                    ClassFile.ACC_PUBLIC,
+                                    mb -> mb.withCode( cb -> cb
+                                        .aload(cob.receiverSlot())
+                                        .aload(cob.parameterSlot(0))
+                                        .ldc(fullClassName + " constructor called")
+                                        .invokestatic(ClassDesc.of("vm/mlvm/share/Env"), "traceVerbose",MethodTypeDesc.ofDescriptor("Ljava/lang/String;)V"))
+                                        .invokespecial(ClassDesc.ofInternalName(PARENT_CLASS_NAME), INIT_METHOD_NAME,MethodTypeDesc.ofDescriptor(VOID_NO_ARG_METHOD_SIGNATURE)))
+                                        .return_()
+                                    )));
     }
 
-    protected void createClassInitMethod(ClassWriter cw) {
+    protected void createTargetMethod(ClassModel cm) {
+        ClassFile.of().transform(cm,
+            ClassTransform.endHandler(cb -> cb.withMethod(TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE),
+                                    ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                    mb -> mb.withCode(
+                                        CodeBuilder -> CodeBuilder
+                                            .ldc(fullClassName + " constructor called")
+                                            .invokestatic(ClassDesc.of("vm/mlvm/share/Env"), "traceVerbose",MethodTypeDesc.ofDescriptor("Ljava/lang/String;)V"))
+                                            .return_()))));
     }
 
-    protected void createInitMethod(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(
-                Opcodes.ACC_PUBLIC,
-                INIT_METHOD_NAME, INIT_METHOD_SIGNATURE,
-                null,
-                new String[0]);
-
-        mv.visitIntInsn(Opcodes.ALOAD, 0);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                PARENT_CLASS_NAME,
-                INIT_METHOD_NAME, INIT_METHOD_SIGNATURE);
-
-        createLogMsgCode(mv, fullClassName + " constructor called");
-
-        finishMethodCode(mv);
+    protected void createBootstrapMethod(ClassModel cm) {
+         createBootstrapMethod(cm, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
     }
 
-    protected void createTargetMethod(ClassWriter cw) {
-        MethodVisitor mv = cw.visitMethod(
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                TARGET_METHOD_NAME, TARGET_METHOD_SIGNATURE,
-                null,
-                new String[0]);
-
-        createLogMsgCode(mv, fullClassName + "." + TARGET_METHOD_NAME + TARGET_METHOD_SIGNATURE + " called");
-
-        finishMethodCode(mv);
-    }
-
-    protected void createBootstrapMethod(ClassWriter cw) {
-         createBootstrapMethod(cw, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
-    }
-
-    protected void createBootstrapMethod(ClassWriter cw, boolean isStatic, String methodName, String methodSignature) {
-        MethodVisitor mv = cw.visitMethod(
-                (isStatic ? Opcodes.ACC_STATIC : 0) | Opcodes.ACC_PUBLIC,
-                methodName, methodSignature,
-                null, new String[0]);
-
-        createLogMsgCode(mv, fullClassName + "." + BOOTSTRAP_METHOD_NAME + BOOTSTRAP_METHOD_SIGNATURE + " called");
-
+    protected void createBootstrapMethod(ClassModel cm, boolean isStatic, String methodName, String methodSignature) {
+        
         int argShift = isStatic ? 0 : 1;
 
-        mv.visitTypeInsn(Opcodes.NEW, JLI_CONSTANTCALLSITE);
-        mv.visitInsn(Opcodes.DUP);
-        mv.visitVarInsn(Opcodes.ALOAD, 0 + argShift);
-        mv.visitLdcInsn(Type.getObjectType(fullClassName));
-        mv.visitVarInsn(Opcodes.ALOAD, 1 + argShift);
-        mv.visitVarInsn(Opcodes.ALOAD, 2 + argShift);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                JLI_METHODHANDLES_LOOKUP, "findStatic",
-                "(" + fd(JL_CLASS) + fd(JL_STRING) + fd(JLI_METHODTYPE) + ")" + fd(JLI_METHODHANDLE));
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, JLI_CONSTANTCALLSITE,
-                INIT_METHOD_NAME, "(" + fd(JLI_METHODHANDLE) + ")V");
-
-        finishMethodCode(mv, Opcodes.ARETURN);
+        ClassFile.of().transform(cm,
+            ClassTransform.endHandler(cb -> cb.withMethod(methodName, MethodTypeDesc.ofDescriptor(methodSignature),
+                                    ClassFile.ACC_PUBLIC | (isStatic ? ClassFile.ACC_STATIC : 0),
+                                    mb -> mb.withCode(
+                                        CodeBuilder -> CodeBuilder
+                                            .ldc(fullClassName + "." + BOOTSTRAP_METHOD_NAME + BOOTSTRAP_METHOD_SIGNATURE + " called")
+                                            .invokestatic(ClassDesc.of("vm/mlvm/share/Env"), "traceVerbose",MethodTypeDesc.ofDescriptor("Ljava/lang/String;)V"))
+                                            .new_(ClassDesc.ofInternalName(JLI_CONSTANTCALLSITE))
+                                            .dup()
+                                            .aload(0 + argShift)
+                                            .ldc(ClassDesc.ofDescriptor(fullClassName))
+                                            .aload(1 + argShift)
+                                            .aload(2 + argShift)
+                                            .invokevirtual(ClassDesc.ofInternalName(JLI_METHODHANDLES_LOOKUP), "findStatic",
+                                                    MethodTypeDesc.ofDescriptor("(" + fd(JL_CLASS) + fd(JL_STRING) + fd(JLI_METHODTYPE) + ")" + fd(JLI_METHODHANDLE)))
+                                            .invokespecial(ClassDesc.ofInternalName(JLI_CONSTANTCALLSITE),
+                                                    INIT_METHOD_NAME, MethodTypeDesc.ofDescriptor("(" + fd(JLI_METHODHANDLE) + ")V"))
+                                            .areturn()
+                                            ))));
     }
 
     @Override
     public Klass[] generateBytecodes() {
 
         // COMPUTE_FRAMES were disabled due to JDK-8079697
-        ClassWriterExt cw = new ClassWriterExt(/*ClassWriter.COMPUTE_FRAMES |*/ ClassWriter.COMPUTE_MAXS);
+        ClassWriterExt cw = new ClassWriterExt(/* ClassWriter.COMPUTE_FRAMES | */ ClassWriter.COMPUTE_MAXS);
 
         String[] interfaces = new String[1];
         interfaces[0] = getDummyInterfaceClassName();
-        cw.visit(CLASSFILE_VERSION, Opcodes.ACC_PUBLIC, fullClassName, null, PARENT_CLASS_NAME, interfaces);
 
-        generateCommonData(cw);
+        byte[] bytes = ClassFile.of().build(ClassDesc.ofInternalName(fullClassName), classBuilder -> {
+            classBuilder.withFlags(ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER)
+                    .withInterfaceSymbols(ClassDesc.ofInternalName(interfaces[0]))
+                    .withSuperclass(ClassDesc.ofInternalName(PARENT_CLASS_NAME))
+                    .withVersion(CLASSFILE_VERSION, 0);
+        });
 
-        MethodVisitor mainMV = cw.visitMethod(
-                Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                MAIN_METHOD_NAME, MAIN_METHOD_SIGNATURE,
-                null, new String[0]);
+        generateCommonData(cm);
 
-        mainMV.visitTypeInsn(Opcodes.NEW, fullClassName);
-        mainMV.visitInsn(Opcodes.DUP);
-        mainMV.visitMethodInsn(Opcodes.INVOKESPECIAL, fullClassName, INIT_METHOD_NAME, INIT_METHOD_SIGNATURE);
+        bytes = ClassFile.of().transform(ClassFile.of().parse(bytes),
+                ClassTransform.endHandler(cb -> cb.withFlags(ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER)
+                        .withMethod(MAIN_METHOD_NAME, MethodTypeDesc.ofDescriptor(MAIN_METHOD_SIGNATURE),
+                                ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                mb -> mb.new_(ClassDesc.ofInternalName(fullClassName))
+                                        .dup()
+                                        .invokespecial(ClassDesc.ofInternalName(fullClassName), INIT_METHOD_NAME,
+                                                MethodTypeDesc.of(ConstantDescs.CD_void))
+                                        .return_())));
 
         int constCount = 0;
         int methodNum = 0;
@@ -262,27 +259,24 @@ public abstract class GenFullCP extends ClassfileGenerator {
         while (constCount < CP_CONST_COUNT) {
             final String methodName = TEST_METHOD_NAME + String.format("%02d", methodNum);
 
-            MethodVisitor mw = cw.visitMethod(
-                    Opcodes.ACC_PUBLIC,
-                    methodName, TEST_METHOD_SIGNATURE,
-                    null, new String[0]);
+            bytes = ClassFile.of().transform(ClassFile.of().parse(bytes),
+                    ClassTransform.endHandler(cb -> cb.withMethod(methodName, TEST_METHOD_TYPE_DESC,
+                            ClassFile.ACC_PUBLIC,
+                            mb -> mb.withCode(
+                                    CodeBuilder::return_))));
 
-            generateTestMethodProlog(mw);
+            generateTestMethodProlog(ClassFile.of().parse(bytes));
 
             // TODO: check real CP size and also limit number of iterations in this cycle
-            while (constCount < CP_CONST_COUNT && cw.getBytecodeLength(mw) < MAX_METHOD_SIZE) {
-                generateCPEntryData(cw, mw);
+            while (constCount < CP_CONST_COUNT && cw.getBytecodeLength(ClassFile.of().parse(bytes)) < MAX_METHOD_SIZE) {
+                generateCPEntryData(ClassFile.of().parse(bytes));
                 ++constCount;
             }
 
-            generateTestMethodEpilog(mw);
-
-            mw.visitMaxs(-1, -1);
-            mw.visitEnd();
-
+            generateTestMethodEpilog(ClassFile.of().parse(bytes));
             Env.traceNormal("Method " + fullClassName + "." + methodName + "(): "
-                          + constCount + " constants in CP, "
-                          + cw.getBytecodeLength(mw) + " bytes of code");
+                    + constCount + " constants in CP, "
+                    + cw.getBytecodeLength(ClassFile.of().parse(bytes)) + " bytes of code");
 
             mainMV.visitInsn(Opcodes.DUP);
             mainMV.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fullClassName, methodName, TEST_METHOD_SIGNATURE);
@@ -293,24 +287,26 @@ public abstract class GenFullCP extends ClassfileGenerator {
         mainMV.visitInsn(Opcodes.POP);
         finishMethodCode(mainMV);
 
-        cw.visitEnd();
         return new Klass[] { new Klass(this.pkgName, this.shortClassName, MAIN_METHOD_NAME, MAIN_METHOD_SIGNATURE, cw.toByteArray()) };
     }
 
-    protected void generateCommonData(ClassWriterExt cw) {
-        createClassInitMethod(cw);
-        createInitMethod(cw);
-        createTargetMethod(cw);
-        createBootstrapMethod(cw);
+    protected void generateCommonData(ClassModel cm) {
+        createClassInitMethod(cm);
+        createInitMethod(cm);
+        createTargetMethod(cm);
+        createBootstrapMethod(cm);
     }
 
-    protected void generateTestMethodProlog(MethodVisitor mw) {
+    protected void generateTestMethodProlog(ClassModel cm) {
     }
 
-    protected abstract void generateCPEntryData(ClassWriter cw, MethodVisitor mw);
+    protected abstract void generateCPEntryData(ClassModel cm);
 
-    protected void generateTestMethodEpilog(MethodVisitor mw) {
-        mw.visitInsn(Opcodes.RETURN);
+    protected void generateTestMethodEpilog(ClassModel cm) {
+        ClassFile.of().transform(cm, ClassTransform.endHandler(
+                cb -> cb.withMethod("testMethodEpilog", MethodTypeDesc.ofDescriptor("()V"), ClassFile.ACC_PUBLIC,
+                        mb -> mb.withCode(CodeBuilder::return_))
+        ));
     }
 
 }
