@@ -85,9 +85,6 @@ public class DisposeInActionEventTest {
         frame.getContentPane().add(textArea);
         frame.setSize(400, 200);
 
-        System.setProperty("sun.awt.exception.handler ",
-                           "DisposeInActionEventTest$EDTExceptionHandler");
-
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
         Graphics g = img.createGraphics();
         g.setColor(Color.WHITE);
