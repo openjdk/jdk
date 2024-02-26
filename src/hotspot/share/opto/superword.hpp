@@ -156,7 +156,7 @@ public:
 class VLoopDependenceGraph : public StackObj {
 private:
   // bb_idx -> DependenceNode*
-  GrowableArray<DependenceNode*> _map;
+  // TODO GrowableArray<DependenceNode*> _map;
 public:
 };
 
