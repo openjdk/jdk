@@ -106,9 +106,9 @@ public class HttpsParametersClientAuthTest {
     }
 
     /**
-     * sets {@link HttpsParameters#setNeedClientAuth(boolean)} to true and verifies
+     * sets {@link HttpsParameters#setNeedClientAuth(boolean)} and verifies
      * that subsequent calls to {@link HttpsParameters#getNeedClientAuth()} returns
-     * true and {@link HttpsParameters#getWantClientAuth()} returns false
+     * the set value and {@link HttpsParameters#getWantClientAuth()} returns false
      */
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
@@ -122,12 +122,19 @@ public class HttpsParametersClientAuthTest {
                 "needClientAuth was expected to be true but wasn't");
         assertFalse(needClientAuthParams.getWantClientAuth(),
                 "wantClientAuth was expected to be false but wasn't");
+        // now set needClientAuth = false and verify that both needClientAuth and wantClientAuth
+        // are now false
+        needClientAuthParams.setNeedClientAuth(false);
+        assertFalse(needClientAuthParams.getNeedClientAuth(),
+                "needClientAuth was expected to be false but wasn't");
+        assertFalse(needClientAuthParams.getWantClientAuth(),
+                "wantClientAuth was expected to be false but wasn't");
     }
 
     /**
-     * sets {@link HttpsParameters#setWantClientAuth(boolean)} to true and verifies
+     * sets {@link HttpsParameters#setWantClientAuth(boolean)} and verifies
      * that subsequent calls to {@link HttpsParameters#getWantClientAuth()} returns
-     * true and {@link HttpsParameters#getNeedClientAuth()} returns false
+     * the set value and {@link HttpsParameters#getNeedClientAuth()} returns false
      */
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
@@ -139,6 +146,13 @@ public class HttpsParametersClientAuthTest {
         wantClientAuthParams.setWantClientAuth(true);
         assertTrue(wantClientAuthParams.getWantClientAuth(),
                 "wantClientAuth was expected to be true but wasn't");
+        assertFalse(wantClientAuthParams.getNeedClientAuth(),
+                "needClientAuth was expected to be false but wasn't");
+        // now set wantClientAuth = false and verify that both wantClientAuth and needClientAuth
+        // are now false
+        wantClientAuthParams.setWantClientAuth(false);
+        assertFalse(wantClientAuthParams.getWantClientAuth(),
+                "wantClientAuth was expected to be false but wasn't");
         assertFalse(wantClientAuthParams.getNeedClientAuth(),
                 "needClientAuth was expected to be false but wasn't");
     }
