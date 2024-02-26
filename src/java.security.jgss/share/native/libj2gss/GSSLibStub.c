@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -195,12 +195,14 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
   if (jcb == NULL) {
     return GSS_C_NO_CHANNEL_BINDINGS;
   }
-
-  cb = malloc(sizeof(struct gss_channel_bindings_struct));
+  size_t size = sizeof(struct gss_channel_bindings_struct);
+  cb = malloc(size);
   if (cb == NULL) {
     gssThrowOutOfMemoryError(env, NULL);
     return NULL;
   }
+
+  memset(cb, 0, size);
 
   // initialize addrtype in CB first
   // LDAP TLS Channel Binding requires GSS_C_AF_UNSPEC address type
