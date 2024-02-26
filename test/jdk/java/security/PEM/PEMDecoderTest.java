@@ -32,6 +32,10 @@ import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.IOException;
 import java.security.*;
 import java.security.interfaces.*;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPrivateCrtKeySpec;
+import java.security.spec.RSAPrivateKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.Arrays;
 
@@ -51,6 +55,11 @@ public class PEMDecoderTest {
         PEMCerts.failureEntryList.stream().forEach(entry -> testFailure(entry));
         testFailure(PEMCerts.getEntry("ecprivpem"), ECPublicKey.class);
         testFailure(PEMCerts.getEntry(PEMCerts.privList, "rsaOpenSSL"), RSAPublicKey.class);
+        testClass(PEMCerts.getEntry("privpem"), PKCS8EncodedKeySpec.class);
+        testClass(PEMCerts.getEntry("privpem"), RSAPrivateCrtKeySpec.class);
+        testClass(PEMCerts.getEntry("privpem"), RSAPrivateKeySpec.class);
+        testClass(PEMCerts.getEntry("privpem"), X509EncodedKeySpec.class, false);
+        testClass(PEMCerts.getEntry("rsaCert"), X509EncodedKeySpec.class, false);
     }
 
     static void testFailure(PEMCerts.Entry entry) {
@@ -64,10 +73,10 @@ public class PEMDecoderTest {
                 entry.name() + ":  Not supposed to succeed.");
         } catch (NullPointerException e) {
             System.out.println("PASS (" + entry.name() + "):  " + e.getClass() +
-                ": " +e.getMessage());
-        } catch (IOException|RuntimeException e) {
+                ": " + e.getMessage());
+        } catch (IOException | RuntimeException e) {
             System.out.println("PASS (" + entry.name() + "):  " + e.getClass() +
-                ": " +e.getMessage());
+                ": " + e.getMessage());
         }
     }
 
@@ -79,7 +88,7 @@ public class PEMDecoderTest {
 
         try {
             test(entry.pem(), entry.clazz(), decoder);
-        } catch (Exception|AssertionError e) {
+        } catch (Exception | AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
                 "):  " + e.getMessage(), e);
         }
@@ -95,7 +104,7 @@ public class PEMDecoderTest {
         try {
             test(entry.pem(), entry.clazz(), new PEMDecoder());
             System.out.println("PASS (" + entry.name() + ")");
-        } catch (Exception|AssertionError e) {
+        } catch (Exception | AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
                 "):  " + e.getMessage(), e);
         }
@@ -138,7 +147,7 @@ public class PEMDecoderTest {
 
         // Search interfaces and inheritance to find a match with clazz
         List<Class> list = getInterfaceList(pk.getClass());
-        for(Class cc : list) {
+        for (Class cc : list) {
             if (cc != null && cc.equals(clazz)) {
                 return;
             }
@@ -161,6 +170,20 @@ public class PEMDecoderTest {
             System.err.println(hex.parseHex(new String(p2.getEncoded())));
             throw new AssertionError("Two decoding of the same key failed to" +
                 " match: ");
+        }
+    }
+
+    static void testClass(PEMCerts.Entry entry, Class clazz) throws IOException {
+        var pk = new PEMDecoder().decode(entry.pem(), clazz);
+    }
+
+    static void testClass(PEMCerts.Entry entry, Class clazz, boolean pass) throws RuntimeException {
+        try {
+            testClass(entry, clazz);
+        } catch (IOException e) {
+            if (pass) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

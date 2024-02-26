@@ -27,17 +27,15 @@ package java.security;
 
 import sun.security.pkcs.PKCS8Key;
 import sun.security.rsa.RSAPrivateCrtKeyImpl;
-import sun.security.rsa.RSAUtil;
 import sun.security.util.Pem;
 
 import javax.crypto.EncryptedPrivateKeyInfo;
 import java.io.*;
-import java.math.BigInteger;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
@@ -256,23 +254,8 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     public <S extends SecurityObject> S decode(String string,
         Class<S> tClass) throws IOException {
         Objects.requireNonNull(string);
-        Objects.requireNonNull(tClass);
 
-        // KeySpec's other that EncodedKeySpec's do not differentiate between
-        // public or private key via a subclass.  Specifying each class is
-        // in this the decoder error-prone and not extensible.
-/*        if (tClass.isInstance(KeySpec.class) &&
-            (!tClass.isInstance(X509EncodedKeySpec.class) &&
-                !tClass.isInstance(PKCS8EncodedKeySpec.class))) {
-            throw new IOException("Decoder does not support the provided " +
-                "KeySpec.");
-        }
-*/
-        try {
-            return tClass.cast(decode(new ByteArrayInputStream(string.getBytes())));
-        } catch (ClassCastException e) {
-            throw new IOException(e);
-        }
+        return decode(new ByteArrayInputStream(string.getBytes()), tClass);
     }
 
     /**
@@ -290,12 +273,42 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
      * error casting to tClass.
      */
     @Override
+    @SuppressWarnings("unchecked")  // (Class<KeySpec>) tClass
     public <S extends SecurityObject> S decode(InputStream is,
         Class<S> tClass) throws IOException {
         Objects.requireNonNull(is);
         Objects.requireNonNull(tClass);
+        Pem pem = Pem.readPEM(is);
+        if (pem == null) {
+            throw new IOException("No PEM data found.");
+        }
+
+        SecurityObject so =
+            decode(pem.getData(), pem.getHeader(), pem.getFooter());
+
+        /*
+         * KeySpec use getKeySpec after the Key has been generated.  Even though
+         * returning a binary encoding after the Base64 decoding is ok when the
+         * user wants PKCS8EncodedKeySpec, generating the key verifies the
+         * binary encoding and allows the KeyFactory to use the provider's
+         * KeySpec()
+         */
+        if ((KeySpec.class).isAssignableFrom(tClass)) {
+            if (so instanceof Key key) {
+                try {
+                    // unchecked suppressed as we know tClass comes from KeySpec
+                    // KeyType not relevant here.  We just want KeyFactory
+                    so = ((KeyFactory) getFactory(Pem.KeyType.PRIVATE,
+                        key.getAlgorithm())).
+                        getKeySpec(key, (Class<KeySpec>) tClass);
+                } catch (InvalidKeySpecException e) {
+                    throw new IOException(e);
+                }
+            }
+        }
+
         try {
-            return tClass.cast(decode(is));
+            return tClass.cast(so);
         } catch (ClassCastException e) {
             throw new IOException(e);
         }
