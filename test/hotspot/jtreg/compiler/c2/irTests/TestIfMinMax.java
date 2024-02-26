@@ -33,7 +33,6 @@ import jdk.test.lib.Utils;
  * @bug 8324655
  * @summary Test that if expressions are properly folded into min/max nodes
  * @library /test/lib /
- * @requires vm.compiler2.enabled
  * @run driver compiler.c2.irTests.TestIfMinMax
  */
 public class TestIfMinMax {
@@ -46,97 +45,97 @@ public class TestIfMinMax {
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
     public int testMinI1(int a, int b) {
-      return a < b ? a : b;
+        return a < b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
     public int testMinI2(int a, int b) {
-      return a > b ? b : a;
+        return a > b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MAX_I, "1" })
     public int testMaxI1(int a, int b) {
-      return a > b ? a : b;
+        return a > b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MAX_I, "1" })
     public int testMaxI2(int a, int b) {
-      return a < b ? b : a;
+        return a < b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
     public int testMinI1E(int a, int b) {
-      return a <= b ? a : b;
+        return a <= b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MIN_I, "1" })
     public int testMinI2E(int a, int b) {
-      return a >= b ? b : a;
+        return a >= b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MAX_I, "1" })
     public int testMaxI1E(int a, int b) {
-      return a >= b ? a : b;
+        return a >= b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.MAX_I, "1" })
     public int testMaxI2E(int a, int b) {
-      return a <= b ? b : a;
+        return a <= b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMinL1(long a, long b) {
-      return a < b ? a : b;
+        return a < b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMinL2(long a, long b) {
-      return a > b ? b : a;
+        return a > b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMaxL1(long a, long b) {
-      return a > b ? a : b;
+        return a > b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMaxL2(long a, long b) {
-      return a < b ? b : a;
+        return a < b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMinL1E(long a, long b) {
-      return a <= b ? a : b;
+        return a <= b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMinL2E(long a, long b) {
-      return a >= b ? b : a;
+        return a >= b ? b : a;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMaxL1E(long a, long b) {
-      return a >= b ? a : b;
+        return a >= b ? a : b;
     }
 
     @Test
     @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
     public long testMaxL2E(long a, long b) {
-      return a <= b ? b : a;
+        return a <= b ? b : a;
     }
 
     @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E" })
@@ -160,7 +159,6 @@ public class TestIfMinMax {
         Asserts.assertEQ(a >= b ? b : a, testMinI2E(a, b));
         Asserts.assertEQ(a >= b ? a : b, testMaxI1E(a, b));
         Asserts.assertEQ(a <= b ? b : a, testMaxI2E(a, b));
-
     }
 
     @Run(test = { "testMinL1", "testMinL2", "testMaxL1", "testMaxL2", "testMinL1E", "testMinL2E", "testMaxL1E", "testMaxL2E" })
