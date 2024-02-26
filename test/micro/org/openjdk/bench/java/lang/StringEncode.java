@@ -223,4 +223,66 @@ public class StringEncode {
         bh.consume(latin1String15.getBytes(charset));
         bh.consume(asciiString.getBytes(charset));
     }
+
+    @Benchmark
+    @CompilerControl(CompilerControl.Mode.DONT_INLINE)
+    public void encodeUTF8InternalAllMixed(Blackhole bh) {
+        bh.consume(encode(utf16String));
+        bh.consume(encode(longUtf16StartString));
+        bh.consume(encode(asciiString7));
+        bh.consume(encode(longUtf16EndString));
+        bh.consume(encode(latin1String3));
+        bh.consume(encode(longUtf16OnlyString));
+        bh.consume(encode(longLatin1EndString));
+        bh.consume(encode(longLatin1StartString));
+        bh.consume(encode(utf16String15));
+        bh.consume(encode(longLatin1OnlyString));
+        bh.consume(encode(latin1String));
+        bh.consume(encode(asciiString));
+        bh.consume(encode(longAsciiString));
+    }
+
+    // Code from jdk.internal.reflect.UTF8
+    static byte[] encode(String str) {
+        int len = str.length();
+        byte[] res = new byte[utf8Length(str)];
+        int utf8Idx = 0;
+        try {
+            for (int i = 0; i < len; i++) {
+                int c = str.charAt(i) & 0xFFFF;
+                if (c >= 0x0001 && c <= 0x007F) {
+                    res[utf8Idx++] = (byte) c;
+                } else if (c == 0x0000 ||
+                        (c >= 0x0080 && c <= 0x07FF)) {
+                    res[utf8Idx++] = (byte) (0xC0 + (c >> 6));
+                    res[utf8Idx++] = (byte) (0x80 + (c & 0x3F));
+                } else {
+                    res[utf8Idx++] = (byte) (0xE0 + (c >> 12));
+                    res[utf8Idx++] = (byte) (0x80 + ((c >> 6) & 0x3F));
+                    res[utf8Idx++] = (byte) (0x80 + (c & 0x3F));
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw new InternalError
+                    ("Bug in sun.reflect bootstrap UTF-8 encoder", e);
+        }
+        return res;
+    }
+
+    private static int utf8Length(String str) {
+        int len = str.length();
+        int utf8Len = 0;
+        for (int i = 0; i < len; i++) {
+            int c = str.charAt(i) & 0xFFFF;
+            if (c >= 0x0001 && c <= 0x007F) {
+                utf8Len += 1;
+            } else if (c == 0x0000 ||
+                    (c >= 0x0080 && c <= 0x07FF)) {
+                utf8Len += 2;
+            } else {
+                utf8Len += 3;
+            }
+        }
+        return utf8Len;
+    }
 }
