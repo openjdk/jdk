@@ -23,8 +23,9 @@
  */
 
 /* @test
+ * @key headful
+ * @bug 8326497
  * @summary Verifies that an iconified window is restored with Window.toFront()
- * @requires os.family == "linux"
  * @library /test/lib
  * @run main IconifiedToFront
  */
