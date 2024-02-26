@@ -340,8 +340,8 @@ public class HyperbolicTests {
             {0x1.fffffffffff68p4,       0x1.1f43fcc4b5b83p45},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
-            // Empirical worst-case points in other libraries with larger
-            // worst-case errors than FDLIBM
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
             {-0x1.633c654fee2bap+9,    -0x1.fdf25fc26e7cp1023},
             {-0x1.633cae1335f26p+9,    -0x1.ff149489e50a1p1023},
             { 0x1.9fcba01feb507p-2,     0x1.ab50d8e4d8c56p-2},
@@ -386,8 +386,8 @@ public class HyperbolicTests {
             {0x1.0p4,                   0x1.0f2ebd0a8005cp22},
             {0x1.fffffffffffd4p4,       0x1.1f43fcc4b6316p45},
             {0x1.0p5,                   0x1.1f43fcc4b662cp45},
-            // Empirical worst-case points in other libraries with larger
-            // worst-case errors than FDLIBM
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
             {-0x1.633c654fee2bap+9,     0x1.fdf25fc26e7cp1023},
             { 0x1.ff76fb3f476d5p+0,     0x1.e0976c8f0ebdfp1},
             { 0x1.633cc2ae1c934p+9,     0x1.ff66e0de4dc6fp1023},
@@ -462,8 +462,8 @@ public class HyperbolicTests {
             {0x1.fffffffffffe1p0,       0x1.ed9505e1bc3cfp-1},
             {0x1.ffffffffffed8p1,       0x1.ffa81708a0b4p-1},
             {0x1.fffffffffff92p1,       0x1.ffa81708a0b41p-1},
-            // Empirical worst-case points in other libraries with larger
-            // worst-case errors than FDLIBM
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
             {-0x1.c41e527b70f43p-3,    -0x1.bcea047cc736cp-3},
         };
 

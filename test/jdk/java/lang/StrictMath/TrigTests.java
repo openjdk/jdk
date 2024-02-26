@@ -168,7 +168,7 @@ public class TrigTests {
             {-0x1.f8b791cafcdefp+4,  -0x1.073ca87470dfap-3},
             {-0x1.0e16eb809a35dp+944, 0x1.b5e361ed01dadp-2},
             {-0x1.842d8ec8f752fp+21, -0x1.6ce864edeaffep-1},
-            {-0x1.1c49ad613ff3bp+19, -0x1.fffe203cfabe2p-2},
+            {-0x1.1c49ad613ff3bp+19, -0x1.fffe203cfabe1p-2},
         };
 
         for (double[] testCase: testCases) {
@@ -270,7 +270,15 @@ public class TrigTests {
             {0x1.000000000011cp299,  0x1.8a6f42eaa3d1fp0},
             {0x1.000000000001cp300, -0x1.b30fc9f73002cp-1},
             {0x1.0000000000013p500, -0x1.c4e46751be12cp-1},
-            {0x1.00000000000ep1023, -0x1.d52c4ec04f108p-2}
+            {0x1.00000000000ep1023, -0x1.d52c4ec04f108p-2},
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {+0x1.371a47b7e4eb2p+11,    0x1.9ded57c9ff46ap-1},
+            {-0x1.a81d98fc58537p+6 ,    0x1.ffd83332326fdp-1},
+            {-0x1.13a5ccd87c9bbp+1008, -0x1.6a3815320e5cfp-1},
+            {-0x1.4d7c8b8320237p+11,   -0x1.9dec1f1b36ecdp-1},
+            {+0x1.da7a85a88bbecp+11,    0x1.ff7ae7631230ep-1},
+            {-0x1.66af736e8555p+18,    -0x1.fc3d1cb02536bp-1},
         };
 
         for (double[] testCase: testCases) {

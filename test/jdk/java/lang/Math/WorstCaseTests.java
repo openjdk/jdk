@@ -373,7 +373,14 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
             // Other worst-case observed errors
-
+            {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2}, // check
+            {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1}, // check
+            {+0x1.35b03e336a82bp-1,     0x1.d7a84ec2f6707p-1}, // check
+            {-0x1.8d313198a2e03p-53,    0x1.921fb54442d19p0},  // check
+            {-0x1.010fd0ad6aa41p-1,     0x1.0c63a8cd23befp1},  // check
+            {+0x1.251869c3f7881p-1,     0x1.ec2ff0c102684p-1}, // check
+            {+0x1.266637a3d2bbcp-1,     0x1.ea98637533648p-1}, // check
+            {-0x1.36b1482765f6dp-1,     0x1.1c8666ca1cab1p1},  // check
         };
 
         for(double[] testCase: testCases) {
@@ -408,7 +415,7 @@ public class WorstCaseTests {
             {+0x0.A3561B9121A9Bp+0,     +0x0.BDD24FB9CC14Fp+0},
 
             // Worst-case observed error for OpenLibm, outside of 1 ulp error
-            // {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64934p-1},
+            // {0x1.3f9605aaeb51bp+21,     -0x1.9678ee5d64934p-1}, // 1.02
         };
 
         for(double[] testCase: testCases) {
@@ -447,6 +454,16 @@ public class WorstCaseTests {
 
             // Worst-case observed error
             {0x1.62ff6a1682c25p-1,      +0x1.3666b15c8756ap-1},
+            // Other worst-case observed errors
+            {+0x1.f9004c4fef9eap-4,  0x1.f67727f5618f2p-4},
+            {-0x1.ffff8020d3d1dp-7,  0x1.fff4d5e4886c7p-7}
+            {+0x1.0103fc4ebaaa8p+1,  0x1.1bd5c375c97b5p0},
+            {+0x1.01e0be37af68fp+1,  0x1.1c2d45ec82765p0},
+            {-0x1.60370d15396b7p-1, -0x1.348461c347fd9p-1},
+            {+0x1.032b4811f3dc5p+0,  0x1.9545fd233ee14p-1},
+            {+0x1.52184b1b9bd9bp+0,  0x1.d86de33c93814p-1},
+            {-0x1.0684fa9fa7481p+0, -0x1.988f9da70b11ap-1},
+
         };
 
         for(double[] testCase: testCases) {
