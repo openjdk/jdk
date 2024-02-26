@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -815,6 +815,7 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
+            boolean genericPatternsExpanded = false;
             try {
                 boolean repeat = true;
                 while (repeat) {
@@ -824,10 +825,22 @@ public class Flow {
                     updatedPatterns = reduceRecordPatterns(updatedPatterns);
                     updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                     repeat = !updatedPatterns.equals(patterns);
-                    patterns = updatedPatterns;
                     if (checkCovered(selector.type, patterns)) {
                         return true;
                     }
+                    if (!repeat && !genericPatternsExpanded) {
+                        //there may be situation like:
+                        //class B extends S1, S2
+                        //patterns: R(S1, B), R(S2, S2)
+                        //this should be joined to R(B, S2),
+                        //but hashing in reduceNestedPatterns will not allow that
+                        //attempt to once expand all types to their transitive permitted types,
+                        //on all depth of nesting:
+                        updatedPatterns = expandGenericPatterns(updatedPatterns);
+                        genericPatternsExpanded = true;
+                        repeat = !updatedPatterns.equals(patterns);
+                    }
+                    patterns = updatedPatterns;
                 }
                 return checkCovered(selector.type, patterns);
             } catch (CompletionFailure cf) {
@@ -1130,6 +1143,40 @@ public class Flow {
             return pattern;
         }
 
+        private Set<PatternDescription> expandGenericPatterns(Set<PatternDescription> patterns) {
+            var newPatterns = new HashSet<PatternDescription>(patterns);
+            boolean modified;
+            do {
+                modified = false;
+                for (PatternDescription pd : patterns) {
+                    if (pd instanceof RecordPattern rpOne) {
+                        for (int i = 0; i < rpOne.nested.length; i++) {
+                            Set<PatternDescription> toExpand = Set.of(rpOne.nested[i]);
+                            Set<PatternDescription> expanded = expandGenericPatterns(toExpand);
+                            if (expanded != toExpand) {
+                                expanded.removeAll(toExpand);
+                                for (PatternDescription exp : expanded) {
+                                    PatternDescription[] newNested = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                                    newNested[i] = exp;
+                                    modified |= newPatterns.add(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), newNested));
+                                }
+                            }
+                        }
+                    } else if (pd instanceof BindingPattern bp) {
+                        Set<Symbol> permittedSymbols = allPermittedSubTypes((ClassSymbol) bp.type.tsym, cs -> true);
+
+                        if (!permittedSymbols.isEmpty()) {
+                            for (Symbol permitted : permittedSymbols) {
+                                //TODO infer.instantiatePatternType(selectorType, csym); (?)
+                                modified |= newPatterns.add(new BindingPattern(permitted.type));
+                            }
+                        }
+                    }
+                }
+            } while (modified);
+            return newPatterns;
+        }
+
         private Set<PatternDescription> removeCoveredRecordPatterns(Set<PatternDescription> patterns) {
             Set<Symbol> existingBindings = patterns.stream()
                                                    .filter(pd -> pd instanceof BindingPattern)
@@ -1297,24 +1344,12 @@ public class Flow {
 
     private boolean isBpCovered(Type componentType, PatternDescription newNested) {
         if (newNested instanceof BindingPattern bp) {
-            var seltype = types.erasure(componentType);
+            Type seltype = types.erasure(componentType);
+            Type pattype = types.erasure(bp.type);
 
-            if (seltype.isPrimitive()) {
-                if (types.isSameType(bp.type, types.boxedClass(seltype).type)) {
-                    return true;
-                }
-
-                // if the target is unconditionally exact to the pattern, target is covered
-                if (types.isUnconditionallyExact(seltype, bp.type)) {
-                    return true;
-                }
-            } else if (seltype.isReference() && bp.type.isPrimitive() && types.isCastable(seltype, bp.type)) {
-                return true;
-            } else {
-                if (types.isSubtype(seltype, types.erasure(bp.type))) {
-                    return true;
-                }
-            }
+            return seltype.isPrimitive() ?
+                    types.isUnconditionallyExact(seltype, pattype) :
+                    (bp.type.isPrimitive() && types.isUnconditionallyExact(types.unboxedType(seltype), bp.type)) || types.isSubtype(seltype, pattype);
         }
         return false;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,20 +153,19 @@ AwtDebugSupport::~AwtDebugSupport() {
 static jboolean isHeadless() {
     jmethodID headlessFn;
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jclass graphicsEnvClass = env->FindClass(
-        "java/awt/GraphicsEnvironment");
+    // be on the safe side and avoid JNI warnings by calling ExceptionCheck
+    // an accumulated exception is not cleared
+    env->ExceptionCheck();
+    jclass graphicsEnvClass = env->FindClass("java/awt/GraphicsEnvironment");
 
     if (graphicsEnvClass != NULL) {
-        headlessFn = env->GetStaticMethodID(
-            graphicsEnvClass, "isHeadless", "()Z");
+        headlessFn = env->GetStaticMethodID(graphicsEnvClass, "isHeadless", "()Z");
         if (headlessFn != NULL) {
-            return env->CallStaticBooleanMethod(graphicsEnvClass,
-                                                headlessFn);
+            return env->CallStaticBooleanMethod(graphicsEnvClass, headlessFn);
         }
     }
     return true;
 }
-
 
 void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int line) {
     static const int ASSERT_MSG_SIZE = 1024;
@@ -177,9 +176,9 @@ void AwtDebugSupport::AssertCallback(const char * expr, const char * file, int l
             "Do you want to break into the debugger?";
 
     static char assertMsg[ASSERT_MSG_SIZE+1];
-    DWORD   lastError = GetLastError();
-    LPSTR       msgBuffer = NULL;
-    int     ret = IDNO;
+    DWORD lastError = GetLastError();
+    LPSTR msgBuffer = NULL;
+    int ret = IDNO;
     static jboolean headless = isHeadless();
 
     DWORD fret= FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER |
