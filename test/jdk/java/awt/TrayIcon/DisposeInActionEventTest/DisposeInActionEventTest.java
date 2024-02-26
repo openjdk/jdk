@@ -55,12 +55,12 @@ public class DisposeInActionEventTest {
 
         String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
                        "  don't see a tray icon, please, make sure that the tray area\n" +
-                       "  (also called Taskbar Status Area on MS Windows, Notification\n" +
+                       "  (also called Taskbar Status Area on MS Windows, Notification\n\n" +
                        "  Area on Gnome or System Tray on KDE) is visible.\n" +
                         clickInstruction + " the button on the tray icon to trigger the\n" +
                        "  action event. Brief information about action events is printed\n" +
                        "  in the frame. After each action event the tray icon is removed from\n" +
-                       "  the tray and then added back in a second.\n" +
+                       "  the tray and then added back in a second.\n\n" +
                        "The test performs some automatic checks when removing the icon. If\n" +
                        "  something is wrong the corresponding message is displayed below.\n" +
                        "  Repeat clicks several times. If no 'Test FAILED' messages\n" +
@@ -70,7 +70,7 @@ public class DisposeInActionEventTest {
                 .title("Test Instructions Frame")
                 .instructions(instructions)
                 .testTimeOut(10)
-                .rows(10)
+                .rows(15)
                 .columns(45)
                 .testUI(DisposeInActionEventTest::showFrameAndIcon)
                 .build()
@@ -83,10 +83,9 @@ public class DisposeInActionEventTest {
 
         textArea = new JTextArea();
         frame.getContentPane().add(textArea);
-        frame.setSize(200, 200);
-        frame.setVisible(true);
+        frame.setSize(400, 200);
 
-        System.setProperty("sun.awt.exception.handler\n",
+        System.setProperty("sun.awt.exception.handler ",
                            "DisposeInActionEventTest$EDTExceptionHandler");
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -101,15 +100,15 @@ public class DisposeInActionEventTest {
         TrayIcon trayIcon = new TrayIcon(img);
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(ev -> {
-            textArea.append(ev.toString());
+            textArea.append(ev.toString() + "\n");
             systemTray.remove(trayIcon);
             new Thread(() -> {
                 try {
                     Thread.sleep(1000);
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
-                    textArea.append(e.toString());
-                    textArea.append("!!! The test couldn't be performed !!!");
+                    textArea.append(e.toString() + "\n");
+                    textArea.append("!!! The test couldn't be performed !!!\\n");
                 }
             }).start();
         });
@@ -117,8 +116,8 @@ public class DisposeInActionEventTest {
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            textArea.append(e.toString());
-            textArea.append("!!! The test couldn't be performed !!!");
+            textArea.append(e.toString() + "\n");
+            textArea.append("!!! The test couldn't be performed !!!\n");
         }
 
         return frame;
