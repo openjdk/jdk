@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,6 +164,11 @@ public class TrigTests {
             {0x1.00000000000fcp299,  0x1.78ad2fd7aef78p-1},
             {0x1.0000000000002p300, -0x1.1adaf3550facp-1},
             {0x1.00000000001afp1023, 0x1.d1c804ef2eeccp-1},
+            // Empirical worst-case points
+            {-0x1.f8b791cafcdefp+4,  -0x1.073ca87470dfap-3},
+            {-0x1.0e16eb809a35dp+944, 0x1.b5e361ed01dadp-2},
+            {-0x1.842d8ec8f752fp+21, -0x1.6ce864edeaffep-1},
+            {-0x1.1c49ad613ff3bp+19, -0x1.fffe203cfabe2p-2},
         };
 
         for (double[] testCase: testCases) {

@@ -370,8 +370,10 @@ public class WorstCaseTests {
             {+0x1.E45A1C93651ECp-1,     +0x1.520DC553F6B23p-2},
             {+0x1.F10FC61E2C78Fp-1,     +0x1.EFEEF61D39AC1p-3},
 
-            // Worst-case observed error
+            // Worst-case observed error for OpenLibm
             {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
+            // Other worst-case observed errors
+
         };
 
         for(double[] testCase: testCases) {
