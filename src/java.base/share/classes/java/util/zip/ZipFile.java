@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,7 +308,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the zip file comment, or null if none.
+     * Returns the zip file comment. If a comment does not exist or an error is
+     * encountered decoding the comment using the charset specified
+     * when opening the Zip file, then {@code null} is returned.
      *
      * @return the comment string for the zip file, or null if none
      *
@@ -322,7 +324,13 @@ public class ZipFile implements ZipConstants, Closeable {
             if (res.zsrc.comment == null) {
                 return null;
             }
-            return res.zsrc.zc.toString(res.zsrc.comment);
+            // If there is a problem decoding the byte array which represents
+            // the Zip file comment, return null;
+            try {
+                return res.zsrc.zc.toString(res.zsrc.comment);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
         }
     }
 
