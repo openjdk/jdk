@@ -1158,32 +1158,22 @@ static void* dll_load_library(const char *filename, char *ebuf, int ebuflen) {
   }
   return nullptr;
 }
-/*
- Load library named <filename>
- dll_build_name constructs the entire path as libfilename.so
- Search order:
- Load "libfilename.so" first, then load libfilename.a, on failure.
- In OpenJ9, the libary with .so extension is loaded first and then .a extension, on failure.
-*/
+// Load library named <filename>
+// If filename matches <name>.so, and loading fails, repeat with <name>.a.
 void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void* result = nullptr;
-  char *file_path = strdup(filename);
+  char* const file_path = strdup(filename);
   char* const pointer_to_dot = strrchr(file_path, '.');
-  char const *old_extension = ".so";
-  char const *new_extension = ".a";
-  if (pointer_to_dot == nullptr) {
-    log_info(os)("Attempting to load a shared object without extension %s", filename);
-    FREE_C_HEAP_ARRAY(char, file_path);
-    return result;
-  }
+  const char old_extension[] = ".so";
+  const char new_extension[] = ".a";
+  STATIC_ASSERT(sizeof(old_extension) >= sizeof(new_extension));
   // First try to load the existing file.
   result = dll_load_library(filename, ebuf, ebuflen);
   // If the load fails,we try to reload by changing the extension to .a for .so files only.
   // Shared object in .so format dont have braces, hence they get removed for archives with members.
-  if (result == nullptr) {
-    assert(strlen(new_extension) < strlen(old_extension), "New extension length must be less than existing one");
+  if (result == nullptr && pointer_to_dot != nullptr && strcmp(pointer_to_dot, old_extension) == 0) {
     if (strcmp(pointer_to_dot, old_extension) == 0) {
-      sprintf(pointer_to_dot, "%s", new_extension);
+      snprintf(pointer_to_dot, sizeof(old_extension), "%s", new_extension);
       result = dll_load_library(file_path, ebuf, ebuflen);
     }
   }
