@@ -5074,7 +5074,7 @@ void MacroAssembler::lightweight_lock(Register obj, Register tmp1, Register tmp2
   test_bit(t, mark, exact_log2(markWord::monitor_value));
   bnez(t, slow, /* is_far */ true);
 
-  // Try to lock. Transition lock bits 0b00 => 0b01
+  // Try to lock. Transition lock-bits 0b01 => 0b00
   assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
   ori(mark, mark, markWord::unlocked_value);
   xori(t, mark, markWord::unlocked_value);
