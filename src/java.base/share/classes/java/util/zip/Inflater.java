@@ -637,16 +637,10 @@ public class Inflater {
 
     /**
      * Returns the total number of compressed bytes input so far.
-     *<p>
-     * The implementation of this method is equivalent to:
-     * {@snippet lang="java" :
-     *     return (int) getBytesRead();
-     * }
      * <p>
-     * If the number of compressed bytes is greater than {@link Integer#MAX_VALUE},
-     * the narrowing conversion to <code>int</code> discards all but the 32 lowest
-     * order bits. The value returned in such cases will be incorrect
-     * and may even be a negative number.
+     * This method returns the equivalent of {@code (int) getBytesRead()}
+     * and therefore cannot return the correct number of compressed bytes
+     * input so far when it is greater than {@link Integer#MAX_VALUE}.
      *
      * @deprecated This method cannot return the correct value when the
      * number of compressed bytes is greater than {@link Integer#MAX_VALUE}.
