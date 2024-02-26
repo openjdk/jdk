@@ -333,6 +333,7 @@ import jdk.internal.vm.annotation.ForceInline;
  *     1008, 1012) are 4-byte aligned. And, the segment can be accessed at offsets 0, 2,
  *     4, 6, etc under a 2-byte alignment constraint, because the target addresses (e.g.
  *     1000, 1002, 1004, 1006) are 2-byte aligned.</li>
+ * </ul>
  * <p>
  * In other words, heap segments feature a (platform-dependent) <em>maximum</em>
  * alignment which is derived from the size of the elements of the Java array backing the
