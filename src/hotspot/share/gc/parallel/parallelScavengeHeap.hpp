@@ -119,12 +119,6 @@ class ParallelScavengeHeap : public CollectedHeap {
     _old_pool(nullptr),
     _workers("GC Thread", ParallelGCThreads) { }
 
-  // For use by VM operations
-  enum CollectionType {
-    Scavenge,
-    MarkSweep
-  };
-
   Name kind() const override {
     return CollectedHeap::Parallel;
   }

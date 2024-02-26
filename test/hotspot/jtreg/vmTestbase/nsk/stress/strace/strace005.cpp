@@ -22,7 +22,7 @@
  */
 
 #include <stdio.h>
-#include "nsk_strace.h"
+#include "nsk_strace.hpp"
 #include "nsk_tools.h"
 
 extern "C" {
