@@ -3347,7 +3347,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_bre(not_recursive); // if 0 then jump, it's not recursive locking
   // Recursive inflated unlock
   z_asi(Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), -1);
-  z_bre(done); // CC is 1 here
+  z_cgr(currentHeader, currentHeader); // set the CC 1
+  z_bre(done);
   bind(not_recursive);
 
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
