@@ -25,12 +25,6 @@
 
 include GensrcCommon.gmk
 
-include modules/java.base/gensrc/GensrcLocaleData.gmk
-
-# GensrcLocaleData.gmk does not set TARGETS, so we must choose which targets
-# to include.
-TARGETS += $(GENSRC_LOCALEDATA)
-
 ################################################################################
 
 CLDR_DATA_DIR := $(TOPDIR)/make/data/cldr/common
