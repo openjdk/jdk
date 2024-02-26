@@ -115,7 +115,7 @@ closeDescriptors(void)
 // Does necessary housekeeping of a forked child process
 // (like closing copied file descriptors) before
 // execing the child process. This function never returns.
-void
+static void
 forkedChildProcess(const char *file, char *const argv[])
 {
     /* Close all file descriptors that have been copied over
