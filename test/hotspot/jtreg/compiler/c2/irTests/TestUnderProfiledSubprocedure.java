@@ -75,7 +75,7 @@ public class TestUnderProfiledSubprocedure {
         baz();
     }
 
-    // method baz must be greater than 6 bytecodes(MaxTrivialSize), or it will be inlined as a trivia
+    // method baz must be greater than 6 bytecodes(MaxTrivialSize), or it will be inlined as a trivial
     public int baz() {
         val = (val-1) * (val+1);
         return val;
