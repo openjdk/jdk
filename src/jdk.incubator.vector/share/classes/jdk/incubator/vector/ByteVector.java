@@ -3068,7 +3068,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             IntVector vix = IntVector
                 .fromArray(lsp, indexMap, mapOffset + i)
                 .add(offset);
-            vix = VectorIntrinsics.checkIndex(vix, a.length);
+            VectorIntrinsics.checkIndex(vix, a.length);
         }
 
         return VectorSupport.loadWithMap(
@@ -3825,7 +3825,7 @@ public abstract class ByteVector extends AbstractVector<Byte> {
             IntVector vix = IntVector
                 .fromArray(lsp, indexMap, mapOffset + i)
                 .add(offset);
-            vix = VectorIntrinsics.checkIndex(vix, a.length);
+            VectorIntrinsics.checkIndex(vix, a.length);
         }
 
         return VectorSupport.loadWithMap(

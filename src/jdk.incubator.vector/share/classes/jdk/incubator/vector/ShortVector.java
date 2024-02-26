@@ -3069,7 +3069,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             IntVector vix = IntVector
                 .fromArray(lsp, indexMap, mapOffset + i)
                 .add(offset);
-            vix = VectorIntrinsics.checkIndex(vix, a.length);
+            VectorIntrinsics.checkIndex(vix, a.length);
         }
 
         return VectorSupport.loadWithMap(
@@ -3811,7 +3811,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
             IntVector vix = IntVector
                 .fromArray(lsp, indexMap, mapOffset + i)
                 .add(offset);
-            vix = VectorIntrinsics.checkIndex(vix, a.length);
+            VectorIntrinsics.checkIndex(vix, a.length);
         }
 
         return VectorSupport.loadWithMap(

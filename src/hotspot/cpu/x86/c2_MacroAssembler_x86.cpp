@@ -1643,11 +1643,11 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
 }
 
 /*
- * Gather using hybrid algorithm which initially partially unrolls scalar loop
- * to accumulates values from gather indices into a quad-word(64bit) slice, a
- * slice may hold 8 bytes or 4 short values. This is followed by a vector
- * permutation to place the slice into appropriate vector lanes
- * location in destination vector. Following pseudo code describes the
+ * Gather using hybrid algorithm, first partially unroll scalar loop
+ * to accumulate values from gather indices into a quad-word(64bit) slice.
+ * A slice may hold 8 bytes or 4 short values. This is followed by a vector
+ * permutation to place the slice into appropriate vector lane
+ * locations in destination vector. Following pseudo code describes the
  * algorithm in detail:
  *
  * DST_VEC = ZERO_VEC
@@ -1660,7 +1660,7 @@ void C2_MacroAssembler::vgather8b_offset(BasicType elem_bt, XMMRegister dst,
  *     PERM_INDEX = PERM_INDEX - TWO_VEC
  *
  * With each iteration, doubleword permute indices (0,1) corresponding
- * to gathered quadword gets right shifted by two lane position.
+ * to gathered quadword gets right shifted by two lane positions.
  *
  */
 void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
