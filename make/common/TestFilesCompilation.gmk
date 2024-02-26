@@ -103,7 +103,7 @@ define SetupTestFilesCompilationBody
     $$(eval $$(call SetupNativeCompilation, BUILD_TEST_$$(name), \
         NAME := $$(unprefixed_name), \
         TYPE := $$($1_COMPILATION_TYPE), \
-        LANG := $(if $$(filter %.cpp, $$(file)), C++, C), \
+        LINK_TYPE := $(if $$(filter %.cpp, $$(file)), C++, C), \
         EXTRA_FILES := $$(file) $$($1_EXTRA_FILES), \
         OBJECT_DIR := $$($1_OUTPUT_DIR)/support/$$(name), \
         OUTPUT_DIR := $$($1_OUTPUT_DIR)/$$($1_OUTPUT_SUBDIR), \

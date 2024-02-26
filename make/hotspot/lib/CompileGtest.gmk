@@ -50,7 +50,7 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
     TYPE := STATIC_LIBRARY, \
-    LANG := C++, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/libgtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/libgtest/objs, \
     SRC := \
@@ -93,7 +93,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
-    LANG := C++, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
     SRC := $(GTEST_TEST_SRC), \
@@ -141,7 +141,7 @@ TARGETS += $(BUILD_GTEST_LIBJVM)
 $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     NAME := gtestLauncher, \
     TYPE := EXECUTABLE, \
-    LANG := C++, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \

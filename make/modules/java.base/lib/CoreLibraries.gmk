@@ -115,7 +115,7 @@ TARGETS += $(BUILD_LIBZIP)
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     NAME := jimage, \
-    LANG := C++, \
+    LINK_TYPE := C++, \
     OPTIMIZATION := LOW, \
     CFLAGS := $(CFLAGS_JDKLIB), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB), \

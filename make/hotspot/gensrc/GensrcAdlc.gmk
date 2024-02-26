@@ -72,7 +72,7 @@ ifeq ($(call check-jvm-feature, compiler2), true)
       NAME := adlc, \
       TYPE := EXECUTABLE, \
       TARGET_TYPE := BUILD, \
-      LANG := C++, \
+      LINK_TYPE := C++, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \
