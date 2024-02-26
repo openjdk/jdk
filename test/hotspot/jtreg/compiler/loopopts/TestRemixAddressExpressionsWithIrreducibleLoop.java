@@ -26,7 +26,7 @@
  * @test
  * @bug 8326638
  * @summary Test handling of irreducible loops in PhaseIdealLoop::remix_address_expressions.
- * @run main/othervm -XX:-TieredCompilation -Xbatch 
+ * @run main/othervm -XX:-TieredCompilation -Xbatch
  *                   -XX:CompileCommand=compileonly,TestRemixAddressExpressionsWithIrreducibleLoop::test
  *                   TestRemixAddressExpressionsWithIrreducibleLoop
  */
