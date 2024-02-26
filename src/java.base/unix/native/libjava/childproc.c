@@ -65,7 +65,7 @@ isAsciiDigit(char c)
   #define FD_DIR "/proc/self/fd"
 #endif
 
-static int
+int
 closeDescriptors(void)
 {
     DIR *dp;
