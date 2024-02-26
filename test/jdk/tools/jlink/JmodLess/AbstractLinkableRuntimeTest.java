@@ -127,7 +127,7 @@ public abstract class AbstractLinkableRuntimeTest {
     }
 
     protected Path jlinkUsingImage(JlinkSpec spec) throws Exception {
-        return jlinkUsingImage(spec, new NoopOutputAnalyzerHandler());
+        return jlinkUsingImage(spec, new RuntimeLinkOutputAnalyzerHandler());
     }
 
     protected Path jlinkUsingImage(JlinkSpec spec, OutputAnalyzerHandler handler) throws Exception {
@@ -492,11 +492,11 @@ public abstract class AbstractLinkableRuntimeTest {
 
     }
 
-    static class NoopOutputAnalyzerHandler extends OutputAnalyzerHandler {
+    static class RuntimeLinkOutputAnalyzerHandler extends OutputAnalyzerHandler {
 
         @Override
         public void handleAnalyzer(OutputAnalyzer out) {
-            // nothing
+            out.shouldContain("Linking based on the current run-time image.");
         }
 
     }
