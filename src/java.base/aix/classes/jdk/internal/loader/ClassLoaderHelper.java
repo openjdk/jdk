@@ -50,7 +50,20 @@ class ClassLoaderHelper {
      */
     static File mapAlternativeName(File lib) {
         String name = lib.toString();
-        System.out.println("Searching for "+lib);
+        
+        if(name.contains("(")){
+            System.out.println("Searching inside map alternate name for "+lib);
+            System.out.println("Member file of AIX ? ");
+            int firstbracket = name.lastIndexOf('(');
+            int dot = name.lastIndexOf('.');
+            String member=name.substring(firstbracket,dot);
+            System.out.println("member function mapping");
+            System.out.println(name.substring(0, firstbracket) + ".a"+member);
+            
+            return new File(name.substring(0, firstbracket) + ".a"+member);
+
+        }
+        System.out.println("Searching inside map alternate name for "+lib);
         int index = name.lastIndexOf('.');
         if (index < 0) {
             return null;

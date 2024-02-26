@@ -117,6 +117,7 @@ public final class NativeLibraries {
     @SuppressWarnings("removal")
     public NativeLibrary loadLibrary(Class<?> fromClass, File file) {
         // Check to see if we're attempting to access a static library
+
         String name = findBuiltinLib(file.getName());
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
@@ -124,8 +125,35 @@ public final class NativeLibraries {
                     public String run() {
                         try {
                             if (loadLibraryOnlyIfPresent && !file.exists()) {
+                                System.out.println("File not found here loadLibrary");
+                                System.out.println(file.getName());
+                                if (file.getName().contains("(")){
+                                    System.out.println("need to check members");
+                                    String path=file.getCanonicalPath();
+                                    int index=path.lastIndexOf("(");
+                                    System.out.println(path.substring(0,index));
+                                    String newFileName=path.substring(0,index);
+                                    File file2 = new File(newFileName);
+                                    file.renameTo(file2);
+                                    System.out.println("File renamed to"+file2.getCanonicalPath());
+                                    if (file2.exists()){
+                                        System.out.println("File present"+file.getName());
+                                        System.out.println("returning "+path);
+                                        return path;
+                                    }
+                                    
+                                }    
+
+
                                 return null;
                             }
+                            if (file.getName().contains("(")){
+                                System.out.println("need to check members");
+                                String path=file.getCanonicalPath();
+                                int index=path.lastIndexOf("(");
+                                System.out.println(path.substring(0,index));
+                            }
+                            System.out.println("file path found check and dlopen?"+file.getCanonicalPath());
                             return file.getCanonicalPath();
                         } catch (IOException e) {
                             return null;
@@ -136,6 +164,7 @@ public final class NativeLibraries {
                 return null;
             }
         }
+        
         return loadLibrary(fromClass, name, isBuiltin);
     }
 
@@ -245,25 +274,40 @@ public final class NativeLibraries {
      */
     public NativeLibrary loadLibrary(Class<?> fromClass, String name) {
         assert name.indexOf(File.separatorChar) < 0;
-
+        System.out.println("Calling loadlibrary in native for library named : "+name);
         NativeLibrary lib = findFromPaths(LibraryPaths.SYS_PATHS, fromClass, name);
         if (lib == null && searchJavaLibraryPath) {
+            System.out.println("Search of lib done ,now search  in another set of paths");
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
+            if(lib==null)
+            System.out.println("not found anywehere in the paths ");
         }
         return lib;
     }
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
         for (String path : paths) {
+
+
             File libfile = new File(path, System.mapLibraryName(name));
+            System.out.println("path being searched :"+path);
+            System.out.println("File  being searced :"+name);
             NativeLibrary nl = loadLibrary(fromClass, libfile);
+            
             if (nl != null) {
+                System.out.println("libarry found in path ");
+                System.out.println("Is dlopen done after this ? ");
                 return nl;
             }
+            System.out.println("Trying to do mapAlternate name.");
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
+
             if (libfile != null) {
+
                 nl = loadLibrary(fromClass, libfile);
+                
                 if (nl != null) {
+
                     return nl;
                 }
             }
