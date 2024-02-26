@@ -395,8 +395,9 @@ abstract class P11Key implements Key, Length {
                     new CK_ATTRIBUTE(CKA_EXTRACTABLE),
         });
 
-        boolean keySensitive = (attrs[0].getBoolean() ||
-                attrs[1].getBoolean() || !attrs[2].getBoolean());
+        boolean keySensitive =
+                (attrs[0].getBoolean() && P11Util.isNSS(session.token)) ||
+                attrs[1].getBoolean() || !attrs[2].getBoolean();
 
         return switch (algorithm) {
             case "RSA" -> P11RSAPrivateKeyInternal.of(session, keyID, algorithm,
@@ -413,7 +414,7 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 private keys
-    private static abstract class P11PrivateKey extends P11Key implements
+    private abstract static class P11PrivateKey extends P11Key implements
             PrivateKey {
         @Serial
         private static final long serialVersionUID = -2138581185214187615L;
@@ -478,7 +479,7 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 public keys
-    private static abstract class P11PublicKey extends P11Key implements
+    private abstract static class P11PublicKey extends P11Key implements
             PublicKey {
         @Serial
         private static final long serialVersionUID = 1L;

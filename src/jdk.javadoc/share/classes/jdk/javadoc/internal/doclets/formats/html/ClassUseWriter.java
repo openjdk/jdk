@@ -34,7 +34,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
@@ -43,7 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -62,6 +60,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final TypeElement typeElement;
     Set<PackageElement> pkgToPackageAnnotations = null;
     final Map<PackageElement, List<Element>> pkgToClassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubclassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubinterfaceTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToImplementsTypeParameter;
     final Map<PackageElement, List<Element>> pkgToClassAnnotations;
     final Map<PackageElement, List<Element>> pkgToMethodTypeParameter;
     final Map<PackageElement, List<Element>> pkgToMethodArgTypeParameter;
@@ -107,6 +108,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         configuration.currentTypeElement = typeElement;
         this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
+        this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
+        this.pkgToSubinterfaceTypeParameter = pkgDivide(mapper.classToSubinterfaceTypeParam);
+        this.pkgToImplementsTypeParameter = pkgDivide(mapper.classToImplementsTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
         this.pkgToMethodArgTypeParameter = pkgDivide(mapper.classToMethodArgTypeParam);
@@ -340,6 +344,15 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         classSubWriter.addUseInfo(pkgToImplementingClass.get(pkg),
                 contents.getContent("doclet.ClassUse_ImplementingClass", classLink,
                 pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubclassTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubclassTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubinterfaceTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubinterfaceTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToImplementsTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_ImplementsTypeParameter", classLink,
+                pkgLink), content);
         fieldSubWriter.addUseInfo(pkgToField.get(pkg),
                 contents.getContent("doclet.ClassUse_Field", classLink,
                 pkgLink), content);
@@ -422,15 +435,14 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         List<Content> subnavLinks = new ArrayList<>();
         if (configuration.showModules) {
-            ModuleElement mdle = utils.elementUtils.getModuleOf(typeElement);
-            subnavLinks.add(getModuleLink(mdle, Text.of(mdle.getQualifiedName())));
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
         }
-        PackageElement pkg = utils.containingPackage(typeElement);
-        subnavLinks.add(getPackageLink(pkg, getLocalizedPackageName(pkg)));
-        subnavLinks.add(getLink(
-                new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                        .style(HtmlStyle.currentSelection)
-                        .skipPreview(true)));
+        // We may generate a class-use page for an otherwise undocumented page in the condition below.
+        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
+        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
+        if (!isUndocumented) {
+            subnavLinks.add(getBreadcrumbLink(typeElement, true));
+        }
 
         return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }

@@ -1624,7 +1624,7 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * been cancelled on entry and might not otherwise be cancelled by
      * others.
      */
-    static abstract class InterruptibleTask<T> extends ForkJoinTask<T>
+    abstract static class InterruptibleTask<T> extends ForkJoinTask<T>
         implements RunnableFuture<T> {
         transient volatile Thread runner;
         abstract T compute() throws Exception;

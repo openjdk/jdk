@@ -44,6 +44,10 @@ import static java.util.zip.ZipUtils.NIO_ACCESS;
  * the <a href="package-summary.html#package-description">java.util.zip
  * package description</a>.
  * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ * <p>
  * This class inflates sequences of ZLIB compressed bytes. The input byte
  * sequence is provided in either byte array or byte buffer, via one of the
  * {@code setInput()} methods. The output byte sequence is written to the
@@ -130,6 +134,7 @@ public class Inflater {
      *
      * @param nowrap if true then support GZIP compatible compression
      */
+    @SuppressWarnings("this-escape")
     public Inflater(boolean nowrap) {
         this.zsRef = new InflaterZStreamRef(this, init(nowrap));
     }
