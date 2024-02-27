@@ -1494,10 +1494,10 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
   uint pack_size = pack->size();
 
   if (task.is_unchanged()) {
-    return SplitStatus::make_no_change(pack);
+    return SplitStatus::make_unchanged(pack);
   }
 
-  if (task.is_reject()) {
+  if (task.is_rejected()) {
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1509,7 +1509,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       Node* n = pack->at(i);
       set_my_pack(n, nullptr);
     }
-    return SplitStatus::make_reject();
+    return SplitStatus::make_rejected();
   }
 
   uint split_size = task.split_size();
@@ -1542,7 +1542,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       Node* n = pack->at(i);
       set_my_pack(n, nullptr);
     }
-    return SplitStatus::make_reject();
+    return SplitStatus::make_rejected();
   }
 
   // Just pop off a single node?
@@ -1557,7 +1557,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
         n->dump();
       }
 #endif
-    return SplitStatus::make_one_pack(pack);
+    return SplitStatus::make_modified(pack);
   }
 
   // Just remove a single node at front?
@@ -1573,7 +1573,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
         n->dump();
       }
 #endif
-    return SplitStatus::make_one_pack(pack);
+    return SplitStatus::make_modified(pack);
   }
 
   // We must will have two packs
@@ -1592,7 +1592,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
 
   // We assume that new_pack is more "stable" (i.e. will have to be split less than new_pack).
   // Put "pack" second, so that we insert it later in the list, and iterate over it again sooner.
-  return SplitStatus::make_two_packs(new_pack, pack);
+  return SplitStatus::make_split(new_pack, pack);
 }
 
 template <typename SplitStrategy>
@@ -1607,7 +1607,7 @@ void SuperWord::split_packs(const char* split_name,
       assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
       SplitTask task = strategy(pack);
       SplitStatus status = split_pack(split_name, pack, task);
-      changed |= status.is_changed();
+      changed |= !status.is_unchanged();
       Node_List* first_pack = status.first_pack();
       Node_List* second_pack = status.second_pack();
       _packset.at_put(i, nullptr); // take out pack
@@ -1654,7 +1654,7 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                  uint pack_size = pack->size();
                  uint implemented_size = max_implemented_size(pack);
                  if (implemented_size == 0)  {
-                   return SplitTask::make_reject("not implemented at any smaller size");
+                   return SplitTask::make_rejected("not implemented at any smaller size");
                  }
                  assert(is_power_of_2(implemented_size), "power of 2 size or zero: %d", implemented_size);
                  if (implemented_size != pack_size) {

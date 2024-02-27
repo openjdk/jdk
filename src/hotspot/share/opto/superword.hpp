@@ -431,7 +431,7 @@ private:
     enum Kind {
       // The lambda method for split_packs can return one of these tasks:
       Unchanged, // The pack is left in the packset, unchanged.
-      Reject,    // The pack is removed from the packset.
+      Rejected,  // The pack is removed from the packset.
       Split,     // Split away split_size nodes from the end of the pack.
     };
     const Kind _kind;
@@ -442,18 +442,26 @@ private:
         _kind(kind), _split_size(split_size), _message(message)
     {
       assert(message != nullptr, "must have message");
-      assert(_kind != Unchanged || (split_size == 0), "unchanged task conditions");
-      assert(_kind != Reject    || (split_size == 0), "reject task conditions");
-      assert(_kind != Split     || (split_size != 0), "split task conditions");
+      assert(_kind != Unchanged || split_size == 0, "unchanged task conditions");
+      assert(_kind != Rejected  || split_size == 0, "reject task conditions");
+      assert(_kind != Split     || split_size != 0, "split task conditions");
     }
 
   public:
-    static SplitTask make_split(const uint split_size, const char* message) { return SplitTask(Split, split_size, message); }
-    static SplitTask make_unchanged() { return SplitTask(Unchanged, 0, "unchanged"); }
-    static SplitTask make_reject(const char* message) { return SplitTask(Reject, 0, message); }
+    static SplitTask make_split(const uint split_size, const char* message) {
+      return SplitTask(Split, split_size, message);
+    }
 
-    bool is_reject() const { return _kind == Reject; }
+    static SplitTask make_unchanged() {
+      return SplitTask(Unchanged, 0, "unchanged");
+    }
+
+    static SplitTask make_rejected(const char* message) {
+      return SplitTask(Rejected, 0, message);
+    }
+
     bool is_unchanged() const { return _kind == Unchanged; }
+    bool is_rejected() const { return _kind == Rejected; }
     bool is_split() const { return _kind == Split; }
     const char* message() const { return _message; }
 
@@ -463,47 +471,46 @@ private:
     }
   };
 
-  // After split_pack, we either have:
-  //    changed    first_pack    second_pack
-  // 1) false      old_pack      nullptr       -> old_pack not modified
-  // 2) true       nullptr       nullptr       -> old_pack rejected
-  // 3) true       old_pack      nullptr       -> old_pack modified (nodes removed)
-  // 4) true       pack1         pack2         -> old_pack split into two packs
   class SplitStatus {
   private:
+    enum Kind {
+      // After split_pack, we have:                              first_pack   second_pack
+      Unchanged, // The pack is left in the pack, unchanged.     old_pack     nullptr
+      Rejected,  // The pack is removed from the packset.        nullptr      nullptr
+      Modified,  // The pack had some nodes removed.             old_pack     nullptr
+      Split,     // The pack was split into two packs.           pack1        pack2
+    };
+    Kind _kind;
     Node_List* _first_pack;
     Node_List* _second_pack;
-    bool _changed;
 
-    SplitStatus(Node_List* first_pack, Node_List* second_pack, bool changed) :
-      _first_pack(first_pack), _second_pack(second_pack), _changed(changed)
+    SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+      _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
     {
-      assert(_second_pack == nullptr || _changed, "second pack implies is_changed");
-      assert(_second_pack == nullptr || _first_pack != nullptr, "second pack implies first pack");
-      assert(second_pack == nullptr || first_pack != second_pack, "cannot have the same pack twice");
+      assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
+      assert(_kind != Rejected  || (first_pack == nullptr && second_pack == nullptr), "rejected status conditions");
+      assert(_kind != Modified  || (first_pack != nullptr && second_pack == nullptr), "modified status conditions");
+      assert(_kind != Split     || (first_pack != nullptr && second_pack != nullptr), "split status conditions");
     }
 
   public:
-    static SplitStatus make_no_change(Node_List* old_pack) {
-      assert(old_pack != nullptr, "must have 1 pack");
-      return SplitStatus(old_pack, nullptr, false);
+    static SplitStatus make_unchanged(Node_List* old_pack) {
+      return SplitStatus(Unchanged, old_pack, nullptr);
     }
 
-    static SplitStatus make_one_pack(Node_List* first_pack) {
-      assert(first_pack != nullptr, "must have 1 pack");
-      return SplitStatus(first_pack, nullptr, true);
+    static SplitStatus make_rejected() {
+      return SplitStatus(Rejected, nullptr, nullptr);
     }
 
-    static SplitStatus make_two_packs(Node_List* first_pack, Node_List* second_pack) {
-      assert(first_pack != nullptr && second_pack != nullptr, "must have 2 packs");
-      return SplitStatus(first_pack, second_pack, true);
+    static SplitStatus make_modified(Node_List* first_pack) {
+      return SplitStatus(Modified, first_pack, nullptr);
     }
 
-    static SplitStatus make_reject() {
-      return SplitStatus(nullptr, nullptr, true);
+    static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+      return SplitStatus(Split, first_pack, second_pack);
     }
 
-    bool is_changed() const { return _changed; }
+    bool is_unchanged() const { return _kind == Unchanged; }
     Node_List* first_pack() const { return _first_pack; }
     Node_List* second_pack() const { return _second_pack; }
   };
