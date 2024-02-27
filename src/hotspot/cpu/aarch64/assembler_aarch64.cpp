@@ -31,11 +31,6 @@
 #include "memory/resourceArea.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
