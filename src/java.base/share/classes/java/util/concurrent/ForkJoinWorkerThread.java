@@ -99,6 +99,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @throws NullPointerException if pool is null
      * @since 19
      */
+    @SuppressWarnings("this-escape")
     protected ForkJoinWorkerThread(ThreadGroup group, ForkJoinPool pool,
                                    boolean preserveThreadLocals) {
         this(group, pool, false, !preserveThreadLocals);
@@ -110,6 +111,7 @@ public class ForkJoinWorkerThread extends Thread {
      * @param pool the pool this thread works in
      * @throws NullPointerException if pool is null
      */
+    @SuppressWarnings("this-escape")
     protected ForkJoinWorkerThread(ForkJoinPool pool) {
         this(null, pool, false, false);
     }

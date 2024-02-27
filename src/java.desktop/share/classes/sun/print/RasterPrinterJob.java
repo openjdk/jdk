@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2396,6 +2396,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                      * the page on the next iteration of the loop.
                      */
                     bandGraphics.setTransform(uniformTransform);
+                    bandGraphics.translate(-deviceAddressableX, deviceAddressableY);
                     bandGraphics.transform(deviceTransform);
                     deviceTransform.translate(0, -bandHeight);
 
@@ -2418,12 +2419,12 @@ public abstract class RasterPrinterJob extends PrinterJob {
                          * We also need to translate by the adjusted amount
                          * so that printing appears in the correct place.
                          */
-                        int bandX = deviceLeft - deviceAddressableX;
+                        int bandX = deviceLeft;
                         if (bandX < 0) {
                             bandGraphics.translate(bandX/xScale,0);
                             bandX = 0;
                         }
-                        int bandY = deviceTop + bandTop - deviceAddressableY;
+                        int bandY = deviceTop;
                         if (bandY < 0) {
                             bandGraphics.translate(0,bandY/yScale);
                             bandY = 0;
@@ -2434,7 +2435,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
                         painterGraphics.setDelegate((Graphics2D) bandGraphics.create());
                         painter.print(painterGraphics, origPage, pageIndex);
                         painterGraphics.dispose();
-                        printBand(data, bandX, bandY, bandWidth, bandHeight);
+                        printBand(data, bandX, bandTop + bandY, bandWidth, bandHeight);
                     }
                 }
 

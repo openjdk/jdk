@@ -1,0 +1,118 @@
+#
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# This file contains functionality related to native debug symbol handling.
+
+################################################################################
+define CreateDebugSymbols
+  ifneq ($$($1_COPY_DEBUG_SYMBOLS), false)
+    $1_COPY_DEBUG_SYMBOLS := $(COPY_DEBUG_SYMBOLS)
+  endif
+
+  ifneq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), false)
+    $1_ZIP_EXTERNAL_DEBUG_SYMBOLS := $(ZIP_EXTERNAL_DEBUG_SYMBOLS)
+  endif
+
+  ifeq ($$($1_COPY_DEBUG_SYMBOLS), true)
+    ifneq ($$($1_DEBUG_SYMBOLS), false)
+      $$(call SetIfEmpty, $1_SYMBOLS_DIR, $$($1_OUTPUT_DIR))
+      # Only copy debug symbols for dynamic libraries and programs.
+      ifneq ($$($1_TYPE), STATIC_LIBRARY)
+        # Generate debuginfo files.
+        ifeq ($(call isTargetOs, windows), true)
+          $1_EXTRA_LDFLAGS += -debug "-pdb:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb" \
+              "-map:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).map"
+          ifeq ($(SHIP_DEBUG_SYMBOLS), public)
+            $1_EXTRA_LDFLAGS += "-pdbstripped:$$($1_SYMBOLS_DIR)/$$($1_BASENAME).stripped.pdb"
+          endif
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).pdb \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).map
+
+        else ifeq ($(call isTargetOs, linux), true)
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
+          # Setup the command line creating debuginfo files, to be run after linking.
+          # It cannot be run separately since it updates the original target file
+          # Creating the debuglink is done in another command rather than all at once
+          # so we can run it after strip is called, since strip can sometimes mangle the
+          # embedded debuglink, which we want to avoid.
+          $1_CREATE_DEBUGINFO_CMDS := \
+              $$($1_OBJCOPY) --only-keep-debug $$($1_TARGET) $$($1_DEBUGINFO_FILES) && \
+              $$(CHMOD) -x $$($1_DEBUGINFO_FILES)
+          $1_CREATE_DEBUGLINK_CMDS := $(CD) $$($1_SYMBOLS_DIR) && \
+              $$($1_OBJCOPY) --add-gnu-debuglink=$$($1_DEBUGINFO_FILES) $$($1_TARGET)
+
+        else ifeq ($(call isTargetOs, aix), true)
+          # AIX does not provide the equivalent of OBJCOPY to extract debug symbols,
+          # so we copy the compiled object with symbols to the .debuginfo file, which
+          # happens prior to the STRIP_CMD on the original target object file.
+          $1_DEBUGINFO_FILES := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).debuginfo
+          $1_CREATE_DEBUGINFO_CMDS := $(CP) $$($1_TARGET) $$($1_DEBUGINFO_FILES)
+
+        else ifeq ($(call isTargetOs, macosx), true)
+          $1_DEBUGINFO_FILES := \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Info.plist \
+              $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM/Contents/Resources/DWARF/$$($1_BASENAME)
+          $1_CREATE_DEBUGINFO_CMDS := \
+              $(DSYMUTIL) --out $$($1_SYMBOLS_DIR)/$$($1_BASENAME).dSYM $$($1_TARGET)
+        endif
+
+        # Since the link rule creates more than one file that we want to track,
+        # we have to use some tricks to get make to cooperate. To properly
+        # trigger downstream dependants of $$($1_DEBUGINFO_FILES), we must have
+        # a recipe in the rule below. To avoid rerunning the recipe every time
+        # have it touch the target. If a debuginfo file is deleted by something
+        # external, explicitly delete the TARGET to trigger a rebuild of both.
+        ifneq ($$(wildcard $$($1_DEBUGINFO_FILES)), $$($1_DEBUGINFO_FILES))
+          $$(call LogDebug, Deleting $$($1_BASENAME) because debuginfo files are missing)
+          $$(shell $(RM) $$($1_TARGET))
+        endif
+        $$($1_DEBUGINFO_FILES): $$($1_TARGET)
+		$$(if $$(CORRECT_FUNCTION_IN_RECIPE_EVALUATION), \
+		  $$(if $$(wildcard $$@), , $$(error $$@ was not created for $$<)) \
+		)
+		$(TOUCH) $$@
+
+        $1 += $$($1_DEBUGINFO_FILES)
+
+        ifeq ($$($1_ZIP_EXTERNAL_DEBUG_SYMBOLS), true)
+          ifeq ($(call isTargetOs, windows), true)
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_BASENAME).diz
+          else
+            $1_DEBUGINFO_ZIP := $$($1_SYMBOLS_DIR)/$$($1_NOSUFFIX).diz
+          endif
+          $1 += $$($1_DEBUGINFO_ZIP)
+
+          # The dependency on TARGET is needed for debuginfo files
+          # to be rebuilt properly.
+          $$($1_DEBUGINFO_ZIP): $$($1_DEBUGINFO_FILES) $$($1_TARGET)
+		$(CD) $$($1_SYMBOLS_DIR) && \
+		    $(ZIPEXE) -q -r $$@ $$(subst $$($1_SYMBOLS_DIR)/,, $$($1_DEBUGINFO_FILES))
+
+        endif
+       endif # !STATIC_LIBRARY
+    endif # $1_DEBUG_SYMBOLS != false
+  endif # COPY_DEBUG_SYMBOLS
+endef
