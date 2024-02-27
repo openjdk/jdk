@@ -139,12 +139,12 @@ public class ThreadCountLimit {
 
     // Now that all threads have joined, we are away from dangerous
     // VM state and have enough memory to perform any other things.
-    if (!reachedNativeOOM) {
-       System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
-                          " ms, with " + count + " threads created");
+    if (reachedNativeOOM) {
+      System.out.println("INFO: reached this process thread count limit with " +
+                         count + " threads created");
     } else {
-       System.out.println("INFO: reached this process thread count limit with " +
-                           count + " threads created");
+      System.out.println("INFO: reached the time limit " + TIME_LIMIT_MS +
+                         " ms, with " + count + " threads created");
     }
   }
 }
