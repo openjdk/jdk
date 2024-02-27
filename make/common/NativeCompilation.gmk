@@ -199,8 +199,6 @@ define SetupNativeCompilationBody
   $$(eval $$(call SetupLinkerFlags,$1))
   ifneq ($(TOOLCHAIN_TYPE), microsoft)
     $$(eval $$(call SetupLinking,$1))
-  else
-    $$(eval $$(call SetupLinkingMicrosoft,$1))
   endif
 
   $$(eval $$(call SetupObjectFileList,$1))
