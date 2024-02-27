@@ -4970,7 +4970,7 @@ bool Compile::coarsened_locks_consistent() {
 // of Lock/Unlock nodes in region. As result we can't execute other
 // locks elimination optimizations which assume all code paths have
 // corresponding pair of Lock/Unlock nodes - they are balanced.
-void Compile::mark_unbalanced_boxes() {
+void Compile::mark_unbalanced_boxes() const {
   int count = coarsened_count();
   for (int i = 0; i < count; i++) {
     Node_List* locks_list = _coarsened_locks.at(i);
