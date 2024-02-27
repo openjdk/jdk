@@ -177,11 +177,11 @@ public abstract class GenFullCP extends ClassfileGenerator {
         createThrowRuntimeExceptionCode(cm, "Method " + methodName + methodSignature + " should not be called!", false);
     }
 
-    protected void createClassInitMethod(ClassModel cm) {
+    protected byte[] createClassInitMethod(byte[] bytes) {
     }
 
-    protected void createInitMethod(ClassModel cm) {
-        ClassFile.of().transform(cm,
+    protected byte[] createInitMethod(byte[] bytes) {
+        return ClassFile.of().transform(ClassFile.of().parse(bytes),
                 ClassTransform.endHandler(clb -> clb.withMethod(INIT_METHOD_NAME,
                         MethodTypeDesc.ofDescriptor(VOID_NO_ARG_METHOD_SIGNATURE),
                         ClassFile.ACC_PUBLIC,
@@ -196,8 +196,8 @@ public abstract class GenFullCP extends ClassfileGenerator {
                                 .return_()))));
     }
 
-    protected void createTargetMethod(ClassModel cm) {
-        ClassFile.of().transform(cm,
+    protected byte[] createTargetMethod(byte[] bytes) {
+        return ClassFile.of().transform(ClassFile.of().parse(bytes),
                 ClassTransform.endHandler(
                         cb -> cb.withMethod(TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE),
                                 ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
@@ -209,14 +209,14 @@ public abstract class GenFullCP extends ClassfileGenerator {
                                                 .return_()))));
     }
 
-    protected void createBootstrapMethod(ClassModel cm) {
-        createBootstrapMethod(cm, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
+    protected byte[] createBootstrapMethod(byte[] bytes) {
+        return createBootstrapMethod(bytes, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
     }
 
-    protected void createBootstrapMethod(ClassModel cm, boolean isStatic, String methodName, String methodSignature) {
+    protected byte[] createBootstrapMethod(byte[] bytes, boolean isStatic, String methodName, String methodSignature) {
         int argShift = isStatic ? 0 : 1;
 
-        ClassFile.of().transform(cm,
+        return ClassFile.of().transform(ClassFile.of().parse(bytes),
                 ClassTransform.endHandler(cb -> cb.withMethod(methodName, MethodTypeDesc.ofDescriptor(methodSignature),
                         ClassFile.ACC_PUBLIC | (isStatic ? ClassFile.ACC_STATIC : 0),
                         mb -> mb.withCode(
@@ -256,7 +256,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
                     .withVersion(CLASSFILE_VERSION, 0);
         });
 
-        generateCommonData(ClassFile.of().parse(bytes));
+        bytes = generateCommonData(bytes);
 
         bytes = ClassFile.of().transform(ClassFile.of().parse(bytes),
                 ClassTransform.endHandler(cb -> cb.withFlags(ClassFile.ACC_PUBLIC | ClassFile.ACC_SUPER)
@@ -284,15 +284,15 @@ public abstract class GenFullCP extends ClassfileGenerator {
                             mb -> mb.withCode(
                                     CodeBuilder::return_))));
 
-            generateTestMethodProlog(ClassFile.of().parse(bytes));
+            bytes = generateTestMethodProlog(bytes);
 
             // TODO: check real CP size and also limit number of iterations in this cycle
             while (constCount < CP_CONST_COUNT && cw.getBytecodeLength(ClassFile.of().parse(bytes)) < MAX_METHOD_SIZE) {
-                generateCPEntryData(ClassFile.of().parse(bytes));
+                bytes = generateCPEntryData(bytes);
                 ++constCount;
             }
 
-            generateTestMethodEpilog(ClassFile.of().parse(bytes));
+            bytes = generateTestMethodEpilog(bytes);
             Env.traceNormal("Method " + fullClassName + "." + methodName + "(): "
                     + constCount + " constants in CP, "
                     + cw.getBytecodeLength(ClassFile.of().parse(bytes)) + " bytes of code");
@@ -309,20 +309,21 @@ public abstract class GenFullCP extends ClassfileGenerator {
         return new Klass[] { new Klass(this.pkgName, this.shortClassName, MAIN_METHOD_NAME, MAIN_METHOD_SIGNATURE, cw.toByteArray()) };
     }
 
-    protected void generateCommonData(ClassModel cm) {
-        createClassInitMethod(cm);
-        createInitMethod(cm);
-        createTargetMethod(cm);
-        createBootstrapMethod(cm);
+    protected byte[] generateCommonData(byte[] bytes) {
+        bytes = createClassInitMethod(bytes);
+        bytes = createInitMethod(bytes);
+        bytes = createTargetMethod(bytes);
+        bytes = createBootstrapMethod(bytes);
+        return bytes;
     }
 
-    protected void generateTestMethodProlog(ClassModel cm) {
+    protected byte[] generateTestMethodProlog(byte[] bytes) {
     }
 
-    protected abstract void generateCPEntryData(ClassModel cm);
+    protected abstract byte[] generateCPEntryData(byte[] bytes);
 
-    protected void generateTestMethodEpilog(ClassModel cm) {
-        ClassFile.of().transform(cm, ClassTransform.endHandler(
+    protected byte[] generateTestMethodEpilog(byte[] bytes) {
+        return ClassFile.of().transform(cm, ClassTransform.endHandler(
                 cb -> cb.withMethod("testMethodEpilog", MethodTypeDesc.ofDescriptor("()V"), ClassFile.ACC_PUBLIC,
                         mb -> mb.withCode(CodeBuilder::return_))));
     }
