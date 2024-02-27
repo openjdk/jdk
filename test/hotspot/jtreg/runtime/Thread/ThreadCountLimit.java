@@ -77,9 +77,9 @@ public class ThreadCountLimit {
 
         final String ULIMIT_CMD = "ulimit -u 4096";
         ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(ThreadCountLimit.class.getName());
-        String java_cmd = ProcessTools.getCommandLine(pb);
+        String javaCmd = ProcessTools.getCommandLine(pb);
         // Relaunch the test with args.length > 0, and the ulimit set
-        ProcessTools.executeCommand("bash", "-c", ULIMIT_CMD + " && " + java_cmd + " dummy")
+        ProcessTools.executeCommand("bash", "-c", ULIMIT_CMD + " && " + javaCmd + " dummy")
                     .shouldHaveExitValue(0);
       } else {
         // Not Linux so run directly.
