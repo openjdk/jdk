@@ -1576,7 +1576,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
     return SplitStatus::make_modified(pack);
   }
 
-  // We must will have two packs
+  // We will have two packs
   assert(old_size >= 2 && new_size >= 2, "implied");
   Node_List* new_pack = new Node_List(new_size);
 
