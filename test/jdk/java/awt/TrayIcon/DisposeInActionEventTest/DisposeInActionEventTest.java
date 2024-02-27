@@ -29,17 +29,18 @@ import java.awt.SystemTray;
 import java.awt.TrayIcon;
 import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import jdk.test.lib.Platform;
 
 /*
  * @test
- * @bug 6299866
+ * @bug 6299866 8316931
  * @summary Tests that no NPE is thrown when the tray icon is disposed from the
  * handler of action event caused by clicking on this icon.
  * @library ../../regtesthelpers /test/lib
- * @build Sysout jtreg.SkippedException
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DisposeInActionEventTest
  */
 
@@ -51,7 +52,7 @@ public class DisposeInActionEventTest {
             throw new jtreg.SkippedException("The test cannot be run because " +
                     "SystemTray is not supported.");
         }
-        String clickInstruction = (Platform.isOSX()) ? "Right-click" : "Double-left click";
+        String clickInstruction = (Platform.isOSX()) ? "Right-click" : "Double click";
 
         String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
                        "  don't see a tray icon, please, make sure that the tray area\n" +
@@ -62,12 +63,12 @@ public class DisposeInActionEventTest {
                        "  in the frame. After each action event the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
                        "The test performs some automatic checks when removing the icon. If\n" +
-                       "  something is wrong the corresponding message is displayed below.\n" +
+                       "  something is wrong the corresponding message is displayed.\n" +
                        "  Repeat clicks several times. If no 'Test FAILED' messages\n" +
                        "  are printed, press PASS button else FAIL button.";
 
         PassFailJFrame.builder()
-                .title("Test Instructions Frame")
+                .title("Event Message Display")
                 .instructions(instructions)
                 .testTimeOut(10)
                 .rows(15)
@@ -81,8 +82,10 @@ public class DisposeInActionEventTest {
         JFrame frame = new JFrame("DisposeInActionEventTest");
         frame.setLayout(new BorderLayout());
 
+        JScrollPane spane = new JScrollPane();
         textArea = new JTextArea();
-        frame.getContentPane().add(textArea);
+        spane.add(textArea);
+        frame.getContentPane().add(spane);
         frame.setSize(400, 200);
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -97,15 +100,16 @@ public class DisposeInActionEventTest {
         TrayIcon trayIcon = new TrayIcon(img);
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(ev -> {
-            textArea.append(ev.toString() + "\n");
+            textArea.append(ev + "\n");
             systemTray.remove(trayIcon);
             new Thread(() -> {
                 try {
                     Thread.sleep(1000);
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
-                    textArea.append(e.toString() + "\n");
-                    textArea.append("!!! The test couldn't be performed !!!\\n");
+                    textArea.append(e + "\n");
+                    e.printStackTrace();
+                    throw new RuntimeException();
                 }
             }).start();
         });
@@ -113,8 +117,9 @@ public class DisposeInActionEventTest {
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            textArea.append(e.toString() + "\n");
-            textArea.append("!!! The test couldn't be performed !!!\n");
+            textArea.append(e + "\n");
+            e.printStackTrace();
+            throw new RuntimeException("Test failed.");
         }
 
         return frame;
