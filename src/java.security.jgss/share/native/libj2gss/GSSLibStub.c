@@ -196,7 +196,10 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
     return GSS_C_NO_CHANNEL_BINDINGS;
   }
 
+  // initialize cb as zeroes to avoid uninitialized pointer being
+  // freed when deleteGSSCB is called at cleanup.
   cb = calloc(1, sizeof(struct gss_channel_bindings_struct));
+
   if (cb == NULL) {
     gssThrowOutOfMemoryError(env, NULL);
     return NULL;
@@ -210,15 +213,10 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
 
   if ((*env)->IsInstanceOf(env, jcb, tlsCBCl)) {
       // TLS Channel Binding requires unspecified addrtype=0
-      cb->initiator_addrtype = GSS_C_AF_UNSPEC;
-      cb->acceptor_addrtype = GSS_C_AF_UNSPEC;
   } else {
       cb->initiator_addrtype = GSS_C_AF_NULLADDR;
       cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
   }
-  // addresses needs to be initialized to empty
-  memset(&cb->initiator_address, 0, sizeof(cb->initiator_address));
-  memset(&cb->acceptor_address, 0, sizeof(cb->acceptor_address));
 
   /* set up initiator address */
   jinetAddr = (*env)->CallObjectMethod(env, jcb,
