@@ -43,27 +43,14 @@
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
  * @requires os.family != "windows"
- * @library /vmTestbase
- * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack019 -eager
+ * @run main/othervm/timeout=900 -Xss200K Stack019
  */
 
-package nsk.stress.stack;
-
-import nsk.share.Terminator;
-
-public class stack019 {
+public class Stack019 {
     private final static int CYCLES = 50;
     private final static int PROBES = 50;
 
     public static void main(String[] args) {
-        boolean eager = false;
-        for (int i = 0; i < args.length; i++)
-             if (args[i].toLowerCase().equals("-eager"))
-                eager = true;
-        if (!eager) {
-            Terminator.appoint(Terminator.parseAppointment(args));
-        }
         //
         // Measure recursive depth before stack overflow:
         //

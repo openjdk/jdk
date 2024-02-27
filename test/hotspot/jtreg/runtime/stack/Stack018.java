@@ -47,36 +47,20 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
- * @library /vmTestbase
- * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss220K nsk.stress.stack.stack018 -eager
+ * @run main/othervm/timeout=900 -Xss220K Stack018
  */
-
-package nsk.stress.stack;
-
-
-import nsk.share.Terminator;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class stack018 extends Thread {
+public class Stack018 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int STEP = 100;
     private final static int RESERVE = 100;
 
     public static void main(String[] args) {
-        boolean eager = false;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].toLowerCase().equals("-eager")) {
-                eager = true;
-            }
-        }
-        if (!eager) {
-            Terminator.appoint(Terminator.parseAppointment(args));
-        }
-        stack018 test = new stack018();
+        Stack018 test = new Stack018();
         test.doRun();
     }
 
@@ -108,9 +92,9 @@ public class stack018 extends Thread {
         //
         // Run the tested threads:
         //
-        stack018 threads[] = new stack018[THREADS];
+        Stack018 threads[] = new Stack018[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new stack018();
+            threads[i] = new Stack018();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
@@ -180,7 +164,7 @@ public class stack018 extends Thread {
             //
             // Optimization trick: allocate once, use everywhere.
             //
-            method = stack018.class.getMethod("recurse");
+            method = Stack018.class.getMethod("recurse");
             params = new Object[]{};
         }
         this.depth = depth; // actual parameter

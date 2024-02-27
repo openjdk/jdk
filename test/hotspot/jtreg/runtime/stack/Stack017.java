@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,59 +25,56 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack011.
- * VM testbase keywords: [stress, stack, nonconcurrent]
+ * @summary converted from VM testbase nsk/stress/stack/stack017.
+ * VM testbase keywords: [stress, diehard, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
- *     This test provokes multiple stack overflows in the multiple
- *     threads -- by invoking final static recursive method for the
- *     given fixed depth of recursion (though, for a large depth).
- *     This test measures a number of recursive invocations until
- *     stack overflow, and then tries to provoke similar stack overflows
- *     10 times in each of 10 threads. Each provocation consists of
- *     invoking that recursive method for the given fixed depth
- *     of invocations which is 10 times that depth measured before.
+ *     The test invokes infinitely recursive method from within stack
+ *     overflow handler  -- repeatedly multiple times, and in multiple
+ *     threads.
  *     The test is deemed passed, if VM have not crashed, and
  *     if exception other than due to stack overflow was not
  *     thrown.
  * COMMENTS
- *     This test crashes HS versions 2.0, 1.3, 1.4 on Win32 and Solaris
- *     platforms.
+ *     This test crashes HS versions 2.0, 1.3, and 1.4 on both
+ *     Solaris and Win32 platforms.
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
- * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack011
+ * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
+ * @run main/othervm/timeout=900 -Xss220K Stack017
  */
 
-package nsk.stress.stack;
-
-public class stack011 extends Thread {
-    final static int THREADS = 10;
-    final static int CYCLES = 10;
+public class Stack017 extends Thread {
+    private final static int THREADS = 10;
+    private final static int CYCLES = 10;
+    private final static int PROBES = 100;
 
     public static void main(String[] args) {
+        Stack017 test = new Stack017();
+        test.doRun();
+    }
+
+    private static int depthToTry;
+
+    private void doRun() {
         //
-        // Measure maximal recursion depth until stack overflow:
+        // Measure recursive depth before stack overflow:
         //
-        int maxDepth = 0;
-        for (int depth = 10; ; depth += 10) {
-            try {
-                recurse(depth);
-                maxDepth = depth;
-            } catch (StackOverflowError | OutOfMemoryError soe) {
-                break;
-            }
+        try {
+            recurse(0);
+        } catch (StackOverflowError | OutOfMemoryError err) {
         }
-        System.out.println("Max. depth: " + maxDepth);
+        System.out.println("Maximal recursion depth: " + maxDepth);
+        depthToTry = maxDepth;
 
         //
-        // Execute multiple threads repeatedly provoking stack overflows:
+        // Run the tested threads:
         //
-        stack011 threads[] = new stack011[THREADS];
+        Stack017 threads[] = new Stack017[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new stack011();
-            threads[i].depthToTry = 10 * maxDepth;
+            threads[i] = new Stack017();
+            threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].start();
         }
         for (int i = 0; i < threads.length; i++) {
@@ -90,7 +87,7 @@ public class stack011 extends Thread {
             }
         }
         //
-        // Check if unexpected exceptions were not thrown:
+        // Check if unexpected exceptions were thrown:
         //
         for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
@@ -100,16 +97,38 @@ public class stack011 extends Thread {
         }
     }
 
-    int depthToTry = 0;
-    Throwable thrown = null;
+    private int maxDepth = 0;
+
+    private void recurse(int depth) {
+        maxDepth = depth;
+        recurse(depth + 1);
+    }
+
+    private void trickyRecurse(int depth) {
+        try {
+            maxDepth = depth;
+            trickyRecurse(depth + 1);
+        } catch (StackOverflowError | OutOfMemoryError error) {
+            //
+            // Stack problem caught: provoke it again,
+            // if current stack is enough deep:
+            //
+            if (depth < depthToTry - PROBES)
+                throw error;
+            recurse(depth + 1);
+        }
+    }
+
+    private Throwable thrown = null;
 
     public void run() {
-        for (int i = 0; i < CYCLES; i++) {
+        String threadName = Thread.currentThread().getName();
+        for (int i = 1; i <= CYCLES; i++)
             try {
-                recurse(depthToTry);
+                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES);
+                trickyRecurse(0);
                 throw new Exception(
-                        "TEST_RFE: no stack overflow thrown" +
-                                ", need to try deeper recursion?");
+                        "TEST_BUG: stack overflow was expected!");
 
             } catch (StackOverflowError | OutOfMemoryError err) {
                 // It's OK
@@ -118,12 +137,5 @@ public class stack011 extends Thread {
                 thrown = throwable;
                 break;
             }
-        }
-    }
-
-    final static void recurse(int depth) {
-        if (depth > 0) {
-            recurse(depth - 1);
-        }
     }
 }

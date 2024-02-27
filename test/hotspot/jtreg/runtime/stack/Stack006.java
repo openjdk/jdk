@@ -25,12 +25,12 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack003.
+ * @summary converted from VM testbase nsk/stress/stack/stack006.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the same thread
- *     by invoking static recursive method for the given fixed depth
+ *     by invoking virtual recursive method for the given fixed depth
  *     of recursion (though, for a large depth).
  *     This test makes measures a number of recursive invocations
  *     before 1st StackOverflowError, and then tries to reproduce
@@ -47,29 +47,24 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack003
+ * @run main/othervm/timeout=900 Stack006
  */
 
-package nsk.stress.stack;
-
-public class stack003 {
-    final static int ITERATIONS = 100;
-    final static int INCREMENT = 100;
-
+public class Stack006 implements Stack006i {
     public static void main(String[] args) {
-
+        Stack006i test = new Stack006();
         int depth;
-        for (depth = 1; ; depth += INCREMENT) {
+        for (depth = 100; ; depth += 100) {
             try {
-                recurse(depth);
+                test.recurse(depth);
             } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
         }
         System.out.println("Max. depth: " + depth);
-        for (int i = 0; i < ITERATIONS; i++) {
+        for (int i = 0; i < 100; i++) {
             try {
-                recurse(2 * depth);
+                test.recurse(2 * depth);
                 System.out.println("?");
             } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
@@ -77,9 +72,13 @@ public class stack003 {
         }
     }
 
-    static void recurse(int depth) {
+    public void recurse(int depth) {
         if (depth > 0) {
             recurse(depth - 1);
         }
     }
+}
+
+interface Stack006i {
+    void recurse(int depth);
 }

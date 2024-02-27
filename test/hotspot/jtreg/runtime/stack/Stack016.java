@@ -49,19 +49,12 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp")
- * @library /vmTestbase
- * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xint -Xss448K nsk.stress.stack.stack016 -eager
- * @run main/othervm/timeout=900 -Xcomp -Xss448K nsk.stress.stack.stack016 -eager
- * @run main/othervm/timeout=900 -Xcomp -XX:-TieredCompilation -Xss448K nsk.stress.stack.stack016 -eager
+ * @run main/othervm/timeout=900 -Xint -Xss448K Stack016
+ * @run main/othervm/timeout=900 -Xcomp -Xss448K Stack016
+ * @run main/othervm/timeout=900 -Xcomp -XX:-TieredCompilation -Xss448K Stack016
  */
 
-package nsk.stress.stack;
-
-
-import nsk.share.Terminator;
-
-public class stack016 extends Thread {
+public class Stack016 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int STEP = 10;
@@ -69,28 +62,8 @@ public class stack016 extends Thread {
     private final static int PROBES = STEP * RESERVE;
 
     public static void main(String[] args) {
-        verbose = false;
-        boolean eager = false;
-        for (int i = 0; i < args.length; i++) {
-            if (args[i].toLowerCase().equals("-verbose"))
-                verbose = true;
-            else if (args[i].toLowerCase().equals("-eager"))
-                eager = true;
-        }
-        if (!eager) {
-            Terminator.appoint(Terminator.parseAppointment(args));
-        }
-        stack016 test = new stack016();
+        Stack016 test = new Stack016();
         test.doRun();
-    }
-
-    private static boolean verbose;
-
-    private void display(Object message) {
-        if (!verbose) {
-            return;
-        }
-        System.out.println(message.toString());
     }
 
     private void doRun() {
@@ -111,9 +84,9 @@ public class stack016 extends Thread {
         //
         // Run the tested threads:
         //
-        stack016 threads[] = new stack016[THREADS];
+        Stack016 threads[] = new Stack016[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new stack016();
+            threads[i] = new Stack016();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
@@ -172,7 +145,7 @@ public class stack016 extends Thread {
         String threadName = Thread.currentThread().getName();
         for (int i = 1; i <= CYCLES; i++) {
             try {
-                display(threadName + ", iteration: " + i + "/" + CYCLES +
+                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES +
                         ", depthToTry: " + depthToTry);
                 trickyRecurse(depthToTry);
                 throw new Error(

@@ -25,16 +25,17 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack001.
+ * @summary converted from VM testbase nsk/stress/stack/stack002.
  * VM testbase keywords: [stress, quick, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     Provoke StackOverflowError by infinite recursion in Java method,
- *     intercept the exception try to make one more invocation.
+ *     intercept the exception and continue to invoke that method until
+ *     the test exceeds timeout, or until Java VM crashes.
  * COMMENTS
- *     Kestrel for Solaris_JDK_1.3-b10 crashes while trying to execute
- *     this test with Client HS VM.
- *     See lots of bugs concerning similar failures:
+ *     I believe that the test causes HS crashes due to the following bug:
+ *     4330318 (P2/S2) NSK test fails as An irrecoverable stack overflow
+ *     See also bugs (lots of bugs!):
  *     Evaluated:
  *     4217960 [native stack overflow bug] reflection test causes crash
  *     Accepted:
@@ -52,28 +53,73 @@
  *     4302288 the second stack overflow causes Classic VM to exit on win32
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack001
+ * @run main/othervm/timeout=900 Stack002
  */
 
-package nsk.stress.stack;
+public class Stack002 {
+    static final long timeout = 10000; // 10 seconds
 
-public class stack001 {
     public static void main(String[] args) {
-        stack001 test = new stack001();
-        test.recurse(0);
-        System.out.println("Maximal depth: " + test.maxdepth);
+        Tester tester = new Tester();
+        Timer timer = new Timer(tester);
+        timer.start();
+        tester.start();
+        while (timer.isAlive()) {
+            try {
+                timer.join();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+                throw new RuntimeException(e);
+            }
+        }
+        System.out.println("Maximal depth: " + tester.maxdepth);
     }
 
-    private int maxdepth;
+    private static class Tester extends Thread {
+        int maxdepth;
+        public volatile boolean stop;
 
-    private void recurse(int depth) {
-        maxdepth = depth;
-        try {
-            recurse(depth + 1);
-        } catch (StackOverflowError | OutOfMemoryError e) {
-            if (maxdepth == depth) {
+        public Tester() {
+            maxdepth = 0;
+            stop = false;
+        }
+
+        public void run() {
+            recurse(0);
+        }
+
+        void recurse(int depth) {
+            maxdepth = depth;
+            try {
+                if (stop) {
+                    return;
+                }
+                recurse(depth + 1);
+            } catch (StackOverflowError | OutOfMemoryError e) {
                 recurse(depth + 1);
             }
+        }
+    }
+
+    private static class Timer extends Thread {
+        private Tester tester;
+
+        public Timer(Tester tester) {
+            this.tester = tester;
+        }
+
+        public void run() {
+            long started;
+            started = System.currentTimeMillis();
+            while (System.currentTimeMillis() - started < timeout) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return;
+                };
+            }
+            tester.stop = true;
         }
     }
 }

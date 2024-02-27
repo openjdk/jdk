@@ -46,17 +46,15 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack007
+ * @run main/othervm/timeout=900 Stack007
  */
 
-package nsk.stress.stack;
-
-public class stack007 implements stack007i {
+public class Stack007 implements Stack007i {
     final static int ITERATIONS = 1000;
     final static int INCREMENT = 100;
 
     public static void main(String[] args) {
-        stack007i test = new stack007();
+        Stack007i test = new Stack007();
         int depth;
         for (depth = 100; ; depth += INCREMENT) {
             try {
@@ -83,6 +81,6 @@ public class stack007 implements stack007i {
     }
 }
 
-interface stack007i {
+interface Stack007i {
     void recurse(int depth);
 }

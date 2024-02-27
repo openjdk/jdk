@@ -48,15 +48,13 @@
  *     Making it bigger could cause timeouts on other platform.
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
- * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack008
+ * @run main/othervm/timeout=900 -Xss200K Stack008
  */
-
-package nsk.stress.stack;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class stack008 {
+public class Stack008 {
     public static void main(String[] args) {
         int depth;
         //
@@ -108,7 +106,7 @@ public class stack008 {
     }
 
     static Method method = null;
-    static stack008 instance = null;
+    static Stack008 instance = null;
     static Object params[] = null;
 
     private static void invokeRecurse(int depth) throws Exception {
@@ -116,8 +114,8 @@ public class stack008 {
             //
             // Optimization trick: allocate once, use everywhere.
             //
-            instance = new stack008();
-            method = stack008.class.getMethod("recurse");
+            instance = new Stack008();
+            method = Stack008.class.getMethod("recurse");
             params = new Object[]{};
         }
         //

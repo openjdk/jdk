@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack006.
+ * @summary converted from VM testbase nsk/stress/stack/stack004.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the same thread
- *     by invoking virtual recursive method for the given fixed depth
- *     of recursion (though, for a large depth).
+ *     by invoking final static recursive method for the given fixed
+ *     depth of recursion (though, for a large depth).
  *     This test makes measures a number of recursive invocations
  *     before 1st StackOverflowError, and then tries to reproduce
  *     such StackOverflowError 100 times -- each time by trying to
@@ -47,18 +47,20 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack006
+ * @run main/othervm/timeout=900 Stack004
  */
 
-package nsk.stress.stack;
-
-public class stack006 implements stack006i {
+public class Stack004 {
     public static void main(String[] args) {
-        stack006i test = new stack006();
+        Stack004 test = new Stack004();
+        test.doRun();
+    }
+
+    public void doRun() {
         int depth;
         for (depth = 100; ; depth += 100) {
             try {
-                test.recurse(depth);
+                recurse(depth);
             } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
@@ -66,7 +68,7 @@ public class stack006 implements stack006i {
         System.out.println("Max. depth: " + depth);
         for (int i = 0; i < 100; i++) {
             try {
-                test.recurse(2 * depth);
+                recurse(2 * depth);
                 System.out.println("?");
             } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
@@ -74,13 +76,9 @@ public class stack006 implements stack006i {
         }
     }
 
-    public void recurse(int depth) {
+    final static void recurse(int depth) {
         if (depth > 0) {
             recurse(depth - 1);
         }
     }
-}
-
-interface stack006i {
-    void recurse(int depth);
 }

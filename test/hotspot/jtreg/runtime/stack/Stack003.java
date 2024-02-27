@@ -25,49 +25,52 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack009.
- * VM testbase keywords: [stress, quick, stack, nonconcurrent]
+ * @summary converted from VM testbase nsk/stress/stack/stack003.
+ * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
- *     The test provokes second stack overflow from within the
- *     stack overflow handler.
- *     This test measures a number of recursive invocations until
- *     StackOverflowError, and then tries to make an invocation
- *     for the fixed invocations depth from within the "catch"
- *     block just caught the 1st stack overflow. The depth of new
- *     invocations is 10 times that depth seen at the 1st stack
- *     overflow; so that another stack overflow occurs.
- *     The test is deemed passed, if VM have not crashed, and
- *     if there is no exception thrown other than due to stack
- *     overflow.
+ *     This test provokes multiple stack overflows in the same thread
+ *     by invoking static recursive method for the given fixed depth
+ *     of recursion (though, for a large depth).
+ *     This test makes measures a number of recursive invocations
+ *     before 1st StackOverflowError, and then tries to reproduce
+ *     such StackOverflowError 100 times -- each time by trying to
+ *     invoke the same recursive method for the given fixed depth
+ *     of invocations (which is twice that depth just measured).
+ *     The test is deemed passed, if VM have not crashed.
  * COMMENTS
- *     This test crashes HS versions 2.0, 1.3, and 1.4 on Win32
- *     and Solaris platforms.
+ *     This test crashes all HS versions (2.0, 1.3, 1.4) on all
+ *     platforms (Win32, Solaris, Linux) in all execution modes
+ *     (-Xint, -Xmixed, -Xcomp) in 100% of executions in which
+ *     I had tryied it.
  *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack009
+ * @run main/othervm/timeout=900 Stack003
  */
 
-package nsk.stress.stack;
+public class Stack003 {
+    final static int ITERATIONS = 100;
+    final static int INCREMENT = 100;
 
-public class stack009 {
     public static void main(String[] args) {
-        for (int depth = 100; ; depth += 100) {
+
+        int depth;
+        for (depth = 1; ; depth += INCREMENT) {
             try {
                 recurse(depth);
-            } catch (StackOverflowError | OutOfMemoryError error1)  {
-
-                System.out.println("Max. depth: " + depth);
-
-                try {
-                    recurse(10 * depth);
-                    System.out.println("?");
-                } catch (StackOverflowError | OutOfMemoryError error2) {
-                    // ignore
-                }
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
+            }
+        }
+        System.out.println("Max. depth: " + depth);
+        for (int i = 0; i < ITERATIONS; i++) {
+            try {
+                recurse(2 * depth);
+                System.out.println("?");
+            } catch (StackOverflowError | OutOfMemoryError err) {
+                // OK.
             }
         }
     }
