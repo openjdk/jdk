@@ -312,7 +312,7 @@ void IR::eliminate_null_checks() {
 //
 // Some instructions may introduce more than one edge between two blocks.
 // By checking if the current 'to' block sets critical_edge_split_flag
-// (all new blocks set this flag) to avoid repeated processing.
+// (all new blocks set this flag) we can avoid repeated processing.
 // This is why BlockPair contains the index rather than the original 'to' block.
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
