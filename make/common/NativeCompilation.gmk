@@ -89,9 +89,6 @@ include native/ToolchainDefinitions.gmk
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
-#   MAPFILE mapfile
-#   USE_MAPFILE_FOR_SYMBOLS if true and this is a STATIC_BUILD, just copy the
-#       mapfile for the output symbols file
 #   CC the compiler to use, default is $(CC)
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST, HIGHEST_JVM, SIZE
@@ -202,8 +199,6 @@ define SetupNativeCompilationBody
   $$(eval $$(call SetupLinkerFlags,$1))
   ifneq ($(TOOLCHAIN_TYPE), microsoft)
     $$(eval $$(call SetupLinking,$1))
-  else
-    $$(eval $$(call SetupLinkingMicrosoft,$1))
   endif
 
   $$(eval $$(call SetupObjectFileList,$1))
