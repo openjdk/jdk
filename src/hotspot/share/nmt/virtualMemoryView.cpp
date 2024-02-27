@@ -652,13 +652,17 @@ VirtualMemoryView::PhysicalMemorySpace VirtualMemoryView::Interface::register_sp
 
 void VirtualMemoryView::Interface::reserve_memory(address base_addr, size_t size, MEMFLAGS flag,
                                                   const NativeCallStack& stack) {
+  _instance->reserve_memory(base_addr, size, flag, stack);
 }
 void VirtualMemoryView::Interface::release_memory(address base_addr, size_t size) {
+  _instance->release_memory(base_addr, size);
 }
 void VirtualMemoryView::Interface::commit_memory(address base_addr, size_t size,
                                                  const NativeCallStack& stack) {
+  _instance->commit_memory_into_space(_heap, base_addr, size, stack);
 }
 void VirtualMemoryView::Interface::uncommit_memory(address base_addr, size_t size) {
+  _instance->uncommit_memory_into_space(_heap, base_addr, size);
 }
 void VirtualMemoryView::Interface::add_view_into_space(const PhysicalMemorySpace& space,
                                                        address base_addr, size_t size,
