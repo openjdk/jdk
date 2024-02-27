@@ -85,6 +85,8 @@
 #endif
 
 // put OS-includes here
+# include <ctype.h>
+# include <stdlib.h>
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -340,6 +342,29 @@ static void next_line(FILE *f) {
   do {
     c = fgetc(f);
   } while (c != '\n' && c != EOF);
+}
+
+void os::Linux::kernel_version(long* major, long* minor) {
+  *major = -1;
+  *minor = -1;
+
+  struct utsname buffer;
+  int ret = uname(&buffer);
+  if (ret != 0) {
+    log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
+    return;
+  }
+
+  char* walker = buffer.release;
+  long* set_v = major;
+  while (*minor == -1 && walker != nullptr) {
+    if (isdigit(walker[0])) {
+      *set_v = strtol(walker, &walker, 10);
+      set_v = minor;
+    } else {
+      ++walker;
+    }
+  }
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {

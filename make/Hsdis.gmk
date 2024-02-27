@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -122,8 +122,8 @@ ifeq ($(HSDIS_BACKEND), binutils)
 
     TOOLCHAIN_TYPE := gcc
     OPENJDK_TARGET_OS := linux
+    OPENJDK_TARGET_OS_TYPE := unix
     CC_OUT_OPTION := -o$(SPACE)
-    LD_OUT_OPTION := -o$(SPACE)
     GENDEPS_FLAGS := -MMD -MF
     CFLAGS_DEBUG_SYMBOLS := -g
     DISABLED_WARNINGS :=
