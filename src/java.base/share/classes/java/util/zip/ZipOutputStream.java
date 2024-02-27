@@ -49,9 +49,9 @@ import sun.security.action.GetBooleanAction;
 public class ZipOutputStream extends DeflaterOutputStream implements ZipConstants {
 
     /**
-     * Whether to use ZIP64 for zip files with more than 64k entries.
-     * Until ZIP64 support in zip implementations is ubiquitous, this
-     * system property allows the creation of zip files which can be
+     * Whether to use ZIP64 for ZIP files with more than 64k entries.
+     * Until ZIP64 support in ZIP implementations is ubiquitous, this
+     * system property allows the creation of ZIP files which can be
      * read by legacy ZIP implementations which tolerate "incorrect"
      * total entry count fields, such as the ones in jdk6, and even
      * some in jdk7.
