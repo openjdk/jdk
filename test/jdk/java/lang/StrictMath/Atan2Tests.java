@@ -76,7 +76,7 @@ public class Atan2Tests {
         };
 
         for (double[] testCase : testCases) {
-            failures += testAtan2Case(testCase[0], testCase[1], testCase[2]); 
+            failures += testAtan2Case(testCase[0], testCase[1], testCase[2]);
         }
         return failures;
     }
