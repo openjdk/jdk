@@ -126,6 +126,7 @@ public:
   size_t used()     const { return byte_size(bottom(), top()); }
   size_t free()     const { return byte_size(top(),    end()); }
 
+  void print() const;
   void print_on(outputStream* st) const;
 
   // Initialization.
