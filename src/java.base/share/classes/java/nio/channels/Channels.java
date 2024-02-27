@@ -435,6 +435,8 @@ public final class Channels {
      *         default capacity is to be used
      *
      * @return  A new reader
+     *
+     * @since 10
      */
     public static Reader newReader(ReadableByteChannel ch,
                                    CharsetDecoder dec,
@@ -577,6 +579,8 @@ public final class Channels {
      * @throws  UnsupportedCharsetException
      *          If no support for the named charset is available
      *          in this instance of the Java virtual machine
+     *
+     * @since 10
      */
     public static Writer newWriter(WritableByteChannel ch,
                                    String csName)
