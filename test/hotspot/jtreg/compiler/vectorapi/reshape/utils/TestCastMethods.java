@@ -34,113 +34,221 @@ import static compiler.vectorapi.reshape.utils.VectorSpeciesPair.makePair;
  */
 public class TestCastMethods {
     public static final List<VectorSpeciesPair> RVV_CAST_TESTS = List.of(
+        // ====== from B ======
+        // from B 64
+            // to X 64
             makePair(BSPEC64, SSPEC64),
-            makePair(BSPEC64, SSPEC128),
-            makePair(BSPEC64, ISPEC128),
-            makePair(BSPEC64, FSPEC128),
-            makePair(BSPEC64, DSPEC256),
-            makePair(SSPEC64, BSPEC64),
-            makePair(SSPEC128, BSPEC64),
-            makePair(SSPEC64, ISPEC64),
-            makePair(SSPEC64, ISPEC128),
-            makePair(SSPEC64, LSPEC128),
-            makePair(SSPEC64, FSPEC64),
-            makePair(SSPEC64, FSPEC128),
-            makePair(SSPEC64, DSPEC128),
-            makePair(SSPEC64, DSPEC256),
-            makePair(ISPEC128, BSPEC64),
-            makePair(ISPEC64, SSPEC64),
-            makePair(ISPEC128, SSPEC64),
-            makePair(ISPEC64, LSPEC128),
-            makePair(ISPEC64, FSPEC64),
-            makePair(ISPEC128, FSPEC128),
-            makePair(ISPEC64, DSPEC128),
-            makePair(ISPEC128, DSPEC256),
-            makePair(LSPEC128, SSPEC64),
-            makePair(LSPEC128, ISPEC64),
-            makePair(FSPEC64, ISPEC64),
-            makePair(FSPEC128, ISPEC128),
-            makePair(FSPEC64, DSPEC128),
-            makePair(FSPEC128, DSPEC256),
-            makePair(FSPEC128, ISPEC128),
-            makePair(FSPEC128, SSPEC64),
-            makePair(DSPEC128, FSPEC64),
-            makePair(DSPEC256, FSPEC128),
-            makePair(DSPEC128, ISPEC64),
             makePair(BSPEC64, SSPEC64, true),
+            // to X 128
+            makePair(BSPEC64, SSPEC128),
             makePair(BSPEC64, SSPEC128, true),
+            makePair(BSPEC64, ISPEC128),
             makePair(BSPEC64, ISPEC128, true),
-            makePair(SSPEC64, ISPEC64, true),
-            makePair(SSPEC64, ISPEC128, true),
-            makePair(SSPEC64, LSPEC128, true),
-            makePair(ISPEC64, LSPEC128, true),
-
-            makePair(DSPEC256, ISPEC128),
-            makePair(DSPEC256, SSPEC64),
-            makePair(FSPEC256, ISPEC256),
-            makePair(FSPEC256, SSPEC128),
-            makePair(FSPEC256, BSPEC64),
-            makePair(BSPEC128, SSPEC256),
+            makePair(BSPEC64, FSPEC128),
+            // to X 256
             makePair(BSPEC64, ISPEC256),
-            makePair(BSPEC64, LSPEC256),
-            makePair(BSPEC64, FSPEC256),
-            makePair(SSPEC256, BSPEC128),
-            makePair(SSPEC128, ISPEC256),
-            makePair(SSPEC64, LSPEC256),
-            makePair(SSPEC128, FSPEC256),
-            makePair(ISPEC256, BSPEC64),
-            makePair(ISPEC256, SSPEC128),
-            makePair(ISPEC128, LSPEC256),
-            makePair(ISPEC256, FSPEC256),
-            makePair(LSPEC256, BSPEC64),
-            makePair(LSPEC256, SSPEC64),
-            makePair(LSPEC256, ISPEC128),
-            makePair(BSPEC128, SSPEC256, true),
             makePair(BSPEC64, ISPEC256, true),
+            makePair(BSPEC64, LSPEC256),
             makePair(BSPEC64, LSPEC256, true),
-            makePair(SSPEC128, ISPEC256, true),
-            makePair(SSPEC64, LSPEC256, true),
-            makePair(ISPEC128, LSPEC256, true),
-
-            makePair(BSPEC128, ISPEC512),
+            makePair(BSPEC64, FSPEC256),
+            makePair(BSPEC64, DSPEC256),
+            // to X 512
             makePair(BSPEC64, LSPEC512),
-            makePair(BSPEC128, FSPEC512),
-            makePair(BSPEC64, DSPEC512),
-            makePair(SSPEC256, ISPEC512),
-            makePair(SSPEC128, LSPEC512),
-            makePair(SSPEC256, FSPEC512),
-            makePair(SSPEC128, DSPEC512),
-            makePair(ISPEC512, BSPEC128),
-            makePair(ISPEC512, SSPEC256),
-            makePair(ISPEC256, LSPEC512),
-            makePair(ISPEC512, FSPEC512),
-            makePair(ISPEC256, DSPEC512),
-            makePair(LSPEC512, BSPEC64),
-            makePair(LSPEC512, SSPEC128),
-            makePair(LSPEC512, ISPEC256),
-            makePair(FSPEC256, DSPEC512),
-            makePair(DSPEC512, FSPEC256),
-            makePair(DSPEC512, ISPEC256),
-            makePair(DSPEC512, SSPEC128),
-            makePair(DSPEC512, BSPEC64),
-            makePair(FSPEC512, ISPEC512),
-            makePair(FSPEC512, SSPEC256),
-            makePair(FSPEC512, BSPEC128),
-            makePair(BSPEC128, ISPEC512, true),
             makePair(BSPEC64, LSPEC512, true),
-            makePair(SSPEC256, ISPEC512, true),
-            makePair(SSPEC128, LSPEC512, true),
-            makePair(ISPEC256, LSPEC512, true),
+            makePair(BSPEC64, DSPEC512),
 
+        // from B 128
+            // to X 256
+            makePair(BSPEC128, SSPEC256),
+            makePair(BSPEC128, SSPEC256, true),
+            // to X 512
+            makePair(BSPEC128, ISPEC512),
+            makePair(BSPEC128, ISPEC512, true),
+            makePair(BSPEC128, FSPEC512),
+
+        // from B 256
+            // to X 512
             makePair(BSPEC256, SSPEC512),
-            makePair(SSPEC512, BSPEC256),
             makePair(BSPEC256, SSPEC512, true),
 
+
+        // ====== from S ======
+        // from S 64
+            // to X 64
+            makePair(SSPEC64, BSPEC64),
+            makePair(SSPEC64, ISPEC64),         // testS64toI64
+            makePair(SSPEC64, ISPEC64, true),   // testUS64toI64
+            makePair(SSPEC64, FSPEC64),         // testS64toF64
+            // to X 128
+            makePair(SSPEC64, ISPEC128),
+            makePair(SSPEC64, ISPEC128, true),
+            makePair(SSPEC64, LSPEC128),        // testS64toL128
+            makePair(SSPEC64, LSPEC128, true),  // testUS64toL128
+            makePair(SSPEC64, FSPEC128),
+            makePair(SSPEC64, DSPEC128),        // testS64toD128
+            // to X 256
+            makePair(SSPEC64, LSPEC256),
+            makePair(SSPEC64, LSPEC256, true),
+            makePair(SSPEC64, DSPEC256),
+
+        // from S 128
+            // to X 64
+            makePair(SSPEC128, BSPEC64),
+            // to X 128
+            // ...
+            // to X 256
+            makePair(SSPEC128, ISPEC256),
+            makePair(SSPEC128, ISPEC256, true),
+            makePair(SSPEC128, FSPEC256),
+            // to X 512
+            makePair(SSPEC128, LSPEC512),
+            makePair(SSPEC128, LSPEC512, true),
+            makePair(SSPEC128, DSPEC512),
+
+        // from S 256
+            // to X 128
+            makePair(SSPEC256, BSPEC128),
+            // to X 512
+            makePair(SSPEC256, ISPEC512),
+            makePair(SSPEC256, ISPEC512, true),
+            makePair(SSPEC256, FSPEC512),
+
+        // from S 512
+            // to X 256
+            makePair(SSPEC512, BSPEC256),
+
+
+
+        // ====== from I ======
+        // from I 64
+            // to X 64
+            makePair(ISPEC64, SSPEC64),         // testI64toS64
+            makePair(ISPEC64, FSPEC64),
+            // to X 128
+            makePair(ISPEC64, LSPEC128),
+            makePair(ISPEC64, LSPEC128, true),
+            makePair(ISPEC64, DSPEC128),
+
+        // from I 128
+            // to X 64
+            makePair(ISPEC128, BSPEC64),
+            makePair(ISPEC128, SSPEC64),
+            // to X 128
+            makePair(ISPEC128, FSPEC128),
+            // to X 256
+            makePair(ISPEC128, LSPEC256),
+            makePair(ISPEC128, LSPEC256, true),
+            makePair(ISPEC128, DSPEC256),
+
+        // from I 256
+            // to X 64
+            makePair(ISPEC256, BSPEC64),
+            // to X 128
+            makePair(ISPEC256, SSPEC128),
+            // to X 256
+            makePair(ISPEC256, FSPEC256),
+            // to X 512
+            makePair(ISPEC256, LSPEC512),
+            makePair(ISPEC256, LSPEC512, true),
+            makePair(ISPEC256, DSPEC512),
+
+        // from I 512
+            // to X 128
+            makePair(ISPEC512, BSPEC128),
+            // to X 256
+            makePair(ISPEC512, SSPEC256),
+            // to X 512
+            makePair(ISPEC512, FSPEC512),
+
+
+        // ====== from L ======
+        // from L 128
+            // to X 64
+            makePair(LSPEC128, SSPEC64),        // testL128toS64
+            makePair(LSPEC128, ISPEC64),
+            // to X 128
             makePair(LSPEC128, DSPEC128),
+
+        // from L 256
+            // to X 64
+            makePair(LSPEC256, BSPEC64),
+            makePair(LSPEC256, SSPEC64),
+            // to X 128
+            makePair(LSPEC256, ISPEC128),
+            // to X 256
             makePair(LSPEC256, DSPEC256),
+
+        // from L 512
+            // to X 64
+            makePair(LSPEC512, BSPEC64),
+            // to X 128
+            makePair(LSPEC512, SSPEC128),
+            // to X 256
+            makePair(LSPEC512, ISPEC256),
+            // to X 512
             makePair(LSPEC512, DSPEC512),
+
+
+        // ====== from F ======
+        // from F 64
+            // to X 64
+            makePair(FSPEC64, ISPEC64),
+            // to X 128
+            makePair(FSPEC64, DSPEC128),
+
+        // from F 128
+            // to X 64
+            makePair(FSPEC128, SSPEC64),
+            // to X 128
+            makePair(FSPEC128, ISPEC128),
+            // to X 256
+            makePair(FSPEC128, DSPEC256),
+
+        // from F 256
+            // to X 64
+            makePair(FSPEC256, BSPEC64),
+            // to X 128
+            makePair(FSPEC256, SSPEC128),
+            // to X 256
+            makePair(FSPEC256, ISPEC256),
+            // to X 512
+            makePair(FSPEC256, DSPEC512),
+
+        // from F 512
+            // to X 128
+            makePair(FSPEC512, BSPEC128),
+            // to X 256
+            makePair(FSPEC512, SSPEC256),
+            // to X 512
+            makePair(FSPEC512, ISPEC512),
+
+
+        // ====== from D ======
+        // from D 128
+            // to X 64
+            makePair(DSPEC128, FSPEC64),
+            makePair(DSPEC128, ISPEC64),
+            // to X 128
             makePair(DSPEC128, LSPEC128),
+
+        // from D 256
+            // to X 64
+            makePair(DSPEC256, SSPEC64),
+            // to X 128
+            makePair(DSPEC256, ISPEC128),
+            makePair(DSPEC256, FSPEC128),
+            // to X 256
             makePair(DSPEC256, LSPEC256),
+
+        // from D 512
+            // to X 64
+            makePair(DSPEC512, BSPEC64),
+            // to X 128
+            makePair(DSPEC512, SSPEC128),
+            // to X 256
+            makePair(DSPEC512, ISPEC256),
+            makePair(DSPEC512, FSPEC256),
+            // to X 512
             makePair(DSPEC512, LSPEC512)
     );
 
