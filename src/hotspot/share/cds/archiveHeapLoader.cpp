@@ -106,8 +106,7 @@ class PatchCompressedEmbeddedPointers: public BitMapClosure {
   PatchCompressedEmbeddedPointers(narrowOop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = MetaspaceShared::oopmap_leading_zeros();
-    narrowOop* p = _start + offset + shift;
+    narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     oop o = ArchiveHeapLoader::decode_from_mapped_archive(v);
@@ -124,8 +123,7 @@ class PatchCompressedEmbeddedPointersQuick: public BitMapClosure {
   PatchCompressedEmbeddedPointersQuick(narrowOop* start, uint32_t delta) : _start(start), _delta(delta) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = MetaspaceShared::oopmap_leading_zeros();
-    narrowOop* p = _start + offset + shift;
+    narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     narrowOop new_v = CompressedOops::narrow_oop_cast(CompressedOops::narrow_oop_value(v) + _delta);
@@ -147,8 +145,7 @@ class PatchUncompressedEmbeddedPointers: public BitMapClosure {
   PatchUncompressedEmbeddedPointers(oop* start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = MetaspaceShared::oopmap_leading_zeros();
-    oop* p = _start + offset + shift;
+    oop* p = _start + offset;
     intptr_t dumptime_oop = (intptr_t)((void*)*p);
     assert(dumptime_oop != 0, "null oops should have been filtered out at dump time");
     intptr_t runtime_oop = dumptime_oop + ArchiveHeapLoader::mapped_heap_delta();
@@ -167,18 +164,19 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
 
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
   // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
+  narrowOop* patching_start = (narrowOop*)region.start() + MetaspaceShared::oopmap_start_pos();
   if (_narrow_oop_shift == CompressedOops::shift()) {
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
     log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
     if (quick_delta == 0) {
       log_info(cds)("CDS heap data relocation unnecessary, quick_delta = 0");
     } else {
-      PatchCompressedEmbeddedPointersQuick patcher((narrowOop*)region.start(), quick_delta);
+      PatchCompressedEmbeddedPointersQuick patcher(patching_start, quick_delta);
       bm.iterate(&patcher);
     }
   } else {
     log_info(cds)("CDS heap data quick relocation not possible");
-    PatchCompressedEmbeddedPointers patcher((narrowOop*)region.start());
+    PatchCompressedEmbeddedPointers patcher(patching_start);
     bm.iterate(&patcher);
   }
 }
@@ -192,7 +190,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
   if (UseCompressedOops) {
     patch_compressed_embedded_pointers(bm, info, region);
   } else {
-    PatchUncompressedEmbeddedPointers patcher((oop*)region.start());
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + MetaspaceShared::oopmap_start_pos());
     bm.iterate(&patcher);
   }
 }
@@ -243,8 +241,7 @@ class ArchiveHeapLoader::PatchLoadedRegionPointers: public BitMapClosure {
 
   bool do_bit(size_t offset) {
     assert(UseCompressedOops, "PatchLoadedRegionPointers for uncompressed oops is unimplemented");
-    size_t shift = MetaspaceShared::oopmap_leading_zeros();
-    narrowOop* p = _start + offset + shift;
+    narrowOop* p = _start + offset;
     narrowOop v = *p;
     assert(!CompressedOops::is_null(v), "null oops should have been filtered out at dump time");
     uintptr_t o = cast_from_oop<uintptr_t>(ArchiveHeapLoader::decode_from_archive(v));
@@ -313,7 +310,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   uintptr_t oopmap = bitmap_base + r->oopmap_offset();
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
-  PatchLoadedRegionPointers patcher((narrowOop*)load_address, loaded_region);
+  PatchLoadedRegionPointers patcher((narrowOop*)load_address + MetaspaceShared::oopmap_start_pos(), loaded_region);
   bm.iterate(&patcher);
   return true;
 }
@@ -427,8 +424,7 @@ class PatchNativePointers: public BitMapClosure {
   PatchNativePointers(Metadata** start) : _start(start) {}
 
   bool do_bit(size_t offset) {
-    size_t shift = MetaspaceShared::ptrmap_leading_zeros();
-    Metadata** p = _start + offset + shift;
+    Metadata** p = _start + offset;
     *p = (Metadata*)(address(*p) + MetaspaceShared::relocation_delta());
     // Currently we have only Klass pointers in heap objects.
     // This needs to be relaxed when we support other types of native
@@ -447,7 +443,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(cds, heap)("Patching native pointers in heap region");
     BitMapView bm = r->ptrmap_view();
-    PatchNativePointers patcher((Metadata**)r->mapped_base());
+    PatchNativePointers patcher((Metadata**)r->mapped_base() + MetaspaceShared::ptrmap_start_pos());
     bm.iterate(&patcher);
   }
 }
