@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -75,81 +75,11 @@ IfAppend = \
     $(if $(strip $1),$(strip $1)$(strip $2),)
 
 ################################################################################
-# Replace question marks with space in string. This macro needs to be called on
-# files from FindFiles in case any of them contains space in their file name,
-# since FindFiles replaces space with ?.
-# Param 1 - String to replace in
-DecodeSpace = \
-    $(subst ?,$(SPACE),$(strip $1))
-
-EncodeSpace = \
-    $(subst $(SPACE),?,$(strip $1))
-
-################################################################################
 # Assign a variable only if it is empty
 # Param 1 - Variable to assign
 # Param 2 - Value to assign
 SetIfEmpty = \
     $(if $($(strip $1)),,$(eval $(strip $1) := $2))
-
-################################################################################
-# Take two paths and return the path of the last common directory.
-# Ex: /foo/bar/baz, /foo/bar/banan -> /foo/bar
-#     foo/bar/baz, /foo/bar -> <empty>
-#
-# The x prefix is used to preserve the presence of the initial slash
-# On Windows paths are treated as case-insensitive
-#
-# $1 - Path to compare
-# $2 - Other path to compare
-FindCommonPathPrefix = \
-    $(call DecodeSpace,$(patsubst x%,%,$(subst $(SPACE),/,$(strip \
-        $(call FindCommonPathPrefixHelper1, \
-            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $1))), \
-            $(subst /,$(SPACE),x$(call EncodeSpace,$(strip $2)))) \
-    ))))
-
-FindCommonPathPrefixHelper1 = \
-    $(if $(filter $(OPENJDK_TARGET_OS), windows), \
-        $(call FindCommonPathPrefixHelper2,$(call uppercase,$1),$(call uppercase,$2),$1), \
-        $(call FindCommonPathPrefixHelper2,$1,$2,$1))
-
-FindCommonPathPrefixHelper2 = \
-    $(if $(call equals, $(firstword $1), $(firstword $2)), \
-      $(if $(call equals, $(firstword $1),),, \
-        $(firstword $3) \
-        $(call FindCommonPathPrefixHelper2, \
-            $(wordlist 2, $(words $1), $1), \
-            $(wordlist 2, $(words $2), $2), \
-            $(wordlist 2, $(words $3), $3) \
-        ) \
-      ) \
-    )
-
-# Computes the relative path from a directory to a file
-# $1 - File to compute the relative path to
-# $2 - Directory to compute the relative path from
-RelativePath = \
-    $(call DecodeSpace,$(strip $(call RelativePathHelper,$(call EncodeSpace \
-        ,$(strip $1)),$(call EncodeSpace \
-        ,$(strip $2)),$(call EncodeSpace \
-        ,$(call FindCommonPathPrefix,$1,$2)))))
-
-RelativePathHelper = \
-    $(eval $3_prefix_length := $(words $(subst /,$(SPACE),$3))) \
-    $(eval $1_words := $(subst /,$(SPACE),$1)) \
-    $(eval $2_words := $(subst /,$(SPACE),$2)) \
-    $(if $(call equals,$($3_prefix_length),0),, \
-        $(eval $1_words := $(wordlist 2,$(words $($1_words)),$(wordlist \
-            $($3_prefix_length),$(words $($1_words)),$($1_words)))) \
-        $(eval $2_words := $(wordlist 2,$(words $($2_words)),$(wordlist \
-            $($3_prefix_length),$(words $($2_words)),$($2_words)))) \
-    ) \
-    $(eval $1_suffix := $(subst $(SPACE),/,$($1_words))) \
-    $(eval $2_dotdots := $(subst $(SPACE),/,$(foreach d,$($2_words),..))) \
-    $(if $($1_suffix), \
-        $(if $($2_dotdots), $($2_dotdots)/$($1_suffix), $($1_suffix)), \
-        $(if $($2_dotdots), $($2_dotdots), .))
 
 ################################################################################
 # Filter out duplicate sub strings while preserving order. Keeps the first occurrence.
