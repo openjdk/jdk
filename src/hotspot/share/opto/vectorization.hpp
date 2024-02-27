@@ -149,6 +149,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
   }
 
+  bool is_trace_dependency_graph() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
   bool is_trace_pointer_analysis() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -466,14 +470,26 @@ public:
     _vloop(vloop),
     _body(body),
     _memory_slices(memory_slices),
-    _dependency_nodes(arena, vloop.estimated_body_length(), 0, nullptr),
-    _depth           (arena, vloop.estimated_body_length(), 0, 0) {}
+    _dependency_nodes(arena,
+                      vloop.estimated_body_length(),
+                      vloop.estimated_body_length(),
+                      nullptr),
+    _depth(arena,
+           vloop.estimated_body_length(),
+           vloop.estimated_body_length(),
+           0) {}
   NONCOPYABLE(VLoopDependencyGraph);
 
   void construct();
 
 private:
   void add_node(MemNode* n, GrowableArray<int>& extra_edges);
+
+  DependencyNode* dependency_node(Node* n) const {
+    return _dependency_nodes.at(_body.bb_idx(n));
+  }
+
+  NOT_PRODUCT( void print() const; )
 
   class DependencyNode : public ArenaObj {
   private:
@@ -482,7 +498,12 @@ private:
     int* _extra_edges; // extra def-edges, mapping to bb_idx
   public:
     DependencyNode(MemNode* n, GrowableArray<int>& extra_edges, Arena* arena);
-    // TODO
+    uint extra_edges_length() const { return _extra_edges_length; }
+
+    int extra_edge(uint i) const {
+      assert(i < _extra_edges_length, "bounds check");
+      return _extra_edges[i];
+    }
   };
 };
 

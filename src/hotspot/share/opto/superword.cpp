@@ -3766,7 +3766,7 @@ void DepMem::print() {
     Node* pred = p->pred()->node();
     tty->print(" %d", pred != nullptr ? pred->_idx : 0);
   }
-  tty->print(")");
+  tty->print_cr(")");
 #endif
 }
 

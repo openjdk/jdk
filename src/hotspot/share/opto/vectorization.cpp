@@ -188,8 +188,8 @@ void VLoopDependencyGraph::construct() {
 
       VPointer p1(n1, _vloop);
       // For all memory nodes before it, check if we need to add a memory edge.
-      for (int k = j - 1; k >= 0; k--) {
-        MemNode* n2 = slice_nodes.at(j);
+      for (int k = slice_nodes.length() - 1; k > j; k--) {
+        MemNode* n2 = slice_nodes.at(k);
 
         // Ignore Load-Load dependencies:
         if (n1->is_Load() && n2->is_Load()) { continue; }
@@ -202,7 +202,14 @@ void VLoopDependencyGraph::construct() {
       }
       add_node(n1, def_nodes);
     }
+    slice_nodes.clear();
   }
+
+#ifndef PRODUCT
+  if (_vloop.is_trace_dependency_graph()) {
+    print();
+  }
+#endif
 }
 
 void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_edges) {
@@ -211,6 +218,30 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_edges)
   DependencyNode* dn = new (_arena) DependencyNode(n, extra_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
+
+#ifndef PRODUCT
+void VLoopDependencyGraph::print() const {
+  tty->print_cr("\nVLoopDependencyGraph::print:");
+  if (_body.body().length() > 0) {
+    tty->print_cr(" Extra edges:");
+  } else {
+    tty->print_cr(" No extra (memory) edges.");
+  }
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    DependencyNode* dn = dependency_node(n);
+    if (dn != nullptr) {
+      tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
+      for (uint j = 0; j < dn->extra_edges_length(); j++) {
+        Node* def = _body.body().at(dn->extra_edge(j));
+        tty->print("  %d %s", def->_idx, def->Name());
+      }
+      tty->print_cr("]");
+    }
+  }
+  tty->cr();
+}
+#endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
                                                      GrowableArray<int>& extra_edges,

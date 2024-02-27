@@ -35,6 +35,7 @@
   flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \
   flags(BODY,                 "Trace VLoopBody") \
   flags(TYPES,                "Trace VLoopTypes") \
+  flags(DEPENDENCY_GRAPH,     "Trace VLoopDependencyGraph") \
   flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
   flags(SW_DEPENDENCE_GRAPH,  "Trace SuperWord::dependence_graph") \
   flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
