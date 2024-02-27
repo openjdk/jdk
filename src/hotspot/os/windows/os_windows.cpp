@@ -4055,7 +4055,7 @@ bool os::win32::is_windows_server_2022_or_greater() {
 
 DWORD os::win32::active_processors_in_job_object() {
   BOOL is_in_job_object = false;
-  if (!IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object)) {
+  if (IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object) == 0) {
     warning("IsProcessInJob() failed: GetLastError->%ld.", GetLastError());
     return 0;
   }
@@ -4069,38 +4069,46 @@ DWORD os::win32::active_processors_in_job_object() {
   LPVOID job_object_information = nullptr;
   DWORD job_object_information_length = 0;
 
-  if (!QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, nullptr, 0, &job_object_information_length)) {
-    DWORD last_error = GetLastError();
-    if (last_error == ERROR_INSUFFICIENT_BUFFER) {
-      DWORD group_count = job_object_information_length / sizeof(GROUP_AFFINITY);
+  if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, nullptr, 0, &job_object_information_length) != 0) {
+    warning("Unexpected QueryInformationJobObject success result.");
+    assert(false, "Unexpected QueryInformationJobObject success result");
+    return 0;
+  }
 
-      job_object_information = os::malloc(job_object_information_length, mtInternal);
-      if (job_object_information != nullptr) {
-          if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, job_object_information, job_object_information_length, &job_object_information_length)) {
-            DWORD groups_found = job_object_information_length / sizeof(GROUP_AFFINITY);
-            if (groups_found != group_count) {
-              warning("Unexpected processor group count->%ld. Expected %ld processor groups.", groups_found, group_count);
-              assert(false, "Unexpected group count");
-            }
+  DWORD last_error = GetLastError();
+  if (last_error == ERROR_INSUFFICIENT_BUFFER) {
+    DWORD group_count = job_object_information_length / sizeof(GROUP_AFFINITY);
 
-            GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
-            for (DWORD i = 0; i < groups_found; i++, group_affinity_data++) {
-              processors += population_count(group_affinity_data->Mask);
-            }
-
-            if (processors == 0) {
-              warning("Could not determine processor count from the job object.");
-              assert(false, "Must find at least 1 logical processor");
-            }
-          } else {
-            warning("QueryInformationJobObject() failed: GetLastError->%ld.", GetLastError());
+    job_object_information = os::malloc(job_object_information_length, mtInternal);
+    if (job_object_information != nullptr) {
+        if (QueryInformationJobObject(nullptr, JobObjectGroupInformationEx, job_object_information, job_object_information_length, &job_object_information_length) != 0) {
+          DWORD groups_found = job_object_information_length / sizeof(GROUP_AFFINITY);
+          if (groups_found != group_count) {
+            warning("Unexpected processor group count: %ld. Expected %ld processor groups.", groups_found, group_count);
+            assert(false, "Unexpected group count");
           }
 
-          os::free(job_object_information);
-      } else {
-          warning("os::malloc() failed to allocate %ld bytes for QueryInformationJobObject", job_object_information_length);
-      }
+          GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
+          for (DWORD i = 0; i < groups_found; i++, group_affinity_data++) {
+            processors += population_count(group_affinity_data->Mask);
+          }
+
+          if (processors == 0) {
+            warning("Could not determine processor count from the job object.");
+            assert(false, "Must find at least 1 logical processor");
+          }
+        } else {
+          warning("QueryInformationJobObject() failed: GetLastError->%ld.", GetLastError());
+        }
+
+        os::free(job_object_information);
+    } else {
+        warning("os::malloc() failed to allocate %ld bytes for QueryInformationJobObject", job_object_information_length);
     }
+  } else {
+    warning("Unexpected QueryInformationJobObject error code: GetLastError->%ld.", last_error);
+    assert(false, "Unexpected QueryInformationJobObject error code");
+    return 0;
   }
 
   return processors;
@@ -4113,7 +4121,7 @@ DWORD os::win32::system_logical_processor_count() {
   DWORD returned_length = 0;
 
   // https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex
-  if (!GetLogicalProcessorInformationEx(relationship_type, nullptr, &returned_length)) {
+  if (GetLogicalProcessorInformationEx(relationship_type, nullptr, &returned_length) == 0) {
     DWORD last_error = GetLastError();
 
     if (last_error == ERROR_INSUFFICIENT_BUFFER) {
@@ -4121,7 +4129,7 @@ DWORD os::win32::system_logical_processor_count() {
 
       if (nullptr == system_logical_processor_info) {
         warning("os::malloc() failed to allocate %ld bytes for GetLogicalProcessorInformationEx buffer", returned_length);
-      } else if (!GetLogicalProcessorInformationEx(relationship_type, system_logical_processor_info, &returned_length)) {
+      } else if (GetLogicalProcessorInformationEx(relationship_type, system_logical_processor_info, &returned_length) == 0) {
         warning("GetLogicalProcessorInformationEx() failed: GetLastError->%ld.", GetLastError());
       } else {
         DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
