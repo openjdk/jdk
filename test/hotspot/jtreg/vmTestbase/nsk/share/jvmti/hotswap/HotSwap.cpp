@@ -27,7 +27,7 @@
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "Injector.hpp"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 #define PASSED 0
 

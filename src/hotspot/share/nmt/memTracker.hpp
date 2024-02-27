@@ -175,12 +175,12 @@ class MemTracker : AllStatic {
   //
   // The two new memory regions will be both registered under stack and
   //  memory flags of the original region.
-  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split) {
+  static inline void record_virtual_memory_split_reserved(void* addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag) {
     assert_post_init();
     if (!enabled()) return;
     if (addr != nullptr) {
       ThreadCritical tc;
-      VirtualMemoryTracker::split_reserved_region((address)addr, size, split);
+      VirtualMemoryTracker::split_reserved_region((address)addr, size, split, flag, split_flag);
     }
   }
 

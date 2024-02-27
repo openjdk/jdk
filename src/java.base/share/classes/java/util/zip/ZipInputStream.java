@@ -515,9 +515,16 @@ public class ZipInputStream extends InflaterInputStream implements ZipConstants 
         }
         readFully(b, 0, len);
         // Force to use UTF-8 if the USE_UTF8 bit is ON
-        ZipEntry e = createZipEntry(((flag & USE_UTF8) != 0)
-                                    ? ZipCoder.toStringUTF8(b, len)
-                                    : zc.toString(b, len));
+        String entryName;
+        try {
+            entryName = ((flag & USE_UTF8) != 0) ?
+                    ZipCoder.toStringUTF8(b, len)
+                    : zc.toString(b, len);
+        } catch (Exception ex) {
+            throw (ZipException) new ZipException(
+                    "invalid LOC header (bad entry name)").initCause(ex);
+        }
+        ZipEntry e = createZipEntry(entryName);
         // now get the remaining fields for the entry
         if ((flag & 1) == 1) {
             throw new ZipException("encrypted ZIP entry not supported");

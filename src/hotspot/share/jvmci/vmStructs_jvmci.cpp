@@ -43,8 +43,13 @@
 #include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
+#endif
+
+#if defined(TARGET_COMPILER_gcc)
+#undef JNIEXPORT
+#define JNIEXPORT
 #endif
 
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
