@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "classfile/javaClasses.inline.hpp"
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/serial/serialStringDedup.hpp"
+#include "gc/shared/slidingForwarding.inline.hpp"
 #include "memory/universe.hpp"
 #include "oops/markWord.hpp"
 #include "oops/access.inline.hpp"
@@ -45,8 +46,8 @@ template <class T> inline void MarkSweep::adjust_pointer(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     assert(Universe::heap()->is_in(obj), "should be in heap");
 
-    if (obj->is_forwarded()) {
-      oop new_obj = obj->forwardee();
+    if (SlidingForwarding::is_forwarded(obj)) {
+      oop new_obj = SlidingForwarding::forwardee(obj);
       assert(is_object_aligned(new_obj), "oop must be aligned");
       RawAccess<IS_NOT_NULL>::oop_store(p, new_obj);
     }

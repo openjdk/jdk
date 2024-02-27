@@ -86,6 +86,7 @@
 #include "gc/shared/oopStorageParState.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shared/referenceProcessor.inline.hpp"
+#include "gc/shared/slidingForwarding.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
@@ -1439,6 +1440,8 @@ jint G1CollectedHeap::initialize() {
   CPUTimeCounters::create_counter(CPUTimeGroups::CPUTimeType::gc_service);
 
   G1InitLogger::print();
+
+  SlidingForwarding::initialize(heap_rs.region(), HeapRegion::GrainWords);
 
   return JNI_OK;
 }
