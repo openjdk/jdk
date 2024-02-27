@@ -243,8 +243,6 @@ class TenuredSpace: public ContiguousSpace {
   inline HeapWord* par_allocate(size_t word_size) override;
 
   inline void update_for_block(HeapWord* start, HeapWord* end);
-
-  void print_on(outputStream* st) const override;
 };
 #endif //INCLUDE_SERIALGC
 
