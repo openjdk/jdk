@@ -29,7 +29,7 @@
  * @run main/othervm -XX:CompileCommand=compileonly,compiler.loopopts.TestBaseCountedEndLoopUnswitchCandidate::test*
  *                   -Xcomp -XX:LoopMaxUnroll=0 -XX:-UseLoopPredicate -XX:-RangeCheckElimination
  *                   compiler.loopopts.TestBaseCountedEndLoopUnswitchCandidate
- * @run main/othervm compiler.loopopts.TestBaseCountedEndLoopUnswitchCandidate
+ * @run main compiler.loopopts.TestBaseCountedEndLoopUnswitchCandidate
  */
 
 package compiler.loopopts;
