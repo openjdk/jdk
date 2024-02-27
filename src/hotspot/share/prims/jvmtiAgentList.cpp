@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,11 +124,11 @@ void JvmtiAgentList::add(JvmtiAgent* agent) {
   } while (Atomic::cmpxchg(&_list, next, agent) != next);
 }
 
-void JvmtiAgentList::add(const char* name, char* options, bool absolute_path) {
+void JvmtiAgentList::add(const char* name, const char* options, bool absolute_path) {
   add(new JvmtiAgent(name, options, absolute_path));
 }
 
-void JvmtiAgentList::add_xrun(const char* name, char* options, bool absolute_path) {
+void JvmtiAgentList::add_xrun(const char* name, const char* options, bool absolute_path) {
   JvmtiAgent* agent = new JvmtiAgent(name, options, absolute_path);
   agent->set_xrun();
   add(agent);
@@ -198,18 +198,14 @@ void JvmtiAgentList::load_xrun_agents() {
 }
 
 // Invokes Agent_OnAttach for agents loaded dynamically during runtime.
-jint JvmtiAgentList::load_agent(const char* agent_name, const char* absParam,
-                           const char* options, outputStream* st) {
-  // The abs parameter should be "true" or "false"
-  const bool is_absolute_path = (absParam != nullptr) && (strcmp(absParam, "true") == 0);
+void JvmtiAgentList::load_agent(const char* agent_name, bool is_absolute_path,
+                                const char* options, outputStream* st) {
   JvmtiAgent* const agent = new JvmtiAgent(agent_name, options, is_absolute_path, /* dynamic agent */ true);
   if (agent->load(st)) {
     add(agent);
   } else {
     delete agent;
   }
-  // Agent_OnAttach executed so completion status is JNI_OK
-  return JNI_OK;
 }
 
 // Send any Agent_OnUnload notifications

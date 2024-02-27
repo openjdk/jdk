@@ -141,7 +141,6 @@ private:
 public:
   // Returns JNI_OK on success
   jint initialize() override;
-  virtual CardTableRS* create_rem_set(const MemRegion& reserved_region);
 
   // Does operations required after initialization has been done.
   void post_initialize() override;

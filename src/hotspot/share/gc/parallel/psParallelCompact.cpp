@@ -1969,6 +1969,7 @@ public:
 
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    cm->create_marking_stats_cache();
     PCMarkAndPushClosure mark_and_push_closure(cm);
 
     {
@@ -2017,6 +2018,13 @@ public:
   }
 };
 
+static void flush_marking_stats_cache(const uint num_workers) {
+  for (uint i = 0; i < num_workers; ++i) {
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(i);
+    cm->flush_and_destroy_marking_stats_cache();
+  }
+}
+
 void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
@@ -2044,6 +2052,12 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) tm("Flush Marking Stats", &_gc_timer);
+
+    flush_marking_stats_cache(active_gc_threads);
   }
 
   // This is the point where the entire marking should have completed.

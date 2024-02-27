@@ -100,7 +100,6 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 inline bool PSParallelCompact::mark_obj(oop obj) {
   const size_t obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
-    _summary_data.add_obj(obj, obj_size);
     ContinuationGCSupport::transform_stack_chunk(obj);
     return true;
   } else {
