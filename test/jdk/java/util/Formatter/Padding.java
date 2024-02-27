@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4906370
+ * @bug 4906370 8299677 8326718
  * @summary Tests to excercise padding on int and double values,
  *      with various flag combinations.
- * @run junit/timeout=10 Padding
+ * @run junit Padding
  */
 
 import java.util.Locale;
@@ -40,8 +40,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class Padding {
 
-    static String tenMillionZeros = "0".repeat(10000000);
-    static String tenMillionBlanks = " ".repeat(10000000);
+    private static final String tenMillionZeros = "0".repeat(10000000);
+    private static final String tenMillionBlanks = " ".repeat(10000000);
 
     static Arguments[] padding() {
         return new Arguments[] {
