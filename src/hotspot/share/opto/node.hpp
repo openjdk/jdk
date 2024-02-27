@@ -134,6 +134,8 @@ class NegNode;
 class NegVNode;
 class NeverBranchNode;
 class Opaque1Node;
+class OpaqueLoopInitNode;
+class OpaqueLoopStrideNode;
 class OuterStripMinedLoopNode;
 class OuterStripMinedLoopEndNode;
 class Node;
@@ -784,6 +786,8 @@ public:
     DEFINE_CLASS_ID(ClearArray, Node, 14)
     DEFINE_CLASS_ID(Halt,     Node, 15)
     DEFINE_CLASS_ID(Opaque1,  Node, 16)
+      DEFINE_CLASS_ID(OpaqueLoopInit, Opaque1, 0)
+      DEFINE_CLASS_ID(OpaqueLoopStride, Opaque1, 1)
     DEFINE_CLASS_ID(Move,     Node, 17)
     DEFINE_CLASS_ID(LShift,   Node, 18)
     DEFINE_CLASS_ID(Neg,      Node, 19)
@@ -953,6 +957,8 @@ public:
   DEFINE_CLASS_QUERY(NegV)
   DEFINE_CLASS_QUERY(NeverBranch)
   DEFINE_CLASS_QUERY(Opaque1)
+  DEFINE_CLASS_QUERY(OpaqueLoopInit)
+  DEFINE_CLASS_QUERY(OpaqueLoopStride)
   DEFINE_CLASS_QUERY(OuterStripMinedLoop)
   DEFINE_CLASS_QUERY(OuterStripMinedLoopEnd)
   DEFINE_CLASS_QUERY(Parm)

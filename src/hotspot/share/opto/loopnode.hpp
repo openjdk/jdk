@@ -941,9 +941,6 @@ private:
                                                  Node* uncommon_proj, Node* control, IdealLoopTree* outer_loop,
                                                  Node* input_proj);
   static void count_opaque_loop_nodes(Node* n, uint& init, uint& stride);
-  static bool subgraph_has_opaque(Node* n);
-  Node* create_bool_from_template_assertion_predicate(Node* template_assertion_predicate, Node* new_init, Node* new_stride,
-                                                      Node* control);
   static bool assertion_predicate_has_loop_opaque_node(IfNode* iff);
   static void get_assertion_predicates(Node* predicate, Unique_Node_List& list, bool get_opaque = false);
   void update_main_loop_assertion_predicates(Node* ctrl, CountedLoopNode* loop_head, Node* init, int stride_con);
@@ -1330,7 +1327,7 @@ public:
                                       bool* p_short_scale, int depth);
 
   // Create a new if above the uncommon_trap_if_pattern for the predicate to be promoted
-  IfProjNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_proj, Node* new_entry,
+  IfTrueNode* create_new_if_for_predicate(ParsePredicateSuccessProj* parse_predicate_success_proj, Node* new_entry,
                                           Deoptimization::DeoptReason reason, int opcode,
                                           bool rewire_uncommon_proj_phi_inputs = false);
 
@@ -1349,9 +1346,14 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
+  void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
+    _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
+    set_idom(loop_head, new_entry, dom_depth(new_entry));
+  }
+
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
-                         jint stride, Node* range, bool upper, bool& overflow);
+  BoolNode* rc_predicate(Node* ctrl, int scale, Node* offset, Node* init, Node* limit, jint stride, Node* range,
+                         bool upper, bool& overflow);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
@@ -1388,8 +1390,7 @@ public:
 
   void eliminate_useless_zero_trip_guard();
 
-  bool has_control_dependencies_from_predicates(LoopNode* head) const;
-  void verify_fast_loop(LoopNode* head, const ProjNode* proj_true) const NOT_DEBUG_RETURN;
+  static bool has_control_dependencies_from_predicates(LoopNode* head);
  public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
@@ -1407,18 +1408,15 @@ public:
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.
   // Return the inserted if.
-  IfNode* create_slow_version_of_loop(IdealLoopTree *loop,
-                                        Node_List &old_new,
-                                        IfNode* unswitch_iff,
-                                        CloneLoopMode mode);
+  IfNode* create_slow_version_of_loop(IdealLoopTree* loop, Node_List& old_new, IfNode* unswitching_candidate);
 
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
-  void do_unswitching (IdealLoopTree *loop, Node_List &old_new);
+  void do_unswitching(IdealLoopTree* loop, Node_List& old_new);
 
   // Find candidate "if" for unswitching
-  IfNode* find_unswitching_candidate(const IdealLoopTree *loop) const;
+  IfNode* find_unswitching_candidate(const IdealLoopTree* loop) const;
 
   // Range Check Elimination uses this function!
   // Constrain the main loop iterations so the affine function:
@@ -1625,9 +1623,11 @@ private:
     _nodes_required = UINT_MAX;
   }
 
+ public:
   // Clone Parse Predicates to slow and fast loop when unswitching a loop
   void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+ private:
   void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                             const PredicateBlock* predicate_block,
                                                             Deoptimization::DeoptReason reason, IfProjNode*& iffast_pred,
@@ -1653,6 +1653,12 @@ public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node(Node* n, Node* blk);
+
+  Node* clone_and_register(Node* n, Node* ctrl) {
+    n = n->clone();
+    register_new_node(n, ctrl);
+    return n;
+  }
 
 #ifdef ASSERT
   void dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA);
@@ -1730,14 +1736,12 @@ public:
 
   void finish_clone_loop(Node_List* split_if_set, Node_List* split_bool_set, Node_List* split_cex_set);
 
-  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
-
-  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
-
-  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
-
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
 
+  bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_loadklass_nodes_at_cmp_index(const Node* n, Node* cmp, int i);
+  bool clone_cmp_down(Node* n, const Node* blk1, const Node* blk2);
+  void clone_template_assertion_predicate_bool_down_if_related(Node* n);
 
   Node* similar_subtype_check(const Node* x, Node* r_in);
 

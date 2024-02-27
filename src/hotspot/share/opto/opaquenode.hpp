@@ -60,6 +60,7 @@ class Opaque1Node : public Node {
 class OpaqueLoopInitNode : public Opaque1Node {
   public:
   OpaqueLoopInitNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+    init_class_id(Class_OpaqueLoopInit);
   }
   virtual int Opcode() const;
 };
@@ -67,6 +68,7 @@ class OpaqueLoopInitNode : public Opaque1Node {
 class OpaqueLoopStrideNode : public Opaque1Node {
   public:
   OpaqueLoopStrideNode(Compile* C, Node *n) : Opaque1Node(C, n) {
+    init_class_id(Class_OpaqueLoopStride);
   }
   virtual int Opcode() const;
 };

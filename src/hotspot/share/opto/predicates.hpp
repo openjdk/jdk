@@ -26,6 +26,8 @@
 #define SHARE_OPTO_PREDICATES_HPP
 
 #include "opto/cfgnode.hpp"
+#include "opto/loopnode.hpp"
+#include "opto/opaquenode.hpp"
 
 /*
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
@@ -261,6 +263,42 @@ class RuntimePredicate : public StackObj {
 
  public:
   static bool is_success_proj(Node* node, Deoptimization::DeoptReason deopt_reason);
+};
+
+// A Template Assertion Predicate Bool represents the BoolNode for the initial value or the last value of a
+// Template Assertion Predicate and all the nodes up to and including the OpaqueLoop* nodes.
+class TemplateAssertionPredicateBool : public StackObj {
+  BoolNode* _source_bool;
+
+ public:
+  explicit TemplateAssertionPredicateBool(Node* source_bool);
+
+  // Is 'n' a node that could be part of a Template Assertion Predicate Bool (i.e. could be found on the input chain of
+  // a Template Assertion Predicate BoolNode up to and including the OpaqueLoop* nodes)?
+  static bool could_be_part(const Node* n) {
+    const int opcode = n->Opcode();
+    return (opcode == Op_OpaqueLoopInit ||
+            opcode == Op_OpaqueLoopStride ||
+            n->is_Bool() ||
+            n->is_Cmp() ||
+            opcode == Op_AndL ||
+            opcode == Op_OrL ||
+            opcode == Op_RShiftL ||
+            opcode == Op_LShiftL ||
+            opcode == Op_LShiftI ||
+            opcode == Op_AddL ||
+            opcode == Op_AddI ||
+            opcode == Op_MulL ||
+            opcode == Op_MulI ||
+            opcode == Op_SubL ||
+            opcode == Op_SubI ||
+            opcode == Op_ConvI2L ||
+            opcode == Op_CastII);
+  }
+
+  BoolNode* clone(Node* new_ctrl, PhaseIdealLoop* phase);
+  BoolNode* clone_and_replace_init(Node* new_ctrl, Node* new_init, PhaseIdealLoop* phase);
+  BoolNode* clone_and_replace_opaque_loop_nodes(Node* new_ctrl, Node* new_init, Node* new_stride, PhaseIdealLoop* phase);
 };
 
 // This class represents a Predicate Block (i.e. either a Loop Predicate Block, a Profiled Loop Predicate Block,
