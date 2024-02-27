@@ -80,7 +80,6 @@ include $(TOPDIR)/make/common/BaseUtils.gmk
 # least for now.
 
 include $(TOPDIR)/make/common/FileUtils.gmk
-include $(TOPDIR)/make/common/MakeIO.gmk
 include $(TOPDIR)/make/common/Utils.gmk
 
 ################################################################################
