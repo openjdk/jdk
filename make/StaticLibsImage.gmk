@@ -30,6 +30,8 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+
+include CopyFiles.gmk
 include Modules.gmk
 
 ALL_MODULES = $(call FindAllModules)

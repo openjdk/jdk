@@ -23,6 +23,8 @@
 # questions.
 #
 
+include CopyFiles.gmk
+
 # Copy all built libraries into exploded jdk
 LIB_TARGETS := $(filter $(LIB_OUTPUTDIR)/%, $(TARGETS))
 ifeq ($(call isTargetOs, windows), true)

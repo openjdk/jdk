@@ -79,7 +79,6 @@ include $(TOPDIR)/make/common/BaseUtils.gmk
 # For convenience, MakeBase.gmk continues to include these separate files, at
 # least for now.
 
-include $(TOPDIR)/make/common/CopyFiles.gmk
 include $(TOPDIR)/make/common/FileUtils.gmk
 include $(TOPDIR)/make/common/MakeIO.gmk
 include $(TOPDIR)/make/common/Utils.gmk

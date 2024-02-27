@@ -28,6 +28,8 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
+include CopyFiles.gmk
+
 PRODUCT_TARGETS :=
 LEGACY_TARGETS :=
 TEST_TARGETS :=
