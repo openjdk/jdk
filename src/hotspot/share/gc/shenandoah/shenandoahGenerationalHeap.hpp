@@ -27,13 +27,28 @@
 
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+class ShenandoahRegulatorThread;
+class ShenandoahGenerationalControlThread;
+
 class ShenandoahGenerationalHeap : public ShenandoahHeap {
 public:
-  explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) : ShenandoahHeap(policy) {}
+  explicit ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy);
 
   static ShenandoahGenerationalHeap* heap();
 
   void print_init_logger() const override;
+
+  ShenandoahRegulatorThread* regulator_thread() const             { return _regulator_thread;  }
+
+  void gc_threads_do(ThreadClosure* tcl) const override;
+
+  void stop() override;
+
+private:
+  void initialize_controller() override;
+
+private:
+  ShenandoahRegulatorThread* _regulator_thread;
 };
 
 #endif //SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONALHEAP

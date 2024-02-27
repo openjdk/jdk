@@ -36,6 +36,7 @@
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
+#include "gc/shenandoah/shenandoahController.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahEvacOOMHandler.hpp"
 #include "gc/shenandoah/shenandoahEvacTracker.hpp"
@@ -54,7 +55,6 @@ class ConcurrentGCTimer;
 class ObjectIterateScanRootClosure;
 class PLAB;
 class ShenandoahCollectorPolicy;
-class ShenandoahControlThread;
 class ShenandoahRegulatorThread;
 class ShenandoahGCSession;
 class ShenandoahGCStateResetter;
@@ -272,6 +272,8 @@ private:
   ShenandoahWorkerThreads* _workers;
   ShenandoahWorkerThreads* _safepoint_workers;
 
+  virtual void initialize_controller();
+
 public:
   uint max_workers();
   void assert_gc_workers(uint nworker) NOT_DEBUG_RETURN;
@@ -356,8 +358,6 @@ public:
 private:
   bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
-
-  // tracks if new regions have been allocated or retired since last check
   ShenandoahSharedFlag   _heap_changed;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
@@ -555,8 +555,10 @@ private:
   ShenandoahGeneration*      _global_generation;
   ShenandoahOldGeneration*   _old_generation;
 
-  ShenandoahControlThread*   _control_thread;
-  ShenandoahRegulatorThread* _regulator_thread;
+protected:
+  ShenandoahController*  _control_thread;
+
+private:
   ShenandoahCollectorPolicy* _shenandoah_policy;
   ShenandoahMode*            _gc_mode;
   ShenandoahFreeSet*         _free_set;
@@ -568,10 +570,9 @@ private:
   ShenandoahMmuTracker          _mmu_tracker;
   ShenandoahGenerationSizer     _generation_sizer;
 
-  ShenandoahRegulatorThread* regulator_thread()        { return _regulator_thread;  }
-
 public:
-  ShenandoahControlThread*   control_thread()          { return _control_thread;    }
+  ShenandoahController*   control_thread() { return _control_thread; }
+
   ShenandoahYoungGeneration* young_generation()  const { return _young_generation;  }
   ShenandoahGeneration*      global_generation() const { return _global_generation; }
   ShenandoahOldGeneration*   old_generation()    const { return _old_generation;    }

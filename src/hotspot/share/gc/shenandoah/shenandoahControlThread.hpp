@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2013, 2021, Red Hat, Inc. All rights reserved.
- * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,131 +31,41 @@
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
-class ShenandoahControlThread: public ConcurrentGCThread {
+class ShenandoahControlThread: public ShenandoahController {
   friend class VMStructs;
 
 private:
-  // While we could have a single lock for these, it may risk unblocking
-  // GC waiters when alloc failure GC cycle finishes. We want instead
-  // to make complete explicit cycle for demanding customers.
-  Monitor _alloc_failure_waiters_lock;
-  Monitor _gc_waiters_lock;
-  Monitor _control_lock;
-  Monitor _regulator_lock;
-
-public:
   typedef enum {
     none,
     concurrent_normal,
     stw_degenerated,
-    stw_full,
-    bootstrapping_old,
-    servicing_old
+    stw_full
   } GCMode;
 
-  void run_service();
-  void stop_service();
+  ShenandoahSharedFlag _gc_requested;
+  GCCause::Cause       _requested_gc_cause;
+  ShenandoahGC::ShenandoahDegenPoint _degen_point;
 
-  size_t get_gc_id();
+public:
+  ShenandoahControlThread();
+
+  void run_service() override;
+  void stop_service() override;
+
+  void request_gc(GCCause::Cause cause) override;
 
 private:
-  ShenandoahSharedFlag _allow_old_preemption;
-  ShenandoahSharedFlag _preemption_requested;
-  ShenandoahSharedFlag _alloc_failure_gc;
-  ShenandoahSharedFlag _humongous_alloc_failure_gc;
-  ShenandoahSharedFlag _graceful_shutdown;
 
-  GCCause::Cause  _requested_gc_cause;
-  volatile ShenandoahGenerationType _requested_generation;
-  ShenandoahGC::ShenandoahDegenPoint _degen_point;
-  ShenandoahGeneration* _degen_generation;
-
-  shenandoah_padding(0);
-  volatile size_t _allocs_seen;
-  shenandoah_padding(1);
-  volatile size_t _gc_id;
-  shenandoah_padding(2);
-  volatile GCMode _mode;
-  shenandoah_padding(3);
-
-  // Returns true if the cycle has been cancelled or degenerated.
   bool check_cancellation_or_degen(ShenandoahGC::ShenandoahDegenPoint point);
-
-  // Returns true if the old generation marking completed (i.e., final mark executed for old generation).
-  bool resume_concurrent_old_cycle(ShenandoahGeneration* generation, GCCause::Cause cause);
-  void service_concurrent_cycle(ShenandoahGeneration* generation, GCCause::Cause cause, bool reset_old_bitmap_specially);
+  void service_concurrent_normal_cycle(GCCause::Cause cause);
   void service_stw_full_cycle(GCCause::Cause cause);
   void service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point);
-
-  // Return true if setting the flag which indicates allocation failure succeeds.
-  bool try_set_alloc_failure_gc(bool is_humongous);
-
-  // Notify threads waiting for GC to complete.
-  void notify_alloc_failure_waiters();
-
-  // True if allocation failure flag has been set.
-  bool is_alloc_failure_gc();
-
-  void reset_gc_id();
-  void update_gc_id();
 
   void notify_gc_waiters();
 
   // Handle GC request.
   // Blocks until GC is over.
   void handle_requested_gc(GCCause::Cause cause);
-
-  // Returns true if the old generation marking was interrupted to allow a young cycle.
-  bool preempt_old_marking(ShenandoahGenerationType generation);
-
-  void process_phase_timings(const ShenandoahHeap* heap);
-
-public:
-  // Constructor
-  ShenandoahControlThread();
-
-  // Handle allocation failure from a mutator allocation.
-  // Optionally blocks while collector is handling the failure. If the GC
-  // threshold has been exceeded, the mutator allocation will not block so
-  // that the out of memory error can be raised promptly.
-  void handle_alloc_failure(ShenandoahAllocRequest& req, bool block = true);
-
-  // Handle allocation failure from evacuation path.
-  void handle_alloc_failure_evac(size_t words);
-
-  void request_gc(GCCause::Cause cause);
-  // Return true if the request to start a concurrent GC for the given generation succeeded.
-  bool request_concurrent_gc(ShenandoahGenerationType generation);
-
-  void pacing_notify_alloc(size_t words);
-
-  void start();
-  void prepare_for_graceful_shutdown();
-  bool in_graceful_shutdown();
-
-  void service_concurrent_normal_cycle(ShenandoahHeap* heap,
-                                       const ShenandoahGenerationType generation,
-                                       GCCause::Cause cause);
-
-  void service_concurrent_old_cycle(ShenandoahHeap* heap,
-                                    GCCause::Cause &cause);
-
-  void set_gc_mode(GCMode new_mode);
-  GCMode gc_mode() {
-    return _mode;
-  }
-
-  static ShenandoahGenerationType select_global_generation();
-
- private:
-  static const char* gc_mode_name(GCMode mode);
-  void notify_control_thread();
-
-  void service_concurrent_cycle(ShenandoahHeap* heap,
-                                ShenandoahGeneration* generation,
-                                GCCause::Cause &cause,
-                                bool do_old_gc_bootstrap);
-
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCONTROLTHREAD_HPP

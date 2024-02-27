@@ -24,10 +24,12 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
 #include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahInitLogger.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
+#include "gc/shenandoah/shenandoahRegulatorThread.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
 
 #include "logging/log.hpp"
@@ -45,12 +47,12 @@ public:
     ShenandoahGenerationalHeap* heap = ShenandoahGenerationalHeap::heap();
 
     ShenandoahYoungGeneration* young = heap->young_generation();
-    log_info(gc, init)("Young Generation Soft Size: " PROPERFMT, PROPERFMTARGS(young->soft_max_capacity()));
-    log_info(gc, init)("Young Generation Max: " PROPERFMT, PROPERFMTARGS(young->max_capacity()));
+    log_info(gc, init)("Young Generation Soft Size: " EXACTFMT, EXACTFMTARGS(young->soft_max_capacity()));
+    log_info(gc, init)("Young Generation Max: " EXACTFMT, EXACTFMTARGS(young->max_capacity()));
 
     ShenandoahOldGeneration* old = heap->old_generation();
-    log_info(gc, init)("Old Generation Soft Size: " PROPERFMT, PROPERFMTARGS(old->soft_max_capacity()));
-    log_info(gc, init)("Old Generation Max: " PROPERFMT, PROPERFMTARGS(old->max_capacity()));
+    log_info(gc, init)("Old Generation Soft Size: " EXACTFMT, EXACTFMTARGS(old->soft_max_capacity()));
+    log_info(gc, init)("Old Generation Max: " EXACTFMT, EXACTFMTARGS(old->max_capacity()));
   }
 
 protected:
@@ -71,4 +73,26 @@ ShenandoahGenerationalHeap* ShenandoahGenerationalHeap::heap() {
 void ShenandoahGenerationalHeap::print_init_logger() const {
   ShenandoahGenerationalInitLogger logger;
   logger.print_all();
+}
+
+ShenandoahGenerationalHeap::ShenandoahGenerationalHeap(ShenandoahCollectorPolicy* policy) :
+  ShenandoahHeap(policy),
+  _regulator_thread(nullptr) { }
+
+void ShenandoahGenerationalHeap::initialize_controller() {
+  auto control_thread = new ShenandoahGenerationalControlThread();
+  _control_thread = control_thread;
+  _regulator_thread = new ShenandoahRegulatorThread(control_thread);
+}
+
+void ShenandoahGenerationalHeap::gc_threads_do(ThreadClosure* tcl) const {
+  if (!shenandoah_policy()->is_at_shutdown()) {
+    ShenandoahHeap::gc_threads_do(tcl);
+    tcl->do_thread(regulator_thread());
+  }
+}
+
+void ShenandoahGenerationalHeap::stop() {
+  regulator_thread()->stop();
+  ShenandoahHeap::stop();
 }
