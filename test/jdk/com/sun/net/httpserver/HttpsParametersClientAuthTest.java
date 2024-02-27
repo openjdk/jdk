@@ -21,9 +21,7 @@
  * questions.
  */
 
-import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -33,7 +31,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.KeyStore;
 import java.security.PrivilegedExceptionAction;
@@ -213,6 +210,10 @@ public class HttpsParametersClientAuthTest {
                             fail("request was expected to fail, but didn't");
                         }
                         assertEquals(200, resp.statusCode(), "unexpected response code");
+                        // verify the client did present the certs
+                        assertTrue(resp.sslSession().isPresent(), "missing SSLSession on response");
+                        assertNotNull(resp.sslSession().get().getLocalCertificates(),
+                                "client was expected to present certs to the server, but didn't");
                     } catch (IOException ioe) {
                         if (presentClientCerts) {
                             // wasn't expected to fail, just let the exception propagate
@@ -301,6 +302,12 @@ public class HttpsParametersClientAuthTest {
                     final HttpResponse<Void> resp = client.send(
                             HttpRequest.newBuilder(reqURI).build(), BodyHandlers.discarding());
                     assertEquals(200, resp.statusCode(), "unexpected response code");
+                    if (presentClientCerts) {
+                        // verify the client did present the certs
+                        assertTrue(resp.sslSession().isPresent(), "missing SSLSession on response");
+                        assertNotNull(resp.sslSession().get().getLocalCertificates(),
+                                "client was expected to present certs to the server, but didn't");
+                    }
                 }
             } finally {
                 System.out.println("Stopping server at " + server.getAddress());
