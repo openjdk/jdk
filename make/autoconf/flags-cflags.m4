@@ -125,9 +125,8 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
 
             # Add debug prefix map for OUTPUTDIR to handle the scenario when
             # it is not located within WORKSPACE_ROOT
-            outputdir_trailing_slash="${OUTPUTDIR%/}/"
-            DEBUG_PREFIX_CFLAGS= \
-                "$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=${outputdir_trailing_slash}="
+            outputdir_slash="${OUTPUTDIR%/}/"
+            DEBUG_PREFIX_CFLAGS="$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=${outputdir_slash}="
         ]
       )
     fi
