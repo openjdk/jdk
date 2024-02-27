@@ -426,34 +426,39 @@ private:
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
-  // The lambda method for split_packs can return one of these tasks:
-  // 1) reject   -> the pack is removed
-  // 2) no_split -> split_size = 0, the old_pack is unchanged
-  // 3) else     -> split away split_size nodes from the end of the old_pack
   class SplitTask {
   private:
+    enum Kind {
+      // The lambda method for split_packs can return one of these tasks:
+      Unchanged, // The pack is left in the packset, unchanged.
+      Reject,    // The pack is removed from the packset.
+      Split,     // Split away split_size nodes from the end of the pack.
+    };
+    const Kind _kind;
     const uint _split_size;
-    const bool _reject;
     const char* _message;
 
-    SplitTask(const uint split_size, const bool reject, const char* message) :
-        _split_size(split_size), _reject(reject), _message(message)
+    SplitTask(const Kind kind, const uint split_size, const char* message) :
+        _kind(kind), _split_size(split_size), _message(message)
     {
-      assert(!reject || split_size == 0, "only non-rejections actually split packs");
       assert(message != nullptr, "must have message");
+      assert(_kind != Unchanged || (split_size == 0), "unchanged task conditions");
+      assert(_kind != Reject    || (split_size == 0), "reject task conditions");
+      assert(_kind != Split     || (split_size != 0), "split task conditions");
     }
 
   public:
-    SplitTask(const uint split_size, const char* message) :
-        SplitTask(split_size, false, message) {};
+    static SplitTask make_split(const uint split_size, const char* message) { return SplitTask(Split, split_size, message); }
+    static SplitTask make_unchanged() { return SplitTask(Unchanged, 0, "unchanged"); }
+    static SplitTask make_reject(const char* message) { return SplitTask(Reject, 0, message); }
 
-    static SplitTask make_no_split() { return SplitTask(0, "no split"); }
-    static SplitTask make_reject(const char* message) { return SplitTask(0, true, message); }
+    bool is_reject() const { return _kind == Reject; }
+    bool is_unchanged() const { return _kind == Unchanged; }
+    bool is_split() const { return _kind == Split; }
     const char* message() const { return _message; }
-    bool is_reject() const { return _reject; }
 
     int split_size() const {
-      assert(!is_reject(), "only non-rejections have a split size");
+      assert(is_split(), "only split tasks have split_size");
       return _split_size;
     }
   };

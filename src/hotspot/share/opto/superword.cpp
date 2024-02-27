@@ -1487,10 +1487,15 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
-// Split pack according to task. Return true if any change was made, else false.
-SuperWord::SplitStatus
-SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
+SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
+                                             Node_List* pack,
+                                             SplitTask task)
+{
   uint pack_size = pack->size();
+
+  if (task.is_unchanged()) {
+    return SplitStatus::make_no_change(pack);
+  }
 
   if (task.is_reject()) {
 #ifndef PRODUCT
@@ -1508,10 +1513,7 @@ SuperWord::split_pack(const char* split_name, Node_List* pack, SplitTask task) {
   }
 
   uint split_size = task.split_size();
-  assert(split_size <= pack_size, "split_size must be in range");
-  if (split_size == 0 || split_size == pack_size) {
-    return SplitStatus::make_no_change(pack);
-  }
+  assert(0 < split_size && split_size < pack_size, "split_size must be in range");
 
   // Split the size
   uint new_size = split_size;
@@ -1637,7 +1639,10 @@ void SuperWord::split_packs_at_use_def_boundaries() {
                  uint pack_size = pack->size();
                  uint boundary = find_use_def_boundary(pack);
                  assert(boundary < pack_size, "valid boundary %d", boundary);
-                 return SplitTask(pack_size - boundary, "found a use/def boundary");
+                 if (boundary != 0) {
+                   return SplitTask::make_split(pack_size - boundary, "found a use/def boundary");
+                 }
+                 return SplitTask::make_unchanged();
                });
 }
 
@@ -1651,9 +1656,11 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                  if (implemented_size == 0)  {
                    return SplitTask::make_reject("not implemented at any smaller size");
                  }
-                 assert(is_power_of_2(implemented_size) || implemented_size == 0,
-                        "power of 2 size or zero: %d", implemented_size);
-                 return SplitTask(implemented_size, "only implemented at smaller size");
+                 assert(is_power_of_2(implemented_size), "power of 2 size or zero: %d", implemented_size);
+                 if (implemented_size != pack_size) {
+                   return SplitTask::make_split(implemented_size, "only implemented at smaller size");
+                 }
+                 return SplitTask::make_unchanged();
                });
 }
 
@@ -1666,9 +1673,9 @@ void SuperWord::split_packs_to_break_mutual_dependence() {
                  if (!is_marked_reduction(pack->at(0)) &&
                      !mutually_independent(pack)) {
                    // Split in half.
-                   return SplitTask(pack_size >> 1, "was not mutually independent");
+                   return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
                  }
-                 return SplitTask::make_no_split();
+                 return SplitTask::make_unchanged();
                });
 }
 
