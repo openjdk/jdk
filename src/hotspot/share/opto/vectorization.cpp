@@ -196,7 +196,7 @@ void VLoopDependencyGraph::construct() {
 
         VPointer p2(n2, _vloop);
         if (!VPointer::not_equal(p1.cmp(p2))) {
-          // Possibly the same / overlapping address.
+          // Possibly overlapping addresses
           def_nodes.append(_body.bb_idx(n2));
         }
       }
@@ -212,28 +212,24 @@ void VLoopDependencyGraph::construct() {
 #endif
 }
 
-void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_edges) {
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_def_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  if (extra_edges.length() == 0) { return; }
-  DependencyNode* dn = new (_arena) DependencyNode(n, extra_edges, _arena);
+  if (extra_def_edges.length() == 0) { return; }
+  DependencyNode* dn = new (_arena) DependencyNode(n, extra_def_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
 #ifndef PRODUCT
 void VLoopDependencyGraph::print() const {
   tty->print_cr("\nVLoopDependencyGraph::print:");
-  if (_body.body().length() > 0) {
-    tty->print_cr(" Extra edges:");
-  } else {
-    tty->print_cr(" No extra (memory) edges.");
-  }
+  tty->print_cr(" Extra def edges:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
-      for (uint j = 0; j < dn->extra_edges_length(); j++) {
-        Node* def = _body.body().at(dn->extra_edge(j));
+      for (uint j = 0; j < dn->extra_def_edges_length(); j++) {
+        Node* def = _body.body().at(dn->extra_def_edge(j));
         tty->print("  %d %s", def->_idx, def->Name());
       }
       tty->print_cr("]");
@@ -244,16 +240,16 @@ void VLoopDependencyGraph::print() const {
 #endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& extra_edges,
+                                                     GrowableArray<int>& extra_def_edges,
                                                      Arena* arena) :
     _node(n),
-    _extra_edges_length(extra_edges.length()),
-    _extra_edges(nullptr)
+    _extra_def_edges_length(extra_def_edges.length()),
+    _extra_def_edges(nullptr)
 {
-  assert(extra_edges.length() > 0, "not empty");
-  uint bytes = extra_edges.length() * sizeof(int);
-  _extra_edges = (int*)arena->Amalloc(bytes);
-  memcpy(_extra_edges, extra_edges.adr_at(0), bytes);
+  assert(extra_def_edges.length() > 0, "not empty");
+  uint bytes = extra_def_edges.length() * sizeof(int);
+  _extra_def_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_extra_def_edges, extra_def_edges.adr_at(0), bytes);
 }
 
 #ifndef PRODUCT

@@ -483,7 +483,7 @@ public:
   void construct();
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& extra_edges);
+  void add_node(MemNode* n, GrowableArray<int>& extra_def_edges);
 
   DependencyNode* dependency_node(Node* n) const {
     return _dependency_nodes.at(_body.bb_idx(n));
@@ -494,15 +494,15 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _extra_edges_length;
-    int* _extra_edges; // extra def-edges, mapping to bb_idx
+    const uint _extra_def_edges_length;
+    int* _extra_def_edges; // extra def-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& extra_edges, Arena* arena);
-    uint extra_edges_length() const { return _extra_edges_length; }
+    DependencyNode(MemNode* n, GrowableArray<int>& extra_def_edges, Arena* arena);
+    uint extra_def_edges_length() const { return _extra_def_edges_length; }
 
-    int extra_edge(uint i) const {
-      assert(i < _extra_edges_length, "bounds check");
-      return _extra_edges[i];
+    int extra_def_edge(uint i) const {
+      assert(i < _extra_def_edges_length, "bounds check");
+      return _extra_def_edges[i];
     }
   };
 };
