@@ -26,7 +26,11 @@
  * @bug 8304982 8174269
  * @summary Check if a warning is logged with COMPAT locale provider
  * @run main/othervm -Djava.locale.providers=COMPAT CompatWarning
+ * @run main/othervm -Djava.locale.providers=SPI,COMPAT CompatWarning
+ * @run main/othervm -Djava.locale.providers=COMPAT,SPI CompatWarning
  * @run main/othervm -Djava.locale.providers=JRE CompatWarning
+ * @run main/othervm -Djava.locale.providers=SPI,JRE CompatWarning
+ * @run main/othervm -Djava.locale.providers=JRE,SPI CompatWarning
  */
 
 import java.io.File;
