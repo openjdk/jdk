@@ -47,11 +47,6 @@
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 #define VM_STRUCTS(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field) \
   static_field(CompilerToVM::Data,             Klass_vtable_start_offset,              int)                                          \
   static_field(CompilerToVM::Data,             Klass_vtable_length_offset,             int)                                          \
