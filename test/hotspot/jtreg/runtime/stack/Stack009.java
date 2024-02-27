@@ -55,7 +55,7 @@ public class Stack009 {
         for (int depth = 100; ; depth += 100) {
             try {
                 recurse(depth);
-            } catch (StackOverflowError | OutOfMemoryError error1)  {
+            } catch (StackOverflowError | OutOfMemoryError error1) {
 
                 System.out.println("Max. depth: " + depth);
 
