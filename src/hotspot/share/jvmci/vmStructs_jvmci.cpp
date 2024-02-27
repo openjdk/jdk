@@ -43,7 +43,7 @@
 #include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 

@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGION_INLINE_HPP
-#define SHARE_GC_G1_HEAPREGION_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGION_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGION_INLINE_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 #include "classfile/vmClasses.hpp"
 #include "gc/g1/g1BlockOffsetTable.inline.hpp"
@@ -559,4 +559,4 @@ inline void HeapRegion::add_pinned_object_count(size_t value) {
   Atomic::add(&_pinned_object_count, value, memory_order_relaxed);
 }
 
-#endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGION_INLINE_HPP
