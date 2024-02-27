@@ -621,7 +621,8 @@ public class JlinkTask {
               .forEach(rm -> log.format("%s %s%s%n",
                                         rm.name(),
                                         rm.reference().location().get(),
-                                        config.linkFromRuntimeImage() ? " " + taskHelper.getMessage("runtime.link.jprt.path.extra") : " "));
+                                        "jrt".equals(rm.reference().location().get().getScheme()) && config.linkFromRuntimeImage() ?
+                                                " " + taskHelper.getMessage("runtime.link.jprt.path.extra") : ""));
 
             // print provider info
             Set<ModuleReference> references = cf.modules().stream()
