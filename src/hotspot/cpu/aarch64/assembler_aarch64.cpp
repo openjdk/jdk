@@ -123,10 +123,6 @@ extern "C" {
     else
       Disassembler::decode((address)start, (address)start + len);
   }
-
-  void das1(uintptr_t insn) {
-    das(insn, 1);
-  }
 }
 
 #define __ as->
