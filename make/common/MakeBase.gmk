@@ -37,6 +37,9 @@ ifeq ($(wildcard $(SPEC)),)
   $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
 endif
 
+# Basic functionality that is always needed
+include $(TOPDIR)/make/common/BaseUtils.gmk
+
 # By defining this pseudo target, make will automatically remove targets
 # if their recipe fails so that a rebuild is automatically triggered on the
 # next make invocation.
