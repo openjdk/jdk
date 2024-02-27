@@ -24,8 +24,8 @@
 
 #include "precompiled.hpp"
 
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HRPrinter.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 
 void G1HRPrinter::cleanup(FreeRegionList* cleanup_list) {
   if (is_active()) {

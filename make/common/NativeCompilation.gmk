@@ -89,9 +89,6 @@ include native/Paths.gmk
 #   VERSIONINFO_RESOURCE Input file for RC. Setting this implies that RC will be run
 #   RCFLAGS flags for RC.
 #   EMBED_MANIFEST if true, embed manifest on Windows.
-#   MAPFILE mapfile
-#   USE_MAPFILE_FOR_SYMBOLS if true and this is a STATIC_BUILD, just copy the
-#       mapfile for the output symbols file
 #   CC the C compiler to use
 #   CXX the C++ compiler to use
 #   LD the Linker to use
@@ -212,8 +209,6 @@ define SetupNativeCompilationBody
   $$(eval $$(call SetupLinkerFlags,$1))
   ifneq ($(TOOLCHAIN_TYPE), microsoft)
     $$(eval $$(call SetupLinking,$1))
-  else
-    $$(eval $$(call SetupLinkingMicrosoft,$1))
   endif
 
   $$(eval $$(call SetupObjectFileList,$1))

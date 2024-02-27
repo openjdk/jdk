@@ -70,6 +70,11 @@
 #include "jfr/jfr.hpp"
 #endif
 
+#if defined(TARGET_COMPILER_gcc)
+#undef JNIEXPORT
+#define JNIEXPORT
+#endif
+
 JVMCIKlassHandle::JVMCIKlassHandle(Thread* thread, Klass* klass) {
   _thread = thread;
   _klass = klass;

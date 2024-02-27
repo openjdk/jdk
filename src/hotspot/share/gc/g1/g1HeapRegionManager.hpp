@@ -22,13 +22,13 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONMANAGER_HPP
-#define SHARE_GC_G1_HEAPREGIONMANAGER_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONMANAGER_HPP
+#define SHARE_GC_G1_G1HEAPREGIONMANAGER_HPP
 
 #include "gc/g1/g1BiasedArray.hpp"
 #include "gc/g1/g1CommittedRegionMap.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "memory/allocation.hpp"
 #include "services/memoryUsage.hpp"
 
@@ -326,4 +326,4 @@ class HeapRegionClaimer : public StackObj {
   // Claim the given region, returns true if successfully claimed.
   bool claim_region(uint region_index);
 };
-#endif // SHARE_GC_G1_HEAPREGIONMANAGER_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONMANAGER_HPP

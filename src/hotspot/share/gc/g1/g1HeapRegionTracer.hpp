@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONTRACER_HPP
-#define SHARE_GC_G1_HEAPREGIONTRACER_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONTRACER_HPP
+#define SHARE_GC_G1_G1HEAPREGIONTRACER_HPP
 
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "memory/allStatic.hpp"
@@ -38,4 +38,4 @@ class HeapRegionTracer : AllStatic {
                                         size_t used);
 };
 
-#endif // SHARE_GC_G1_HEAPREGIONTRACER_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONTRACER_HPP
