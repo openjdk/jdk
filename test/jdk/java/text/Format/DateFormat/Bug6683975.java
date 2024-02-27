@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 6683975 8008577 8174269
- * @summary Make sure that date is formatted correctlyin th locale.
+ * @summary Make sure that date is formatted correctly in th locale.
  * @modules jdk.localedata
  * @run main Bug6683975
  */
