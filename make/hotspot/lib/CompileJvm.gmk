@@ -162,7 +162,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \
