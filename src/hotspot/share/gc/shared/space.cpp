@@ -99,18 +99,9 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-
-void ContiguousSpace::print_short() const { print_short_on(tty); }
-
-void ContiguousSpace::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
-}
-
-void ContiguousSpace::print() const { print_on(tty); }
-
 void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
+  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
+            (int) ((double) used() * 100 / capacity()));
   st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
                 p2i(bottom()), p2i(top()), p2i(end()));
 }
