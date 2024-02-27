@@ -218,7 +218,7 @@ public class JMXInterfaceBindingTest {
             args.add(Boolean.toString(useSSL));
 
             try {
-                ProcessBuilder builder = ProcessTools.createTestJvm(args.toArray(new String[]{}));
+                ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(args.toArray(new String[]{}));
                 System.out.println(ProcessTools.getCommandLine(builder));
                 Process process = builder.start();
                 output = new OutputAnalyzer(process);

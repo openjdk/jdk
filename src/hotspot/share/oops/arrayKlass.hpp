@@ -47,7 +47,7 @@ class ArrayKlass: public Klass {
   // The constructor with the Symbol argument does the real array
   // initialization, the other is a dummy
   ArrayKlass(Symbol* name, KlassKind kind);
-  ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  ArrayKlass();
 
  public:
   // Testing operation

@@ -220,7 +220,7 @@ class TypeClass {
                     }
                 }
             }
-            case PaddingLayout __ -> {
+            case PaddingLayout  _ -> {
             }
             case SequenceLayout seq -> {
                 MemoryLayout elem = seq.elementLayout();

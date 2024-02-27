@@ -32,27 +32,51 @@
  */
 package org.jcp.xml.dsig.internal.dom;
 
-import javax.xml.crypto.*;
-import javax.xml.crypto.dsig.*;
-import javax.xml.crypto.dom.DOMCryptoContext;
-import javax.xml.crypto.dom.DOMURIReference;
-
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.*;
-import java.util.*;
+import java.security.AccessController;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivilegedAction;
+import java.security.Provider;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import org.w3c.dom.Attr;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-
-import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import javax.xml.crypto.Data;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.NodeSetData;
+import javax.xml.crypto.OctetStreamData;
+import javax.xml.crypto.URIDereferencer;
+import javax.xml.crypto.URIReferenceException;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.dom.DOMCryptoContext;
+import javax.xml.crypto.dom.DOMURIReference;
+import javax.xml.crypto.dsig.CanonicalizationMethod;
+import javax.xml.crypto.dsig.DigestMethod;
+import javax.xml.crypto.dsig.Reference;
+import javax.xml.crypto.dsig.Transform;
+import javax.xml.crypto.dsig.TransformException;
+import javax.xml.crypto.dsig.TransformService;
+import javax.xml.crypto.dsig.XMLSignContext;
+import javax.xml.crypto.dsig.XMLSignature;
+import javax.xml.crypto.dsig.XMLSignatureException;
+import javax.xml.crypto.dsig.XMLValidateContext;
 
 import org.jcp.xml.dsig.internal.DigesterOutputStream;
 import com.sun.org.apache.xml.internal.security.signature.XMLSignatureInput;
 import com.sun.org.apache.xml.internal.security.utils.UnsyncBufferedOutputStream;
+import com.sun.org.apache.xml.internal.security.utils.XMLUtils;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 /**
  * DOM-based implementation of Reference.
@@ -270,30 +294,37 @@ public final class DOMReference extends DOMStructure
         this.provider = provider;
     }
 
+    @Override
     public DigestMethod getDigestMethod() {
         return digestMethod;
     }
 
+    @Override
     public String getId() {
         return id;
     }
 
+    @Override
     public String getURI() {
         return uri;
     }
 
+    @Override
     public String getType() {
         return type;
     }
 
+    @Override
     public List<Transform> getTransforms() {
         return Collections.unmodifiableList(allTransforms);
     }
 
+    @Override
     public byte[] getDigestValue() {
         return digestValue == null ? null : digestValue.clone();
     }
 
+    @Override
     public byte[] getCalculatedDigestValue() {
         return calcDigestValue == null ? null
                                         : calcDigestValue.clone();
@@ -372,6 +403,7 @@ public final class DOMReference extends DOMStructure
         LOG.debug("Reference digesting completed");
     }
 
+    @Override
     public boolean validate(XMLValidateContext validateContext)
         throws XMLSignatureException
     {
@@ -394,10 +426,12 @@ public final class DOMReference extends DOMStructure
         return validationStatus;
     }
 
+    @Override
     public Data getDereferencedData() {
         return derefData;
     }
 
+    @Override
     public InputStream getDigestInputStream() {
         return dis;
     }
@@ -568,6 +602,7 @@ public final class DOMReference extends DOMStructure
         }
     }
 
+    @Override
     public Node getHere() {
         return here;
     }
@@ -631,6 +666,7 @@ public final class DOMReference extends DOMStructure
                 try {
                     final Set<Node> s = xsi.getNodeSet();
                     return new NodeSetData<Node>() {
+                        @Override
                         public Iterator<Node> iterator() { return s.iterator(); }
                     };
                 } catch (Exception e) {

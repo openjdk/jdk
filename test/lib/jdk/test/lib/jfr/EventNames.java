@@ -88,6 +88,7 @@ public class EventNames {
     public static final String NativeMemoryUsageTotal = PREFIX + "NativeMemoryUsageTotal";
     public static final String JavaAgent = PREFIX + "JavaAgent";
     public static final String NativeAgent = PREFIX + "NativeAgent";
+    public static final String DeprecatedInvocation = PREFIX + "DeprecatedInvocation";
 
     // This event is hard to test
     public static final String ReservedStackActivation = PREFIX + "ReservedStackActivation";
@@ -160,6 +161,7 @@ public class EventNames {
     public static final String CompilerPhase = PREFIX + "CompilerPhase";
     public static final String CompilationFailure = PREFIX + "CompilationFailure";
     public static final String CompilerInlining = PREFIX + "CompilerInlining";
+    public static final String CompilerQueueUtilization = PREFIX + "CompilerQueueUtilization";
     public static final String CompilerStatistics = PREFIX + "CompilerStatistics";
     public static final String CompilerConfiguration = PREFIX + "CompilerConfiguration";
     public static final String CodeCacheStatistics = PREFIX + "CodeCacheStatistics";
@@ -184,6 +186,7 @@ public class EventNames {
     public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
     public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
+    public static final String SwapSpace = PREFIX + "SwapSpace";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
     public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
@@ -207,6 +210,7 @@ public class EventNames {
     public static final String SecurityProviderService = PREFIX + "SecurityProviderService";
     public static final String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public static final String Deserialization = PREFIX + "Deserialization";
+    public static final String SerializationMisdeclaration = PREFIX + "SerializationMisdeclaration";
     public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";

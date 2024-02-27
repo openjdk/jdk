@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768 8261976 8277300 8282452 8287597
+ * @bug      8250768 8261976 8277300 8282452 8287597 8325325
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -77,7 +77,7 @@ public class TestPreview extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("preview-list.html", true,
-                    """
+                """
                     <ul class="preview-feature-list">
                     <li><label for="feature-1">
                     <input type="checkbox" id="feature-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
@@ -85,18 +85,35 @@ public class TestPreview extends JavadocTester {
                     </ul>
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
+                    <li id="contents-package"><a href="#package">Packages</a></li>
                     <li id="contents-class"><a href="#class">Classes</a></li>
                     <li id="contents-record-class"><a href="#record-class">Record Classes</a></li>
                     <li id="contents-method"><a href="#method">Methods</a></li>
                     </ul>
                     """,
-                    """
+                """
+                    <div id="package">
+                    <div class="table-tabs" role="tablist" aria-orientation="horizontal">
+                    <div class="caption"><span>Packages</span></div>
+                    </div>
+                    <div id="package.tabpanel" role="tabpanel" aria-labelledby="package-tab0">
+                    <div class="summary-table three-column-summary">
+                    <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Package</div>
+                    <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
+                    <div class="table-header col-last">Description</div>
+                    <div class="col-summary-item-name even-row-color package package-tab1"><a href="java.base/preview/package-summary.html">preview</a><sup><a href="java.base/preview/package-summary.html#preview-preview">PREVIEW</a></sup></div>
+                    <div class="col-second even-row-color package package-tab1">Test Feature</div>
+                    <div class="col-last even-row-color package package-tab1">
+                    <div class="block">Preview package.</div>
+                    </div>
+                    """,
+                """
                     <div id="record-class">
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                     <div class="caption"><span>Record Classes</span></div>
                     </div>
-                    <div id="record-class.tabpanel" role="tabpanel">
-                    <div class="summary-table three-column-summary" aria-labelledby="record-class-tab0">
+                    <div id="record-class.tabpanel" role="tabpanel" aria-labelledby="record-class-tab0">
+                    <div class="summary-table three-column-summary">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Record Class</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
@@ -105,13 +122,13 @@ public class TestPreview extends JavadocTester {
                     <div class="col-last even-row-color record-class record-class-tab1"></div>
                     </div>
                     """,
-                    """
+                """
                     <div id="method">
                     <div class="table-tabs" role="tablist" aria-orientation="horizontal">
                     <div class="caption"><span>Methods</span></div>
                     </div>
-                    <div id="method.tabpanel" role="tabpanel">
-                    <div class="summary-table three-column-summary" aria-labelledby="method-tab0">
+                    <div id="method.tabpanel" role="tabpanel" aria-labelledby="method-tab0">
+                    <div class="summary-table three-column-summary">
                     <div class="table-header col-first sort-asc" onclick="sortTable(this, 0, 3)">Method</div>
                     <div class="table-header col-second" onclick="sortTable(this, 1, 3)">Preview Feature</div>
                     <div class="table-header col-last">Description</div>
@@ -121,6 +138,21 @@ public class TestPreview extends JavadocTester {
                     <div class="block">Returns the value of the <code>i</code> record component.</div>
                     </div>
                     """);
+
+        // 8325325: Breadcrumb navigation links should not contain PREVIEW link
+        checkOutput("java.base/preview/package-summary.html", true,
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">java.base</a></li>
+                    <li><a href="package-summary.html" class="current-selection">preview</a></li>
+                    </ol>""");
+        checkOutput("java.base/preview/Core.html", true,
+                """
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">java.base</a></li>
+                    <li><a href="package-summary.html">preview</a></li>
+                    <li><a href="Core.html" class="current-selection">Core</a></li>
+                    </ol>""");
     }
 
     @Test

@@ -23,6 +23,7 @@
  /*
  * @test
  * @bug 6529030 8159134
+ * @key printer
  * @summary  Verifies if Java Printing: Selection radiobutton gets enabled.
  * @requires (os.family == "windows")
  * @run main/manual PrintDlgSelectionAttribTest

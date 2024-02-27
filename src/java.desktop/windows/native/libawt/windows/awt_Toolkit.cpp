@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,6 @@ jmethodID AwtToolkit::insetsMID;
  */
 
 AwtToolkit::AwtToolkit() {
-    m_localPump = FALSE;
     m_mainThreadId = 0;
     m_toolkitHWnd = NULL;
     m_inputMethodHWnd = NULL;
@@ -604,7 +603,7 @@ Java_sun_awt_windows_WToolkit_startToolkitThread(JNIEnv *env, jclass cls, jobjec
     return result ? JNI_TRUE : JNI_FALSE;
 }
 
-BOOL AwtToolkit::Initialize(BOOL localPump) {
+BOOL AwtToolkit::Initialize() {
     AwtToolkit& tk = AwtToolkit::GetInstance();
 
     if (!tk.m_isActive || tk.m_mainThreadId != 0) {
@@ -616,11 +615,6 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     // there led to the bug 6480630: there could be a situation when
     // ComCtl32Util was constructed but not disposed
     ComCtl32Util::GetInstance().InitLibraries();
-
-    if (!localPump) {
-        // if preload thread was run, terminate it
-        preloadThread.Terminate(true);
-    }
 
     /* Register this toolkit's helper window */
     VERIFY(tk.RegisterClass() != NULL);
@@ -650,7 +644,6 @@ BOOL AwtToolkit::Initialize(BOOL localPump) {
     ::ReleaseDC(NULL, hDC);
         ///////////////////////////////////////////////////////////////////////////
 
-    tk.m_localPump = localPump;
     tk.m_mainThreadId = ::GetCurrentThreadId();
 
     /*
@@ -1507,12 +1500,6 @@ const int AwtToolkit::EXIT_ALL_ENCLOSING_LOOPS = -1;
  * for example, we might get a WINDOWPOSCHANGING event, then we
  * idle and release the lock here, then eventually we get the
  * WINDOWPOSCHANGED event.
- *
- * This method may be called from WToolkit.embeddedEventLoopIdleProcessing
- * if there is a separate event loop that must do the same CriticalSection
- * check.
- *
- * See bug #4526587 for more information.
  */
 void VerifyWindowMoveLockReleased()
 {
@@ -2022,9 +2009,6 @@ JNIEnv* AwtToolkit::m_env;
 DWORD AwtToolkit::m_threadId;
 
 void AwtToolkit::SetEnv(JNIEnv *env) {
-    if (m_env != NULL) { // If already cashed (by means of embeddedInit() call).
-        return;
-    }
     m_threadId = GetCurrentThreadId();
     m_env = env;
 }
@@ -2496,53 +2480,6 @@ Java_sun_awt_windows_WToolkit_initIDs(JNIEnv *env, jclass cls)
 
 /*
  * Class:     sun_awt_windows_WToolkit
- * Method:    embeddedInit
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_WToolkit_embeddedInit(JNIEnv *env, jclass cls)
-{
-    TRY;
-
-    AwtToolkit::SetEnv(env);
-
-    return AwtToolkit::GetInstance().Initialize(FALSE);
-
-    CATCH_BAD_ALLOC_RET(JNI_FALSE);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
- * Method:    embeddedDispose
- * Signature: ()Z
- */
-JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_WToolkit_embeddedDispose(JNIEnv *env, jclass cls)
-{
-    TRY;
-
-    BOOL retval = AwtToolkit::GetInstance().Dispose();
-    AwtToolkit::GetInstance().SetPeer(env, NULL);
-    return retval;
-
-    CATCH_BAD_ALLOC_RET(JNI_FALSE);
-}
-
-/*
- * Class:     sun_awt_windows_WToolkit
- * Method:    embeddedEventLoopIdleProcessing
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_windows_WToolkit_embeddedEventLoopIdleProcessing(JNIEnv *env,
-    jobject self)
-{
-    VerifyWindowMoveLockReleased();
-}
-
-
-/*
- * Class:     sun_awt_windows_WToolkit
  * Method:    init
  * Signature: ()Z
  */
@@ -2557,7 +2494,7 @@ Java_sun_awt_windows_WToolkit_init(JNIEnv *env, jobject self)
 
     // This call will fail if the Toolkit was already initialized.
     // In that case, we don't want to start another message pump.
-    return AwtToolkit::GetInstance().Initialize(TRUE);
+    return AwtToolkit::GetInstance().Initialize();
 
     CATCH_BAD_ALLOC_RET(FALSE);
 }
@@ -2571,8 +2508,6 @@ JNIEXPORT void JNICALL
 Java_sun_awt_windows_WToolkit_eventLoop(JNIEnv *env, jobject self)
 {
     TRY;
-
-    DASSERT(AwtToolkit::GetInstance().localPump());
 
     AwtToolkit::SetBusy(TRUE);
 
@@ -3231,4 +3166,3 @@ LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lP
         return 0;
     }
 }
-

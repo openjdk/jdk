@@ -523,6 +523,9 @@ public final class Channels {
      * The resulting stream will not otherwise be buffered.  Closing the stream
      * will in turn cause the channel to be closed.  </p>
      *
+     * @implNote
+     * The value of {@code minBufferCap} is ignored.
+     *
      * @param  ch
      *         The channel to which bytes will be written
      *
@@ -532,7 +535,8 @@ public final class Channels {
      * @param  minBufferCap
      *         The minimum capacity of the internal byte buffer,
      *         or {@code -1} if an implementation-dependent
-     *         default capacity is to be used
+     *         default capacity is to be used. The value of
+     *         {@code minBufferCap} may be ignored
      *
      * @return  A new writer
      */

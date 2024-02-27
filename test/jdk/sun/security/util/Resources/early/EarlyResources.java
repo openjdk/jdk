@@ -42,7 +42,7 @@ public class EarlyResources {
         String fs = File.separator;
         String policyPath = testSrc + fs + "malformed.policy";
 
-        OutputAnalyzer out = ProcessTools.executeTestJvm(
+        OutputAnalyzer out = ProcessTools.executeTestJava(
             "-Djava.security.manager",
             "-Djava.security.policy=" + policyPath,
             "EarlyResources$TestMain");

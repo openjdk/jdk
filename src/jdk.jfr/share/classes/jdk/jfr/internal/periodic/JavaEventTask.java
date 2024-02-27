@@ -24,7 +24,7 @@
  */
 package jdk.jfr.internal.periodic;
 
-import jdk.jfr.Event;
+import jdk.internal.event.Event;
 import jdk.jfr.EventType;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;

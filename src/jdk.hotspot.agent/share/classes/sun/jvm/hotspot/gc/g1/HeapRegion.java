@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,8 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
     private static AddressField endField;
 
     private static CIntegerField grainBytesField;
+    private static CIntegerField pinnedCountField;
+
     private static long typeFieldOffset;
     private static long pointerSize;
 
@@ -71,6 +73,8 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
         endField = type.getAddressField("_end");
 
         grainBytesField = type.getCIntegerField("GrainBytes");
+        pinnedCountField = type.getCIntegerField("_pinned_object_count");
+
         typeFieldOffset = type.getField("_type").getOffset();
 
         pointerSize = db.lookupType("HeapRegion*").getSize();
@@ -124,6 +128,10 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
         return type.isHumongous();
     }
 
+    public boolean isPinned() {
+        return pinnedCountField.getValue(addr) != 0;
+    }
+
     public boolean isOld() {
         return type.isOld();
     }
@@ -132,8 +140,12 @@ public class HeapRegion extends ContiguousSpace implements LiveRegionsProvider {
         return pointerSize;
     }
 
+    public boolean isInRegion(Address addr) {
+        return (addr.greaterThanOrEqual(bottom()) && addr.lessThan(end()));
+    }
+
     public void printOn(PrintStream tty) {
         tty.print("Region: " + bottom() + "," + top() + "," + end());
-        tty.println(":" + type.typeAnnotation());
+        tty.println(":" + type.typeAnnotation() + (isPinned() ? " Pinned" : ""));
     }
 }

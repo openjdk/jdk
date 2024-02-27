@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,13 +104,8 @@ public:
   Bytecode  bytecode() const                     { return Bytecode(method(), bcp()); }
   int get_index_u1(Bytecodes::Code bc) const     { return bytecode().get_index_u1(bc); }
   int get_index_u2(Bytecodes::Code bc) const     { return bytecode().get_index_u2(bc); }
-  int get_index_u2_cpcache(Bytecodes::Code bc) const
-                                                 { return bytecode().get_index_u2_cpcache(bc); }
   int get_index_u4(Bytecodes::Code bc) const     { return bytecode().get_index_u4(bc); }
   int number_of_dimensions() const               { return bcp()[3]; }
-  ConstantPoolCacheEntry* cache_entry_at(int i) const
-                                                 { return method()->constants()->cache()->entry_at(i); }
-  ConstantPoolCacheEntry* cache_entry() const    { return cache_entry_at(Bytes::get_native_u2(bcp() + 1)); }
 
   oop callee_receiver(Symbol* signature) {
     return _last_frame.interpreter_callee_receiver(signature);
@@ -207,8 +202,8 @@ JRT_ENTRY(void, InterpreterRuntime::resolve_ldc(JavaThread* current, Bytecodes::
     // Tell the interpreter how to unbox the primitive.
     guarantee(java_lang_boxing_object::is_instance(result, type), "");
     int offset = java_lang_boxing_object::value_offset(type);
-    intptr_t flags = ((as_TosState(type) << ConstantPoolCacheEntry::tos_state_shift)
-                      | (offset & ConstantPoolCacheEntry::field_index_mask));
+    intptr_t flags = ((as_TosState(type) << ConstantPoolCache::tos_state_shift)
+                      | (offset & ConstantPoolCache::field_index_mask));
     current->set_vm_result_2((Metadata*)flags);
   }
 }
@@ -465,6 +460,7 @@ JRT_END
 // bci where the exception happened. If the exception was propagated back
 // from a call, the expression stack contains the values for the bci at the
 // invoke w/o arguments (i.e., as if one were inside the call).
+// Note that the implementation of this method assumes it's only called when an exception has actually occured
 JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThread* current, oopDesc* exception))
   // We get here after we have unwound from a callee throwing an exception
   // into the interpreter. Any deferred stack processing is notified of
@@ -551,7 +547,12 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 #if INCLUDE_JVMCI
   if (EnableJVMCI && h_method->method_data() != nullptr) {
     ResourceMark rm(current);
-    ProfileData* pdata = h_method->method_data()->allocate_bci_to_data(current_bci, nullptr);
+    MethodData* mdo = h_method->method_data();
+
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
+    ProfileData* pdata = mdo->allocate_bci_to_data(current_bci, nullptr);
     if (pdata != nullptr && pdata->is_BitData()) {
       BitData* bit_data = (BitData*) pdata;
       bit_data->set_exception_seen();
@@ -579,6 +580,7 @@ JRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
   } else {
     // handler in this method => change bci/bcp to handler bci/bcp and continue there
     handler_pc = h_method->code_base() + handler_bci;
+    h_method->set_exception_handler_entered(handler_bci); // profiling
 #ifndef ZERO
     set_bcp_and_mdp(handler_pc, current);
     continuation = Interpreter::dispatch_table(vtos)[*handler_pc];
@@ -840,14 +842,16 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   // resolve method
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
+  ConstantPoolCache* cache = pool->cache();
 
   methodHandle resolved_method;
 
+  int method_index = last_frame.get_index_u2(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, receiver, pool,
-                                 last_frame.get_index_u2_cpcache(bytecode), bytecode,
+                                 method_index, bytecode,
                                  THREAD);
 
     if (HAS_PENDING_EXCEPTION) {
@@ -868,8 +872,7 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
   } // end JvmtiHideSingleStepping
 
   // check if link resolution caused cpCache to be updated
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  if (cp_cache_entry->is_resolved(bytecode)) return;
+  if (cache->resolved_method_entry_at(method_index)->is_resolved(bytecode)) return;
 
 #ifdef ASSERT
   if (bytecode == Bytecodes::_invokeinterface) {
@@ -903,20 +906,15 @@ void InterpreterRuntime::resolve_invoke(JavaThread* current, Bytecodes::Code byt
 
   switch (info.call_kind()) {
   case CallInfo::direct_call:
-    cp_cache_entry->set_direct_call(
-      bytecode,
-      resolved_method,
-      sender->is_interface());
+    cache->set_direct_call(bytecode, method_index, resolved_method, sender->is_interface());
     break;
   case CallInfo::vtable_call:
-    cp_cache_entry->set_vtable_call(
-      bytecode,
-      resolved_method,
-      info.vtable_index());
+    cache->set_vtable_call(bytecode, method_index, resolved_method, info.vtable_index());
     break;
   case CallInfo::itable_call:
-    cp_cache_entry->set_itable_call(
+    cache->set_itable_call(
       bytecode,
+      method_index,
       info.resolved_klass(),
       resolved_method,
       info.itable_index());
@@ -934,16 +932,16 @@ void InterpreterRuntime::resolve_invokehandle(JavaThread* current) {
   // resolve method
   CallInfo info;
   constantPoolHandle pool(current, last_frame.method()->constants());
+  int method_index = last_frame.get_index_u2(bytecode);
   {
     JvmtiHideSingleStepping jhss(current);
     JavaThread* THREAD = current; // For exception macros.
     LinkResolver::resolve_invoke(info, Handle(), pool,
-                                 last_frame.get_index_u2_cpcache(bytecode), bytecode,
+                                 method_index, bytecode,
                                  CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = last_frame.cache_entry();
-  cp_cache_entry->set_method_handle(pool, info);
+  pool->cache()->set_method_handle(method_index, info);
 }
 
 // First time execution:  Resolve symbols, create a permanent CallSite object.
@@ -1501,7 +1499,7 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
     return;
   }
   ConstantPool* cpool = method->constants();
-  int cp_index = Bytes::get_native_u2(bcp + 1) + ConstantPool::CPCACHE_INDEX_TAG;
+  int cp_index = Bytes::get_native_u2(bcp + 1);
   Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
   Symbol* mname = cpool->name_ref_at(cp_index, code);
 

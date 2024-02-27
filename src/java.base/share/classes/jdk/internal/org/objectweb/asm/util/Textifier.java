@@ -87,7 +87,9 @@ public class Textifier extends Printer {
             "Prints a disassembled view of the given class.\n"
                     + "Usage: Textifier [-nodebug] <fully qualified class name or class file name>";
 
-    /** The type of internal names. See {@link #appendDescriptor}. */
+    /**
+      * The type of internal names (see {@link Type#getInternalName()}). See {@link #appendDescriptor}.
+      */
     public static final int INTERNAL_NAME = 0;
 
     /** The type of field descriptors. See {@link #appendDescriptor}. */
@@ -1355,7 +1357,8 @@ public class Textifier extends Printer {
       * @param type the type of 'value'. Must be one of {@link #INTERNAL_NAME}, {@link
       *     #FIELD_DESCRIPTOR}, {@link #FIELD_SIGNATURE}, {@link #METHOD_DESCRIPTOR}, {@link
       *     #METHOD_SIGNATURE}, {@link #CLASS_SIGNATURE} or {@link #HANDLE_DESCRIPTOR}.
-      * @param value an internal name, type descriptor or a type signature. May be {@literal null}.
+      * @param value an internal name (see {@link Type#getInternalName()}), type descriptor or a type
+      *     signature. May be {@literal null}.
       */
     protected void appendDescriptor(final int type, final String value) {
         if (type == CLASS_SIGNATURE || type == FIELD_SIGNATURE || type == METHOD_SIGNATURE) {
@@ -1631,4 +1634,3 @@ public class Textifier extends Printer {
         return new Textifier(api);
     }
 }
-

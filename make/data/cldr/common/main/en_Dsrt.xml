@@ -355,7 +355,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">𐐆𐑆𐑉𐐨𐐲𐑊</territory>
 			<territory type="IM">𐐌𐐲𐑊 𐐲𐑁 𐐣𐐰𐑌</territory>
 			<territory type="IN">𐐆𐑌𐐼𐐨𐐲</territory>
-			<territory type="IO">𐐒𐑉𐐮𐐼𐐮𐑇 𐐆𐑌𐐼𐐨𐐲𐑌 𐐄𐑇𐐲𐑌 𐐓𐐯𐑉𐐲𐐻𐐱𐑉𐐨</territory>
+			<territory type="IO" draft="provisional">𐐒𐑉𐐮𐐼𐐮𐑇 𐐆𐑌𐐼𐐨𐐲𐑌 𐐄𐑇𐐲𐑌 𐐓𐐯𐑉𐐲𐐻𐐱𐑉𐐨</territory>
 			<territory type="IQ">𐐆𐑉𐐰𐐿</territory>
 			<territory type="IR">𐐆𐑉𐐪𐑌</territory>
 			<territory type="IS">𐐌𐑅𐑊𐐲𐑌𐐼</territory>
@@ -519,7 +519,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[𐐨 𐐩 𐐪 𐐫 𐐬 𐐭 𐐮 𐐯 𐐰 𐐱 𐐲 𐐳 𐐴 𐐵 𐐶 𐐷 𐐸 𐐹 𐐺 𐐻 𐐼 𐐽 𐐾 𐐿 𐑀 𐑁 𐑂 𐑃 𐑄 𐑅 𐑆 𐑇 𐑈 𐑉 𐑊 𐑋 𐑌 𐑍 𐑎 𐑏]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[𐐀 𐐁 𐐂 𐐃 𐐄 𐐅 𐐆 𐐇 𐐈 𐐉 𐐊 𐐋 𐐌 𐐍 𐐎 𐐏 𐐐 𐐑 𐐒 𐐓 𐐔 𐐕 𐐖 𐐗 𐐘 𐐙 𐐚 𐐛 𐐜 𐐝 𐐞 𐐟 𐐠 𐐡 𐐢 𐐣 𐐤 𐐥 𐐦 𐐧]</exemplarCharacters>
 	</characters>
 	<dates>
@@ -541,20 +540,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11">𐐤𐐬𐑂</month>
 							<month type="12">𐐔𐐨𐑅</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">𐐖</month>
-							<month type="2">𐐙</month>
-							<month type="3">𐐣</month>
-							<month type="4">𐐁</month>
-							<month type="5">𐐣</month>
-							<month type="6">𐐖</month>
-							<month type="7">𐐖</month>
-							<month type="8">𐐂</month>
-							<month type="9">𐐝</month>
-							<month type="10">𐐉</month>
-							<month type="11">𐐤</month>
-							<month type="12">𐐔</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">𐐖𐐰𐑌𐐷𐐭𐐯𐑉𐐨</month>
 							<month type="2">𐐙𐐯𐐺𐑉𐐭𐐯𐑉𐐨</month>
@@ -571,20 +556,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">𐐖𐐰𐑌</month>
-							<month type="2">𐐙𐐯𐐺</month>
-							<month type="3">𐐣𐐪𐑉</month>
-							<month type="4">𐐁𐐹𐑉</month>
-							<month type="5">𐐣𐐩</month>
-							<month type="6">𐐖𐐭𐑌</month>
-							<month type="7">𐐖𐐭𐑊</month>
-							<month type="8">𐐂𐑀</month>
-							<month type="9">𐐝𐐯𐐹</month>
-							<month type="10">𐐉𐐿𐐻</month>
-							<month type="11">𐐤𐐬𐑂</month>
-							<month type="12">𐐔𐐨𐑅</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">𐐖</month>
 							<month type="2">𐐙</month>
@@ -598,20 +569,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">𐐉</month>
 							<month type="11">𐐤</month>
 							<month type="12">𐐔</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">𐐖𐐰𐑌𐐷𐐭𐐯𐑉𐐨</month>
-							<month type="2">𐐙𐐯𐐺𐑉𐐭𐐯𐑉𐐨</month>
-							<month type="3">𐐣𐐪𐑉𐐽</month>
-							<month type="4">𐐁𐐹𐑉𐐮𐑊</month>
-							<month type="5">𐐣𐐩</month>
-							<month type="6">𐐖𐐭𐑌</month>
-							<month type="7">𐐖𐐭𐑊𐐴</month>
-							<month type="8">𐐂𐑀𐐲𐑅𐐻</month>
-							<month type="9">𐐝𐐯𐐹𐐻𐐯𐑋𐐺𐐲𐑉</month>
-							<month type="10">𐐉𐐿𐐻𐐬𐐺𐐲𐑉</month>
-							<month type="11">𐐤𐐬𐑂𐐯𐑋𐐺𐐲𐑉</month>
-							<month type="12">𐐔𐐨𐑅𐐯𐑋𐐺𐐲𐑉</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -667,12 +624,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">𐐈𐐣</dayPeriod>
-							<dayPeriod type="am" alt="variant">𐐰𐑋</dayPeriod>
-							<dayPeriod type="pm">𐐑𐐣</dayPeriod>
-							<dayPeriod type="pm" alt="variant">𐐹𐑋</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">𐐈𐐣</dayPeriod>
 							<dayPeriod type="am" alt="variant">𐐰𐑋</dayPeriod>
 							<dayPeriod type="pm">𐐑𐐣</dayPeriod>

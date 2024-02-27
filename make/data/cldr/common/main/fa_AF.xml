@@ -148,7 +148,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064E \u0650 \u064F \u0652 \u0656 \u0670 \u200C \u200D إ ټ ځ څ ډ ړ ږ ښ ك ګ ڼ ى ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200E\u200F َ ِ ُ ْ ٖ ٰ \u200C\u200D إ ټ ځ څ ډ ړ ږ ښ ك ګ ڼ ىي]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -168,20 +168,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10">اکتوبر</month>
 							<month type="11">نومبر</month>
 							<month type="12">دسم</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ج</month>
-							<month type="2">ف</month>
-							<month type="3">م</month>
-							<month type="4">ا</month>
-							<month type="5">م</month>
-							<month type="6">ج</month>
-							<month type="7">ج</month>
-							<month type="8">ا</month>
-							<month type="9">س</month>
-							<month type="10">ا</month>
-							<month type="11">ن</month>
-							<month type="12">د</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">جنوری</month>
@@ -258,20 +244,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4" draft="contributed">ربع چهارم</quarter>
 						</quarterWidth>
 					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="contributed">ر۱</quarter>
-							<quarter type="2" draft="contributed">ر۲</quarter>
-							<quarter type="3" draft="contributed">ر۳</quarter>
-							<quarter type="4" draft="contributed">ر۴</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="contributed">ربع اول</quarter>
-							<quarter type="2" draft="contributed">ربع دوم</quarter>
-							<quarter type="3" draft="contributed">ربع سوم</quarter>
-							<quarter type="4" draft="contributed">ربع چهارم</quarter>
-						</quarterWidth>
-					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -293,25 +265,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="morning1" draft="contributed">بامداد</dayPeriod>
-							<dayPeriod type="morning2" draft="contributed">صبح</dayPeriod>
-							<dayPeriod type="afternoon1" draft="contributed">ظهر</dayPeriod>
-							<dayPeriod type="afternoon2" draft="contributed">بعدازچاشت</dayPeriod>
-							<dayPeriod type="night1">شب</dayPeriod>
-							<dayPeriod type="night2" draft="contributed">نیمه‌شب</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="morning1">ب</dayPeriod>
 							<dayPeriod type="afternoon1" draft="contributed">بعد از چاشت</dayPeriod>
 							<dayPeriod type="night1">ش</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="morning1" draft="contributed">بامداد</dayPeriod>
-							<dayPeriod type="morning2" draft="contributed">صبح</dayPeriod>
-							<dayPeriod type="afternoon1" draft="contributed">ظهر</dayPeriod>
-							<dayPeriod type="afternoon2" draft="contributed">بعدازچاشت</dayPeriod>
-							<dayPeriod type="night2" draft="contributed">نیمه‌شب</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
