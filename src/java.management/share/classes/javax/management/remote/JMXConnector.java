@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -135,34 +135,14 @@ public interface JMXConnector extends Closeable {
             throws IOException;
 
     /**
-     * <p>Returns an <code>MBeanServerConnection</code> object representing
-     * a remote MBean server on which operations are performed on behalf of
-     * the supplied delegation subject. For a given <code>JMXConnector</code>
-     * and <code>Subject</code>, two successful calls to this method will
-     * usually return the same <code>MBeanServerConnection</code> object,
-     * though this is not required.</p>
+     * <p>This method remains for compatibility reasons, but has no more meaning
+     * than {@link #getMBeanServerConnection()}.
      *
-     * <p>For each method in the returned
-     * <code>MBeanServerConnection</code>, calling the method causes
-     * the corresponding method to be called in the remote MBean
-     * server on behalf of the given delegation subject instead of the
-     * authenticated subject. The value returned by the MBean server
-     * method is the value returned to the client. If the MBean server
-     * method produces an <code>Exception</code>, the same
-     * <code>Exception</code> is seen by the client. If the MBean
-     * server method, or the attempt to call it, produces an
-     * <code>Error</code>, the <code>Error</code> is wrapped in a
-     * {@link JMXServerErrorException}, which is seen by the
-     * client.</p>
-     *
-     * @param delegationSubject the <code>Subject</code> on behalf of
-     * which requests will be performed.  Can be null, in which case
-     * requests will be performed on behalf of the authenticated
-     * Subject, if any.
+     * @param delegationSubject must be null, since the removal of the
+     * Subject Delegation feature.  If non-null, a SecurityException is thrown.
      *
      * @return an object that implements the <code>MBeanServerConnection</code>
-     * interface by forwarding its methods to the remote MBean server on behalf
-     * of a given delegation subject.
+     * interface by forwarding its methods to the remote MBean server.
      *
      * @exception IOException if a valid <code>MBeanServerConnection</code>
      * cannot be created, for instance because the connection to the remote

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,6 +395,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             getMBeanServerConnection(Subject delegationSubject)
             throws IOException {
 
+        if (delegationSubject != null) {
+            throw new SecurityException("Subject Delegation has been removed.");
+        }
         if (terminated) {
             if (logger.traceOn())
                 logger.trace("getMBeanServerConnection","[" + this.toString() +
@@ -406,8 +409,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         "] is not connected.");
             throw new IOException("Not connected");
         }
-
-        return getConnectionWithSubject(delegationSubject);
+        return getConnection();
     }
 
     public void
@@ -515,10 +517,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 if (debug) logger.debug("close",e);
             }
         }
-
-        // Clean up MBeanServerConnection table
-        //
-        rmbscMap.clear();
 
         /* Send notification of closure.  We don't do this if the user
          * never called connect() on the connector, because there's no
@@ -1745,7 +1743,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     // Initialization of transient variables.
     private void initTransients() {
-        rmbscMap = new WeakHashMap<Subject, WeakReference<MBeanServerConnection>>();
         connected = false;
         terminated = false;
 
@@ -1893,21 +1890,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         private final ClassLoader loader;
     }
 
-    private MBeanServerConnection getConnectionWithSubject(Subject delegationSubject) {
+    private MBeanServerConnection getConnection() {
         MBeanServerConnection conn = null;
 
-        if (delegationSubject == null) {
-            if (nullSubjectConnRef == null
-                    || (conn = nullSubjectConnRef.get()) == null) {
-                conn = new RemoteMBeanServerConnection(null);
-                nullSubjectConnRef = new WeakReference<MBeanServerConnection>(conn);
-            }
-        } else {
-            WeakReference<MBeanServerConnection> wr = rmbscMap.get(delegationSubject);
-            if (wr == null || (conn = wr.get()) == null) {
-                conn = new RemoteMBeanServerConnection(delegationSubject);
-                rmbscMap.put(delegationSubject, new WeakReference<MBeanServerConnection>(conn));
-            }
+        if (nullSubjectConnRef == null
+                || (conn = nullSubjectConnRef.get()) == null) {
+            conn = new RemoteMBeanServerConnection(null);
+            nullSubjectConnRef = new WeakReference<MBeanServerConnection>(conn);
         }
         return conn;
     }
@@ -2279,7 +2268,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
     private transient long clientNotifSeqNo = 0;
 
-    private transient WeakHashMap<Subject, WeakReference<MBeanServerConnection>> rmbscMap;
     private transient WeakReference<MBeanServerConnection> nullSubjectConnRef = null;
 
     private transient RMINotifClient rmiNotifClient;
