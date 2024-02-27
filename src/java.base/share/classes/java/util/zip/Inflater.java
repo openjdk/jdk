@@ -647,9 +647,7 @@ public class Inflater {
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
      *
-     * @deprecated This method cannot return the correct value when the
-     * number of compressed bytes is greater than {@link Integer#MAX_VALUE}.
-     * Use {@link #getBytesRead()} instead.
+     * @deprecated Use {@link #getBytesRead()} instead
      *
      * @return the total number of compressed bytes input so far
      */
