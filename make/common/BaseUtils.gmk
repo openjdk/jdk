@@ -141,3 +141,51 @@ isBuildCpuArch = \
 
 isCompiler = \
   $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
+
+################################################################################
+# Make directory without forking mkdir if not needed.
+#
+# If a directory with an encoded space is provided, the wildcard function
+# sometimes returns false answers (typically if the dir existed when the
+# makefile was parsed, but was deleted by a previous rule). In that case, always
+# call mkdir regardless of what wildcard says.
+#
+# 1: List of directories to create
+MakeDir = \
+    $(strip \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, \
+          $(if $(findstring ?, $d), '$(call DecodeSpace, $d)', \
+            $(if $(wildcard $d), , $d) \
+          ) \
+        ))) \
+        $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
+    )
+
+################################################################################
+# Write to and read from file
+
+# Param 1 - File to read
+ReadFile = \
+    $(shell $(CAT) $1)
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  WriteFile = \
+      $(file >$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  WriteFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
+endif
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  AppendFile = \
+      $(file >>$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  AppendFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
+endif

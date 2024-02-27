@@ -37,9 +37,6 @@ ifeq ($(wildcard $(SPEC)),)
   $(error MakeBase.gmk needs SPEC set to a proper spec.gmk)
 endif
 
-# Basic functionality that is always needed
-include $(TOPDIR)/make/common/BaseUtils.gmk
-
 # By defining this pseudo target, make will automatically remove targets
 # if their recipe fails so that a rebuild is automatically triggered on the
 # next make invocation.
@@ -68,9 +65,6 @@ define NEWLINE
 
 endef
 
-# Make sure we have a value (could be overridden on command line by caller)
-CREATING_BUILDJDK ?= false
-
 # Certain features only work in newer version of GNU Make. The build will still
 # function in 3.81, but will be less performant.
 ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
@@ -79,6 +73,9 @@ ifeq (4.0, $(firstword $(sort 4.0 $(MAKE_VERSION))))
   RWILDCARD_WORKS := true
 endif
 
+# Basic functionality for MakeBase and friends. Needs the make version defines.
+include $(TOPDIR)/make/common/BaseUtils.gmk
+
 # For convenience, MakeBase.gmk continues to include these separate files, at
 # least for now.
 
@@ -86,6 +83,10 @@ include $(TOPDIR)/make/common/CopyFiles.gmk
 include $(TOPDIR)/make/common/FileUtils.gmk
 include $(TOPDIR)/make/common/MakeIO.gmk
 include $(TOPDIR)/make/common/Utils.gmk
+
+################################################################################
+# Make sure we have a value (could be overridden on command line by caller)
+CREATING_BUILDJDK ?= false
 
 ################################################################################
 
