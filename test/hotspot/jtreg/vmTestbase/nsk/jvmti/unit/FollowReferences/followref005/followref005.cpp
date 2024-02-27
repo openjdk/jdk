@@ -22,7 +22,7 @@
  */
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "jni_tools.h"
 #include "jvmti_tools.h"
 #include "jvmti_FollowRefObjects.hpp"

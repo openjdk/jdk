@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,7 +70,7 @@ static void register_jfr_type_constants() {
 #endif
 
 void G1NewTracer::initialize() {
-  JFR_ONLY(register_jfr_type_constants());
+  JFR_ONLY(register_jfr_type_constants();)
 }
 
 void G1NewTracer::report_young_gc_pause(G1GCPauseType pause) {

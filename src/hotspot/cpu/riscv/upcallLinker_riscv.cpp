@@ -267,8 +267,12 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ mov_metadata(xmethod, entry);
   __ sd(xmethod, Address(xthread, JavaThread::callee_target_offset())); // just in case callee is deoptimized
 
+  __ push_cont_fastpath(xthread);
+
   __ ld(t0, Address(xmethod, Method::from_compiled_offset()));
   __ jalr(t0);
+
+  __ pop_cont_fastpath(xthread);
 
   // return value shuffle
   if (!needs_return_buffer) {
