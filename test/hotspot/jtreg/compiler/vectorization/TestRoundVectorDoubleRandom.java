@@ -38,6 +38,7 @@
 package compiler.vectorization;
 
 import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import compiler.lib.ir_framework.DontCompile;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
@@ -96,27 +97,27 @@ public class TestRoundVectorDoubleRandom {
     final int e_width = 11;
     final int e_bound = 1 << e_width;
     final int f_width = e_shift;
-    final int f_bound = 1 << f_width;
+    final long f_bound = 1 << f_width;
     final int f_num = 256;
 
     // prepare test data
-    int fis[] = new int[f_num];
+    long fis[] = new long[f_num];
     int fidx = 0;
     for (; fidx < f_width; fidx++) {
       fis[fidx] = 1 << fidx;
     }
     fis[fidx++] = 0;
     for (; fidx < f_num; fidx++) {
-      fis[fidx] = rand.nextInt(f_bound);
+      fis[fidx] = ThreadLocalRandom.current().nextLong(f_bound);
     }
 
     // run test & verify
-    for (int fi : fis) {
+    for (long fi : fis) {
       final int e_start = rand.nextInt(9);
       final int e_step = (1 << 3) + rand.nextInt(3);
       for (int ei = e_start; ei < e_bound; ei += e_step) {
         int ei_idx = ei/e_step;
-        int bits = (ei << e_shift) + fi;
+        long bits = (ei << e_shift) + fi;
         input[ei_idx*2] = Double.longBitsToDouble(bits);
         bits = bits | (1 << 63);
         input[ei_idx*2+1] = Double.longBitsToDouble(bits);
