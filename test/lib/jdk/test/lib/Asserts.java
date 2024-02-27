@@ -199,10 +199,7 @@ public class Asserts {
      */
     public static void assertEquals(Object lhs, Object rhs, String msg) {
         if ((lhs != rhs) && ((lhs == null) || !(lhs.equals(rhs)))) {
-            msg = Objects.toString(msg, "assertEquals")
-                    + ": object \"" + Objects.toString(lhs)
-                    + "\" is not equal to \"" + Objects.toString(rhs) + "\"";
-            fail(msg);
+            fail((msg == null ? "assertEquals" : msg) + " expected: " + lhs + " but was: " + rhs);
         }
     }
 
