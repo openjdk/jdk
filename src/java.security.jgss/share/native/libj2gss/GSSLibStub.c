@@ -213,6 +213,8 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
 
   if ((*env)->IsInstanceOf(env, jcb, tlsCBCl)) {
       // TLS Channel Binding requires unspecified addrtype=0
+      cb->initiator_addrtype = GSS_C_AF_UNSPEC;
+      cb->acceptor_addrtype = GSS_C_AF_UNSPEC;
   } else {
       cb->initiator_addrtype = GSS_C_AF_NULLADDR;
       cb->acceptor_addrtype = GSS_C_AF_NULLADDR;
