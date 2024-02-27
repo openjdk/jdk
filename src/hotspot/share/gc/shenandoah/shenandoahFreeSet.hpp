@@ -222,12 +222,19 @@ private:
 
   void dump_bitmap_row(ssize_t idx) const;
   void dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const;
+#ifdef KELVIN_GOOD_CODE
   void dump_bitmap_all() const;
-
+#else
+#define KELVIN_BAD_CODE
+#endif
 
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions();
+
+#ifdef KELVIN_BAD_CODE
+  void dump_bitmap_all() const;
+#endif
 
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
