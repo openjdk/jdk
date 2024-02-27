@@ -1048,9 +1048,9 @@ address StubGenerator::generate_poly1305_processBlocks() {
  ----------------------------------------------------------
 
   Poly1305 AVX2 algorithm:
-
+  Let the 32-byte one-time key be partitioned into two equal parts R and K.
   Let R be the 16-byte secret key used for polynomial evaluation.
-  Let K be the 16-byte secret AES key.
+  Let K be the 16-byte secret key.
   Let Z_P be prime field over which the polynomial is evaluated. Let P = 2^130 - 5 be the prime.
   Let M be the message which can be represented as a concatenation (||) of 'l' 16-byte blocks M[i].
   i.e., M = M[0] || M[1] || ... || M[i] || ... || M[l-2] || M[l-1]
