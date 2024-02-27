@@ -195,14 +195,12 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
   if (jcb == NULL) {
     return GSS_C_NO_CHANNEL_BINDINGS;
   }
-  size_t size = sizeof(struct gss_channel_bindings_struct);
-  cb = malloc(size);
+
+  cb = calloc(1, sizeof(struct gss_channel_bindings_struct));
   if (cb == NULL) {
     gssThrowOutOfMemoryError(env, NULL);
     return NULL;
   }
-
-  memset(cb, 0, size);
 
   // initialize addrtype in CB first
   // LDAP TLS Channel Binding requires GSS_C_AF_UNSPEC address type
