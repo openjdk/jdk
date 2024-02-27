@@ -88,7 +88,7 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // of them fit into a cache line.
   Range* _ranges;
   MEMFLAGS* _flags;
-  uintx _count, _capacity;
+  size_t _count, _capacity;
 public:
   CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
 
@@ -107,7 +107,7 @@ public:
     }
     if (_count == _capacity) {
       // Enlarge if needed
-      const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
+      const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
       ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
