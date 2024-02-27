@@ -27,10 +27,10 @@
 #include "precompiled.hpp"
 #include "asm/assembler.inline.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_riscv.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -171,22 +171,22 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   assert(VtableStub::receiver_location() == j_rarg0->as_VMReg(), "receiver expected in j_rarg0");
 
   // Entry arguments:
-  //  t1: CompiledICHolder
+  //  t1: CompiledICData
   //  j_rarg0: Receiver
 
   // This stub is called from compiled code which has no callee-saved registers,
   // so all registers except arguments are free at this point.
   const Register recv_klass_reg     = x18;
-  const Register holder_klass_reg   = x19; // declaring interface klass (DECC)
-  const Register resolved_klass_reg = xmethod; // resolved interface klass (REFC)
+  const Register holder_klass_reg   = x19; // declaring interface klass (DEFC)
+  const Register resolved_klass_reg = x30; // resolved interface klass (REFC)
   const Register temp_reg           = x28;
   const Register temp_reg2          = x29;
-  const Register icholder_reg       = t1;
+  const Register icdata_reg         = t1;
 
   Label L_no_such_interface;
 
-  __ ld(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
-  __ ld(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+  __ ld(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ ld(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   start_pc = __ pc();
 
@@ -195,28 +195,13 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   __ load_klass(recv_klass_reg, j_rarg0);
 
   // Receiver subtype check against REFC.
-  __ lookup_interface_method(// inputs: rec. class, interface
-                             recv_klass_reg, resolved_klass_reg, noreg,
-                             // outputs:  scan temp. reg1, scan temp. reg2
-                             temp_reg2, temp_reg,
-                             L_no_such_interface,
-                             /*return_method=*/false);
-
-  const ptrdiff_t typecheckSize = __ pc() - start_pc;
-  start_pc = __ pc();
-
   // Get selected method from declaring class and itable index
-  __ lookup_interface_method(// inputs: rec. class, interface, itable index
-                             recv_klass_reg, holder_klass_reg, itable_index,
-                             // outputs: method, scan temp. reg
-                             xmethod, temp_reg,
-                             L_no_such_interface);
-
-  const ptrdiff_t lookupSize = __ pc() - start_pc;
+  __ lookup_interface_method_stub(recv_klass_reg, holder_klass_reg, resolved_klass_reg, xmethod,
+                                  temp_reg, temp_reg2, itable_index, L_no_such_interface);
 
   // Reduce "estimate" such that "padding" does not drop below 8.
   const ptrdiff_t estimate = 256;
-  const ptrdiff_t codesize = typecheckSize + lookupSize;
+  const ptrdiff_t codesize = __ pc() - start_pc;
   slop_delta = (int)(estimate - codesize);
   slop_bytes += slop_delta;
   assert(slop_delta >= 0, "itable #%d: Code size estimate (%d) for lookup_interface_method too small, required: %d", itable_index, (int)estimate, (int)codesize);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcWhen.hpp"
+#include "gc/shared/softRefPolicy.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
@@ -56,7 +57,6 @@ class GCMemoryManager;
 class MemoryPool;
 class MetaspaceSummary;
 class ReservedHeapSpace;
-class SoftRefPolicy;
 class Thread;
 class ThreadClosure;
 class VirtualSpaceSummary;
@@ -84,8 +84,7 @@ public:
 
 //
 // CollectedHeap
-//   GenCollectedHeap
-//     SerialHeap
+//   SerialHeap
 //   G1CollectedHeap
 //   ParallelScavengeHeap
 //   ShenandoahHeap
@@ -105,6 +104,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Historic gc information
   size_t _capacity_at_last_gc;
   size_t _used_at_last_gc;
+
+  SoftRefPolicy _soft_ref_policy;
 
   // First, set it to java_lang_Object.
   // Then, set it to FillerObject after the FillerObject_klass loading is complete.
@@ -165,8 +166,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
 
   // Filler object utilities.
   static inline size_t filler_array_hdr_size();
-  static inline size_t filler_array_min_size();
 
+  static size_t filler_array_min_size();
+
+protected:
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -402,7 +405,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   void increment_total_full_collections() { _total_full_collections++; }
 
   // Return the SoftRefPolicy for the heap;
-  virtual SoftRefPolicy* soft_ref_policy() = 0;
+  SoftRefPolicy* soft_ref_policy() { return &_soft_ref_policy; }
 
   virtual MemoryUsage memory_usage();
   virtual GrowableArray<GCMemoryManager*> memory_managers() = 0;

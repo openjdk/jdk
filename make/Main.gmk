@@ -608,11 +608,11 @@ endif
 ifeq ($(CREATING_BUILDJDK), true)
   # This target is only called by the recursive call below.
   create-buildjdk-interim-image-helper: interim-image jdk.jlink-launchers \
-      java.base-copy jdk.jdeps-launchers
+      java.base-copy jdk.jdeps-launchers jdk.compiler-launchers
 endif
 
-BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink $(INTERIM_IMAGE_MODULES), \
-    $(call FindTransitiveDepsForModule, $m) $m))
+BUILDJDK_MODULES := $(sort $(foreach m, jdk.jlink jdk.compiler \
+    $(INTERIM_IMAGE_MODULES), $(call FindTransitiveDepsForModule, $m) $m))
 
 $(eval $(call SetupTarget, create-buildjdk-interim-image, \
     MAKEFILE := Main, \
@@ -744,7 +744,14 @@ endif
 
 $(eval $(call SetupTarget, build-test-lib, \
     MAKEFILE := test/BuildTestLib, \
+    TARGET := build-test-lib, \
     DEPS := exploded-image, \
+))
+
+$(eval $(call SetupTarget, test-image-lib, \
+    MAKEFILE := test/BuildTestLib, \
+    TARGET := test-image-lib, \
+    DEPS := build-test-lib, \
 ))
 
 ifeq ($(BUILD_FAILURE_HANDLER), true)
@@ -781,7 +788,7 @@ endif
 
 $(eval $(call SetupTarget, build-microbenchmark, \
     MAKEFILE := test/BuildMicrobenchmark, \
-    DEPS := interim-langtools exploded-image, \
+    DEPS := interim-langtools exploded-image build-test-lib, \
 ))
 
 ################################################################################
@@ -865,14 +872,6 @@ ifeq ($(JCOV_ENABLED), true)
       DEPS := jcov-image, \
   ))
 endif
-
-################################################################################
-# Install targets
-
-$(eval $(call SetupTarget, install, \
-    MAKEFILE := Install, \
-    DEPS := product-images, \
-))
 
 ################################################################################
 #
@@ -970,8 +969,29 @@ else
 
   jdk.jdeps-gendata: java
 
-  # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS)
+  # jdk.compiler gendata generates ct.sym, which requires all generated
+  # java source and compiled classes present.
+  jdk.compiler-gendata: $(JAVA_TARGETS)
+
+  # jdk.javadoc gendata generates element-list, which requires all java sources
+  # but not compiled classes.
+  jdk.javadoc-gendata: $(GENSRC_TARGETS)
+
+  # ct.sym and element-list generation also needs the BUILD_JDK. If the
+  # BUILD_JDK was supplied externally, no extra prerequisites are needed.
+  ifeq ($(CREATE_BUILDJDK), true)
+    ifneq ($(CREATING_BUILDJDK), true)
+      # When cross compiling and an external BUILD_JDK wasn't supplied, it's
+      # produced by the create-buildjdk target.
+      jdk.compiler-gendata: create-buildjdk
+      jdk.javadoc-gendata: create-buildjdk
+    endif
+  else ifeq ($(EXTERNAL_BUILDJDK), false)
+    # When not cross compiling, the BUILD_JDK is the interim jdk image, and
+    # the javac launcher is needed.
+    jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.javadoc-gendata: jdk.compiler-launchers
+  endif
 
   # Declare dependencies between jmod targets.
   # java.base jmod needs jrt-fs.jar and access to the jmods for all non
@@ -1259,7 +1279,7 @@ all-docs-bundles: docs-jdk-bundles docs-javase-bundles docs-reference-bundles
 # This target builds the test image
 test-image: prepare-test-image test-image-jdk-jtreg-native \
     test-image-demos-jdk test-image-libtest-jtreg-native \
-    test-image-lib-native
+    test-image-lib test-image-lib-native
 
 ifneq ($(JVM_TEST_IMAGE_TARGETS), )
   # If JVM_TEST_IMAGE_TARGETS is externally defined, use it instead of the

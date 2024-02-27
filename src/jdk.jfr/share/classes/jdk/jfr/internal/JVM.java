@@ -50,7 +50,7 @@ public final class JVM {
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -149,10 +149,15 @@ public final class JVM {
      *
      * Requires that JFR has been started with {@link #createNativeJFR()}
      *
-     * @param skipCount number of frames to skip
+     * @param skipCount number of frames to skip, or 0 if no frames should be
+     *                  skipped
+     *
+     * @param ID        ID of the filter that should be used, or -1 if no filter should
+     *                  be used
+     *
      * @return a unique stack trace identifier
      */
-    public static native long getStackTraceId(int skipCount);
+    public static native long getStackTraceId(int skipCount, long stackFilerId);
 
     /**
      * Return identifier for thread
@@ -623,9 +628,49 @@ public final class JVM {
     public static native long hostTotalMemory();
 
     /**
+     * Returns the total amount of swap memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalSwapMemory();
+
+    /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.
      *
      * @param bytes number of bytes that were lost
      */
     public static native void emitDataLoss(long bytes);
+
+    /**
+     * Registers stack filters that should be used with getStackTrace(int, long)
+     * <p>
+     * Method name at an array index is for class at the same array index.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and before
+     * bytecode for the associated event class has been added.
+     *
+     * @param classes, name of classes, for example {"java/lang/String"}, not
+     *                 {@code null}
+     * @param methods, name of method, for example {"toString"}, not {@code null}
+     *
+     * @return an ID that can be used to unregister the start frames, or -1 if it could not be registered
+     */
+    public static native long registerStackFilter(String[] classes, String[] methods);
+
+    /**
+     * Unregisters a set of stack filters.
+     * <p>
+     * This method should be called holding the MetadataRepository lock and after
+     * the associated event class has been unloaded.
+     *
+     * @param stackFilterId the stack filter ID to unregister
+     */
+    public static native void unregisterStackFilter(long stackFilterId);
+
+    /**
+     * Sets bits used for event settings, like cutoff(ticks) and level
+     *
+     * @param eventTypeId the id of the event type
+     * @param value
+     */
+    public static native void setMiscellaneous(long eventTypeId, long value);
 }

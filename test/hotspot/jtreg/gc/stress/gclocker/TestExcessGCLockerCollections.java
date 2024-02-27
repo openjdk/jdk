@@ -31,6 +31,8 @@ package gc.stress.gclocker;
  * @requires vm.gc != "Z"
  * @requires vm.gc != "Epsilon"
  * @requires vm.gc != "Shenandoah"
+ * @requires vm.gc != "G1"
+ * @requires vm.gc != null
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @run driver/timeout=1000 gc.stress.gclocker.TestExcessGCLockerCollections 300 4 2
@@ -151,7 +153,7 @@ public class TestExcessGCLockerCollections {
     private static final String BAD_LOCKER = locker + " [1-9][0-9]?M";
 
     private static final String[] COMMON_OPTIONS = new String[] {
-        "-Xmx1G", "-Xms1G", "-Xmn256M", "-Xlog:gc" };
+        "-Xmx1G", "-Xms1G", "-Xmn256M", "-Xlog:gc,gc+ergo*=debug,gc+ergo+cset=trace:x.log", "-XX:+UnlockDiagnosticVMOptions", "-XX:+VerifyAfterGC"};
 
     public static void main(String args[]) throws Exception {
         if (args.length < 3) {
@@ -167,7 +169,7 @@ public class TestExcessGCLockerCollections {
         finalArgs.addAll(Arrays.asList(args));
 
         // GC and other options obtained from test framework.
-        OutputAnalyzer output = ProcessTools.executeTestJvm(finalArgs);
+        OutputAnalyzer output = ProcessTools.executeTestJava(finalArgs);
         output.shouldHaveExitValue(0);
         //System.out.println("------------- begin stdout ----------------");
         //System.out.println(output.getStdout());

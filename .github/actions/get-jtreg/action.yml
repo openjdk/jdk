@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ runs:
 
     - name: 'Check cache for JTReg'
       id: get-cached-jtreg
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: jtreg/installed
         key: jtreg-${{ steps.version.outputs.value }}
@@ -56,8 +56,14 @@ runs:
 
     - name: 'Build JTReg'
       run: |
+        # If runner architecture is x64 set JAVA_HOME_17_X64 otherwise set to JAVA_HOME_17_arm64
+        if [[ '${{ runner.arch }}' == 'X64' ]]; then
+          JDK="$JAVA_HOME_17_X64"
+        else
+          JDK="$JAVA_HOME_17_arm64"
+        fi
         # Build JTReg and move files to the proper locations
-        bash make/build.sh --jdk "$JAVA_HOME_17_X64"
+        bash make/build.sh --jdk "$JDK"
         mkdir ../installed
         mv build/images/jtreg/* ../installed
       working-directory: jtreg/src

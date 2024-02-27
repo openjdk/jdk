@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "code/codeCache.hpp"
+#include "compiler/compilationFailureInfo.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/gcConfig.hpp"
@@ -72,10 +73,6 @@
 #endif
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci.hpp"
-#endif
-
-#ifdef AIX
-#include "loadlib_aix.hpp"
 #endif
 
 #ifndef PRODUCT
@@ -725,6 +722,11 @@ void VMError::report(outputStream* st, bool _verbose) {
                    "Runtime Environment to continue.");
     }
 
+  // avoid the cache update for malloc/mmap errors
+  if (should_report_bug(_id)) {
+    os::prepare_native_symbols();
+  }
+
 #ifdef ASSERT
   // Error handler self tests
   // Meaning of codes passed through in the tests.
@@ -1052,6 +1054,12 @@ void VMError::report(outputStream* st, bool _verbose) {
     check_failing_cds_access(st, _siginfo);
     st->cr();
 
+#if defined(COMPILER1) || defined(COMPILER2)
+  STEP_IF("printing pending compilation failure",
+          _verbose && _thread != nullptr && _thread->is_Compiler_thread())
+    CompilationFailureInfo::print_pending_compilation_failure(st);
+#endif
+
   STEP_IF("printing registers", _verbose && _context != nullptr)
     // printing registers
     os::print_context(st, _context);
@@ -1347,7 +1355,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 void VMError::print_vm_info(outputStream* st) {
 
   char buf[O_BUFLEN];
-  AIX_ONLY(LoadedLibraries::reload());
+  os::prepare_native_symbols();
 
   report_vm_version(st, buf, sizeof(buf));
 

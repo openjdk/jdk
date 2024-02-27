@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,9 @@ extern "C" {
 static jlong timeout = 0;
 
 /* test objects */
-static jobject threadDeath = NULL;
-static jthread threadForStop = NULL;
-static jthread threadForInterrupt = NULL;
+static jobject threadDeath = nullptr;
+static jthread threadForStop = nullptr;
+static jthread threadForInterrupt = nullptr;
 
 /* ========================================================================== */
 
@@ -51,10 +51,10 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     const char* THREAD_DEATH_CTOR_NAME = "<init>";
     const char* THREAD_DEATH_CTOR_SIGNATURE = "()V";
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
-    jclass cls = NULL;
-    jmethodID ctor = NULL;
+    jclass cls = nullptr;
+    jmethodID ctor = nullptr;
     int i;
 
     NSK_DISPLAY0("Prepare: find tested thread\n");
@@ -63,12 +63,12 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(threads_count > 0 && threads != NULL))
+    if (!NSK_VERIFY(threads_count > 0 && threads != nullptr))
         return NSK_FALSE;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             return NSK_FALSE;
 
         /* get thread information */
@@ -78,7 +78,7 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
         NSK_DISPLAY3("    thread #%d (%s): %p\n", i, info.name, threads[i]);
 
         /* find by name */
-        if (info.name != NULL) {
+        if (info.name != nullptr) {
             if (strcmp(info.name, STOP_THREAD_NAME) == 0) {
                 threadForStop = threads[i];
             } else if (strcmp(info.name, INTERRUPT_THREAD_NAME) == 0) {
@@ -91,26 +91,26 @@ static int prepare(jvmtiEnv* jvmti, JNIEnv* jni) {
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
         return NSK_FALSE;
 
-    if (threadForStop == NULL) {
+    if (threadForStop == nullptr) {
         NSK_COMPLAIN0("DebuggeeThreadForStop not found");
         return NSK_FALSE;
     }
 
-    if (threadForInterrupt == NULL) {
+    if (threadForInterrupt == nullptr) {
         NSK_COMPLAIN0("DebuggeeThreadForInterrupt not found");
         return NSK_FALSE;
     }
 
     NSK_DISPLAY0("Prepare: create new instance of ThreadDeath exception\n");
 
-    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (cls = jni->FindClass(THREAD_DEATH_CLASS_NAME)) != nullptr))
         return NSK_FALSE;
 
     if (!NSK_JNI_VERIFY(jni, (ctor =
-            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != NULL))
+            jni->GetMethodID(cls, THREAD_DEATH_CTOR_NAME, THREAD_DEATH_CTOR_SIGNATURE)) != nullptr))
         return NSK_FALSE;
 
-    if (!NSK_JNI_VERIFY(jni, (threadDeath = jni->NewObject(cls, ctor)) != NULL))
+    if (!NSK_JNI_VERIFY(jni, (threadDeath = jni->NewObject(cls, ctor)) != nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -131,7 +131,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Testcase #1: call StopThread\n");
-    if (!NSK_VERIFY(threadForStop != NULL)) {
+    if (!NSK_VERIFY(threadForStop != nullptr)) {
         nsk_jvmti_setFailStatus();
     } else {
         if (!NSK_JVMTI_VERIFY(jvmti->StopThread(threadForStop, threadDeath)))
@@ -139,7 +139,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     }
 
     NSK_DISPLAY0("Testcase #2: call InterruptThread\n");
-    if (!NSK_VERIFY(threadForInterrupt != NULL)) {
+    if (!NSK_VERIFY(threadForInterrupt != nullptr)) {
         nsk_jvmti_setFailStatus();
     } else {
         if (!NSK_JVMTI_VERIFY(jvmti->InterruptThread(threadForInterrupt)))
@@ -171,7 +171,7 @@ JNIEXPORT jint JNI_OnLoad_ma08t001(JavaVM *jvm, char *options, void *reserved) {
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
     jvmtiCapabilities caps;
     jvmtiEventCallbacks callbacks;
 
@@ -183,10 +183,10 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     memset(&caps, 0, sizeof(caps));

@@ -202,8 +202,14 @@ ifeq ($(HAS_SPEC),)
           matching_confs := $$(strip $$(all_confs))
         else
           # Otherwise select those that contain the given CONF string
-          matching_confs := $$(strip $$(foreach var, $$(all_confs), \
-              $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          ifeq ($$(patsubst !%,,$$(CONF)),)
+            # A CONF starting with ! means we should negate the search term
+            matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+               $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
+          else
+            matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+                $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          endif
           ifneq ($$(filter $$(CONF), $$(matching_confs)), )
             # If we found an exact match, use that
             matching_confs := $$(CONF)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ extern "C" {
 // limit virtual memory (this usually happens on mac).
 #define MAX_CHUNK_COUNT 8 * 1024
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 
 #ifdef STATIC_BUILD
@@ -59,7 +59,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -71,17 +71,17 @@ JNIEXPORT jint JNICALL
 Java_nsk_jvmti_Allocate_alloc001_Test_check(JNIEnv *env, jclass cls) {
     jvmtiError err;
     size_t size;
-    void *prev = NULL;
+    void *prev = nullptr;
     void **mem;
     int memCount = 1;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
 
     printf(">>> Null pointer check ...\n");
-    err = jvmti->Allocate((jlong)1, NULL);
+    err = jvmti->Allocate((jlong)1, nullptr);
     if (err != JVMTI_ERROR_NULL_POINTER) {
         printf("Error expected: JVMTI_ERROR_NULL_POINTER, got: %s\n",
                TranslateError(err));
@@ -135,7 +135,7 @@ Java_nsk_jvmti_Allocate_alloc001_Test_check(JNIEnv *env, jclass cls) {
     printf(">>> ... done (%dMb)\n", memCount);
 
     printf(">>> Deallocation ...\n");
-    while (prev != NULL) {
+    while (prev != nullptr) {
         mem = (void**) prev;
         prev = *mem;
         err = jvmti->Deallocate((unsigned char *)mem);

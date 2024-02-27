@@ -154,7 +154,7 @@ support (GCC 9.1.0+ or Clang 10+). The resulting build can be run on both
 machines with and without support for branch protection in hardware. Branch
 Protection is only supported for Linux targets.
 
-### Building on 32-bit arm
+### Building on 32-bit ARM
 
 This is not recommended. Instead, see the section on [Cross-compiling](
 #cross-compiling).
@@ -349,7 +349,7 @@ will most likely need to install developer packages.
 For apt-based distributions (Debian, Ubuntu, etc), try this:
 
 ```
-sudo apt-get install build-essential
+sudo apt-get install build-essential autoconf
 ```
 
 For rpm-based distributions (Fedora, Red Hat, etc), try this:
@@ -518,7 +518,7 @@ heuristics has a high likelihood to fail. If the boot JDK is not automatically
 detected, or the wrong JDK is picked, use `--with-boot-jdk` to point to the JDK
 to use.
 
-### Getting JDK binaries
+### Getting JDK Binaries
 
 An overview of common ways to download and install prebuilt JDK binaries can be
 found on https://openjdk.org/install. An alternative is to download the [Oracle
@@ -572,6 +572,7 @@ required on all platforms except Windows and macOS.
 libfontconfig-dev`.
 * To install on an rpm-based Linux, try running `sudo yum install
 fontconfig-devel`.
+* To install on Alpine Linux, try running `sudo apk add fontconfig-dev`.
 
 Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>` if
 `configure` does not automatically locate the platform Fontconfig files.
@@ -683,6 +684,14 @@ The JDK build requires [GNU Bash](https://www.gnu.org/software/bash). No other
 shells are supported.
 
 At least version 3.2 of GNU Bash must be used.
+
+### Graphviz and Pandoc
+
+In order to build the full docs (see the `--enable-full-docs`
+configure option) [Graphviz](https://www.graphviz.org) and
+[Pandoc](https://pandoc.org) are required. Any recent versions should
+work. For reference, and subject to change, Oracle builds use Graphviz
+9.0.0 and Pandoc 2.19.2.
 
 ## Running Configure
 
@@ -1026,7 +1035,7 @@ The default mode "auto" will try for `hardened` signing if the debug level is
 If hardened isn't possible, then `debug` signing is chosen if it works. If
 nothing works, the codesign build step is disabled.
 
-## Cross-compiling
+## Cross-Compiling
 
 Cross-compiling means using one platform (the *build* platform) to generate
 output that can ran on another platform (the *target* platform).
@@ -1213,7 +1222,7 @@ built JDK, for your *target* system.
 Copy these folders to your *target* system. Then you can run e.g.
 `images/jdk/bin/java -version`.
 
-### Cross compiling the easy way
+### Cross-Compiling the Easy Way
 
 Setting up a proper cross-compilation environment can be a lot of work.
 Fortunately there are ways that more or less automate this process. Here are
@@ -1225,7 +1234,7 @@ solution only work for gcc.
 The devkit method is regularly used for testing by Oracle, and the debootstrap
 method is regularly used in GitHub Actions testing.
 
-#### Using OpenJDK devkits
+#### Using OpenJDK Devkits
 
 The JDK build system provides out-of-the box support for creating and using so
 called devkits. A `devkit` is basically a collection of a cross-compiling
@@ -1316,9 +1325,6 @@ For example, cross-compiling to AArch64 from x86_64 could be done like this:
     https://httpredir.debian.org/debian/
   ```
 
-  If the target architecture is `riscv64`, the path should be `debian-ports`
-  instead of `debian`.
-
 * To create an Ubuntu-based chroot:
 
   ```
@@ -1388,7 +1394,7 @@ Architectures that are known to successfully cross-compile like this are:
 | sh4          | sid          | sh4           | sh4-linux-gnu            | zero                      |
 | riscv64      | sid          | riscv64       | riscv64-linux-gnu        | (all)                     |
 
-### Considerations for specific targets
+### Considerations for Specific Targets
 
 #### Building for ARM32
 
@@ -1526,7 +1532,7 @@ things down.
 You can experiment by disabling pre-compiled headers using
 `--disable-precompiled-headers`.
 
-### Icecc / icecream
+### Icecc / Icecream
 
 [icecc/icecream](https://github.com/icecc/icecream) is a simple way to setup a
 distributed compiler network. If you have multiple machines available for
@@ -1536,7 +1542,7 @@ it.
 To use, setup an icecc network, and install icecc on the build machine. Then
 run `configure` using `--enable-icecc`.
 
-### Using the javac server
+### Using the javac Server
 
 To speed up compilation of Java code, especially during incremental
 compilations, the javac server is automatically enabled in the configuration
@@ -1946,12 +1952,25 @@ configuration with the name `<name>`. Alternatively, you can create a directory
 under `build` and run `configure` from there, e.g. `mkdir build/<name> && cd
 build/<name> && bash ../../configure`.
 
-Then you can build that configuration using `make CONF_NAME=<name>` or `make
-CONF=<pattern>`, where `<pattern>` is a substring matching one or several
-configurations, e.g. `CONF=debug`. The special empty pattern (`CONF=`) will
-match *all* available configuration, so `make CONF= hotspot` will build the
-`hotspot` target for all configurations. Alternatively, you can execute `make`
-in the configuration directory, e.g. `cd build/<name> && make`.
+Then you can build that configuration using `make CONF=<selector>`, where
+`<selector>` is interpreted as follows:
+
+* If `<selector>` exacly matches the name of a configuration, this and only
+  this configuration will be selected.
+* If `<selector>` matches (i.e. is a substring of) the names of several
+  configurations, then all these configurations will be selected.
+* If `<selector>` is empty (i.e. `CONF=`), then all configurations will be
+  selected.
+* If `<selector>` begins with `!`, then all configurations **not** matching the
+  string following `!` will be selected.
+
+A more specialized version, `CONF_NAME=<name>` also exists, which will only
+match if the given `<name>` exactly matches a single configuration.
+
+Alternatively, you can execute `make` in the configuration directory, e.g. `cd
+build/<name> && make`.
+
+`make CONF_NAME=<name>` or
 
 ### Handling Reconfigurations
 
@@ -2274,7 +2293,7 @@ our rules and guidelines to be able to accept your contribution.
 The official place to start is the [OpenJDK Developers’ Guide](
 https://openjdk.org/guide/).
 
-## Editing this document
+## Editing This Document
 
 If you want to contribute changes to this document, edit `doc/building.md` and
 then run `make update-build-docs` to generate the same changes in
