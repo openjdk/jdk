@@ -153,13 +153,6 @@ public:
   void  next();
 };
 
-class VLoopDependenceGraph : public StackObj {
-private:
-  // bb_idx -> DependenceNode*
-  // TODO GrowableArray<DependenceNode*> _map;
-public:
-};
-
 // ========================= SuperWord =====================
 
 // -----------------------------SWNodeInfo---------------------------------

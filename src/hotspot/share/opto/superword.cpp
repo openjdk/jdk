@@ -769,7 +769,7 @@ void SuperWord::dependence_graph() {
   const GrowableArray<MemNode*>& mem_slice_tail = _vloop_analyzer.memory_slices().tails();
 
   ResourceMark rm;
-  GrowableArray<Node*> slice_nodes;
+  GrowableArray<MemNode*> slice_nodes;
 
   // For each memory slice, create the dependences
   for (int i = 0; i < mem_slice_head.length(); i++) {
@@ -861,7 +861,7 @@ void VLoopMemorySlices::print() const {
 #endif
 
 // Get all memory nodes of a slice, in reverse order
-void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const {
+void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -871,7 +871,7 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
         if (_vloop.in_bb(out)) {
-          slice.push(out);
+          slice.push(out->as_Load());
         }
       } else {
         // FIXME
@@ -889,7 +889,7 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
       }//else
     }//for
     if (n == head) { break; }
-    slice.push(n);
+    slice.push(n->as_Mem());
     prev = n;
     assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);

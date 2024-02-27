@@ -307,7 +307,7 @@ public:
   const GrowableArray<MemNode*>& tails() const { return _tails; }
 
   // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*>& slice) const;
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
 
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
@@ -439,6 +439,53 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Submodule of VLoopAnalyzer.
+// TODO desc
+// Mention: data dependencies implicit, here only additional edges, i.e. memory
+class VLoopDependencyGraph : public StackObj {
+private:
+  class DependencyNode;
+
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+  const VLoopMemorySlices& _memory_slices;
+
+  // bb_idx -> DependenceNode*
+  GrowableArray<DependencyNode*> _dependency_nodes;
+
+  // bb_idx -> depth
+  GrowableArray<int> _depth;
+
+public:
+  VLoopDependencyGraph(Arena* arena,
+                       const VLoop& vloop,
+                       const VLoopBody& body,
+                       const VLoopMemorySlices& memory_slices) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _memory_slices(memory_slices),
+    _dependency_nodes(arena, vloop.estimated_body_length(), 0, nullptr),
+    _depth           (arena, vloop.estimated_body_length(), 0, 0) {}
+  NONCOPYABLE(VLoopDependencyGraph);
+
+  void construct();
+
+private:
+  void add_node(MemNode* n, GrowableArray<int>& extra_edges);
+
+  class DependencyNode : public ArenaObj {
+  private:
+    MemNode* _node; // Corresponding ideal node
+    const uint _extra_edges_length;
+    int* _extra_edges; // extra def-edges, mapping to bb_idx
+  public:
+    DependencyNode(MemNode* n, GrowableArray<int>& extra_edges, Arena* arena);
+    // TODO
+  };
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -461,6 +508,7 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
+  VLoopDependencyGraph _dependency_graph;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
@@ -470,7 +518,8 @@ public:
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
-    _types           (&_arena, vloop, _body)
+    _types           (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices)
   {
     _success = setup_submodules();
   }
@@ -484,6 +533,7 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
+  const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:
   bool setup_submodules();

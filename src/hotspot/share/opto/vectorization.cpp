@@ -161,7 +161,68 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
 
   _types.compute_vector_element_type();
 
+  _dependency_graph.construct();
+
   return VStatus::make_success();
+}
+
+void VLoopDependencyGraph::construct() {
+  const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
+
+  ResourceMark rm;
+  GrowableArray<MemNode*> slice_nodes;
+  GrowableArray<int> def_nodes;
+
+  // For each memory slice, create the memory subgraph
+  for (int i = 0; i < mem_slice_heads.length(); i++) {
+    PhiNode* head = mem_slice_heads.at(i);
+    MemNode* tail = mem_slice_tails.at(i);
+
+    _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
+
+    // In forward order (reverse of reverse), visit all memory nodes in the slice.
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      MemNode* n1 = slice_nodes.at(j);
+      def_nodes.clear();
+
+      VPointer p1(n1, _vloop);
+      // For all memory nodes before it, check if we need to add a memory edge.
+      for (int k = j - 1; k >= 0; k--) {
+        MemNode* n2 = slice_nodes.at(j);
+
+        // Ignore Load-Load dependencies:
+        if (n1->is_Load() && n2->is_Load()) { continue; }
+
+        VPointer p2(n2, _vloop);
+        if (!VPointer::not_equal(p1.cmp(p2))) {
+          // Possibly the same / overlapping address.
+          def_nodes.append(_body.bb_idx(n2));
+        }
+      }
+      add_node(n1, def_nodes);
+    }
+  }
+}
+
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_edges) {
+  assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
+  if (extra_edges.length() == 0) { return; }
+  DependencyNode* dn = new (_arena) DependencyNode(n, extra_edges, _arena);
+  _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
+}
+
+VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
+                                                     GrowableArray<int>& extra_edges,
+                                                     Arena* arena) :
+    _node(n),
+    _extra_edges_length(extra_edges.length()),
+    _extra_edges(nullptr)
+{
+  assert(extra_edges.length() > 0, "not empty");
+  uint bytes = extra_edges.length() * sizeof(int);
+  _extra_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_extra_edges, extra_edges.adr_at(0), bytes);
 }
 
 #ifndef PRODUCT
