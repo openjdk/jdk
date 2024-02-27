@@ -33,35 +33,6 @@ endif
 #
 ################################################################################
 
-################################################################################
-# This macro translates $ into \$ to protect the $ from expansion in the shell.
-# To make this macro resilient against already escaped strings, first remove
-# any present escapes before escaping so that no double escapes are added.
-EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
-
-################################################################################
-# This macro works just like EscapeDollar above, but for #.
-EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
-
-################################################################################
-# This macro translates $ into $$ to protect the string from make itself.
-DoubleDollar = $(subst $$,$$$$,$(strip $1))
-
-################################################################################
-# Creates a sequence of increasing numbers (inclusive).
-# Param 1 - starting number
-# Param 2 - ending number
-sequence = \
-    $(wordlist $1, $2, $(strip \
-        $(eval SEQUENCE_COUNT :=) \
-        $(call _sequence-do,$(strip $2))))
-
-_sequence-do = \
-    $(if $(word $1, $(SEQUENCE_COUNT)),, \
-      $(eval SEQUENCE_COUNT += .) \
-      $(words $(SEQUENCE_COUNT)) \
-      $(call _sequence-do,$1))
-
 # String equals
 equals = \
     $(if $(strip $1)$(strip $2),$(strip \
@@ -88,12 +59,89 @@ uppercase = \
   )
 
 ################################################################################
+# Creates a sequence of increasing numbers (inclusive).
+# Param 1 - starting number
+# Param 2 - ending number
+sequence = \
+    $(wordlist $1, $2, $(strip \
+        $(eval SEQUENCE_COUNT :=) \
+        $(call _sequence-do,$(strip $2))))
+
+_sequence-do = \
+    $(if $(word $1, $(SEQUENCE_COUNT)),, \
+      $(eval SEQUENCE_COUNT += .) \
+      $(words $(SEQUENCE_COUNT)) \
+      $(call _sequence-do,$1))
+
+################################################################################
+# This macro translates $ into \$ to protect the $ from expansion in the shell.
+# To make this macro resilient against already escaped strings, first remove
+# any present escapes before escaping so that no double escapes are added.
+EscapeDollar = $(subst $$,\$$,$(subst \$$,$$,$(strip $1)))
+
+################################################################################
+# This macro works just like EscapeDollar above, but for #.
+EscapeHash = $(subst \#,\\\#,$(subst \\\#,\#,$(strip $1)))
+
+################################################################################
+# This macro translates $ into $$ to protect the string from make itself.
+DoubleDollar = $(subst $$,$$$$,$(strip $1))
+
+################################################################################
 # ShellQuote
 #
 # Quotes a string with single quotes and replaces single quotes with '\'' so
 # that the contents survives being given to the shell.
 ShellQuote = \
     $(SQUOTE)$(subst $(SQUOTE),$(SQUOTE)\$(SQUOTE)$(SQUOTE),$(strip $1))$(SQUOTE)
+
+################################################################################
+# Write to and read from file
+
+# Param 1 - File to read
+ReadFile = \
+    $(shell $(CAT) $1)
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  WriteFile = \
+      $(file >$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  WriteFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
+endif
+
+# Param 1 - Text to write
+# Param 2 - File to write to
+ifeq ($(HAS_FILE_FUNCTION), true)
+  AppendFile = \
+      $(file >>$2,$(strip $1))
+else
+  # Use printf to get consistent behavior on all platforms.
+  AppendFile = \
+      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
+endif
+
+################################################################################
+# Make directory without forking mkdir if not needed.
+#
+# If a directory with an encoded space is provided, the wildcard function
+# sometimes returns false answers (typically if the dir existed when the
+# makefile was parsed, but was deleted by a previous rule). In that case, always
+# call mkdir regardless of what wildcard says.
+#
+# 1: List of directories to create
+MakeDir = \
+    $(strip \
+        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, \
+          $(if $(findstring ?, $d), '$(call DecodeSpace, $d)', \
+            $(if $(wildcard $d), , $d) \
+          ) \
+        ))) \
+        $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
+    )
 
 ################################################################################
 # Check if our build or target conforms to certain restrictions. This set of
@@ -141,51 +189,3 @@ isBuildCpuArch = \
 
 isCompiler = \
   $(strip $(if $(filter $(TOOLCHAIN_TYPE), $1), true, false))
-
-################################################################################
-# Make directory without forking mkdir if not needed.
-#
-# If a directory with an encoded space is provided, the wildcard function
-# sometimes returns false answers (typically if the dir existed when the
-# makefile was parsed, but was deleted by a previous rule). In that case, always
-# call mkdir regardless of what wildcard says.
-#
-# 1: List of directories to create
-MakeDir = \
-    $(strip \
-        $(eval MakeDir_dirs_to_make := $(strip $(foreach d, $1, \
-          $(if $(findstring ?, $d), '$(call DecodeSpace, $d)', \
-            $(if $(wildcard $d), , $d) \
-          ) \
-        ))) \
-        $(if $(MakeDir_dirs_to_make), $(shell $(MKDIR) -p $(MakeDir_dirs_to_make))) \
-    )
-
-################################################################################
-# Write to and read from file
-
-# Param 1 - File to read
-ReadFile = \
-    $(shell $(CAT) $1)
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  WriteFile = \
-      $(file >$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  WriteFile = \
-      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) > $2)
-endif
-
-# Param 1 - Text to write
-# Param 2 - File to write to
-ifeq ($(HAS_FILE_FUNCTION), true)
-  AppendFile = \
-      $(file >>$2,$(strip $1))
-else
-  # Use printf to get consistent behavior on all platforms.
-  AppendFile = \
-      $(shell $(PRINTF) "%s\n" $(strip $(call ShellQuote, $1)) >> $2)
-endif
