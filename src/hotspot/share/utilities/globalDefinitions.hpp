@@ -1025,6 +1025,10 @@ enum LockingMode {
   LM_LIGHTWEIGHT = 2
 };
 
+// Redefine Thread as BaseThread to avoid duplicate symbol issues for
+// JDK static builds. See runtime/thread.hpp for Thread class.
+#define Thread HotspotBaseThread
+
 //----------------------------------------------------------------------------------------------------
 // Special constants for debugging
 

@@ -31,10 +31,10 @@
 _ZN10JavaThread25aarch64_get_thread_helperEv:
 	hint #0x19      // paciasp
 	stp x29, x30, [sp, -16]!
-	adrp x0, :tlsdesc:_ZN6Thread12_thr_currentE
-	ldr x1, [x0, #:tlsdesc_lo12:_ZN6Thread12_thr_currentE]
-	add x0, x0, :tlsdesc_lo12:_ZN6Thread12_thr_currentE
-	.tlsdesccall _ZN6Thread12_thr_currentE
+	adrp x0, :tlsdesc:_ZN17HotspotBaseThread12_thr_currentE
+	ldr x1, [x0, #:tlsdesc_lo12:_ZN17HotspotBaseThread12_thr_currentE]
+	add x0, x0, :tlsdesc_lo12:_ZN17HotspotBaseThread12_thr_currentE
+	.tlsdesccall _ZN17HotspotBaseThread12_thr_currentE
 	blr x1
 	mrs x1, tpidr_el0
 	add x0, x1, x0
