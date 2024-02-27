@@ -732,11 +732,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   AC_SUBST(AS)
 
   #
-  # Setup the archiver (AR)
+  # Setup tools for creating static libraries (AR/LIB)
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LIB, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else

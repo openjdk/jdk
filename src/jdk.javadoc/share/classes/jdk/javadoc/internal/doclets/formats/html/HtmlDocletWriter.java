@@ -31,7 +31,6 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -84,13 +83,11 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -632,6 +629,29 @@ public abstract class HtmlDocletWriter {
      */
     protected DocPath pathString(PackageElement packageElement, DocPath name) {
         return pathToRoot.resolve(docPaths.forPackage(packageElement).resolve(name));
+    }
+
+    /**
+     * {@return a content element containing a breadcrumb navigtation link for {@code elem}}
+     * Only module, package and type elements can appear in breadcrumb navigation.
+     *
+     * @param elem the element
+     * @param selected whether to use the style for current page element
+     */
+    protected Content getBreadcrumbLink(Element elem, boolean selected) {
+        HtmlTree link = switch (elem) {
+            case ModuleElement mdle -> links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
+                    Text.of(mdle.getQualifiedName()));
+            case PackageElement pkg -> links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
+                    getLocalizedPackageName(pkg));
+            case TypeElement type -> links.createLink(pathString(type, docPaths.forName(type)),
+                    utils.getSimpleName(type));
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
+        if (selected) {
+            link.setStyle(HtmlStyle.currentSelection);
+        }
+        return link;
     }
 
     /**

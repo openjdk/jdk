@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,8 +198,8 @@ void PlaceholderEntry::set_supername(Symbol* supername) {
 // All threads examining the placeholder table must hold the
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
-PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
-                            Symbol* supername){
+static PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
+                                   Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != nullptr, "adding nullptr obj");
 
@@ -213,7 +213,7 @@ PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
 }
 
 // Remove a placeholder object.
-void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
+static void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   PlaceholderKey key(class_name, loader_data);

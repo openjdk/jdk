@@ -263,7 +263,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 
 jlong* JavaThread::_jvmci_old_thread_counters;
 
-bool jvmci_counters_include(JavaThread* thread) {
+static bool jvmci_counters_include(JavaThread* thread) {
   return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
 }
 
@@ -282,7 +282,7 @@ void JavaThread::collect_counters(jlong* array, int length) {
 }
 
 // Attempt to enlarge the array for per thread counters.
-jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
+static jlong* resize_counters_array(jlong* old_counters, int current_size, int new_size) {
   jlong* new_counters = NEW_C_HEAP_ARRAY_RETURN_NULL(jlong, new_size, mtJVMCI);
   if (new_counters == nullptr) {
     return nullptr;
@@ -1456,7 +1456,7 @@ void JavaThread::metadata_do(MetadataClosure* f) {
 }
 
 // Printing
-const char* _get_thread_state_name(JavaThreadState _thread_state) {
+static const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
   case _thread_new:               return "_thread_new";

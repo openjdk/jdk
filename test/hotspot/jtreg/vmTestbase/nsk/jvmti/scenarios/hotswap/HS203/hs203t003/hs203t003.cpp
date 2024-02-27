@@ -23,7 +23,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
 #include "jvmti_tools.h"
