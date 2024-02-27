@@ -1506,6 +1506,7 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Reference discovery will not need a barrier.
 
   // Concurrent Mark ref processor
+  _is_alive_closure_cm.set_concurrent_mark(concurrent_mark());
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
                            ParallelGCThreads,                              // degree of mt processing

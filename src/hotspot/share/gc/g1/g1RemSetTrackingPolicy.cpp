@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectionSetChooser.hpp"
 #include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/g1/g1HeapRegionRemSet.inline.hpp"
@@ -101,7 +102,8 @@ bool G1RemSetTrackingPolicy::update_before_rebuild(HeapRegion* r, size_t live_by
 
   assert(!r->rem_set()->is_updating(), "Remembered set of region %u is updating before rebuild", r->hrm_index());
 
-  size_t live_bytes_above_tams = pointer_delta(r->top(), r->top_at_mark_start()) * HeapWordSize;
+  HeapWord* top_at_mark_start = G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(r);
+  size_t live_bytes_above_tams = pointer_delta(r->top(), top_at_mark_start) * HeapWordSize;
   size_t total_live_bytes = live_bytes_below_tams + live_bytes_above_tams;
 
   bool selected_for_rebuild = false;

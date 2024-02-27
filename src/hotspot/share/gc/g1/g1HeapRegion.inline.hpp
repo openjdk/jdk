@@ -267,11 +267,18 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
 }
 
 inline HeapWord* HeapRegion::top_at_mark_start() const {
-  return Atomic::load(&_top_at_mark_start);
+  HeapWord* value = Atomic::load(&_top_at_mark_start);
+  assert(value == G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(hrm_index()),
+         "must be equal region %u %s " PTR_FORMAT " " PTR_FORMAT,
+          hrm_index(), get_short_type_str(),
+         p2i(value), p2i(G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(hrm_index())));
+  return value;
 }
 
 inline void HeapRegion::set_top_at_mark_start(HeapWord* value) {
   Atomic::store(&_top_at_mark_start, value);
+  assert(_top_at_mark_start == G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(this),
+         "duh " PTR_FORMAT " " PTR_FORMAT, p2i(_top_at_mark_start), p2i(G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(this)));
 }
 
 inline HeapWord* HeapRegion::parsable_bottom() const {
@@ -290,6 +297,7 @@ inline void HeapRegion::reset_parsable_bottom() {
 inline void HeapRegion::note_start_of_marking() {
   assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
   if (is_old_or_humongous() && !is_collection_set_candidate()) {
+    G1CollectedHeap::heap()->concurrent_mark()->update_top_at_mark_start(this);
     set_top_at_mark_start(top());
   }
 }
@@ -324,6 +332,7 @@ inline void HeapRegion::reset_top_at_mark_start() {
   // all at that point).
   // - otherwise we reclaim regions only during GC and we do not read tams and the
   // bitmap concurrently.
+  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
   set_top_at_mark_start(bottom());
 }
 

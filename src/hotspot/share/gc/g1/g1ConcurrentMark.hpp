@@ -97,8 +97,11 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
   G1CollectedHeap* _g1h;
+  G1ConcurrentMark* _cm;
 public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  G1CMIsAliveClosure(G1CollectedHeap* g1h);
+  void set_concurrent_mark(G1ConcurrentMark* cm);
+
   bool do_object_b(oop obj);
 };
 
@@ -539,6 +542,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
+  HeapWord* volatile* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
@@ -557,6 +561,12 @@ public:
   size_t live_bytes(uint region) const { return _region_mark_stats[region]._live_words * HeapWordSize; }
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
+
+  inline void update_top_at_mark_start(HeapRegion* r);
+  inline void reset_top_at_mark_start(HeapRegion* r);
+  inline HeapWord* top_at_mark_start(HeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(uint region) const;
+  inline bool obj_allocated_since_mark_start(oop obj) const;
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);

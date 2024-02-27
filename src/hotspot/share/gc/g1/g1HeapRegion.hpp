@@ -540,10 +540,6 @@ public:
   inline        bool is_in_parsable_area(const void* const addr) const;
   inline static bool is_in_parsable_area(const void* const addr, const void* const pb);
 
-  bool obj_allocated_since_marking_start(oop obj) const {
-    return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start();
-  }
-
   // Update the region state after a failed evacuation.
   void handle_evacuation_failure(bool retain);
 

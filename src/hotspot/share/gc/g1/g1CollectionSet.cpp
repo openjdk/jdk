@@ -255,7 +255,7 @@ public:
     assert(r->in_collection_set(), "Region %u should be in collection set", r->hrm_index());
     _st->print_cr("  " HR_FORMAT ", TAMS: " PTR_FORMAT " PB: " PTR_FORMAT ", age: %4d",
                   HR_FORMAT_PARAMS(r),
-                  p2i(r->top_at_mark_start()),
+                  p2i(G1CollectedHeap::heap()->concurrent_mark()->top_at_mark_start(r)),
                   p2i(r->parsable_bottom()),
                   r->has_surv_rate_group() ? checked_cast<int>(r->age_in_surv_rate_group()) : -1);
     return false;
