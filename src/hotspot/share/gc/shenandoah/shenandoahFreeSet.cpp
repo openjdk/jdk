@@ -785,14 +785,6 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
                            " because min_size() is " SIZE_FORMAT, req.size(), r->index(), adjusted_size, req.min_size());
       }
     }
-  } else if (req.is_lab_alloc() && req.type() == ShenandoahAllocRequest::_alloc_plab) {
-
-    // inelastic PLAB
-    size_t size = req.size();
-    size_t usable_free = get_usable_free_words(r->free());
-    if (size <= usable_free) {
-      result = allocate_aligned_plab(size, req, r);
-    }
   } else {
     size_t size = req.size();
     result = r->allocate(size, req);
