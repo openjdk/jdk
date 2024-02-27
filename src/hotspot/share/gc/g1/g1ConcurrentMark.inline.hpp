@@ -184,9 +184,8 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
   return mr.word_size();
 }
 
-inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(uint region) const {
-  assert(region < _g1h->max_reserved_regions(), "Tried to access TARS for region %u out of bounds", region);
-  return _top_at_rebuild_starts[region];
+inline HeapWord* G1ConcurrentMark::top_at_rebuild_start(HeapRegion* r) const {
+  return _top_at_rebuild_starts[r->hrm_index()];
 }
 
 inline void G1ConcurrentMark::update_top_at_rebuild_start(HeapRegion* r) {
