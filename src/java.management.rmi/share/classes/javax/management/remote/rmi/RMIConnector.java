@@ -621,14 +621,15 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     // Implementation of MBeanServerConnection
     //--------------------------------------------------------------------
     private class RemoteMBeanServerConnection implements MBeanServerConnection {
-        private Subject delegationSubject;
 
         public RemoteMBeanServerConnection() {
             this(null);
         }
 
         public RemoteMBeanServerConnection(Subject delegationSubject) {
-            this.delegationSubject = delegationSubject;
+            if (delegationSubject != null) {
+                throw new SecurityException("Subject Delegation has been removed.");
+            }
         }
 
         public ObjectInstance createMBean(String className,
@@ -648,13 +649,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 return connection.createMBean(className,
                         name,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 return connection.createMBean(className,
                         name,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -682,7 +683,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 return connection.createMBean(className,
                         name,
                         loaderName,
-                        delegationSubject);
+                        null);
 
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
@@ -690,7 +691,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 return connection.createMBean(className,
                         name,
                         loaderName,
-                        delegationSubject);
+                        null);
 
             } finally {
                 popDefaultClassLoader(old);
@@ -720,7 +721,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         name,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
@@ -728,7 +729,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         name,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -760,7 +761,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         loaderName,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
@@ -769,7 +770,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         loaderName,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -784,11 +785,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                connection.unregisterMBean(name, delegationSubject);
+                connection.unregisterMBean(name, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                connection.unregisterMBean(name, delegationSubject);
+                connection.unregisterMBean(name, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -802,11 +803,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.getObjectInstance(name, delegationSubject);
+                return connection.getObjectInstance(name, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.getObjectInstance(name, delegationSubject);
+                return connection.getObjectInstance(name, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -822,11 +823,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     new MarshalledObject<QueryExp>(query);
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.queryMBeans(name, sQuery, delegationSubject);
+                return connection.queryMBeans(name, sQuery, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.queryMBeans(name, sQuery, delegationSubject);
+                return connection.queryMBeans(name, sQuery, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -842,11 +843,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     new MarshalledObject<QueryExp>(query);
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.queryNames(name, sQuery, delegationSubject);
+                return connection.queryNames(name, sQuery, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.queryNames(name, sQuery, delegationSubject);
+                return connection.queryNames(name, sQuery, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -859,11 +860,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.isRegistered(name, delegationSubject);
+                return connection.isRegistered(name, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.isRegistered(name, delegationSubject);
+                return connection.isRegistered(name, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -875,11 +876,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.getMBeanCount(delegationSubject);
+                return connection.getMBeanCount(null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.getMBeanCount(delegationSubject);
+                return connection.getMBeanCount(null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -900,13 +901,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 return connection.getAttribute(name,
                         attribute,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 return connection.getAttribute(name,
                         attribute,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -925,14 +926,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 return connection.getAttributes(name,
                         attributes,
-                        delegationSubject);
+                        null);
 
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 return connection.getAttributes(name,
                         attributes,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -956,11 +957,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     new MarshalledObject<Attribute>(attribute);
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                connection.setAttribute(name, sAttribute, delegationSubject);
+                connection.setAttribute(name, sAttribute, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                connection.setAttribute(name, sAttribute, delegationSubject);
+                connection.setAttribute(name, sAttribute, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -984,13 +985,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 return connection.setAttributes(name,
                         sAttributes,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 return connection.setAttributes(name,
                         sAttributes,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1019,7 +1020,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         operationName,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
@@ -1027,7 +1028,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         operationName,
                         sParams,
                         signature,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1040,11 +1041,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.getDefaultDomain(delegationSubject);
+                return connection.getDefaultDomain(null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.getDefaultDomain(delegationSubject);
+                return connection.getDefaultDomain(null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1055,11 +1056,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.getDomains(delegationSubject);
+                return connection.getDomains(null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.getDomains(delegationSubject);
+                return connection.getDomains(null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1074,11 +1075,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             if (logger.debugOn()) logger.debug("getMBeanInfo", "name=" + name);
             final ClassLoader old = pushDefaultClassLoader();
             try {
-                return connection.getMBeanInfo(name, delegationSubject);
+                return connection.getMBeanInfo(name, null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
-                return connection.getMBeanInfo(name, delegationSubject);
+                return connection.getMBeanInfo(name, null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1097,13 +1098,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 return connection.isInstanceOf(name,
                         className,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 return connection.isInstanceOf(name,
                         className,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1132,7 +1133,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         listener,
                         sFilter,
                         sHandback,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
@@ -1140,7 +1141,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         listener,
                         sFilter,
                         sHandback,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1161,13 +1162,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 connection.removeNotificationListener(name,
                         listener,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 connection.removeNotificationListener(name,
                         listener,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1198,7 +1199,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         listener,
                         sFilter,
                         sHandback,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
@@ -1206,7 +1207,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                         listener,
                         sFilter,
                         sHandback,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1235,10 +1236,10 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             final Integer listenerID =
                     addListenerWithSubject(name,
                     new MarshalledObject<NotificationFilter>(filter),
-                    delegationSubject,true);
+                    null, true);
             rmiNotifClient.addNotificationListener(listenerID, name, listener,
                     filter, handback,
-                    delegationSubject);
+                    null);
         }
 
         public void removeNotificationListener(ObjectName name,
@@ -1265,13 +1266,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 connection.removeNotificationListeners(name,
                         ret,
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 connection.removeNotificationListeners(name,
                         ret,
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
@@ -1307,13 +1308,13 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             try {
                 connection.removeNotificationListeners(name,
                         new Integer[] {ret},
-                        delegationSubject);
+                        null);
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
 
                 connection.removeNotificationListeners(name,
                         new Integer[] {ret},
-                        delegationSubject);
+                        null);
             } finally {
                 popDefaultClassLoader(old);
             }
