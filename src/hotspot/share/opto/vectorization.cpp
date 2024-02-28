@@ -231,10 +231,12 @@ void VLoopDependencyGraph::compute_depth() {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     int max_pred_depth = 0;
-    for (PredsIterator it(*this, n); !it.done(); it.next()) {
-      Node* pred = it.current();
-      if (_vloop.in_bb(pred)) {
-        max_pred_depth = MAX2(max_pred_depth, depth(pred));
+    if (n->is_Phi()) {
+      for (PredsIterator it(*this, n); !it.done(); it.next()) {
+        Node* pred = it.current();
+        if (_vloop.in_bb(pred)) {
+          max_pred_depth = MAX2(max_pred_depth, depth(pred));
+        }
       }
     }
     set_depth(n, max_pred_depth + 1);
