@@ -417,7 +417,10 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req, 
     log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
                  req.type_string(),
                  byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
-
+#undef KELVIN_ALLOC_FAILURE
+#ifdef KELVIN_ALLOC_FAILURE
+    heap->free_set()->dump_bitmaps();
+#endif
     // Now that alloc failure GC is scheduled, we can abort everything else
     heap->cancel_gc(GCCause::_allocation_failure);
   }

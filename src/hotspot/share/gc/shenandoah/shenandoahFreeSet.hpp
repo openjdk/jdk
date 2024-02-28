@@ -222,6 +222,7 @@ private:
 
   void dump_bitmap_row(ssize_t idx) const;
   void dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const;
+#define KELVIN_GOOD_CODE
 #ifdef KELVIN_GOOD_CODE
   void dump_bitmap_all() const;
 #else
@@ -326,6 +327,11 @@ public:
   inline size_t used_by(ShenandoahFreeSetPartitionId which_partition) const {
     assert (which_partition < NumPartitions, "selected free set must be valid");
     return _used[which_partition];
+  }
+
+  inline size_t available_in(ShenandoahFreeSetPartitionId which_partition) const {
+    assert (which_partition < NumPartitions, "selected free set must be valid");
+    return _capacity[which_partition] - _used[which_partition];
   }
 
   inline void set_capacity_of(ShenandoahFreeSetPartitionId which_partition, size_t value) {
@@ -434,6 +440,10 @@ public:
 
   void clear();
   void rebuild();
+
+#ifdef KELVIN_BAD_CODE
+  void dump_bitmaps();
+#endif
 
   // Move up to cset_regions number of regions from being available to the collector to being available to the mutator.
   //
