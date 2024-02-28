@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,6 +168,13 @@ class JfrEvent {
       set_starttime(JfrTicks::now());
     } else if (_end_time == 0) {
       set_endtime(JfrTicks::now());
+    }
+
+    if (JfrEventSetting::selector(T::eventId) > 0) {
+      if (JfrEventSetting::selector(T::eventId) == 1 && !JfrContext::is_present()) {
+        // selector="if-context" but there is no context
+        return false;
+      }
     }
     if (T::isInstant || T::isRequestable) {
       return T::hasThrottle ? JfrEventThrottler::accept(T::eventId, _untimed ? 0 : _start_time) : true;

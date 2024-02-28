@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +52,7 @@ import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
 import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
+import jdk.jfr.internal.settings.SelectorSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
 import jdk.jfr.internal.settings.ThrottleSetting;
@@ -71,9 +73,10 @@ public final class EventControl {
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
     private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
     private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
+    private static final Type TYPE_SELECTOR = TypeLibrary.createType(SelectorSetting.class);
 
     private final ArrayList<SettingControl> settingControls = new ArrayList<>();
-    private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
+    private final ArrayList<NamedControl> namedControls = new ArrayList<>(10);
     private final PlatformEventType type;
     private final String idName;
 
@@ -96,6 +99,9 @@ public final class EventControl {
         if (eventType.hasLevel()) {
             addControl(Level.NAME, defineLevel(eventType));
         }
+        if (eventType.hasSelector()) {
+            addControl(Selector.NAME, defineSelector(eventType));
+        }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
         addStackFilters(eventType);
@@ -107,6 +113,7 @@ public final class EventControl {
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
         remove(eventType, aes, StackFilter.class);
+        remove(eventType, aes, Selector.class);
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());
@@ -358,6 +365,13 @@ public final class EventControl {
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_PERIOD, PeriodSetting.NAME, def, Collections.emptyList()));
         return new Control(new PeriodSetting(type), def);
+    }
+
+    private static Control defineSelector(PlatformEventType type) {
+        Selector selector = type.getAnnotation(Selector.class);
+        String def = selector != null ? selector.value() : "all";
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_SELECTOR, Selector.NAME, def, Collections.emptyList()));
+        return new Control(new SelectorSetting(type), def);
     }
 
     void disable() {

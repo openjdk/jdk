@@ -152,6 +152,10 @@ public class TestDefaultConfigurations {
     private static Set<String> createRequiredSettingNameSet(EventType cd) {
         Set<String> requiredSettings = new HashSet<>();
         for (SettingDescriptor s : cd.getSettingDescriptors()) {
+            if (s.getName().equals("select")) {
+                // select is a special case, it is not required
+                continue;
+            }
             requiredSettings.add(s.getName());
         }
         return requiredSettings;

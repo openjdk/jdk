@@ -106,7 +106,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"markContextInUse", (char*)"()V", (void*)jfr_mark_context_in_use,
       (char*)"openContext", (char*)"()J", (void*)jfr_open_context,
       (char*)"closeContext", (char*)"()J", (void*)jfr_close_context,
-      (char*)"hasContext", (char*)"()Z", (void*)jfr_has_context
+      (char*)"hasContext", (char*)"()Z", (void*)jfr_has_context,
+      (char*)"setSelector", (char*)("(JB)V"), (void*)jfr_set_selector
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

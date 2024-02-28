@@ -443,3 +443,7 @@ NO_TRANSITION_END
 NO_TRANSITION(jboolean, jfr_has_context(JNIEnv* env, jclass jvm))
   return JfrContext::is_present();
 NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_set_selector(JNIEnv* env, jobject jvm, jlong event_type_id, jbyte value))
+  JfrEventSetting::set_selector(event_type_id, value);
+NO_TRANSITION_END

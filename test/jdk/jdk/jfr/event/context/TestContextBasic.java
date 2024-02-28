@@ -27,6 +27,7 @@
 package jdk.jfr.event.context;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.time.Duration;
@@ -37,11 +38,15 @@ import jdk.jfr.Enabled;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
+import jdk.jfr.SettingDefinition;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.Contextual;
 
+import jdk.jfr.internal.Selector;
+import jdk.jfr.internal.settings.SelectorSetting;
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.EventNames;
+import jdk.test.lib.jfr.RecurseThread;
 import static jdk.test.lib.Asserts.*;
 
 /*
@@ -71,6 +76,7 @@ public class TestContextBasic {
     @Name("jdk.TestWork")
     @Registered
     @Enabled
+    @Selector("if-context")
     public static class MyWorkEvent extends Event {
     }
 
@@ -79,12 +85,15 @@ public class TestContextBasic {
         checkSimpleContext();
         checkNestedContext();
         checkWithExecutionSamples();
+        for (String selector : Arrays.asList("", "all", "if-context", "none")) {
+            checkContextWithSelector(selector);
+        }
     }
 
     private static void checkInactiveContext() throws IOException {
         Recording r = new Recording();
         r.enable(MyContextEvent.class);
-        r.enable(MyWorkEvent.class);
+        r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
         // a simple work event, not enveloped in a context at all
@@ -111,7 +120,7 @@ public class TestContextBasic {
     private static void checkSimpleContext() throws IOException {
         Recording r = new Recording();
         r.enable(MyContextEvent.class);
-        r.enable(MyWorkEvent.class);
+        r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
 
@@ -134,7 +143,7 @@ public class TestContextBasic {
     private static void checkNestedContext() throws IOException {
         Recording r = new Recording();
         r.enable(MyContextEvent.class);
-        r.enable(MyWorkEvent.class);
+        r.enable(MyWorkEvent.class).with("select", "all");
         r.start();
 
 
@@ -209,6 +218,7 @@ public class TestContextBasic {
         r.enable(MyWorkEvent.class);
         r.enable(MyContextEvent.class);
         r.enable(EventNames.ExecutionSample).withPeriod(Duration.ofMillis(1));
+        r.enable(EventNames.JavaMonitorWait).with("select", "if-context").with("threshold", "100 ms");
         r.start();
 
         t.join();
@@ -217,6 +227,65 @@ public class TestContextBasic {
         r.dump(java.nio.file.Paths.get(System.getProperty("java.io.tmpdir"), "recording.jfr"));
         List<RecordedEvent> events = Events.fromRecording(r);
         assertEquals(1, eventCount(events, "jdk.TestContext"));
+        assertEquals(1, eventCount(events, EventNames.JavaMonitorWait));
+    }
+
+    private static void checkContextWithSelector(String selector) throws IOException {
+        int ctxEventCount = 0;
+        int workEventCount = 0;
+
+        switch (selector) {
+            case "": {
+                // the event is defined as requiring a context
+                ctxEventCount = 1;
+                workEventCount = 1;
+                break;
+            }
+            case "all":
+                ctxEventCount = 1;
+                workEventCount = 2;
+                break;
+            case "if-context":
+                ctxEventCount = 1;
+                workEventCount = 1;
+                break;
+            case "none":
+                // none will be refused and replaced by "all"
+                ctxEventCount = 1;
+                workEventCount = 2;
+                break;
+        }
+
+        Recording r = new Recording();
+        r.enable(MyContextEvent.class);
+        var settings = r.enable(MyWorkEvent.class);
+        if (!selector.isEmpty()) {
+            settings.with("select", selector);
+        }
+        r.start();
+
+        // this event is not enveloped in a context; it should not be written to the recording unless selector is "all"
+        new MyWorkEvent().commit();
+
+        MyContextEvent ctx = new MyContextEvent("123");
+        ctx.begin();
+        ctx.end();
+        // this context event has no enveloped events; it should not be written to the recording
+        ctx.commit();
+
+        ctx = new MyContextEvent("456");
+        ctx.begin();
+        // this event is enveloped in a context; it should be written to the recording if selector is not "none"
+        new MyWorkEvent().commit();
+        ctx.end();
+        ctx.commit();
+
+        r.stop();
+
+        List<RecordedEvent> events = Events.fromRecording(r);
+        // expecting one work event and one context event
+        assertEquals(workEventCount, eventCount(events, "jdk.TestWork"), "event: jdk.TestWork, selector: " + selector);
+        assertEquals(ctxEventCount, eventCount(events, "jdk.TestContext"), "event: jdk.TestContext, selector: " + selector);
     }
 
     private static int eventCount(List<RecordedEvent> events, String name) throws IOException {
@@ -231,7 +300,7 @@ public class TestContextBasic {
 
     private static long sieve(int n) {
         // Create a boolean array "prime[0..n]" and initialize
-        // all entries it as true. A value in prime[i] will
+        // all entries as true. A value in prime[i] will
         // finally be false if i is not a prime, true otherwise.
         boolean prime[] = new boolean[n+1];
         for(int i=0;i<=n;i++)

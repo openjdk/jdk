@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +67,8 @@ public final class PlatformEventType extends Type {
     private boolean registered = true;
     private boolean committable = enabled && registered;
     private boolean hasLevel = false;
+    private boolean hasSelector = false;
+    private byte selector = 0;
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -163,6 +166,17 @@ public final class PlatformEventType extends Type {
         }
     }
 
+    public void setSelector(int selector) {
+        this.selector = (byte)(selector & 0xff);
+        if (isJVM) {
+            JVM.setSelector(getId(), this.selector);
+        }
+    }
+
+    public byte getSelector() {
+        return selector;
+    }
+
     public void setHasPeriod(boolean hasPeriod) {
         this.hasPeriod = hasPeriod;
     }
@@ -173,6 +187,14 @@ public final class PlatformEventType extends Type {
 
     public boolean hasLevel() {
         return this.hasLevel;
+    }
+
+    public void setHasSelector(boolean hasSelector) {
+        this.hasSelector = hasSelector;
+    }
+
+    public boolean hasSelector() {
+        return this.hasSelector || getAnnotation(Selector.class) != null;
     }
 
     public boolean hasStackTrace() {

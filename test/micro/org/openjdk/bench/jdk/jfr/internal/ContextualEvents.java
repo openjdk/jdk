@@ -76,10 +76,12 @@ public class ContextualEvents {
 
     public static enum Experiment {
         NO_CONTEXT,
-        CONTEXT
+        NO_CONTEXT_WITH_FILTER,
+        CONTEXT,
+        CONTEXT_WITH_FILTER
     }
 
-    @Param({"NO_CONTEXT", "CONTEXT"})
+    @Param({"NO_CONTEXT", "NO_CONTEXT_WITH_FILTER", "CONTEXT", "CONTEXT_WITH_FILTER"})
     private Experiment experiment;
 
     private Recording recording;
@@ -90,9 +92,16 @@ public class ContextualEvents {
             case NO_CONTEXT:
                 recording.enable("test.WorkContext");
                 break;
+            case NO_CONTEXT_WITH_FILTER:
+                recording.enable("test.WorkContext").with("select", "if-context");
+                break;
             case CONTEXT:
                 recording.enable("test.SpanContext");
                 recording.enable("test.WorkContext");
+                break;
+            case CONTEXT_WITH_FILTER:
+                recording.enable("test.SpanContext");
+                recording.enable("test.WorkContext").with("select", "if-context");
                 break;
         }
         recording.start();

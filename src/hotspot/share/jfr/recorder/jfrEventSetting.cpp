@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,6 +57,12 @@ void JfrEventSetting::set_enabled(jlong id, bool enabled) {
 void JfrEventSetting::set_large(JfrEventId event_id) {
   assert(bounds_check_event(event_id), "invariant");
   setting(event_id).large = true;
+}
+
+void JfrEventSetting::set_selector(jlong id, jbyte selector) {
+  JfrEventId event_id = (JfrEventId)id;
+  assert(bounds_check_event(event_id), "invariant");
+  setting(event_id).selector = selector;
 }
 
 void JfrEventSetting::unhide_internal_types() {

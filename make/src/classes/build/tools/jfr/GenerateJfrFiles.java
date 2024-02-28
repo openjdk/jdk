@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -658,7 +659,8 @@ public class GenerateJfrFiles {
             out.write("  u1     stacktrace;");
             out.write("  u1     enabled;");
             out.write("  u1     large;");
-            out.write("  u1     pad[5]; // Because GCC on linux ia32 at least tries to pack this.");
+            out.write("  u1     selector;");
+            out.write("  u1     pad[4]; // Because GCC on linux ia32 at least tries to pack this.");
             out.write("};");
             out.write("");
             out.write("union JfrNativeSettings {");
