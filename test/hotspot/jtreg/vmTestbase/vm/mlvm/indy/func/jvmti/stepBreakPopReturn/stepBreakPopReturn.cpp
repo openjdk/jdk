@@ -25,10 +25,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "JVMTITools.h"
 #include "jvmti_tools.h"
-#include "mlvmJvmtiUtils.h"
+#include "mlvmJvmtiUtils.hpp"
 
 extern "C" {
 

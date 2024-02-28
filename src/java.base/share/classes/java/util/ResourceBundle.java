@@ -2425,7 +2425,7 @@ public abstract class ResourceBundle {
      * {@snippet lang=java :
      * import java.util.*;
      * import static java.util.ResourceBundle.Control.*;
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      * ResourceBundle bundle =
      *   ResourceBundle.getBundle("MyResources", Locale.forLanguageTag("fr-CH"),
      *                            ResourceBundle.Control.getControl(FORMAT_PROPERTIES));
@@ -2494,7 +2494,7 @@ public abstract class ResourceBundle {
      *         }
      *     });
      *
-     * code: // @replace substring="code:" replacement="..."
+     * ...
      *
      * private static class XMLResourceBundle extends ResourceBundle {
      *     private Properties props;
@@ -2506,7 +2506,7 @@ public abstract class ResourceBundle {
      *         return props.getProperty(key);
      *     }
      *     public Enumeration<String> getKeys() {
-     *         code: // @replace substring="code:" replacement="..."
+     *         ...
      *     }
      * }
      * }

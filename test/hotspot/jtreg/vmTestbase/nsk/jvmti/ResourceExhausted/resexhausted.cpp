@@ -25,7 +25,7 @@
 #include <string.h>
 #include <errno.h>
 #include "jvmti_tools.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 #define PASSED 0
 #define STATUS_FAILED 2

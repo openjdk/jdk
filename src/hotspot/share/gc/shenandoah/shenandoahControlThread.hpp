@@ -28,10 +28,8 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "utilities/ostream.hpp"
 
 class ShenandoahControlThread: public ConcurrentGCThread {
   friend class VMStructs;
@@ -85,8 +83,6 @@ private:
   // Handle GC request.
   // Blocks until GC is over.
   void handle_requested_gc(GCCause::Cause cause);
-
-  bool is_explicit_gc(GCCause::Cause cause) const;
 
 public:
   // Constructor

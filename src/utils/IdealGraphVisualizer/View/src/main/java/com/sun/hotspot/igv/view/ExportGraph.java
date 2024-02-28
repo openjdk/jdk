@@ -39,7 +39,6 @@ import org.apache.batik.svggen.SVGGeneratorContext;
 import org.apache.batik.svggen.SVGGraphics2D;
 import org.openide.DialogDisplayer;
 import org.openide.NotifyDescriptor;
-import org.w3c.dom.DOMImplementation;
 
 
 public class ExportGraph implements ExportCookie {
@@ -88,9 +87,8 @@ public class ExportGraph implements ExportCookie {
     }
 
     private static void exportToSVG(EditorTopComponent editor, File f) {
-        DOMImplementation dom = GenericDOMImplementation.getDOMImplementation();
-        org.w3c.dom.Document document = dom.createDocument("http://www.w3.org/2000/svg", "svg", null);
-        SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(document);
+        SVGGeneratorContext ctx = SVGGeneratorContext.createDefault(GenericDOMImplementation.getDOMImplementation()
+                .createDocument("http://www.w3.org/2000/svg", "svg", null));
         ctx.setEmbeddedFontsOn(true);
         SVGGraphics2D svgGenerator = new SVGGraphics2D(ctx, true);
         editor.paintScene(svgGenerator);
