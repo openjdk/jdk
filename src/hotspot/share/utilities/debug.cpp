@@ -67,11 +67,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
