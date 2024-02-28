@@ -48,7 +48,7 @@ import com.sun.jdi.request.*;
  *   precise - The debuggee creates a 2nd thread that repeatedly calls
  *       Thread.interrupt() on the main thread, but does so in a controlled
  *       fashion that allows to test to verify that every interrupt is
- *       received and handle.
+ *       received and handled.
  *   aggressive - The debuggee creates a 2nd thread that repeatedly calls
  *       Thread.interrupt() on the main thread, but does so at a high pace
  *       and without any coordination with the main thread. Because of
@@ -116,7 +116,7 @@ class InterruptHangTarg {
                     // interrupts can come in at any time, even while we are handling
                     // an intrrupt.
                     if (isInterrupted) {
-                        throw new RuntimeException("Thread is interrupted but shouldn't be.");
+                        throw new RuntimeException("Thread should not have interrupted status set.");
                     }
                     synchronized(InterruptHangTarg.sync) {
                         // Let the interruptor thread know it can start interrupting again
@@ -137,7 +137,11 @@ class InterruptHangTarg {
             }
         }
 
-        if (!remoteMode) { // we don't count interruptsSent when in remote mode
+        // Print how many times an interrupt was sent. When in remote mode, the RemoteInterruptor
+        // is in a different process, so interruptsSent is not updated, therefore we don't
+        // print it here. The RemoteInterruptor thread keeps its own count and prints
+        // it before it exits.
+        if (!remoteMode) {
             System.out.println("interrupts sent: " + interruptsSent);
         }
 
