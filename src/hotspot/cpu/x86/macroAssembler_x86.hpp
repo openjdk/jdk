@@ -646,6 +646,28 @@ public:
                                      Label* L_failure,
                                      bool set_cond_codes = false);
 
+  // As above, but with a constant super_klass.
+  // The result is in Register result, not the condition codes.
+  void check_klass_subtype_slow_path(Register sub_klass,
+                                     Klass *super_klass,
+                                     Register temp1,
+                                     Register temp2,
+                                     Register temp3,
+                                     Register temp4,
+                                     Register temp5,
+                                     Register result);
+
+  void verify_klass_subtype_slow_path(Register sub_klass,
+                                      Klass *super_klass,
+                                      Register r_super_klass,
+                                      Register temp1,
+                                      Register temp2,
+                                      Register temp3,
+                                      Register temp4,
+                                      Register temp5,
+                                      Register result);
+  void klass_subtype_fallback();
+
   // Simplified, combined version, good for typical uses.
   // Falls through on failure.
   void check_klass_subtype(Register sub_klass,

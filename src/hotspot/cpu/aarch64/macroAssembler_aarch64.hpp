@@ -1024,8 +1024,6 @@ public:
                                       FloatRegister vtemp,
                                       Register result);
 
-
-
   void klass_subtype_fallback();
 
   // Simplified, combined version, good for typical uses.

@@ -247,15 +247,15 @@ inline ReverseRegSetIterator<RegImpl> AbstractRegSet<RegImpl>::rbegin() {
 
 template<typename R, typename... Rx>
 inline void assert_different_registers(R first_register, Rx... more_registers) {
-#ifdef ASSERT
+// #ifdef ASSERT
   const R regs[] = { first_register, more_registers... };
   // Verify there are no equal entries.
   for (size_t i = 0; i < ARRAY_SIZE(regs) - 1; ++i) {
     for (size_t j = i + 1; j < ARRAY_SIZE(regs); ++j) {
-      assert(regs[i] != regs[j], "Multiple uses of register: %s", regs[i]->name());
+      guarantee(regs[i] != regs[j], "Multiple uses of register: %s", regs[i]->name());
     }
   }
-#endif
+// #endif
 }
 
 #endif // SHARE_ASM_REGISTER_HPP
