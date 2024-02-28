@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -145,7 +145,7 @@ private:
     // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
-    // Illustration of the Growable Array data structure.
+    // Illustration of the growable array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
@@ -174,7 +174,7 @@ private:
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket -1));
+              _min_capacity * ( 1ULL << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -225,7 +225,9 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    bool expand();
+    // Expand the mark stack doubling its size.
+    bool try_expand();
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
@@ -559,7 +561,7 @@ public:
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(uint region) const;
+  inline HeapWord* top_at_rebuild_start(HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.

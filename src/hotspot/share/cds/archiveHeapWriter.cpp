@@ -44,7 +44,7 @@
 
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 
 #if INCLUDE_CDS_JAVA_HEAP
