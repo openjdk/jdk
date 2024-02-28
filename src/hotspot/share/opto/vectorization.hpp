@@ -461,6 +461,9 @@ private:
   // bb_idx -> depth
   GrowableArray<int> _depth;
 
+protected:
+  const VLoopBody& body() const { return _body; }
+
 public:
   VLoopDependencyGraph(Arena* arena,
                        const VLoop& vloop,
@@ -483,13 +486,13 @@ public:
   void construct();
 
 private:
+  void compute_depth();
   void add_node(MemNode* n, GrowableArray<int>& extra_def_edges);
+  NOT_PRODUCT( void print() const; )
 
-  DependencyNode* dependency_node(Node* n) const {
+  const DependencyNode* dependency_node(const Node* n) const {
     return _dependency_nodes.at(_body.bb_idx(n));
   }
-
-  NOT_PRODUCT( void print() const; )
 
   class DependencyNode : public ArenaObj {
   private:
@@ -504,6 +507,29 @@ private:
       assert(i < _extra_def_edges_length, "bounds check");
       return _extra_def_edges[i];
     }
+  };
+public:
+  class DefIterator : public StackObj {
+  private:
+    const VLoopDependencyGraph& _dependency_graph;
+
+    const Node* _node;
+    const DependencyNode* _dependency_node;
+
+    Node* _current_def;
+
+    // Iterate in node->in(i)
+    int _next_def;
+    int _end_def;
+
+    // Iterate in dependency_node->extra_def_edge(i)
+    int _next_extra_def;
+    int _end_extra_def;
+  public:
+    DefIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    void next();
+    bool done() const { return _current_def == nullptr; }
+    Node* current_def() const { assert(!done(), "not done yet"); return _current_def; }
   };
 };
 

@@ -205,6 +205,8 @@ void VLoopDependencyGraph::construct() {
     slice_nodes.clear();
   }
 
+  compute_depth();
+
 #ifndef PRODUCT
   if (_vloop.is_trace_dependency_graph()) {
     print();
@@ -219,13 +221,17 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_def_ed
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
+void VLoopDependencyGraph::compute_depth() {
+}
+
 #ifndef PRODUCT
 void VLoopDependencyGraph::print() const {
   tty->print_cr("\nVLoopDependencyGraph::print:");
+
   tty->print_cr(" Extra def edges:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    DependencyNode* dn = dependency_node(n);
+    const DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
       for (uint j = 0; j < dn->extra_def_edges_length(); j++) {
@@ -236,6 +242,17 @@ void VLoopDependencyGraph::print() const {
     }
   }
   tty->cr();
+
+  tty->print_cr(" Complete dependency graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  Dependencies[%d %s:", n->_idx, n->Name());
+    for (DefIterator it(*this, n); !it.done(); it.next()) {
+      Node* def = it.current_def();
+      tty->print("  %d %s", def->_idx, def->Name());
+    }
+    tty->print_cr("]");
+  }
 }
 #endif
 
@@ -250,6 +267,39 @@ VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
   uint bytes = extra_def_edges.length() * sizeof(int);
   _extra_def_edges = (int*)arena->Amalloc(bytes);
   memcpy(_extra_def_edges, extra_def_edges.adr_at(0), bytes);
+}
+
+VLoopDependencyGraph::DefIterator::DefIterator(const VLoopDependencyGraph& dependency_graph,
+                                               const Node* node) :
+    _dependency_graph(dependency_graph),
+    _node(node),
+    _dependency_node(dependency_graph.dependency_node(node)),
+    _current_def(nullptr),
+    _next_def(0),
+    _end_def(node->req()),
+    _next_extra_def(0),
+    _end_extra_def((_dependency_node != nullptr) ? _dependency_node->extra_def_edges_length() : 0)
+{
+  if (_node->is_Store() || _node->is_Load()) {
+    // Load: address
+    // Store: address, value
+    _next_def = MemNode::Address;
+  } else {
+    assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
+    _next_def = 1; // skip control
+  }
+  next();
+}
+
+void VLoopDependencyGraph::DefIterator::next() {
+  if (_next_def < _end_def) {
+    _current_def = _node->in(_next_def++);
+  } else if (_next_extra_def < _end_extra_def) {
+    int def_bb_idx = _dependency_node->extra_def_edge(_next_extra_def++);
+    _current_def = _dependency_graph.body().body().at(def_bb_idx);
+  } else {
+    _current_def = nullptr; // done
+  }
 }
 
 #ifndef PRODUCT
