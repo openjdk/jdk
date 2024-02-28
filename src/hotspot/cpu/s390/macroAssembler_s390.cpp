@@ -3273,8 +3273,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_bre(done); // acquired the lock for the first time.
 
   // Check if we are already the owner (recursive lock)
-  z_cgr(currentHeader, Z_thread);
-
+  z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
   z_brne(done);
 
   // Current thread already owns the lock. Just increment recursion count.
@@ -3348,7 +3347,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_lg(currentHeader, hdr_offset, oop);    // CurrentHeader is tagged with monitor_value set.
 
   z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-  z_brne(done);
+  z_brne(not_recursive);
 
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   z_bre(not_recursive); // if 0 then jump, it's not recursive locking
