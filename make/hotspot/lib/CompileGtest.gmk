@@ -122,6 +122,7 @@ ifeq ($(call isTargetOs, windows), true)
   $(BUILD_GTEST_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
 endif
 
+
 TARGETS += $(BUILD_GTEST_LIBJVM)
 
 ################################################################################
