@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,6 +107,23 @@ public class TestUtil {
         Path target = dir.resolve("testtarget");
         try {
             Files.createSymbolicLink(link, target);
+            Files.delete(link);
+            return true;
+        } catch (UnsupportedOperationException x) {
+            return false;
+        } catch (IOException x) {
+            return false;
+        }
+    }
+
+    /**
+     * Returns true if hard links are supported
+     */
+    static boolean supportsHardLinks(Path dir) {
+        Path link = dir.resolve("testlink");
+        Path target = dir.resolve("testtarget");
+        try {
+            Files.createLink(link, target);
             Files.delete(link);
             return true;
         } catch (UnsupportedOperationException x) {
