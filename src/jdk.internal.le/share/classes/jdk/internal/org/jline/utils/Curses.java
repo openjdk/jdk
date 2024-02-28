@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -29,8 +29,7 @@ public final class Curses {
     private static final int IFTE_THEN = 2;
     private static final int IFTE_ELSE = 3;
 
-    private Curses() {
-    }
+    private Curses() {}
 
     /**
      * Print the given terminal capabilities
@@ -95,9 +94,9 @@ public final class Curses {
                             case 'n':
                                 out.append('\n');
                                 break;
-//                        case 'l':
-//                            rawPrint('\l');
-//                            break;
+                                //                        case 'l':
+                                //                            rawPrint('\l');
+                                //                            break;
                             case 'r':
                                 if (exec) {
                                     out.append('\r');
@@ -138,7 +137,7 @@ public final class Curses {
                 case '^':
                     ch = str.charAt(index++);
                     if (exec) {
-                        out.append((char)(ch - '@'));
+                        out.append((char) (ch - '@'));
                     }
                     break;
                 case '%':
@@ -195,7 +194,8 @@ public final class Curses {
                             break;
                         case '{':
                             int start = index;
-                            while (str.charAt(index++) != '}') ;
+                            while (str.charAt(index++) != '}')
+                                ;
                             if (exec) {
                                 int v = Integer.parseInt(str.substring(start, index - 1));
                                 stack.push(v);
@@ -364,10 +364,18 @@ public final class Curses {
                             int cnv;
                             while ("-+# ".indexOf(ch) >= 0) {
                                 switch (ch) {
-                                    case '-': left = true; break;
-                                    case '+': plus = true; break;
-                                    case '#': alternate = true; break;
-                                    case ' ': space = true; break;
+                                    case '-':
+                                        left = true;
+                                        break;
+                                    case '+':
+                                        plus = true;
+                                        break;
+                                    case '#':
+                                        alternate = true;
+                                        break;
+                                    case ' ':
+                                        space = true;
+                                        break;
                                 }
                                 ch = str.charAt(index++);
                             }
@@ -473,5 +481,4 @@ public final class Curses {
             return Integer.parseInt(pop.toString());
         }
     }
-
 }

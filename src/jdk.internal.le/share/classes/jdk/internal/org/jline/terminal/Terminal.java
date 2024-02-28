@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2018, the original author or authors.
+ * Copyright (c) 2002-2018, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -34,6 +34,7 @@ public interface Terminal extends Closeable, Flushable {
      * Type used for dumb terminals.
      */
     String TYPE_DUMB = "dumb";
+
     String TYPE_DUMB_COLOR = "dumb-color";
 
     String getName();
@@ -59,6 +60,16 @@ public interface Terminal extends Closeable, Flushable {
         void handle(Signal signal);
     }
 
+    /**
+     * Registers a handler for the given {@link Signal}.
+     * <p>
+     * Note that the JVM does not easily allow catching the {@link Signal#QUIT} signal, which causes a thread dump
+     * to be displayed.  This signal is mainly used when connecting through an SSH socket to a virtual terminal.
+     *
+     * @param signal the signal to register a handler for
+     * @param handler the handler
+     * @return the previous signal handler
+     */
     SignalHandler handle(Signal signal, SignalHandler handler);
 
     void raise(Signal signal);
@@ -180,8 +191,21 @@ public interface Terminal extends Closeable, Flushable {
 
     boolean echo(boolean echo);
 
+    /**
+     * Returns the terminal attributes.
+     * The returned object can be safely modified
+     * further used in a call to {@link #setAttributes(Attributes)}.
+     *
+     * @return the terminal attributes.
+     */
     Attributes getAttributes();
 
+    /**
+     * Set the terminal attributes.
+     * The terminal will perform a copy of the given attributes.
+     *
+     * @param attr the new attributes
+     */
     void setAttributes(Attributes attr);
 
     /**
@@ -334,5 +358,4 @@ public interface Terminal extends Closeable, Flushable {
      * Color support
      */
     ColorPalette getPalette();
-
 }

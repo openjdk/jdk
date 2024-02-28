@@ -1,17 +1,10 @@
 /*
- * Copyright (C) 2009-2018 the original author(s).
+ * Copyright (c) 2009-2018, the original author(s).
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This software is distributable under the BSD license. See the terms of the
+ * BSD license in the documentation provided with this software.
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * https://opensource.org/licenses/BSD-3-Clause
  */
 package jdk.internal.org.jline.utils;
 
@@ -252,12 +245,10 @@ public class AnsiWriter extends FilterWriter {
      * @throws IOException      if no more non-null values left
      */
     private int getNextOptionInt(Iterator<Object> optionsIterator) throws IOException {
-        for (;;) {
-            if (!optionsIterator.hasNext())
-                throw new IllegalArgumentException();
+        for (; ; ) {
+            if (!optionsIterator.hasNext()) throw new IllegalArgumentException();
             Object arg = optionsIterator.next();
-            if (arg != null)
-                return (Integer) arg;
+            if (arg != null) return (Integer) arg;
         }
     }
 
@@ -346,27 +337,21 @@ public class AnsiWriter extends FilterWriter {
                                     int g = getNextOptionInt(optionsIterator);
                                     int b = getNextOptionInt(optionsIterator);
                                     if (r >= 0 && r <= 255 && g >= 0 && g <= 255 && b >= 0 && b <= 255) {
-                                        if (value == 38)
-                                            processSetForegroundColorExt(r, g, b);
-                                        else
-                                            processSetBackgroundColorExt(r, g, b);
+                                        if (value == 38) processSetForegroundColorExt(r, g, b);
+                                        else processSetBackgroundColorExt(r, g, b);
                                     } else {
                                         throw new IllegalArgumentException();
                                     }
-                                }
-                                else if (arg2or5 == 5) {
+                                } else if (arg2or5 == 5) {
                                     // 256 color style like `esc[38;5;<index>m`
                                     int paletteIndex = getNextOptionInt(optionsIterator);
                                     if (paletteIndex >= 0 && paletteIndex <= 255) {
-                                        if (value == 38)
-                                            processSetForegroundColorExt(paletteIndex);
-                                        else
-                                            processSetBackgroundColorExt(paletteIndex);
+                                        if (value == 38) processSetForegroundColorExt(paletteIndex);
+                                        else processSetBackgroundColorExt(paletteIndex);
                                     } else {
                                         throw new IllegalArgumentException();
                                     }
-                                }
-                                else {
+                                } else {
                                     throw new IllegalArgumentException();
                                 }
                             } else {
@@ -449,47 +434,41 @@ public class AnsiWriter extends FilterWriter {
      * Process <code>CSI u</code> ANSI code, corresponding to <code>RCP \u2013 Restore Cursor Position</code>
      * @throws IOException if an error occurs
      */
-    protected void processRestoreCursorPosition() throws IOException {
-    }
+    protected void processRestoreCursorPosition() throws IOException {}
 
     /**
      * Process <code>CSI s</code> ANSI code, corresponding to <code>SCP \u2013 Save Cursor Position</code>
      * @throws IOException if an error occurs
      */
-    protected void processSaveCursorPosition() throws IOException {
-    }
+    protected void processSaveCursorPosition() throws IOException {}
 
     /**
      * Process <code>CSI s</code> ANSI code, corresponding to <code>IL \u2013 Insert Line</code>
      * @param optionInt the option
      * @throws IOException if an error occurs
      */
-    protected void processInsertLine(int optionInt) throws IOException {
-    }
+    protected void processInsertLine(int optionInt) throws IOException {}
 
     /**
      * Process <code>CSI s</code> ANSI code, corresponding to <code>DL \u2013 Delete Line</code>
      * @param optionInt the option
      * @throws IOException if an error occurs
      */
-    protected void processDeleteLine(int optionInt) throws IOException {
-    }
+    protected void processDeleteLine(int optionInt) throws IOException {}
 
     /**
      * Process <code>CSI n T</code> ANSI code, corresponding to <code>SD \u2013 Scroll Down</code>
      * @param optionInt the option
      * @throws IOException if an error occurs
      */
-    protected void processScrollDown(int optionInt) throws IOException {
-    }
+    protected void processScrollDown(int optionInt) throws IOException {}
 
     /**
      * Process <code>CSI n U</code> ANSI code, corresponding to <code>SU \u2013 Scroll Up</code>
      * @param optionInt the option
      * @throws IOException if an error occurs
      */
-    protected void processScrollUp(int optionInt) throws IOException {
-    }
+    protected void processScrollUp(int optionInt) throws IOException {}
 
     protected static final int ERASE_SCREEN_TO_END = 0;
     protected static final int ERASE_SCREEN_TO_BEGINING = 1;
@@ -500,8 +479,7 @@ public class AnsiWriter extends FilterWriter {
      * @param eraseOption the erase option
      * @throws IOException if an error occurs
      */
-    protected void processEraseScreen(int eraseOption) throws IOException {
-    }
+    protected void processEraseScreen(int eraseOption) throws IOException {}
 
     protected static final int ERASE_LINE_TO_END = 0;
     protected static final int ERASE_LINE_TO_BEGINING = 1;
@@ -512,25 +490,27 @@ public class AnsiWriter extends FilterWriter {
      * @param eraseOption the erase option
      * @throws IOException if an error occurs
      */
-    protected void processEraseLine(int eraseOption) throws IOException {
-    }
+    protected void processEraseLine(int eraseOption) throws IOException {}
 
-    protected static final int ATTRIBUTE_INTENSITY_BOLD = 1; //         Intensity: Bold
-    protected static final int ATTRIBUTE_INTENSITY_FAINT = 2; //        Intensity; Faint        not widely supported
-    protected static final int ATTRIBUTE_ITALIC = 3; //         Italic; on      not widely supported. Sometimes treated as inverse.
-    protected static final int ATTRIBUTE_UNDERLINE = 4; //      Underline; Single
-    protected static final int ATTRIBUTE_BLINK_SLOW = 5; //     Blink; Slow     less than 150 per minute
-    protected static final int ATTRIBUTE_BLINK_FAST = 6; //     Blink; Rapid    MS-DOS ANSI.SYS; 150 per minute or more
-    protected static final int ATTRIBUTE_NEGATIVE_ON = 7; //    Image; Negative         inverse or reverse; swap foreground and background
-    protected static final int ATTRIBUTE_CONCEAL_ON = 8; //     Conceal on
-    protected static final int ATTRIBUTE_UNDERLINE_DOUBLE = 21; //      Underline; Double       not widely supported
-    protected static final int ATTRIBUTE_INTENSITY_NORMAL = 22; //      Intensity; Normal       not bold and not faint
-    protected static final int ATTRIBUTE_UNDERLINE_OFF = 24; //         Underline; None
-    protected static final int ATTRIBUTE_BLINK_OFF = 25; //     Blink; off
+    protected static final int ATTRIBUTE_INTENSITY_BOLD = 1; //  Intensity: Bold
+    protected static final int ATTRIBUTE_INTENSITY_FAINT = 2; //  Intensity; Faint  not widely supported
+    protected static final int ATTRIBUTE_ITALIC = 3; //  Italic; on  not widely supported. Sometimes treated as inverse.
+    protected static final int ATTRIBUTE_UNDERLINE = 4; //  Underline; Single
+    protected static final int ATTRIBUTE_BLINK_SLOW = 5; //  Blink; Slow  less than 150 per minute
+    protected static final int ATTRIBUTE_BLINK_FAST = 6; //  Blink; Rapid  MS-DOS ANSI.SYS; 150 per minute or more
+    protected static final int ATTRIBUTE_NEGATIVE_ON =
+            7; //  Image; Negative  inverse or reverse; swap foreground and background
+    protected static final int ATTRIBUTE_CONCEAL_ON = 8; //  Conceal on
+    protected static final int ATTRIBUTE_UNDERLINE_DOUBLE = 21; //  Underline; Double  not widely supported
+    protected static final int ATTRIBUTE_INTENSITY_NORMAL = 22; //  Intensity; Normal  not bold and not faint
+    protected static final int ATTRIBUTE_UNDERLINE_OFF = 24; //  Underline; None
+    protected static final int ATTRIBUTE_BLINK_OFF = 25; //  Blink; off
+
     @Deprecated
     protected static final int ATTRIBUTE_NEGATIVE_Off = 27; //  Image; Positive
+
     protected static final int ATTRIBUTE_NEGATIVE_OFF = 27; //  Image; Positive
-    protected static final int ATTRIBUTE_CONCEAL_OFF = 28; //   Reveal  conceal off
+    protected static final int ATTRIBUTE_CONCEAL_OFF = 28; //  Reveal  conceal off
 
     /**
      * process <code>SGR</code> other than <code>0</code> (reset), <code>30-39</code> (foreground),
@@ -546,8 +526,7 @@ public class AnsiWriter extends FilterWriter {
      * @see #processDefaultTextColor()
      * @see #processDefaultBackgroundColor()
      */
-    protected void processSetAttribute(int attribute) throws IOException {
-    }
+    protected void processSetAttribute(int attribute) throws IOException {}
 
     protected static final int BLACK = 0;
     protected static final int RED = 1;
@@ -584,8 +563,7 @@ public class AnsiWriter extends FilterWriter {
      * @param paletteIndex the text color in the palette
      * @throws IOException if an error occurs
      */
-    protected void processSetForegroundColorExt(int paletteIndex) throws IOException {
-    }
+    protected void processSetForegroundColorExt(int paletteIndex) throws IOException {}
 
     /**
      * process <code>SGR 38</code> corresponding to <code>extended set text color (foreground)</code>
@@ -625,8 +603,7 @@ public class AnsiWriter extends FilterWriter {
      * @param paletteIndex the background color in the palette
      * @throws IOException if an error occurs
      */
-    protected void processSetBackgroundColorExt(int paletteIndex) throws IOException {
-    }
+    protected void processSetBackgroundColorExt(int paletteIndex) throws IOException {}
 
     /**
      * process <code>SGR 48</code> corresponding to <code>extended set background color</code>
@@ -644,22 +621,19 @@ public class AnsiWriter extends FilterWriter {
      * process <code>SGR 39</code> corresponding to <code>Default text color (foreground)</code>
      * @throws IOException if an error occurs
      */
-    protected void processDefaultTextColor() throws IOException {
-    }
+    protected void processDefaultTextColor() throws IOException {}
 
     /**
      * process <code>SGR 49</code> corresponding to <code>Default background color</code>
      * @throws IOException if an error occurs
      */
-    protected void processDefaultBackgroundColor() throws IOException {
-    }
+    protected void processDefaultBackgroundColor() throws IOException {}
 
     /**
      * process <code>SGR 0</code> corresponding to <code>Reset / Normal</code>
      * @throws IOException if an error occurs
      */
-    protected void processAttributeRest() throws IOException {
-    }
+    protected void processAttributeRest() throws IOException {}
 
     /**
      * process <code>CSI n ; m H</code> corresponding to <code>CUP \u2013 Cursor Position</code> or
@@ -668,24 +642,21 @@ public class AnsiWriter extends FilterWriter {
      * @param col the column
      * @throws IOException if an error occurs
      */
-    protected void processCursorTo(int row, int col) throws IOException {
-    }
+    protected void processCursorTo(int row, int col) throws IOException {}
 
     /**
      * process <code>CSI n G</code> corresponding to <code>CHA \u2013 Cursor Horizontal Absolute</code>
      * @param x the column
      * @throws IOException if an error occurs
      */
-    protected void processCursorToColumn(int x) throws IOException {
-    }
+    protected void processCursorToColumn(int x) throws IOException {}
 
     /**
      * process <code>CSI n F</code> corresponding to <code>CPL \u2013 Cursor Previous Line</code>
      * @param count line count
      * @throws IOException if an error occurs
      */
-    protected void processCursorUpLine(int count) throws IOException {
-    }
+    protected void processCursorUpLine(int count) throws IOException {}
 
     /**
      * process <code>CSI n E</code> corresponding to <code>CNL \u2013 Cursor Next Line</code>
@@ -704,8 +675,7 @@ public class AnsiWriter extends FilterWriter {
      * @param count the count
      * @throws IOException if an error occurs
      */
-    protected void processCursorLeft(int count) throws IOException {
-    }
+    protected void processCursorLeft(int count) throws IOException {}
 
     /**
      * process <code>CSI n C</code> corresponding to <code>CUF \u2013 Cursor Forward</code>
@@ -724,19 +694,16 @@ public class AnsiWriter extends FilterWriter {
      * @param count the count
      * @throws IOException if an error occurs
      */
-    protected void processCursorDown(int count) throws IOException {
-    }
+    protected void processCursorDown(int count) throws IOException {}
 
     /**
      * process <code>CSI n A</code> corresponding to <code>CUU \u2013 Cursor Up</code>
      * @param count the count
      * @throws IOException if an error occurs
      */
-    protected void processCursorUp(int count) throws IOException {
-    }
+    protected void processCursorUp(int count) throws IOException {}
 
-    protected void processUnknownExtension(ArrayList<Object> options, int command) {
-    }
+    protected void processUnknownExtension(ArrayList<Object> options, int command) {}
 
     /**
      * process <code>OSC 0;text BEL</code> corresponding to <code>Change Window and Icon label</code>
@@ -751,23 +718,20 @@ public class AnsiWriter extends FilterWriter {
      * process <code>OSC 1;text BEL</code> corresponding to <code>Change Icon label</code>
      * @param name the icon name
      */
-    protected void processChangeIconName(String name) {
-    }
+    protected void processChangeIconName(String name) {}
 
     /**
      * process <code>OSC 2;text BEL</code> corresponding to <code>Change Window title</code>
      * @param title the title
      */
-    protected void processChangeWindowTitle(String title) {
-    }
+    protected void processChangeWindowTitle(String title) {}
 
     /**
      * Process unknown <code>OSC</code> command.
      * @param command the command
      * @param param the param
      */
-    protected void processUnknownOperatingSystemCommand(int command, String param) {
-    }
+    protected void processUnknownOperatingSystemCommand(int command, String param) {}
 
     /**
      * Process character set sequence.
@@ -781,17 +745,13 @@ public class AnsiWriter extends FilterWriter {
         return true;
     }
 
-    protected void processCharsetSelect(int set, char seq) {
-    }
+    protected void processCharsetSelect(int set, char seq) {}
 
     private int optionInt(ArrayList<Object> options, int index) {
-        if (options.size() <= index)
-            throw new IllegalArgumentException();
+        if (options.size() <= index) throw new IllegalArgumentException();
         Object value = options.get(index);
-        if (value == null)
-            throw new IllegalArgumentException();
-        if (!value.getClass().equals(Integer.class))
-            throw new IllegalArgumentException();
+        if (value == null) throw new IllegalArgumentException();
+        if (!value.getClass().equals(Integer.class)) throw new IllegalArgumentException();
         return (Integer) value;
     }
 
@@ -828,5 +788,4 @@ public class AnsiWriter extends FilterWriter {
         flush();
         super.close();
     }
-
 }

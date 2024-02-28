@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2021, the original author or authors.
+ * Copyright (c) 2002-2021, the original author(s).
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -15,6 +15,7 @@ import jdk.internal.org.jline.terminal.Terminal;
 import jdk.internal.org.jline.terminal.impl.AbstractWindowsTerminal;
 import jdk.internal.org.jline.utils.InfoCmp.Capability;
 
+import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTERNATE_CHARSET;
 import static jdk.internal.org.jline.utils.AttributedStyle.BG_COLOR;
 import static jdk.internal.org.jline.utils.AttributedStyle.BG_COLOR_EXP;
 import static jdk.internal.org.jline.utils.AttributedStyle.FG_COLOR;
@@ -30,12 +31,11 @@ import static jdk.internal.org.jline.utils.AttributedStyle.F_FAINT;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND_IND;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_FOREGROUND_RGB;
+import static jdk.internal.org.jline.utils.AttributedStyle.F_HIDDEN;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_INVERSE;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_ITALIC;
 import static jdk.internal.org.jline.utils.AttributedStyle.F_UNDERLINE;
-import static jdk.internal.org.jline.utils.AttributedStyle.F_HIDDEN;
 import static jdk.internal.org.jline.utils.AttributedStyle.MASK;
-import static jdk.internal.org.jline.terminal.TerminalBuilder.PROP_DISABLE_ALTERNATE_CHARSET;
 
 public abstract class AttributedCharSequence implements CharSequence {
 
@@ -120,6 +120,7 @@ public abstract class AttributedCharSequence implements CharSequence {
             char c = charAt(i);
             if (altIn != null && altOut != null) {
                 char pc = c;
+                // @spotless:off
                 switch (c) {
                     case '\u2518': c = 'j'; break;
                     case '\u2510': c = 'k'; break;
@@ -133,15 +134,16 @@ public abstract class AttributedCharSequence implements CharSequence {
                     case '\u252C': c = 'w'; break;
                     case '\u2502': c = 'x'; break;
                 }
+                // @spotless:on
                 boolean oldalt = alt;
                 alt = c != pc;
                 if (oldalt ^ alt) {
                     sb.append(alt ? altIn : altOut);
                 }
             }
-            long  s = styleCodeAt(i) & ~F_HIDDEN; // The hidden flag does not change the ansi styles
+            long s = styleCodeAt(i) & ~F_HIDDEN; // The hidden flag does not change the ansi styles
             if (style != s) {
-                long  d = (style ^ s) & MASK;
+                long d = (style ^ s) & MASK;
                 long fg = (s & F_FOREGROUND) != 0 ? s & (FG_COLOR | F_FOREGROUND) : 0;
                 long bg = (s & F_BACKGROUND) != 0 ? s & (BG_COLOR | F_BACKGROUND) : 0;
                 if (s == 0) {
@@ -172,16 +174,16 @@ public abstract class AttributedCharSequence implements CharSequence {
                         if (fg > 0) {
                             int rounded = -1;
                             if ((fg & F_FOREGROUND_RGB) != 0) {
-                                int r = (int)(fg >> (FG_COLOR_EXP + 16)) & 0xFF;
-                                int g = (int)(fg >> (FG_COLOR_EXP + 8)) & 0xFF;
-                                int b = (int)(fg >> FG_COLOR_EXP) & 0xFF;
+                                int r = (int) (fg >> (FG_COLOR_EXP + 16)) & 0xFF;
+                                int g = (int) (fg >> (FG_COLOR_EXP + 8)) & 0xFF;
+                                int b = (int) (fg >> FG_COLOR_EXP) & 0xFF;
                                 if (colors >= HIGH_COLORS) {
                                     first = attr(sb, "38;2;" + r + ";" + g + ";" + b, first);
                                 } else {
                                     rounded = palette.round(r, g, b);
                                 }
                             } else if ((fg & F_FOREGROUND_IND) != 0) {
-                                rounded = palette.round((int)(fg >> FG_COLOR_EXP) & 0xFF);
+                                rounded = palette.round((int) (fg >> FG_COLOR_EXP) & 0xFF);
                             }
                             if (rounded >= 0) {
                                 if (colors >= HIGH_COLORS && force == ForceMode.ForceTrueColors) {
@@ -211,16 +213,16 @@ public abstract class AttributedCharSequence implements CharSequence {
                         if (bg > 0) {
                             int rounded = -1;
                             if ((bg & F_BACKGROUND_RGB) != 0) {
-                                int r = (int)(bg >> (BG_COLOR_EXP + 16)) & 0xFF;
-                                int g = (int)(bg >> (BG_COLOR_EXP + 8)) & 0xFF;
-                                int b = (int)(bg >> BG_COLOR_EXP) & 0xFF;
+                                int r = (int) (bg >> (BG_COLOR_EXP + 16)) & 0xFF;
+                                int g = (int) (bg >> (BG_COLOR_EXP + 8)) & 0xFF;
+                                int b = (int) (bg >> BG_COLOR_EXP) & 0xFF;
                                 if (colors >= HIGH_COLORS) {
                                     first = attr(sb, "48;2;" + r + ";" + g + ";" + b, first);
                                 } else {
                                     rounded = palette.round(r, g, b);
                                 }
                             } else if ((bg & F_BACKGROUND_IND) != 0) {
-                                rounded = palette.round((int)(bg >> BG_COLOR_EXP) & 0xFF);
+                                rounded = palette.round((int) (bg >> BG_COLOR_EXP) & 0xFF);
                             }
                             if (rounded >= 0) {
                                 if (colors >= HIGH_COLORS && force == ForceMode.ForceTrueColors) {
@@ -243,8 +245,7 @@ public abstract class AttributedCharSequence implements CharSequence {
                         background = bg;
                     }
                     if ((d & (F_BOLD | F_FAINT)) != 0) {
-                        if (    (d & F_BOLD)  != 0 && (s & F_BOLD)  == 0
-                                || (d & F_FAINT) != 0 && (s & F_FAINT) == 0) {
+                        if ((d & F_BOLD) != 0 && (s & F_BOLD) == 0 || (d & F_FAINT) != 0 && (s & F_FAINT) == 0) {
                             first = attr(sb, "22", first);
                         }
                         if ((d & F_BOLD) != 0 && (s & F_BOLD) != 0) {
@@ -360,8 +361,7 @@ public abstract class AttributedCharSequence implements CharSequence {
         int len = length();
         for (int cur = 0; cur < len; ) {
             int cp = codePointAt(cur);
-            if (!isHidden(cur))
-                cols += WCWidth.wcwidth(cp);
+            if (!isHidden(cur)) cols += WCWidth.wcwidth(cp);
             cur += Character.charCount(cp);
         }
         return cols;
@@ -382,8 +382,7 @@ public abstract class AttributedCharSequence implements CharSequence {
         int end = begin;
         while (end < this.length()) {
             int cp = codePointAt(end);
-            if (cp == '\n')
-                break;
+            if (cp == '\n') break;
             int w = isHidden(end) ? 0 : WCWidth.wcwidth(cp);
             if (col + w > stop) {
                 break;
@@ -407,7 +406,7 @@ public abstract class AttributedCharSequence implements CharSequence {
             int cp = codePointAt(cur);
             int w = isHidden(cur) ? 0 : WCWidth.wcwidth(cp);
             if (cp == '\n') {
-                strings.add(subSequence(beg, includeNewlines ? cur+1 : cur));
+                strings.add(subSequence(beg, includeNewlines ? cur + 1 : cur));
                 beg = cur + 1;
                 col = 0;
             } else if ((col += w) > columns) {
@@ -429,5 +428,4 @@ public abstract class AttributedCharSequence implements CharSequence {
     public AttributedString toAttributedString() {
         return substring(0, length());
     }
-
 }
