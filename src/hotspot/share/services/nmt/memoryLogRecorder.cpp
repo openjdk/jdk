@@ -868,7 +868,6 @@ void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
         printf(",");
       }
     }
-    printf("\n");
     os::exit(0);
   }
 }
