@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
-#define SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONSET_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONSET_INLINE_HPP
 
-#include "gc/g1/heapRegionSet.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 
 #include "gc/g1/g1NUMA.hpp"
 
@@ -271,4 +271,4 @@ inline uint FreeRegionList::length(uint node_index) const {
   }
 }
 
-#endif // SHARE_GC_G1_HEAPREGIONSET_INLINE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONSET_INLINE_HPP

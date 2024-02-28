@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1AllocRegion.hpp"
 
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 
 #define assert_alloc_region(p, message)                                  \
   do {                                                                   \

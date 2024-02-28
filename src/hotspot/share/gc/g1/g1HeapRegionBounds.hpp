@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONBOUNDS_HPP
-#define SHARE_GC_G1_HEAPREGIONBOUNDS_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONBOUNDS_HPP
+#define SHARE_GC_G1_G1HEAPREGIONBOUNDS_HPP
 
 #include "memory/allStatic.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -55,4 +55,4 @@ public:
   static inline size_t target_number();
 };
 
-#endif // SHARE_GC_G1_HEAPREGIONBOUNDS_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONBOUNDS_HPP
