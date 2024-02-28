@@ -338,7 +338,7 @@ jobs:
         # Hack to get hold of the api environment variables that are only defined for actions
       - name: 'Get API configuration'
         id: api
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: 'return { url: process.env["ACTIONS_RUNTIME_URL"], token: process.env["ACTIONS_RUNTIME_TOKEN"] }'
 
