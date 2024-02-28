@@ -34,9 +34,9 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
  * @summary Test that vector cast intrinsics work as intended on riscv (rvv).
- * @requires vm.cpu.features ~= ".*v,.*"
+ * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*"
  * @library /test/lib /
- * @run main compiler.vectorapi.reshape.TestVectorCastRVV
+ * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastRVV
  */
 public class TestVectorCastRVV {
     public static void main(String[] args) {
