@@ -913,9 +913,7 @@ int os::active_processor_count() {
     // correctly report processor count but will not schedule threads across
     // processor groups unless the application explicitly uses group affinity APIs
     // to assign threads to processor groups. On these older operating systems, we
-    // will continue to use the dwNumberOfProcessors field. For details on the
-    // latest Windows scheduling behavior, see
-    // https://learn.microsoft.com/en-us/windows/win32/procthread/processor-groups#behavior-starting-with-windows-11-and-windows-server-2022
+    // will continue to use the dwNumberOfProcessors field.
     if (schedules_all_processor_groups) {
       logical_processors = processor_count();
     }
@@ -4042,14 +4040,12 @@ void os::win32::initialize_windows_version() {
 }
 
 bool os::win32::is_windows_11_or_greater() {
-  // Windows 11 starts at build 22000 (Version 21H2) as per
-  // https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information
+  // Windows 11 starts at build 22000 (Version 21H2)
   return (windows_major_version() >= 10 && windows_build_number() >= 22000 && !IsWindowsServer());
 }
 
 bool os::win32::is_windows_server_2022_or_greater() {
-  // Windows Server 2022 starts at build 20348.169 as per
-  // https://learn.microsoft.com/en-us/windows/release-health/release-information
+  // Windows Server 2022 starts at build 20348.169
   return (windows_major_version() >= 10 && windows_build_number() >= 20348 && IsWindowsServer());
 }
 
@@ -4120,7 +4116,6 @@ DWORD os::win32::system_logical_processor_count() {
   PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX system_logical_processor_info = nullptr;
   DWORD returned_length = 0;
 
-  // https://learn.microsoft.com/en-us/windows/win32/api/sysinfoapi/nf-sysinfoapi-getlogicalprocessorinformationex
   if (GetLogicalProcessorInformationEx(relationship_type, nullptr, &returned_length) == 0) {
     DWORD last_error = GetLastError();
 
