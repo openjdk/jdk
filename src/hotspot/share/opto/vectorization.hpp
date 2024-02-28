@@ -507,9 +507,10 @@ private:
   private:
     MemNode* _node; // Corresponding ideal node
     const uint _extra_pred_edges_length;
-    int* _extra_pred_edges; // extra def-edges, mapping to bb_idx
+    int* _extra_pred_edges; // extra pred-edges, mapping to bb_idx
   public:
     DependencyNode(MemNode* n, GrowableArray<int>& extra_pred_edges, Arena* arena);
+    NONCOPYABLE(DependencyNode);
     uint extra_pred_edges_length() const { return _extra_pred_edges_length; }
 
     int extra_pred_edge(uint i) const {
@@ -517,7 +518,9 @@ private:
       return _extra_pred_edges[i];
     }
   };
+
 public:
+  // Iterator for dependency graph predecessors of a node.
   class PredsIterator : public StackObj {
   private:
     const VLoopDependencyGraph& _dependency_graph;
@@ -536,6 +539,7 @@ public:
     int _end_extra_pred;
   public:
     PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
     Node* current() const { assert(!done(), "not done yet"); return _current; }
