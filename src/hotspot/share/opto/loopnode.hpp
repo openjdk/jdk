@@ -42,6 +42,7 @@ class OuterStripMinedLoopEndNode;
 class PredicateBlock;
 class PathFrequency;
 class PhaseIdealLoop;
+class UnswitchedLoopSelector;
 class VectorSet;
 class VSharedData;
 class Invariance;
@@ -770,6 +771,12 @@ public:
     return _has_range_checks;
   }
 
+  // Return the parent's IdealLoopTree for a strip mined loop which is the outer strip mined loop.
+  // In all other cases, return this.
+  IdealLoopTree* skip_strip_mined() {
+    return _head->as_Loop()->is_strip_mined() ? _parent : this;
+  }
+
 #ifndef PRODUCT
   void dump_head();       // Dump loop head only
   void dump();            // Dump this loop recursively
@@ -1349,6 +1356,11 @@ public:
  public:
   void register_control(Node* n, IdealLoopTree *loop, Node* pred, bool update_body = true);
 
+  void replace_loop_entry(LoopNode* loop_head, Node* new_entry) {
+    _igvn.replace_input_of(loop_head, LoopNode::EntryControl, new_entry);
+    set_idom(loop_head, new_entry, dom_depth(new_entry));
+  }
+
   // Construct a range check for a predicate if
   BoolNode* rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init, Node* limit,
                          jint stride, Node* range, bool upper, bool& overflow);
@@ -1388,8 +1400,6 @@ public:
 
   void eliminate_useless_zero_trip_guard();
 
-  bool has_control_dependencies_from_predicates(LoopNode* head) const;
-  void verify_fast_loop(LoopNode* head, const ProjNode* proj_true) const NOT_DEBUG_RETURN;
  public:
   // Change the control input of expensive nodes to allow commoning by
   // IGVN when it is guaranteed to not result in a more frequent
@@ -1404,21 +1414,30 @@ public:
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   void do_range_check(IdealLoopTree *loop, Node_List &old_new);
 
-  // Create a slow version of the loop by cloning the loop
-  // and inserting an if to select fast-slow versions.
-  // Return the inserted if.
-  IfNode* create_slow_version_of_loop(IdealLoopTree *loop,
-                                        Node_List &old_new,
-                                        IfNode* unswitch_iff,
-                                        CloneLoopMode mode);
-
   // Clone loop with an invariant test (that does not exit) and
   // insert a clone of the test that selects which version to
   // execute.
-  void do_unswitching (IdealLoopTree *loop, Node_List &old_new);
+  void do_unswitching(IdealLoopTree* loop, Node_List& old_new);
 
-  // Find candidate "if" for unswitching
-  IfNode* find_unswitching_candidate(const IdealLoopTree *loop) const;
+  IfNode* find_unswitch_candidate(const IdealLoopTree* loop) const;
+
+ private:
+  static bool has_control_dependencies_from_predicates(LoopNode* head);
+  static void revert_to_normal_loop(const LoopNode* loop_head);
+
+  void hoist_invariant_check_casts(const IdealLoopTree* loop, const Node_List& old_new,
+                                   const UnswitchedLoopSelector& unswitched_loop_selector);
+  void add_unswitched_loop_version_bodies_to_igvn(IdealLoopTree* loop, const Node_List& old_new);
+  static void increment_unswitch_counts(LoopNode* original_head, LoopNode* new_head);
+  void remove_unswitch_candidate_from_loops(const Node_List& old_new, const UnswitchedLoopSelector& unswitched_loop_selector);
+#ifndef PRODUCT
+  static void trace_loop_unswitching_count(IdealLoopTree* loop, LoopNode* original_head);
+  static void trace_loop_unswitching_impossible(const LoopNode* original_head);
+  static void trace_loop_unswitching_result(const UnswitchedLoopSelector& unswitched_loop_selector,
+                                            const LoopNode* original_head, const LoopNode* new_head);
+#endif
+
+ public:
 
   // Range Check Elimination uses this function!
   // Constrain the main loop iterations so the affine function:
@@ -1625,9 +1644,11 @@ private:
     _nodes_required = UINT_MAX;
   }
 
+ public:
   // Clone Parse Predicates to slow and fast loop when unswitching a loop
   void clone_parse_and_assertion_predicates_to_unswitched_loop(IdealLoopTree* loop, Node_List& old_new,
                                                                IfProjNode*& iffast_pred, IfProjNode*& ifslow_pred);
+ private:
   void clone_loop_predication_predicates_to_unswitched_loop(IdealLoopTree* loop, const Node_List& old_new,
                                                             const PredicateBlock* predicate_block,
                                                             Deoptimization::DeoptReason reason, IfProjNode*& iffast_pred,
@@ -1744,6 +1765,8 @@ public:
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+
+  void pin_array_access_nodes_dependent_on(Node* ctrl);
 };
 
 
