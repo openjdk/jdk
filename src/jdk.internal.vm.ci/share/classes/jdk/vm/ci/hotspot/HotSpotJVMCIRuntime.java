@@ -232,7 +232,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      */
     public enum Option {
         // @formatter:off
-        Compiler(String.class, null, 
+        Compiler(String.class, null,
                 "Selects the system compiler. This must match the getCompilerName() value",
                 "returned by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. ",
                 "An empty string or the value \"null\" selects a compiler ",
