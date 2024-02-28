@@ -46,8 +46,6 @@ public class SerialHeap extends CollectedHeap {
   private static AddressField youngGenField;
   private static AddressField oldGenField;
 
-  private static GenerationFactory genFactory;
-
   static {
     VM.registerVMInitializedObserver(new Observer() {
         public void update(Observable o, Object data) {
@@ -61,8 +59,6 @@ public class SerialHeap extends CollectedHeap {
 
     youngGenField = type.getAddressField("_young_gen");
     oldGenField = type.getAddressField("_old_gen");
-
-    genFactory = new GenerationFactory();
   }
 
   public DefNewGeneration youngGen() {
