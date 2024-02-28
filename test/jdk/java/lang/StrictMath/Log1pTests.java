@@ -217,6 +217,7 @@ public class Log1pTests {
             {-0x1.8000000000000p-53,    -0x1.8000000000001p-53},
             {-0x1.2e496d25897ecp-2,     -0x1.663d81cb08f56p-2},
             {-0x1.ffffffbaefe27p-2,     -0x1.62e42faa93817p-1},
+            {-0x1.5efad5491a79bp-1022,  -0x1.5efad5491a79bp-1022},
         };
 
         for (double[] testCase: testCases)

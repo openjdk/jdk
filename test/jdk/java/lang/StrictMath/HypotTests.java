@@ -708,7 +708,7 @@ public class HypotTests {
 
             // Empirical worst-case points in other libraries with
             // larger worst-case errors than FDLIBM
-            {0x0.00000000039a2p-1022, 0x0.0000000000001p-1022, 0x0.00000000039a2p-1022},
+            {0x0.fffffffffffffp-1022, 0x0.0000000000001p-1022, 0x0.fffffffffffffp-1022},
             {0x1.41fcfeeb2e246p+420,  0x1.8d4d41eacdeccp+420,  0x1.ff65325de5517p420},
         };
 

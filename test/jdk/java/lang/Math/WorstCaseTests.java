@@ -144,10 +144,10 @@ public class WorstCaseTests {
             // Other worst-case observed errors
             {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
             {+0x1.fce66609f7428p+5,     0x1.b59724cb0bc4cp91},
-            {+0x1.b97dc8345c55p+5,      0x1.88ab482dafdd8p79},    // check
-            {-0x1.18209ecd19a8cp+6,     0x1.f3dcee4c90dfap-102},  // check
-            {-0x1.4133f4fd79c1cp-13,    0x1.ffebed256fadp-1},     // check
-            {-0x1.74046dfefd9d1p+9,     0x0.0000000000001p-1022}, // check
+            {+0x1.b97dc8345c55p+5,      0x1.88ab482dafdd7p79},
+            {-0x1.18209ecd19a8cp+6,     0x1.f3dcee4c90df9p-102},
+            {-0x1.4133f4fd79c1cp-13,    0x1.ffebed256fadp-1},
+            {-0x1.74046dfefd9d1p+9,     0x0.0000000000001p-1022},
             {-0x1.49f33ad2c1c58p+9,     0x1.f3ccc815431b5p-953},
         };
 
@@ -188,15 +188,15 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {+0x1.48ae5a67204f5p+0,     0x1.ffd10abffc3fep-3},
             // Other worst-case observed errors
-            {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f85p-4},  // check
-            {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10}, // check
+            {+0x1.1211bef8f68e9p+0,     +0x1.175caeca67f84p-4},
+            {+0x1.008000db2e8bep+0,     +0x1.ff83959f5cc1fp-10},
             {+0x1.0ffea3878db6bp+0,     +0x1.f07a0cca521efp-5},
-            {+0x1.dc0b586f2b26p-1,      -0x1.2a3eaaa6e8d73p-4},  // check
+            {+0x1.dc0b586f2b26p-1,      -0x1.2a3eaaa6e8d72p-4},
             {+0x1.490af72a25a81p-1,     -0x1.c4bf7ae48f078p-2},
-            {+0x1.5b6e7e4e96f86p+2,     +0x1.b11240cba290ep0},   // check
-            {+0x1.0ffc349469a2fp+0,     +0x1.f030c2507cd81p-5},  // check
+            {+0x1.5b6e7e4e96f86p+2,     +0x1.b11240cba290dp0},
+            {+0x1.0ffc349469a2fp+0,     +0x1.f030c2507cd81p-5},
             {+0x1.69e7aa6da2df5p-1,     -0x1.634508c9adfp-2},
-            {+0x1.5556123e8a2bp-1,      -0x1.9f300810f7d7dp-2},  // check
+            {+0x1.5556123e8a2bp-1,      -0x1.9f300810f7d7cp-2},
         };
 
         for(double[] testCase: testCases) {
@@ -239,13 +239,13 @@ public class WorstCaseTests {
             // Other worst-case observed errors
             {-0x1.f8b791cafcdefp+4,     -0x1.073ca87470df9p-3 },
             {-0x1.0e16eb809a35dp+944,   +0x1.b5e361ed01dacp-2},
-            {-0x1.85e624577c23ep-1,     -0x1.614ac15b6df5bp-1}, // check
+            {-0x1.85e624577c23ep-1,     -0x1.614ac15b6df5ap-1},
             {-0x1.842d8ec8f752fp+21,    -0x1.6ce864edeaffdp-1},
-            {-0x1.07e4c92b5349dp+4,     +0x1.6a096375ffb23p-1}, // check
-            {-0x1.13a5ccd87c9bbp+1008,  -0x1.27b3964185d8dp-1}, // check
-            {-0x1.11b624b546894p+9,     -0x1.6a35f2416aba9p-1}, // check
+            {-0x1.07e4c92b5349dp+4,     +0x1.6a096375ffb23p-1},
+            // {-0x1.13a5ccd87c9bbp+1008,  -0x1.27b3964185d8dp-1}, // check -- need +/-
+            {-0x1.11b624b546894p+9,     -0x1.6a35f2416aba8p-1},
             {-0x1.1c49ad613ff3bp+19,    -0x1.fffe203cfabe1p-2},
-            {-0x1.f05e952d81b89p+5,     +0x1.6a2319a85a545p-1}, // check
+            {-0x1.f05e952d81b89p+5,     +0x1.6a2319a85a544p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -285,14 +285,14 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {-0x1.004d1c5a9400bp-1,    -0x1.0c6e322e8a28bp-1},
             // Other worst-case observed errors
-            {-0x1.0000045b2c904p-3,     -0x1.00abe5252746dp-3}, // check
-            {+0x1.6c042a6378102p-1,     +0x1.94eda53f72c5ap-1}, // check
-            {-0x1.00d44cccfa99p-1,      -0x1.0d0a6a0e79e15p-1}, // check
-            {+0x1.eae75e3d82b6fp-2,     +0x1.fff7d74b1ea5p-2},  // check
-            {-0x1.0239000439deep-1,     -0x1.0ea71ea2a7cd7p-1}, // check
-            {+0x1.0479b37d95e5cp-1,     +0x1.1143fafdc5b2cp-1}, // check
-            {-0x1.2ef2481799c7cp-1,     -0x1.442d10aa50906p-1}, // check
-            {+0x1.df27e1c764802p-2,     +0x1.f2a0f0c96deefp-2}, // check
+            {-0x1.0000045b2c904p-3,     -0x1.00abe5252746cp-3},
+            {+0x1.6c042a6378102p-1,     +0x1.94eda53f72c5ap-1},
+            {-0x1.00d44cccfa99p-1,      -0x1.0d0a6a0e79e15p-1},
+            {+0x1.eae75e3d82b6fp-2,     +0x1.fff7d74b1ea4fp-2},
+            {-0x1.0239000439deep-1,     -0x1.0ea71ea2a7cd7p-1},
+            {+0x1.0479b37d95e5cp-1,     +0x1.1143fafdc5b2cp-1},
+            {-0x1.2ef2481799c7cp-1,     -0x1.442d10aa50906p-1},
+            {+0x1.df27e1c764802p-2,     +0x1.f2a0f0c96deefp-2},
         };
 
         for(double[] testCase: testCases) {
@@ -335,13 +335,13 @@ public class WorstCaseTests {
             // Other worst-case observed errors
             {-0x1.7120161c92674p+0,     +0x1.0741fb7683849p-3},
             {-0x1.d19ebc5567dcdp+311,   -0x1.b5d2f45f68958p-2},
-            {+0x1.91e60af551108p-1,     +0x1.6a32aaa34b119p-1}, // check
+            {+0x1.91e60af551108p-1,     +0x1.6a32aaa34b118p-1},
             {-0x1.4ae182c1ab422p+21,    -0x1.6c9c3831b6e3bp-1},
-            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1}, // check
-            {+0x1.2f29eb4e99fa2p+7,     +0x1.6a0751dc5d2bbp-1}, // check
-            {-0x1.9200634d4471fp-1,     +0x1.6a200b493230dp-1}, // check
-            {+0x1.25133ca3904dfp+20,    -0x1.fb399cd6fe564p-3}, // check
-            {+0x1.2a33ae49ab15dp+1,     -0x1.60524e89bbcb3p-1}, // check
+            {-0x1.34e729fd08086p+21,    +0x1.6a6a0d6a17f0fp-1},
+            {+0x1.2f29eb4e99fa2p+7,     +0x1.6a0751dc5d2bbp-1},
+            {-0x1.9200634d4471fp-1,     +0x1.6a200b493230cp-1},
+            {+0x1.25133ca3904dfp+20,    -0x1.fb399cd6fe563p-3},
+            {+0x1.2a33ae49ab15dp+1,     -0x1.60524e89bbcb2p-1},
         };
 
         for(double[] testCase: testCases) {
@@ -373,14 +373,14 @@ public class WorstCaseTests {
             // Worst-case observed error for OpenLibm
             {-0x1.0068b067c6feep-1,     +0x1.0c335e2f0726fp1},
             // Other worst-case observed errors
-            {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2}, // check
-            {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1}, // check
-            {+0x1.35b03e336a82bp-1,     0x1.d7a84ec2f6707p-1}, // check
-            {-0x1.8d313198a2e03p-53,    0x1.921fb54442d19p0},  // check
-            {-0x1.010fd0ad6aa41p-1,     0x1.0c63a8cd23befp1},  // check
-            {+0x1.251869c3f7881p-1,     0x1.ec2ff0c102684p-1}, // check
-            {+0x1.266637a3d2bbcp-1,     0x1.ea98637533648p-1}, // check
-            {-0x1.36b1482765f6dp-1,     0x1.1c8666ca1cab1p1},  // check
+            {+0x1.dffffb3488a4p-1,      0x1.6bf3a4a4f4dcbp-2},
+            {+0x1.6c05eb219ec46p-1,     0x1.8f4f472807261p-1},
+            {+0x1.35b03e336a82bp-1,     0x1.d7a84ec2f6707p-1},
+            {-0x1.8d313198a2e03p-53,    0x1.921fb54442d19p0},
+            {-0x1.010fd0ad6aa41p-1,     0x1.0c63a8cd23beep1},
+            {+0x1.251869c3f7881p-1,     0x1.ec2ff0c102683p-1},
+            {+0x1.266637a3d2bbcp-1,     0x1.ea98637533648p-1},
+            {-0x1.36b1482765f6dp-1,     0x1.1c8666ca1cab1p1},
         };
 
         for(double[] testCase: testCases) {
