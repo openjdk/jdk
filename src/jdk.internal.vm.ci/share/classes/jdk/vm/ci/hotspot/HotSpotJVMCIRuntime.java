@@ -389,6 +389,7 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
                 for (String line : option.helpLines) {
                     out.printf("%" + PROPERTY_HELP_INDENT + "s%s%n", "", line);
                 }
+                out.println();
             }
         }
 
