@@ -455,9 +455,6 @@ bool SuperWord::SLP_extract() {
   // build _dg
   dependence_graph();
 
-  // compute function depth(Node*)
-  compute_max_depth();
-
   // Attempt vectorization
   find_adjacent_refs();
 
@@ -828,12 +825,15 @@ void SuperWord::dependence_graph() {
     slice_nodes.clear();
   }
 
+  // compute function depth(Node*)
+  compute_max_depth();
+
 #ifndef PRODUCT
   if (is_trace_superword_dependence_graph()) {
     tty->print_cr("\nCompilete Dependence graph:");
     for (int i = 0; i < body().length(); i++ ) {
       Node* n = body().at(i);
-      tty->print("DepPreds[%d %s, ", n->_idx, n->Name());
+      tty->print("DepPreds[%d %s depth(%d): ", n->_idx, n->Name(), depth(n));
       for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
         Node* pred = preds.current();
         tty->print("  %d %s", pred->_idx, pred->Name());

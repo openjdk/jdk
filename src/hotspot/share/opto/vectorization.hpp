@@ -484,10 +484,12 @@ public:
   NONCOPYABLE(VLoopDependencyGraph);
 
   void construct();
+  int depth(const Node* n) const { return _depth.at(_body.bb_idx(n)); }
 
 private:
-  void compute_depth();
   void add_node(MemNode* n, GrowableArray<int>& extra_def_edges);
+  void set_depth(const Node* n, int d) { _depth.at_put(_body.bb_idx(n), d); }
+  void compute_depth();
   NOT_PRODUCT( void print() const; )
 
   const DependencyNode* dependency_node(const Node* n) const {

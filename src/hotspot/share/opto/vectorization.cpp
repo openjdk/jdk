@@ -221,7 +221,21 @@ void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_def_ed
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
+// We iterate over the body, which is already ordered by the dependencies, i.e. def comes
+// before use. With a single pass, we can compute the depth of every node, since we can
+// assume that the depth of all defs is already computed when we compute the depth of use.
 void VLoopDependencyGraph::compute_depth() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_def_depth = 0;
+    for (DefIterator it(*this, n); !it.done(); it.next()) {
+      Node* def = it.current_def();
+      if (_vloop.in_bb(def)) {
+        max_def_depth = MAX2(max_def_depth, depth(def));
+      }
+    }
+    set_depth(n, max_def_depth + 1);
+  }
 }
 
 #ifndef PRODUCT
@@ -246,7 +260,7 @@ void VLoopDependencyGraph::print() const {
   tty->print_cr(" Complete dependency graph:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    tty->print("  Dependencies[%d %s:", n->_idx, n->Name());
+    tty->print("  Dependencies[%d %s depth(%d):", n->_idx, n->Name(), depth(n));
     for (DefIterator it(*this, n); !it.done(); it.next()) {
       Node* def = it.current_def();
       tty->print("  %d %s", def->_idx, def->Name());
