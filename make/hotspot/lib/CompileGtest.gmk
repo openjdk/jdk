@@ -74,15 +74,6 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
 
 TARGETS += $(BUILD_GTEST_LIBGTEST)
 
-ifeq ($(call isTargetOs, windows), true)
-  ifeq ($(STATIC_LIBS), true)
-    GTEST_WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/gtest/static-win-exports.def
-  else
-    GTEST_WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/gtest/win-exports.def
-  endif
-  JVM_LDFLAGS += -def:$(GTEST_WIN_EXPORT_FILE)
-endif
-
 ################################################################################
 # Additional disabled warnings are due to code in the test source.
 
@@ -128,9 +119,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
 $(BUILD_GTEST_LIBJVM) : $(BUILD_GTEST_LIBGTEST)
 
 ifeq ($(call isTargetOs, windows), true)
-    $(eval $(call CreateWinExportFile, $(GTEST_WIN_EXPORT_FILE), $(BUILD_GTEST_LIBJVM_ALL_OBJS)))
-
-  $(BUILD_GTEST_LIBJVM_TARGET): $(GTEST_WIN_EXPORT_FILE)
+  $(BUILD_GTEST_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
 endif
 
 TARGETS += $(BUILD_GTEST_LIBJVM)
