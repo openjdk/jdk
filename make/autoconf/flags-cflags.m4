@@ -115,6 +115,11 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
             # Add debug prefix map gcc system include paths, as they cause
             # non-deterministic debug paths depending on gcc path location.
             DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
+
+            # Add debug prefix map for OUTPUTDIR to handle the scenario when
+            # it is not located within WORKSPACE_ROOT
+            outputdir_slash="${OUTPUTDIR%/}/"
+            DEBUG_PREFIX_CFLAGS="$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=${outputdir_slash}="
         ]
       )
     fi
