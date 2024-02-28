@@ -160,10 +160,6 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.dependency_graph();
   }
 
-  int depth_in_dependency_graph(const Node* n) const {
-    return _vloop_analyzer.dependency_graph().depth(n);
-  }
-
   bool independent(Node* n1, Node* n2) const {
     return _vloop_analyzer.dependency_graph().independent(n1, n2);
   }
