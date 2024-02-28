@@ -493,6 +493,53 @@ private:
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
+// TODO summary of pattern matching:
+//
+// Node* adr = mem->in(MemNode::Address);
+// -> must be AddP
+// get base -> must be loop invariant
+// loop over all "offsets":
+// adr = base + o1 + o2 + ...
+//
+// For each "offset":
+// -> scaled_iv_plus_offset (bailout on failure)
+// (remainder may be base or something else... hmm not sure)
+//
+// scaled_iv_plus_offset:
+//   try scaled_iv
+//   try offset_plus_k
+//   AddI -> recursive
+//   SubI/SubL -> recursive with negation
+//   else fail.
+//
+// scaled_iv:
+//   assert: not yet scaled (nasty!)
+//   try iv
+//   try MulI(iv, ConI)
+//   try MulI(ConI, iv)
+//   try ShiftI(iv, ConI)
+//   try ConvI2L or CastII -> scaled_iv_plus_offset (wow, nasty!!!)
+//   try LShiftL(x, ConI) -> scaled_iv_plus_offset and merge (even nastier!!!!!)
+//
+// offset_plus_k:
+//   try ConI
+//   try ConL -> does check that in int range, but does not look safe!
+//               especially once we add it to other thins.
+//   try AddI(ConI, invar)
+//   try AddI(invar, ConI)
+//   try SubI(ConI, invar)
+//   try SubI(invar, ConI)
+//   special case invariant:
+//     bypass ConvI2L, CastII
+//
+// Yeah, the naming is messed up.
+// Is it possible that the same nodes end up on the nstack many times? -> boom?
+// Could more nasty things be happening with SubI/SubL?
+//
+// Idea: create some "accumulator" record. Then recursively accumulate them.
+//       In the end just return that record! May also be easier to extend.
+//
+// TODO: try to overflow the _offset somehow (is int)
 class VPointer : public ArenaObj {
  protected:
   const MemNode*  _mem;      // My memory reference node
