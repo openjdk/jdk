@@ -37,6 +37,8 @@
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Set;
+import java.util.HashSet;
 
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.lib.classloader.ClassUnloadCommon;
@@ -122,10 +124,26 @@ public class InitExceptionUnloadTest {
             }
         }
         cl = null;
-        ClassUnloadCommon.triggerUnloading();  // should unload these classes
-        for (String className : classNames) {
-          ClassUnloadCommon.failIf(wb.isClassAlive(className), "should be unloaded");
+
+        Set<String> loadedClasses = new HashSet<>(Set.of(classNames));
+        int attempt = 0;
+        while (!loadedClasses.isEmpty() && attempt < 20) {
+            ClassUnloadCommon.triggerUnloading();
+            for (String className : classNames) {
+                if (loadedClasses.contains(className)) {
+                    if (wb.isClassAlive(className)) {
+                        // Parallel threads cleaning types in profiles might need more time,
+                        // especially when TypeProfileWidth is 8 (default for UseJVMCICompiler).
+                        Thread.sleep(100);
+                    } else {
+                        loadedClasses.remove(className);
+                    }
+                }
+            }
+            attempt++;
         }
+        ClassUnloadCommon.failIf(!loadedClasses.isEmpty(), "should be unloaded: " + loadedClasses);
+        System.err.printf("Classes unloaded after %d attempts%n", attempt);
     }
     public static void main(java.lang.String[] unused) throws Throwable {
         test();
