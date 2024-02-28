@@ -866,11 +866,6 @@ bool PSParallelCompact::initialize() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
 
-  // Was the old gen get allocated successfully?
-  if (!heap->old_gen()->is_allocated()) {
-    return false;
-  }
-
   initialize_space_info();
   initialize_dead_wood_limiter();
 
