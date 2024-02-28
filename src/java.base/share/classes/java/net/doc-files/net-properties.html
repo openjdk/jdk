@@ -68,12 +68,14 @@ If there is no special note, a property value is checked every time it is used.<
 <H2>Proxies</H2>
 <P>A proxy server allows indirect connection to network services and
 is used mainly for security (to get through firewalls) and
-performance reasons (proxies often do provide caching mechanisms).
-The following properties allow for configuration of the various type
-of proxies.</P>
+performance reasons (proxies often do provide caching mechanisms).</P>
+<P>Applications may use the {@link java.net.ProxySelector#select(URI)} method
+to determine the proxy that should be used for connecting to a given URI.</P>
+<P>The following properties allow for configuration of the
+{@linkplain java.net.ProxySelector#getDefault() default proxy selector}.</P>
 <UL>
 	<LI><P>HTTP</P>
-	<P>The following proxy settings are used by the HTTP protocol handler.</P>
+	<P>The following proxy settings are used with the {@code http://} URI scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty http.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
@@ -92,20 +94,19 @@ of proxies.</P>
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
         </UL>
-	<LI><P>HTTPS<BR>This is HTTP over SSL, a secure version of HTTP
-	mainly used when confidentiality (like on payment sites) is needed.</P>
-	<P>The following proxy settings are used by the HTTPS protocol handler.</P>
+	<LI><P>HTTPS</P>
+	<P>The following proxy settings are used with the {@code https://} URI scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty https.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
 		</P>
 		<LI><P><B>{@systemProperty https.proxyPort}</B> (default: {@code 443})<BR>
 	        The port number of the proxy server.</P>
-		<P>The HTTPS protocol handler will use the same nonProxyHosts
+		<P>The HTTPS protocol uses the same nonProxyHosts
 		property as the HTTP protocol.</P>
 	</UL>
 	<LI><P>FTP</P>
-	<P>The following proxy settings are used by the FTP protocol handler.</P>
+	<P>The following proxy settings are used with the {@code ftp://} URI scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty ftp.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
@@ -118,22 +119,32 @@ of proxies.</P>
 	        The value of this property is a list of hosts, separated by
 	        the '|' character. In addition, the wildcard character
 		'*' can be used for pattern matching. For example,
-		{@code -Dhttp.nonProxyHosts="*.foo.com|localhost"}
+		{@code -Dftp.nonProxyHosts="*.foo.com|localhost"}
 		will indicate that every host in the foo.com domain and the
 		localhost should be accessed directly even if a proxy server is
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
-	<LI><P>SOCKS<BR>The SOCKS proxy enables a lower-level type of tunneling
-	because it works at the TCP level. Specifying a SOCKS proxy server
-	results in all java.net TCP connections going through that proxy server
-	unless other proxies are specified. The following proxy settings
-	are used by the SOCKS protocol handler.</P>
+	<LI><P>SOCKS</P>
+	<P>This is a lower-level proxy that is used with all of the above URI schemes
+		unless a scheme-specific proxy is configured.
+		It is also used with the {@code socket://} URI scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty socksProxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
 		<LI><P><B>{@systemProperty socksProxyPort}</B> (default: {@code 1080})<BR>
 	        The port number of the proxy server.</P>
+		<LI><P><B>{@systemProperty socksNonProxyHosts}</B> (default: {@code localhost|127.*|[::1]})<BR>
+			Indicates the hosts that should be accessed without going
+			through the proxy. Typically this defines internal hosts.
+			The value of this property is a list of hosts, separated by
+			the '|' character. In addition, the wildcard character
+			'*' can be used for pattern matching. For example,
+			{@code -DsocksNonProxyHosts="*.foo.com|localhost"}
+			will indicate that every host in the foo.com domain and the
+			localhost should be accessed directly even if a proxy server is
+			specified.</P>
+			<P>The default value excludes all common variations of the loopback address.</P>
 		<LI><P><B>{@systemProperty socksProxyVersion}</B> (default: {@code 5})<BR>
                 The version of the SOCKS protocol supported by the server. The
                 default is {@code 5} indicating SOCKS V5. Alternatively,
