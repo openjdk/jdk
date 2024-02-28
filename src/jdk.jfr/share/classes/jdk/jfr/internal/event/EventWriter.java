@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,6 +296,16 @@ public final class EventWriter {
         // Reset the writer and return false to restart the write attempt.
         currentPosition = nextPosition;
         return false;
+    }
+
+    // Called from EventInstrumentation
+    public long openContext() {
+        return JVM.openContext();
+    }
+
+    // Called from EventInstrumentation
+    public long closeContext() {
+        return JVM.closeContext();
     }
 
     private EventWriter(long startPos, long maxPos, long threadID, boolean valid, boolean excluded) {

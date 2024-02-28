@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,19 +80,21 @@ static const char* utf8_constants[] = {
   "()Z",          // 8
   "end",          // 9
   "shouldCommit", // 10
-  "startTime",    // 11 // LAST_REQUIRED_UTF8
-  "Ljdk/jfr/internal/event/EventConfiguration;", // 12
-  "Ljava/lang/Object;", // 13
-  "<clinit>",     // 14
-  "jdk/jfr/FlightRecorder", // 15
-  "register",     // 16
-  "(Ljava/lang/Class;)V", // 17
-  "StackMapTable", // 18
-  "Exceptions", // 19
-  "LineNumberTable", // 20
-  "LocalVariableTable", // 21
-  "LocalVariableTypeTable", // 22
-  "RuntimeVisibleAnnotation", // 23
+  "startTime",    // 11
+  // the '^' prefix will make the field 'hidden' in a way that it can not be accidentally overridden by the user
+  "^ctxOffset",   // 12 // LAST_REQUIRED_UTF8
+  "Ljdk/jfr/internal/event/EventConfiguration;", // 13
+  "Ljava/lang/Object;", // 14
+  "<clinit>",     // 15
+  "jdk/jfr/FlightRecorder", // 16
+  "register",     // 17
+  "(Ljava/lang/Class;)V", // 18
+  "StackMapTable", // 19
+  "Exceptions", // 20
+  "LineNumberTable", // 21
+  "LocalVariableTable", // 22
+  "LocalVariableTypeTable", // 23
+  "RuntimeVisibleAnnotation", // 24
 };
 
 enum utf8_req_symbols {
@@ -107,6 +110,7 @@ enum utf8_req_symbols {
   UTF8_REQ_end,
   UTF8_REQ_shouldCommit,
   UTF8_REQ_startTime,
+  UTF8_REQ_ctxOffset,
   NOF_UTF8_REQ_SYMBOLS
 };
 
@@ -400,6 +404,23 @@ static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_typ
   return false;
 }
 
+static bool has_annotation(const InstanceKlass* ik, const Symbol* annotation_type) {
+  assert(annotation_type != nullptr, "invariant");
+  AnnotationArray* class_annotations = ik->class_annotations();
+  if (class_annotations == nullptr) {
+    return false;
+  }
+
+  const AnnotationIterator annotation_iterator(ik, class_annotations);
+  while (annotation_iterator.has_next()) {
+    annotation_iterator.move_to_next();
+    if (annotation_iterator.type() == annotation_type) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Evaluate to the value of the first found Symbol* annotation type.
 // Searching moves upwards in the klass hierarchy in order to support
 // inherited annotations in addition to the ability to override.
@@ -452,6 +473,7 @@ static bool java_base_can_read_jdk_jfr() {
 }
 
 static const char registered_constant[] = "Ljdk/jfr/Registered;";
+static const char context_carrier_constant[] = "Ljdk/jfr/internal/Contextual;";
 
 // Evaluate to the value of the first found "Ljdk/jfr/Registered;" annotation.
 // Searching moves upwards in the klass hierarchy in order to support
@@ -472,6 +494,25 @@ static bool should_register_klass(const InstanceKlass* ik, bool& untypedEventHan
   bool value = false; // to be set by annotation_value
   untypedEventHandler = !(annotation_value(ik, registered_symbol, value) || java_base_can_read_jdk_jfr());
   return value;
+}
+
+static bool is_context_carrier_klass(const InstanceKlass* ik) {
+  assert(ik != nullptr, "invariant");
+  assert(JdkJfrEvent::is_a(ik), "invariant");
+
+  static const Symbol* symbol = nullptr;
+  if (symbol == nullptr) {
+    symbol = SymbolTable::probe(context_carrier_constant, sizeof context_carrier_constant - 1);
+  }
+  if (symbol == nullptr) {
+    return false;
+  }
+  assert(symbol != nullptr, "invariant");
+  if (has_annotation(ik, symbol)) {
+    return true;
+  }
+  InstanceKlass* const super = InstanceKlass::cast(ik->super());
+  return super != nullptr && JdkJfrEvent::is_a(super) ? has_annotation(super, symbol) : false;
 }
 
 /*
@@ -577,7 +618,7 @@ static jlong add_field_info(JfrBigEndianWriter& writer, u2 name_index, u2 desc_i
   return writer.current_offset();
 }
 
-static u2 add_field_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes, bool untypedEventConfiguration) {
+static u2 add_field_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes, bool untypedEventConfiguration, bool is_context_carrier) {
   assert(utf8_indexes != nullptr, "invariant");
   add_field_info(writer,
                  utf8_indexes[UTF8_REQ_eventConfiguration],
@@ -592,7 +633,15 @@ static u2 add_field_infos(JfrBigEndianWriter& writer, const u2* utf8_indexes, bo
                  utf8_indexes[UTF8_REQ_duration],
                  utf8_indexes[UTF8_REQ_J_FIELD_DESC]);
 
-  return number_of_new_fields;
+  u2 offset = 0;
+  if (is_context_carrier) {
+    add_field_info(writer,
+                   utf8_indexes[UTF8_REQ_ctxOffset],
+                   utf8_indexes[UTF8_REQ_J_FIELD_DESC]);
+    offset++;
+  }
+
+  return number_of_new_fields + offset;
 }
 
 /*
@@ -1378,7 +1427,7 @@ static u1* schema_extend_event_subklass_bytes(const InstanceKlass* ik,
   assert(writer.is_valid(), "invariant");
   // We are sitting just after the original number of field_infos
   // so this is a position where we can add (append) new field_infos
-  const u2 number_of_new_fields = add_field_infos(writer, utf8_indexes, untypedEventHandler);
+  const u2 number_of_new_fields = add_field_infos(writer, utf8_indexes, untypedEventHandler, is_context_carrier_klass(ik));
   assert(writer.is_valid(), "invariant");
   const jlong new_method_len_offset = writer.current_offset();
   // Additional field_infos added, update classfile fields_count
@@ -1602,36 +1651,60 @@ static void rewrite_klass_pointer(InstanceKlass*& ik, InstanceKlass* new_ik, Cla
 }
 
 // If code size is 1, it is 0xb1, i.e. the return instruction.
-static inline bool is_commit_method_instrumented(const Method* m) {
+static inline bool is_method_instrumented(const Method* m) {
   assert(m != nullptr, "invariant");
-  assert(m->name() == commit, "invariant");
+  assert(m->name() == commit || m->name() == begin || m->name() == end || m->name() == shouldCommit, "invariant");
   assert(m->constMethod()->code_size() > 0, "invariant");
   return m->constMethod()->code_size() > 1;
 }
 
-static bool bless_static_commit_method(const Array<Method*>* methods) {
+static u1 blessing_mask(const Method* const m) {
+  assert(m != nullptr, "invariant");
+  assert(m->name() == commit || m->name() == begin || m->name() == end || m->name() == shouldCommit, "invariant");
+  u1 mask = 0;
+  if (m->name() == commit) {
+    mask = 1;
+  } else if (m->name() == begin) {
+    mask = 2;
+  } else if (m->name() == end) {
+    mask = 4;
+  } else if (m->name() == shouldCommit) {
+    mask = 8;
+  }
+  return mask;
+}
+
+static u1 bless_static_methods(const Array<Method*>* methods) {
   assert(methods != nullptr, "invariant");
+  u1 mask = 0;
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
     // Method is of the form "static void UserEvent::commit(...)" and instrumented
-    if (m->is_static() && m->name() == commit && is_commit_method_instrumented(m)) {
-      BLESS_METHOD(m);
-      return true;
+    if (m->is_static() && m->name() == commit && is_method_instrumented(m)) {
+      u1 mask_diff = blessing_mask(m);
+      if (mask_diff != 0) {
+        BLESS_METHOD(m);
+      }
+      mask |= mask_diff;
     }
   }
-  return false;
+  return mask;
 }
 
-static void bless_instance_commit_method(const Array<Method*>* methods) {
+static void bless_instance_methods(const Array<Method*>* methods, u1 blessed_mask) {
   assert(methods != nullptr, "invariant");
   for (int i = 0; i < methods->length(); ++i) {
     const Method* const m = methods->at(i);
     // Method is of the form "void UserEvent:commit()" and instrumented
     if (!m->is_static() &&
-         m->name() == commit &&
+         (m->name() == commit || m->name() == begin || m->name() == end || m->name() == shouldCommit) &&
          m->signature() == void_method_sig &&
-         is_commit_method_instrumented(m)) {
-      BLESS_METHOD(m);
+         is_method_instrumented(m)) {
+      u1 mask = blessing_mask(m);
+      // previously blessed static methods take precedence
+      if ((mask & blessed_mask) == 0) {
+        BLESS_METHOD(m);
+      }
     }
   }
 }
@@ -1639,18 +1712,18 @@ static void bless_instance_commit_method(const Array<Method*>* methods) {
 // A blessed method is a method that is allowed to link to system sensitive code.
 // It is primarily the class file schema extended instance 'commit()V' method.
 // Jdk events can also define a static commit method with an arbitrary signature.
-static void bless_commit_method(const InstanceKlass* new_ik) {
+static void bless_methods(const InstanceKlass* new_ik) {
   assert(new_ik != nullptr, "invariant");
   assert(JdkJfrEvent::is_subklass(new_ik), "invariant");
   const Array<Method*>* const methods = new_ik->methods();
+  u1 mask = 0;
   if (new_ik->class_loader() == nullptr) {
     // JDK events are allowed an additional commit method that is static.
     // Search precedence must therefore inspect static methods first.
-    if (bless_static_commit_method(methods)) {
-      return;
-    }
+    // The mask is used to ensure that the instance method is not blessed if a static method is already blessed.
+    mask = bless_static_methods(methods);
   }
-  bless_instance_commit_method(methods);
+  bless_instance_methods(methods, mask);
 }
 
 static void copy_traceid(const InstanceKlass* ik, const InstanceKlass* new_ik) {
@@ -1756,7 +1829,7 @@ static void transform(InstanceKlass*& ik, ClassFileParser& parser, JavaThread* t
     cache_class_file_data(new_ik, stream, thread);
   }
   if (is_instrumented && JdkJfrEvent::is_subklass(new_ik)) {
-    bless_commit_method(new_ik);
+    bless_methods(new_ik);
   }
   copy_traceid(ik, new_ik);
   rewrite_klass_pointer(ik, new_ik, parser, thread);

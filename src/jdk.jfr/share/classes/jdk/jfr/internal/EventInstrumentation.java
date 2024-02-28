@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,9 +83,11 @@ final class EventInstrumentation {
     private static final FieldDesc FIELD_DURATION = FieldDesc.of(long.class, ImplicitFields.DURATION);
     private static final FieldDesc FIELD_EVENT_CONFIGURATION = FieldDesc.of(Object.class, "eventConfiguration");;
     private static final FieldDesc FIELD_START_TIME = FieldDesc.of(long.class, ImplicitFields.START_TIME);
+    private static final FieldDesc FIELD_CTX_OFFSET = FieldDesc.of(long.class, hiddenName("ctxOffset"));
     private static final ClassDesc ANNOTATION_ENABLED = classDesc(Enabled.class);
     private static final ClassDesc ANNOTATION_NAME = classDesc(Name.class);
     private static final ClassDesc ANNOTATION_REGISTERED = classDesc(Registered.class);
+    private static final ClassDesc ANNOTATION_CONTEXTUAL = classDesc(Contextual.class);
     private static final ClassDesc ANNOTATION_REMOVE_FIELDS = classDesc(RemoveFields.class);
     private static final ClassDesc TYPE_EVENT_CONFIGURATION = classDesc(EventConfiguration.class);
     private static final ClassDesc TYPE_ISE = Bytecode.classDesc(IllegalStateException.class);
@@ -106,6 +109,8 @@ final class EventInstrumentation {
     private static final MethodDesc METHOD_RESET = MethodDesc.of("reset", "()V");
     private static final MethodDesc METHOD_SHOULD_COMMIT_LONG = MethodDesc.of("shouldCommit", "(J)Z");
     private static final MethodDesc METHOD_TIME_STAMP = MethodDesc.of("timestamp", "()J");
+    private static final MethodDesc METHOD_OPEN_CTX = MethodDesc.of("openContext", "()J");
+    private static final MethodDesc METHOD_CLOSE_CTX = MethodDesc.of("closeContext", "()J");
 
     private final ClassModel classModel;
     private final List<SettingDesc> settingDescs;
@@ -140,6 +145,17 @@ final class EventInstrumentation {
         // been registered,
         // so we add a guard against a null reference.
         this.guardEventConfiguration = guardEventConfiguration;
+    }
+
+    /**
+     * Make an element name 'hidden' by prefixing it with a caret.
+     * The prefix is valid in bytecode but will be refused by javac such that element can not get accidentally
+     * overridden by the user.
+     * @param name the element name
+     * @return the name prefixed with '^' if it is not already prefixed
+     */
+    private static String hiddenName(String name) {
+        return name.startsWith(Utils.HIDDEN_NAME_PREFIX) ? name : Utils.HIDDEN_NAME_PREFIX + name;
     }
 
     private ImplicitFields determineImplicitFields() {
@@ -203,6 +219,17 @@ final class EventInstrumentation {
             if (r != null) {
                 return r.value();
             }
+        }
+        return true;
+    }
+
+    boolean isContextualEvent() {
+        if (!hasAnnotation(classModel, ANNOTATION_CONTEXTUAL)) {
+            if (superClass != null) {
+                Contextual cp = superClass.getAnnotation(Contextual.class);
+                return cp != null;
+            }
+            return false;
         }
         return true;
     }
@@ -271,6 +298,20 @@ final class EventInstrumentation {
             }
         }
         return null;
+    }
+
+    private static boolean hasAnnotation(ClassModel classModel, ClassDesc classDesc) {
+        String typeDescriptor = classDesc.descriptorString();
+        for (ClassElement ce : classModel.elements()) {
+            if (ce instanceof RuntimeVisibleAnnotationsAttribute rvaa) {
+                for (Annotation a : rvaa.annotations()) {
+                    if (a.className().equalsString(typeDescriptor)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private static List<SettingDesc> buildSettingDescs(Class<?> superClass, ClassModel classModel) {
@@ -437,6 +478,12 @@ final class EventInstrumentation {
                 codeBuilder.aload(0);
                 invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_TIME_STAMP);
                 putfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
+                if (isContextualEvent()) {
+                    codeBuilder.aload(0); // [this]
+                    getEventWriter(codeBuilder); // [this, ew]
+                    invokevirtual(codeBuilder, TYPE_EVENT_WRITER, METHOD_OPEN_CTX); // [this, offset, offset]
+                    putfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // []
+                }
                 codeBuilder.return_();
             }
         });
@@ -451,6 +498,16 @@ final class EventInstrumentation {
                 getfield(codeBuilder, getEventClassDesc(), FIELD_START_TIME);
                 invokestatic(codeBuilder, TYPE_EVENT_CONFIGURATION, METHOD_DURATION);
                 putfield(codeBuilder, getEventClassDesc(), FIELD_DURATION);
+                if (isContextualEvent()) {
+                    codeBuilder.aload(0); // [this]
+                    codeBuilder.dup(); // [this, this]
+                    getEventWriter(codeBuilder); // [this, this, ew]
+                    invokevirtual(codeBuilder, TYPE_EVENT_WRITER, METHOD_CLOSE_CTX); // [this, offset, offset]
+                    codeBuilder.aload(0); // [this, offset, offset, this]
+                    getfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // [this, offset, offset, fld, fld]
+                    codeBuilder.lsub(); // [this, rslt, rslt]
+                    putfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // []
+                }
                 codeBuilder.return_();
             }
         });
@@ -501,6 +558,13 @@ final class EventInstrumentation {
         // MyEvent#shouldCommit()
         updateMethod(METHOD_EVENT_SHOULD_COMMIT, codeBuilder -> {
             Label fail = codeBuilder.newLabel();
+            if (isContextualEvent()) {
+                codeBuilder.aload(0); // [this]
+                getfield(codeBuilder, getEventClassDesc(), FIELD_CTX_OFFSET); // [fld, fld]
+                codeBuilder.ldc(0L); // [fld, fld, 0, 0]
+                codeBuilder.lcmp(); // [result]
+                codeBuilder.ifeq(fail); // []
+            }
             if (guardEventConfiguration) {
                 getEventConfiguration(codeBuilder);
                 codeBuilder.if_null(fail);

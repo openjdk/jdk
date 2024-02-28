@@ -31,7 +31,7 @@ import jdk.jfr.Registered;
 import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
-import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.Contextual;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -57,28 +57,13 @@ public class ContextualEvents {
     @Label("Span Context Event")
     @Name("test.SpanContext")
     @Registered
+    @Contextual
     public static class ContextualEvent extends Event {
         @Label("spanId")
         private String spanId;
 
-        private transient long ctxId = 0;
-
         public ContextualEvent(String spanId) {
             this.spanId = spanId;
-        }
-
-        public void doBegin() {
-            ctxId = JVM.openContext();
-        }
-
-        public void doEnd() {
-            ctxId = JVM.closeContext() - ctxId;
-        }
-
-        public void doCommit() {
-            if (shouldCommit() && ctxId != 0) {
-                commit();
-            }
         }
     }
 
@@ -123,10 +108,9 @@ public class ContextualEvents {
     public void test(Blackhole bh) {
         WorkEvent event = new WorkEvent();
         ContextualEvent ctx = new ContextualEvent("1234");
-        ctx.doBegin();
+        ctx.begin();
         event.commit();
-        ctx.doEnd();
-        ctx.doCommit();
+        ctx.end();
         bh.consume(event);
         bh.consume(ctx);
     }

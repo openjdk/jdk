@@ -38,7 +38,7 @@ import jdk.jfr.Label;
 import jdk.jfr.Name;
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
-import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.Contextual;
 
 import jdk.test.lib.jfr.Events;
 import jdk.test.lib.jfr.EventNames;
@@ -49,7 +49,7 @@ import static jdk.test.lib.Asserts.*;
  * @key jfr
  * @requires vm.hasJFR
  * @library /test/lib
- * @modules jdk.jfr/jdk.jfr.internal
+ * @modules jdk.jfr/jdk.jfr.internal jdk.jfr/jdk.jfr.internal.settings
  * @run main/othervm jdk.jfr.event.context.TestContextBasic
  */
 public class TestContextBasic {
@@ -57,28 +57,13 @@ public class TestContextBasic {
     @Name("jdk.TestContext")
     @Registered
     @Enabled
+    @Contextual
     public static class MyContextEvent extends Event {
         @Label("spanId")
         private String spanId;
 
-        private transient long ctxId = 0;
-
         public MyContextEvent(String spanId) {
             this.spanId = spanId;
-        }
-
-        public void doBegin() {
-            ctxId = JVM.openContext();
-        }
-
-        public void doEnd() {
-            ctxId = JVM.closeContext() - ctxId;
-        }
-
-        public void doCommit() {
-            if (shouldCommit() && ctxId != 0) {
-                commit();
-            }
         }
     }
 
@@ -108,12 +93,12 @@ public class TestContextBasic {
         MyContextEvent ctx = new MyContextEvent("123");
         // events committed before the context is started do not activate the context
         new MyWorkEvent().commit();
-        ctx.doBegin();
-        ctx.doEnd();
+        ctx.begin();
+        ctx.end();
         // events committed after the context is ended do not activate the context
         new MyWorkEvent().commit();
         // this context event has no enveloped events; it should not be written to the recording
-        ctx.doCommit();
+        ctx.commit();
 
         r.stop();
 
@@ -132,11 +117,11 @@ public class TestContextBasic {
 
         MyContextEvent ctx = new MyContextEvent("123");
         ctx = new MyContextEvent("456");
-        ctx.doBegin();
+        ctx.begin();
         // this event is enveloped in a context; it should be written to the recording if selector is not "none"
         new MyWorkEvent().commit();
-        ctx.doEnd();
-        ctx.doCommit();
+        ctx.end();
+        ctx.commit();
 
         r.stop();
 
@@ -156,19 +141,19 @@ public class TestContextBasic {
         MyContextEvent ctx1 = new MyContextEvent("123");
         MyContextEvent ctx2 = new MyContextEvent("456");
         MyContextEvent ctx3 = new MyContextEvent("789");
-        ctx1.doBegin();
-        ctx2.doBegin();
+        ctx1.begin();
+        ctx2.begin();
         // this event is enveloped in a context and activates it
         new MyWorkEvent().commit();
-        ctx3.doBegin();
-        ctx3.doEnd();
+        ctx3.begin();
+        ctx3.end();
         // no event is enveloped in context ctx3; it should not be written to the recording
-        ctx3.doCommit();
-        ctx2.doEnd();
-        ctx2.doCommit();
-        ctx1.doEnd();
+        ctx3.commit();
+        ctx2.end();
+        ctx2.commit();
+        ctx1.end();
         // although no work event was committed for context ctx1, the nested context event ctx2 should have activated this context
-        ctx1.doCommit();
+        ctx1.commit();
 
         r.stop();
 
@@ -192,15 +177,15 @@ public class TestContextBasic {
                 Random rand = new Random();
                 long ts = System.nanoTime();
                 long accumulated = 0;
-                ctx1.doBegin();
+                ctx1.begin();
                 for (int i = 0; i < 1000000; i++) {
                     accumulated += sieve(rand.nextInt(10000));
                 }
                 synchronized (TestContextBasic.class) {
                     TestContextBasic.class.wait(500);
                 }
-                ctx1.doEnd();
-                ctx1.doCommit();
+                ctx1.end();
+                ctx1.commit();
 
                 synchronized (TestContextBasic.class) {
                     TestContextBasic.class.wait(200);
