@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONSET_HPP
-#define SHARE_GC_G1_HEAPREGIONSET_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONSET_HPP
+#define SHARE_GC_G1_G1HEAPREGIONSET_HPP
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "utilities/macros.hpp"
 
 #define assert_heap_region_set(p, message) \
@@ -271,4 +271,4 @@ public:
   }
 };
 
-#endif // SHARE_GC_G1_HEAPREGIONSET_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONSET_HPP

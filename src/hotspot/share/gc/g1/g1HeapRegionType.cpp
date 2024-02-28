@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
-#include "gc/g1/heapRegionType.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 
 const HeapRegionType HeapRegionType::Eden      = HeapRegionType(EdenTag);
 const HeapRegionType HeapRegionType::Survivor  = HeapRegionType(SurvTag);

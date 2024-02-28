@@ -23,7 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/heapRegionTracer.hpp"
+#include "gc/g1/g1HeapRegionTracer.hpp"
 #include "jfr/jfrEvents.hpp"
 
 void HeapRegionTracer::send_region_type_change(uint index,

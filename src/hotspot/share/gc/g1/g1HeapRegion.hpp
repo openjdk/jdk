@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGION_HPP
-#define SHARE_GC_G1_HEAPREGION_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGION_HPP
+#define SHARE_GC_G1_G1HEAPREGION_HPP
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
+#include "gc/g1/g1HeapRegionTracer.hpp"
 #include "gc/g1/g1HeapRegionTraceType.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1SurvRateGroup.hpp"
-#include "gc/g1/heapRegionTracer.hpp"
-#include "gc/g1/heapRegionType.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
 #include "gc/shared/verifyOption.hpp"
@@ -622,4 +622,4 @@ public:
   bool is_complete() { return _is_complete; }
 };
 
-#endif // SHARE_GC_G1_HEAPREGION_HPP
+#endif // SHARE_GC_G1_G1HEAPREGION_HPP

@@ -22,14 +22,14 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
-#define SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
+#ifndef SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
+#define SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP
 
-#include "gc/g1/heapRegionRemSet.hpp"
+#include "gc/g1/g1HeapRegionRemSet.hpp"
 
 #include "gc/g1/g1CardSet.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
@@ -144,4 +144,4 @@ void HeapRegionRemSet::print_info(outputStream* st, OopOrNarrowOopStar from) {
   _card_set.print_info(st, to_card(from));
 }
 
-#endif // SHARE_VM_GC_G1_HEAPREGIONREMSET_INLINE_HPP
+#endif // SHARE_VM_GC_G1_G1HEAPREGIONREMSET_INLINE_HPP

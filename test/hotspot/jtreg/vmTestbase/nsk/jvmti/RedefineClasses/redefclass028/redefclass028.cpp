@@ -26,7 +26,7 @@
 #include <string.h>
 
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 #include "nsk_tools.h"
 #include "native_thread.hpp"

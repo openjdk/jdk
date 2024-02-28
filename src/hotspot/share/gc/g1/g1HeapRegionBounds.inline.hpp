@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,21 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-#ifndef NSK_JVMTI_AGENT_COMMON_DEFINED
-#define NSK_JVMTI_AGENT_COMMON_DEFINED
 
-#include "jvmti.h"
-#include "../jvmti_tools.h"
+#ifndef SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
 
-extern "C" {
+#include "gc/g1/g1HeapRegionBounds.hpp"
 
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *jvm, char *options, void *reserved);
-
-JNIEXPORT jint JNICALL Agent_OnAttach(JavaVM *jvm, char *options, void *reserved);
-
-jint Agent_Initialize(JavaVM *vm, char *options, void *reserved);
-
+size_t HeapRegionBounds::min_size() {
+  return MIN_REGION_SIZE;
 }
 
-#endif
+size_t HeapRegionBounds::max_ergonomics_size() {
+  return MAX_ERGONOMICS_SIZE;
+}
+
+size_t HeapRegionBounds::max_size() {
+  return MAX_REGION_SIZE;
+}
+
+size_t HeapRegionBounds::target_number() {
+  return TARGET_REGION_NUMBER;
+}
+
+#endif // SHARE_GC_G1_G1HEAPREGIONBOUNDS_INLINE_HPP
