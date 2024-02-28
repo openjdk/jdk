@@ -86,7 +86,7 @@ static inline bool requires_marking(const void* entry, G1CollectedHeap* g1h) {
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
   G1ConcurrentMark* cm = g1h->concurrent_mark();
-  if (cm->obj_allocated_since_mark_start(entry)) {
+  if (cm->obj_allocated_since_mark_start(cast_to_oop(entry))) {
     return false;
   }
 

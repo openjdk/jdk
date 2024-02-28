@@ -56,6 +56,7 @@ void G1RemSetTrackingPolicy::update_at_free(HeapRegion* r) {
 }
 
 static void print_before_rebuild(HeapRegion* r, bool selected_for_rebuild, size_t total_live_bytes, size_t live_bytes) {
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
   log_trace(gc, remset, tracking)("Before rebuild region %u "
                                   "(tams: " PTR_FORMAT ") "
                                   "total_live_bytes %zu "
@@ -63,7 +64,7 @@ static void print_before_rebuild(HeapRegion* r, bool selected_for_rebuild, size_
                                   "(live_bytes %zu "
                                   "type %s)",
                                   r->hrm_index(),
-                                  p2i(r->top_at_mark_start()),
+                                  p2i(cm->top_at_mark_start(r)),
                                   total_live_bytes,
                                   BOOL_TO_STR(selected_for_rebuild),
                                   live_bytes,
@@ -152,7 +153,7 @@ void G1RemSetTrackingPolicy::update_after_rebuild(HeapRegion* r) {
                                     "remset occ %zu "
                                     "size %zu)",
                                     r->hrm_index(),
-                                    p2i(r->top_at_mark_start()),
+                                    p2i(cm->top_at_mark_start(r)),
                                     cm->live_bytes(r->hrm_index()),
                                     r->rem_set()->occupied(),
                                     r->rem_set()->mem_size());

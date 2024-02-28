@@ -560,9 +560,8 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       } else {
         // This evacuation failed region is going to be marked through. Update mark data.
         cm->update_top_at_mark_start(r);
-        r->set_top_at_mark_start(r->top());
         cm->set_live_bytes(r->hrm_index(), r->live_bytes());
-        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
+        assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), cm->top_at_mark_start(r)) != cm->top_at_mark_start(r),
                "Marks must be on bitmap for region %u", r->hrm_index());
       }
       return false;

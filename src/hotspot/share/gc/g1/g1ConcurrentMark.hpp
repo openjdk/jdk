@@ -564,7 +564,7 @@ public:
 
   inline void update_top_at_mark_start(HeapRegion* r);
   inline void reset_top_at_mark_start(HeapRegion* r);
-  inline HeapWord* top_at_mark_start(HeapRegion* r) const;
+  inline HeapWord* top_at_mark_start(const HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;
   inline bool obj_allocated_since_mark_start(oop obj) const;
 

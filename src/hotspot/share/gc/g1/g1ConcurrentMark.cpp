@@ -748,7 +748,7 @@ private:
       }
       assert(cur >= end, "Must have completed iteration over the bitmap for region %u.", r->hrm_index());
 
-      r->reset_top_at_mark_start();
+      _cm->reset_top_at_mark_start(r);
 
       return false;
     }
@@ -860,9 +860,15 @@ void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
+  G1ConcurrentMark* _cm;
+
 public:
+  NoteStartOfMarkHRClosure() : HeapRegionClosure(), _cm(G1CollectedHeap::heap()->concurrent_mark()) { }
+
   bool do_heap_region(HeapRegion* r) override {
-    r->note_start_of_marking();
+    if (r->is_old_or_humongous() && !r->is_collection_set_candidate()) {
+      _cm->update_top_at_mark_start(r);
+    }
     return false;
   }
 };
@@ -1261,7 +1267,7 @@ class G1UpdateRemSetTrackingBeforeRebuildTask : public WorkerTask {
     }
 
     void add_marked_bytes_and_note_end(HeapRegion* hr, size_t marked_bytes) {
-      hr->note_end_of_marking(marked_bytes);
+      hr->note_end_of_marking(_cm->top_at_mark_start(hr), marked_bytes);
       _cl->do_heap_region(hr);
     }
 
@@ -1936,6 +1942,7 @@ void G1ConcurrentMark::flush_all_task_caches() {
 void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
+  reset_top_at_mark_start(hr);
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {

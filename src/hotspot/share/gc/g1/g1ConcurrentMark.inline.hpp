@@ -187,9 +187,6 @@ inline size_t G1CMTask::scan_objArray(objArrayOop obj, MemRegion mr) {
 inline void G1ConcurrentMark::update_top_at_mark_start(HeapRegion* r) {
   uint const region = r->hrm_index();
   assert(region < _g1h->max_reserved_regions(), "Tried to access TAMS for region %u out of bounds", region);
-  assert(_top_at_mark_starts[region] == r->bottom(),
-         "TAMS for region %u has already been set to " PTR_FORMAT " should be bottom " PTR_FORMAT,
-         region, p2i(_top_at_mark_starts[region]), p2i(r->bottom()));
   _top_at_mark_starts[region] = r->top();
 }
 
@@ -197,13 +194,8 @@ inline void G1ConcurrentMark::reset_top_at_mark_start(HeapRegion* r) {
   _top_at_mark_starts[r->hrm_index()] = r->bottom();
 }
 
-inline HeapWord* G1ConcurrentMark::top_at_mark_start(HeapRegion* r) const {
-  HeapWord* value = top_at_mark_start(r->hrm_index());
-  assert(r->top_at_mark_start() == top_at_mark_start(r->hrm_index()),
-         "Inconsistency check region %u %s " PTR_FORMAT " " PTR_FORMAT,
-         r->hrm_index(), r->get_short_type_str(), p2i(r->top_at_mark_start()), p2i(top_at_mark_start(r->hrm_index())   )      );
-
-  return value;
+inline HeapWord* G1ConcurrentMark::top_at_mark_start(const HeapRegion* r) const {
+  return top_at_mark_start(r->hrm_index());
 }
 
 inline HeapWord* G1ConcurrentMark::top_at_mark_start(uint region) const {
@@ -214,9 +206,6 @@ inline HeapWord* G1ConcurrentMark::top_at_mark_start(uint region) const {
 inline bool G1ConcurrentMark::obj_allocated_since_mark_start(oop obj) const {
   uint const region = _g1h->addr_to_region(obj);
   assert(region < _g1h->max_reserved_regions(), "obj " PTR_FORMAT " outside heap %u", p2i(obj), region);
-  assert(_g1h->region_at(region)->top_at_mark_start() == top_at_mark_start(region),
-         "Inconsistency region %u %s " PTR_FORMAT " " PTR_FORMAT, region, _g1h->region_at(region)->get_short_type_str(), p2i(_g1h->region_at(region)->top_at_mark_start()), p2i(top_at_mark_start(region))
-          );
   return cast_from_oop<HeapWord*>(obj) >= top_at_mark_start(region);
 }
 
