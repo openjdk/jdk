@@ -586,11 +586,10 @@ class GrowableBitMap : public BitMap {
   // and the extended memory is optionally cleared.
   void resize(idx_t new_size_in_bits, bool clear = true);
   // Slice bitmap
-  // Old bits are shifted to the front and then the map is resized
-  void slice(idx_t start_bit, idx_t end_bit, bool clear = true);
-  void slice(idx_t start_bit, bool clear = true);
-  bm_word_t* slice_copy(idx_t start_bit, idx_t end_bit, bool clear = true);
-  bm_word_t* slice_copy(idx_t start_bit, bool clear = true);
+  // Bits in the selected range are copied to a new map
+  bm_word_t* slice(idx_t start_bit, idx_t end_bit, bool clear = true);
+  bm_word_t* slice(idx_t start_bit, bool clear = true);
+  // Overwrite bitmap with result from slicing
   void truncate(idx_t start_bit, idx_t end_bit, bool clear = true);
   void truncate(idx_t start_bit, bool clear = true);
 };

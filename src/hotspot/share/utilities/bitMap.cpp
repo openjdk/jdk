@@ -100,44 +100,7 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 }
 
 template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, bool clear) {
-  assert(start_bit < end_bit, "End bit must come after start bit");
-  assert(end_bit <= size(), "End bit not in bitmap");
-  idx_t start_word = to_words_align_down(start_bit);
-  idx_t end_word = to_words_align_up(end_bit);
-  bm_word_t* const old_map = map();
-  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
-
-  // Shift over elements to avoid allocating a new array
-  for (idx_t word = start_word; word < end_word; word++) {
-    set_word(word - start_word, old_map[word]);
-    assert(old_map[word-start_word] == old_map[word], "sanity");
-  }
-
-  resize(new_size_in_bits, clear);
-}
-
-template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit, bool clear) {
-  const size_t old_size_in_words = calc_size_in_words(size());
-  idx_t start_word = to_words_align_down(start_bit);
-  idx_t end_word = to_words_align_up(end_bit);
-  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
-  bm_word_t* const old_map = map();
-  bm_word_t* new_map = slice_copy(start_bit, end_bit, clear);
-
-  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
-  derived->free(old_map, old_size_in_words);
-  update(new_map, new_size_in_bits);
-}
-
-template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, bool clear) {
-  truncate(start_bit, size(), clear);
-}
-
-template <class BitMapWithAllocator>
-bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice_copy(idx_t start_bit, idx_t end_bit, bool clear) {
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, bool clear) {
   assert(start_bit < end_bit, "End bit must come after start bit: %ld, %ld", start_bit, end_bit);
   assert(end_bit <= size(), "End bit not in bitmap");
   idx_t start_word = to_words_align_down(start_bit);
@@ -157,13 +120,27 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice_copy(idx_t start_bit, idx_
 }
 
 template <class BitMapWithAllocator>
-bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice_copy(idx_t start_bit, bool clear) {
-  return slice_copy(start_bit, size(), clear);
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, bool clear) {
+  return slice(start_bit, size(), clear);
 }
 
 template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, bool clear) {
-  slice(start_bit, size(), clear);
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit, bool clear) {
+  const size_t old_size_in_words = calc_size_in_words(size());
+  idx_t start_word = to_words_align_down(start_bit);
+  idx_t end_word = to_words_align_up(end_bit);
+  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+  bm_word_t* const old_map = map();
+  bm_word_t* new_map = slice(start_bit, end_bit, clear);
+
+  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+  derived->free(old_map, old_size_in_words);
+  update(new_map, new_size_in_bits);
+}
+
+template <class BitMapWithAllocator>
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, bool clear) {
+  truncate(start_bit, size(), clear);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)
