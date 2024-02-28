@@ -458,7 +458,7 @@ private:
   // bb_idx -> DependenceNode*
   GrowableArray<DependencyNode*> _dependency_nodes;
 
-  // bb_idx -> depth
+  // Node depth in DAG: bb_idx -> depth
   GrowableArray<int> _depth;
 
 protected:
@@ -485,9 +485,11 @@ public:
 
   void construct();
   int depth(const Node* n) const { return _depth.at(_body.bb_idx(n)); }
+  bool independent(Node* s1, Node* s2) const;
+  bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& extra_def_edges);
+  void add_node(MemNode* n, GrowableArray<int>& extra_pred_edges);
   void set_depth(const Node* n, int d) { _depth.at_put(_body.bb_idx(n), d); }
   void compute_depth();
   NOT_PRODUCT( void print() const; )
@@ -499,39 +501,39 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _extra_def_edges_length;
-    int* _extra_def_edges; // extra def-edges, mapping to bb_idx
+    const uint _extra_pred_edges_length;
+    int* _extra_pred_edges; // extra def-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& extra_def_edges, Arena* arena);
-    uint extra_def_edges_length() const { return _extra_def_edges_length; }
+    DependencyNode(MemNode* n, GrowableArray<int>& extra_pred_edges, Arena* arena);
+    uint extra_pred_edges_length() const { return _extra_pred_edges_length; }
 
-    int extra_def_edge(uint i) const {
-      assert(i < _extra_def_edges_length, "bounds check");
-      return _extra_def_edges[i];
+    int extra_pred_edge(uint i) const {
+      assert(i < _extra_pred_edges_length, "bounds check");
+      return _extra_pred_edges[i];
     }
   };
 public:
-  class DefIterator : public StackObj {
+  class PredsIterator : public StackObj {
   private:
     const VLoopDependencyGraph& _dependency_graph;
 
     const Node* _node;
     const DependencyNode* _dependency_node;
 
-    Node* _current_def;
+    Node* _current;
 
     // Iterate in node->in(i)
-    int _next_def;
-    int _end_def;
+    int _next_pred;
+    int _end_pred;
 
-    // Iterate in dependency_node->extra_def_edge(i)
-    int _next_extra_def;
-    int _end_extra_def;
+    // Iterate in dependency_node->extra_pred_edge(i)
+    int _next_extra_pred;
+    int _end_extra_pred;
   public:
-    DefIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
     void next();
-    bool done() const { return _current_def == nullptr; }
-    Node* current_def() const { assert(!done(), "not done yet"); return _current_def; }
+    bool done() const { return _current == nullptr; }
+    Node* current() const { assert(!done(), "not done yet"); return _current; }
   };
 };
 

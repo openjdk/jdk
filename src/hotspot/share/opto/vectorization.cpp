@@ -172,7 +172,7 @@ void VLoopDependencyGraph::construct() {
 
   ResourceMark rm;
   GrowableArray<MemNode*> slice_nodes;
-  GrowableArray<int> def_nodes;
+  GrowableArray<int> pred_nodes;
 
   // For each memory slice, create the memory subgraph
   for (int i = 0; i < mem_slice_heads.length(); i++) {
@@ -184,7 +184,7 @@ void VLoopDependencyGraph::construct() {
     // In forward order (reverse of reverse), visit all memory nodes in the slice.
     for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
       MemNode* n1 = slice_nodes.at(j);
-      def_nodes.clear();
+      pred_nodes.clear();
 
       VPointer p1(n1, _vloop);
       // For all memory nodes before it, check if we need to add a memory edge.
@@ -197,10 +197,10 @@ void VLoopDependencyGraph::construct() {
         VPointer p2(n2, _vloop);
         if (!VPointer::not_equal(p1.cmp(p2))) {
           // Possibly overlapping addresses
-          def_nodes.append(_body.bb_idx(n2));
+          pred_nodes.append(_body.bb_idx(n2));
         }
       }
-      add_node(n1, def_nodes);
+      add_node(n1, pred_nodes);
     }
     slice_nodes.clear();
   }
@@ -210,27 +210,27 @@ void VLoopDependencyGraph::construct() {
   NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
 }
 
-void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_def_edges) {
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_pred_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  if (extra_def_edges.length() == 0) { return; }
-  DependencyNode* dn = new (_arena) DependencyNode(n, extra_def_edges, _arena);
+  if (extra_pred_edges.length() == 0) { return; }
+  DependencyNode* dn = new (_arena) DependencyNode(n, extra_pred_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
 
-// We iterate over the body, which is already ordered by the dependencies, i.e. def comes
+// We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
 // before use. With a single pass, we can compute the depth of every node, since we can
-// assume that the depth of all defs is already computed when we compute the depth of use.
+// assume that the depth of all preds is already computed when we compute the depth of use.
 void VLoopDependencyGraph::compute_depth() {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    int max_def_depth = 0;
-    for (DefIterator it(*this, n); !it.done(); it.next()) {
-      Node* def = it.current_def();
-      if (_vloop.in_bb(def)) {
-        max_def_depth = MAX2(max_def_depth, depth(def));
+    int max_pred_depth = 0;
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      if (_vloop.in_bb(pred)) {
+        max_pred_depth = MAX2(max_pred_depth, depth(pred));
       }
     }
-    set_depth(n, max_def_depth + 1);
+    set_depth(n, max_pred_depth + 1);
   }
 }
 
@@ -238,15 +238,15 @@ void VLoopDependencyGraph::compute_depth() {
 void VLoopDependencyGraph::print() const {
   tty->print_cr("\nVLoopDependencyGraph::print:");
 
-  tty->print_cr(" Extra def edges:");
+  tty->print_cr(" Extra pred edges:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     const DependencyNode* dn = dependency_node(n);
     if (dn != nullptr) {
       tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
-      for (uint j = 0; j < dn->extra_def_edges_length(); j++) {
-        Node* def = _body.body().at(dn->extra_def_edge(j));
-        tty->print("  %d %s", def->_idx, def->Name());
+      for (uint j = 0; j < dn->extra_pred_edges_length(); j++) {
+        Node* pred = _body.body().at(dn->extra_pred_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
       }
       tty->print_cr("]");
     }
@@ -257,9 +257,9 @@ void VLoopDependencyGraph::print() const {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
-    for (DefIterator it(*this, n); !it.done(); it.next()) {
-      Node* def = it.current_def();
-      tty->print("  %d %s", def->_idx, def->Name());
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      tty->print("  %d %s", pred->_idx, pred->Name());
     }
     tty->print_cr("]");
   }
@@ -267,48 +267,48 @@ void VLoopDependencyGraph::print() const {
 #endif
 
 VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
-                                                     GrowableArray<int>& extra_def_edges,
+                                                     GrowableArray<int>& extra_pred_edges,
                                                      Arena* arena) :
     _node(n),
-    _extra_def_edges_length(extra_def_edges.length()),
-    _extra_def_edges(nullptr)
+    _extra_pred_edges_length(extra_pred_edges.length()),
+    _extra_pred_edges(nullptr)
 {
-  assert(extra_def_edges.length() > 0, "not empty");
-  uint bytes = extra_def_edges.length() * sizeof(int);
-  _extra_def_edges = (int*)arena->Amalloc(bytes);
-  memcpy(_extra_def_edges, extra_def_edges.adr_at(0), bytes);
+  assert(extra_pred_edges.length() > 0, "not empty");
+  uint bytes = extra_pred_edges.length() * sizeof(int);
+  _extra_pred_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_extra_pred_edges, extra_pred_edges.adr_at(0), bytes);
 }
 
-VLoopDependencyGraph::DefIterator::DefIterator(const VLoopDependencyGraph& dependency_graph,
-                                               const Node* node) :
+VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
+                                                   const Node* node) :
     _dependency_graph(dependency_graph),
     _node(node),
     _dependency_node(dependency_graph.dependency_node(node)),
-    _current_def(nullptr),
-    _next_def(0),
-    _end_def(node->req()),
-    _next_extra_def(0),
-    _end_extra_def((_dependency_node != nullptr) ? _dependency_node->extra_def_edges_length() : 0)
+    _current(nullptr),
+    _next_pred(0),
+    _end_pred(node->req()),
+    _next_extra_pred(0),
+    _end_extra_pred((_dependency_node != nullptr) ? _dependency_node->extra_pred_edges_length() : 0)
 {
   if (_node->is_Store() || _node->is_Load()) {
     // Load: address
     // Store: address, value
-    _next_def = MemNode::Address;
+    _next_pred = MemNode::Address;
   } else {
     assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
-    _next_def = 1; // skip control
+    _next_pred = 1; // skip control
   }
   next();
 }
 
-void VLoopDependencyGraph::DefIterator::next() {
-  if (_next_def < _end_def) {
-    _current_def = _node->in(_next_def++);
-  } else if (_next_extra_def < _end_extra_def) {
-    int def_bb_idx = _dependency_node->extra_def_edge(_next_extra_def++);
-    _current_def = _dependency_graph.body().body().at(def_bb_idx);
+void VLoopDependencyGraph::PredsIterator::next() {
+  if (_next_pred < _end_pred) {
+    _current = _node->in(_next_pred++);
+  } else if (_next_extra_pred < _end_extra_pred) {
+    int pred_bb_idx = _dependency_node->extra_pred_edge(_next_extra_pred++);
+    _current = _dependency_graph.body().body().at(pred_bb_idx);
   } else {
-    _current_def = nullptr; // done
+    _current = nullptr; // done
   }
 }
 
