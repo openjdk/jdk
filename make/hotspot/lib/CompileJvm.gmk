@@ -250,7 +250,7 @@ ifeq ($(call isTargetOs, windows), true)
 	$$(call LogInfo, Generating list of symbols to export from object files)
 	$$(call MakeDir, $$(@D))
 	$$(ECHO) "EXPORTS" > $$@.tmp
-	$$(CD) $$(JVM_OUTPUTDIR)/objs && \
+	$$(CD) $$(BUILD_LIBJVM_OBJECT_DIR) && \
 	    $$(DUMPBIN) -symbols *$$(OBJ_SUFFIX) | $$(AWK) $$(FILTER_SYMBOLS_AWK_SCRIPT) | $$(SORT) -u >> $$@.tmp
 	$$(RM) $$@
 	$$(MV) $$@.tmp $$@
