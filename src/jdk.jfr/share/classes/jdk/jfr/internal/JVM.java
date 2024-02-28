@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -673,4 +674,49 @@ public final class JVM {
      * @param value
      */
     public static native void setMiscellaneous(long eventTypeId, long value);
+
+    /**
+     * A helper function for context tracking.<br>
+     * Notifies the context tracking that an event was written on this thread and the context is in use.
+     */
+    public static native void markContextInUse();
+
+    /**
+     * A helper function for context tracking.<br>
+     * It is to be called when a contextual event is 'opened' and returns the context identifier.
+     * The context identifier is 'virtual' offset - the context tracking is maintaining an endless thread-local counter
+     * for the number of events written on the thread. This is to be used to decide whether a contextual even has
+     * 'content' or not.
+     * @return the context identifier at open
+     */
+    public static native long openContext();
+
+    /**
+     * A helper function for context tracking.<br>
+     * It is to be called when a contextual event is 'closed' and returns the context identifier.
+     * The context identifier is used to determine whether there are any events written between opening and closing
+     * this context. If the context identifier at close is not the same as at open there are some events belonging
+     * to this context.
+     * Although it can be theoretically possible to get the same context identifier even with events in the context,
+     * it would take for the context counter to wrap around and this is extremely unlikely, given that the counter is
+     * 8 bytes long.
+     * @return the context identifier at close
+     */
+    public static native long closeContext();
+
+    /**
+     * A helper function for context tracking.<br>
+     * The context tracking is maintaining the information whether there is any context open at a particular thread.
+     * This can be used in custom event to eg. emit an event only if there is an open context present.
+     * @return {@literal true} if there is an open context present, {@literal false} otherwise
+     */
+    public static native boolean hasContext();
+
+    /**
+     * A helper function for the 'select' event configuration.<br>
+     * This configuration allow eg. emitting an event only if there is an open context present.
+     * @param eventTypeId the event type id
+     * @param selector selector value, one of [0 = "all", 1 = "if-context"]
+     */
+    public static native void setSelector(long eventTypeId, byte selector);
 }

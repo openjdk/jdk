@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +78,8 @@ JfrThreadLocal::JfrThreadLocal() :
   _jvm_thread_excluded(false),
   _vthread(false),
   _notified(false),
-  _dead(false) {
+  _dead(false),
+  _context(nullptr) {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
 }

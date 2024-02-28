@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 #ifndef SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 #define SHARE_JFR_SUPPORT_JFRTHREADLOCAL_HPP
 
+#include "jfr/support/jfrThreadContext.hpp"
 #include "jfr/utilities/jfrBlob.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 
@@ -72,6 +74,7 @@ class JfrThreadLocal {
   bool _vthread;
   bool _notified;
   bool _dead;
+  mutable JfrThreadContext* _context;
 
   JfrBuffer* install_native_buffer() const;
   JfrBuffer* install_java_buffer() const;
@@ -265,6 +268,17 @@ class JfrThreadLocal {
 
   bool is_dead() const {
     return _dead;
+  }
+
+  JfrThreadContext* get_context() {
+    if (_context == nullptr) {
+      _context = new JfrThreadContext();
+    }
+    return _context;
+  }
+
+  bool has_context() {
+    return _context != nullptr;
   }
 
   bool is_excluded() const;

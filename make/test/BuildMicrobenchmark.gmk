@@ -1,5 +1,6 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2024, Datadog, Inc. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -106,6 +107,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \
         --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
         --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        --add-exports jdk.jfr/jdk.jfr.internal=ALL-UNNAMED \
         --enable-preview \
         -XDsuppressNotes \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor, \

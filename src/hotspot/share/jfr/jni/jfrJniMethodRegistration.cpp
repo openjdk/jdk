@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +26,7 @@
 #include "precompiled.hpp"
 #include "jfr/jni/jfrJniMethod.hpp"
 #include "jfr/jni/jfrJniMethodRegistration.hpp"
+#include "jfr/support/jfrContext.hpp"
 #include "logging/log.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.inline.hpp"
@@ -100,7 +102,11 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
       (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
       (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
-      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter
+      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter,
+      (char*)"markContextInUse", (char*)"()V", (void*)jfr_mark_context_in_use,
+      (char*)"openContext", (char*)"()J", (void*)jfr_open_context,
+      (char*)"closeContext", (char*)"()J", (void*)jfr_close_context,
+      (char*)"hasContext", (char*)"()Z", (void*)jfr_has_context
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

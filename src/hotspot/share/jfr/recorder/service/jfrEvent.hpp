@@ -28,6 +28,7 @@
 #include "jfr/recorder/jfrEventSetting.inline.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
+#include "jfr/support/jfrContext.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
@@ -205,6 +206,12 @@ class JfrEvent {
       // Most likely a pending OOM.
       return;
     }
+
+    // periodic/requestable events are not affecting the JFR context
+    if (!T::is_requestable()) {
+      JfrContext::mark_context_in_use(tl);
+    }
+
     bool large = is_large();
     if (write_sized_event(buffer, thread, tid, sid, large)) {
       // Event written successfully

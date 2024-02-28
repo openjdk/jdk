@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +47,7 @@
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/support/jfrContext.hpp"
 #include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
@@ -425,3 +427,19 @@ JVM_END
 JVM_ENTRY_NO_ENV(void, jfr_unregister_stack_filter(JNIEnv* env,  jclass jvm, jlong id))
   JfrStackFilterRegistry::remove(id);
 JVM_END
+
+NO_TRANSITION(void, jfr_mark_context_in_use(JNIEnv* env, jclass jvm))
+  JfrContext::mark_context_in_use();
+NO_TRANSITION_END
+
+NO_TRANSITION(jlong, jfr_open_context(JNIEnv* env, jclass jvm))
+  return JfrContext::open();
+NO_TRANSITION_END
+
+NO_TRANSITION(jlong, jfr_close_context(JNIEnv* env, jclass jvm))
+  return JfrContext::close();
+NO_TRANSITION_END
+
+NO_TRANSITION(jboolean, jfr_has_context(JNIEnv* env, jclass jvm))
+  return JfrContext::is_present();
+NO_TRANSITION_END

@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
 #include "jfr/recorder/storage/jfrBuffer.hpp"
+#include "jfr/support/jfrContext.hpp"
 #include "jfr/support/jfrThreadLocal.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfrfiles/jfrEventClasses.hpp"
@@ -403,6 +405,9 @@ bool JfrThreadSampleClosure::do_sample_thread(JavaThread* thread, JfrStackFrame*
   if (UseSystemMemoryBarrier) {
     SystemMemoryBarrier::emit();
   }
+  // Sampler events are written from other thread than for which they were collected.
+  // In order to maintain the proper stats for the context the event must be attributed to the sampled thread.
+  JfrContext::mark_context_in_use(thread->jfr_thread_local());
   if (JAVA_SAMPLE == type) {
     if (thread_state_in_java(thread)) {
       ret = sample_thread_in_java(thread, frames, max_frames);

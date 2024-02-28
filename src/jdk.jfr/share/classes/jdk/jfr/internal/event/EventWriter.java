@@ -255,6 +255,7 @@ public final class EventWriter {
     }
 
     public boolean endEvent() {
+        JVM.markContextInUse();
         if (!valid) {
             reset();
             valid = true;
