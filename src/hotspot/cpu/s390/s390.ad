@@ -1,6 +1,6 @@
 //
-// Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2017, 2022 SAP SE. All rights reserved.
+// Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2017, 2024 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -740,7 +740,7 @@ int emit_call_reloc(C2_MacroAssembler &_masm, intptr_t entry_point, relocInfo::r
   if (rtype == relocInfo::runtime_call_w_cp_type) {
     assert((__ offset() & 2) == 0, "misaligned emit_call_reloc");
     address call_addr = __ call_c_opt((address)entry_point);
-    if (call_addr == NULL) {
+    if (call_addr == nullptr) {
       Compile::current()->env()->record_out_of_memory_failure();
       return -1;
     }
@@ -835,7 +835,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   st->print_cr("push_frame %d", (int)-framesize);
   st->print("\t");
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     st->print("nmethod entry barrier\n\t");
   }
 }
@@ -890,7 +890,7 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
     constant_table.set_table_base_offset(constant_table.calculate_table_base_offset());
   }
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
     bs->nmethod_entry_barrier(&_masm);
   }
@@ -1056,7 +1056,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
   bool src12 = Immediate::is_uimm12(src_offset);
   bool dst12 = Immediate::is_uimm12(dst_offset);
 
-  const char   *mnemo = NULL;
+  const char   *mnemo = nullptr;
   unsigned long opc = 0;
 
   // Memory->Memory Spill. Use Z_R0 to hold the value.
@@ -1199,7 +1199,7 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
 #if !defined(PRODUCT)
 void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
   if (ra_ && ra_->node_regs_max_index() > 0) {
-    implementation(NULL, ra_, false, os);
+    implementation(nullptr, ra_, false, os);
   } else {
     if (req() == 2 && in(1)) {
       os->print("N%d = N%d\n", _idx, in(1)->_idx);
@@ -1217,11 +1217,11 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+  implementation(&cbuf, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
-  return implementation(NULL, ra_, true, NULL);
+  return implementation(nullptr, ra_, true, nullptr);
 }
 
 //=============================================================================
@@ -1341,51 +1341,9 @@ void MachUEPNode::format(PhaseRegAlloc *ra_, outputStream *os) const {
 #endif
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
+  // This is Unverified Entry Point
   C2_MacroAssembler _masm(&cbuf);
-  const int ic_miss_offset = 2;
-
-  // Inline_cache contains a klass.
-  Register ic_klass = as_Register(Matcher::inline_cache_reg_encode());
-  // ARG1 is the receiver oop.
-  Register R2_receiver = Z_ARG1;
-  int      klass_offset = oopDesc::klass_offset_in_bytes();
-  AddressLiteral icmiss(SharedRuntime::get_ic_miss_stub());
-  Register R1_ic_miss_stub_addr = Z_R1_scratch;
-
-  // Null check of receiver.
-  // This is the null check of the receiver that actually should be
-  // done in the caller. It's here because in case of implicit null
-  // checks we get it for free.
-  assert(!MacroAssembler::needs_explicit_null_check(oopDesc::klass_offset_in_bytes()),
-         "second word in oop should not require explicit null check.");
-  if (!ImplicitNullChecks) {
-    Label valid;
-    if (VM_Version::has_CompareBranch()) {
-      __ z_cgij(R2_receiver, 0, Assembler::bcondNotEqual, valid);
-    } else {
-      __ z_ltgr(R2_receiver, R2_receiver);
-      __ z_bre(valid);
-    }
-    // The ic_miss_stub will handle the null pointer exception.
-    __ load_const_optimized(R1_ic_miss_stub_addr, icmiss);
-    __ z_br(R1_ic_miss_stub_addr);
-    __ bind(valid);
-  }
-
-  // Check whether this method is the proper implementation for the class of
-  // the receiver (ic miss check).
-  {
-    Label valid;
-    // Compare cached class against klass from receiver.
-    // This also does an implicit null check!
-    __ compare_klass_ptr(ic_klass, klass_offset, R2_receiver, false);
-    __ z_bre(valid);
-    // The inline cache points to the wrong method. Call the
-    // ic_miss_stub to find the proper method.
-    __ load_const_optimized(R1_ic_miss_stub_addr, icmiss);
-    __ z_br(R1_ic_miss_stub_addr);
-    __ bind(valid);
-  }
+  __ ic_check(CodeEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -1446,7 +1404,8 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
     return 0;          // CodeBuffer::expand failed
   }
 
@@ -1467,7 +1426,8 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
   address        base = __ start_a_stub(size_deopt_handler());
 
-  if (base == NULL) {
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
 
@@ -1513,7 +1473,7 @@ bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
@@ -1533,11 +1493,11 @@ bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
-  return NULL;
+  return nullptr;
 }
 
 const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) {
-  return NULL;
+  return nullptr;
 }
 
 // Vector calling convention not yet implemented.
@@ -1574,7 +1534,7 @@ int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
@@ -1602,7 +1562,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 
 MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* original_opnd, uint ideal_reg, bool is_temp) {
   ShouldNotReachHere(); // generic vector operands not supported
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -1948,12 +1908,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
     __ z_brul(l);
   %}
 
@@ -1961,12 +1921,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
     __ z_bru(l);
   %}
 
@@ -1974,12 +1934,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
     __ z_brcl((Assembler::branch_condition)$cmp$$cmpcode, l);
   %}
 
@@ -1987,12 +1947,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
     __ z_brc((Assembler::branch_condition)$cmp$$cmpcode, l);
   %}
 
@@ -2000,12 +1960,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
     Assembler::branch_condition cc = (Assembler::branch_condition)$cmp$$cmpcode;
     unsigned long instr = $primary;
     if (instr == CRJ_ZOPC) {
@@ -2024,12 +1984,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
 
     unsigned long instr = $primary;
     if (instr == CR_ZOPC) {
@@ -2050,12 +2010,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
 
     Assembler::branch_condition cc = (Assembler::branch_condition)$cmp$$cmpcode;
     unsigned long instr = $primary;
@@ -2075,12 +2035,12 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Label* p = $lbl$$label;
 
-    // 'p' is `NULL' when this encoding class is used only to
+    // 'p' is `nullptr' when this encoding class is used only to
     // determine the size of the encoded instruction.
     // Use a bound dummy label in that case.
     Label d;
     __ bind(d);
-    Label& l = (NULL == p) ? d : *(p);
+    Label& l = (nullptr == p) ? d : *(p);
 
     unsigned long instr = $primary;
     if (instr == CHI_ZOPC) {
@@ -2112,7 +2072,7 @@ encode %{
 
     assert((__ offset() & 2) == 0, "misaligned z_enc_java_to_runtime_call");
     address call_addr = __ call_c_opt((address)$meth$$method);
-    if (call_addr == NULL) {
+    if (call_addr == nullptr) {
       Compile::current()->env()->record_out_of_memory_failure();
       return;
     }
@@ -2143,11 +2103,11 @@ encode %{
                                      static_call_Relocation::spec(method_index));
       }
     }
-    assert(__ inst_mark() != NULL, "emit_call_reloc must set_inst_mark()");
+    assert(__ inst_mark() != nullptr, "emit_call_reloc must set_inst_mark()");
 
     if (_method) { // Emit stub for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
-      if (stub == NULL) {
+      address stub = CompiledDirectCall::emit_to_interp_stub(cbuf);
+      if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -2162,7 +2122,7 @@ encode %{
     int vtable_index = this->_vtable_index;
     if (vtable_index == -4) {
       Register ic_reg = reg_to_register_object(Matcher::inline_cache_reg_encode());
-      address virtual_call_oop_addr = NULL;
+      address virtual_call_oop_addr = nullptr;
 
       AddressLiteral empty_ic((address) Universe::non_oop_word());
       virtual_call_oop_addr = __ pc();
@@ -2929,7 +2889,7 @@ operand immP8() %{
 // POINTER specific values
 //-----------------------------------
 
-// Pointer Immediate: NULL
+// Pointer Immediate: nullptr
 operand immP0() %{
   predicate(n->get_ptr() == 0);
   match(ConP);
@@ -2966,7 +2926,7 @@ operand immN8() %{
   interface(CONST_INTER);
 %}
 
-// Narrow NULL Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0() %{
   predicate(n->get_narrowcon() == 0);
   match(ConN);
@@ -3383,7 +3343,7 @@ operand inline_cache_regP(iRegP reg) %{
 // Operands to remove register moves in unscaled mode.
 // Match read/write registers with an EncodeP node if neither shift nor add are required.
 operand iRegP2N(iRegP reg) %{
-  predicate(CompressedOops::shift() == 0 && _leaf->as_EncodeP()->in(0) == NULL);
+  predicate(CompressedOops::shift() == 0 && _leaf->as_EncodeP()->in(0) == nullptr);
   constraint(ALLOC_IN_RC(z_memory_ptr_reg));
   match(EncodeP reg);
   format %{ "$reg" %}
@@ -3391,8 +3351,8 @@ operand iRegP2N(iRegP reg) %{
 %}
 
 operand iRegN2P(iRegN reg) %{
-  predicate(CompressedOops::base() == NULL && CompressedOops::shift() == 0 &&
-            _leaf->as_DecodeN()->in(0) == NULL);
+  predicate(CompressedOops::base() == nullptr && CompressedOops::shift() == 0 &&
+            _leaf->as_DecodeN()->in(0) == nullptr);
   constraint(ALLOC_IN_RC(z_memory_ptr_reg));
   match(DecodeN reg);
   format %{ "$reg" %}
@@ -4236,7 +4196,7 @@ instruct loadConL_pcrelTOC(iRegL dst, immL src) %{
   format %{ "LGRL    $dst,[pcrelTOC]\t # load long $src from table" %}
   ins_encode %{
     address long_address = __ long_constant($src$$constant);
-    if (long_address == NULL) {
+    if (long_address == nullptr) {
       Compile::current()->env()->record_out_of_memory_failure();
       return;
     }
@@ -4292,14 +4252,14 @@ instruct loadConP_pcrelTOC(iRegP dst, immP src) %{
     } else if (constant_reloc == relocInfo::metadata_type) {
       AddressLiteral a = __ constant_metadata_address((Metadata *)$src$$constant);
       address const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      if (const_toc_addr == NULL) {
+      if (const_toc_addr == nullptr) {
         Compile::current()->env()->record_out_of_memory_failure();
         return;
       }
       __ load_long_pcrelative($dst$$Register, const_toc_addr);
     } else {          // Non-oop pointers, e.g. card mark base, heap top.
       address long_address = __ long_constant((jlong)$src$$constant);
-      if (long_address == NULL) {
+      if (long_address == nullptr) {
         Compile::current()->env()->record_out_of_memory_failure();
         return;
       }
@@ -4314,7 +4274,7 @@ instruct loadConP0(iRegP dst, immP0 src, flagsReg cr) %{
   match(Set dst src);
   effect(KILL cr);
   size(4);
-  format %{ "XGR     $dst,$dst\t # NULL ptr" %}
+  format %{ "XGR     $dst,$dst\t # null pointer" %}
   opcode(XGR_ZOPC);
   ins_encode(z_rreform(dst, dst));
   ins_pipe(pipe_class_dummy);
@@ -4660,7 +4620,7 @@ instruct loadConNKlass(iRegN dst, immNKlass src) %{
 
 instruct decodeLoadN(iRegP dst, memory mem) %{
   match(Set dst (DecodeN (LoadN mem)));
-  predicate(false && (CompressedOops::base()==NULL)&&(CompressedOops::shift()==0));
+  predicate(false && (CompressedOops::base()==nullptr)&&(CompressedOops::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "DecodeLoadN  $dst,$mem\t # (cOop Load+Decode)" %}
@@ -4671,7 +4631,7 @@ instruct decodeLoadN(iRegP dst, memory mem) %{
 
 instruct decodeLoadNKlass(iRegP dst, memory mem) %{
   match(Set dst (DecodeNKlass (LoadNKlass mem)));
-  predicate(false && (CompressedKlassPointers::base()==NULL)&&(CompressedKlassPointers::shift()==0));
+  predicate(false && (CompressedKlassPointers::base()==nullptr)&&(CompressedKlassPointers::shift()==0));
   ins_cost(MEMORY_REF_COST);
   size(Z_DISP3_SIZE);
   format %{ "DecodeLoadNKlass  $dst,$mem\t # (load/decode NKlass)" %}
@@ -4699,7 +4659,7 @@ instruct decodeLoadConNKlass(iRegP dst, immNKlass src) %{
 instruct decodeN(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   effect(KILL cr);
-  predicate(CompressedOops::base() == NULL || !ExpandLoadingBaseDecode);
+  predicate(CompressedOops::base() == nullptr || !ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "decodeN  $dst,$src\t # (decode cOop)" %}
@@ -4723,7 +4683,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
   effect(KILL cr);
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            (CompressedOops::base()== NULL || !ExpandLoadingBaseDecode_NN));
+            (CompressedOops::base()== nullptr || !ExpandLoadingBaseDecode_NN));
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   format %{ "decodeN  $dst,$src\t # (decode cOop NN)" %}
@@ -4749,7 +4709,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
     effect(KILL cr);
     predicate(false);
     // TODO: s390 port size(VARIABLE_SIZE);
-    format %{ "decodeN  $dst = ($src == 0) ? NULL : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
+    format %{ "decodeN  $dst = ($src == 0) ? nullptr : ($src << 3) + $base + pow2_offset\t # (decode cOop)" %}
     ins_encode %{
       __ oop_decoder($dst$$Register, $src$$Register, true, $base$$Register,
                      (jlong)MacroAssembler::get_oop_base_pow2_offset((uint64_t)(intptr_t)CompressedOops::base()));
@@ -4774,7 +4734,7 @@ instruct decodeN_NN(iRegP dst, iRegN src, flagsReg cr) %{
 // Decoder for heapbased mode peeling off loading the base.
 instruct decodeN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
-  predicate(CompressedOops::base() != NULL && ExpandLoadingBaseDecode);
+  predicate(CompressedOops::base() != nullptr && ExpandLoadingBaseDecode);
   ins_cost(MEMORY_REF_COST+3 * DEFAULT_COST + BRANCH_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
@@ -4790,7 +4750,7 @@ instruct decodeN_NN_Ex(iRegP dst, iRegN src, flagsReg cr) %{
   match(Set dst (DecodeN src));
   predicate((n->bottom_type()->make_ptr()->ptr() == TypePtr::NotNull ||
              n->bottom_type()->is_oopptr()->ptr() == TypePtr::Constant) &&
-            CompressedOops::base() != NULL && ExpandLoadingBaseDecode_NN);
+            CompressedOops::base() != nullptr && ExpandLoadingBaseDecode_NN);
   ins_cost(MEMORY_REF_COST+2 * DEFAULT_COST);
   // TODO: s390 port size(VARIABLE_SIZE);
   expand %{
@@ -6069,7 +6029,7 @@ instruct addP_reg_reg_imm12(iRegP dst, memoryRegP src1, iRegL src2, uimmL12 con)
 
 instruct addP_regN_reg_imm12(iRegP dst, iRegP_N2P src1, iRegL src2, uimmL12 con) %{
   match(Set dst (AddP (AddP src1 src2) con));
-  predicate( PreferLAoverADD && CompressedOops::base() == NULL && CompressedOops::shift() == 0);
+  predicate( PreferLAoverADD && CompressedOops::base() == nullptr && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST_LOW);
   size(4);
   format %{ "LA      $dst,$con($src1,$src2)\t # ptr d12(x,b)" %}
@@ -6091,7 +6051,7 @@ instruct addP_reg_reg_imm20(iRegP dst, memoryRegP src1, iRegL src2, immL20 con) 
 
 instruct addP_regN_reg_imm20(iRegP dst, iRegP_N2P src1, iRegL src2, immL20 con) %{
   match(Set dst (AddP (AddP src1 src2) con));
-  predicate( PreferLAoverADD && CompressedOops::base() == NULL && CompressedOops::shift() == 0);
+  predicate( PreferLAoverADD && CompressedOops::base() == nullptr && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST);
   // TODO: s390 port size(FIXED_SIZE);
   format %{ "LAY     $dst,$con($src1,$src2)\t # ptr d20(x,b)" %}
@@ -8427,7 +8387,7 @@ instruct compP_reg_imm0(flagsReg cr, iRegP_N2P op1, immP0 op2) %{
 // Don't use LTGFR which performs sign extend.
 instruct compP_decode_reg_imm0(flagsReg cr, iRegN op1, immP0 op2) %{
   match(Set cr (CmpP (DecodeN op1) op2));
-  predicate(CompressedOops::base() == NULL && CompressedOops::shift() == 0);
+  predicate(CompressedOops::base() == nullptr && CompressedOops::shift() == 0);
   ins_cost(DEFAULT_COST_LOW);
   size(2);
   format %{ "LTR    $op1, $op1\t # ptr" %}
@@ -9843,24 +9803,10 @@ instruct string_equalsL(iRegP str1, iRegP str2, iRegI cnt, iRegI result, roddReg
   ins_pipe(pipe_class_dummy);
 %}
 
-instruct string_equalsU(iRegP str1, iRegP str2, iRegI cnt, iRegI result, roddRegL oddReg, revenRegL evenReg, flagsReg cr) %{
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(TEMP oddReg, TEMP evenReg, KILL cr); // R0, R1 are killed, too.
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU || ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::none);
-  ins_cost(300);
-  format %{ "String Equals char[] $str1,$str2,$cnt -> $result" %}
-  ins_encode %{
-    __ array_equals(false, $str1$$Register, $str2$$Register,
-                    $cnt$$Register, $oddReg$$Register, $evenReg$$Register,
-                    $result$$Register, false /* byte */);
-  %}
-  ins_pipe(pipe_class_dummy);
-%}
-
 instruct string_equals_imm(iRegP str1, iRegP str2, uimmI8 cnt, iRegI result, flagsReg cr) %{
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(KILL cr); // R0 is killed, too.
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL || ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
+  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::LL);
   ins_cost(100);
   format %{ "String Equals byte[] $str1,$str2,$cnt -> $result" %}
   ins_encode %{

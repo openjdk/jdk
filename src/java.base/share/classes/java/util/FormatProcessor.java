@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Alibaba Group Holding Limited. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +31,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.StringTemplate.Processor;
 import java.lang.StringTemplate.Processor.Linkage;
-import java.util.regex.Matcher;
 
 import jdk.internal.javac.PreviewFeature;
 
@@ -218,22 +218,35 @@ public final class FormatProcessor implements Processor<String, RuntimeException
      * @throws MissingFormatArgumentException if not at end or found and not needed
      */
     private static boolean findFormat(String fragment, boolean needed) {
-        Matcher matcher = Formatter.FORMAT_SPECIFIER_PATTERN.matcher(fragment);
-        String group;
-
-        while (matcher.find()) {
-            group = matcher.group();
-
-            if (!group.equals("%%") && !group.equals("%n")) {
-                if (matcher.end() == fragment.length() && needed) {
-                    return true;
-                }
-
-                throw new MissingFormatArgumentException(group +
-                        " is not immediately followed by an embedded expression");
+        int max = fragment.length();
+        for (int i = 0; i < max;) {
+            int n = fragment.indexOf('%', i);
+            if (n < 0) {
+                return false;
             }
-        }
 
+            i = n + 1;
+            if (i >= max) {
+                return false;
+            }
+
+            char c = fragment.charAt(i);
+            if (c == '%' || c == 'n') {
+                i++;
+                continue;
+            }
+            int off = new Formatter.FormatSpecifierParser(null, c, i, fragment, max)
+                    .parse();
+            if (off == 0) {
+                return false;
+            }
+            if (i + off == max && needed) {
+                return true;
+            }
+            throw new MissingFormatArgumentException(
+                    fragment.substring(i - 1, i + off)
+                    + " is not immediately followed by an embedded expression");
+        }
         return false;
     }
 

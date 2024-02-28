@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,8 @@ import static java.util.zip.ZipUtils.*;
  */
 public class ZipFile implements ZipConstants, Closeable {
 
-    private final String name;     // zip file name
+    private final String filePath;     // zip file path
+    private final String fileName;     // name of the file
     private volatile boolean closeRequested;
 
     // The "resource" used by this zip file that needs to be
@@ -226,6 +227,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     public ZipFile(File file, int mode, Charset charset) throws IOException
     {
         if (((mode & OPEN_READ) == 0) ||
@@ -245,7 +247,8 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         Objects.requireNonNull(charset, "charset");
 
-        this.name = name;
+        this.filePath = name;
+        this.fileName = file.getName();
         long t0 = System.nanoTime();
 
         this.res = new CleanableResource(this, ZipCoder.get(charset), file, mode);
@@ -305,7 +308,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the zip file comment, or null if none.
+     * Returns the zip file comment. If a comment does not exist or an error is
+     * encountered decoding the comment using the charset specified
+     * when opening the Zip file, then {@code null} is returned.
      *
      * @return the comment string for the zip file, or null if none
      *
@@ -319,7 +324,13 @@ public class ZipFile implements ZipConstants, Closeable {
             if (res.zsrc.comment == null) {
                 return null;
             }
-            return res.zsrc.zc.toString(res.zsrc.comment);
+            // If there is a problem decoding the byte array which represents
+            // the Zip file comment, return null;
+            try {
+                return res.zsrc.zc.toString(res.zsrc.comment);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
         }
     }
 
@@ -483,7 +494,16 @@ public class ZipFile implements ZipConstants, Closeable {
      * @return the path name of the ZIP file
      */
     public String getName() {
-        return name;
+        return filePath;
+    }
+
+    /**
+     * {@return a string identifying this {@code ZipFile}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return this.fileName
+                + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 
     private class ZipEntryIterator<T extends ZipEntry>

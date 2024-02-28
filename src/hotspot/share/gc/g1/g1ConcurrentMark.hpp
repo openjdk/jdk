@@ -27,9 +27,9 @@
 
 #include "gc/g1/g1ConcurrentMarkBitMap.hpp"
 #include "gc/g1/g1ConcurrentMarkObjArrayProcessor.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.hpp"
-#include "gc/g1/heapRegionSet.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/taskqueue.hpp"
@@ -145,7 +145,7 @@ private:
     // within the bucket. Additionally, each new bucket added to the growable array doubles the capacity of
     // the growable array.
     //
-    // Illustration of the Growable Array data structure.
+    // Illustration of the growable array data structure.
     //
     //        +----+        +----+----+
     //        |    |------->|    |    |
@@ -167,14 +167,14 @@ private:
     size_t _num_buckets;
     bool _should_grow;
     TaskQueueEntryChunk* volatile* _buckets;
-    char _pad0[DEFAULT_CACHE_LINE_SIZE];
+    char _pad0[DEFAULT_PADDING_SIZE];
     volatile size_t _size;
-    char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
+    char _pad4[DEFAULT_PADDING_SIZE - sizeof(size_t)];
 
     size_t bucket_size(size_t bucket) {
       return (bucket == 0) ?
               _min_capacity :
-              _min_capacity * ( 1ULL << (bucket -1));
+              _min_capacity * ( 1ULL << (bucket - 1));
     }
 
     static unsigned int find_highest_bit(uintptr_t mask) {
@@ -225,19 +225,21 @@ private:
 
     size_t capacity() const { return _capacity; }
 
-    bool expand();
+    // Expand the mark stack doubling its size.
+    bool try_expand();
+    bool try_expand_to(size_t desired_capacity);
 
     TaskQueueEntryChunk* allocate_new_chunk();
   };
 
   ChunkAllocator _chunk_allocator;
 
-  char _pad0[DEFAULT_CACHE_LINE_SIZE];
+  char _pad0[DEFAULT_PADDING_SIZE];
   TaskQueueEntryChunk* volatile _free_list;  // Linked list of free chunks that can be allocated by users.
-  char _pad1[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*)];
+  char _pad1[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*)];
   TaskQueueEntryChunk* volatile _chunk_list; // List of chunks currently containing data.
   volatile size_t _chunks_in_chunk_list;
-  char _pad2[DEFAULT_CACHE_LINE_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
+  char _pad2[DEFAULT_PADDING_SIZE - sizeof(TaskQueueEntryChunk*) - sizeof(size_t)];
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
@@ -435,12 +437,10 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   G1OldTracer*            _gc_tracer_cm;
 
   // Timing statistics. All of them are in ms
-  NumberSeq _init_times;
   NumberSeq _remark_times;
   NumberSeq _remark_mark_times;
   NumberSeq _remark_weak_ref_times;
   NumberSeq _cleanup_times;
-  double    _total_cleanup_time;
 
   double*   _accum_task_vtime;   // Accumulated task vtime
 
@@ -561,7 +561,7 @@ public:
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(uint region) const;
+  inline HeapWord* top_at_rebuild_start(HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.
