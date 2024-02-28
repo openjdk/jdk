@@ -232,9 +232,10 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
      */
     public enum Option {
         // @formatter:off
-        Compiler(String.class, null, "Selects the system compiler. This must match the getCompilerName() value returned " +
-                "by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. " +
-                "An empty string or the value \"null\" selects a compiler " +
+        Compiler(String.class, null, 
+                "Selects the system compiler. This must match the getCompilerName() value",
+                "returned by a jdk.vm.ci.runtime.JVMCICompilerFactory provider. ",
+                "An empty string or the value \"null\" selects a compiler ",
                 "that raises an exception upon receiving a compilation request."),
 
         PrintConfig(Boolean.class, false, "Prints VM values (e.g. flags, constants, field offsets etc) exposed to JVMCI."),
