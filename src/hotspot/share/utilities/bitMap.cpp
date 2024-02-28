@@ -118,6 +118,50 @@ void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end_bit, 
 }
 
 template <class BitMapWithAllocator>
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit, bool clear) {
+  const size_t old_size_in_words = calc_size_in_words(size());
+  idx_t start_word = to_words_align_down(start_bit);
+  idx_t end_word = to_words_align_up(end_bit);
+  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+  bm_word_t* const old_map = map();
+  bm_word_t* new_map = slice_copy(start_bit, end_bit, clear);
+
+  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+  derived->free(old_map, old_size_in_words);
+  update(new_map, new_size_in_bits);
+}
+
+template <class BitMapWithAllocator>
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, bool clear) {
+  truncate(start_bit, size(), clear);
+}
+
+template <class BitMapWithAllocator>
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice_copy(idx_t start_bit, idx_t end_bit, bool clear) {
+  assert(start_bit < end_bit, "End bit must come after start bit: %ld, %ld", start_bit, end_bit);
+  assert(end_bit <= size(), "End bit not in bitmap");
+  idx_t start_word = to_words_align_down(start_bit);
+  idx_t end_word = to_words_align_up(end_bit);
+  bm_word_t* const old_map = map();
+  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+
+  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+
+  bm_word_t* new_map = derived->allocate(end_word - start_word);
+  for (idx_t word = start_word; word < end_word; word++) {
+    new_map[word-start_word] = old_map[word];
+    assert(new_map[word-start_word] == old_map[word], "sanity");
+  }
+
+  return new_map;
+}
+
+template <class BitMapWithAllocator>
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice_copy(idx_t start_bit, bool clear) {
+  return slice_copy(start_bit, size(), clear);
+}
+
+template <class BitMapWithAllocator>
 void GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, bool clear) {
   slice(start_bit, size(), clear);
 }

@@ -635,10 +635,11 @@ bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, 
 
   BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
   // Leading zeros have been removed so some addresses may not be in the ptrmap
-  if (idx < MetaspaceShared::ptrmap_start_pos()) {
+  size_t start_pos = FileMapInfo::current_info()->header()->heap_ptrmap_start_pos();
+  if (idx < start_pos) {
     return false;
   } else {
-    idx -= MetaspaceShared::ptrmap_start_pos();
+    idx -= start_pos;
   }
   return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
