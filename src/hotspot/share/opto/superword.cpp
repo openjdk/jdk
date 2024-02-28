@@ -926,6 +926,8 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
     return false; // No vectors for this type
   }
 
+  // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
+  // and will still be vectorized by SuperWord::vector_opd.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
@@ -1005,7 +1007,8 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   }
 }
 
-// Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
+// Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
+// We skip the pack creation of these nodes. They will be vectorized by SuperWord::vector_opd.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
   return n1->is_Add() &&
          n2->is_Add() &&
