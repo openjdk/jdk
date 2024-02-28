@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -447,13 +447,13 @@ void ConstantPoolCache::clear_archived_references() {
 }
 
 void ConstantPoolCache::set_archived_references(int root_index) {
-  assert(DumpSharedSpaces, "called only during runtime");
+  assert(CDSConfig::is_dumping_heap(), "sanity");
   _archived_references_index = root_index;
 }
 #endif
 
 #if INCLUDE_JVMTI
-void log_adjust(const char* entry_type, Method* old_method, Method* new_method, bool* trace_name_printed) {
+static void log_adjust(const char* entry_type, Method* old_method, Method* new_method, bool* trace_name_printed) {
   ResourceMark rm;
 
   if (!(*trace_name_printed)) {

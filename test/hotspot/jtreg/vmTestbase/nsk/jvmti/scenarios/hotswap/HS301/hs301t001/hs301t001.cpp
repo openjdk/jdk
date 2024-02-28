@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
 #include "jvmti_tools.h"
 #include "jni_tools.h"
@@ -84,7 +84,7 @@ Java_nsk_jvmti_scenarios_hotswap_HS301_hs301t001_hs301t001_redefine(JNIEnv * jni
 
     redefineNumber=0;
     cls = jni->FindClass(SEARCH_NAME);
-    if (!NSK_JNI_VERIFY(jni, cls != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, cls != nullptr)) {
         nsk_printf("Agent:: (*JNI)->FindClass(jni, %s) returns `null`.\n",SEARCH_NAME);
         return NSK_FALSE;
     }

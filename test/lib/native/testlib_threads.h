@@ -81,10 +81,15 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
     }
 #else
     pthread_t thread;
-    int result = pthread_create(&thread, NULL, procedure, &helper);
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    size_t stack_size = 0x100000;
+    pthread_attr_setstacksize(&attr, stack_size);
+    int result = pthread_create(&thread, &attr, procedure, &helper);
     if (result != 0) {
         fatal("failed to create thread", result);
     }
+    pthread_attr_destroy(&attr);
     result = pthread_join(thread, NULL);
     if (result != 0) {
         fatal("failed to join thread", result);

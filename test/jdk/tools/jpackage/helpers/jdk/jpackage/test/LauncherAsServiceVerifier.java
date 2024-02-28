@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package jdk.jpackage.test;
 
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,10 +60,16 @@ public final class LauncherAsServiceVerifier {
             return this;
         }
 
+        public Builder setAdditionalLauncherCallback(Consumer<AdditionalLauncher> v) {
+            additionalLauncherCallback = v;
+            return this;
+        }
+
         public LauncherAsServiceVerifier create() {
             Objects.requireNonNull(expectedValue);
             return new LauncherAsServiceVerifier(launcherName, appOutputFileName,
-                    expectedValue);
+                    expectedValue,
+                    launcherName != null ? additionalLauncherCallback : null);
         }
 
         public Builder applyTo(PackageTest pkg) {
@@ -72,6 +80,7 @@ public final class LauncherAsServiceVerifier {
         private String launcherName;
         private String expectedValue;
         private String appOutputFileName = "launcher-as-service.txt";
+        private Consumer<AdditionalLauncher> additionalLauncherCallback;
     }
 
     public static Builder build() {
@@ -80,10 +89,12 @@ public final class LauncherAsServiceVerifier {
 
     private LauncherAsServiceVerifier(String launcherName,
             String appOutputFileName,
-            String expectedArgValue) {
+            String expectedArgValue,
+            Consumer<AdditionalLauncher> additionalLauncherCallback) {
         this.expectedValue = expectedArgValue;
         this.launcherName = launcherName;
         this.appOutputFileName = Path.of(appOutputFileName);
+        this.additionalLauncherCallback = additionalLauncherCallback;
     }
 
     public void applyTo(PackageTest pkg) {
@@ -233,7 +244,7 @@ public final class LauncherAsServiceVerifier {
                                 outputFilePath.toString())
                         .addDefaultArguments(expectedValue)
                         .verifyOutput();
-                TKit.deleteIfExists(outputFilePath);
+                deleteOutputFile(outputFilePath);
             }
         });
         pkg.addInstallVerifier(cmd -> {
@@ -242,13 +253,13 @@ public final class LauncherAsServiceVerifier {
     }
 
     private void applyToAdditionalLauncher(PackageTest pkg) {
-        new AdditionalLauncher(launcherName) {
+        AdditionalLauncher al = new AdditionalLauncher(launcherName) {
             @Override
             protected void verify(JPackageCommand cmd) throws IOException {
                 if (canVerifyInstall(cmd)) {
                     delayInstallVerify();
                     super.verify(cmd);
-                    TKit.deleteIfExists(appOutputFilePathVerify(cmd));
+                    deleteOutputFile(appOutputFilePathVerify(cmd));
                 }
                 LauncherAsServiceVerifier.verify(cmd, launcherName);
             }
@@ -256,8 +267,26 @@ public final class LauncherAsServiceVerifier {
                 .addJavaOptions("-Djpackage.test.appOutput="
                         + appOutputFilePathInitialize().toString())
                 .addJavaOptions("-Djpackage.test.noexit=true")
-                .addDefaultArguments(expectedValue)
-                .applyTo(pkg);
+                .addDefaultArguments(expectedValue);
+
+        Optional.ofNullable(additionalLauncherCallback).ifPresent(v -> v.accept(al));
+
+        al.applyTo(pkg);
+    }
+
+    private static void deleteOutputFile(Path file) throws IOException {
+        try {
+            TKit.deleteIfExists(file);
+        } catch (FileSystemException ex) {
+            if (TKit.isLinux() || TKit.isOSX()) {
+                // Probably "Operation no permitted" error. Try with "sudo" as the
+                // file is created by a launcher started under root account.
+                Executor.of("sudo", "rm", "-f").addArgument(file.toString()).
+                        execute();
+            } else {
+                throw ex;
+            }
+        }
     }
 
     private static void verify(JPackageCommand cmd, String launcherName) throws
@@ -337,6 +366,7 @@ public final class LauncherAsServiceVerifier {
     private final String expectedValue;
     private final String launcherName;
     private final Path appOutputFileName;
+    private final Consumer<AdditionalLauncher> additionalLauncherCallback;
 
     final static Set<PackageType> SUPPORTED_PACKAGES = Stream.of(LINUX, WINDOWS,
             Set.of(MAC_PKG)).flatMap(x -> x.stream()).collect(Collectors.toSet());

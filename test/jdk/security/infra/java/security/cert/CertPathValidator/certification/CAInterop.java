@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,6 +451,24 @@
  * @run main/othervm -Djava.security.debug=certpath CAInterop emsigneccrootcag3 CRL
  */
 
+/*
+ * @test id=certainlyrootr1
+ * @bug 8321408
+ * @summary Interoperability tests with Certainly Root R1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certainlyrootr1 DEFAULT
+ */
+
+/*
+ * @test id=certainlyroote1
+ * @bug 8321408
+ * @summary Interoperability tests with Certainly Root E1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certainlyroote1 DEFAULT
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs
  */
@@ -612,6 +630,13 @@ public class CAInterop {
             case "emsigneccrootcag3" ->
                     new CATestURLs("https://testovg3.emsign.com/RootOVG3.html",
                             "https://testovg3r.emsign.com/RootOVG3MR.html");
+
+            case "certainlyrootr1" ->
+                    new CATestURLs("https://valid.root-r1.certainly.com",
+                            "https://revoked.root-r1.certainly.com");
+            case "certainlyroote1" ->
+                    new CATestURLs("https://valid.root-e1.certainly.com",
+                            "https://revoked.root-e1.certainly.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

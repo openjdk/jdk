@@ -39,6 +39,8 @@ public:
   static ZBarrierSetAssembler* assembler();
   static bool barrier_needed(DecoratorSet decorators, BasicType type);
 
+  static void clone_obj_array(objArrayOop src, objArrayOop dst);
+
   virtual void on_thread_create(Thread* thread);
   virtual void on_thread_destroy(Thread* thread);
   virtual void on_thread_attach(Thread* thread);

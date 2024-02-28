@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -224,7 +224,10 @@ void Parse::load_interpreter_state(Node* osr_buf) {
   Node *monitors_addr = basic_plus_adr(osr_buf, osr_buf, (max_locals+mcnt*2-1)*wordSize);
   for (index = 0; index < mcnt; index++) {
     // Make a BoxLockNode for the monitor.
-    Node *box = _gvn.transform(new BoxLockNode(next_monitor()));
+    Node *box = new BoxLockNode(next_monitor());
+    // Check for bailout after new BoxLockNode
+    if (failing()) { return; }
+    box = _gvn.transform(box);
 
 
     // Displaced headers and locked objects are interleaved in the
@@ -401,19 +404,17 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final = nullptr;
-  _entry_bci = InvocationEntryBci;
-  _tf = nullptr;
   _block = nullptr;
   _first_return = true;
   _replaced_nodes_for_exceptions = false;
   _new_idx = C->unique();
-  debug_only(_block_count = -1);
-  debug_only(_blocks = (Block*)-1);
+  DEBUG_ONLY(_entry_bci = UnknownBci);
+  DEBUG_ONLY(_block_count = -1);
+  DEBUG_ONLY(_blocks = (Block*)-1);
 #ifndef PRODUCT
   if (PrintCompilation || PrintOpto) {
     // Make sure I have an inline tree, so I can print messages about it.
-    JVMState* ilt_caller = is_osr_parse() ? caller->caller() : caller;
-    InlineTree::find_subtree_from_root(C->ilt(), ilt_caller, parse_method);
+    InlineTree::find_subtree_from_root(C->ilt(), caller, parse_method);
   }
   _max_switch_depth = 0;
   _est_switch_depth = 0;
@@ -423,23 +424,11 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
     C->set_has_reserved_stack_access(true);
   }
 
-  if (parse_method->is_synchronized()) {
+  if (parse_method->is_synchronized() || parse_method->has_monitor_bytecodes()) {
     C->set_has_monitors(true);
   }
 
-  _tf = TypeFunc::make(method());
   _iter.reset_to_method(method());
-  _flow = method()->get_flow_analysis();
-  if (_flow->failing()) {
-    assert(false, "type flow failed during parsing");
-    C->record_method_not_compilable(_flow->failure_reason());
-  }
-
-#ifndef PRODUCT
-  if (_flow->has_irreducible_entry()) {
-    C->set_parsed_irreducible_loop(true);
-  }
-#endif
   C->set_has_loops(C->has_loops() || method()->has_loops());
 
   if (_expected_uses <= 0) {
@@ -507,14 +496,25 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 
   // Do some special top-level things.
   if (depth() == 1 && C->is_osr_compilation()) {
+    _tf = C->tf();     // the OSR entry type is different
     _entry_bci = C->entry_bci();
     _flow = method()->get_osr_flow_analysis(osr_bci());
-    if (_flow->failing()) {
-      assert(false, "type flow analysis failed for OSR compilation");
-      C->record_method_not_compilable(_flow->failure_reason());
+  } else {
+    _tf = TypeFunc::make(method());
+    _entry_bci = InvocationEntryBci;
+    _flow = method()->get_flow_analysis();
+  }
+
+  if (_flow->failing()) {
+    assert(false, "type flow analysis failed during parsing");
+    C->record_method_not_compilable(_flow->failure_reason());
 #ifndef PRODUCT
       if (PrintOpto && (Verbose || WizardMode)) {
-        tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        if (is_osr_parse()) {
+          tty->print_cr("OSR @%d type flow bailout: %s", _entry_bci, _flow->failure_reason());
+        } else {
+          tty->print_cr("type flow bailout: %s", _flow->failure_reason());
+        }
         if (Verbose) {
           method()->print();
           method()->print_codes();
@@ -522,8 +522,6 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
         }
       }
 #endif
-    }
-    _tf = C->tf();     // the OSR entry type is different
   }
 
 #ifdef ASSERT
@@ -535,6 +533,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
 #endif
 
 #ifndef PRODUCT
+  if (_flow->has_irreducible_entry()) {
+    C->set_parsed_irreducible_loop(true);
+  }
+
   methods_parsed++;
   // add method size here to guarantee that inlined methods are added too
   if (CITime)
@@ -700,7 +702,7 @@ void Parse::do_all_blocks() {
         // that any path which was supposed to reach here has already
         // been parsed or must be dead.
         Node* c = control();
-        Node* result = _gvn.transform_no_reclaim(control());
+        Node* result = _gvn.transform(control());
         if (c != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block->rpo(), c->_idx, result->_idx);
         }
@@ -882,7 +884,7 @@ void Compile::return_values(JVMState* jvms) {
   // bind it to root
   root()->add_req(ret);
   record_for_igvn(ret);
-  initial_gvn()->transform_no_reclaim(ret);
+  initial_gvn()->transform(ret);
 }
 
 //------------------------rethrow_exceptions-----------------------------------
@@ -901,7 +903,7 @@ void Compile::rethrow_exceptions(JVMState* jvms) {
   // bind to root
   root()->add_req(exit);
   record_for_igvn(exit);
-  initial_gvn()->transform_no_reclaim(exit);
+  initial_gvn()->transform(exit);
 }
 
 //---------------------------do_exceptions-------------------------------------
@@ -1261,6 +1263,8 @@ void Parse::do_method_entry() {
     kill_dead_locals();
     // Build the FastLockNode
     _synch_lock = shared_lock(lock_obj);
+    // Check for bailout in shared_lock
+    if (failing()) { return; }
   }
 
   // Feed profiling data for parameters to the type system so it can
@@ -1512,13 +1516,13 @@ void Parse::do_one_block() {
     int ns = b->num_successors();
     int nt = b->all_successors();
 
-    tty->print("Parsing block #%d at bci [%d,%d), successors: ",
+    tty->print("Parsing block #%d at bci [%d,%d), successors:",
                   block()->rpo(), block()->start(), block()->limit());
     for (int i = 0; i < nt; i++) {
-      tty->print((( i < ns) ? " %d" : " %d(e)"), b->successor_at(i)->rpo());
+      tty->print((( i < ns) ? " %d" : " %d(exception block)"), b->successor_at(i)->rpo());
     }
     if (b->is_loop_head()) {
-      tty->print("  lphd");
+      tty->print("  loop head");
     }
     if (b->is_irreducible_loop_entry()) {
       tty->print("  irreducible");
@@ -1531,6 +1535,22 @@ void Parse::do_one_block() {
 
   // Set iterator to start of block.
   iter().reset_to_bci(block()->start());
+
+  if (ProfileExceptionHandlers && block()->is_handler()) {
+    ciMethodData* methodData = method()->method_data();
+    if (methodData->is_mature()) {
+      ciBitData data = methodData->exception_handler_bci_to_data(block()->start());
+      if (!data.exception_handler_entered() || StressPrunedExceptionHandlers) {
+        // dead catch block
+        // Emit an uncommon trap instead of processing the block.
+        set_parse_bci(block()->start());
+        uncommon_trap(Deoptimization::Reason_unreached,
+                      Deoptimization::Action_reinterpret,
+                      nullptr, "dead catch block");
+        return;
+      }
+    }
+  }
 
   CompileLog* log = C->log();
 
@@ -1751,7 +1771,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
 
     if (pnum == 1) {            // Last merge for this Region?
       if (!block()->flow()->is_irreducible_loop_secondary_entry()) {
-        Node* result = _gvn.transform_no_reclaim(r);
+        Node* result = _gvn.transform(r);
         if (r != result && TraceOptoParse) {
           tty->print_cr("Block #%d replace %d with %d", block()->rpo(), r->_idx, result->_idx);
         }
@@ -1815,7 +1835,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
           // Phis of pointers cannot lose the basic pointer type.
           debug_only(const Type* bt1 = phi->bottom_type());
           assert(bt1 != Type::BOTTOM, "should not be building conflict phis");
-          map()->set_req(j, _gvn.transform_no_reclaim(phi));
+          map()->set_req(j, _gvn.transform(phi));
           debug_only(const Type* bt2 = phi->bottom_type());
           assert(bt2->higher_equal_speculative(bt1), "must be consistent with type-flow");
           record_for_igvn(phi);
@@ -1894,7 +1914,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
         base = phi;  // delay transforming it
       } else if (pnum == 1) {
         record_for_igvn(phi);
-        p = _gvn.transform_no_reclaim(phi);
+        p = _gvn.transform(phi);
       }
       mms.set_memory(p);// store back through the iterator
     }
@@ -1902,7 +1922,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
   // Transform base last, in case we must fiddle with remerging.
   if (base != nullptr && pnum == 1) {
     record_for_igvn(base);
-    m->set_base_memory( _gvn.transform_no_reclaim(base) );
+    m->set_base_memory(_gvn.transform(base));
   }
 }
 

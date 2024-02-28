@@ -25,7 +25,7 @@
  * @test
  * @bug 4245280
  * @summary PrinterJob not cancelled when PrinterJob.cancel() is used
- * @author prr
+ * @key printer
  * @run main/manual PrinterJobCancel
  */
 

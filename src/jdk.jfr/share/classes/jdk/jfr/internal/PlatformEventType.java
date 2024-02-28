@@ -46,6 +46,7 @@ public final class PlatformEventType extends Type {
     private final List<SettingDescriptor> settings = new ArrayList<>(5);
     private final boolean dynamicSettings;
     private final int stackTraceOffset;
+    private long startFilterId = -1;
 
     // default values
     private boolean largeSize = false;
@@ -64,6 +65,7 @@ public final class PlatformEventType extends Type {
     private boolean markForInstrumentation;
     private boolean registered = true;
     private boolean committable = enabled && registered;
+    private boolean hasLevel = false;
 
     // package private
     PlatformEventType(String name, long id, boolean isJDK, boolean dynamicSettings) {
@@ -141,7 +143,17 @@ public final class PlatformEventType extends Type {
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
             long cutoffTicks = JVMSupport.nanosToTicks(cutoffNanos);
-            JVM.setCutoff(getId(), cutoffTicks);
+            JVM.setMiscellaneous(getId(), cutoffTicks);
+        }
+    }
+
+    public void setLevel(long level) {
+        setMiscellaneous(level);
+    }
+
+    private void setMiscellaneous(long value) {
+        if (isJVM) {
+            JVM.setMiscellaneous(getId(), value);
         }
     }
 
@@ -153,6 +165,14 @@ public final class PlatformEventType extends Type {
 
     public void setHasPeriod(boolean hasPeriod) {
         this.hasPeriod = hasPeriod;
+    }
+
+    public void setHasLevel(boolean hasLevel) {
+        this.hasLevel = hasLevel;
+    }
+
+    public boolean hasLevel() {
+        return this.hasLevel;
     }
 
     public boolean hasStackTrace() {
@@ -338,5 +358,17 @@ public final class PlatformEventType extends Type {
 
     public boolean isMethodSampling() {
         return isMethodSampling;
+    }
+
+    public void setStackFilterId(long id) {
+        startFilterId = id;
+    }
+
+    public boolean hasStackFilters() {
+        return startFilterId >= 0;
+    }
+
+    public long getStackFilterId() {
+        return startFilterId;
     }
 }

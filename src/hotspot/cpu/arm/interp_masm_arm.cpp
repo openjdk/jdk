@@ -39,6 +39,7 @@
 #include "oops/methodData.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -222,48 +223,6 @@ void InterpreterMacroAssembler::get_index_at_bcp(Register index, int bcp_offset,
   }
 }
 
-// Sets cache, index.
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size) {
-  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  assert_different_registers(cache, index);
-
-  get_index_at_bcp(index, bcp_offset, cache, index_size);
-
-  // load constant pool cache pointer
-  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
-
-  // convert from field index to ConstantPoolCacheEntry index
-  assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
-  logical_shift_left(index, index, 2);
-}
-
-// Sets cache, index, bytecode.
-void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size) {
-  get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
-  // caution index and bytecode can be the same
-  add(bytecode, cache, AsmOperand(index, lsl, LogBytesPerWord));
-  ldrb(bytecode, Address(bytecode, (1 + byte_no) + in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset())));
-  TemplateTable::volatile_barrier(MacroAssembler::LoadLoad, noreg, true);
-}
-
-// Sets cache. Blows reg_tmp.
-void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache, Register reg_tmp, int bcp_offset, size_t index_size) {
-  assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
-  assert_different_registers(cache, reg_tmp);
-
-  get_index_at_bcp(reg_tmp, bcp_offset, cache, index_size);
-
-  // load constant pool cache pointer
-  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
-
-  // skip past the header
-  add(cache, cache, in_bytes(ConstantPoolCache::base_offset()));
-  // convert from field index to ConstantPoolCacheEntry index
-  // and from word offset to byte offset
-  assert(sizeof(ConstantPoolCacheEntry) == 4*wordSize, "adjust code below");
-  add(cache, cache, AsmOperand(reg_tmp, lsl, 2 + LogBytesPerWord));
-}
-
 // Load object from cpool->resolved_references(index)
 void InterpreterMacroAssembler::load_resolved_reference_at_index(
                                            Register result, Register index) {
@@ -341,6 +300,24 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
     add(cache, cache, Array<ResolvedFieldEntry>::base_offset_in_bytes());
     add(cache, cache, index);
   }
+}
+
+void InterpreterMacroAssembler::load_method_entry(Register cache, Register index, int bcp_offset) {
+  assert_different_registers(cache, index);
+
+  // Get index out of bytecode pointer
+  get_index_at_bcp(index, bcp_offset, cache /* as tmp */, sizeof(u2));
+
+  // sizeof(ResolvedMethodEntry) is not a power of 2 on Arm, so can't use shift
+  mov(cache, sizeof(ResolvedMethodEntry));
+  mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedMethodEntry)
+
+  // load constant pool cache pointer
+  ldr(cache, Address(FP, frame::interpreter_frame_cache_offset * wordSize));
+  // Get address of method entries array
+  ldr(cache, Address(cache, in_bytes(ConstantPoolCache::method_entries_offset())));
+  add(cache, cache, Array<ResolvedMethodEntry>::base_offset_in_bytes());
+  add(cache, cache, index);
 }
 
 // Generate a subtype check: branch to not_subtype if sub_klass is

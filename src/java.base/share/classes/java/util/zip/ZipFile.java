@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,8 @@ import static java.util.zip.ZipUtils.*;
  */
 public class ZipFile implements ZipConstants, Closeable {
 
-    private final String name;     // zip file name
+    private final String filePath;     // zip file path
+    private final String fileName;     // name of the file
     private volatile boolean closeRequested;
 
     // The "resource" used by this zip file that needs to be
@@ -226,6 +227,7 @@ public class ZipFile implements ZipConstants, Closeable {
      *
      * @since 1.7
      */
+    @SuppressWarnings("this-escape")
     public ZipFile(File file, int mode, Charset charset) throws IOException
     {
         if (((mode & OPEN_READ) == 0) ||
@@ -245,7 +247,8 @@ public class ZipFile implements ZipConstants, Closeable {
         }
         Objects.requireNonNull(charset, "charset");
 
-        this.name = name;
+        this.filePath = name;
+        this.fileName = file.getName();
         long t0 = System.nanoTime();
 
         this.res = new CleanableResource(this, ZipCoder.get(charset), file, mode);
@@ -305,7 +308,9 @@ public class ZipFile implements ZipConstants, Closeable {
     }
 
     /**
-     * Returns the zip file comment, or null if none.
+     * Returns the zip file comment. If a comment does not exist or an error is
+     * encountered decoding the comment using the charset specified
+     * when opening the Zip file, then {@code null} is returned.
      *
      * @return the comment string for the zip file, or null if none
      *
@@ -319,7 +324,13 @@ public class ZipFile implements ZipConstants, Closeable {
             if (res.zsrc.comment == null) {
                 return null;
             }
-            return res.zsrc.zc.toString(res.zsrc.comment);
+            // If there is a problem decoding the byte array which represents
+            // the Zip file comment, return null;
+            try {
+                return res.zsrc.zc.toString(res.zsrc.comment);
+            } catch (IllegalArgumentException iae) {
+                return null;
+            }
         }
     }
 
@@ -483,7 +494,16 @@ public class ZipFile implements ZipConstants, Closeable {
      * @return the path name of the ZIP file
      */
     public String getName() {
-        return name;
+        return filePath;
+    }
+
+    /**
+     * {@return a string identifying this {@code ZipFile}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return this.fileName
+                + "@" + Integer.toHexString(System.identityHashCode(this));
     }
 
     private class ZipEntryIterator<T extends ZipEntry>
@@ -1222,16 +1242,17 @@ public class ZipFile implements ZipConstants, Closeable {
             int nlen = CENNAM(cen, pos);
             int elen = CENEXT(cen, pos);
             int clen = CENCOM(cen, pos);
-            if (entryPos + nlen > cen.length - ENDHDR) {
+            long headerSize = (long)CENHDR + nlen + clen + elen;
+            // CEN header size + name length + comment length + extra length
+            // should not exceed 65,535 bytes per the PKWare APP.NOTE
+            // 4.4.10, 4.4.11, & 4.4.12.  Also check that current CEN header will
+            // not exceed the length of the CEN array
+            if (headerSize > 0xFFFF || pos + headerSize > cen.length - ENDHDR) {
                 zerror("invalid CEN header (bad header size)");
             }
 
             if (elen > 0 && !DISABLE_ZIP64_EXTRA_VALIDATION) {
-                long extraStartingOffset = pos + CENHDR + nlen;
-                if ((int)extraStartingOffset != extraStartingOffset) {
-                    zerror("invalid CEN header (bad extra offset)");
-                }
-                checkExtraFields(pos, (int)extraStartingOffset, elen);
+                checkExtraFields(pos, entryPos + nlen, elen);
             } else if (elen == 0 && (CENSIZ(cen, pos) == ZIP64_MAGICVAL
                     || CENLEN(cen, pos) == ZIP64_MAGICVAL
                     || CENOFF(cen, pos) == ZIP64_MAGICVAL
@@ -1292,7 +1313,7 @@ public class ZipFile implements ZipConstants, Closeable {
 
                 int tagBlockSize = get16(cen, currentOffset);
                 currentOffset += Short.BYTES;
-                int tagBlockEndingOffset = currentOffset + tagBlockSize;
+                long tagBlockEndingOffset = (long)currentOffset + tagBlockSize;
 
                 //  The ending offset for this tag block should not go past the
                 //  offset for the end of the extra field

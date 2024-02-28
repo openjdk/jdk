@@ -73,6 +73,7 @@ public final class MetadataRepository {
                 EventType eventType = PrivateAccess.getInstance().newEventType(pEventType);
                 pEventType.setHasCutoff(eventType.getAnnotation(Cutoff.class) != null);
                 pEventType.setHasThrottle(eventType.getAnnotation(Throttle.class) != null);
+                pEventType.setHasLevel(eventType.getAnnotation(Level.class) != null);
                 pEventType.setHasPeriod(eventType.getAnnotation(Period.class) != null);
                 // Must add hook before EventControl is created as it removes
                 // annotations, such as Period and Threshold.
@@ -321,6 +322,9 @@ public final class MetadataRepository {
                     if (!knownIds.contains(pe.getId())) {
                         if (!pe.isJVM()) {
                             pe.setRegistered(false);
+                            if (pe.hasStackFilters()) {
+                                JVM.unregisterStackFilter(pe.getStackFilterId());
+                            }
                         }
                     }
                 }
@@ -354,5 +358,9 @@ public final class MetadataRepository {
 
     public synchronized List<Type> getVisibleTypes() {
         return TypeLibrary.getVisibleTypes();
+    }
+
+    public synchronized long registerStackFilter(String[] typeArray, String[] methodArray) {
+        return JVM.registerStackFilter(typeArray, methodArray);
     }
 }

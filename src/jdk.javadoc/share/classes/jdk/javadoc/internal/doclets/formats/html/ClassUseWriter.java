@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final TypeElement typeElement;
     Set<PackageElement> pkgToPackageAnnotations = null;
     final Map<PackageElement, List<Element>> pkgToClassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubclassTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToSubinterfaceTypeParameter;
+    final Map<PackageElement, List<Element>> pkgToImplementsTypeParameter;
     final Map<PackageElement, List<Element>> pkgToClassAnnotations;
     final Map<PackageElement, List<Element>> pkgToMethodTypeParameter;
     final Map<PackageElement, List<Element>> pkgToMethodArgTypeParameter;
@@ -105,6 +108,9 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         configuration.currentTypeElement = typeElement;
         this.pkgSet = new TreeSet<>(comparators.packageComparator());
         this.pkgToClassTypeParameter = pkgDivide(mapper.classToClassTypeParam);
+        this.pkgToSubclassTypeParameter = pkgDivide(mapper.classToSubclassTypeParam);
+        this.pkgToSubinterfaceTypeParameter = pkgDivide(mapper.classToSubinterfaceTypeParam);
+        this.pkgToImplementsTypeParameter = pkgDivide(mapper.classToImplementsTypeParam);
         this.pkgToClassAnnotations = pkgDivide(mapper.classToClassAnnotations);
         this.pkgToMethodTypeParameter = pkgDivide(mapper.classToMethodTypeParam);
         this.pkgToMethodArgTypeParameter = pkgDivide(mapper.classToMethodArgTypeParam);
@@ -338,6 +344,15 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         classSubWriter.addUseInfo(pkgToImplementingClass.get(pkg),
                 contents.getContent("doclet.ClassUse_ImplementingClass", classLink,
                 pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubclassTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubclassTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToSubinterfaceTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_SubinterfaceTypeParameter", classLink,
+                pkgLink), content);
+        classSubWriter.addUseInfo(pkgToImplementsTypeParameter.get(pkg),
+                contents.getContent("doclet.ClassUse_ImplementsTypeParameter", classLink,
+                pkgLink), content);
         fieldSubWriter.addUseInfo(pkgToField.get(pkg),
                 contents.getContent("doclet.ClassUse_Field", classLink,
                 pkgLink), content);
@@ -418,14 +433,18 @@ public class ClassUseWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content mdleLinkContent = getModuleLink(utils.elementUtils.getModuleOf(typeElement),
-                contents.moduleLabel);
-        Content classLinkContent = getLink(new HtmlLinkInfo(
-                configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
-                .label(resources.getText("doclet.Class"))
-                .skipPreview(true));
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(mdleLinkContent)
-                .setNavLinkClass(classLinkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(typeElement), false));
+        }
+        // We may generate a class-use page for an otherwise undocumented page in the condition below.
+        boolean isUndocumented = options.noDeprecated() && utils.isDeprecated(typeElement);
+        subnavLinks.add(getBreadcrumbLink(utils.containingPackage(typeElement), isUndocumented));
+        if (!isUndocumented) {
+            subnavLinks.add(getBreadcrumbLink(typeElement, true));
+        }
+
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }
+

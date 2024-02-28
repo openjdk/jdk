@@ -25,6 +25,7 @@
 /**
  * @test
  * @bug 8262470
+ * @key printer
  * @requires (os.family == "windows")
  * @summary Check thay shapes are properly painted with the precision scale factor
  * @run main/othervm/manual PathPrecisionScaleFactorShapeTest
