@@ -345,10 +345,6 @@
   product(bool, UseAdaptiveSizePolicyWithSystemGC, false,                   \
           "Include statistics from System.gc() for adaptive size policy")   \
                                                                             \
-  develop(intx, PSAdaptiveSizePolicyResizeVirtualSpaceAlot, -1,             \
-          "Resize the virtual spaces of the young or old generations")      \
-          range(-1, 1)                                                      \
-                                                                            \
   product(uint, AdaptiveSizeThroughPutPolicy, 0,                            \
           "Policy for changing generation size for throughput goals")       \
           range(0, 1)                                                       \
