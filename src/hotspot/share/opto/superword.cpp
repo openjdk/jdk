@@ -833,7 +833,7 @@ void SuperWord::dependence_graph() {
     tty->print_cr("\nCompilete Dependence graph:");
     for (int i = 0; i < body().length(); i++ ) {
       Node* n = body().at(i);
-      tty->print("DepPreds[%d %s depth(%d): ", n->_idx, n->Name(), depth(n));
+      tty->print(" d%02d DepPreds[%d %s: ", depth(n), n->_idx, n->Name());
       for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
         Node* pred = preds.current();
         tty->print("  %d %s", pred->_idx, pred->Name());

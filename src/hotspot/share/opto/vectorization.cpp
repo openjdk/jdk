@@ -207,11 +207,7 @@ void VLoopDependencyGraph::construct() {
 
   compute_depth();
 
-#ifndef PRODUCT
-  if (_vloop.is_trace_dependency_graph()) {
-    print();
-  }
-#endif
+  NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
 }
 
 void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& extra_def_edges) {
@@ -260,7 +256,7 @@ void VLoopDependencyGraph::print() const {
   tty->print_cr(" Complete dependency graph:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
-    tty->print("  Dependencies[%d %s depth(%d):", n->_idx, n->Name(), depth(n));
+    tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
     for (DefIterator it(*this, n); !it.done(); it.next()) {
       Node* def = it.current_def();
       tty->print("  %d %s", def->_idx, def->Name());
