@@ -125,7 +125,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
 $(BUILD_GTEST_LIBJVM) : $(BUILD_GTEST_LIBGTEST)
 
 ifeq ($(call isTargetOs, windows), true)
-  $(call CreateWinExportFile, $(GTEST_WIN_EXPORT_FILE), $(BUILD_GTEST_LIBJVM_ALL_OBJS))
+   $(eval $(call CreateWinExportFile, $(GTEST_WIN_EXPORT_FILE), $(BUILD_GTEST_LIBJVM_ALL_OBJS)))
 
   $(BUILD_GTEST_LIBJVM_TARGET): $(GTEST_WIN_EXPORT_FILE)
 endif
