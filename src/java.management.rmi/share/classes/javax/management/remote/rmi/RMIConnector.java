@@ -385,19 +385,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         return connection.getConnectionId();
     }
 
-    public synchronized MBeanServerConnection getMBeanServerConnection()
-    throws IOException {
-        return getMBeanServerConnection(null);
-    }
-
-    @SuppressWarnings("removal")
-    public synchronized MBeanServerConnection
-            getMBeanServerConnection(Subject delegationSubject)
-            throws IOException {
-
-        if (delegationSubject != null) {
-            throw new SecurityException("Subject Delegation has been removed.");
-        }
+    public synchronized MBeanServerConnection getMBeanServerConnection() throws IOException {
         if (terminated) {
             if (logger.traceOn())
                 logger.trace("getMBeanServerConnection","[" + this.toString() +

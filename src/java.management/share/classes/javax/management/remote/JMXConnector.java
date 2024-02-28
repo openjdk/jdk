@@ -155,9 +155,14 @@ public interface JMXConnector extends Closeable {
      * deprecated and subject to removal. There is no replacement.
      */
     @Deprecated(since="21", forRemoval=true)
-    public MBeanServerConnection getMBeanServerConnection(
-                                               Subject delegationSubject)
-            throws IOException;
+    public default MBeanServerConnection getMBeanServerConnection(Subject delegationSubject)
+            throws IOException {
+
+        if (delegationSubject != null) {
+            throw new SecurityException("Subject Delegation has been removed.");
+        }
+        return getMBeanServerConnection();
+    }
 
     /**
      * <p>Closes the client connection to its server.  Any ongoing or new
