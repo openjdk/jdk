@@ -251,7 +251,7 @@ public class CheckPermissions {
                 delete(target);
             }
 
-            if (TestUtil.supportsLinks(testdir)) {
+            if (TestUtil.supportsSymbolicLinks(testdir)) {
                 Path link = testdir.resolve("link1234");
                 createSymbolicLink(link, file);
                 try {
@@ -297,7 +297,7 @@ public class CheckPermissions {
 
             // -- createSymbolicLink --
 
-            if (TestUtil.supportsLinks(testdir)) {
+            if (TestUtil.supportsSymbolicLinks(testdir)) {
                 prepare();
                 Path link = testdir.resolve("link1234");
                 createSymbolicLink(link, file);

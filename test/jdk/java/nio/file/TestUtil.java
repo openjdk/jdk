@@ -102,7 +102,7 @@ public class TestUtil {
     /**
      * Returns true if symbolic links are supported
      */
-    static boolean supportsLinks(Path dir) {
+    static boolean supportsSymbolicLinks(Path dir) {
         Path link = dir.resolve("testlink");
         Path target = dir.resolve("testtarget");
         try {
