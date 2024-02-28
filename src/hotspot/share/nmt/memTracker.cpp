@@ -40,6 +40,7 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "services/mallocLimit.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/vmError.hpp"
@@ -53,6 +54,12 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 MemBaseline MemTracker::_baseline;
 
 void MemTracker::initialize() {
+#ifdef ASSERT
+  if (strlen(NMTPrintMemoryAllocationsSizesFor) > 0) {
+    NMT_MemoryLogRecorder::printActualSizesFor((const char*)NMTPrintMemoryAllocationsSizesFor);
+  }
+#endif
+
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
 

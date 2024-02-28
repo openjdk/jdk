@@ -589,9 +589,9 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, NMTPrintRecordedMemoryAllocations, false, DIAGNOSTIC,       \
           "Print the recorded entries at exit")                             \
                                                                             \
-  product(ccstrlist, NMTGetMemoryAllocationsSizes, "", DIAGNOSTIC,          \
+  product(ccstrlist, NMTPrintMemoryAllocationsSizesFor, "", DIAGNOSTIC,     \
           "Print the actual allocated memory sizes for given "              \
-          "comma separated lst of malloc sizes"                             \
+          "comma separated list of malloc sizes")                           \
                                                                             \
   product(bool, LogCompilation, false, DIAGNOSTIC,                          \
           "Log compilation activity in detail to LogFile")                  \

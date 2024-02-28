@@ -45,9 +45,9 @@
 
 /*
 
- This code collects malloc/realloc/free os requests (-XX:RecordMemoryAllocations=XXX) and has 2 purposes:
+ This code collects malloc/realloc/free os requests (-XX:NMTRecordMemoryAllocations=XXX) and has 2 purposes:
 
- #1 Print all the entries captured in the log (-XX:+PrintRecordedNMTEntries),
+ #1 Print all the entries captured in the log (-XX:+NMTPrintRecordedMemoryAllocations),
       which later can be "played back" to allow measuring the performance speed utilizing the exact same memory
       access pattern as the captured ones from the use case.
       This can be used to compare NMT off vs NMT summary vs NMT detail speed performance.
@@ -652,7 +652,7 @@ void NMT_MemoryLogRecorder::remember_thread_name(const char* name) {
 //  fprintf(stderr, "MemTracker::overhead_per_malloc(): %zu\n\n", MemTracker::overhead_per_malloc());
 //  calculate_good_sizes(entries, _count);
 //
-//  if (PrintRecordedMemoryAllocations) {
+//  if (NMTPrintRecordedMemoryAllocations) {
 //    print_records(entries, _count);
 //  }
 //
@@ -733,7 +733,7 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
 #endif // LINUX || __APPLE__
   volatile static int _log_fd = -1;
   volatile static size_t _count = 0;
-  volatile static bool _done = (RecordMemoryAllocations==0);
+  volatile static bool _done = (NMTRecordMemoryAllocations==0);
 
   if (!_done) {
 #if defined(LINUX) || defined(__APPLE__)
@@ -746,11 +746,11 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
         _log_fd = _prepare_log_file(MEMORY_LOG_FILE);
       }
       if (!_done && (_log_fd != -1)) {
-        bool triggered_by_limit = (_count >= (size_t)(RecordMemoryAllocations));
+        bool triggered_by_limit = (_count >= (size_t)(NMTRecordMemoryAllocations));
         bool triggered_by_request = ((requested == 0) && (ptr == nullptr));
         if (triggered_by_limit) {
           fprintf(stderr, "NMT memory recorder will exit.\n");
-          fprintf(stderr, "REASON: reached RecordMemoryAllocations limit: %ld/%ld\n\n", _count, RecordMemoryAllocations);
+          fprintf(stderr, "REASON: reached NMTRecordMemoryAllocations limit: %ld/%ld\n\n", _count, NMTRecordMemoryAllocations);
         } else if (triggered_by_request) {
           fprintf(stderr, "\n\n");
           fprintf(stderr, "REASON: triggered by exit\n\n");
@@ -841,6 +841,35 @@ void NMT_MemoryLogRecorder::log(MEMFLAGS flags, size_t requested, address ptr, a
     }
 
     _count++;
+  }
+}
+
+void NMT_MemoryLogRecorder::printActualSizesFor(const char* list) {
+  char* string = os::strdup(NMTPrintMemoryAllocationsSizesFor, mtNMT);
+  if (string != nullptr) {
+    char* token = strtok(string, ",");
+    while (token) {
+      long requested = strtol(token, nullptr, 10);
+      long actual = 0;
+      void *ptr = ALLOW_C_FUNCTION(::malloc, ::malloc(requested);)
+      if (ptr != nullptr) {
+#if defined(LINUX)
+        actual = ALLOW_C_FUNCTION(::malloc_usable_size, ::malloc_usable_size(ptr);)
+#elif defined(WINDOWS)
+        actual = ALLOW_C_FUNCTION(::_msize, ::_msize(ptr);)
+#elif defined(__APPLE__)
+        actual = ALLOW_C_FUNCTION(::malloc_size, ::malloc_size(ptr);)
+#endif
+        ALLOW_C_FUNCTION(::free, ::free(ptr);)
+      }
+      printf("%ld", actual);
+      token = strtok(NULL, ",");
+      if (token) {
+        printf(",");
+      }
+    }
+    printf("\n");
+    os::exit(0);
   }
 }
 
