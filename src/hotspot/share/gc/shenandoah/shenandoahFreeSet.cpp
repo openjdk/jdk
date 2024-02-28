@@ -472,7 +472,7 @@ void ShenandoahFreeSet::dump_bitmaps() {
   _partitions.dump_bitmap_all();
   for (ssize_t idx = _heap->num_regions() - 1; idx >= 0; idx--) {
     if (_partitions.in_free_set(Mutator, idx)) {
-      log_info(gc)(" Mutator region " SIZE_FORMAT " has capacity: " SIZE_FORMAT, idx, alloc_capacity(idx)); 
+      log_info(gc)(" Mutator region " SIZE_FORMAT " has capacity: " SIZE_FORMAT, idx, alloc_capacity(idx));
     }
   }
 }
