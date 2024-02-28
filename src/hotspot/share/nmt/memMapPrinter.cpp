@@ -112,7 +112,7 @@ public:
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
       ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
       if (_ranges == nullptr || _flags == nullptr) {
-        // In case of OOM lets make no fuzz. Just return.
+        // In case of OOM lets make no fuss. Just return.
         return false;
       }
       _capacity = new_capacity;
@@ -133,7 +133,7 @@ public:
     // are usually sorted in order of addresses, ascending.
     static uintx last = 0;
     if (to <= _ranges[last].from) {
-      // not sequential? restart at 0
+      // the range is to the right of the given section, we need to re-start the search
       last = 0;
     }
     MemFlagBitmap bm;
