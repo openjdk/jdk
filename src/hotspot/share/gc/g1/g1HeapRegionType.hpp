@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_GC_G1_HEAPREGIONTYPE_HPP
-#define SHARE_GC_G1_HEAPREGIONTYPE_HPP
+#ifndef SHARE_GC_G1_G1HEAPREGIONTYPE_HPP
+#define SHARE_GC_G1_G1HEAPREGIONTYPE_HPP
 
 #include "gc/g1/g1HeapRegionTraceType.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -167,4 +167,4 @@ public:
   static const HeapRegionType Humongous;
 };
 
-#endif // SHARE_GC_G1_HEAPREGIONTYPE_HPP
+#endif // SHARE_GC_G1_G1HEAPREGIONTYPE_HPP

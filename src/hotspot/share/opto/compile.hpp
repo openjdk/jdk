@@ -780,6 +780,7 @@ private:
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
+  void mark_unbalanced_boxes() const;
 
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
