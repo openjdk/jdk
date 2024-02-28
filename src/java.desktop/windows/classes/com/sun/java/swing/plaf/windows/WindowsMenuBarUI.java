@@ -139,6 +139,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class TakeFocus extends AbstractAction {
+        static boolean mnemonicShowHideFlag = false;
         public void actionPerformed(ActionEvent e) {
             JMenuBar menuBar = (JMenuBar)e.getSource();
             JMenu menu = menuBar.getMenu(0);
@@ -148,10 +149,15 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                 MenuElement[] path = new MenuElement[2];
                 path[0] = (MenuElement)menuBar;
                 path[1] = (MenuElement)menu;
-                msm.setSelectedPath(path);
-
-                // toggle between show and hide mnemonics
-                WindowsLookAndFeel.setMnemonicHidden(!WindowsLookAndFeel.isMnemonicHidden());
+                if (!mnemonicShowHideFlag) {
+                    msm.setSelectedPath(path);
+                    WindowsLookAndFeel.setMnemonicHidden(false);
+                    mnemonicShowHideFlag = true;
+                } else {
+                    msm.clearSelectedPath();
+                    WindowsLookAndFeel.setMnemonicHidden(true);
+                    mnemonicShowHideFlag = false;
+                }
                 WindowsLookAndFeel.repaintRootPane(menuBar);
             }
         }
