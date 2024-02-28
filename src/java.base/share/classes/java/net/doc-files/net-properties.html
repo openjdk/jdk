@@ -75,7 +75,9 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 {@linkplain java.net.ProxySelector#getDefault() default proxy selector}.</P>
 <UL>
 	<LI><P>HTTP</P>
-	<P>The following proxy settings are used with the {@code http://} URI scheme.</P>
+	<P>The following properties are used to configure the proxy
+		that is {@linkplain java.net.ProxySelector#select(URI) selected}
+		for URIs with the {@code http://} scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty http.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
@@ -95,7 +97,9 @@ to determine the proxy that should be used for connecting to a given URI.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
         </UL>
 	<LI><P>HTTPS</P>
-	<P>The following proxy settings are used with the {@code https://} URI scheme.</P>
+	<P>The following properties are used to configure the proxy
+		that is {@linkplain java.net.ProxySelector#select(URI) selected}
+		for URIs with the {@code https://} scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty https.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
@@ -106,7 +110,9 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 		property as the HTTP protocol.</P>
 	</UL>
 	<LI><P>FTP</P>
-	<P>The following proxy settings are used with the {@code ftp://} URI scheme.</P>
+	<P>The following properties are used to configure the proxy
+		that is {@linkplain java.net.ProxySelector#select(URI) selected}
+		for URIs with the {@code ftp://} scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty ftp.proxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.
@@ -126,9 +132,10 @@ to determine the proxy that should be used for connecting to a given URI.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
 	<LI><P>SOCKS</P>
-	<P>This is a lower-level proxy that is used with all of the above URI schemes
-		unless a scheme-specific proxy is configured.
-		It is also used with the {@code socket://} URI scheme.</P>
+	<P>This is a lower-level proxy that is
+		{@linkplain java.net.ProxySelector#select(URI) selected}
+		for all of the above URI schemes unless a scheme-specific proxy
+		is configured. It is also selected for the {@code socket://} URI scheme.</P>
 	<UL>
 		<LI><P><B>{@systemProperty socksProxyHost}</B> (default: &lt;none&gt;)<BR>
 	        The hostname, or address, of the proxy server.</P>
