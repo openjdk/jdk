@@ -2912,8 +2912,7 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
 
   int opcode = iff->Opcode();
   assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
-  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
-    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
+  IfNode* new_if = IfNode::make_with_same_profile(iff, proj2, bol);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach
@@ -4251,7 +4250,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   Node_List *split_if_set = nullptr;
   Node_List *split_bool_set = nullptr;
   Node_List *split_cex_set = nullptr;
-  fix_data_uses(wq, loop, ControlAroundStripMined, head->is_strip_mined() ? loop->_parent : loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+  fix_data_uses(wq, loop, ControlAroundStripMined, loop->skip_strip_mined(), new_counter, old_new, worklist,
+                split_if_set, split_bool_set, split_cex_set);
 
   finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
 
