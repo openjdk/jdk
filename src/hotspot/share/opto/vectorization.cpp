@@ -166,6 +166,13 @@ VStatus VLoopAnalyzer::setup_submodules_helper() {
   return VStatus::make_success();
 }
 
+// Construct the dependency graph:
+//  - Data-dependencies: implicit (taken from C2 node inputs).
+//  - Memory-dependencies:
+//    - No edges between different slices.
+//    - No Load-Load edges.
+//    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
+//      except if we can prove that the memory does not overlap.
 void VLoopDependencyGraph::construct() {
   const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
   const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
@@ -196,7 +203,7 @@ void VLoopDependencyGraph::construct() {
 
         VPointer p2(n2, _vloop);
         if (!VPointer::not_equal(p1.cmp(p2))) {
-          // Possibly overlapping addresses
+          // Possibly overlapping memory
           pred_nodes.append(_body.bb_idx(n2));
         }
       }

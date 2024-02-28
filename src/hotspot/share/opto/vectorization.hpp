@@ -444,8 +444,13 @@ private:
 };
 
 // Submodule of VLoopAnalyzer.
-// TODO desc
-// Mention: data dependencies implicit, here only additional edges, i.e. memory
+// The dependency graph is used to determine if nodes are independent, and can thus potentially
+// be executed in parallel. That is a prerequisite for packing nodes into vector operations.
+// The dependency graph is a combination:
+//  - Data-dependencies: they an directly be taken from the C2 node inputs.
+//  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
+//                         stores are serialized, even if their memory does not overlap. Thus,
+//                         we refine the memory-dependencies (see construct method).
 class VLoopDependencyGraph : public StackObj {
 private:
   class DependencyNode;
