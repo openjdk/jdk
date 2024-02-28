@@ -103,6 +103,7 @@ class CLibrary {
         private static final VarHandle c_oflag;
         private static final VarHandle c_cflag;
         private static final VarHandle c_lflag;
+        private static final int c_cc_offset;
         private static final VarHandle c_ispeed;
         private static final VarHandle c_ospeed;
 
@@ -116,6 +117,7 @@ class CLibrary {
                         MemoryLayout.sequenceLayout(32, ValueLayout.JAVA_BYTE).withName("c_cc"),
                         ValueLayout.JAVA_LONG.withName("c_ispeed"),
                         ValueLayout.JAVA_LONG.withName("c_ospeed"));
+                c_cc_offset = 32;
             } else if (OSUtils.IS_LINUX) {
                 LAYOUT = MemoryLayout.structLayout(
                         ValueLayout.JAVA_INT.withName("c_iflag"),
@@ -127,6 +129,7 @@ class CLibrary {
                         MemoryLayout.paddingLayout(3),
                         ValueLayout.JAVA_INT.withName("c_ispeed"),
                         ValueLayout.JAVA_INT.withName("c_ospeed"));
+                c_cc_offset = 17;
             } else {
                 throw new IllegalStateException("Unsupported system!");
             }
@@ -306,7 +309,7 @@ class CLibrary {
         }
 
         java.lang.foreign.MemorySegment c_cc() {
-            return seg.asSlice(32, 20);
+            return seg.asSlice(c_cc_offset, 20);
         }
 
         long c_ispeed() {
