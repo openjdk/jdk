@@ -403,7 +403,9 @@ public class ChoiceFormat extends NumberFormat {
      * Constructs a ChoiceFormat with limits and corresponding formats
      * based on the pattern. The syntax and error related caveats for the
      * ChoiceFormat pattern can be found in the {@linkplain ##patterns Patterns}
-     * section.
+     * section. Unlike {@link #ChoiceFormat(double[], String[])} this method will
+     * throw an {@code IllegalArgumentException} if the {@code limits} are not
+     * in ascending order.
      *
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is
