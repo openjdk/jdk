@@ -63,60 +63,72 @@ public class GenCPFullOfMH extends GenFullCP {
     @Override
     protected byte[] generateCPEntryData(byte[] bytes) {
         ClassModel cm = ClassFile.of().parse(bytes);
-        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData", MethodTypeDesc.ofDescriptor("()[B"), ClassFile.ACC_PUBLIC,
-                mb -> mb.withCode(
-                        cob -> {
-                            DirectMethodHandleDesc.Kind[] kinds = DirectMethodHandleDesc.Kind.values();
-                            DirectMethodHandleDesc.Kind kind = kinds[new Random().nextInt(kinds.length)];
+        bytes = ClassFile.of().transform(cm,
+                ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData",
+                        MethodTypeDesc.ofDescriptor("()[B"), ClassFile.ACC_PUBLIC,
+                        mb -> mb.withCode(
+                                cob -> {
+                                    DirectMethodHandleDesc.Kind[] kinds = DirectMethodHandleDesc.Kind.values();
+                                    DirectMethodHandleDesc.Kind kind = kinds[new Random().nextInt(kinds.length)];
 
-                            switch (kind) {
-                                case SETTER:
-                                case STATIC_SETTER:
-                                    cob.iconst_0();
-                                    break;
-                                case SPECIAL:
-                                case VIRTUAL:
-                                case INTERFACE_VIRTUAL:
-                                    cob.aconst_null();
-                                    break;
-                            }
+                                    switch (kind) {
+                                        case SETTER:
+                                        case STATIC_SETTER:
+                                            cob.iconst_0();
+                                            break;
+                                        case SPECIAL:
+                                        case VIRTUAL:
+                                        case INTERFACE_VIRTUAL:
+                                            cob.aconst_null();
+                                            break;
+                                    }
 
-                            MethodHandleDesc handle;
-                            switch (kind) {
-                                case GETTER:
-                                case SETTER:
-                                    handle = MethodHandleDesc.ofField(kind, ClassDesc.of(fullClassName), INSTANCE_FIELD_NAME, ClassDesc.ofDescriptor(INSTANCE_FIELD_SIGNATURE));
-                                    break;
-                                case GETTER:
-                                case SETTER:
-                                    handle = MethodHandleDesc.ofField(kind, ClassDesc.of(fullClassName), STATIC_FIELD_NAME, ClassDesc.ofDescriptor(STATIC_FIELD_SIGNATURE));
-                                    break;
-                                case CONSTRUCTOR:
-                                    handle = MethodHandleDesc.ofConstructor(ClassDesc.of(fullClassName), MethodTypeDesc.ofDescriptor(INIT_METHOD_SIGNATURE));
-                                    break;
-                                case STATIC:
-                                    handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(fullClassName), TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE));
-                                    break;
-                                case INTERFACE_VIRTUAL:
-                                    handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(getDummyInterfaceClassName()), INSTANCE_TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(INSTANCE_TARGET_METHOD_SIGNATURE));
-                                    break;
-                                case SPECIAL:
-                                case VIRTUAL:
-                                    handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(fullClassName), INSTANCE_TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(INSTANCE_TARGET_METHOD_SIGNATURE));
-                                    break;
-                                default:
-                                    throw new Error("Unexpected handle type " + kind);
-                            }
-                            cob.ldc(handle);
+                                    MethodHandleDesc handle;
+                                    switch (kind) {
+                                        case GETTER:
+                                        case SETTER:
+                                            handle = MethodHandleDesc.ofField(kind, ClassDesc.of(fullClassName),
+                                                    INSTANCE_FIELD_NAME,
+                                                    ClassDesc.ofDescriptor(INSTANCE_FIELD_SIGNATURE));
+                                            break;
+                                        case GETTER:
+                                        case SETTER:
+                                            handle = MethodHandleDesc.ofField(kind, ClassDesc.of(fullClassName),
+                                                    STATIC_FIELD_NAME, ClassDesc.ofDescriptor(STATIC_FIELD_SIGNATURE));
+                                            break;
+                                        case CONSTRUCTOR:
+                                            handle = MethodHandleDesc.ofConstructor(ClassDesc.of(fullClassName),
+                                                    MethodTypeDesc.ofDescriptor(INIT_METHOD_SIGNATURE));
+                                            break;
+                                        case STATIC:
+                                            handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(fullClassName),
+                                                    TARGET_METHOD_NAME,
+                                                    MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE));
+                                            break;
+                                        case INTERFACE_VIRTUAL:
+                                            handle = MethodHandleDesc.ofMethod(kind,
+                                                    ClassDesc.of(getDummyInterfaceClassName()),
+                                                    INSTANCE_TARGET_METHOD_NAME,
+                                                    MethodTypeDesc.ofDescriptor(INSTANCE_TARGET_METHOD_SIGNATURE));
+                                            break;
+                                        case SPECIAL:
+                                        case VIRTUAL:
+                                            handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(fullClassName),
+                                                    INSTANCE_TARGET_METHOD_NAME,
+                                                    MethodTypeDesc.ofDescriptor(INSTANCE_TARGET_METHOD_SIGNATURE));
+                                            break;
+                                        default:
+                                            throw new Error("Unexpected handle type " + kind);
+                                    }
+                                    cob.ldc(handle);
 
-                            switch (kind) {
-                                case GETTER:
-                                case STATIC_GETTER:
-                                    cob.pop();
-                                    break;
-                            }
-                        }
-                ))));
+                                    switch (kind) {
+                                        case GETTER:
+                                        case STATIC_GETTER:
+                                            cob.pop();
+                                            break;
+                                    }
+                                }))));
 
         return bytes;
     }
