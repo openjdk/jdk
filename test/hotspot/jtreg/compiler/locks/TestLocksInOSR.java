@@ -26,6 +26,7 @@
  * @bug 8322743
  * @summary EA incorrectly marks locks for elimination for escaped object which comes from Interpreter in OSR compilation.
  * @run main/othervm -XX:-TieredCompilation -Xcomp -XX:CompileCommand=compileonly,TestLocksInOSR*::* -XX:CompileCommand=quiet TestLocksInOSR
+ * @run main TestLocksInOSR
  */
 
 public class TestLocksInOSR {
