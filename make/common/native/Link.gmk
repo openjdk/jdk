@@ -27,7 +27,6 @@
 # This file contains functionality related to linking a native binary;
 # creating either a dynamic library, a static library or an executable.
 
-
 ################################################################################
 # GetEntitlementsFile
 # Find entitlements file for executable when signing on macosx. If no
@@ -49,14 +48,6 @@ GetEntitlementsFile = \
 
 ################################################################################
 define SetupLinking
-  ifneq ($(DISABLE_MAPFILES), true)
-    $1_REAL_MAPFILE := $$($1_MAPFILE)
-  endif
-
-  ifneq ($$($1_REAL_MAPFILE), )
-    $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
-  endif
-
   # Unless specifically set, stripping should only happen if symbols are also
   # being copied.
   $$(call SetIfEmpty, $1_STRIP_SYMBOLS, $$($1_COPY_DEBUG_SYMBOLS))
@@ -95,15 +86,7 @@ define CreateStaticLibrary
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
-  # Generating a static library, ie object file archive.
-  ifeq ($(STATIC_BUILD), true)
-    ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
-      STATIC_MAPFILE_DEP := $$($1_MAPFILE)
-    endif
-  endif
-
-  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_VARDEPS_FILE) \
-      $$(STATIC_MAPFILE_DEP)
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_VARDEPS_FILE)
 
   $1_AR_OBJ_ARG := $$($1_LD_OBJ_ARG)
   # With clang on linux, partial linking is enabled and 'AR' takes the output
@@ -136,28 +119,11 @@ define CreateStaticLibrary
 	    $$($1_AR) $$(ARFLAGS) $$($1_ARFLAGS) -r -cs $$($1_TARGET) \
 	        $$($1_AR_OBJ_ARG) $$($1_RES))
         ifeq ($(STATIC_BUILD), true)
-          ifeq ($$($1_USE_MAPFILE_FOR_SYMBOLS), true)
-	    $(CP) $$($1_MAPFILE) $$(@D)/$$(basename $$(@F)).symbols
-          else
-            # get the exported symbols from mapfiles and if there
-            # is no mapfile, get them from the archive
-	    $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
-	    if [ ! -z $$($1_MAPFILE) -a -e $$($1_MAPFILE) ]; then \
-	      $(ECHO) "Getting symbols from mapfile $$($1_MAPFILE)"; \
-	      $(AWK) '/global:/','/local:/' $$($1_MAPFILE) | \
-		  $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
-		  $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
-		  $$(@D)/$$(basename $$(@F)).symbols || true; \
-	      $(NM) $(NMFLAGS) $$($1_TARGET) | $(GREP)  " T " | \
-		  $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
-		  $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
-	    else \
-	      $(ECHO) "Getting symbols from nm"; \
-	      $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
-		  $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
-		  $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
-	    fi
-          endif
+	  $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
+	  $(ECHO) "Getting symbols from nm"; \
+	  $(NM) $(NMFLAGS) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+	      $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
+	      $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols
         endif
 endef
 
@@ -180,7 +146,7 @@ define CreateDynamicLibraryOrExecutable
   $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
-  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)
+  $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_VARDEPS_FILE)
 
   $$($1_TARGET): $$($1_TARGET_DEPS)
         ifneq ($$($1_OBJ_FILE_LIST), )

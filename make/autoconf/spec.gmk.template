@@ -617,10 +617,6 @@ INSTALL_NAME_TOOL := @INSTALL_NAME_TOOL@
 METAL := @METAL@
 METALLIB := @METALLIB@
 
-# Options to linker to specify a mapfile.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_MAPFILE = @SET_SHARED_LIBRARY_MAPFILE@
-
 #
 # Options for generating debug symbols
 COMPILE_WITH_DEBUG_SYMBOLS := @COMPILE_WITH_DEBUG_SYMBOLS@
