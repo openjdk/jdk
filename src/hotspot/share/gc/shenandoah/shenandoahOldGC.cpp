@@ -151,7 +151,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
   // We do not rebuild_free following increments of old marking because memory has not been reclaimed..  However, we may
   // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
   size_t allocation_runway = heap->young_heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
-  heap->adjust_generation_sizes_for_next_cycle(allocation_runway, 0, 0);
+  heap->compute_old_generation_balance(allocation_runway, 0);
 
   bool success;
   size_t region_xfer;

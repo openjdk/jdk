@@ -819,6 +819,12 @@ inline size_t ShenandoahHeap::get_young_evac_reserve() const {
   return _young_evac_reserve;
 }
 
+inline void ShenandoahHeap::reset_generation_reserves() {
+  set_young_evac_reserve(0);
+  set_old_evac_reserve(0);
+  set_promoted_reserve(0);
+}
+
 template<class T>
 inline void ShenandoahHeap::marked_object_iterate(ShenandoahHeapRegion* region, T* cl) {
   marked_object_iterate(region, cl, region->top());

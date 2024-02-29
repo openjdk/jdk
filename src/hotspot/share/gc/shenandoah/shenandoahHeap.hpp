@@ -482,6 +482,8 @@ public:
   inline size_t set_young_evac_reserve(size_t new_val);
   inline size_t get_young_evac_reserve() const;
 
+  inline void reset_generation_reserves();
+
   // Return the age census object for young gen (in generational mode)
   inline ShenandoahAgeCensus* age_census() const;
 
@@ -854,7 +856,7 @@ public:
   void retire_plab(PLAB* plab, Thread* thread);
   void cancel_old_gc();
 
-  void adjust_generation_sizes_for_next_cycle(size_t old_xfer_limit, size_t young_cset_regions, size_t old_cset_regions);
+  void compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions);
 
 // ---------- Helper functions
 //

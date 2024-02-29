@@ -123,6 +123,9 @@ private:
   size_t used() const override { return _used; }
   size_t available() const override;
   size_t available_with_reserve() const;
+  size_t used_including_humongous_waste() const {
+    return used() + get_humongous_waste();
+  }
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger

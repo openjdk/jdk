@@ -31,6 +31,36 @@
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "logging/log.hpp"
 
+// A closure that takes an oop in the old generation and, if it's pointing
+// into the young generation, dirties the corresponding remembered set entry.
+// This is only used to rebuild the remembered set after a full GC.
+class ShenandoahDirtyRememberedSetClosure : public BasicOopIterateClosure {
+protected:
+  ShenandoahHeap*    const _heap;
+  RememberedScanner* const _scanner;
+
+public:
+  ShenandoahDirtyRememberedSetClosure() :
+          _heap(ShenandoahHeap::heap()),
+          _scanner(_heap->card_scan()) {}
+
+  template<class T>
+  inline void work(T* p) {
+    assert(_heap->is_in_old(p), "Expecting to get an old gen address");
+    T o = RawAccess<>::oop_load(p);
+    if (!CompressedOops::is_null(o)) {
+      oop obj = CompressedOops::decode_not_null(o);
+      if (_heap->is_in_young(obj)) {
+        // Dirty the card containing the cross-generational pointer.
+        _scanner->mark_card_as_dirty((HeapWord*) p);
+      }
+    }
+  }
+
+  virtual void do_oop(narrowOop* p) { work(p); }
+  virtual void do_oop(oop* p)       { work(p); }
+};
+
 ShenandoahDirectCardMarkRememberedSet::ShenandoahDirectCardMarkRememberedSet(ShenandoahCardTable* card_table, size_t total_card_count) :
   LogCardValsPerIntPtr(log2i_exact(sizeof(intptr_t)) - log2i_exact(sizeof(CardValue))),
   LogCardSizeInWords(log2i_exact(CardTable::card_size_in_words())) {
@@ -370,4 +400,58 @@ ShenandoahRegionChunkIterator::ShenandoahRegionChunkIterator(ShenandoahHeap* hea
 
 void ShenandoahRegionChunkIterator::reset() {
   _index = 0;
+}
+
+ShenandoahReconstructRememberedSetTask::ShenandoahReconstructRememberedSetTask(ShenandoahRegionIterator* regions)
+  : WorkerTask("Shenandoah Reset Bitmap")
+  , _regions(regions) { }
+
+void ShenandoahReconstructRememberedSetTask::work(uint worker_id) {
+  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahHeapRegion* r = _regions->next();
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
+  RememberedScanner* scanner = heap->card_scan();
+  ShenandoahDirtyRememberedSetClosure dirty_cards_for_cross_generational_pointers;
+
+  while (r != nullptr) {
+    if (r->is_old() && r->is_active()) {
+      HeapWord* obj_addr = r->bottom();
+      if (r->is_humongous_start()) {
+        // First, clear the remembered set
+        oop obj = cast_to_oop(obj_addr);
+        size_t size = obj->size();
+
+        // First, clear the remembered set for all spanned humongous regions
+        size_t num_regions = ShenandoahHeapRegion::required_regions(size * HeapWordSize);
+        size_t region_span = num_regions * ShenandoahHeapRegion::region_size_words();
+        scanner->reset_remset(r->bottom(), region_span);
+        size_t region_index = r->index();
+        ShenandoahHeapRegion* humongous_region = heap->get_region(region_index);
+        while (num_regions-- != 0) {
+          scanner->reset_object_range(humongous_region->bottom(), humongous_region->end());
+          region_index++;
+          humongous_region = heap->get_region(region_index);
+        }
+
+        // Then register the humongous object and DIRTY relevant remembered set cards
+        scanner->register_object_without_lock(obj_addr);
+        obj->oop_iterate(&dirty_cards_for_cross_generational_pointers);
+      } else if (!r->is_humongous()) {
+        // First, clear the remembered set
+        scanner->reset_remset(r->bottom(), ShenandoahHeapRegion::region_size_words());
+        scanner->reset_object_range(r->bottom(), r->end());
+
+        // Then iterate over all objects, registering object and DIRTYing relevant remembered set cards
+        HeapWord* t = r->top();
+        while (obj_addr < t) {
+          oop obj = cast_to_oop(obj_addr);
+          size_t size = obj->size();
+          scanner->register_object_without_lock(obj_addr);
+          obj_addr += obj->oop_iterate_size(&dirty_cards_for_cross_generational_pointers);
+        }
+      } // else, ignore humongous continuation region
+    }
+    // else, this region is FREE or YOUNG or inactive and we can ignore it.
+    r = _regions->next();
+  }
 }

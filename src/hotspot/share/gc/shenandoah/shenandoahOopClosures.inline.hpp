@@ -55,16 +55,4 @@ inline void ShenandoahConcUpdateRefsClosure::work(T* p) {
   _heap->conc_update_with_forwarded(p);
 }
 
-template<class T>
-inline void ShenandoahSetRememberedCardsToDirtyClosure::work(T* p) {
-  T o = RawAccess<>::oop_load(p);
-  if (!CompressedOops::is_null(o)) {
-    oop obj = CompressedOops::decode_not_null(o);
-    if (_heap->is_in_young(obj)) {
-      // Found interesting pointer.  Mark the containing card as dirty.
-      _scanner->mark_card_as_dirty((HeapWord*) p);
-    }
-  }
-}
-
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHOOPCLOSURES_INLINE_HPP

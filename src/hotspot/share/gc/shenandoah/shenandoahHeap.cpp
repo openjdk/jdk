@@ -1242,10 +1242,9 @@ void ShenandoahHeap::cancel_old_gc() {
 
 // Make sure old-generation is large enough, but no larger than is necessary, to hold mixed evacuations
 // and promotions, if we anticipate either. Any deficit is provided by the young generation, subject to
-// xfer_limit, and any excess is transferred to the young generation.
+// xfer_limit, and any surplus is transferred to the young generation.
 // xfer_limit is the maximum we're able to transfer from young to old.
-void ShenandoahHeap::adjust_generation_sizes_for_next_cycle(
-  size_t xfer_limit, size_t young_cset_regions, size_t old_cset_regions) {
+void ShenandoahHeap::compute_old_generation_balance(size_t old_xfer_limit, size_t old_cset_regions) {
 
   // We can limit the old reserve to the size of anticipated promotions:
   // max_old_reserve is an upper bound on memory evacuated from old and promoted to old,
@@ -1271,7 +1270,7 @@ void ShenandoahHeap::adjust_generation_sizes_for_next_cycle(
 
   // In the case that ShenandoahOldEvacRatioPercent equals 100, max_old_reserve is limited only by xfer_limit.
 
-  const size_t bound_on_old_reserve = old_available + xfer_limit + young_reserve;
+  const size_t bound_on_old_reserve = old_available + old_xfer_limit + young_reserve;
   const size_t max_old_reserve = (ShenandoahOldEvacRatioPercent == 100)?
     bound_on_old_reserve: MIN2((young_reserve * ShenandoahOldEvacRatioPercent) / (100 - ShenandoahOldEvacRatioPercent),
                                bound_on_old_reserve);
@@ -1334,7 +1333,7 @@ void ShenandoahHeap::adjust_generation_sizes_for_next_cycle(
     // Round down the regions we can transfer from young to old. If we're running short
     // on young-gen memory, we restrict the xfer. Old-gen collection activities will be
     // curtailed if the budget is restricted.
-    const size_t max_old_region_xfer = xfer_limit / region_size_bytes;
+    const size_t max_old_region_xfer = old_xfer_limit / region_size_bytes;
     old_region_deficit = MIN2(old_region_deficit, max_old_region_xfer);
   }
   assert(old_region_deficit == 0 || old_region_surplus == 0, "Only surplus or deficit, never both");
@@ -3179,7 +3178,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
     size_t allocation_runway = young_heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
-    adjust_generation_sizes_for_next_cycle(allocation_runway, young_cset_regions, old_cset_regions);
+    compute_old_generation_balance(allocation_runway, old_cset_regions);
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
     // memory represents more than 16 regions worth of data.  Note that fragmentation may increase when we promote regular

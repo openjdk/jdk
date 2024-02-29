@@ -174,7 +174,6 @@
 // These limitations will be addressed in future enhancements to the
 // existing implementation.
 
-#include <stdint.h>
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -1047,5 +1046,17 @@ class ShenandoahScanRememberedTask : public WorkerTask {
   void do_work(uint worker_id);
 };
 
+// After Full GC is done, reconstruct the remembered set by iterating over OLD regions,
+// registering all objects between bottom() and top(), and dirtying the cards containing
+// cross-generational pointers.
+class ShenandoahReconstructRememberedSetTask : public WorkerTask {
+private:
+  ShenandoahRegionIterator* _regions;
+
+public:
+  explicit ShenandoahReconstructRememberedSetTask(ShenandoahRegionIterator* regions);
+
+  void work(uint worker_id) override;
+};
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHSCANREMEMBERED_HPP

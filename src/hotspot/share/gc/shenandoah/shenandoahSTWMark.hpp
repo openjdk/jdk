@@ -26,6 +26,7 @@
 #define SHARE_GC_SHENANDOAH_SHENANDOAHSTWMARK_HPP
 
 #include "gc/shenandoah/shenandoahMark.hpp"
+#include "gc/shenandoah/shenandoahRootProcessor.hpp"
 
 class ShenandoahSTWMarkTask;
 class ShenandoahGeneration;
