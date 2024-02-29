@@ -1,5 +1,6 @@
 /*
- * Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (C) 2021, 2024 THL A29 Limited, a Tencent company. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +123,7 @@ public class SigAlgosExtTestWithTLS12 extends SSLEngineTemplate {
                         "Expected SSLHandshakeException wasn't thrown");
             }
         } catch (SSLHandshakeException e) {
-            if (EXPECT_FAIL && e.getMessage().equals(
+            if (EXPECT_FAIL && e.getMessage().endsWith(
                     "No supported signature algorithm")) {
                 System.out.println("Expected SSLHandshakeException");
             } else {

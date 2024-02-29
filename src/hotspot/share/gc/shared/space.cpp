@@ -40,7 +40,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-ContiguousSpace::ContiguousSpace(): Space(),
+ContiguousSpace::ContiguousSpace():
+  _bottom(nullptr),
+  _end(nullptr),
   _next_compaction_space(nullptr),
   _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
@@ -75,9 +77,6 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
 void ContiguousSpace::set_top_for_allocations() {
   mangler()->set_top_for_allocations(top());
 }
@@ -100,35 +99,13 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-
-void Space::print_short() const { print_short_on(tty); }
-
-void Space::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
-}
-
-void Space::print() const { print_on(tty); }
-
-void Space::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(end()));
-}
+void ContiguousSpace::print() const { print_on(tty); }
 
 void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(end()));
+  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               capacity() / K, (int) ((double) used() * 100 / capacity()),
+               p2i(bottom()), p2i(top()), p2i(end()));
 }
-
-#if INCLUDE_SERIALGC
-void TenuredSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(end()));
-}
-#endif
 
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
@@ -165,26 +142,6 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
     }
     assert(oopDesc::is_oop(cast_to_oop(last)), PTR_FORMAT " should be an object start", p2i(last));
     return last;
-  }
-}
-
-size_t ContiguousSpace::block_size(const HeapWord* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  HeapWord* current_top = top();
-  assert(p <= current_top,
-         "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-         p2i(p), p2i(current_top));
-  assert(p == current_top || oopDesc::is_oop(cast_to_oop(p)),
-         "p (" PTR_FORMAT ") is not a block start - "
-         "current_top: " PTR_FORMAT ", is_oop: %s",
-         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(cast_to_oop(p))));
-  if (p < current_top) {
-    return cast_to_oop(p)->size();
-  } else {
-    assert(p == current_top, "just checking");
-    return pointer_delta(end(), (HeapWord*) p);
   }
 }
 

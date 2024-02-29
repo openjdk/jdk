@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,13 +32,13 @@ include LauncherCommon.gmk
 ifeq ($(call isTargetOs, linux), true)
   JPACKAGE_APPLAUNCHER_SRC := \
       $(call FindSrcDirsForComponent, jdk.jpackage, applauncher)
-  JPACKAGE_APPLAUNCHER_TOOLCHAIN := TOOLCHAIN_DEFAULT
+  JPACKAGE_APPLAUNCHER_LINK_TYPE := C
   JPACKAGE_APPLAUNCHER_INCLUDE_FILES := %.c
 else
   JPACKAGE_APPLAUNCHER_SRC := \
       $(call FindSrcDirsForComponent, jdk.jpackage, applauncher) \
       $(call FindSrcDirsForComponent, jdk.jpackage, common)
-  JPACKAGE_APPLAUNCHER_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  JPACKAGE_APPLAUNCHER_LINK_TYPE := C++
 endif
 
 
@@ -59,11 +59,11 @@ JPACKAGE_APPLAUNCHER_INCLUDES := $(addprefix -I, $(JPACKAGE_APPLAUNCHER_SRC))
 # Output app launcher executable in resources dir, and symbols in the object dir
 $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     NAME := jpackageapplauncher, \
+    LINK_TYPE := $(JPACKAGE_APPLAUNCHER_LINK_TYPE), \
     OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
     SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncher, \
     SRC := $(JPACKAGE_APPLAUNCHER_SRC), \
     INCLUDE_FILES := $(JPACKAGE_APPLAUNCHER_INCLUDE_FILES), \
-    TOOLCHAIN := $(JPACKAGE_APPLAUNCHER_TOOLCHAIN), \
     OPTIMIZATION := LOW, \
     DISABLED_WARNINGS_clang_LinuxPackage.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
@@ -103,7 +103,7 @@ ifeq ($(call isTargetOs, linux), true)
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjpackageapplauncheraux, \
       SRC := $(JPACKAGE_LIBAPPLAUNCHER_SRC), \
       EXCLUDE_FILES := LinuxLauncher.c LinuxPackage.c, \
-      TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+      LINK_TYPE := C++, \
       OPTIMIZATION := LOW, \
       DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
@@ -177,10 +177,10 @@ ifeq ($(call isTargetOs, windows), true)
   # Build non-console version of launcher
   $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHERWEXE, \
       NAME := jpackageapplauncherw, \
+      LINK_TYPE := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LINK_TYPE), \
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jpackageapplauncherw, \
       SRC := $(BUILD_JPACKAGE_APPLAUNCHEREXE_SRC), \
-      TOOLCHAIN := $(BUILD_JPACKAGE_APPLAUNCHEREXE_TOOLCHAIN), \
       OPTIMIZATION := $(BUILD_JPACKAGE_APPLAUNCHEREXE_OPTIMIZATION), \
       CXXFLAGS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_CXXFLAGS), \
       CXXFLAGS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_CXXFLAGS_windows) -DJP_LAUNCHERW, \

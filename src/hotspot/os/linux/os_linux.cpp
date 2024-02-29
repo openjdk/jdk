@@ -85,6 +85,8 @@
 #endif
 
 // put OS-includes here
+# include <ctype.h>
+# include <stdlib.h>
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -340,6 +342,29 @@ static void next_line(FILE *f) {
   do {
     c = fgetc(f);
   } while (c != '\n' && c != EOF);
+}
+
+void os::Linux::kernel_version(long* major, long* minor) {
+  *major = -1;
+  *minor = -1;
+
+  struct utsname buffer;
+  int ret = uname(&buffer);
+  if (ret != 0) {
+    log_warning(os)("uname(2) failed to get kernel version: %s", os::errno_name(ret));
+    return;
+  }
+
+  char* walker = buffer.release;
+  long* set_v = major;
+  while (*minor == -1 && walker != nullptr) {
+    if (isdigit(walker[0])) {
+      *set_v = strtol(walker, &walker, 10);
+      set_v = minor;
+    } else {
+      ++walker;
+    }
+  }
 }
 
 bool os::Linux::get_tick_information(CPUPerfTicks* pticks, int which_logical_cpu) {
@@ -3935,8 +3960,12 @@ void os::Linux::large_page_init() {
     // In THP mode:
     // - os::large_page_size() is the *THP page size*
     // - os::pagesizes() has two members, the THP page size and the system page size
-    assert(HugePages::thp_pagesize() > 0, "Missing OS info");
     _large_page_size = HugePages::thp_pagesize();
+    if (_large_page_size == 0) {
+        log_info(pagesize) ("Cannot determine THP page size (kernel < 4.10 ?)");
+        _large_page_size = HugePages::thp_pagesize_fallback();
+        log_info(pagesize) ("Assuming THP page size to be: " EXACTFMT " (heuristics)", EXACTFMTARGS(_large_page_size));
+    }
     _page_sizes.add(_large_page_size);
     _page_sizes.add(os::vm_page_size());
     // +UseTransparentHugePages implies +UseLargePages
@@ -5061,51 +5090,6 @@ jlong os::current_file_offset(int fd) {
 // move file pointer to the specified offset
 jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
-}
-
-// Map a block of memory.
-char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec) {
-  int prot;
-  int flags = MAP_PRIVATE;
-
-  if (read_only) {
-    prot = PROT_READ;
-  } else {
-    prot = PROT_READ | PROT_WRITE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
-  }
-
-  if (addr != nullptr) {
-    flags |= MAP_FIXED;
-  }
-
-  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
-                                     fd, file_offset);
-  if (mapped_address == MAP_FAILED) {
-    return nullptr;
-  }
-  return mapped_address;
-}
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
-}
-
-
-// Unmap a block of memory.
-bool os::pd_unmap_memory(char* addr, size_t bytes) {
-  return munmap(addr, bytes) == 0;
 }
 
 static jlong slow_thread_cpu_time(Thread *thread, bool user_sys_cpu_time);
