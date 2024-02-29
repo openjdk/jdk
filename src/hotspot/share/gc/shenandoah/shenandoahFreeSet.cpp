@@ -385,7 +385,7 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
       array_idx = last_idx / _bits_per_array_element;
       bit_number = last_idx % _bits_per_array_element;
       element_bits = _bitmap[array_idx];
-      if (bit_number < 63){
+      if (bit_number < _bits_per_array_element - 1){
         size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
         element_bits &= mask_in;
       }
@@ -402,7 +402,12 @@ void ShenandoahRegionPartitions::dump_bitmap_all() const {
                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
                _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
-  log_info(gc)("%6s: %18s %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "Conflicted Bits", "NotFree Bits");
+
+#ifdef _LP64
+  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+#else
+  log_info(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+#endif
   dump_bitmap_range(0, _max-1);
 }
 
@@ -423,11 +428,10 @@ void ShenandoahRegionPartitions::dump_bitmap_row(ssize_t idx) const {
   ssize_t aligned_idx = _membership[Mutator].aligned_index(idx);
   size_t mutator_bits = _membership[Mutator].bits_at(aligned_idx);
   size_t collector_bits = _membership[Collector].bits_at(aligned_idx);
-  size_t conflicted_bits = mutator_bits & collector_bits;
   size_t free_bits = mutator_bits | collector_bits;
   size_t notfree_bits =  ~free_bits;
-  log_info(gc)("%6ld: 0x%016lx 0x%016lx 0x%016lx 0x%016lx",
-               aligned_idx, mutator_bits, collector_bits, conflicted_bits, notfree_bits);
+  log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
+               aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
 
 ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set) :
