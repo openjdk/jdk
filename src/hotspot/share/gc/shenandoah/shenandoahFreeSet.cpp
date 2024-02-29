@@ -396,9 +396,10 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
 }
 
 void ShenandoahRegionPartitions::dump_bitmap_all() const {
-  log_info(gc)("Mutator range [%ld, %ld], Collector range [%ld, %ld]",
+  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts[Mutator], _rightmosts[Mutator], _leftmosts[Collector], _rightmosts[Collector]);
-  log_info(gc)("Empty Mutator range [%ld, %ld], Empty Collector range [%ld, %ld]",
+  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+               "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
                _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
   log_info(gc)("%6s: %18s %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "Conflicted Bits", "NotFree Bits");
