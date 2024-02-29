@@ -146,17 +146,17 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
             if (menu != null) {
                 MenuSelectionManager msm =
                     MenuSelectionManager.defaultManager();
-                MenuElement[] path = new MenuElement[2];
-                path[0] = (MenuElement)menuBar;
-                path[1] = (MenuElement)menu;
-                if (!mnemonicShowHideFlag) {
-                    msm.setSelectedPath(path);
-                    WindowsLookAndFeel.setMnemonicHidden(false);
-                    mnemonicShowHideFlag = true;
-                } else {
+                MenuElement[] selectedPath = msm.getSelectedPath();
+                //MenuElement[] path = new MenuElement[2];
+                //path[0] = (MenuElement)menuBar;
+                //path[1] = (MenuElement)menu;
+                if (selectedPath.length > 0 && (selectedPath[0] instanceof JMenuBar)) {
                     msm.clearSelectedPath();
                     WindowsLookAndFeel.setMnemonicHidden(true);
-                    mnemonicShowHideFlag = false;
+                } else {
+                    MenuElement[] path = {menuBar, menu};
+                    msm.setSelectedPath(path);
+                    WindowsLookAndFeel.setMnemonicHidden(false);
                 }
                 WindowsLookAndFeel.repaintRootPane(menuBar);
             }
