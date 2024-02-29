@@ -27,7 +27,7 @@
  * @summary Test of diagnostic command VM.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvmdebug.find=true -XX:+UnlockDiagnosticVMOptions VMDebugTest
+ * @run testng/othervm -Dvmdebug.enabled=true -XX:+UnlockDiagnosticVMOptions VMDebugTest
  */
 
 /*
@@ -36,7 +36,7 @@
  * @summary Test of diagnostic command VM.debug
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
- * @run testng/othervm -Dvmdebug.find=false VMDebugTest
+ * @run testng/othervm -Dvmdebug.enabled=false VMDebugTest
  */
 
 import org.testng.annotations.Test;
@@ -69,6 +69,18 @@ public class VMDebugTest {
         BigInteger ptr = null;
         OutputAnalyzer output = null;
 
+        // Testing VM.debug requires UnlockDiagnosticVMOptions or a debug JVM.
+        // This test runs with a System Property set as a hint whether UnlockDiagnosticVMOptions is set.
+        boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vmdebug.find");
+        System.out.println("VM.debug should be enabled = " + enabled);
+        if (!enabled) {
+            // Use any pointer, command should be refused:
+            output = executor.execute("VM.debug find 0x0");
+            output.shouldContain("-XX:+UnlockDiagnosticVMOptions is required");
+            return; // no more testing
+        } 
+
+        // Tests with VM.debug enabled:
         output = executor.execute("help");
         output.shouldNotContain("VM.debug"); // debug is not promoted in help
         output = executor.execute("help VM.debug");
@@ -99,17 +111,8 @@ public class VMDebugTest {
         output = executor.execute("VM.debug findmethod java/lang/String contains 3");
         output.shouldContain("class java/lang/String");
 
-        // Test VM.debug find: requires UnlockDiagnosticVMOptions or a debug JVM.
-        // This test runs with a System Property set as a hint whether UnlockDiagnosticVMOptions is set.
-        boolean findEnabled = Platform.isDebugBuild() || Boolean.getBoolean("vmdebug.find");
-        System.out.println("VM.debug find should be enabled = " + findEnabled);
-        if (!findEnabled) {
-            // Use any pointer, command should be refused:
-            output = executor.execute("VM.debug find 0x0");
-            output.shouldContain("find requires -XX:+UnlockDiagnosticVMOptions");
-        } else {
-            testFind(executor);
-        }
+        // Test VM.debug find:
+        testFind(executor);
     }
 
     public void testFind(CommandExecutor executor) {
