@@ -1364,7 +1364,7 @@ void Arguments::no_shared_spaces(const char* message) {
   }
 }
 
-void set_object_alignment() {
+static void set_object_alignment() {
   // Object alignment.
   assert(is_power_of_2(ObjectAlignmentInBytes), "ObjectAlignmentInBytes must be power of 2");
   MinObjAlignmentInBytes     = ObjectAlignmentInBytes;
@@ -2009,11 +2009,12 @@ jint Arguments::parse_vm_init_args(const JavaVMInitArgs *vm_options_args,
   return JNI_OK;
 }
 
+#if !INCLUDE_JVMTI
 // Checks if name in command-line argument -agent{lib,path}:name[=options]
 // represents a valid JDWP agent.  is_path==true denotes that we
 // are dealing with -agentpath (case where name is a path), otherwise with
 // -agentlib
-bool valid_jdwp_agent(char *name, bool is_path) {
+static bool valid_jdwp_agent(char *name, bool is_path) {
   char *_name;
   const char *_jdwp = "jdwp";
   size_t _len_jdwp, _len_prefix;
@@ -2053,6 +2054,7 @@ bool valid_jdwp_agent(char *name, bool is_path) {
 
   return false;
 }
+#endif
 
 int Arguments::process_patch_mod_option(const char* patch_mod_tail, bool* patch_mod_javabase) {
   // --patch-module=<module>=<file>(<pathsep><file>)*

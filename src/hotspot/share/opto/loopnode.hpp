@@ -1098,6 +1098,7 @@ private:
   // Compute the Ideal Node to Loop mapping
   PhaseIdealLoop(PhaseIterGVN& igvn, LoopOptsMode mode) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(nullptr),
     _verify_only(false),
@@ -1112,6 +1113,7 @@ private:
   // or only verify that the graph is valid if verify_me is null.
   PhaseIdealLoop(PhaseIterGVN& igvn, const PhaseIdealLoop* verify_me = nullptr) :
     PhaseTransform(Ideal_Loop),
+    _loop_or_ctrl(igvn.C->comp_arena()),
     _igvn(igvn),
     _verify_me(verify_me),
     _verify_only(verify_me == nullptr),
@@ -1742,6 +1744,8 @@ public:
   void update_addp_chain_base(Node* x, Node* old_base, Node* new_base);
 
   bool can_move_to_inner_loop(Node* n, LoopNode* n_loop, Node* x);
+
+  void pin_array_access_nodes_dependent_on(Node* ctrl);
 };
 
 

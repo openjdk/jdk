@@ -201,9 +201,6 @@ class DefNewGeneration: public Generation {
   // Return true if the expansion was successful.
   bool expand(size_t bytes);
 
-  // DefNewGeneration cannot currently expand except at
-  // a GC.
-  virtual bool is_maximal_no_gc() const { return true; }
 
   // Iteration
   void object_iterate(ObjectClosure* blk);

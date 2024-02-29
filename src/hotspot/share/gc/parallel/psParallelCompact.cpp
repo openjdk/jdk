@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ void PSParallelCompact::print_region_ranges() {
   }
 }
 
-void
+static void
 print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
 {
 #define REGION_IDX_FORMAT        SIZE_FORMAT_W(7)
@@ -312,7 +312,7 @@ print_generic_summary_data(ParallelCompactData& summary_data,
   }
 }
 
-void
+static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            const MutableSpace* space) {
   if (space->top() == space->bottom()) {
@@ -393,7 +393,7 @@ print_initial_summary_data(ParallelCompactData& summary_data,
                                     max_reclaimed_ratio_region, max_dead_to_right, max_live_to_right, max_reclaimed_ratio);
 }
 
-void
+static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            SpaceInfo* space_info) {
   if (!log_develop_is_enabled(Trace, gc, compaction)) {
