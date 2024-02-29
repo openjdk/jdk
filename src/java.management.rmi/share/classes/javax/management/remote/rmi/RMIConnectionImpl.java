@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,6 @@ import static javax.management.remote.rmi.RMIConnector.Util.cast;
 import com.sun.jmx.remote.internal.ServerCommunicatorAdmin;
 import com.sun.jmx.remote.internal.ServerNotifForwarder;
 import com.sun.jmx.remote.security.JMXSubjectDomainCombiner;
-import com.sun.jmx.remote.security.SubjectDelegator;
 import com.sun.jmx.remote.util.ClassLoaderWithRepository;
 import com.sun.jmx.remote.util.ClassLogger;
 import com.sun.jmx.remote.util.EnvHelp;
@@ -110,21 +109,13 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         this.connectionId = connectionId;
         this.defaultClassLoader = defaultClassLoader;
 
-        this.subjectDelegator = new SubjectDelegator();
         this.subject = subject;
         if (subject == null) {
             this.acc = null;
-            this.removeCallerContext = false;
         } else {
-            this.removeCallerContext =
-                SubjectDelegator.checkRemoveCallerContext(subject);
-            if (this.removeCallerContext) {
-                this.acc =
-                    JMXSubjectDomainCombiner.getDomainCombinerContext(subject);
-            } else {
-                this.acc =
-                    JMXSubjectDomainCombiner.getContext(subject);
-            }
+            // An authenticated Subject was provided.
+            // Subject Delegation has been removed.
+            this.acc = JMXSubjectDomainCombiner.getContext(subject);
         }
         this.mbeanServer = rmiServer.getMBeanServer();
 
@@ -1381,26 +1372,15 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                          final Subject delegationSubject)
         throws PrivilegedActionException, IOException {
 
+        // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
+        // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
+        if (delegationSubject != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
         serverCommunicatorAdmin.reqIncoming();
         try {
-
-            final AccessControlContext reqACC;
-            if (delegationSubject == null)
-                reqACC = acc;
-            else {
-                if (subject == null) {
-                    final String msg =
-                        "Subject delegation cannot be enabled unless " +
-                        "an authenticated subject is put in place";
-                    throw new SecurityException(msg);
-                }
-                reqACC = subjectDelegator.delegatedContext(
-                    acc, delegationSubject, removeCallerContext);
-            }
-
-            PrivilegedOperation op =
-                new PrivilegedOperation(operation, params);
-            if (reqACC == null) {
+            PrivilegedOperation op = new PrivilegedOperation(operation, params);
+            if (acc == null) {
                 try {
                     return op.run();
                 } catch (Exception e) {
@@ -1409,7 +1389,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                     throw new PrivilegedActionException(e);
                 }
             } else {
-                return AccessController.doPrivileged(op, reqACC);
+                return AccessController.doPrivileged(op, acc);
             }
         } catch (Error e) {
             throw new JMXServerErrorException(e.toString(),e);
@@ -1563,29 +1543,22 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
                                 final Class<T> wrappedClass,
                                 Subject delegationSubject)
             throws IOException {
+
+        // Subject Delegation is removed: locally this is caught earlier, in getMBeanServerConnection,
+        // but remote connections call into RMIConnectionImpl over RMI, so deny them here:
+        if (delegationSubject != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
         if (mo == null) {
             return null;
         }
         try {
             final ClassLoader old = AccessController.doPrivileged(new SetCcl(cl));
             try{
-                final AccessControlContext reqACC;
-                if (delegationSubject == null)
-                    reqACC = acc;
-                else {
-                    if (subject == null) {
-                        final String msg =
-                            "Subject delegation cannot be enabled unless " +
-                            "an authenticated subject is put in place";
-                        throw new SecurityException(msg);
-                    }
-                    reqACC = subjectDelegator.delegatedContext(
-                        acc, delegationSubject, removeCallerContext);
-                }
-                if(reqACC != null){
+                if (acc != null) {
                     return AccessController.doPrivileged(
                             (PrivilegedExceptionAction<T>) () ->
-                                    wrappedClass.cast(mo.get()), reqACC);
+                                    wrappedClass.cast(mo.get()), acc);
                 }else{
                     return wrappedClass.cast(mo.get());
                 }
@@ -1703,10 +1676,6 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     //------------------------------------------------------------------------
 
     private final Subject subject;
-
-    private final SubjectDelegator subjectDelegator;
-
-    private final boolean removeCallerContext;
 
     @SuppressWarnings("removal")
     private final AccessControlContext acc;
