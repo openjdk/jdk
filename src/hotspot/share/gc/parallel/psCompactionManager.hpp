@@ -111,7 +111,35 @@ class ParCompactionManager : public CHeapObj<mtGC> {
   static RegionTaskQueueSet* region_task_queues()      { return _region_task_queues; }
   OopTaskQueue*  oop_stack()       { return &_oop_stack; }
 
- public:
+  // To collect per-region live-words in a worker local cache in order to
+  // reduce threads contention.
+  class MarkingStatsCache : public CHeapObj<mtGC> {
+    constexpr static size_t num_entries = 1024;
+    static_assert(is_power_of_2(num_entries), "inv");
+    static_assert(num_entries > 0, "inv");
+
+    constexpr static size_t entry_mask = num_entries - 1;
+
+    struct CacheEntry {
+      size_t region_id;
+      size_t live_words;
+    };
+
+    CacheEntry entries[num_entries] = {};
+
+    inline void push(size_t region_id, size_t live_words);
+
+  public:
+    inline void push(oop obj, size_t live_words);
+
+    inline void evict(size_t index);
+
+    inline void evict_all();
+  };
+
+  MarkingStatsCache* _marking_stats_cache;
+
+public:
   static const size_t InvalidShadow = ~0;
   static size_t  pop_shadow_region_mt_safe(PSParallelCompact::RegionData* region_ptr);
   static void    push_shadow_region_mt_safe(size_t shadow_region);
@@ -197,6 +225,10 @@ class ParCompactionManager : public CHeapObj<mtGC> {
       : _compaction_manager(cm), _terminator(terminator), _worker_id(worker_id) { }
     virtual void do_void();
   };
+
+  inline void create_marking_stats_cache();
+
+  inline void flush_and_destroy_marking_stats_cache();
 
   // Called after marking.
   static void verify_all_marking_stack_empty() NOT_DEBUG_RETURN;

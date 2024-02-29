@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -362,6 +362,15 @@ void FormDict::dump() {
   _form.print(dumpkey, dumpform);
 }
 
+void FormDict::forms_do(FormClosure* f) {;
+  DictI iter(&_form);
+  for( ; iter.test(); ++iter ) {
+    Form* form = (Form*) iter._value;
+    assert(form != nullptr, "sanity");
+    f->do_form(form);
+  }
+}
+
 //------------------------------SourceForm-------------------------------------
 SourceForm::SourceForm(char* code) : _code(code) { }; // Constructor
 SourceForm::~SourceForm() {
@@ -373,4 +382,12 @@ void SourceForm::dump() {                    // Debug printer
 
 void SourceForm::output(FILE *fp) {
   fprintf(fp,"\n//%s\n%s\n",classname(),(_code?_code:""));
+}
+
+void FormClosure::do_form(Form* form) {
+  assert(false, "should not reach here");
+}
+
+void FormClosure::do_form_by_name(const char* name) {
+  assert(false, "should not reach here");
 }
