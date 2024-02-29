@@ -134,9 +134,20 @@ public class bug8008657 {
     static void createDateSpinner() {
         Calendar calendar = Calendar.getInstance();
         Date initDate = calendar.getTime();
+        int year = calendar.get(Calendar.YEAR);
+        boolean isLeapYear = ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
+        int curDay = 0;
+        int curMonth = 0;
+        if (isLeapYear) {
+            curMonth = calendar.get(Calendar.MONTH);
+            curDay = calendar.get(Calendar.DAY_OF_MONTH);
+        }
         calendar.add(Calendar.YEAR, -1);
         Date earliestDate = calendar.getTime();
         calendar.add(Calendar.YEAR, 1);
+        if (isLeapYear && curMonth == 1 && curDay == 29) {
+            calendar.add(Calendar.DAY_OF_MONTH, 1);
+        }
         Date latestDate = calendar.getTime();
         SpinnerModel dateModel = new SpinnerDateModel(initDate,
                 earliestDate,
