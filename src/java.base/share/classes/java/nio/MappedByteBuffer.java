@@ -410,6 +410,7 @@ public abstract sealed class MappedByteBuffer
      * of this buffer that the returned buffer represents, namely
      * {@code [index,index+length)}, where {@code index} and {@code length} are
      * assumed to satisfy the preconditions.
+     * @since 13
      */
     @Override
     public abstract MappedByteBuffer slice(int index, int length);

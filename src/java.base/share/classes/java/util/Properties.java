@@ -185,6 +185,7 @@ public class Properties extends Hashtable<Object,Object> {
      *         accommodate this many elements
      * @throws IllegalArgumentException if the initial capacity is less than
      *         zero.
+     * @since 10
      */
     public Properties(int initialCapacity) {
         this(null, initialCapacity);
