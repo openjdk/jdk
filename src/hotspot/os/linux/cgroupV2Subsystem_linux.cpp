@@ -187,7 +187,7 @@ jlong CgroupV2Subsystem::memory_and_swap_usage_in_bytes() {
         jlong swap_current = limit_from_str(mem_swp_current_str);
         return memory_usage + swap_current;
     }
-    return memory_usage; // case of no memory limits
+    return memory_usage; // not supported or unlimited case
 }
 
 char* CgroupV2Subsystem::mem_swp_limit_val() {
