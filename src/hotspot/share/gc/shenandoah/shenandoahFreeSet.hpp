@@ -29,9 +29,6 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
-#undef KELVIN_TRACE_HPP
-
-
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_contiguous_bits() and
 // find_prev_contiguous_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
@@ -44,16 +41,6 @@ class ShenandoahSimpleBitMap {
   size_t* const _bitmap;
 
 public:
-#ifdef KELVIN_DOES_NOT_WANT
-  // No-arg constructor simplifies declaration and subsequent re-initialization after number of regions is known.
-  ShenandoahSimpleBitMap() :
-      _num_bits(0),
-      _num_words(0),
-      _bitmap(nullptr) {
-    clear_all();
-  }
-#endif
-
   ShenandoahSimpleBitMap(size_t num_bits) :
       _num_bits(num_bits),
       _num_words((num_bits + (_bits_per_array_element - 1)) / _bits_per_array_element),
@@ -184,12 +171,8 @@ private:
   const ssize_t _max;           // The maximum number of heap regions
   const size_t _region_size_bytes;
   const ShenandoahFreeSet* _free_set;
-#ifdef KELVIN_DEPRECATE
-  ShenandoahFreeSetPartitionId* const _membership;
-#else
   // For each partition, we maintain a bitmap of which regions are affiliated with his partition.
   ShenandoahSimpleBitMap _membership[NumPartitions];
-#endif
 
   // For each partition, we track an interval outside of which a region affiliated with that partition is guaranteed
   // not to be found. This makes searches for free space more efficient.  For each partition p, _leftmosts[p]
@@ -222,20 +205,11 @@ private:
 
   void dump_bitmap_row(ssize_t idx) const;
   void dump_bitmap_range(ssize_t start_idx, ssize_t end_idx) const;
-#define KELVIN_GOOD_CODE
-#ifdef KELVIN_GOOD_CODE
   void dump_bitmap_all() const;
-#else
-#define KELVIN_BAD_CODE
-#endif
 
 public:
   ShenandoahRegionPartitions(size_t max_regions, ShenandoahFreeSet* free_set);
   ~ShenandoahRegionPartitions();
-
-#ifdef KELVIN_BAD_CODE
-  void dump_bitmap_all() const;
-#endif
 
   // Remove all regions from all partitions and reset all bounds
   void make_all_regions_unavailable();
