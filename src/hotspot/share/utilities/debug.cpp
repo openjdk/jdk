@@ -68,11 +68,7 @@
 #include <stdarg.h>
 
 // These functions needs to be exported on Windows only
-#if defined(TARGET_COMPILER_visCPP)
-#define DEBUGEXPORT JNIEXPORT
-#else
-#define DEBUGEXPORT
-#endif
+#define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
 
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
