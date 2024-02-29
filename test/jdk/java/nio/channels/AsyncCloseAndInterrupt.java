@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,10 +134,15 @@ public class AsyncCloseAndInterrupt {
                 throw new IOException("Cannot delete existing fifo " + fifoFile);
         }
         Process p = Runtime.getRuntime().exec("mkfifo " + fifoFile);
-        if (p.waitFor() != 0)
-            throw new IOException("Error creating fifo");
+        if (p.waitFor() != 0) {
+            StringBuilder sb = new StringBuilder();
+            try (BufferedReader errorReader = p.errorReader()) {
+                errorReader.lines().forEach(o -> sb.append((String)o));
+            }
+            throw new IOException("Error creating fifo \"" +
+                fifoFile.getAbsolutePath() + "\" - " + sb);
+        }
         new RandomAccessFile(fifoFile, "rw").close();
-
     }
 
 
