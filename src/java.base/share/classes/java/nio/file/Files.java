@@ -3836,10 +3836,10 @@ public final class Files {
     /**
      * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed in <em>pre-order</em>, <em>depth-first</em>
-     * fashion, the elements in the stream are {@link Path} objects that are
-     * obtained as if by {@link Path#resolve(Path) resolving} the relative
-     * path against {@code start}.
+     * file tree is traversed <em>depth-first</em> with a directory visited
+     * before the entries in that directory. The elements in the stream are
+     * {@link Path} objects that are obtained as if by {@link Path#resolve(Path)
+     * resolving} the relative path against {@code start}.
      *
      * <p> The {@code stream} walks the file tree as elements are consumed.
      * The {@code Stream} returned is guaranteed to have at least one
@@ -3936,10 +3936,10 @@ public final class Files {
     /**
      * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed in <em>pre-order</em>, <em>depth-first</em>
-     * fashion, the elements in the stream are {@link Path} objects that are
-     * obtained as if by {@link Path#resolve(Path) resolving} the relative
-     * path against {@code start}.
+     * file tree is traversed <em>depth-first</em> with a directory visited
+     * before the entries in that directory. The elements in the stream are
+     * {@link Path} objects that are obtained as if by {@link Path#resolve(Path)
+     * resolving} the relative path against {@code start}.
      *
      * <p> This method works as if invoking it were equivalent to evaluating the
      * expression:
