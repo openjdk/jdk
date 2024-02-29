@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ JNIEXPORT jint JNICALL
 Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 
   jint res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv !\n");
     return JNI_ERR;
   }
@@ -56,7 +56,7 @@ Java_contmon02_checkMonitor(JNIEnv *jni, jclass cls, jint point, jthread thread)
   jobject monitor;
   jvmtiError err = jvmti->GetCurrentContendedMonitor(thread, &monitor);
   check_jvmti_status(jni, err, "Error in GetCurrentContendedMonitor");
-  if (monitor != NULL) {
+  if (monitor != nullptr) {
     LOG("(#%d) unexpected monitor object: 0x%p\n", point, monitor);
     fatal(jni, "GetCurrentContendedMonitor return unexpected monitor.");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ extern "C" {
 
 /* ============================================================================= */
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 
 /* Class, which contains the following callback method:
  *    static public void callback(String className, int agentID) */
@@ -93,31 +93,31 @@ ClassFileLoadHook (
     jstring class_name_string;
 
     // Check whether currently retransformed class belongs to the package we are interested in
-    if (name == NULL || strncmp(TRIGGER, name,strlen(name) < strlen(TRIGGER) ? strlen(name) : strlen(TRIGGER)))
+    if (name == nullptr || strncmp(TRIGGER, name,strlen(name) < strlen(TRIGGER) ? strlen(name) : strlen(TRIGGER)))
     {
         return;
     }
 
     // Get ant the invoke callback function
-    if (!NSK_VERIFY((loader_class = jni->GetObjectClass(loader)) != NULL))
+    if (!NSK_VERIFY((loader_class = jni->GetObjectClass(loader)) != nullptr))
         return;
 
     if (!NSK_VERIFY((method_id = jni->GetMethodID(
-            loader_class, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;")) != NULL))
+            loader_class, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;")) != nullptr))
         return;
 
-    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(CALLBACK_CLASS_NAME)) != NULL))
+    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(CALLBACK_CLASS_NAME)) != nullptr))
         return;
 
     if (!NSK_VERIFY((callback_class = (jclass) jni->CallObjectMethod(
-            loader, method_id, class_name_string)) != NULL))
+            loader, method_id, class_name_string)) != nullptr))
         return;
 
     if (!NSK_VERIFY((method_id = jni->GetStaticMethodID(
-            callback_class, "callback", "(Ljava/lang/String;I)V")) != NULL))
+            callback_class, "callback", "(Ljava/lang/String;I)V")) != nullptr))
         return;
 
-    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(name)) != NULL))
+    if (!NSK_VERIFY((class_name_string = jni->NewStringUTF(name)) != nullptr))
         return;
 
     jni->CallStaticObjectMethod(callback_class, method_id, class_name_string, agent_id);
@@ -151,7 +151,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
 
     agent_id= nsk_jvmti_findOptionIntValue("id", -1);
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != NULL))
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(vm, reserved)) != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->GetCapabilities(&caps)))
@@ -179,7 +179,7 @@ jint Agent_Initialize(JavaVM *vm, char *options, void *reserved)
     if (!NSK_JVMTI_VERIFY(
                 jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                 JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
-                                                NULL)))
+                                                nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

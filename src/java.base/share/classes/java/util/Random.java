@@ -350,6 +350,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
      * @param seed the initial seed
      * @see   #setSeed(long)
      */
+    @SuppressWarnings("this-escape")
     public Random(long seed) {
         if (getClass() == Random.class)
             this.seed = new AtomicLong(initialScramble(seed));

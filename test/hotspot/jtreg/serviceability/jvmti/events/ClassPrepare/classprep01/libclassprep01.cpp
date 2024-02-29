@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ typedef struct {
   jint icount;
 } class_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jint result = PASSED;
 static size_t eventsCount = 0;
@@ -158,7 +158,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls)
   LOG(">>>   %d methods:", inf.mcount);
   for (int i = 0; i < inf.mcount; i++) {
     if (i > 0) LOG(",");
-    if (methods[i] == NULL) {
+    if (methods[i] == nullptr) {
       LOG(" null");
     } else {
       err = jvmti->GetMethodName(methods[i], &name, &sig, &generic);
@@ -173,7 +173,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls)
   LOG(">>>   %d fields:", inf.fcount);
   for (int i = 0; i < inf.fcount; i++) {
     if (i > 0) LOG(",");
-    if (fields[i] == NULL) {
+    if (fields[i] == nullptr) {
       LOG(" null");
     } else {
       err = jvmti->GetFieldName(cls, fields[i], &name, &sig, &generic);
@@ -188,7 +188,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls)
   LOG(">>>   %d interfaces:", inf.icount);
   for (int i = 0; i < inf.icount; i++) {
     if (i > 0) LOG(",");
-    if (interfaces[i] == NULL) {
+    if (interfaces[i] == nullptr) {
       LOG(" null");
     } else {
       err = jvmti->GetClassSignature(interfaces[i], &sig, &generic);
@@ -226,7 +226,7 @@ void JNICALL ClassPrepare(jvmtiEnv *jvmti, JNIEnv *jni, jthread thr, jclass cls)
     return;
   }
 
-  if (inf.sig == NULL || strcmp(inf.sig, classes[eventsCount].sig) != 0) {
+  if (inf.sig == nullptr || strcmp(inf.sig, classes[eventsCount].sig) != 0) {
     LOG("(#%" PRIuPTR ") wrong class: \"%s\"", eventsCount, inf.sig);
     LOG(", expected: \"%s\"\n", classes[eventsCount].sig);
     result = STATUS_FAILED;
@@ -262,7 +262,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
 
   res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti == NULL) {
+  if (res != JNI_OK || jvmti == nullptr) {
     LOG("Wrong result of a valid call to GetEnv!\n");
     return JNI_ERR;
   }
@@ -299,7 +299,7 @@ JNIEXPORT void JNICALL
 Java_classprep01_getReady(JNIEnv *jni, jclass cls, jthread thread) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return;
   }
@@ -327,7 +327,7 @@ JNIEXPORT jint JNICALL
 Java_classprep01_check(JNIEnv *jni, jclass cls, jthread thread) {
   jvmtiError err;
 
-  if (jvmti == NULL) {
+  if (jvmti == nullptr) {
     LOG("JVMTI client was not properly loaded!\n");
     return STATUS_FAILED;
   }

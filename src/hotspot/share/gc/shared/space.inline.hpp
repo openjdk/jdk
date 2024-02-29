@@ -34,10 +34,6 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-inline HeapWord* Space::block_start(const void* p) {
-  return block_start_const(p);
-}
-
 #if INCLUDE_SERIALGC
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);

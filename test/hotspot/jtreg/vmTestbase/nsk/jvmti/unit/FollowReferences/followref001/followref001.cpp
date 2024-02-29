@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ static int objectsCount  = 0;
 static int fakeUserData  = 0;
 static int userDataError = 0;
 
-static ObjectDesc* objectDescList = NULL;
+static ObjectDesc* objectDescList = nullptr;
 
 static const jlong ROOT_CLASS_TAG   = 9;
 static const jlong CHAIN_CLASS_TAG  = 99;
@@ -94,8 +94,6 @@ static const char* ref_kind_str[28] = {
    "JVMTI_HEAP_REFERENCE_THREAD",
    "JVMTI_HEAP_REFERENCE_OTHER"
 };
-
-#define DEREF(ptr) (((ptr) == NULL ? 0 : *(ptr)))
 
 
 /* ============================================================================= */
@@ -175,7 +173,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
                              jclass*      rootObjectClass,
                              jclass*      chainObjectClass) {
 
-    if (!NSK_JNI_VERIFY(jni, (*debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (*debugeeClass = jni->FindClass(DEBUGEE_CLASS_NAME)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -184,7 +182,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectClass =
-            jni->FindClass(ROOT_OBJECT_CLASS_NAME)) != NULL)) {
+            jni->FindClass(ROOT_OBJECT_CLASS_NAME)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -200,7 +198,7 @@ static bool getAndTagClasses(jvmtiEnv*    jvmti,
 
 
     if (!NSK_JNI_VERIFY(jni, (*chainObjectClass =
-            jni->FindClass(CHAIN_OBJECT_CLASS_NAME)) != NULL)) {
+            jni->FindClass(CHAIN_OBJECT_CLASS_NAME)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -227,10 +225,10 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
                                 jfieldID*  reachableChainField,
                                 jfieldID*  unreachableChainField,
                                 jfieldID*  nextField) {
-    jfieldID rootObjectField = NULL;
+    jfieldID rootObjectField = nullptr;
 
     if (!NSK_JNI_VERIFY(jni, (rootObjectField =
-            jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, ROOT_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetStaticFieldID(debugeeClass, OBJECT_FIELD_NAME, ROOT_OBJECT_CLASS_SIG)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -239,7 +237,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*reachableChainField =
-            jni->GetFieldID(rootObjectClass, REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(rootObjectClass, REACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -248,7 +246,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*unreachableChainField =
-            jni->GetFieldID(rootObjectClass, UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(rootObjectClass, UNREACHABLE_CHAIN_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -258,7 +256,7 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*nextField =
-            jni->GetFieldID(chainObjectClass, NEXT_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != NULL)) {
+            jni->GetFieldID(chainObjectClass, NEXT_FIELD_NAME, CHAIN_OBJECT_CLASS_SIG)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -267,14 +265,14 @@ static bool getFieldsAndObjects(jvmtiEnv*  jvmti,
     fflush(0);
 
     if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr =
-            jni->GetStaticObjectField(debugeeClass, rootObjectField)) != NULL)) {
+            jni->GetStaticObjectField(debugeeClass, rootObjectField)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
     printf("\nFound root object: 0x%p\n", (void*) *rootObjectPtr);
     fflush(0);
 
-    if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr = jni->NewGlobalRef(*rootObjectPtr)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (*rootObjectPtr = jni->NewGlobalRef(*rootObjectPtr)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -296,7 +294,7 @@ static bool getAndTagChainObjects(
     ObjectDesc objectDescList[],
     jlong      tag,
     bool       reachable) {
-    jobject nextObj = NULL;
+    jobject nextObj = nullptr;
     jlong objTag = (reachable ? tag : -tag);
 
     if (count <= 0) {
@@ -306,7 +304,7 @@ static bool getAndTagChainObjects(
     count--;
     tag++;
 
-    if (!NSK_JNI_VERIFY(jni, (nextObj = jni->GetObjectField(currObj, refField)) != NULL)) {
+    if (!NSK_JNI_VERIFY(jni, (nextObj = jni->GetObjectField(currObj, refField)) != nullptr)) {
         nsk_jvmti_setFailStatus();
         return false;
     }
@@ -350,13 +348,13 @@ static int getAndTagTestedObjects(
     ObjectDesc** objectDescList,
     jobject*     rootObjectPtr)
 {
-    jclass   debugeeClass          = NULL;
-    jclass   rootObjectClass       = NULL;
-    jclass   chainObjectClass      = NULL;
+    jclass   debugeeClass          = nullptr;
+    jclass   rootObjectClass       = nullptr;
+    jclass   chainObjectClass      = nullptr;
 
-    jfieldID reachableChainField   = NULL;
-    jfieldID unreachableChainField = NULL;
-    jfieldID nextField             = NULL;
+    jfieldID reachableChainField   = nullptr;
+    jfieldID unreachableChainField = nullptr;
+    jfieldID nextField             = nullptr;
 
     if (!initObjectDescList(jvmti,
                             chainLength,
@@ -504,12 +502,12 @@ static void releaseTestedObjects(jvmtiEnv*   jvmti,
                                  ObjectDesc* objectDescList,
                                  jobject     rootObject)
 {
-    if (rootObject != NULL) {
+    if (rootObject != nullptr) {
         printf("Release object reference to root tested object: 0x%p\n", rootObject);
         NSK_TRACE(jni->DeleteGlobalRef(rootObject));
     }
 
-    if (objectDescList != NULL) {
+    if (objectDescList != nullptr) {
         printf("Deallocate objects list: 0x%p\n", (void*)objectDescList);
         if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)objectDescList))) {
             nsk_jvmti_setFailStatus();
@@ -577,7 +575,7 @@ jint JNICALL heapReferenceCallback(
         nsk_jvmti_setFailStatus();
     }
 
-    if (tag_ptr != NULL && *tag_ptr != 0) {
+    if (tag_ptr != nullptr && *tag_ptr != 0) {
         int found = 0;
         int i;
 
@@ -724,7 +722,7 @@ jint JNICALL stringPrimitiveValueCallback(
 /** Agent algorithm. */
 static void JNICALL
 agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
-    jobject rootObject = NULL;
+    jobject rootObject = nullptr;
 
     printf("Wait for tested objects created\n");
     fflush(0);
@@ -760,7 +758,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
     fflush(0);
 
     if (!NSK_JVMTI_VERIFY(jvmti->FollowReferences((jint)   0,    /* heap_filter    */
-                                                  (jclass) NULL, /* class          */
+                                                  (jclass) nullptr, /* class          */
                                                   rootObject,    /* initial_object */
                                                   &heapCallbacks,
                                                   (const void *) &fakeUserData))) {
@@ -803,7 +801,7 @@ JNIEXPORT jint JNI_OnLoad_followref001(JavaVM *jvm, char *options, void *reserve
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options))) {
         return JNI_ERR;
@@ -814,7 +812,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!NSK_VERIFY(chainLength > 0))
         return JNI_ERR;
 
-    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL)) {
+    if (!NSK_VERIFY((jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr)) {
         return JNI_ERR;
     }
 
@@ -829,13 +827,13 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* Setting Heap Callbacks */
-    heapCallbacks.heap_iteration_callback         = NULL;
+    heapCallbacks.heap_iteration_callback         = nullptr;
     heapCallbacks.heap_reference_callback         = heapReferenceCallback;
     heapCallbacks.primitive_field_callback        = primitiveFieldCallback;
     heapCallbacks.array_primitive_value_callback  = arrayPrimitiveValueCallback;
     heapCallbacks.string_primitive_value_callback = stringPrimitiveValueCallback;
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL))) {
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr))) {
         return JNI_ERR;
     }
 
