@@ -148,6 +148,8 @@ extern "C" void disnm(intptr_t p);
 //                 strictly should be 64 bit movz #imm16<<0
 //       110___10100 (i.e. requires insn[31:21] == 11010010100)
 //
+namespace { // All have internal linkage in this file
+
 class RelocActions {
 protected:
   typedef int (*reloc_insn)(address insn_addr, address &target);
@@ -492,6 +494,7 @@ public:
   virtual void verify(address insn_addr, address &target) {
   }
 };
+}
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
   Decoder decoder(insn_addr, insn);
