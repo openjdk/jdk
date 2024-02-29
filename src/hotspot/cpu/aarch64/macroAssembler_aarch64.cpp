@@ -148,7 +148,6 @@ extern "C" void disnm(intptr_t p);
 //                 strictly should be 64 bit movz #imm16<<0
 //       110___10100 (i.e. requires insn[31:21] == 11010010100)
 //
-namespace { // All have internal linkage in this file
 
 class RelocActions {
 protected:
@@ -394,13 +393,13 @@ static bool offset_for(uint32_t insn1, uint32_t insn2, ptrdiff_t &byte_offset) {
   return false;
 }
 
-class Decoder : public RelocActions {
-  virtual reloc_insn adrpMem() { return &Decoder::adrpMem_impl; }
-  virtual reloc_insn adrpAdd() { return &Decoder::adrpAdd_impl; }
-  virtual reloc_insn adrpMovk() { return &Decoder::adrpMovk_impl; }
+class AArch64Decoder : public RelocActions {
+  virtual reloc_insn adrpMem() { return &AArch64Decoder::adrpMem_impl; }
+  virtual reloc_insn adrpAdd() { return &AArch64Decoder::adrpAdd_impl; }
+  virtual reloc_insn adrpMovk() { return &AArch64Decoder::adrpMovk_impl; }
 
 public:
-  Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
+  AArch64Decoder(address insn_addr, uint32_t insn) : RelocActions(insn_addr, insn) {}
 
   virtual int loadStore(address insn_addr, address &target) {
     intptr_t offset = Instruction_aarch64::sextract(_insn, 23, 5);
@@ -494,10 +493,9 @@ public:
   virtual void verify(address insn_addr, address &target) {
   }
 };
-}
 
 address MacroAssembler::target_addr_for_insn(address insn_addr, uint32_t insn) {
-  Decoder decoder(insn_addr, insn);
+  AArch64Decoder decoder(insn_addr, insn);
   address target;
   decoder.run(insn_addr, target);
   return target;
