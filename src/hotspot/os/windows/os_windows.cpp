@@ -4120,7 +4120,13 @@ DWORD os::win32::active_processors_in_job_object() {
         warning("os::malloc() failed to allocate %ld bytes for QueryInformationJobObject", job_object_information_length);
     }
   } else {
-    warning("Unexpected QueryInformationJobObject error code: GetLastError->%ld.", last_error);
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    if (buf_len != 0) {
+      warning(buf);
+    } else {
+      warning("Attempt to query job object information failed.");
+    }
     assert(false, "Unexpected QueryInformationJobObject error code");
     return 0;
   }
@@ -4143,7 +4149,13 @@ DWORD os::win32::system_logical_processor_count() {
       if (nullptr == system_logical_processor_info) {
         warning("os::malloc() failed to allocate %ld bytes for GetLogicalProcessorInformationEx buffer", returned_length);
       } else if (GetLogicalProcessorInformationEx(relationship_type, system_logical_processor_info, &returned_length) == 0) {
-        warning("GetLogicalProcessorInformationEx() failed: GetLastError->%ld.", GetLastError());
+        char buf[512];
+        size_t buf_len = os::lasterror(buf, sizeof(buf));
+        if (buf_len != 0) {
+          warning(buf);
+        } else {
+          warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed.");
+        }
       } else {
         DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
 
@@ -4160,7 +4172,13 @@ DWORD os::win32::system_logical_processor_count() {
 
       os::free(system_logical_processor_info);
     } else {
-      warning("GetLogicalProcessorInformationEx() failed: GetLastError->%ld.", last_error);
+      char buf[512];
+      size_t buf_len = os::lasterror(buf, sizeof(buf));
+      if (buf_len != 0) {
+        warning(buf);
+      } else {
+        warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed.");
+      }
     }
   }
 
