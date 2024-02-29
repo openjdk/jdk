@@ -32,7 +32,8 @@
 # intermittent:         flaky test, known to fail intermittently
 # randomness:           test uses randomness, test cases differ from run to run
 # cgroups:              test uses cgroups
-keys=stress headful intermittent randomness cgroups
+# external-dep:         test requires external dependencies to work
+keys=stress headful intermittent randomness cgroups external-dep
 
 groups=TEST.groups TEST.quick-groups
 
