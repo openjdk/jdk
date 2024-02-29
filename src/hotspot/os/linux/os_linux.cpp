@@ -313,23 +313,17 @@ jlong os::free_swap_space() {
       if (delta_limit <= 0) {
         return 0;
       }
-      // should we do multiple trys like we do in Java management code ?
-      // cgroupv1 : memory.memsw.usage_in_bytes (CgroupV1Subsystem.java)
-      // cgroupv2 : long swapUsage = getLongVal("memory.swap.current", NO_SWAP); memoryUsage + swapUsage;  (CgroupV2Subsystem.java)
-      //jlong memSwapUsage = containerMetrics.getMemoryAndSwapUsage();
       jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
       jlong mem_usage = OSContainer::memory_usage_in_bytes();
       if (mem_swap_usage > 0 && mem_usage > 0) {
         jlong delta_usage = mem_swap_usage - mem_usage;
         if (delta_usage >= 0) {
           jlong free_swap = delta_limit - delta_usage;
-          if (free_swap >= 0) {
-            return free_swap;
-          }
+          return free_swap >= 0 ? free_swap : 0;
         }
       }
     }
-    return -1; // check the fallback - maybe use something better ?
+    return -1;
   } else {
     struct sysinfo si;
     int ret = sysinfo(&si);
