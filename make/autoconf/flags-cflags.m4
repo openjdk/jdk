@@ -40,7 +40,6 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
     SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
     SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
     SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
-    SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
 
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
@@ -49,7 +48,6 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path$(or [$]1,/.)'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/[$]1'
-      SET_SHARED_LIBRARY_MAPFILE='-Wl,-exported_symbols_list,[$]1'
 
     elif test "x$OPENJDK_TARGET_OS" = xaix; then
       # Linking is different on aix
@@ -57,14 +55,12 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
       SET_EXECUTABLE_ORIGIN=""
       SET_SHARED_LIBRARY_ORIGIN=''
       SET_SHARED_LIBRARY_NAME=''
-      SET_SHARED_LIBRARY_MAPFILE=''
 
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
       SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$ORIGIN[$]1'
       SET_SHARED_LIBRARY_NAME='-Wl,-soname=[$]1'
-      SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=[$]1'
 
       # arm specific settings
       if test "x$OPENJDK_TARGET_CPU" = "xarm"; then
@@ -80,20 +76,17 @@ AC_DEFUN([FLAGS_SETUP_SHARED_LIBS],
     SET_EXECUTABLE_ORIGIN=""
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
-    SET_SHARED_LIBRARY_MAPFILE=''
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     SHARED_LIBRARY_FLAGS="-dll"
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
-    SET_SHARED_LIBRARY_MAPFILE='-def:[$]1'
   fi
 
   AC_SUBST(SET_EXECUTABLE_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_ORIGIN)
   AC_SUBST(SET_SHARED_LIBRARY_NAME)
-  AC_SUBST(SET_SHARED_LIBRARY_MAPFILE)
   AC_SUBST(SHARED_LIBRARY_FLAGS)
 ])
 
@@ -122,6 +115,11 @@ AC_DEFUN([FLAGS_SETUP_DEBUG_SYMBOLS],
             # Add debug prefix map gcc system include paths, as they cause
             # non-deterministic debug paths depending on gcc path location.
             DEBUG_PREFIX_MAP_GCC_INCLUDE_PATHS
+
+            # Add debug prefix map for OUTPUTDIR to handle the scenario when
+            # it is not located within WORKSPACE_ROOT
+            outputdir_slash="${OUTPUTDIR%/}/"
+            DEBUG_PREFIX_CFLAGS="$DEBUG_PREFIX_CFLAGS -fdebug-prefix-map=${outputdir_slash}="
         ]
       )
     fi

@@ -1119,7 +1119,7 @@ void Threads::change_thread_claim_token() {
 }
 
 #ifdef ASSERT
-void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
+static void assert_thread_claimed(const char* kind, Thread* t, uintx expected) {
   const uintx token = t->threads_do_token();
   assert(token == expected,
          "%s " PTR_FORMAT " has incorrect value " UINTX_FORMAT " != "

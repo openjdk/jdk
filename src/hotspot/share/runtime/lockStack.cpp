@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +26,18 @@
 
 #include "precompiled.hpp"
 #include "memory/allocation.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/stackWatermark.hpp"
 #include "runtime/stackWatermarkSet.inline.hpp"
 #include "runtime/thread.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/debug.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/ostream.hpp"
+
+#include <type_traits>
 
 const int LockStack::lock_stack_offset =      in_bytes(JavaThread::lock_stack_offset());
 const int LockStack::lock_stack_top_offset =  in_bytes(JavaThread::lock_stack_top_offset());
@@ -39,6 +45,11 @@ const int LockStack::lock_stack_base_offset = in_bytes(JavaThread::lock_stack_ba
 
 LockStack::LockStack(JavaThread* jt) :
   _top(lock_stack_base_offset), _base() {
+  // Make sure the layout of the object is compatible with the emitted code's assumptions.
+  STATIC_ASSERT(sizeof(_bad_oop_sentinel) == oopSize);
+  STATIC_ASSERT(sizeof(_base[0]) == oopSize);
+  STATIC_ASSERT(std::is_standard_layout<LockStack>::value);
+  STATIC_ASSERT(offsetof(LockStack, _bad_oop_sentinel) == offsetof(LockStack, _base) - oopSize);
 #ifdef ASSERT
   for (int i = 0; i < CAPACITY; i++) {
     _base[i] = nullptr;
@@ -62,11 +73,21 @@ uint32_t LockStack::end_offset() {
 void LockStack::verify(const char* msg) const {
   assert(LockingMode == LM_LIGHTWEIGHT, "never use lock-stack when light weight locking is disabled");
   assert((_top <= end_offset()), "lockstack overflow: _top %d end_offset %d", _top, end_offset());
-  assert((_top >= start_offset()), "lockstack underflow: _top %d end_offset %d", _top, start_offset());
+  assert((_top >= start_offset()), "lockstack underflow: _top %d start_offset %d", _top, start_offset());
   if (SafepointSynchronize::is_at_safepoint() || (Thread::current()->is_Java_thread() && is_owning_thread())) {
     int top = to_index(_top);
     for (int i = 0; i < top; i++) {
       assert(_base[i] != nullptr, "no zapped before top");
+      if (VM_Version::supports_recursive_lightweight_locking()) {
+        oop o = _base[i];
+        for (; i < top - 1; i++) {
+          // Consecutive entries may be the same
+          if (_base[i + 1] != o) {
+            break;
+          }
+        }
+      }
+
       for (int j = i + 1; j < top; j++) {
         assert(_base[i] != _base[j], "entries must be unique: %s", msg);
       }

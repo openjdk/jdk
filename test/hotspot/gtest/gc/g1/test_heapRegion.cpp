@@ -25,7 +25,7 @@
 #include "gc/g1/g1BlockOffsetTable.hpp"
 #include "gc/g1/g1CollectedHeap.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/vmOperations.hpp"
