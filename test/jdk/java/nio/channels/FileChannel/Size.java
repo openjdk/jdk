@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@
 import java.io.*;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.*;
+import java.nio.file.FileStore;
+import java.nio.file.Path;
 import java.util.Random;
 
 
@@ -65,6 +67,8 @@ public class Size {
     // Test for bug 4563125
     private static void testLargeFile() throws Exception {
         File largeFile = new File("largeFileTest");
+        largeFile.deleteOnExit();
+
         long testSize = ((long)Integer.MAX_VALUE) * 2;
         initTestFile(largeFile, 10);
         try (FileChannel fc = new RandomAccessFile(largeFile, "rw").getChannel()) {
@@ -75,8 +79,15 @@ public class Size {
                                          + "Expect size " + (testSize + 10)
                                          + ", actual size " + fc.size());
             }
+        } catch (IOException ioe) {
+            if ("File too large".equals(ioe.getMessage())) {
+                Path p = largeFile.toPath();
+                FileStore store = p.getFileSystem().provider().getFileStore(p);
+                if ("msdos".equals(store.type())) // FAT32
+                    return; // ignore IOE: file too big for 32 bits
+            }
+            throw ioe;
         }
-        largeFile.deleteOnExit();
     }
 
     /**
