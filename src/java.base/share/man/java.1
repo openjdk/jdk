@@ -1,4 +1,4 @@
-.\" Copyright (c) 1994, 2022, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 1994, 2024, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -1538,6 +1538,17 @@ usage by individual \f[CB]CallSite\f[R], individual virtual memory region
 and its committed regions.
 .RS
 .RE
+.RE
+.TP
+.B \f[CB]-XX:TrimNativeHeapInterval=\f[R]\f[I]millis\f[R]
+Interval, in ms, at which the JVM will trim the native heap.
+Lower values will reclaim memory more eagerly at the cost of higher
+overhead.
+A value of 0 (default) disables native heap trimming.
+Native heap trimming is performed in a dedicated thread.
+.RS
+.PP
+This option is only supported on Linux with GNU C Library (glibc).
 .RE
 .TP
 .B \f[CB]\-XX:ObjectAlignmentInBytes=\f[R]\f[I]alignment\f[R]
