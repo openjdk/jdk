@@ -186,10 +186,12 @@ inline T Atomic::PlatformCmpxchg<byte_size>::operator()(T volatile* dest __attri
                                                         T exchange_value,
                                                         atomic_memory_order order) const {
 
-#if !defined(CORRECT_COMPILER_ATOMIC_SUPPORT)
-  STATIC_ASSERT(byte_size >= 8);
-#elif !defined(FULL_COMPILER_ATOMIC_SUPPORT)
+#ifndef FULL_COMPILER_ATOMIC_SUPPORT
   STATIC_ASSERT(byte_size >= 4);
+#endif
+
+#ifndef CORRECT_COMPILER_ATOMIC_SUPPORT
+  STATIC_ASSERT(byte_size != 4);
 #endif
 
   STATIC_ASSERT(byte_size == sizeof(T));
