@@ -4695,38 +4695,42 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
 // Ensure that the inline code and the stub are using the same registers.
 #define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
 do {                                                                    \
-  assert(r_super_klass == rax && r_array_base == rbx &&                 \
-         r_array_length == rdx && r_array_index == rcx &&               \
+  assert(r_super_klass == rcx && r_array_base == rbx &&                 \
+         r_array_length == rdx && r_array_index == rax &&               \
          r_sub_klass == rsi && r_bitmap == r11 && result == rdi,        \
          "registers must match aarch64.ad");                            \
 } while(0)
 
-long piddle_counter;
-void *last_piddle;
-char * piddle_name;
+// long piddle_counter;
+// void *last_piddle;
+// char * piddle_name;
 
-void piddle() {
-  piddle_counter++;
-  last_piddle = __builtin_return_address(0);
-  CodeBlob* cb = CodeCache::find_blob((address)last_piddle);
-  if (cb != nullptr && cb->is_nmethod()) {
-    nmethod *nm = cb->as_nmethod();
-    ResourceMark rm;
-    if (piddle_name) {
-      free(piddle_name);
-    }
-    piddle_name = strdup(nm->method()->name_and_sig_as_C_string());
-    if (strcmp("com.sun.tools.javac.code.Symbol$VarSymbol.getConstValue()Ljava/lang/Object;", piddle_name) == 0) {
-      asm("nop");
-    }
-    if (strcmp("java.util.stream.AbstractPipeline.wrapSink(Ljava/util/stream/Sink;)Ljava/util/stream/Sink;", piddle_name) == 0) {
-      asm("nop");
-    }
-    if (strcmp("com.sun.tools.javac.comp.Attr.checkIdInternal(Lcom/sun/tools/javac/tree/JCTree;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/code/Symbol;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/comp/Env;Lcom/sun/tools/javac/comp/Attr$ResultInfo;)Lcom/sun/tools/javac/code/Type;", piddle_name) == 0) {
-      asm("nop");
-    }
-    fprintf(stderr, "%s\n", piddle_name);
-  }
+// void piddle() {
+//   piddle_counter++;
+//   last_piddle = __builtin_return_address(0);
+//   CodeBlob* cb = CodeCache::find_blob((address)last_piddle);
+//   if (cb != nullptr && cb->is_nmethod()) {
+//     nmethod *nm = cb->as_nmethod();
+//     ResourceMark rm;
+//     if (piddle_name) {
+//       free(piddle_name);
+//     }
+//     piddle_name = strdup(nm->method()->name_and_sig_as_C_string());
+//     if (strcmp("com.sun.tools.javac.code.Symbol$VarSymbol.getConstValue()Ljava/lang/Object;", piddle_name) == 0) {
+//       asm("nop");
+//     }
+//     if (strcmp("java.util.stream.AbstractPipeline.wrapSink(Ljava/util/stream/Sink;)Ljava/util/stream/Sink;", piddle_name) == 0) {
+//       asm("nop");
+//     }
+//     if (strcmp("com.sun.tools.javac.comp.Attr.checkIdInternal(Lcom/sun/tools/javac/tree/JCTree;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/code/Symbol;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/comp/Env;Lcom/sun/tools/javac/comp/Attr$ResultInfo;)Lcom/sun/tools/javac/code/Type;", piddle_name) == 0) {
+//       asm("nop");
+//     }
+//     fprintf(stderr, "%s\n", piddle_name);
+//   }
+// }
+
+void piddle(Klass *super, Klass *sub) {
+  asm("nop");
 }
 
 static void __attribute__((unused)) debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
@@ -4777,11 +4781,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   cmpq(r_array_index, 0);
   jcc(Assembler::greaterEqual, L_failure);
 
-  // push_CPU_state();
-  // call(RuntimeAddress
-  //      (CAST_FROM_FN_PTR(address, &piddle)));
-  // pop_CPU_state();
-
 // #ifdef ASSERT
 //   mov(lr, CAST_FROM_FN_PTR(address, &piddle));
 //   blr(lr);
@@ -4817,12 +4816,20 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     rorq(r_bitmap, bit);
   }
 
+  push_CPU_state();
+  mov(c_rarg1, r_sub_klass);
+  mov_metadata(c_rarg0, super_klass);
+  call(RuntimeAddress
+       (CAST_FROM_FN_PTR(address, &piddle)));
+  pop_CPU_state();
+
   call(RuntimeAddress
        (CAST_FROM_FN_PTR(address, StubRoutines::_klass_subtype_fallback_stub)));
   // Result is in the Z flag
   jcc(Assembler::equal, L_success);
 
   bind(L_failure);
+  cmp(sp, 0);
   movl(result, (u1)1);
   jmp(L_fallthrough);
 

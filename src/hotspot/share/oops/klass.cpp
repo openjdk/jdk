@@ -107,7 +107,9 @@ void Klass::set_name(Symbol* n) {
       if (StressSecondarySuperHash) {
         // Generate many hash collisions in order to stress-test the
         // linear search fallback.
-        _hash %= 3;
+        hash_code = _hash % 3;
+        hash_code = hash_code * (64 / 3);
+        _hash = hash_code << secondary_shift();
       }
     }
   }
