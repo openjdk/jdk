@@ -35,17 +35,10 @@
 
 BOOL DWMIsCompositionEnabled();
 
-jboolean initScreens(JNIEnv *env) {
-
+void initScreens(JNIEnv *env) {
     if (!Devices::UpdateInstance(env)) {
         JNU_ThrowInternalError(env, "Could not update the devices array.");
     }
-
-    // return true if at least one device is available
-    Devices * devices = Devices::GetInstance();
-    int numDevices = devices->GetNumDevices();
-    devices->Release();
-    return numDevices > 0 ? JNI_TRUE : JNI_FALSE;
 }
 
 /**
@@ -140,9 +133,9 @@ BOOL DWMIsCompositionEnabled() {
 /*
  * Class:     sun_awt_Win32GraphicsEnvironment
  * Method:    initDisplay
- * Signature: ()Z
+ * Signature: ()V
  */
-JNIEXPORT jboolean JNICALL
+JNIEXPORT void JNICALL
 Java_sun_awt_Win32GraphicsEnvironment_initDisplay(JNIEnv *env,
                                                   jclass thisClass)
 {
@@ -151,7 +144,7 @@ Java_sun_awt_Win32GraphicsEnvironment_initDisplay(JNIEnv *env,
 
     DWMIsCompositionEnabled();
 
-    return initScreens(env);
+    initScreens(env);
 }
 
 /*

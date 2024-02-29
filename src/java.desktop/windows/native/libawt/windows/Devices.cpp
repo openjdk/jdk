@@ -123,7 +123,7 @@ static BOOL WINAPI clb_fCountMonitors(HMONITOR hMon, HDC hDC, LPRECT rRect, LPAR
     return TRUE;
 }
 
-static int WINAPI CountMonitors(void)
+int WINAPI CountMonitors(void)
 {
     int monitorCounter = 0;
     ::EnumDisplayMonitors(NULL, NULL, clb_fCountMonitors, (LPARAM)&monitorCounter);

@@ -54,15 +54,14 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     static final float debugScaleX;
     static final float debugScaleY;
 
-    static final boolean hasDisplays;
-
     static {
         // Ensure awt is loaded already.  Also, this forces static init
         // of WToolkit and Toolkit, which we depend upon
         WToolkit.loadLibraries();
         // setup flags before initializing native layer
         WindowsFlags.initFlags();
-        hasDisplays = initDisplay();
+
+        initDisplay();
 
         // Install correct surface manager factory.
         SurfaceManagerFactory.setInstance(new WindowsSurfaceManagerFactory());
@@ -84,15 +83,11 @@ public final class Win32GraphicsEnvironment extends SunGraphicsEnvironment {
     }
 
     /**
-     * Initializes native components of the graphics environment.  This
+     * Initializes native components of the graphics environment. This
      * includes everything from the native GraphicsDevice elements to
      * the DirectX rendering layer.
      */
-    private static native boolean initDisplay();
-
-    static boolean hasDisplays() {
-        return hasDisplays;
-    }
+    private static native void initDisplay();
 
     public Win32GraphicsEnvironment() {
     }

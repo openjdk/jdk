@@ -28,19 +28,29 @@ package sun.awt;
 import java.awt.GraphicsEnvironment;
 import java.awt.Toolkit;
 
+import sun.awt.windows.WToolkit;
+
 public class PlatformGraphicsInfo {
+
+    private static boolean hasDisplays = hasDisplays0();
+
+    private static native boolean hasDisplays0();
+
+    private static boolean hasDisplays() {
+        return hasDisplays;
+    }
 
     public static GraphicsEnvironment createGE() {
         return new Win32GraphicsEnvironment();
     }
 
     public static Toolkit createToolkit() {
-        return new sun.awt.windows.WToolkit();
+        return new WToolkit();
     }
 
     public static boolean getDefaultHeadlessProperty() {
         // If we don't find usable displays, we run headless.
-        return !Win32GraphicsEnvironment.hasDisplays();
+        return !hasDisplays();
     }
 
     /*
@@ -53,5 +63,4 @@ public class PlatformGraphicsInfo {
             "\nThe application does not have desktop access,\n" +
             "but this program performed an operation which requires it.";
     }
-
 }
