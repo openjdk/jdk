@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 package nsk.share.jpda;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import nsk.share.*;
@@ -123,7 +124,7 @@ public class SocketIOPipe extends Log.Logger implements Finalizable {
               // then we should retry the bind() a few times.
               ss.setReuseAddress(false);
             }
-            ss.bind(new InetSocketAddress(port));
+            ss.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), port));
             pipe.setServerSocket(ss);
         } catch (IOException e) {
             e.printStackTrace(log.getOutStream());
