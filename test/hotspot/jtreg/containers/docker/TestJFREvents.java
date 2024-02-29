@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,10 @@ public class TestJFREvents {
             testMemory("200m", "" + 200*MB);
             testMemory("500m", "" + 500*MB);
             testMemory("1g", "" + 1024*MB);
+
+            // see https://docs.docker.com/config/containers/resource_constraints/
+            testSwapMemory("200m", "200m", "" + 0*MB, "" + 0*MB);
+            testSwapMemory("200m", "300m", "" + 100*MB, "" + 100*MB);
 
             testProcessInfo();
 
@@ -208,6 +212,19 @@ public class TestJFREvents {
                                       .addClassOptions("jdk.PhysicalMemory"))
             .shouldHaveExitValue(0)
             .shouldContain("totalSize = " + expectedValue);
+    }
+
+
+    private static void testSwapMemory(String memValueToSet, String swapValueToSet, String expectedTotalValue, String expectedFreeValue) throws Exception {
+        Common.logNewTestCase("Memory: --memory = " + memValueToSet + " --memory-swap = " + swapValueToSet);
+        DockerTestUtils.dockerRunJava(
+                                      commonDockerOpts()
+                                      .addDockerOpts("--memory=" + memValueToSet)
+                                      .addDockerOpts("--memory-swap=" + swapValueToSet)
+                                      .addClassOptions("jdk.SwapSpace"))
+            .shouldHaveExitValue(0)
+            .shouldContain("totalSize = " + expectedTotalValue)
+            .shouldContain("freeSize = " + expectedFreeValue);
     }
 
 
