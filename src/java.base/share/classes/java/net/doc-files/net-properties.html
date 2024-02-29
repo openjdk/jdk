@@ -95,8 +95,8 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 		separated by the '|' character. In addition, the wildcard
 	        character '*' can be used for pattern matching. For example,
 		{@code -Dhttp.nonProxyHosts="*.foo.com|localhost"}
-		will indicate that every host in the foo.com domain and the
-		localhost should be accessed directly even if a proxy server is
+		will indicate that every host in the foo.com domain (including sub-domains)
+		and the localhost should be accessed directly even if a proxy server is
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
         </UL>
@@ -130,8 +130,8 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 	        the '|' character. In addition, the wildcard character
 		'*' can be used for pattern matching. For example,
 		{@code -Dftp.nonProxyHosts="*.foo.com|localhost"}
-		will indicate that every host in the foo.com domain and the
-		localhost should be accessed directly even if a proxy server is
+		will indicate that every host in the foo.com domain (including sub-domains)
+		and the localhost should be accessed directly even if a proxy server is
 		specified.</P>
                 <P>The default value excludes all common variations of the loopback address.</P>
 	</UL>
@@ -152,8 +152,8 @@ to determine the proxy that should be used for connecting to a given URI.</P>
 			the '|' character. In addition, the wildcard character
 			'*' can be used for pattern matching. For example,
 			{@code -DsocksNonProxyHosts="*.foo.com|localhost"}
-			will indicate that every host in the foo.com domain and the
-			localhost should be accessed directly even if a proxy server is
+			will indicate that every host in the foo.com domain (including sub-domains)
+			and the localhost should be accessed directly even if a proxy server is
 			specified.</P>
 			<P>The default value excludes all common variations of the loopback address.</P>
 		<LI><P><B>{@systemProperty socksProxyVersion}</B> (default: {@code 5})<BR>
