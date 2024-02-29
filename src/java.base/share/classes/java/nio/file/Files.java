@@ -3836,7 +3836,7 @@ public final class Files {
     /**
      * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed in <em>post-order</em>, <em>depth-first</em>
+     * file tree is traversed in <em>pre-order</em>, <em>depth-first</em>
      * fashion, the elements in the stream are {@link Path} objects that are
      * obtained as if by {@link Path#resolve(Path) resolving} the relative
      * path against {@code start}.
@@ -3936,7 +3936,7 @@ public final class Files {
     /**
      * Returns a {@code Stream} that is lazily populated with {@code
      * Path} by walking the file tree rooted at a given starting file.  The
-     * file tree is traversed in <em>post-order</em>, <em>depth-first</em>
+     * file tree is traversed in <em>pre-order</em>, <em>depth-first</em>
      * fashion, the elements in the stream are {@link Path} objects that are
      * obtained as if by {@link Path#resolve(Path) resolving} the relative
      * path against {@code start}.
