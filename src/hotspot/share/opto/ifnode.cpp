@@ -454,6 +454,22 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   return new ConINode(TypeInt::ZERO);
 }
 
+IfNode* IfNode::make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol) {
+  // Assert here that we only try to create a clone from an If node with the same profiling if that actually makes sense.
+  // Some If node subtypes should not be cloned in this way. In theory, we should not clone BaseCountedLoopEndNodes.
+  // But they can end up being used as normal If nodes when peeling a loop - they serve as zero-trip guard.
+  // Allow them as well.
+  assert(if_node_profile->Opcode() == Op_If || if_node_profile->is_RangeCheck()
+         || if_node_profile->is_BaseCountedLoopEnd(), "should not clone other nodes");
+  if (if_node_profile->is_RangeCheck()) {
+    // RangeCheck nodes could be further optimized.
+    return new RangeCheckNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  } else {
+    // Not a RangeCheckNode? Fall back to IfNode.
+    return new IfNode(ctrl, bol, if_node_profile->_prob, if_node_profile->_fcnt);
+  }
+}
+
 // if this IfNode follows a range check pattern return the projection
 // for the failed path
 ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
