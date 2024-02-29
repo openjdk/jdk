@@ -110,6 +110,13 @@ public final class ModuleLoaderMap {
         return Modules.platformModules;
     }
 
+    /**
+     * Returns the names of the modules defined to the application loader which perform native access.
+     */
+    public static Set<String> nativeModules() {
+        return Modules.nativeModules;
+    }
+
     private static class Modules {
         // list of boot modules is generated at build time.
         private static final Set<String> bootModules =
@@ -118,6 +125,10 @@ public final class ModuleLoaderMap {
         // list of platform modules is generated at build time.
         private static final Set<String> platformModules =
                 Set.of(new String[] { "@@PLATFORM_MODULE_NAMES@@" });
+
+        // list of jdk modules is generated at build time.
+        private static final Set<String> nativeModules =
+                Set.of(new String[] { "@@NATIVE_MODULE_NAMES@@" });
     }
 
     /**

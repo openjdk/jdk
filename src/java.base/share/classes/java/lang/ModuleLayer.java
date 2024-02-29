@@ -1008,6 +1008,13 @@ public final class ModuleLayer {
         }
     }
 
+    /**
+     * Returns the nameToModule map.
+     */
+    Map<String, Module> nameToModule() {
+        return nameToModule;
+    }
+
     // the list of layers with modules defined to a class loader
     private static final ClassLoaderValue<List<ModuleLayer>> CLV = new ClassLoaderValue<>();
 }

@@ -48,6 +48,7 @@ public class GenModuleLoaderMap {
         // default set of boot modules and ext modules
         Stream<String> bootModules = Stream.empty();
         Stream<String> platformModules = Stream.empty();
+        Stream<String> nativeModules = Stream.empty();
         Path outfile = null;
         Path source = null;
         for (int i=0; i < args.length; i++) {
@@ -60,6 +61,9 @@ public class GenModuleLoaderMap {
                 } else if (option.equals("-platform")) {
                     String[] mns = arg.split(",");
                     platformModules = Stream.concat(platformModules, Arrays.stream(mns));
+                } else if (option.equals("-native")) {
+                    String[] mns = arg.split(",");
+                    nativeModules = Stream.concat(nativeModules, Arrays.stream(mns));
                 } else if (option.equals("-o")) {
                     outfile = Paths.get(arg);
                 } else {
@@ -84,6 +88,8 @@ public class GenModuleLoaderMap {
                     line = patch(line, "@@BOOT_MODULE_NAMES@@", bootModules);
                 } else if (line.contains("@@PLATFORM_MODULE_NAMES@@")) {
                     line = patch(line, "@@PLATFORM_MODULE_NAMES@@", platformModules);
+                } else if (line.contains("@@NATIVE_MODULE_NAMES@@")) {
+                    line = patch(line, "@@NATIVE_MODULE_NAMES@@", nativeModules);
                 }
                 writer.println(line);
             }

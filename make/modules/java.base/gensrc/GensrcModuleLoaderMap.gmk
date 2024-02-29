@@ -37,8 +37,9 @@ $(strip \
 endef
 BOOT_MODULES_LIST := $(call SubstComma, $(BOOT_MODULES))
 PLATFORM_MODULES_LIST := $(call SubstComma, $(PLATFORM_MODULES))
+NATIVE_MODULES_LIST := $(call SubstComma, $(NATIVE_MODULES))
 
-VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST)
+VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST) $(JDK_MODULES_LIST)
 VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)
 
 ############################################################################
@@ -49,7 +50,8 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: 
 	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
 	$(TOOL_GENCLASSLOADERMAP) -boot $(BOOT_MODULES_LIST) \
-	     -platform $(PLATFORM_MODULES_LIST) -o $@.tmp $<
+	     -platform $(PLATFORM_MODULES_LIST) \
+	     -native $(NATIVE_MODULES_LIST) -o $@.tmp $<
 	$(MV) $@.tmp $@
 
 TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java

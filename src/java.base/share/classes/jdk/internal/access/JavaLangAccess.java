@@ -270,6 +270,12 @@ public interface JavaLangAccess {
     Module addEnableNativeAccess(Module m);
 
     /**
+     * Updates module named name in layer layer to allow access to restricted methods.
+     * Returns true iff the given module exists in the given layer.
+     */
+    boolean addEnableNativeAccess(ModuleLayer layer, String name);
+
+    /**
      * Updates all unnamed modules to allow access to restricted methods.
      */
     void addEnableNativeAccessToAllUnnamed();
