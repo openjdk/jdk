@@ -169,15 +169,19 @@ jlong CgroupV1Subsystem::memory_and_swap_limit_in_bytes() {
 }
 
 jlong CgroupV1Subsystem::memory_and_swap_usage_in_bytes() {
-  // isSwapEnabled - maybe compute once and save?
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.limit_in_bytes", "Memory and Swap Limit is: ", JULONG_FORMAT, JULONG_FORMAT, memsw_bytes);
-  GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.swappiness", "Swappiness is: ", JULONG_FORMAT, JULONG_FORMAT, swappiness);
-  if (memsw_bytes > 0 && swappiness > 0) {
+  jlong memory_sw_limit = memory_and_swap_limit_in_bytes();
+  jlong memory_limit = CgroupSubsystem::memory_limit_in_bytes();
+  if (memory_sw_limit > 0 && memory_limit > 0) {
+    jlong delta_swap = memory_sw_limit - memory_limit;
+    if (delta_swap > 0) {
       GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.usage_in_bytes",
-                     "mem swap usage is: ", JULONG_FORMAT, JULONG_FORMAT, memory_swap_usage);
-      return memory_swap_usage;
+                         "mem swap usage is: ", JULONG_FORMAT, JULONG_FORMAT, memory_swap_usage);
+      return (jlong)memory_swap_usage;
+    } else {
+      // no swap
+      return 0;
+    }
   }
-  // fallback like we use in mbean code
   return memory_usage_in_bytes();
 }
 
