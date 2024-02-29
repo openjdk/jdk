@@ -1258,39 +1258,58 @@ class G1MergeHeapRootsTask : public WorkerTask {
     size_t cards_skipped() const { return _cards_skipped; }
   };
 
-  HeapRegionClaimer _hr_claimer;
+  uint _num_workers;
   G1RemSetScanState* _scan_state;
-  BufferNode::Stack _dirty_card_buffers;
+  BufferNode::Stack* _dirty_card_buffers;
   bool _initial_evacuation;
 
   volatile bool _fast_reclaim_handled;
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, worker_id);
-      dcqs.deallocate_buffer(node);
+    for (uint i = 0; i < _num_workers; i++) {
+      uint index = (worker_id + i) % _num_workers;
+      while (BufferNode* node = _dirty_card_buffers[index].pop()) {
+        cl->apply_to_buffer(node, worker_id);
+        dcqs.deallocate_buffer(node);
+      }
     }
   }
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
-    _hr_claimer(num_workers),
+    _num_workers(num_workers),
     _scan_state(scan_state),
-    _dirty_card_buffers(),
+    _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
     _fast_reclaim_handled(false)
   {
     if (initial_evacuation) {
+      _dirty_card_buffers = NEW_C_HEAP_ARRAY(BufferNode::Stack, num_workers, mtGC);
+      for (uint i = 0; i < num_workers; i++)
+      {
+        new (&_dirty_card_buffers[i]) BufferNode::Stack();
+      }
+
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
-      if (buffers._entry_count != 0) {
-        _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
+      BufferNode* cur = buffers._head;
+      uint worker = 0;
+      while (cur != nullptr) {
+        BufferNode* next = cur->next();
+        cur->set_next(nullptr);
+        _dirty_card_buffers[worker++ % num_workers].push(*cur);
+        cur = next;
       }
     }
   }
 
+  ~G1MergeHeapRootsTask() {
+    if (_dirty_card_buffers != nullptr) {
+      FREE_C_HEAP_ARRAY(BufferNode::Stack, _dirty_card_buffers);
+    }
+  }
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();
