@@ -402,7 +402,6 @@ public class Table extends Content {
 
             int tabIndex = 0;
             tablist.add(createTab(HtmlIds.forTab(id, tabIndex), activeTabStyle, true, defaultTab));
-            table.put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTab(id, tabIndex).name());
             for (Content tabLabel : tabMap.keySet()) {
                 tabIndex++;
                 if (tabs.contains(tabLabel)) {
@@ -415,7 +414,8 @@ public class Table extends Content {
             }
             HtmlTree tabpanel = new HtmlTree(TagName.DIV)
                     .setId(HtmlIds.forTabPanel(id))
-                    .put(HtmlAttr.ROLE, "tabpanel");
+                    .put(HtmlAttr.ROLE, "tabpanel")
+                    .put(HtmlAttr.ARIA_LABELLEDBY, HtmlIds.forTab(id, 0).name());
             table.add(getTableBody());
             tabpanel.add(table);
             main.add(tablist);
