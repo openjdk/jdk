@@ -57,6 +57,10 @@ public class GenCPFullOfMH extends GenFullCP {
                         ClassFile.ACC_PUBLIC,
                         mb -> mb.withCode(
                                 CodeBuilder::return_))));
+
+        bytes = createInitMethod(bytes);
+        bytes = createTargetMethod(bytes);
+
         return bytes;
     }
 
