@@ -975,11 +975,6 @@ class PSParallelCompact : AllStatic {
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
 
-  // Compute the dense prefix for the designated space.  This is an experimental
-  // implementation currently not used in production.
-  static HeapWord* compute_dense_prefix_via_density(const SpaceId id,
-                                                    bool maximum_compaction);
-
   // Methods used to compute the dense prefix.
 
   // Compute the value of the normal distribution at x = density.  The mean and
@@ -1170,10 +1165,6 @@ class PSParallelCompact : AllStatic {
   // Debugging support.
   static const char* space_names[last_space_id];
   static void print_region_ranges();
-  static void print_dense_prefix_stats(const char* const algorithm,
-                                       const SpaceId id,
-                                       const bool maximum_compaction,
-                                       HeapWord* const addr);
   static void summary_phase_msg(SpaceId dst_space_id,
                                 HeapWord* dst_beg, HeapWord* dst_end,
                                 SpaceId src_space_id,
