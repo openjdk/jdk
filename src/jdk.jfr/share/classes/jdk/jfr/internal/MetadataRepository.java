@@ -203,7 +203,12 @@ public final class MetadataRepository {
         if (pEventType == null) {
             pEventType = (PlatformEventType) TypeLibrary.createType(eventClass, dynamicAnnotations, dynamicFields);
         }
-        // Check for native mirror
+        // Check for native mirror.
+        // Note, defining an event in metadata.xml is not a generic mechanism to emit
+        // native data in Java. For example, calling JVM.getStackTraceId(int, long)
+        // and assign the result to a long field is not enough to always get a proper
+        // stack trace. Purpose of the mechanism is to transfer metadata, such as
+        // native type IDs, without specialized Java logic for each type.
         if (eventClass.getClassLoader() == null) {
             Name name = eventClass.getAnnotation(Name.class);
             if (name != null) {
@@ -214,7 +219,7 @@ public final class MetadataRepository {
                     var eventFields = pEventType.getFields();
                     var comparator = Comparator.comparing(ValueDescriptor::getName);
                     if (!Utils.compareLists(nativeFields, eventFields, comparator)) {
-                        throw new InternalError("Fields for native mirror event " + n + " doesn't match Java event");
+                        throw new InternalError("Field for native mirror event " + n + " doesn't match Java event");
                     }
                     nativeEventTypes.remove(n);
                     nativeControls.remove(n);
