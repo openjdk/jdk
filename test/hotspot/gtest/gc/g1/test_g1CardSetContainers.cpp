@@ -23,7 +23,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CardSetContainers.inline.hpp"
-#include "gc/g1/heapRegionBounds.inline.hpp"
+#include "gc/g1/g1HeapRegionBounds.inline.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "utilities/globalDefinitions.hpp"

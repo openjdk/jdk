@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 import jdk.test.lib.thread.VThreadRunner;
+import jdk.test.lib.thread.VThreadPinner;
 
 public class GetStackTraceALotWhenPinned {
 
@@ -65,13 +66,14 @@ public class GetStackTraceALotWhenPinned {
                 barrier.await();
 
                 Thread.yield();
-                synchronized (GetStackTraceALotWhenPinned.class) {
-                    if (timed) {
+                boolean b = timed;
+                VThreadPinner.runPinned(() -> {
+                    if (b) {
                         LockSupport.parkNanos(Long.MAX_VALUE);
                     } else {
                         LockSupport.park();
                     }
-                }
+                });
                 timed = !timed;
             }
         });
