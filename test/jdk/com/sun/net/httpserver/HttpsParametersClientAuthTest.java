@@ -231,7 +231,7 @@ public class HttpsParametersClientAuthTest {
                                 break;
                             } else if (cause instanceof SSLHandshakeException she) {
                                 final String msg = she.getMessage();
-                                assertTrue(msg != null && msg.contains("bad_certificate"),
+                                assertTrue(msg != null && msg.contains("certificate_required"),
                                         "unexpected message in SSLHandshakeException: " + msg);
                                 System.out.println("received the expected exception: " + she);
                                 break;
