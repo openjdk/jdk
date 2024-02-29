@@ -37,6 +37,7 @@
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
 #include "opto/macro.hpp"
+#include "opto/locknode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/movenode.hpp"
 #include "opto/rootnode.hpp"
@@ -2547,7 +2548,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
         if (!alock->is_non_esc_obj()) {
-          if (not_global_escape(alock->obj_node())) {
+          if (can_eliminate_lock(alock)) {
             assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
             // The lock could be marked eliminated by lock coarsening
             // code during first IGVN before EA. Replace coarsened flag
@@ -2880,6 +2881,21 @@ bool ConnectionGraph::not_global_escape(Node *n) {
   return true;
 }
 
+// Return true if locked object does not escape globally
+// and locked code region (identified by BoxLockNode) is balanced:
+// all compiled code paths have corresponding Lock/Unlock pairs.
+bool ConnectionGraph::can_eliminate_lock(AbstractLockNode* alock) {
+  BoxLockNode* box = alock->box_node()->as_BoxLock();
+  if (!box->is_unbalanced() && not_global_escape(alock->obj_node())) {
+    if (EliminateNestedLocks) {
+      // We can mark whole locking region as Local only when only
+      // one object is used for locking.
+      box->set_local();
+    }
+    return true;
+  }
+  return false;
+}
 
 // Helper functions
 
