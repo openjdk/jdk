@@ -139,7 +139,7 @@ public interface JMXConnector extends Closeable {
      * than {@link #getMBeanServerConnection()}.
      *
      * @param delegationSubject must be null, since the removal of the
-     * Subject Delegation feature.  If non-null, a SecurityException is thrown.
+     * Subject Delegation feature.  If non-null, UnsupportedOperationException is thrown.
      *
      * @return an object that implements the <code>MBeanServerConnection</code>
      * interface by forwarding its methods to the remote MBean server.
@@ -159,7 +159,7 @@ public interface JMXConnector extends Closeable {
             throws IOException {
 
         if (delegationSubject != null) {
-            throw new SecurityException("Subject Delegation has been removed.");
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
         }
         return getMBeanServerConnection();
     }
