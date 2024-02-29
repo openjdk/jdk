@@ -71,8 +71,12 @@ is used mainly for security (to get through firewalls) and
 performance reasons (proxies often do provide caching mechanisms).</P>
 <P>Applications may use the {@link java.net.ProxySelector#select(URI)} method
 to determine the proxy that should be used for connecting to a given URI.</P>
-<P>The following properties allow for configuration of the
-{@linkplain java.net.ProxySelector#getDefault() default proxy selector}.</P>
+<P>The following properties are used to configure the JDK default
+	{@link java.net.ProxySelector} implementation.
+	This is the ProxySelector returned by {@link java.net.ProxySelector#getDefault()}
+	when no default ProxySelector was installed by
+	{@link java.net.ProxySelector#setDefault(ProxySelector)}
+</P>
 <UL>
 	<LI><P>HTTP</P>
 	<P>The following properties are used to configure the proxy
