@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,6 +191,7 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
+  _heap->flush_region_pin_cache();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -309,6 +310,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
 
     reference_processor()->set_active_mt_degree(old_active_mt_degree);
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
+    for (uint i = 0; i < workers(); i++) {
+      marker(i)->flush_mark_stats_cache();
+    }
   }
 
   // Weak oops cleanup.

@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -634,8 +635,8 @@ void MacroAssembler::unimplemented(const char* what) {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  IncompressibleRegion ir(this);  // Fixed length: see CompiledStaticCall::to_interp_stub_size().
-  // CompiledDirectStaticCall::set_to_interpreted knows the
+  IncompressibleRegion ir(this);  // Fixed length: see CompiledDirectCall::to_interp_stub_size().
+  // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
   mov_metadata(xmethod, (Metadata*)nullptr);
@@ -2542,7 +2543,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -3540,6 +3541,48 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   movptr(t1, (address)Universe::non_oop_word());
   assert_cond(entry != nullptr);
   return trampoline_call(Address(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  // No compressed
+  return (NativeInstruction::instruction_size * (2 /* 2 loads */ + 1 /* branch */)) +
+          far_branch_size();
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  IncompressibleRegion ir(this);
+  Register receiver = j_rarg0;
+  Register data = t1;
+
+  Register tmp1 = t0; // t0 always scratch
+  // t2 is saved on call, thus should have been saved before this check.
+  // Hence we can clobber it.
+  Register tmp2 = t2;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, ic_check_size());
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    lwu(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  } else {
+    ld(tmp1,  Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ld(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  }
+
+  Label ic_hit;
+  beq(tmp1, tmp2, ic_hit);
+  // Note, far_jump is not fixed size.
+  // Is this ever generates a movptr alignment/size will be off.
+  far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  bind(ic_hit);
+
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point.");
+  return uep_offset;
 }
 
 // Emit a trampoline stub for a call to a target which is too far away.

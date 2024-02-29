@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -45,14 +45,14 @@ static jvmtiEnv *jvmti;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
-static jfieldID thrown_fid = NULL;
+static jfieldID thrown_fid = nullptr;
 static field fields[] = {
-    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001", "fld0", "I", 0, NULL },
-    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001", "fld1", "I", 1, NULL },
+    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001", "fld0", "I", 0, nullptr },
+    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001", "fld1", "I", 1, nullptr },
     { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001", "fld2",
-      "Lnsk/jvmti/ClearFieldAccessWatch/clrfldw001a;", 0, NULL },
-    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001a", "fld3", "[I", 0, NULL },
-    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001b", "fld4", "F", 0, NULL },
+      "Lnsk/jvmti/ClearFieldAccessWatch/clrfldw001a;", 0, nullptr },
+    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001a", "fld3", "[I", 0, nullptr },
+    { "nsk/jvmti/ClearFieldAccessWatch/clrfldw001b", "fld4", "F", 0, nullptr },
 };
 
 void switchWatch(JNIEnv *env, jint ind, jboolean on) {
@@ -62,7 +62,7 @@ void switchWatch(JNIEnv *env, jint ind, jboolean on) {
     const char *msg;
 
     cls = env->FindClass(fld.klass);
-    if (fld.fid == NULL) {
+    if (fld.fid == nullptr) {
         if (fld.stat) {
             fields[ind].fid = env->GetStaticFieldID(cls, fld.name, fld.sig);
         } else {
@@ -109,7 +109,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -145,7 +145,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
 
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_ACCESS, NULL);
+                JVMTI_EVENT_FIELD_ACCESS, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable JVMTI_EVENT_FIELD_ACCESS: %s (%d)\n",
                    TranslateError(err), err);
@@ -182,7 +182,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_ClearFieldAccessWatch_clrfldw001_check(JNIEnv *env,
         jclass cls, jint fld_ind, jboolean flag) {
     if (caps.can_generate_field_access_events) {
-        if (flag == JNI_FALSE && thrown_fid != NULL) {
+        if (flag == JNI_FALSE && thrown_fid != nullptr) {
             result = STATUS_FAILED;
             printf("(Field %d) FIELD_ACCESS event without access watch set\n",
                    fld_ind);
@@ -191,7 +191,7 @@ Java_nsk_jvmti_ClearFieldAccessWatch_clrfldw001_check(JNIEnv *env,
             printf("(Field %d) thrown field ID expected: 0x%p, got: 0x%p\n",
                    fld_ind, fields[fld_ind].fid, thrown_fid);
         }
-        thrown_fid = NULL;
+        thrown_fid = nullptr;
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,9 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -78,7 +78,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
         eventsStart = 0;
         eventsEnd = 0;
         NSK_DISPLAY1("Enable events: %d events\n", EVENTS_COUNT);
-        if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL))
+        if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr))
             return;
 
         NSK_DISPLAY0("Let tested thread to run\n");
@@ -90,7 +90,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
             return;
 
         NSK_DISPLAY1("Disable events: %d events\n", EVENTS_COUNT);
-        if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL))
+        if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr))
             return;
 
         NSK_DISPLAY1("Check if all expected events received for tested thread: %s\n",
@@ -117,7 +117,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni, void* arg) {
 JNIEXPORT void JNICALL
 callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     /* check if event is for tested thread */
-    if (thread != NULL) {
+    if (thread != nullptr) {
         jvmtiThreadInfo info;
 
         if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))) {
@@ -125,14 +125,14 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
             return;
         }
 
-        if (info.name != NULL && strcmp(info.name, THREAD_NAME) == 0) {
+        if (info.name != nullptr && strcmp(info.name, THREAD_NAME) == 0) {
             NSK_DISPLAY2("  ... received THREAD_START event for tested thread: %p (%s)\n",
                                                             (void*)thread, info.name);
             eventsStart++;
 
             NSK_DISPLAY1("SetThreadLocalStorage() for current thread with pointer: %p\n",
                                                                 (void*)initialStorage);
-            if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(NULL, (void*)initialStorage))) {
+            if (!NSK_JVMTI_VERIFY(jvmti->SetThreadLocalStorage(nullptr, (void*)initialStorage))) {
                 nsk_jvmti_setFailStatus();
                 return;
             }
@@ -145,7 +145,7 @@ callbackThreadStart(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
 JNIEXPORT void JNICALL
 callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
     /* check if event is for tested thread */
-    if (thread != NULL) {
+    if (thread != nullptr) {
         jvmtiThreadInfo info;
 
         if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(thread, &info))) {
@@ -153,18 +153,18 @@ callbackThreadEnd(jvmtiEnv* jvmti, JNIEnv* jni, jthread thread) {
             return;
         }
 
-        if (info.name != NULL && strcmp(info.name, THREAD_NAME) == 0) {
+        if (info.name != nullptr && strcmp(info.name, THREAD_NAME) == 0) {
             NSK_DISPLAY2("  ... received THREAD_END event for tested thread: %p (%s)\n",
                                                             (void*)thread, info.name);
             eventsEnd++;
 
             /* get storage data */
             {
-                StorageStructure* obtainedStorage = NULL;
+                StorageStructure* obtainedStorage = nullptr;
 
                 NSK_DISPLAY0("GetThreadLocalStorage() for current thread\n");
                 if (!NSK_JVMTI_VERIFY(
-                        jvmti->GetThreadLocalStorage(NULL, (void**)&obtainedStorage))) {
+                        jvmti->GetThreadLocalStorage(nullptr, (void**)&obtainedStorage))) {
                     nsk_jvmti_setFailStatus();
                     return;
                 }
@@ -219,7 +219,7 @@ JNIEXPORT jint JNI_OnLoad_setthrdstor003(JavaVM *jvm, char *options, void *reser
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv* jvmti = NULL;
+    jvmtiEnv* jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -229,7 +229,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* set callbacks for thread events */
@@ -243,7 +243,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     }
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

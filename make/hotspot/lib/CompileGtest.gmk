@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     NAME := gtest, \
     TYPE := STATIC_LIBRARY, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/libgtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/libgtest/objs, \
     SRC := \
@@ -75,25 +75,11 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
 TARGETS += $(BUILD_GTEST_LIBGTEST)
 
 ################################################################################
-
-ifeq ($(call isTargetOs, windows), true)
-  GTEST_JVM_MAPFILE := $(JVM_MAPFILE)
-else
-  GTEST_JVM_MAPFILE := $(JVM_OUTPUTDIR)/gtest/mapfile
-
-  $(JVM_OUTPUTDIR)/gtest/symbols: $(JVM_OUTPUTDIR)/symbols
-	$(call MakeDir, $(@D))
-	( $(CAT) $< ; echo "runUnitTests" ) > $@
-
-  $(GTEST_JVM_MAPFILE): $(JVM_OUTPUTDIR)/gtest/symbols
-	$(call create-mapfile)
-endif
-
 # Additional disabled warnings are due to code in the test source.
 
 $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     NAME := jvm, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/objs, \
     SRC := $(GTEST_TEST_SRC), \
@@ -123,8 +109,6 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     LIBS_unix := -lgtest, \
     LIBS_windows := $(JVM_OUTPUTDIR)/libgtest/gtest.lib, \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
-    MAPFILE := $(GTEST_JVM_MAPFILE), \
-    USE_MAPFILE_FOR_SYMBOLS := true, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \
     ZIP_EXTERNAL_DEBUG_SYMBOLS := false, \
     STRIP_SYMBOLS := false, \
@@ -134,14 +118,19 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
 
 $(BUILD_GTEST_LIBJVM) : $(BUILD_GTEST_LIBGTEST)
 
+ifeq ($(call isTargetOs, windows), true)
+  $(BUILD_GTEST_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
+endif
+
+
 TARGETS += $(BUILD_GTEST_LIBJVM)
 
 ################################################################################
 
 $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     NAME := gtestLauncher, \
     TYPE := EXECUTABLE, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \

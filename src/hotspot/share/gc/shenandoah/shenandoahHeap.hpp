@@ -295,6 +295,9 @@ public:
 private:
   bool _gc_state_changed;
   ShenandoahSharedBitmap _gc_state;
+
+  // tracks if new regions have been allocated or retired since last check
+  ShenandoahSharedFlag   _heap_changed;
   ShenandoahSharedFlag   _degenerated_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_in_progress;
   ShenandoahSharedFlag   _full_gc_move_in_progress;
@@ -315,6 +318,12 @@ public:
   // This is public to support assertions that the state hasn't been changed off of
   // a safepoint and that any changes were propagated to java threads after the safepoint.
   bool has_gc_state_changed() const { return _gc_state_changed; }
+
+  // Returns true if allocations have occurred in new regions or if regions have been
+  // uncommitted since the previous calls. This call will reset the flag to false.
+  bool has_changed() {
+    return _heap_changed.try_unset();
+  }
 
   void set_concurrent_mark_in_progress(bool in_progress);
   void set_evacuation_in_progress(bool in_progress);
@@ -364,9 +373,13 @@ public:
   void cancel_gc(GCCause::Cause cause);
 
 public:
-  // Elastic heap support
-  void entry_uncommit(double shrink_before, size_t shrink_until);
+  // These will uncommit empty regions if heap::committed > shrink_until
+  // and there exists at least one region which was made empty before shrink_before.
+  void maybe_uncommit(double shrink_before, size_t shrink_until);
   void op_uncommit(double shrink_before, size_t shrink_until);
+
+  // Returns true if the soft maximum heap has been changed using management APIs.
+  bool check_soft_max_changed();
 
 private:
   // GC support
@@ -428,15 +441,12 @@ private:
   GCMemoryManager              _stw_memory_manager;
   GCMemoryManager              _cycle_memory_manager;
   ConcurrentGCTimer*           _gc_timer;
-  SoftRefPolicy                _soft_ref_policy;
-
   // For exporting to SA
   int                          _log_min_obj_alignment_in_bytes;
 public:
   ShenandoahMonitoringSupport* monitoring_support()          { return _monitoring_support;    }
   GCMemoryManager* cycle_memory_manager()                    { return &_cycle_memory_manager; }
   GCMemoryManager* stw_memory_manager()                      { return &_stw_memory_manager;   }
-  SoftRefPolicy* soft_ref_policy()                  override { return &_soft_ref_policy;      }
 
   GrowableArray<GCMemoryManager*> memory_managers() override;
   GrowableArray<MemoryPool*> memory_pools() override;

@@ -112,4 +112,3 @@ public class VarInsnNode extends AbstractInsnNode {
         return new VarInsnNode(opcode, var).cloneAnnotations(this);
     }
 }
-
