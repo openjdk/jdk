@@ -262,14 +262,14 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
         ForceTranslateFailure(String.class, null, NO_HELP),
 
         /**
-         * Records a stack trace along with scoped foreign object reference wrappers
-         * to debug issue with a wrapper being used after its scope has closed.
+         * Captures a stack trace along with scoped foreign object reference wrappers
+         * to debug an issue with a wrapper being used after its scope has closed.
          */
         AuditHandles(Boolean.class, false, NO_HELP),
 
         /**
          * Enables tracing of profiling info when read by JVMCI.
-         *     Empty value: trace all methods"
+         *     Empty value: trace all methods
          * Non-empty value: trace methods whose fully qualified name contains the value
          */
         TraceMethodDataFilter(String.class, null, NO_HELP),
