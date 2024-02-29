@@ -240,6 +240,16 @@ public abstract class GenFullCP extends ClassfileGenerator {
                                         .areturn()))));
     }
 
+    protected static void finishMethodCode(MethodVisitor mv) {
+        finishMethodCode(mv, Opcodes.RETURN);
+    }
+
+    protected static void finishMethodCode(MethodVisitor mv, int returnOpcode) {
+        mv.visitInsn(returnOpcode);
+        mv.visitMaxs(-1, -1);
+        mv.visitEnd();
+    }
+
     @Override
     public Klass[] generateBytecodes() {
 
