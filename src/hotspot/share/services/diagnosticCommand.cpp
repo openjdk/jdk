@@ -1221,6 +1221,10 @@ void VMDebugDCmd::find() {
 void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
   DebuggingContext dc{}; // avoid asserts
 
+  if (!UnlockDiagnosticVMOptions) {
+    output()->print_cr("-XX:+UnlockDiagnosticVMOptions is required");
+    return;
+  }
   // Interpret _subcommand, using further args _arg1, etc as required.
   if (strcmp("events", _subcommand.value()) == 0) {
     Events::print_all(output(), 100);
@@ -1242,11 +1246,7 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
       ClassPrinter::print_methods(_arg1.value(), _arg2.value(), flags, output());
     }
   } else if (strcmp("find", _subcommand.value()) == 0) {
-    if (!UnlockDiagnosticVMOptions) {
-      output()->print_cr("find requires -XX:+UnlockDiagnosticVMOptions");
-    } else {
       find();
-    }
   } else {
     output()->print_cr("unknown sub-command");
   }
