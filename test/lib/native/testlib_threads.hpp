@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef TEST_LIB_NATIVE_THREAD_H
-#define TEST_LIB_NATIVE_THREAD_H
+#ifndef TEST_LIB_NATIVE_THREAD_HPP
+#define TEST_LIB_NATIVE_THREAD_HPP
 
 // Header only library for using threads in tests
 
@@ -70,8 +70,8 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
     helper.proc = proc;
     helper.context = context;
 #ifdef _WIN32
-    HANDLE thread = CreateThread(NULL, 0, procedure, &helper, 0, NULL);
-    if (thread == NULL) {
+    HANDLE thread = CreateThread(nullptr, 0, procedure, &helper, 0, nullptr);
+    if (thread == nullptr) {
         fatal("failed to create thread", GetLastError());
     }
     if (WaitForSingleObject(thread, INFINITE) != WAIT_OBJECT_0) {
@@ -90,7 +90,7 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
         fatal("failed to create thread", result);
     }
     pthread_attr_destroy(&attr);
-    result = pthread_join(thread, NULL);
+    result = pthread_join(thread, nullptr);
     if (result != 0) {
         fatal("failed to join thread", result);
     }
@@ -99,4 +99,4 @@ void run_in_new_thread_and_join(PROCEDURE proc, void* context) {
 
 }
 
-#endif // TEST_LIB_NATIVE_THREAD_H
+#endif // TEST_LIB_NATIVE_THREAD_HPP

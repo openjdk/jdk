@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef JVMTI_COMMON_H
-#define JVMTI_COMMON_H
+#ifndef JVMTI_COMMON_HPP
+#define JVMTI_COMMON_HPP
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -60,8 +60,8 @@
 const char* TranslateState(jint flags);
 const char* TranslateError(jvmtiError err);
 
-static jvmtiExtensionFunction GetVirtualThread_func = NULL;
-static jvmtiExtensionFunction GetCarrierThread_func = NULL;
+static jvmtiExtensionFunction GetVirtualThread_func = nullptr;
+static jvmtiExtensionFunction GetCarrierThread_func = nullptr;
 
 /**
  * Convert the digits of the given value argument to a null-terminated
@@ -203,15 +203,15 @@ deallocate(jvmtiEnv *jvmti, JNIEnv* jni, void* ptr) {
 
 static char*
 get_method_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
-  jclass klass = NULL;
-  char*  cname = NULL;
-  char*  result = NULL;
+  jclass klass = nullptr;
+  char*  cname = nullptr;
+  char*  result = nullptr;
   jvmtiError err;
 
   err = jvmti->GetMethodDeclaringClass(method, &klass);
   check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI GetMethodDeclaringClass");
 
-  err = jvmti->GetClassSignature(klass, &cname, NULL);
+  err = jvmti->GetClassSignature(klass, &cname, nullptr);
   check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI GetClassSignature");
 
   size_t len = strlen(cname) - 2; // get rid of leading 'L' and trailing ';'
@@ -228,14 +228,14 @@ get_method_class_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
 
 static void
 print_method(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method, jint depth) {
-  char*  cname = NULL;
-  char*  mname = NULL;
-  char*  msign = NULL;
+  char*  cname = nullptr;
+  char*  mname = nullptr;
+  char*  msign = nullptr;
   jvmtiError err;
 
   cname = get_method_class_name(jvmti, jni, method);
 
-  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  err = jvmti->GetMethodName(method, &mname, &msign, nullptr);
   check_jvmti_status(jni, err, "print_method: error in JVMTI GetMethodName");
 
   LOG("%2d: %s: %s%s\n", depth, cname, mname, msign);
@@ -297,14 +297,14 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
   memset(&thr_info, 0, sizeof(thr_info));
   err = jvmti->GetThreadInfo(thread, &thr_info);
   if (err == JVMTI_ERROR_WRONG_PHASE || err == JVMTI_ERROR_THREAD_NOT_ALIVE) {
-    return NULL; // VM or target thread completed its work
+    return nullptr; // VM or target thread completed its work
   }
   check_jvmti_status(jni, err, "get_thread_name: error in JVMTI GetThreadInfo call");
 
   static const char* UNNAMED_STR = "<Unnamed thread>";
   static size_t UNNAMED_LEN = strlen(UNNAMED_STR);
   char* tname = thr_info.name;
-  if (tname == NULL) {
+  if (tname == nullptr) {
     err = jvmti->Allocate((jlong)(UNNAMED_LEN + 1), (unsigned char**)&tname);
     check_jvmti_status(jni, err, "get_method_class_name: error in JVMTI Allocate");
     strncpy(tname, UNNAMED_STR, UNNAMED_LEN);
@@ -315,10 +315,10 @@ get_thread_name(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread) {
 
 static char*
 get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
-  char*  mname = NULL;
+  char*  mname = nullptr;
   jvmtiError err;
 
-  err = jvmti->GetMethodName(method, &mname, NULL, NULL);
+  err = jvmti->GetMethodName(method, &mname, nullptr, nullptr);
   check_jvmti_status(jni, err, "get_method_name: error in JVMTI GetMethodName call");
 
   return mname;
@@ -326,7 +326,7 @@ get_method_name(jvmtiEnv *jvmti, JNIEnv* jni, jmethodID method) {
 
 static jclass
 find_class(jvmtiEnv *jvmti, JNIEnv *jni, jobject loader, const char* cname) {
-  jclass *classes = NULL;
+  jclass *classes = nullptr;
   jint count = 0;
   jvmtiError err;
 
@@ -335,10 +335,10 @@ find_class(jvmtiEnv *jvmti, JNIEnv *jni, jobject loader, const char* cname) {
 
   // Find the jmethodID of the specified method
   while (--count >= 0) {
-    char* name = NULL;
+    char* name = nullptr;
     jclass klass = classes[count];
 
-    err = jvmti->GetClassSignature(klass, &name, NULL);
+    err = jvmti->GetClassSignature(klass, &name, nullptr);
     check_jvmti_status(jni, err, "find_class: error in JVMTI GetClassSignature call");
 
     bool found = (strcmp(name, cname) == 0);
@@ -347,13 +347,13 @@ find_class(jvmtiEnv *jvmti, JNIEnv *jni, jobject loader, const char* cname) {
       return klass;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static jmethodID
 find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
-  jmethodID *methods = NULL;
-  jmethodID method = NULL;
+  jmethodID *methods = nullptr;
+  jmethodID method = nullptr;
   jint count = 0;
   jvmtiError err;
 
@@ -362,11 +362,11 @@ find_method(jvmtiEnv *jvmti, JNIEnv *jni, jclass klass, const char* mname) {
 
   // Find the jmethodID of the specified method
   while (--count >= 0) {
-    char* name = NULL;
+    char* name = nullptr;
 
     jmethodID meth = methods[count];
 
-    err = jvmti->GetMethodName(meth, &name, NULL, NULL);
+    err = jvmti->GetMethodName(meth, &name, nullptr, nullptr);
     check_jvmti_status(jni, err, "find_method: error in JVMTI GetMethodName call");
 
     bool found = (strcmp(name, mname) == 0);
@@ -387,7 +387,7 @@ print_current_stack_trace(jvmtiEnv *jvmti, JNIEnv* jni) {
   jvmtiFrameInfo frames[MAX_FRAME_COUNT_PRINT_STACK_TRACE];
   jint count = 0;
 
-  jvmtiError err = jvmti->GetStackTrace(NULL, 0, MAX_FRAME_COUNT_PRINT_STACK_TRACE, frames, &count);
+  jvmtiError err = jvmti->GetStackTrace(nullptr, 0, MAX_FRAME_COUNT_PRINT_STACK_TRACE, frames, &count);
   check_jvmti_status(jni, err, "print_stack_trace: error in JVMTI GetStackTrace");
 
   LOG("JVMTI Stack Trace for current thread: frame count: %d\n", count);
@@ -759,19 +759,19 @@ isThreadExpected(jvmtiEnv *jvmti, jthread thread) {
 }
 
 jthread find_thread_by_name(jvmtiEnv* jvmti, JNIEnv* jni, const char name[]) {
-  jthread* threads = NULL;
+  jthread* threads = nullptr;
   jint count = 0;
-  jthread found_thread = NULL;
+  jthread found_thread = nullptr;
 
-  if (name == NULL) {
-    return NULL;
+  if (name == nullptr) {
+    return nullptr;
   }
 
   check_jvmti_status(jni, jvmti->GetAllThreads(&count, &threads), "");
 
   for (int i = 0; i < count; i++) {
     jvmtiThreadInfo info = get_thread_info(jvmti, jni, threads[i]);
-    if (info.name != NULL && strcmp(name, info.name) == 0) {
+    if (info.name != nullptr && strcmp(name, info.name) == 0) {
       found_thread = threads[i];
       break;
     }
@@ -793,22 +793,22 @@ static const jvmtiEvent
 static jvmtiExtensionFunction
 find_ext_function(jvmtiEnv* jvmti, JNIEnv* jni, const char* fname) {
   jint extCount = 0;
-  jvmtiExtensionFunctionInfo* extList = NULL;
+  jvmtiExtensionFunctionInfo* extList = nullptr;
 
   jvmtiError err = jvmti->GetExtensionFunctions(&extCount, &extList);
   check_jvmti_status(jni, err, "jvmti_common find_ext_function: Error in JVMTI GetExtensionFunctions");
 
   for (int i = 0; i < extCount; i++) {
-    if (strstr(extList[i].id, (char*)fname) != NULL) {
+    if (strstr(extList[i].id, (char*)fname) != nullptr) {
       return extList[i].func;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static jvmtiError
 GetVirtualThread(jvmtiEnv* jvmti, JNIEnv* jni, jthread cthread, jthread* vthread_ptr) {
-  if (GetVirtualThread_func == NULL) { // lazily initialize function pointer
+  if (GetVirtualThread_func == nullptr) { // lazily initialize function pointer
     GetVirtualThread_func = find_ext_function(jvmti, jni, "GetVirtualThread");
   }
   jvmtiError err = (*GetVirtualThread_func)(jvmti, cthread, vthread_ptr);
@@ -818,7 +818,7 @@ GetVirtualThread(jvmtiEnv* jvmti, JNIEnv* jni, jthread cthread, jthread* vthread
 
 static jvmtiError
 GetCarrierThread(jvmtiEnv* jvmti, JNIEnv* jni, jthread vthread, jthread* cthread_ptr) {
-  if (GetCarrierThread_func == NULL) { // lazily initialize function pointer
+  if (GetCarrierThread_func == nullptr) { // lazily initialize function pointer
     GetCarrierThread_func = find_ext_function(jvmti, jni, "GetCarrierThread");
   }
   jvmtiError err = (*GetCarrierThread_func)(jvmti, vthread, cthread_ptr);
@@ -828,7 +828,7 @@ GetCarrierThread(jvmtiEnv* jvmti, JNIEnv* jni, jthread vthread, jthread* cthread
 
 static jthread
 get_virtual_thread(jvmtiEnv* jvmti, JNIEnv* jni, jthread cthread) {
-  jthread vthread = NULL;
+  jthread vthread = nullptr;
   jvmtiError err = GetVirtualThread(jvmti, jni, cthread, &vthread);
   check_jvmti_status(jni, err, "jvmti_common get_virtual_thread: Error in JVMTI extension GetVirtualThread");
   return vthread;
@@ -836,7 +836,7 @@ get_virtual_thread(jvmtiEnv* jvmti, JNIEnv* jni, jthread cthread) {
 
 static jthread
 get_carrier_thread(jvmtiEnv* jvmti, JNIEnv* jni, jthread vthread) {
-  jthread cthread = NULL;
+  jthread cthread = nullptr;
   jvmtiError err = GetCarrierThread(jvmti, jni, vthread, &cthread);
   check_jvmti_status(jni, err, "jvmti_common get_carrier_thread: Error in JVMTI extension GetCarrierThread");
 
@@ -846,26 +846,26 @@ get_carrier_thread(jvmtiEnv* jvmti, JNIEnv* jni, jthread vthread) {
 static jvmtiExtensionEventInfo*
 find_ext_event(jvmtiEnv* jvmti, const char* ename) {
   jint extCount = 0;
-  jvmtiExtensionEventInfo* extList = NULL;
+  jvmtiExtensionEventInfo* extList = nullptr;
 
   jvmtiError err = jvmti->GetExtensionEvents(&extCount, &extList);
   if (err != JVMTI_ERROR_NONE) {
     LOG("jvmti_common find_ext_event: Error in JVMTI GetExtensionFunctions: %s(%d)\n",TranslateError(err), err);
-    return NULL;
+    return nullptr;
   }
   for (int i = 0; i < extCount; i++) {
-    if (strstr(extList[i].id, (char*)ename) != NULL) {
+    if (strstr(extList[i].id, (char*)ename) != nullptr) {
       return &extList[i];
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 static jvmtiError
 set_ext_event_callback(jvmtiEnv* jvmti,  const char* ename, jvmtiExtensionEvent callback) {
   jvmtiExtensionEventInfo* info = find_ext_event(jvmti, ename);
 
-  if (info == NULL) {
+  if (info == nullptr) {
     LOG("jvmti_common set_ext_event_callback: Extension event was not found: %s\n", ename);
     return JVMTI_ERROR_NOT_AVAILABLE;
   }
