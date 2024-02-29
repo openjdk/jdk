@@ -148,7 +148,6 @@ extern "C" void disnm(intptr_t p);
 //                 strictly should be 64 bit movz #imm16<<0
 //       110___10100 (i.e. requires insn[31:21] == 11010010100)
 //
-
 class RelocActions {
 protected:
   typedef int (*reloc_insn)(address insn_addr, address &target);
