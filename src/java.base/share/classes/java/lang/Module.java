@@ -143,10 +143,6 @@ public final class Module implements AnnotatedElement {
         String loc = Objects.toString(uri, null);
         Object[] packages = descriptor.packages().toArray();
         defineModule0(this, isOpen, vs, loc, packages);
-        if (loader == null || loader == ClassLoaders.platformClassLoader()) {
-            // boot/builtin modules are always native
-            implAddEnableNativeAccess();
-        }
     }
 
 
