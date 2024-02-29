@@ -348,10 +348,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
   JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
+NO_TRANSITION(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
   JfrRecorderService service;
   service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
-JVM_END
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))
   JfrJavaSupport::exclude(thread, t);

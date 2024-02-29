@@ -29,7 +29,7 @@
 #include "gc/g1/g1BarrierSetRuntime.hpp"
 #include "gc/g1/g1CardTable.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
