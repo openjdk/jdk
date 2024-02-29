@@ -1069,7 +1069,7 @@ class PSParallelCompact : AllStatic {
   // allocations.  This should be called during the VM initialization
   // at a pointer where it would be appropriate to return a JNI_ENOMEM
   // in the event of a failure.
-  static bool initialize();
+  static bool initialize_aux_data();
 
   // Closure accessors
   static BoolObjectClosure* is_alive_closure()     { return &_is_alive_closure; }
