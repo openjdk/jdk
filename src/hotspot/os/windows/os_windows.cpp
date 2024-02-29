@@ -903,7 +903,13 @@ int os::active_processor_count() {
       return logical_processors;
     }
   } else {
-    warning("GetProcessAffinityMask() failed: GetLastError->%ld.", GetLastError());
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    if (buf_len != 0) {
+      warning(buf);
+    } else {
+      warning("Attempt to get the process affinity mask failed.");
+    }
   }
 
   if (UseAllWindowsProcessorGroups) {
@@ -4052,7 +4058,13 @@ bool os::win32::is_windows_server_2022_or_greater() {
 DWORD os::win32::active_processors_in_job_object() {
   BOOL is_in_job_object = false;
   if (IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object) == 0) {
-    warning("IsProcessInJob() failed: GetLastError->%ld.", GetLastError());
+    char buf[512];
+    size_t buf_len = os::lasterror(buf, sizeof(buf));
+    if (buf_len != 0) {
+      warning(buf);
+    } else {
+      warning("Attempt to determine whether the process is running in a job failed.");
+    }
     return 0;
   }
 
@@ -4094,7 +4106,13 @@ DWORD os::win32::active_processors_in_job_object() {
             assert(false, "Must find at least 1 logical processor");
           }
         } else {
-          warning("QueryInformationJobObject() failed: GetLastError->%ld.", GetLastError());
+          char buf[512];
+          size_t buf_len = os::lasterror(buf, sizeof(buf));
+          if (buf_len != 0) {
+            warning(buf);
+          } else {
+            warning("Attempt to query job object information failed.");
+          }
         }
 
         os::free(job_object_information);
