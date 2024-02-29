@@ -1435,7 +1435,7 @@ void PSParallelCompact::summarize_spaces_quick()
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   // Since both markword and klass takes 1 heap word, the min-obj-size is 2
   // heap words.
-  // If min-obj-size decreases to 1, this whole method becomes redundant.
+  // If min-fill-size decreases to 1, this whole method becomes redundant.
   assert(CollectedHeap::min_fill_size() == 2, "inv");
 #ifndef _LP64
   // In 32-bit system, min-obj-alignment is >= 8 bytes, so the gap (if any)
@@ -1444,24 +1444,24 @@ void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
   return;
 #endif
   HeapWord* const dense_prefix_end = dense_prefix(id);
-  RegionData* const region = _summary_data.addr_to_region_ptr(dense_prefix_end);
+  RegionData* const region_after_dense_prefix = _summary_data.addr_to_region_ptr(dense_prefix_end);
   idx_t const dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
 
-  if (region->partial_obj_size() != 0 ||
+  if (region_after_dense_prefix->partial_obj_size() != 0 ||
       _mark_bitmap.is_obj_beg(dense_prefix_bit)) {
-    // next region starts with live bytes
+    // The region after the dense prefix starts with live bytes.
     return;
   }
 
   if (_mark_bitmap.is_obj_end(dense_prefix_bit - 2)) {
-    // Exactly one heap word gap right before dense prefix end; the filler obj
-    // will extend to next region.
-    const size_t obj_len = 2; // min-obj-size
+    // There is exactly one heap word gap right before the dense prefix end, so we need a filler object.
+    // The filler object will extend into the region after the last dense prefix region.
+    const size_t obj_len = 2; // min-fill-size
     HeapWord* const obj_beg = dense_prefix_end - 1;
     CollectedHeap::fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
     _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
-    region->set_partial_obj_size(1);
+    region_after_dense_prefix->set_partial_obj_size(1);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
