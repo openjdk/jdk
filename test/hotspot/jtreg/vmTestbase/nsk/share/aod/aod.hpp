@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#ifndef NSK_SHARE_AOD_H
-#define NSK_SHARE_AOD_H
+#ifndef NSK_SHARE_AOD_HPP
+#define NSK_SHARE_AOD_HPP
 
 #include <jni.h>
-#include <jni_tools.h>
-#include <nsk_tools.h>
+#include <jni_tools.hpp>
+#include <nsk_tools.hpp>
 
 extern "C" {
 
@@ -76,4 +76,4 @@ JNIEnv* nsk_aod_createJNIEnv(JavaVM* vm);
 
 }
 
-#endif /* END OF NSK_SHARE_AOD_H */
+#endif /* END OF NSK_SHARE_AOD_HPP */
