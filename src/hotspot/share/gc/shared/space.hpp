@@ -127,9 +127,7 @@ public:
   size_t free()     const { return byte_size(top(),    end()); }
 
   void print() const;
-  virtual void print_on(outputStream* st) const;
-  void print_short() const;
-  void print_short_on(outputStream* st) const;
+  void print_on(outputStream* st) const;
 
   // Initialization.
   // "initialize" should be called once on a space, before it is used for
@@ -243,8 +241,6 @@ class TenuredSpace: public ContiguousSpace {
   inline HeapWord* par_allocate(size_t word_size) override;
 
   inline void update_for_block(HeapWord* start, HeapWord* end);
-
-  void print_on(outputStream* st) const override;
 };
 #endif //INCLUDE_SERIALGC
 

@@ -28,6 +28,11 @@
         .global CFUNC(_Copy_conjoint_words)
         .global CFUNC(_Copy_disjoint_words)
 
+#ifdef __APPLE__
+        .private_extern CFUNC(_Copy_conjoint_words)
+        .private_extern CFUNC(_Copy_disjoint_words)
+#endif
+
 s       .req    x0
 d       .req    x1
 count   .req    x2

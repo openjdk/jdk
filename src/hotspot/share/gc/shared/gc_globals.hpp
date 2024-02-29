@@ -213,13 +213,13 @@
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
-          "Maximum size of marking stack")                                  \
-          range(1, (INT_MAX - 1))                                          \
+          "Maximum size of marking stack in bytes.")                        \
+          range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
-          "Size of marking stack")                                          \
+          "Size of marking stack in bytes.")                                \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
-          range(1, (INT_MAX - 1))                                          \
+          range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
@@ -344,10 +344,6 @@
                                                                             \
   product(bool, UseAdaptiveSizePolicyWithSystemGC, false,                   \
           "Include statistics from System.gc() for adaptive size policy")   \
-                                                                            \
-  develop(intx, PSAdaptiveSizePolicyResizeVirtualSpaceAlot, -1,             \
-          "Resize the virtual spaces of the young or old generations")      \
-          range(-1, 1)                                                      \
                                                                             \
   product(uint, AdaptiveSizeThroughPutPolicy, 0,                            \
           "Policy for changing generation size for throughput goals")       \
