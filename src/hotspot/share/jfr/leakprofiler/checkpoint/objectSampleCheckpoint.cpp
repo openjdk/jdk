@@ -223,9 +223,6 @@ class StackTraceBlobInstaller {
   StackTraceBlobInstaller() : _cache(JfrOptionSet::old_object_queue_size()) {
     prepare_for_resolution();
   }
-  ~StackTraceBlobInstaller() {
-    JfrStackTraceRepository::clear_leak_profiler();
-  }
   void sample_do(ObjectSample* sample) {
     if (stack_trace_precondition(sample)) {
       add_to_leakp_set(sample);
@@ -280,11 +277,14 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
   assert(LeakProfiler::is_running(), "invariant");
   JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
-  // can safepoint here
-  ThreadInVMfromNative transition(thread);
-  MutexLocker lock(ClassLoaderDataGraph_lock);
-  // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
-  install_stack_traces(sampler);
+  {
+    // can safepoint here
+    ThreadInVMfromNative transition(thread);
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
+    install_stack_traces(sampler);
+  }
+  JfrStackTraceRepository::clear_leak_profiler();
 }
 
 static bool is_klass_unloaded(traceid klass_id) {
