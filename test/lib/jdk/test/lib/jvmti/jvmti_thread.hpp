@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,8 @@
  * questions.
  */
 
-#ifndef JVMTI_THREAD_H
-#define JVMTI_THREAD_H
+#ifndef JVMTI_THREAD_HPP
+#define JVMTI_THREAD_HPP
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,14 +55,14 @@ extern "C" {
 #define STATUS_PASSED       0
 #define STATUS_FAILED       2
 
-static jvmtiEnv* agent_jvmti_env = NULL;
-static JNIEnv* agent_jni_env = NULL;
+static jvmtiEnv* agent_jvmti_env = nullptr;
+static JNIEnv* agent_jni_env = nullptr;
 
 static volatile int current_agent_status = STATUS_PASSED;
 
-static jthread jvmti_agent_thread = NULL;
-static jvmtiStartFunction agent_thread_proc = NULL;
-static void* agent_thread_arg = NULL;
+static jthread jvmti_agent_thread = nullptr;
+static jvmtiStartFunction agent_thread_proc = nullptr;
+static void* agent_thread_arg = nullptr;
 
 void set_agent_fail_status() {
   current_agent_status = STATUS_FAILED;
@@ -185,7 +185,7 @@ static void JNICALL agent_thread_wrapper(jvmtiEnv* jvmti_env, JNIEnv* agentJNI, 
   {
     /* gelete global ref for agent thread */
     agentJNI->DeleteGlobalRef(jvmti_agent_thread);
-    jvmti_agent_thread = NULL;
+    jvmti_agent_thread = nullptr;
   }
 }
 
@@ -198,37 +198,37 @@ static jthread start_agent_thread_wrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) 
   const char* THREAD_CTOR_NAME = "<init>";
   const char* THREAD_CTOR_SIGNATURE = "(Ljava/lang/String;)V";
 
-  jobject threadName = NULL;
-  jclass threadClass = NULL;
-  jmethodID threadCtor = NULL;
-  jobject threadObject = NULL;
-  jobject threadGlobalRef = NULL;
+  jobject threadName = nullptr;
+  jclass threadClass = nullptr;
+  jmethodID threadCtor = nullptr;
+  jobject threadObject = nullptr;
+  jobject threadGlobalRef = nullptr;
   jvmtiError err;
 
   threadClass = jni_env->FindClass(THREAD_CLASS_NAME);
-  if (threadClass == NULL) {
-    return NULL;
+  if (threadClass == nullptr) {
+    return nullptr;
   }
 
   threadCtor = jni_env->GetMethodID(threadClass, THREAD_CTOR_NAME, THREAD_CTOR_SIGNATURE);
-  if (threadCtor == NULL) {
-    return NULL;
+  if (threadCtor == nullptr) {
+    return nullptr;
   }
 
   threadName = jni_env->NewStringUTF(THREAD_NAME);
-  if (threadName == NULL) {
-    return NULL;
+  if (threadName == nullptr) {
+    return nullptr;
   }
 
   threadObject = jni_env->NewObject(threadClass, threadCtor, threadName);
-  if (threadObject == NULL) {
-    return NULL;
+  if (threadObject == nullptr) {
+    return nullptr;
   }
 
   threadGlobalRef = jni_env->NewGlobalRef(threadObject);
-  if (threadGlobalRef == NULL) {
+  if (threadGlobalRef == nullptr) {
     jni_env->DeleteLocalRef(threadObject);
-    return NULL;
+    return nullptr;
   }
   jvmti_agent_thread = (jthread)threadGlobalRef;
 
@@ -236,7 +236,7 @@ static jthread start_agent_thread_wrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) 
   if (err != JVMTI_ERROR_NONE) {
     jni_env->DeleteGlobalRef(threadGlobalRef);
     jni_env->DeleteLocalRef(threadObject);
-    return NULL;
+    return nullptr;
   }
   return jvmti_agent_thread;
 }
@@ -245,9 +245,9 @@ static jthread start_agent_thread_wrapper(JNIEnv *jni_env, jvmtiEnv* jvmti_env) 
 static jthread run_agent_thread(JNIEnv *jni_env, jvmtiEnv* jvmti_env) {
   /* start agent thread wrapper */
   jthread thread = start_agent_thread_wrapper(jni_env, jvmti_env);
-  if (thread == NULL) {
+  if (thread == nullptr) {
     set_agent_fail_status();
-    return NULL;
+    return nullptr;
   }
 
   return thread;
@@ -265,7 +265,7 @@ static jint sync_debuggee_status(JNIEnv* jni_env, jvmtiEnv* jvmti_env, jint debu
 
   /* we don't enter if-stmt in second call */
   if (agent_data.thread_state == NEW) {
-    if (run_agent_thread(jni_env, jvmti_env) == NULL) {
+    if (run_agent_thread(jni_env, jvmti_env) == nullptr) {
       return result;
     }
 
