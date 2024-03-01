@@ -23,6 +23,12 @@
 
 package vm.mlvm.cp.share;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
+
+import jdk.internal.classfile.ClassTransform;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ClassWriterExt;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -38,15 +44,26 @@ public class GenCPFullOfMT extends GenFullCP {
     }
 
     @Override
-    protected void generateCommonData(ClassWriterExt cw) {
+    protected byte[] generateCommonData(byte[] bytes) {
         cw.setCacheMTypes(false);
-        super.generateCommonData(cw);
+        super.generateCommonData(bytes);
     }
 
     @Override
-    protected void generateCPEntryData(ClassWriter cw, MethodVisitor mw) {
-        mw.visitLdcInsn(Type.getMethodType("(FIZ)V"));
-        mw.visitInsn(Opcodes.POP);
+    protected byte[] generateCPEntryData(byte[] bytes) {
+        ClassModel cm = ClassFile.of().parse(bytes);
+
+        bytes = ClassFile.of().transform(cm,
+                ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData",
+                        MethodTypeDesc.of(ClassDesc.ofDescriptor("V")), ClassFile.ACC_PUBLIC,
+                        mb -> mb.withCode(
+                                cob -> {
+                                    cob.ldc(MethodTypeDesc.ofDescriptor("(FIZ)V"));
+                                    cob.pop();
+                                    cob.return_();
+                                }))));
+
+        return bytes;
     }
 
 }
