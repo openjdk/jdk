@@ -71,7 +71,7 @@ public class VMDebugTest {
 
         // Testing VM.debug requires UnlockDiagnosticVMOptions or a debug JVM.
         // This test runs with a System Property set as a hint whether UnlockDiagnosticVMOptions is set.
-        boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vmdebug.find");
+        boolean enabled = Platform.isDebugBuild() || Boolean.getBoolean("vmdebug.enabled");
         System.out.println("VM.debug should be enabled = " + enabled);
         if (!enabled) {
             // Use any pointer, command should be refused:
