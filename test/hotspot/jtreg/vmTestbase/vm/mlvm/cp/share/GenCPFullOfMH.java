@@ -95,14 +95,9 @@ public class GenCPFullOfMH extends GenFullCP {
                                                     INSTANCE_FIELD_NAME,
                                                     ClassDesc.ofDescriptor(INSTANCE_FIELD_SIGNATURE));
                                             break;
-                                        case GETTER:
-                                        case SETTER:
-                                            handle = MethodHandleDesc.ofField(kind, ClassDesc.of(fullClassName),
-                                                    STATIC_FIELD_NAME, ClassDesc.ofDescriptor(STATIC_FIELD_SIGNATURE));
-                                            break;
                                         case CONSTRUCTOR:
                                             handle = MethodHandleDesc.ofConstructor(ClassDesc.of(fullClassName),
-                                                    MethodTypeDesc.ofDescriptor(INIT_METHOD_SIGNATURE));
+                                                    ClassDesc.ofDescriptor(INIT_METHOD_SIGNATURE));
                                             break;
                                         case STATIC:
                                             handle = MethodHandleDesc.ofMethod(kind, ClassDesc.of(fullClassName),

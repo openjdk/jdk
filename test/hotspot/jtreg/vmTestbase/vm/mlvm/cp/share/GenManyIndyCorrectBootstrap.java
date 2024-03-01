@@ -23,6 +23,13 @@
 
 package vm.mlvm.cp.share;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ClassWriterExt;
 import jdk.internal.org.objectweb.asm.Handle;
@@ -35,77 +42,123 @@ import vm.mlvm.share.Env;
 
 public class GenManyIndyCorrectBootstrap extends GenFullCP {
 
-    /**
-     * Generates a class file and writes it to a file
-     * @see vm.mlvm.share.ClassfileGenerator
-     * @param args Parameters for ClassfileGenerator.main() method
-     */
-    public static void main(String[] args) {
-        ClassfileGenerator.main(args);
-    }
-
-    /**
-     * Creates static init method, which constructs a call site object, which refers to the target method
-     * and invokes Dummy.setMH() on this call site
-     * @param cw Class writer object
-     */
-    @Override
-    protected void createClassInitMethod(ClassWriter cw) {
-        MethodVisitor mw = cw.visitMethod(
-                Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC,
-                STATIC_INIT_METHOD_NAME, INIT_METHOD_SIGNATURE,
-                null,
-                new String[0]);
-
-        mw.visitMethodInsn(Opcodes.INVOKESTATIC, JLI_METHODHANDLES, "lookup", "()" + fd(JLI_METHODHANDLES_LOOKUP));
-        mw.visitLdcInsn(Type.getObjectType(fullClassName));
-        mw.visitLdcInsn(TARGET_METHOD_NAME);
-        mw.visitLdcInsn(TARGET_METHOD_SIGNATURE);
-        mw.visitLdcInsn(Type.getObjectType(fullClassName));
-        mw.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JL_CLASS,
-                "getClassLoader", "()" + fd(JL_CLASSLOADER));
-        mw.visitMethodInsn(Opcodes.INVOKESTATIC, JLI_METHODTYPE,
-                "fromMethodDescriptorString", "(" + fd(JL_STRING) + fd(JL_CLASSLOADER) + ")" + fd(JLI_METHODTYPE));
-        mw.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JLI_METHODHANDLES_LOOKUP,
-                "findStatic", "(" + fd(JL_CLASS) + fd(JL_STRING) + fd(JLI_METHODTYPE) + ")" + fd(JLI_METHODHANDLE));
-        mw.visitMethodInsn(Opcodes.INVOKESTATIC, NEW_INVOKE_SPECIAL_CLASS_NAME,
-                "setMH", "(" + fd(JLI_METHODHANDLE) + ")V");
-
-        finishMethodCode(mw);
-    }
-
-    /**
-     * Disables invoke dynamic CP entry caching and generate default common data
-     * @param cw Class writer object
-     */
-    @Override
-    protected void generateCommonData(ClassWriterExt cw) {
-        cw.setCacheInvokeDynamic(false);
-        super.generateCommonData(cw);
-    }
-
-    /**
-     * Generates an invokedynamic instruction (plus CP entry)
-     * which has a valid reference kind in the CP method handle entry for the bootstrap method
-     * @param cw Class writer object
-     * @param mw Method writer object
-     */
-    @Override
-    protected void generateCPEntryData(ClassWriter cw, MethodVisitor mw) {
-        Handle bsm;
-        if (Env.getRNG().nextBoolean()) {
-            bsm = new Handle(Opcodes.H_NEWINVOKESPECIAL,
-                    NEW_INVOKE_SPECIAL_CLASS_NAME,
-                    INIT_METHOD_NAME,
-                    NEW_INVOKE_SPECIAL_BOOTSTRAP_METHOD_SIGNATURE);
-        } else {
-            bsm = new Handle(Opcodes.H_INVOKESTATIC,
-                    this.fullClassName,
-                    BOOTSTRAP_METHOD_NAME,
-                    BOOTSTRAP_METHOD_SIGNATURE);
+        /**
+         * Generates a class file and writes it to a file 
+         * @see vm.mlvm.share.ClassfileGenerator
+         * @param args Parameters for ClassfileGenerator.main() method
+         */
+        public static void main(String[] args) {
+                ClassfileGenerator.main(args);
         }
-        mw.visitInvokeDynamicInsn(TARGET_METHOD_NAME,
-                TARGET_METHOD_SIGNATURE,
-                bsm);
-    }
+
+        /**
+         * Creates static init method, which constructs a call site object, which refers to the target method
+         * and invokes Dummy.setMH() on this call site
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] createClassInitMethod(byte[] bytes) {
+                ClassModel cm = ClassFile.of().parse(bytes);
+
+                bytes = ClassFile.of().transform(cm,
+                                ClassTransform.endHandler(cb -> cb.withMethod(STATIC_INIT_METHOD_NAME,
+                                                MethodTypeDesc.ofDescriptor(INIT_METHOD_SIGNATURE),
+                                                ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
+                                                mb -> mb.withCode(
+                                                                cob -> {
+                                                                        cob.invokestatic(ClassDesc.ofInternalName(
+                                                                                        JLI_METHODHANDLES), "lookup",
+                                                                                        MethodTypeDesc.ofDescriptor("()"
+                                                                                                        + fd(JLI_METHODHANDLES_LOOKUP)));
+                                                                        cob.ldc(ClassDesc.ofDescriptor(fullClassName));
+                                                                        cob.ldc(TARGET_METHOD_NAME);
+                                                                        cob.ldc(TARGET_METHOD_SIGNATURE);
+                                                                        cob.invokevirtual(
+                                                                                        ClassDesc.ofInternalName(
+                                                                                                        JL_CLASS),
+                                                                                        "getClassLoader",
+                                                                                        MethodTypeDesc.ofDescriptor("()"
+                                                                                                        + fd(JL_CLASSLOADER)));
+                                                                        cob.invokestatic(
+                                                                                        ClassDesc.ofInternalName(
+                                                                                                        JLI_METHODTYPE),
+                                                                                        "fromMethodDescriptorString",
+                                                                                        MethodTypeDesc.ofDescriptor("("
+                                                                                                        + fd(JL_STRING)
+                                                                                                        + fd(JL_CLASSLOADER)
+                                                                                                        + ")"
+                                                                                                        + fd(JLI_METHODTYPE)));
+                                                                        cob.invokevirtual(ClassDesc.ofInternalName(
+                                                                                        JLI_METHODHANDLES_LOOKUP),
+                                                                                        "findStatic",
+                                                                                        MethodTypeDesc.ofDescriptor("("
+                                                                                                        + fd(JL_CLASS)
+                                                                                                        + fd(JL_STRING)
+                                                                                                        + fd(JLI_METHODTYPE)
+                                                                                                        + ")"
+                                                                                                        + fd(JLI_METHODHANDLE)));
+                                                                        cob.invokestatic(ClassDesc.ofInternalName(
+                                                                                        NEW_INVOKE_SPECIAL_CLASS_NAME),
+                                                                                        "setMH",
+                                                                                        MethodTypeDesc.ofDescriptor("("
+                                                                                                        + fd(JLI_METHODHANDLE)
+                                                                                                        + ")V"));
+                                                                        cob.return_();
+                                                                }))));
+
+                return bytes;
+        }
+
+        /**
+         * Disables invoke dynamic CP entry caching and generate default common data
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] generateCommonData(byte[] bytes) {
+                super.generateCommonData(bytes);
+        }
+
+        /**
+         * Generates an invokedynamic instruction (plus CP entry)
+         * which has a valid reference kind in the CP method handle entry for the
+         * bootstrap method
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] generateCPEntryData(byte[] bytes) {
+                ClassModel cm = ClassFile.of().parse(bytes);
+
+                bytes = ClassFile.of().transform(cm,
+                                ClassTransform.endHandler(cb -> cb.withMethod("GeneratedCPEntryData",
+                                                MethodTypeDesc.ofDescriptor(("()[B")), ClassFile.ACC_PUBLIC,
+                                                mb -> mb.withCode(
+                                                                cob -> {
+                                                                        DirectMethodHandleDesc.Kind kind;
+                                                                        String className;
+                                                                        String methodName;
+                                                                        String methodSignature;
+
+                                                                        if (Env.getRNG().nextBoolean()) {
+                                                                                kind = DirectMethodHandleDesc.Kind.SPECIAL;
+                                                                                className = NEW_INVOKE_SPECIAL_CLASS_NAME;
+                                                                                methodName = INIT_METHOD_NAME;
+                                                                                methodSignature = NEW_INVOKE_SPECIAL_BOOTSTRAP_METHOD_SIGNATURE;
+                                                                        } else {
+                                                                                kind = DirectMethodHandleDesc.Kind.STATIC;
+                                                                                className = this.fullClassName;
+                                                                                methodName = BOOTSTRAP_METHOD_NAME;
+                                                                                methodSignature = BOOTSTRAP_METHOD_SIGNATURE;
+                                                                        }
+
+                                                                        MethodHandleDesc bsm = MethodHandleDesc
+                                                                                        .ofMethod(kind, ClassDesc
+                                                                                                        .of(className),
+                                                                                                        methodName,
+                                                                                                        MethodTypeDesc.ofDescriptor(
+                                                                                                                        methodSignature));
+                                                                        cob.ldc(bsm);
+
+                                                                }))));
+                return bytes;
+        }
 }

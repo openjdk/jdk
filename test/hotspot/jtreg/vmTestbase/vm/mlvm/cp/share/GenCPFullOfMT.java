@@ -45,7 +45,6 @@ public class GenCPFullOfMT extends GenFullCP {
 
     @Override
     protected byte[] generateCommonData(byte[] bytes) {
-        cw.setCacheMTypes(false);
         super.generateCommonData(bytes);
     }
 
