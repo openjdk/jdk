@@ -238,7 +238,7 @@ public class ChoiceFormat extends NumberFormat {
      * Apply the given pattern to this ChoiceFormat object. The syntax and error
      * related caveats for the ChoiceFormat pattern can be found in the
      * {@linkplain ##patterns Patterns} section. Unlike {@link #setChoices(double[],
-     * String[])} this method will throw an {@code IllegalArgumentException} if
+     * String[])}, this method will throw an {@code IllegalArgumentException} if
      * the {@code limits} are not in ascending order.
      *
      * @param newPattern a pattern string
@@ -403,7 +403,7 @@ public class ChoiceFormat extends NumberFormat {
      * Constructs a ChoiceFormat with limits and corresponding formats
      * based on the pattern. The syntax and error related caveats for the
      * ChoiceFormat pattern can be found in the {@linkplain ##patterns Patterns}
-     * section. Unlike {@link #ChoiceFormat(double[], String[])} this method will
+     * section. Unlike {@link #ChoiceFormat(double[], String[])}, this constructor will
      * throw an {@code IllegalArgumentException} if the {@code limits} are not
      * in ascending order.
      *
