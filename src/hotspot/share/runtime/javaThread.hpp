@@ -524,6 +524,7 @@ private:
   void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
+  oop vthread_or_thread() const;
 
   // Prepare thread and add to priority queue.  If a priority is
   // not specified, use the priority of the thread object. Threads_lock

@@ -189,6 +189,16 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
+// If there is a virtual thread mounted then return vthread() oop.
+// Otherwise, return threadObj().
+oop JavaThread::vthread_or_thread() const {
+  oop result = vthread();
+  if (result == nullptr) {
+    result = threadObj();
+  }
+  return result;
+}
+
 oop JavaThread::scopedValueCache() const {
   return _scopedValueCache.resolve();
 }
@@ -557,7 +567,8 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     return false;
   }
 
-  bool interrupted = java_lang_Thread::interrupted(threadObj());
+  oop thread_oop = vthread_or_thread();
+  bool interrupted = java_lang_Thread::interrupted(thread_oop);
 
   // NOTE that since there is no "lock" around the interrupt and
   // is_interrupted operations, there is the possibility that the
@@ -576,7 +587,11 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   // an interrupt that happens just after we read the field would be lost.
   if (interrupted && clear_interrupted) {
     assert(this == Thread::current(), "only the current thread can clear");
-    java_lang_Thread::set_interrupted(threadObj(), false);
+    java_lang_Thread::set_interrupted(thread_oop, false);
+    if (thread_oop != threadObj()) {
+      // thread_oop is virtual, clear carrier thread interrupt status as well
+      java_lang_Thread::set_interrupted(threadObj(), false);
+    }
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
 
