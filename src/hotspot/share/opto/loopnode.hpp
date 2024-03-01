@@ -35,6 +35,7 @@
 class CmpNode;
 class BaseCountedLoopEndNode;
 class CountedLoopNode;
+class DataInputGraph;
 class IdealLoopTree;
 class LoopNode;
 class Node;
@@ -1343,13 +1344,13 @@ public:
 
  private:
   // Helper functions for create_new_if_for_predicate()
-  void set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
+  void set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
   Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
-  Node* clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl);
-  Dict clone_nodes(const Node_List& list_to_clone);
-  void rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl, const Node_List& nodes_with_same_ctrl,
-                                   const Dict& old_new_mapping);
-  void rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping, const Node* next);
+  const Unique_Node_List& find_nodes_with_same_ctrl(DataInputGraph& data_input_graph, const ProjNode* ctrl);
+  Node* clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
+  void fix_cloned_data_node_controls(
+      const ProjNode* old_uncommon_proj, Node* new_uncommon_proj,
+      const ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler>& orig_to_new);
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
 
@@ -1882,4 +1883,41 @@ public:
   float to(Node* n);
 };
 
+// Class to clone a data node graph by taking a list of data nodes. This is done in 2 steps:
+//   1. Clone the data nodes
+//   2. Fix the cloned data inputs pointing to the old nodes to the cloned inputs by using an old->new mapping.
+class DataNodeGraph : public StackObj {
+  PhaseIdealLoop* const _phase;
+  const Unique_Node_List& _data_nodes;
+  ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> _orig_to_new;
+
+ public:
+  DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
+      : _phase(phase),
+        _data_nodes(data_nodes),
+        // Use 107 as best guess which is the first resize value in ResizeableResourceHashtable::large_table_sizes.
+        _orig_to_new(107, MaxNodeLimit)
+  {
+#ifdef ASSERT
+    for (uint i = 0; i < data_nodes.size(); i++) {
+      assert(!data_nodes[i]->is_CFG(), "only data nodes");
+    }
+#endif
+  }
+  NONCOPYABLE(DataNodeGraph);
+
+ private:
+  void clone(Node* node, Node* new_ctrl);
+  void clone_nodes(Node* new_ctrl);
+  void rewire_clones_to_cloned_inputs();
+
+ public:
+  // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
+  // Set `new_ctrl` as ctrl for the cloned nodes.
+  const ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler>& clone(Node* new_ctrl) {
+    clone_nodes(new_ctrl);
+    rewire_clones_to_cloned_inputs();
+    return _orig_to_new;
+  }
+};
 #endif // SHARE_OPTO_LOOPNODE_HPP
