@@ -27,7 +27,7 @@
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
