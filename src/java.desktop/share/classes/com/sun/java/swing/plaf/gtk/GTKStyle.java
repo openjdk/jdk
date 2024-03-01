@@ -190,6 +190,22 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             }
         }
 
+        if (id == Region.CHECK_BOX && type == ColorType.FOREGROUND
+                && (state & SynthConstants.DISABLED) != 0) {
+            Color c = (Color) get(context, "CheckBox.disabledText");
+            if (c != null) {
+                return c;
+            }
+        }
+
+        if (id == Region.RADIO_BUTTON && type == ColorType.FOREGROUND
+                && (state & SynthConstants.DISABLED) != 0) {
+            Color c = (Color) get(context, "RadioButton.disabledText");
+            if (c != null) {
+                return c;
+            }
+        }
+
         return getStyleSpecificColor(context, state, type);
     }
 

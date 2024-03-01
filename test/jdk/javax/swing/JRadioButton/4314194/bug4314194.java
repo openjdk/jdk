@@ -40,7 +40,7 @@ import javax.swing.JRadioButton;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
-import javax.swing.plaf.synth.SynthLookAndFeel;
+import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 public class bug4314194 {
     private static volatile JFrame frame;
@@ -89,7 +89,7 @@ public class bug4314194 {
     }
 
     private static void createUI(String laf) {
-        if (UIManager.getLookAndFeel() instanceof SynthLookAndFeel) {
+        if (UIManager.getLookAndFeel() instanceof NimbusLookAndFeel) {
             // reset "basic" properties
             UIManager.getDefaults().put("CheckBox.disabledText", null);
             UIManager.getDefaults().put("RadioButton.disabledText", null);
