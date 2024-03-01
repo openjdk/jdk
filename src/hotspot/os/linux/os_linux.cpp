@@ -311,7 +311,6 @@ static jlong host_free_swap() {
   return (jlong)(si.freeswap * si.mem_unit);
 }
 
-
 jlong os::free_swap_space() {
   jlong host_free_swap_val = host_free_swap();
   if (OSContainer::is_containerized()) {
