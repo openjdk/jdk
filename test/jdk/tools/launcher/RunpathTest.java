@@ -25,6 +25,7 @@
  * @test
  * @bug 7190813 8022719
  * @summary Check for extended RPATHs on Linux
+ * @requires os.family == "linux"
  * @compile -XDignore.symbol.file RunpathTest.java
  * @run main RunpathTest
  * @author ksrini
@@ -69,13 +70,11 @@ public class RunpathTest extends TestHelper {
     }
 
     public static void main(String... args) throws Exception {
-        if (isLinux) {
-            RunpathTest rp = new RunpathTest();
-            if (rp.elfreaderCmd == null) {
-                System.err.println("Warning: test passes vacuously");
-                return;
-            }
-            rp.testRpath();
+        RunpathTest rp = new RunpathTest();
+        if (rp.elfreaderCmd == null) {
+            System.err.println("Warning: test passes vacuously");
+            return;
         }
+        rp.testRpath();
     }
 }
