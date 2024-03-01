@@ -192,9 +192,6 @@ public abstract class AbstractWindowsTerminal<Console> extends AbstractTerminal 
 
     protected void updateConsoleMode() {
         int mode = ENABLE_WINDOW_INPUT;
-        if (attributes.getLocalFlag(Attributes.LocalFlag.ISIG)) {
-            mode |= ENABLE_PROCESSED_INPUT;
-        }
         if (attributes.getLocalFlag(Attributes.LocalFlag.ECHO)) {
             mode |= ENABLE_ECHO_INPUT;
         }
