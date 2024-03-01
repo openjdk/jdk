@@ -46,7 +46,7 @@ public class ExternalRefTest {
      * @throws Exception if the test fails
      */
     @Test
-    public void testDisallowDTD() throws Exception {
+    public void testValidatingParser() throws Exception {
         Assert.assertThrows(SAXParseException.class, () -> validateWithParser());
     }
 

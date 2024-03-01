@@ -399,7 +399,7 @@ public class SecuritySupport {
         input = input.replace('\\', '/');
         int i = input.lastIndexOf('/');
         if (i > 0) {
-            return input.substring(i+1, input.length());
+            return input.substring(i+1);
         }
         return input;
     }
