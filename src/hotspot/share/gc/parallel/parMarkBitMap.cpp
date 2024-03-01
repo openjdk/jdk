@@ -215,7 +215,7 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   if (range_beg < range_end && is_unmarked(range_beg)) {
     // The range starts with dead space.  Look for the next object, then fill.
     // This must be the beginning of old/eden/from/to-space, so it's must be
-    // larger enough for a filler.
+    // large enough for a filler.
     cur_beg = find_obj_beg(range_beg + 1, dead_search_end);
     const idx_t dead_space_end = cur_beg - 1;
     const size_t size = obj_size(range_beg, dead_space_end);
