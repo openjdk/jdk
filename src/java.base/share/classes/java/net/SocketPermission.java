@@ -241,8 +241,8 @@ public final class SocketPermission extends Permission
     // lazy initializer
     private static class EphemeralRange {
         static final int low = initEphemeralPorts("low");
-            static final int high = initEphemeralPorts("high");
-    };
+        static final int high = initEphemeralPorts("high");
+    }
 
     private static synchronized Debug getDebug() {
         if (!debugInit) {
@@ -340,10 +340,7 @@ public final class SocketPermission extends Permission
         }
     }
 
-    private int[] parsePort(String port)
-        throws Exception
-    {
-
+    private int[] parsePort(String port) {
         if (port == null || port.isEmpty() || port.equals("*")) {
             return new int[] {PORT_MIN, PORT_MAX};
         }
