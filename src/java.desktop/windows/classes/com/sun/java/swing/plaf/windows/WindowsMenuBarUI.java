@@ -147,9 +147,6 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
                 MenuSelectionManager msm =
                     MenuSelectionManager.defaultManager();
                 MenuElement[] selectedPath = msm.getSelectedPath();
-                //MenuElement[] path = new MenuElement[2];
-                //path[0] = (MenuElement)menuBar;
-                //path[1] = (MenuElement)menu;
                 if (selectedPath.length > 0 && (selectedPath[0] instanceof JMenuBar)) {
                     msm.clearSelectedPath();
                     WindowsLookAndFeel.setMnemonicHidden(true);
