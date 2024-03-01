@@ -744,7 +744,6 @@ class ParMarkBitMapClosure: public StackObj {
  private:
   ParMarkBitMap* const        _bitmap;
   ParCompactionManager* const _compaction_manager;
-  DEBUG_ONLY(const size_t     _initial_words_remaining;) // Useful in debugger.
   size_t                      _words_remaining; // Words left to copy.
 
  protected:
@@ -756,9 +755,6 @@ ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
                                            ParCompactionManager* cm,
                                            size_t words):
   _bitmap(bitmap), _compaction_manager(cm)
-#ifdef  ASSERT
-  , _initial_words_remaining(words)
-#endif
 {
   _words_remaining = words;
   _source = nullptr;
