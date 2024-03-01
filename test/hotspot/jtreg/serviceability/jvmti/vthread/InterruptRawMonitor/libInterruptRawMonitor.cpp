@@ -47,7 +47,7 @@ Java_InterruptRawMonitor_test(JNIEnv *jni, jclass clazz) {
 
   err = jvmti->RawMonitorEnter(monitor);
   check_jvmti_status(jni, err, "Failed in RawMonitorEnter");
- 
+
   check_thread_state(jni, 0);
 
   // expected to be interrupted
