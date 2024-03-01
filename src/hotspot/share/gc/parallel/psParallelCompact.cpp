@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -246,7 +246,7 @@ void PSParallelCompact::print_region_ranges() {
   }
 }
 
-void
+static void
 print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
 {
 #define REGION_IDX_FORMAT        SIZE_FORMAT_W(7)
@@ -312,7 +312,7 @@ print_generic_summary_data(ParallelCompactData& summary_data,
   }
 }
 
-void
+static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            const MutableSpace* space) {
   if (space->top() == space->bottom()) {
@@ -393,7 +393,7 @@ print_initial_summary_data(ParallelCompactData& summary_data,
                                     max_reclaimed_ratio_region, max_dead_to_right, max_live_to_right, max_reclaimed_ratio);
 }
 
-void
+static void
 print_initial_summary_data(ParallelCompactData& summary_data,
                            SpaceInfo* space_info) {
   if (!log_develop_is_enabled(Trace, gc, compaction)) {
@@ -862,14 +862,10 @@ void PSParallelCompact::post_initialize() {
   ParCompactionManager::initialize(mark_bitmap());
 }
 
-bool PSParallelCompact::initialize() {
+bool PSParallelCompact::initialize_aux_data() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
-
-  // Was the old gen get allocated successfully?
-  if (!heap->old_gen()->is_allocated()) {
-    return false;
-  }
+  assert(mr.byte_size() != 0, "heap should be reserved");
 
   initialize_space_info();
   initialize_dead_wood_limiter();
@@ -1969,6 +1965,7 @@ public:
 
   virtual void work(uint worker_id) {
     ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(worker_id);
+    cm->create_marking_stats_cache();
     PCMarkAndPushClosure mark_and_push_closure(cm);
 
     {
@@ -2017,6 +2014,13 @@ public:
   }
 };
 
+static void flush_marking_stats_cache(const uint num_workers) {
+  for (uint i = 0; i < num_workers; ++i) {
+    ParCompactionManager* cm = ParCompactionManager::gc_thread_compaction_manager(i);
+    cm->flush_and_destroy_marking_stats_cache();
+  }
+}
+
 void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
   // Recursively traverse all live objects and mark them
   GCTraceTime(Info, gc, phases) tm("Marking Phase", &_gc_timer);
@@ -2044,6 +2048,12 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
     gc_tracer->report_gc_reference_stats(stats);
     pt.print_all_references();
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) tm("Flush Marking Stats", &_gc_timer);
+
+    flush_marking_stats_cache(active_gc_threads);
   }
 
   // This is the point where the entire marking should have completed.

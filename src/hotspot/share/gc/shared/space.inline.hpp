@@ -34,10 +34,6 @@
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/safepoint.hpp"
 
-inline HeapWord* Space::block_start(const void* p) {
-  return block_start_const(p);
-}
-
 #if INCLUDE_SERIALGC
 inline HeapWord* TenuredSpace::allocate(size_t size) {
   HeapWord* res = ContiguousSpace::allocate(size);
@@ -71,13 +67,12 @@ void ContiguousSpace::oop_since_save_marks_iterate(OopClosureType* blk) {
     t = top();
     while (p < t) {
       Prefetch::write(p, interval);
-      debug_only(HeapWord* prev = p);
       oop m = cast_to_oop(p);
       p += m->oop_iterate_size(blk);
     }
   } while (t < top());
 
-  set_saved_mark_word(p);
+  set_saved_mark();
 }
 
 #endif // SHARE_GC_SHARED_SPACE_INLINE_HPP
