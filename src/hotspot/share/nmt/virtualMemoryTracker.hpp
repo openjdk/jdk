@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@
 #include "memory/metaspaceStats.hpp"
 #include "nmt/allocationSite.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "runtime/os.hpp"
+#include "utilities/bitMap.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
@@ -51,7 +53,7 @@ class VirtualMemory {
   inline void reserve_memory(size_t sz) { _reserved += sz; }
   inline void commit_memory (size_t sz) {
     _committed += sz;
-    assert(_committed <= _reserved, "Sanity check");
+    assert(_committed <= _reserved, "Sanity check " SIZE_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT, _committed, _reserved, sz);
     update_peak(_committed);
   }
 
@@ -61,7 +63,7 @@ class VirtualMemory {
   }
 
   inline void uncommit_memory(size_t sz) {
-    assert(_committed >= sz, "Negative amount");
+    assert(_committed >= sz, "Negative amount " SIZE_FORMAT " " SIZE_FORMAT, _committed, sz);
     _committed -= sz;
   }
 
@@ -285,6 +287,52 @@ class CommittedMemoryRegion : public VirtualMemoryRegion {
 
 typedef LinkedListIterator<CommittedMemoryRegion> CommittedRegionIterator;
 
+// CommittedMemoryRegion (CMR) Map holds Bitmap for every page inside a reserved region.
+// When a page is committed, the corresponding bit is set, otherwise the bit is clear.
+// Size of committed pages is count of 1 bits within a region.
+// To find the actual change in committed size, it is enough to count the bits before and after changing the bits.
+class CMRMap {
+ private:
+  CHeapBitMap _map;
+  address _base;
+
+ public:
+  CMRMap(address base, size_t size_in_bits)  : _map(size_in_bits, mtNMT), _base(base) { }
+  inline void copy_from(const CMRMap* map) { _map.set_from(*map->bitmap()); }
+  inline void copy_to(BitMap* map) { map->set_from(_map); }
+  inline address bit_to_address(BitMap::idx_t index) { return index * os::vm_page_size() + _base; }
+  inline BitMap::idx_t address_to_bit(address addr) { return (addr - _base) / os::vm_page_size(); }
+
+  inline size_t commit(address addr, size_t size) {
+    BitMap::idx_t from_index = address_to_bit(addr);
+    BitMap::idx_t to_index = address_to_bit(addr + size);
+    if (to_index >= _map.size())
+      to_index = _map.size();
+    assert(from_index <= _map.size(), "Index out of range. " SIZE_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT, from_index, _map.size(), to_index);
+    BitMap::idx_t already_committed = _map.count_one_bits(from_index, to_index);
+    _map.set_large_range(from_index, to_index);
+    return ((size / os::vm_page_size()) - already_committed) * os::vm_page_size();
+  }
+
+  inline size_t uncommit(address addr, size_t size) {
+    BitMap::idx_t from_index = address_to_bit(addr);
+    BitMap::idx_t to_index = address_to_bit(addr + size);
+    if (to_index >= _map.size())
+      to_index = _map.size();
+    assert(from_index <= _map.size(), SIZE_FORMAT " " SIZE_FORMAT " " SIZE_FORMAT, from_index, _map.size(), to_index);
+    BitMap::idx_t already_committed = _map.count_one_bits(from_index, to_index);
+    _map.clear_large_range(from_index, to_index);
+    return already_committed * os::vm_page_size();
+  }
+
+  inline size_t committed_size() const {
+    auto count = _map.count_one_bits();
+    return count * os::vm_page_size();
+  }
+
+  const CHeapBitMap* bitmap() const { return &_map; }
+};
+
 int compare_committed_region(const CommittedMemoryRegion&, const CommittedMemoryRegion&);
 class ReservedMemoryRegion : public VirtualMemoryRegion {
  private:
@@ -293,19 +341,20 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
   NativeCallStack  _stack;
   MEMFLAGS         _flag;
+  CMRMap           _cmr_map;
 
  public:
   ReservedMemoryRegion(address base, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone) :
-    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) { }
+    VirtualMemoryRegion(base, size), _stack(stack), _flag(flag) , _cmr_map(base, size / os::vm_page_size()) { }
 
 
   ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) { }
+    VirtualMemoryRegion(base, size), _stack(NativeCallStack::empty_stack()), _flag(mtNone) , _cmr_map(base, size / os::vm_page_size()) { }
 
   // Copy constructor
   ReservedMemoryRegion(const ReservedMemoryRegion& rr) :
-    VirtualMemoryRegion(rr.base(), rr.size()) {
+    VirtualMemoryRegion(rr.base(), rr.size()) , _cmr_map(rr.base(), rr.size() / os::vm_page_size()) {
     *this = rr;
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,14 @@ bool ReservedMemoryRegion::add_committed_region(address addr, size_t size, const
   assert(size > 0, "Invalid size");
   assert(contain_region(addr, size), "Not contain this region");
 
+  if (MemTracker::tracking_level() == NMT_summary) {
+    size_t committed = _cmr_map.commit(addr, size);
+    if (committed != 0) {
+      VirtualMemorySummary::record_committed_memory(committed, flag());
+    }
+    return true;
+  }
+
   // Find the region that fully precedes the [addr, addr + size) region.
   LinkedListNode<CommittedMemoryRegion>* prev = find_preceding_node_from(_committed_regions.head(), addr);
   LinkedListNode<CommittedMemoryRegion>* next = (prev != nullptr ? prev->next() : _committed_regions.head());
@@ -203,6 +211,13 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
   assert(addr != nullptr, "Invalid address");
   assert(sz > 0, "Invalid size");
 
+  if (MemTracker::tracking_level() == NMT_summary) {
+    size_t uncommitted = _cmr_map.uncommit(addr, sz);
+    if (uncommitted != 0)
+      VirtualMemorySummary::record_uncommitted_memory(uncommitted, flag());
+    return true;
+  }
+
   CommittedMemoryRegion del_rgn(addr, sz, *call_stack());
   address end = addr + sz;
 
@@ -285,6 +300,9 @@ void ReservedMemoryRegion::move_committed_regions(address addr, ReservedMemoryRe
 
 size_t ReservedMemoryRegion::committed_size() const {
   size_t committed = 0;
+  if (MemTracker::tracking_level() == NMT_summary) {
+    return _cmr_map.committed_size();
+  }
   LinkedListNode<CommittedMemoryRegion>* head =
     _committed_regions.head();
   while (head != nullptr) {
