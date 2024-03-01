@@ -121,6 +121,11 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((
 #endif
 
 #ifndef CORRECT_COMPILER_ATOMIC_SUPPORT
+// The implementation of `__atomic_compare_exchange` lacks sign extensions
+// in some version of GCC when using with 32-bit unsigned integers on RV64,
+// so we should implement it manually.
+// GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114130.
+// See also JDK-8326936.
 template<>
 template<typename T>
 inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((unused)),
@@ -130,7 +135,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
   STATIC_ASSERT(4 == sizeof(T));
 
   T old_value;
-  long flag;
+  uint64_t rc_temp;
 
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
@@ -142,7 +147,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
     "    sc.w      %1, %4, %2  \n\t"
     "    bnez      %1, 1b      \n\t"
     "2:                        \n\t"
-    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (flag), /*%2*/"+A" (*dest)
+    : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*dest)
     : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
     : "memory" );
 
