@@ -964,7 +964,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
           flip_to_gc(r);
           HeapWord *result = try_allocate_in(r, req, in_new_region);
           if (result != nullptr) {
-            log_debug(gc, free)("Flipped region " SIZE_FORMAT " to gc for request: " PTR_FORMAT, idx, p2i(&req));
+            log_debug(gc)("Flipped region " SIZE_FORMAT " to gc for request: " PTR_FORMAT, idx, p2i(&req));
             return result;
           }
         }
@@ -992,7 +992,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
   in_new_region = r->is_empty();
 
   if (in_new_region) {
-    log_debug(gc, free)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
+    log_debug(gc)("Using new region (" SIZE_FORMAT ") for %s (" PTR_FORMAT ").",
                        r->index(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(&req));
   }
 
@@ -1006,7 +1006,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     }
     if (adjusted_size >= req.min_size()) {
       result = r->allocate(adjusted_size, req.type());
-      log_debug(gc, free)("Allocated " SIZE_FORMAT " words (adjusted from " SIZE_FORMAT ") for %s @" PTR_FORMAT
+      log_debug(gc)("Allocated " SIZE_FORMAT " words (adjusted from " SIZE_FORMAT ") for %s @" PTR_FORMAT
                           " from %s region " SIZE_FORMAT ", free bytes remaining: " SIZE_FORMAT,
                           adjusted_size, req.size(), ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(result),
                           _partitions.partition_membership_name(r->index()), r->index(), r->free());
@@ -1021,7 +1021,7 @@ HeapWord* ShenandoahFreeSet::try_allocate_in(ShenandoahHeapRegion* r, Shenandoah
     result = r->allocate(size, req.type());
     if (result != nullptr) {
       // Record actual allocation size
-      log_debug(gc, free)("Allocated " SIZE_FORMAT " words for %s @" PTR_FORMAT
+      log_debug(gc)("Allocated " SIZE_FORMAT " words for %s @" PTR_FORMAT
                           " from %s region " SIZE_FORMAT ", free bytes remaining: " SIZE_FORMAT,
                           size, ShenandoahAllocRequest::alloc_type_to_string(req.type()), p2i(result),
                           _partitions.partition_membership_name(r->index()),  r->index(), r->free());
@@ -1250,7 +1250,7 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
         mutator_regions++;
         mutator_used += (region_size_bytes - ac);
 
-        log_debug(gc, free)(
+        log_debug(gc)(
           "  Adding Region " SIZE_FORMAT " (Free: " SIZE_FORMAT "%s, Used: " SIZE_FORMAT "%s) to mutator partition",
           idx, byte_size_in_proper_unit(region->free()), proper_unit_for_byte_size(region->free()),
           byte_size_in_proper_unit(region->used()), proper_unit_for_byte_size(region->used()));
@@ -1305,8 +1305,8 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
   }
 
   size_t collector_xfer = collector_empty_xfer + collector_not_empty_xfer;
-  log_info(gc, free)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
-                     byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
+  log_info(gc)("At start of update refs, moving " SIZE_FORMAT "%s to Mutator free partition from Collector Reserve",
+               byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
 }
 
 
@@ -1314,7 +1314,7 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
   shenandoah_assert_heaplocked();
 
-  log_debug(gc, free)("Rebuilding FreeSet");
+  log_debug(gc)("Rebuilding FreeSet");
 
   // This places regions that have alloc_capacity into the mutator partition.
   find_regions_with_alloc_capacity(cset_regions);
@@ -1373,15 +1373,15 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
       // tend to mix survivor objects with ephemeral objects, making it more difficult to reclaim the memory for the
       // ephemeral objects.
       _partitions.move_from_partition_to_partition(idx, Mutator, Collector, ac);
-      log_debug(gc,free)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
+      log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
     }
   }
 
   if (LogTarget(Info, gc, free)::is_enabled()) {
     size_t reserve = _partitions.capacity_of(Collector);
     if (reserve < to_reserve) {
-      log_info(gc, free)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
-                         PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
+      log_debug(gc)("Wanted " PROPERFMT " for young reserve, but only reserved: " PROPERFMT,
+                    PROPERFMTARGS(to_reserve), PROPERFMTARGS(reserve));
     }
   }
 }
@@ -1403,9 +1403,9 @@ void ShenandoahFreeSet::log_status() {
     for (uint i = 0; i < BUFFER_SIZE; i++) {
       buffer[i] = '\0';
     }
-    log_debug(gc, free)("FreeSet map legend:"
+    log_debug(gc)("FreeSet map legend:"
                        " M:mutator_free C:collector_free H:humongous _:retired");
-    log_debug(gc, free)(" mutator free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
+    log_debug(gc)(" mutator free range [" SIZE_FORMAT ".." SIZE_FORMAT "], "
                         " collector free range [" SIZE_FORMAT ".." SIZE_FORMAT "]",
                         _partitions.leftmost(Mutator), _partitions.rightmost(Mutator),
                         _partitions.leftmost(Collector), _partitions.rightmost(Collector));
@@ -1414,7 +1414,7 @@ void ShenandoahFreeSet::log_status() {
       ShenandoahHeapRegion *r = _heap->get_region(i);
       uint idx = i % 64;
       if ((i != 0) && (idx == 0)) {
-        log_debug(gc, free)(" %6u: %s", i-64, buffer);
+        log_debug(gc)(" %6u: %s", i-64, buffer);
       }
       if (_partitions.in_free_set(Mutator, i)) {
         size_t capacity = alloc_capacity(r);
@@ -1438,7 +1438,7 @@ void ShenandoahFreeSet::log_status() {
     } else {
       remnant = 64;
     }
-    log_debug(gc, free)(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
+    log_debug(gc)(" %6u: %s", (uint) (_heap->num_regions() - remnant), buffer);
   }
 #endif
 
