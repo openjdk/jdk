@@ -3869,6 +3869,7 @@ instruct reinterpret_shrink(vec dst, legVec src) %{
 
 #ifdef _LP64
 instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
+  predicate(UseAVX == 0);
   match(Set dst (RoundDoubleMode src rmode));
   format %{ "roundsd $dst,$src" %}
   ins_cost(150);
@@ -3879,6 +3880,18 @@ instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   ins_pipe(pipe_slow);
 %}
 
+instruct roundD_reg_avx(legRegD dst, legRegD src, immU8 rmode) %{
+  predicate(UseAVX > 0);
+  match(Set dst (RoundDoubleMode src rmode));
+  format %{ "roundsd $dst,$src" %}
+  ins_cost(150);
+  ins_encode %{
+    __ vroundsd($dst$$XMMRegister, $src$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+/*
 instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
   match(Set dst (RoundDoubleMode (LoadD src) rmode));
   format %{ "roundsd $dst,$src" %}
@@ -3889,6 +3902,7 @@ instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
   %}
   ins_pipe(pipe_slow);
 %}
+*/
 
 instruct roundD_imm(legRegD dst, immD con, immU8 rmode) %{
   match(Set dst (RoundDoubleMode con rmode));
