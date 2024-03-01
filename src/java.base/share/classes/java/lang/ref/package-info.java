@@ -140,7 +140,7 @@
  * <ul>
  *
  * <li> An object is <em>strongly reachable</em> if it can be reached
- * by some thread without traversing any reference objects.  A
+ * by some thread without traversing any {@link Reference} objects.  A
  * newly-created object is strongly reachable by the thread that
  * created it.
  *
