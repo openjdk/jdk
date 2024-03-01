@@ -3347,7 +3347,7 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_lg(currentHeader, hdr_offset, oop);    // CurrentHeader is tagged with monitor_value set.
 
   z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
-  z_brne(not_recursive);
+  z_brne(done);
 
   load_and_test_long(temp, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
   z_bre(not_recursive); // if 0 then jump, it's not recursive locking
