@@ -20,7 +20,7 @@ import javax.swing.JFileChooser;
  * @requires os.family == "mac" | os.family == "linux"
  * @summary Verifies thread-safety of BasicDirectoryModel (JFileChooser)
  */
-public final class BasicDirectoryModelConcurrency extends ThreadGroup {
+public final class ConcurrentModification extends ThreadGroup {
     /** Initial number of files. */
     private static final long NUMBER_OF_FILES = 50;
     /** Maximum number of files created on a timer tick. */
@@ -60,9 +60,9 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
             // Start the test in its own thread group to catch and handle
             // all thrown exceptions, in particular in
             // BasicDirectoryModel.FilesLoader which is created by Swing.
-            ThreadGroup threadGroup = new BasicDirectoryModelConcurrency();
+            ThreadGroup threadGroup = new ConcurrentModification();
             Thread runner = new Thread(threadGroup,
-                                       BasicDirectoryModelConcurrency::wrapper,
+                                       ConcurrentModification::wrapper,
                                        "Test Runner");
             runner.start();
             runner.join();
@@ -120,7 +120,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     }
 
 
-    private BasicDirectoryModelConcurrency() {
+    private ConcurrentModification() {
         super("bdmConcurrency");
     }
 
@@ -201,7 +201,7 @@ public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     private static void deleteFiles(final Path parent) throws IOException {
         try (var stream = Files.walk(parent)) {
             stream.filter(p -> p != parent)
-                  .forEach(BasicDirectoryModelConcurrency::deleteFile);
+                  .forEach(ConcurrentModification::deleteFile);
         }
     }
 
