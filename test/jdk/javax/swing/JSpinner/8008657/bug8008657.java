@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,6 @@ import javax.swing.UnsupportedLookAndFeelException;
  * @test
  * @key headful
  * @bug 8008657
- * @author Alexander Scherbatiy
  * @summary JSpinner setComponentOrientation doesn't affect on text orientation
  * @run main bug8008657
  */
@@ -134,20 +133,10 @@ public class bug8008657 {
     static void createDateSpinner() {
         Calendar calendar = Calendar.getInstance();
         Date initDate = calendar.getTime();
-        int year = calendar.get(Calendar.YEAR);
-        boolean isLeapYear = ((year % 4 == 0) && (year % 100 != 0) || (year % 400 == 0));
-        int curDay = 0;
-        int curMonth = 0;
-        if (isLeapYear) {
-            curMonth = calendar.get(Calendar.MONTH);
-            curDay = calendar.get(Calendar.DAY_OF_MONTH);
-        }
         calendar.add(Calendar.YEAR, -1);
         Date earliestDate = calendar.getTime();
         calendar.add(Calendar.YEAR, 1);
-        if (isLeapYear && curMonth == 1 && curDay == 29) {
-            calendar.add(Calendar.DAY_OF_MONTH, 1);
-        }
+        calendar.add(Calendar.DAY_OF_MONTH, 1);
         Date latestDate = calendar.getTime();
         SpinnerModel dateModel = new SpinnerDateModel(initDate,
                 earliestDate,
