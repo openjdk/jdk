@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4359,8 +4359,8 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 }
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (int i = 0; i < C->template_assertion_predicate_count(); i++) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i);
+  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
+    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
     assert(opaque4->Opcode() == Op_Opaque4, "must be");
     if (!useful_predicates.member(opaque4)) { // not in the useful list
       _igvn.replace_node(opaque4, opaque4->in(2));
@@ -5071,7 +5071,7 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   }
 }
 
-int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
+static int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
   assert(a != nullptr && b != nullptr, "must be");
   return a->_head->_idx - b->_head->_idx;
 }

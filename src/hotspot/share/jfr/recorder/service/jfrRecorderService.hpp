@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ class JfrRecorderService : public StackObj {
   void flushpoint();
   void process_full_buffers();
   void evaluate_chunk_size_for_rotation();
+  void emit_leakprofiler_events(int64_t cutoff_ticks, bool emit_all, bool skip_bfs);
   static bool is_recording();
 };
 
