@@ -27,7 +27,6 @@ package sun.security.util;
 
 import java.io.PrintStream;
 import java.math.BigInteger;
-import java.text.Normalizer;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +50,7 @@ public class Debug {
     private static String args;
     private static boolean threadInfoAll;
     private static boolean timeStampInfoAll;
+    private static boolean dateTimeFormatInitialized;
 
     private static final HexFormat HEX_FORMATTER =
             HexFormat.of().withUpperCase();
@@ -177,10 +177,11 @@ public class Debug {
             d.prefix = prefix;
             d.printThreadDetails = getConfigInfo(option, "+thread");
             d.printDateTime = getConfigInfo(option, "+timestamp");
-            if (d.printDateTime) {
+            if (d.printDateTime && !dateTimeFormatInitialized) {
                 // trigger loading of Locale service impl now to avoid
                 // possible bootstrap recursive class load issue
                 FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
+                dateTimeFormatInitialized = true;
             }
             return d;
         } else {
