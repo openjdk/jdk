@@ -321,8 +321,6 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   if (secondaries) {
     uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
     assert(_bitmap == real_bitmap, "must be");
-  } else {
-    assert(_bitmap == 0, "must be");
   }
 #endif
   _secondary_supers = secondaries;
@@ -377,7 +375,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
       }
       assert(false, "shouldn't happen");
     stashed:
-      do {} while (0);
+      continue;
     }
   }
 

@@ -4785,7 +4785,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
   movptr(r_bitmap, r_array_index);
   shlq(r_array_index, 63 - bit);
-  cmpq(r_array_index, 0); // The bit we test is the MSB of r_array_indes
+  cmpq(r_array_index, 0); // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::greaterEqual, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
