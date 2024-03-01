@@ -200,6 +200,25 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                         </ol>
                         <p>end</p>"""),
 
+            LIST_UNCLOSED_FENCE(
+                    """
+                        1.  list item
+                            ```
+                            fenced-code
+                            @Anno
+
+                        end""",
+                    """
+                        <ol>
+                        <li>list item
+                        <pre><code>fenced-code
+                        @Anno
+
+                        </code></pre>
+                        </li>
+                        </ol>
+                        <p>end</p>"""),
+
             // in the following, note the indentation of the list item is 5 spaces
             // and the block that follows is indented by just 4 spaces
             POST_LIST_INDENT(
@@ -222,6 +241,35 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                         <pre><code>{@code CODE}
                         @Anno
                         </code></pre>
+                        <p>end</p>"""),
+
+            BLOCK_FENCE(
+                    """
+                        > ```
+                        > fenced code
+                        > @Anno
+                        > ```
+                        end""",
+                    """
+                        <blockquote>
+                        <pre><code>fenced code
+                        @Anno
+                        </code></pre>
+                        </blockquote>
+                        <p>end</p>"""),
+
+            BLOCK_UNCLOSED_FENCE(
+                    """
+                        > ```
+                        > fenced code
+                        > @Anno
+                        end""",
+                    """
+                        <blockquote>
+                        <pre><code>fenced code
+                        @Anno
+                        </code></pre>
+                        </blockquote>
                         <p>end</p>"""),
 
             NOT_INDENT_CONTINUATION(
@@ -338,6 +386,7 @@ public class TestMarkdownCodeBlocks extends JavadocTester {
                 "unknown tag");
 
         for (var tc : TestCase.values()) {
+            out.println("Test case: " + tc);
             checkOutput("p/C.html", true,
                     """
                         <span class="element-name">#NAME#</span>()</div>

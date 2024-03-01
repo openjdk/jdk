@@ -237,4 +237,66 @@ public class TestMarkdown extends JavadocTester {
                     More.</div>
                     </div>""");
     }
+
+    @Test
+    public void testAnnos(Path base) throws Exception {
+        Path src = base.resolve("src");
+
+        // in the following, note that the @ following the backtick
+        // is just a literal character and not part of any tag
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class C {
+                        /// First sentence.
+                        /// 1.  list item
+                        ///
+                        ///     \\@Anno1 plain
+                        ///
+                        ///     abc `
+                        ///     @Anno2 in span
+                        ///     `
+                        ///
+                        ///     ```
+                        ///     @Anno3 fenced
+                        ///     ```
+                        ///
+                        ///         @Anno4 indented
+                        ///
+                        ///     end of list item
+                        ///
+                        /// end
+                        public void m() { }
+                    }
+                    """);
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:syntax", // enable check for "no tag after '@'
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+        checkExit(Exit.OK);
+
+        checkOutput(Output.OUT, false,
+                "C.java:4: error: no tag name after '@'",
+                "unknown tag");
+
+        checkOutput("p/C.html", true,
+                """
+                    <ol>
+                    <li>
+                    <p>list item</p>
+                    <p>@Anno1 plain</p>
+                    <p>abc <code>@Anno2 in span</code></p>
+                    <pre><code>@Anno3 fenced
+                    </code></pre>
+                    <pre><code>@Anno4 indented
+                    </code></pre>
+                    <p>end of list item</p>
+                    </li>
+                    </ol>
+                    <p>end</p>
+                    """);
+
+    }
 }

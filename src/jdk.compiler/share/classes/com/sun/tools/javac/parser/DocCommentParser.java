@@ -26,8 +26,7 @@
 package com.sun.tools.javac.parser;
 
 import java.io.Serial;
-import java.util.ArrayDeque;
-import java.util.Deque;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -447,8 +446,6 @@ public class DocCommentParser {
                                     // if a match for the opening sequence of characters was not found:
                                     // - if the characters were a fence, the code block extends to the end of file
                                     // - if the characters were inline, the opening characters are treated literally
-                                    // TODO: a fenced code block in a list item or block quote can be terminated
-                                    //       by end of that block
                                     if (isCodeFence) {
                                         lastNonWhite = buflen - 1;
                                     } else {
@@ -1319,146 +1316,213 @@ public class DocCommentParser {
     }
 
     /**
-     * A class to encapsulate the work to detect the boundaries of character
-     * sequences of literal text, and to skip over such sequences, without
-     * analyzing the content.
+     * A class to encapsulate the work to parse Markdown enough to
+     * detect the boundaries of character sequences of literal text,
+     * and to skip over such sequences, without analyzing the content.
      *
-     * The two primary factors are the current level of indentation,
-     * used when checking for indented code blocks, and a serial number
-     * that is incremented when a line is encountered that is not a
-     * continuation of the previous block.
+     * The primary factors are:
+     *   - the content of the current line, including its indentation
+     *   - the currently open set of container blocks, and any leaf block
+     *   - a serial number that is incremented when a line is encountered
+     *     that is not a continuation of the previous block.
+     *
+     * There are some limitations when using code blocks containing
+     * strings that resemble tags, which should be treated as literal text.
+     * In particular, list items are parsed individually and not as
+     * part of an overall group of list items. This means that the
+     * indentation is determined _for each item_, and not for the group
+     * as a whole. This in turn implies that a list item cannot begin
+     * with an indented code block. The workaround is to use a fenced code
+     * block. It is also recommended, as a matter of style, that all
+     * list items should use the same relative indentation for their content.
+     *
+     * The restrictions only apply when indented code blocks contain
+     * strings resembling tags.
      *
      * @see <a href="https://spec.commonmark.org/0.30/">CommonMark spec</a>
      */
     class Markdown {
+        // Container blocks may nested contained blocks and leaf blocks.
+        // Note, the code does not model lists, which would require
+        // arbitrary multi-line lookahead.
+        // https://spec.commonmark.org/0.30/#container-blocks
+        private enum ContainerBlockKind {
+            LIST_ITEM, QUOTE
+        }
+
         /**
-         * The current "line kind".
+         * Details about a currently open container block.
+         * @param blockKind the kind of block
+         * @param indent the indentation for the block's content, for list items
          */
-        private LineKind lineKind = LineKind.OTHER;
+        private record BlockInfo(ContainerBlockKind blockKind, int indent) { }
+
+        /**
+         * A list of the currently open container blocks.
+         */
+        private final java.util.List<BlockInfo> containers = new ArrayList<>();
+
+
+        // Except for NONE, leaf blocks contain "textual" content.
+        // Single-line leaf blocks, like ATX headings and thematic breaks are all represented by NONE.
+        // See https://spec.commonmark.org/0.30/#leaf-blocks
+        private enum LeafBlockKind {
+            NONE, PARAGRAPH, FENCED_CODE, INDENTED_CODE
+        }
+
+        private LeafBlockKind leafKind = LeafBlockKind.NONE;
 
         /**
          * A serial number for the current "block".
-         * It is incremented whenever a line is encountered that indicates
+         * It is updated whenever a line is encountered that indicates
          * the beginning of a new block, such that any potential code span
          * should be terminated as "not a span".
          */
         private int blockId = 0;
 
         /**
-         * The current indentation used to determine if a line is part of
-         * an indented code block. Initially zero, it is increased while
-         * analysing bulleted or ordered list items,
-         */
-        private int currIndent = 0;
-
-        /**
-         * A stack of the indentation values for nested lists.
-         * Initially empty, entries are pushed when a top-level or
-         * nested list item is encountered, and removed when a
-         * less indented line is encountered.
-         */
-        private final Deque<Integer> indentStack = new ArrayDeque<>();
-
-        /**
          * Updates the state after a newline has been read.
          * There are two primary goals.
          *
-         * 1. Determine the indentation used to identify indented code blocks.
-         * 2. Determine if the current line should be considered a continuation
-         *    of the preceding block, or the beginning of a new block. This is
-         *    used when determining the end (if any) of a potential code span.
+         * 1. Determine any change to the current list of container blocks
+         * 2. Determine if the current line is part of a code block
          */
         void update() {
-            var prevLineKind = lineKind;
+            var prevLeafKind = leafKind;
             int indent = readIndent(0);
-            if (ch == '\r' || ch == '\n') {
-                lineKind = LineKind.BLANK;
-                blockId++;
-                return;
-            }
 
-            while (indent < currIndent) {
-                currIndent = indentStack.pop();
-            }
+            final var line = peekLine();
+            var peekIndex = 0;  // index into `line`; note it does not include `indent`
+            var blockIndex = 0; // index into `blocks`
 
-            if (indent >= currIndent + 4 && !isParagraph(prevLineKind)) {
-                if (prevLineKind != LineKind.INDENTED_CODE_BLOCK) {
-                    blockId++;
-                }
-                lineKind = LineKind.INDENTED_CODE_BLOCK;
-                return;
-            }
-
-            lineKind = peekLineKind();
-            switch (lineKind) {
-                case BLOCK_QUOTE -> {
-                    if (prevLineKind != LineKind.BLOCK_QUOTE) {
-                        blockId++;
-                    }
-                }
-
-                case BULLETED_LIST_ITEM, ORDERED_LIST_ITEM -> {
-                    var count = indent;
-                    while (ch != ' ' && ch != '\t') {
-                        count++;
-                        nextChar();
-                    }
-                    var listItemIndent = readIndent(count);
-                    if (listItemIndent > count + 4) {
-                        indentStack.push(currIndent);
-                        currIndent = count + 4;
-                        lineKind = LineKind.INDENTED_CODE_BLOCK;
-                    } else if (indent >= currIndent) {
-                        indentStack.push(currIndent);
-                        currIndent = listItemIndent;
-                    }
-                    blockId++;
-                }
-
-                case OTHER -> {
-                    switch (prevLineKind) {
-                        case BLOCK_QUOTE, BULLETED_LIST_ITEM, ORDERED_LIST_ITEM, OTHER -> { }
-                        default -> {
-                            blockId++;
+            // Iterate examining the beginning of the line, left to right,
+            // comparing indications of containers (indentation or markers)
+            // against the list of currently open container blocks.
+            // Side effects may open nested blocks or close existing ones.
+            while (true) {
+                if (blockIndex == containers.size()) {
+                    // check for an open code block
+                    if (prevLeafKind == LeafBlockKind.FENCED_CODE) {
+                        return;
+                    } else {
+                        var codeIndent = (containers.isEmpty() ? 0 : containers.getLast().indent) + 4;
+                        if (indent >= codeIndent && prevLeafKind != LeafBlockKind.PARAGRAPH) {
+                            leafKind = LeafBlockKind.INDENTED_CODE;
+                            if (leafKind != prevLeafKind) {
+                                blockId++;
+                            }
+                            return;
                         }
                     }
-                }
+                    // examine the remaining part of the lne
+                    var peekLineKind = getLineKind(line.substring(peekIndex));
+                    switch (peekLineKind) {
+                        case BULLETED_LIST_ITEM, ORDERED_LIST_ITEM -> {
+                            var count = indent;
+                            // skip over the list marker
+                            while (ch != ' ' && ch != '\t') {
+                                count++;
+                                nextChar();
+                            }
+                            var listItemIndent = readIndent(count);
+                            containers.add(new BlockInfo(ContainerBlockKind.LIST_ITEM, listItemIndent));
+                            blockIndex++;
+                            peekIndex = listItemIndent - indent;
+                            blockId++;
+                        }
 
-                case BLANK, ATX_HEADER, SETEXT_UNDERLINE, THEMATIC_BREAK, CODE_FENCE,
-                        INDENTED_CODE_BLOCK -> {
-                    blockId++;
-                }
+                        case BLOCK_QUOTE -> {
+                            containers.add(new BlockInfo(ContainerBlockKind.QUOTE,  indent + 1));
+                            blockIndex++;
+                            peekIndex += 1;
+                            blockId++;
+                        }
 
-                default -> {
-                    throw new Error(lineKind.toString());
+                        case OTHER -> {
+                            leafKind = LeafBlockKind.PARAGRAPH;
+                            return;
+                        }
+
+                        case ATX_HEADER, SETEXT_UNDERLINE, THEMATIC_BREAK, BLANK -> {
+                            leafKind = LeafBlockKind.NONE;
+                            blockId++;
+                            return;
+                        }
+
+                        case CODE_FENCE -> {
+                            leafKind = LeafBlockKind.FENCED_CODE;
+                            blockId++;
+                            return;
+                        }
+                    }
+                } else {
+                    var block = containers.get(blockIndex);
+                    var blockKind = block.blockKind;
+                    switch (blockKind) {
+                        case LIST_ITEM -> {
+                            if (indent >= block.indent) {
+                                blockIndex++;
+                            } else {
+                                var peekLineKind = getLineKind(line.substring(peekIndex));
+                                if (peekLineKind == LineKind.BLANK) {
+                                    // blank lines are considered to be part of a list item
+                                    blockIndex++;
+                                } else if (peekLineKind == LineKind.OTHER && prevLeafKind == LeafBlockKind.PARAGRAPH) {
+                                    // lazy continuation line: leaf kind and id are unchanged
+                                    return;
+                                } else {
+                                    closeContainer(blockIndex);
+                                    blockId++;
+                                }
+                            }
+                        }
+
+                        case QUOTE -> {
+                            var peekLineKind = getLineKind(line.substring(peekIndex));
+                            if (peekLineKind == LineKind.BLOCK_QUOTE) {
+                                blockIndex++;
+                                peekIndex++;
+                            } else if (peekLineKind == LineKind.OTHER && prevLeafKind == LeafBlockKind.PARAGRAPH) {
+                                // lazy continuation line: leaf kind and id are unchanged
+                                return;
+                            } else {
+                                closeContainer(blockIndex);
+                                blockId++;
+                            }
+                        }
+
+                        default -> throw new IllegalStateException(blockKind.toString());
+                    }
                 }
             }
         }
 
         /**
-         * {@return {@code true} if this line should be treated as an indented code block,
+         * {@return {@code true} if the current line is part of an indented code block,
          *          and {@code false} otherwise}
          * Indented code blocks should be treated as literal text and not scanned for tags.
          */
         boolean isIndentedCodeBlock() {
-            return lineKind == LineKind.INDENTED_CODE_BLOCK;
+            return leafKind == LeafBlockKind.INDENTED_CODE;
         }
 
         /**
-         * {@return {@code true} if this line should be treated as code fence,
+         * {@return {@code true} if the current line is part of a fenced code block,
          *          and {@code false} otherwise}
          * Code fences are used to surround content that should be treated as literal text
          * and not scanned for tags.
          */
         boolean isCodeFence() {
-            return lineKind == LineKind.CODE_FENCE;
+            return leafKind == LeafBlockKind.FENCED_CODE;
         }
 
-        private boolean isParagraph(LineKind lk) {
-            return switch (lk) {
-                case BULLETED_LIST_ITEM, ORDERED_LIST_ITEM, BLOCK_QUOTE, OTHER -> true;
-                default -> false;
-            };
+        /**
+         * Closes a given container block, and any open nested blocks.
+         *
+         * @param index the index of the block to be closed
+         */
+        private void closeContainer(int index) {
+            containers.subList(index, containers.size()).clear();
         }
 
         /**
@@ -1475,9 +1539,13 @@ public class DocCommentParser {
 
         /**
          * Skips literal content.
+         *
          * The ending delimiter is a function of the repetition count of the current
          * character, and whether this is fenced content or not.
-         * In fenced content, the ending delimiter must appear at the end of a line.
+         *
+         * In fenced content, the ending delimiter must appear at the start of a line;
+         * the code block may also be terminated implicitly by the end of a containing block.
+         *
          * In other content, the scan may be terminated if the blockId changes,
          * meaning the ending delimiter was not found before the block ended.
          *
@@ -1487,30 +1555,29 @@ public class DocCommentParser {
         int skipCode() {
             char term = ch;
             var count = count(term);
-            var initialLineKind = lineKind;
+            var initialLeafKind = leafKind;
+            var isFenced = (leafKind == LeafBlockKind.FENCED_CODE);
             var initialBlockId = blockId;
             while (bp < buflen) {
                 switch (ch) {
                     case '\n', '\r' -> {
                         nextChar();
                         update();
-                        switch (initialLineKind) {
-                            case CODE_FENCE -> {
-                                if (lineKind == LineKind.CODE_FENCE && ch == term && count(ch) >= count) {
-                                    return bp;
-                                }
+                        if (isFenced) {
+                            if (leafKind == LeafBlockKind.FENCED_CODE && ch == term && count(ch) >= count
+                                    || blockId != initialBlockId) {
+                                leafKind = LeafBlockKind.NONE;
+                                return bp;
                             }
-
-                            default -> {
-                                if (blockId != initialBlockId) {
-                                    return -1;
-                                }
+                        } else {
+                            if (blockId != initialBlockId) {
+                                return -1;
                             }
                         }
                     }
 
                     default -> {
-                        if (ch == term && initialLineKind != LineKind.CODE_FENCE ) {
+                        if (ch == term && initialLeafKind != LeafBlockKind.FENCED_CODE ) {
                             if (count(ch) == count) {
                                 return bp;
                             }
@@ -1547,25 +1614,27 @@ public class DocCommentParser {
         }
 
         /**
-         * Peeks ahead at the current line, and matches it against an ordered series
-         * of regular expressions, to determine the "kind" of the line.
+         * Matches a string against an ordered series of regular expressions,
+         * to determine the "kind" of the string.
          *
          * @return the "kind" of the line
          */
-        private LineKind peekLineKind() {
-            switch (ch) {
+        private LineKind getLineKind(String s) {
+            if (s.isBlank()) {
+                return LineKind.BLANK;
+            }
+
+            switch (s.charAt(0)) {
                 case '#', '=', '-', '+', '*', '_', '`', '~', '>',
                         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
-                    String line = peekLine();
                     for (LineKind lk : LineKind.values()) {
-                        if (lk.pattern != null) {
-                            if (lk.pattern.matcher(line).matches()) {
-                                return lk;
-                            }
+                        if (lk.pattern.matcher(s).matches()) {
+                            return lk;
                         }
                     }
                 }
             }
+
             return LineKind.OTHER;
         }
 
@@ -1599,6 +1668,16 @@ public class DocCommentParser {
                 nextChar();
             }
             return n;
+        }
+
+        // unused, but useful when debugging
+        @Override
+        public String toString() {
+            return getClass().getSimpleName()
+                    + "[containers:" + containers
+                    + ", leafKind:" + leafKind
+                    + ", blockId:" + blockId
+                    + "]";
         }
     }
 
@@ -1671,13 +1750,6 @@ public class DocCommentParser {
          * @see <a href="https://spec.commonmark.org/0.30/#block-quotes">Block quotes</a>
          */
         BLOCK_QUOTE(Pattern.compile(">.*")),
-
-        /**
-         * Indented code blocks are defined by preceding lines and indentation,
-         * not by any line-specific pattern.
-         * @see <a href="https://spec.commonmark.org/0.30/#indented-code-block">Indented Code Block</a>
-         */
-        INDENTED_CODE_BLOCK(null),
 
         /**
          * Everything else...
