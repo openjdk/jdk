@@ -75,7 +75,7 @@ public class StreamTest {
     static boolean supportsLinks;
     static Path[] level1;
     static Path[] all;
-    static Path[] all_followLinks;
+    static Path[] allFollowLinks;
 
     @BeforeClass
     void setupTestFolder() throws IOException {
@@ -130,7 +130,7 @@ public class StreamTest {
             tmp = tmp.resolve("lnDir2");
             set.add(tmp);
         }
-        all_followLinks = set.toArray(new Path[0]);
+        allFollowLinks = set.toArray(new Path[0]);
     }
 
     @AfterClass
@@ -179,7 +179,7 @@ public class StreamTest {
         // We still want to test the behavior with FOLLOW_LINKS option.
         try (Stream<Path> s = Files.walk(testFolder, FileVisitOption.FOLLOW_LINKS)) {
             Object[] actual = s.sorted().toArray();
-            assertEquals(actual, all_followLinks);
+            assertEquals(actual, allFollowLinks);
         } catch (IOException ioe) {
             fail("Unexpected IOException");
         }
