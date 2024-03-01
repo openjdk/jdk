@@ -91,7 +91,7 @@ bool G1Allocator::is_retained_old_region(HeapRegion* hr) {
   return _retained_old_gc_alloc_region == hr;
 }
 
-void G1Allocator::reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
+void G1Allocator::reuse_retained_old_region(G1EvacuationInfo* evacuation_info,
                                             OldGCAllocRegion* old,
                                             HeapRegion** retained_old) {
   HeapRegion* retained_region = *retained_old;
@@ -120,11 +120,11 @@ void G1Allocator::reuse_retained_old_region(G1EvacuationInfo& evacuation_info,
     _g1h->old_set_remove(retained_region);
     old->set(retained_region);
     _g1h->hr_printer()->reuse(retained_region);
-    evacuation_info.set_alloc_regions_used_before(retained_region->used());
+    evacuation_info->set_alloc_regions_used_before(retained_region->used());
   }
 }
 
-void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
+void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo* evacuation_info) {
   assert_at_safepoint_on_vm_thread();
 
   _survivor_is_full = false;
@@ -140,14 +140,14 @@ void G1Allocator::init_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
                             &_retained_old_gc_alloc_region);
 }
 
-void G1Allocator::release_gc_alloc_regions(G1EvacuationInfo& evacuation_info) {
+void G1Allocator::release_gc_alloc_regions(G1EvacuationInfo* evacuation_info) {
   uint survivor_region_count = 0;
   for (uint node_index = 0; node_index < _num_alloc_regions; node_index++) {
     survivor_region_count += survivor_gc_alloc_region(node_index)->count();
     survivor_gc_alloc_region(node_index)->release();
   }
-  evacuation_info.set_allocation_regions(survivor_region_count +
-                                         old_gc_alloc_region()->count());
+  evacuation_info->set_allocation_regions(survivor_region_count +
+                                          old_gc_alloc_region()->count());
 
   // If we have an old GC alloc region to release, we'll save it in
   // _retained_old_gc_alloc_region. If we don't
