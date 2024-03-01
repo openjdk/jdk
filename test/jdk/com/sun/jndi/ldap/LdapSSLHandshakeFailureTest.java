@@ -87,7 +87,7 @@ public class LdapSSLHandshakeFailureTest {
 
     private static String popArg() {
         if (curArg >= progArgs.length) {
-                return null;
+            return null;
         }
         return progArgs[curArg++];
     }
