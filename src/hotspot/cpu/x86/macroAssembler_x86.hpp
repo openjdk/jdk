@@ -250,7 +250,8 @@ class MacroAssembler: public Assembler {
   // Compare char[] or byte[] arrays.
   void arrays_equals(bool is_array_equ, Register ary1, Register ary2,
                      Register limit, Register result, Register chr,
-                     XMMRegister vec1, XMMRegister vec2, bool is_char, KRegister mask = knoreg);
+                     XMMRegister vec1, XMMRegister vec2, bool is_char,
+                     KRegister mask = knoreg, bool expand_ary2 = false);
 
   // Support for VM calls
   //
@@ -1423,6 +1424,7 @@ public:
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpcmpeqb(XMMRegister dst, XMMRegister src1, Address src2, int vector_len);
 
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqd(KRegister kdst, KRegister mask, XMMRegister nds, AddressLiteral src, int vector_len, Register rscratch = noreg);
 

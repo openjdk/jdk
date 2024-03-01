@@ -1203,9 +1203,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   Node* tgt_count = load_array_length(tgt);
 
   Node* result = nullptr;
-  bool call_opt_stub =
-      (StubRoutines::string_indexof() != nullptr) &&
-      ((ae == StrIntrinsicNode::LL) || (ae == StrIntrinsicNode::UU));
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
 
   if (!call_opt_stub) {
     if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
@@ -1220,7 +1218,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
 
   if (call_opt_stub) {
     Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
-                                   StubRoutines::string_indexof(),
+                                   StubRoutines::_string_indexof_array[ae],
                                    "stringIndexOf", TypePtr::BOTTOM, src_start,
                                    src_count, tgt_start, tgt_count);
     result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
@@ -1239,7 +1237,7 @@ bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
   return true;
 }
 
-//-----------------------------inline_string_indexOf-----------------------
+//-----------------------------inline_string_indexOfI-----------------------
 bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   if (too_many_traps(Deoptimization::Reason_intrinsic)) {
     return false;
@@ -1274,18 +1272,19 @@ bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
   Node* phi = new PhiNode(region, TypeInt::INT);
   Node* result = nullptr;
 
-  if ((StubRoutines::string_indexof() != nullptr) && (ae == StrIntrinsicNode::LL)) {
-    Node* call = make_runtime_call(RC_LEAF,
-                                   OptoRuntime::string_IndexOf_Type(),
-                                   StubRoutines::string_indexof(), "stringIndexOf", TypePtr::BOTTOM,
-                                   src_start, src_count, tgt_start, tgt_count);
+  bool call_opt_stub = (StubRoutines::_string_indexof_array[ae] != nullptr);
+
+  if (call_opt_stub) {
+    Node* call = make_runtime_call(RC_LEAF, OptoRuntime::string_IndexOf_Type(),
+                                   StubRoutines::_string_indexof_array[ae],
+                                   "stringIndexOf", TypePtr::BOTTOM, src_start,
+                                   src_count, tgt_start, tgt_count);
     result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
   } else {
-    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count, region, phi, ae);
+    result = make_indexOf_node(src_start, src_count, tgt_start, tgt_count,
+                               region, phi, ae);
   }
   if (result != nullptr) {
-    // The result is index relative to from_index if substring was found, -1 otherwise.
-    // Generate code which will fold into cmove.
     Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
     Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
 

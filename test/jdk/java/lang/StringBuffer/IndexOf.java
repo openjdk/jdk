@@ -27,15 +27,77 @@
  * @key randomness
  */
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Random;
 
 public class IndexOf {
 
   static Random generator = new Random();
   private static boolean failure = false;
-
   public static void main(String[] args) throws Exception {
     String testName = "IndexOf";
+
+  // ///////////////////////////////////////////////////////////////////////////////////
+  // ///////////////////////////////////////////////////////////////////////////////////
+  char[] haystack = new char[128];
+  char[] haystack_16 = new char[128];
+
+  for (int i = 0; i < 128; i++) {
+    haystack[i] = (char) i;
+  }
+
+  // haystack_16[0] = (char) (23 + 256);
+  // for (int i = 1; i < 128; i++) {
+  //   haystack_16[i] = (char) (i);
+  // }
+
+  for (int i = 0; i < 128; i++) {
+    haystack_16[i] = (char) (i + 256);
+  }
+
+
+  // Charset hs_charset = StandardCharsets.ISO_8859_1;
+  Charset hs_charset = StandardCharsets.UTF_16;
+  Charset needleCharset = StandardCharsets.ISO_8859_1;
+  // Charset needleCharset = StandardCharsets.UTF_16;
+  int l_offset = 0;
+  int needleSize = 65;
+  int haystackSize = 66;
+  int result = 0;
+
+  String needle = new String(Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, l_offset, l_offset + needleSize));
+  int hsSize = (haystackSize - l_offset) >= 0 ? haystackSize - l_offset : 0;
+  int midStart = hsSize / 2;
+  int endStart = (hsSize > needleSize) ? hsSize - needleSize : 0;
+  String midNeedle = new String(
+      Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, midStart + l_offset, midStart + needleSize + l_offset));
+  String endNeedle = new String(
+      Arrays.copyOfRange((needleCharset == StandardCharsets.UTF_16) ? haystack_16 : haystack, endStart + l_offset, endStart + needleSize + l_offset));
+  // String shs = new String(Arrays.copyOfRange((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack, 0, haystackSize));
+  String shs = (new String((hs_charset == StandardCharsets.UTF_16) ? haystack_16 : haystack)).substring(0, haystackSize);
+
+  shs = "$&),,18+-!'8)+";
+  endNeedle = "8)-";
+  l_offset = 9;
+  endNeedle = "/'!(\"3//";
+  shs = ");:(/!-+ %*/'!(\"3//;9";
+  l_offset = 0;
+  StringBuffer bshs = new StringBuffer(shs);
+
+  // printStringBytes(shs.getBytes(hs_charset));
+  for (int i = 0; i < 200000; i++) {
+    if(shs.indexOf(endNeedle, l_offset) != -1) {
+      // System.out.println("result="+bshs.indexOf(endNeedle, l_offset));
+    }
+    result += bshs.indexOf(endNeedle, l_offset);
+    // System.out.print(result + " " + needle + " " + shs);
+  }
+
+  ///////////////////////////////////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////////////////////////////////////
+
 
     for (int i = 0; i < 20000; i++) {
       int foo = testName.indexOf("dex");
@@ -76,19 +138,34 @@ public class IndexOf {
 
   private static int naiveFind(String haystack, String needle, int offset) {
     int x = offset;
-    int y = 0;
     int len = haystack.length() - offset;
-    if (needle.length() == 0) return 0;
-    if (needle.length() > len) return -1;
-    for (x = offset; x < len - needle.length() + 1; x++) {
-      if (haystack.charAt(x) == needle.charAt(0)) {
-        for (y = 1; y < needle.length(); y++) {
-          if (haystack.charAt(x + y) != needle.charAt(y)) {
+    if (needle.length() == 0)
+      return offset;
+    if (needle.length() > len)
+      return -1;
+    int hsndx = 0;
+    int nndx = 0;
+    for (int xx = 0; xx < offset; xx++) {
+      hsndx += Character.charCount(haystack.codePointAt(hsndx));
+    }
+    // System.out.println("(1) hsndx=" + hsndx);
+    for (x = offset; x < haystack.length() - needle.length() + 1; x++) {
+      if (haystack.codePointAt(hsndx) == needle.codePointAt(0)) {
+        nndx = Character.charCount(needle.codePointAt(0));
+        int hsndx_tmp = hsndx + Character.charCount(haystack.codePointAt(hsndx));;
+        // System.out.println("(2) hsndx_tmp=" + hsndx_tmp + " nndx=" + nndx);
+        while (nndx < needle.length()) {
+          if (haystack.codePointAt(hsndx_tmp) != needle.codePointAt(nndx)) {
             break;
           }
+          hsndx_tmp += Character.charCount(haystack.codePointAt(hsndx_tmp));
+          nndx += Character.charCount(needle.codePointAt(nndx));
         }
-        if (y == needle.length()) return x;
+        if (nndx == needle.length()) {
+          return x;
+        }
       }
+      hsndx += Character.charCount(haystack.codePointAt(hsndx));
     }
     return -1;
   }
@@ -137,6 +214,9 @@ public class IndexOf {
     String sourceString;
     StringBuffer sourceBuffer;
     String targetString;
+    String emptyString = "";
+    String allAs = new String("aaaaaaaaaaaaaaaaaaaaaaaaa");
+    StringBuffer allAsBuffer = new StringBuffer(allAs);
 
     for (int i = 0; i < 10000; i++) {
       do {
@@ -149,14 +229,52 @@ public class IndexOf {
       sourceBuffer = sourceBuffer.replace(index1, index1, targetString);
 
       if ((sourceBuffer.indexOf(targetString) != index1) ||
-          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0))) {
+        System.err.println("sourceBuffer.indexOf(targetString) fragment '" + targetString + "' ("
+            + targetString.length() + ") String = "
+            + sourceBuffer.toString() + " len Buffer = " + sourceBuffer.toString().length());
+        System.err.println("  naive = " + naiveFind(sourceBuffer.toString(), targetString, 0) + ", IndexOf = "
+            + sourceBuffer.indexOf(targetString));
         failCount++;
+      }
       if ((sourceBuffer.indexOf(targetString, 5) != index1) ||
-          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0))) {
+        System.err.println("sourceBuffer.indexOf(targetString, 5) fragment '" + targetString + "' ("
+            + targetString.length() + ") String = "
+            + sourceBuffer.toString() + " len Buffer = " + sourceBuffer.toString().length());
+        System.err.println("  naive = " + naiveFind(sourceBuffer.toString(), targetString, 0) + ", IndexOf = "
+            + sourceBuffer.indexOf(targetString, 5));
         failCount++;
+      }
       if ((sourceBuffer.indexOf(targetString, 99) == index1) ||
-          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0)))
+          (index1 != naiveFind(sourceBuffer.toString(), targetString, 0))) {
+        System.err.println("sourceBuffer.indexOf(targetString, 99) fragment '" + targetString + "' ("
+            + targetString.length() + ") String = "
+            + sourceBuffer.toString() + " len Buffer = " + sourceBuffer.toString().length());
+        System.err.println("  naive = " + naiveFind(sourceBuffer.toString(), targetString, 0) + ", IndexOf = "
+            + sourceBuffer.indexOf(targetString, 99));
         failCount++;
+      }
+      if ((sourceBuffer.indexOf(emptyString, 99) != 99) ||
+          (99 != naiveFind(sourceBuffer.toString(), emptyString, 99))) {
+        System.err.println("sourceBuffer.indexOf(emptyString, 99) fragment '" + emptyString + "' ("
+            + emptyString.length() + ") String = "
+            + sourceBuffer.toString() + " len Buffer = " + sourceBuffer.toString().length());
+        System.err.println("  naive = " + naiveFind(sourceBuffer.toString(), emptyString, 99) + ", IndexOf = "
+            + sourceBuffer.indexOf(emptyString, 99));
+        failCount++;
+      }
+      if ((allAsBuffer.substring(1, 3).indexOf(allAsBuffer.substring(5, 12)) != -1) ||
+          (-1 != naiveFind(allAsBuffer.substring(1, 3).toString(), allAsBuffer.substring(5, 12), 0))) {
+        System.err.println("allAsBuffer.substring(1, 3).indexOf(allAsBuffer.substring(5, 12)) fragment '"
+            + allAsBuffer.substring(5, 12) + "' ("
+            + allAsBuffer.substring(5, 12).length() + ") String = "
+            + allAsBuffer.substring(1, 3) + " len Buffer = " + allAsBuffer.substring(1, 3).length());
+        System.err.println(
+            "  naive = " + naiveFind(allAsBuffer.substring(1, 3).toString(), allAsBuffer.substring(5, 12), 0)
+                + ", IndexOf = " + allAsBuffer.substring(1, 3).indexOf(allAsBuffer.substring(5, 12)));
+        failCount++;
+      }
     }
 
     report("Basic Test                   ", failCount);
@@ -207,31 +325,35 @@ public class IndexOf {
     String testString = null;
     int testIndex = 0;
 
+    failCount = "".indexOf("");
+
     for (int x = 0; x < 1000000; x++) {
       if (make_new) {
-          testString = generateTestString(1, 100);
-          int len = testString.length();
+        testString = " ".repeat(1000);
+        testString = generateTestString(1, 100);
+        int len = testString.length();
 
-          testBuffer = new StringBuffer(len);
-          testBuffer.append(testString);
-          if (!testString.equals(testBuffer.toString()))
+        testBuffer = new StringBuffer(len);
+        testBuffer.append(testString);
+        if (!testString.equals(testBuffer.toString()))
           throw new RuntimeException("Initial equality failure");
 
-          int x1 = 0;
-          int x2 = 1000;
-          while (x2 > testString.length()) {
+        int x1 = 0;
+        int x2 = 1000;
+        while (x2 > testString.length()) {
           x1 = generator.nextInt(len);
           x2 = generator.nextInt(100);
           x2 = x1 + x2;
-          }
-          fragment = testString.substring(x1, x2);
+        }
+        fragment = " ".repeat(1000);
+        fragment = new String(testString.substring(x1, x2));
       }
 
       int sAnswer = testString.indexOf(fragment);
       int sbAnswer = testBuffer.indexOf(fragment);
 
       if (sAnswer != sbAnswer) {
-        System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = "
+        System.err.println("(1) IndexOf fragment '" + fragment + "' (" + fragment.length() + ") len String = "
             + testString.length() + " len Buffer = " + testBuffer.length());
         System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
         System.err.println("  testString = '" + testString + "'");
@@ -256,7 +378,7 @@ public class IndexOf {
       sbAnswer = testBuffer.indexOf(fragment, testIndex);
 
       if (sAnswer != sbAnswer) {
-        System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
+        System.err.println("(2) IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
             + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
         System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
         System.err.println("  testString = '" + testString + "'");
@@ -267,7 +389,7 @@ public class IndexOf {
         if ((sAnswer > testString.length()) || ((sAnswer != -1) && (sAnswer < testIndex) && (fragment.length() != 0))) {
           System.err.println("IndexOf returned value out of range; return: " + sAnswer + " length max: "
               + testString.length() + " index: " + testIndex);
-          System.err.println("IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
+          System.err.println("(3) IndexOf fragment '" + fragment + "' (" + fragment.length() + ") index = " + testIndex
               + " len String = " + testString.length() + " len Buffer = " + testBuffer.length());
         }
       }
@@ -276,7 +398,7 @@ public class IndexOf {
       sbAnswer = testBuffer.lastIndexOf(fragment);
 
       if (sAnswer != sbAnswer) {
-        System.err.println("lastIndexOf fragment '" + fragment + "' len String = " + testString.length()
+        System.err.println("(1) lastIndexOf fragment '" + fragment + "' len String = " + testString.length()
             + " len Buffer = " + testBuffer.length());
         System.err.println("  sAnswer = " + sAnswer + ", sbAnswer = " + sbAnswer);
         failCount++;
@@ -288,7 +410,7 @@ public class IndexOf {
       sbAnswer = testBuffer.lastIndexOf(fragment, testIndex);
 
       if (sAnswer != sbAnswer) {
-        System.err.println("lastIndexOf fragment '" + fragment + "' index = " + testIndex + " len String = "
+        System.err.println("(2) lastIndexOf fragment '" + fragment + "' index = " + testIndex + " len String = "
             + testString.length() + " len Buffer = " + testBuffer.length());
         failCount++;
       }

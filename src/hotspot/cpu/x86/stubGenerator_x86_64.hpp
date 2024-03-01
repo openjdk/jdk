@@ -28,6 +28,7 @@
 #include "code/codeBlob.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "opto/intrinsicnode.hpp"
 
 // Stub Code definitions
 
@@ -539,9 +540,10 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
-  void string_indexof_big_loop_helper(int size, Label& bailout, Label& loop_top);
-  void string_indexof_small_loop_helper(int size, Label& bailout, Label& loop_top);
-  address generate_string_indexof();
+  void string_indexof_big_loop_helper(int size, Label& bailout, Label& loop_top, StrIntrinsicNode::ArgEncoding ae);
+  void string_indexof_small_loop_helper(int size, Label& bailout, Label& loop_top, StrIntrinsicNode::ArgEncoding ae);
+  void generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding ae);
+  void generate_string_indexof();
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();

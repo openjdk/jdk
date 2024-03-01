@@ -4569,6 +4569,16 @@ void Assembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int 
   emit_int16(0x75, (0xC0 | encode));
 }
 
+// In this context, the dst vector contains the components that are equal, non equal components are zeroed in dst
+void Assembler::vpcmpeqw(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
+  assert(vector_len == AVX_128bit ? VM_Version::supports_avx() : VM_Version::supports_avx2(), "");
+  assert(vector_len <= AVX_256bit, "evex encoding is different - has k register as dest");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ true, /* no_mask_reg */ true, /* uses_vl */ false);
+  vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
+  emit_int8(0x75);
+  emit_operand(dst, src, 0);
+}
+
 // In this context, kdst is written the mask used to process the equal components
 void Assembler::evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx512bw(), "");
