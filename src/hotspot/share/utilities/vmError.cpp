@@ -489,6 +489,10 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
 static void print_oom_reasons(outputStream* st) {
   st->print_cr("# Possible reasons:");
   st->print_cr("#   The system is out of physical RAM or swap space");
+#ifdef LINUX
+  st->print_cr("#   This process has exceeded the maximum number of memory mappings (check below");
+  st->print_cr("#     for `/proc/sys/vm/max_map_count` and `Total number of mappings`)");
+#endif
   if (UseCompressedOops) {
     st->print_cr("#   This process is running with CompressedOops enabled, and the Java Heap may be blocking the growth of the native heap");
   }
