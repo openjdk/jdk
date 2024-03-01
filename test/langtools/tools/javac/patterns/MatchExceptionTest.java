@@ -26,13 +26,9 @@
  * @bug 8297118
  * @summary Verify javac uses MatchException or IncompatibleClassChangeError for exhaustive switches
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main MatchExceptionTest
@@ -40,11 +36,11 @@
 
 import java.nio.file.Path;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.PoolEntry;
 import java.util.Arrays;
-import jdk.internal.classfile.constantpool.PoolEntry;
 
 import toolbox.JavacTask;
 import toolbox.TestRunner;
@@ -116,7 +112,7 @@ public class MatchExceptionTest extends TestRunner {
                         .outdir(curPath)
                         .run();
 
-                cf = Classfile.of().parse(curPath.resolve("Test.class"));
+                cf = ClassFile.of().parse(curPath.resolve("Test.class"));
                 boolean incompatibleClassChangeErrror = false;
                 boolean matchException = false;
                 for (PoolEntry pe : cf.constantPool()) {

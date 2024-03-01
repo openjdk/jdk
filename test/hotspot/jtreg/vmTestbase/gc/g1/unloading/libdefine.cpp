@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,14 +44,14 @@ extern "C" {
 JNIEXPORT jclass JNICALL Java_gc_g1_unloading_classloaders_JNIClassloader_loadThroughJNI0 (JNIEnv * env,
                                          jclass clazz, jstring className, jobject classLoader, jbyteArray bytecode) {
 
-  const char * classNameChar = env->GetStringUTFChars(className, NULL);
-  jbyte * arrayContent = env->GetByteArrayElements(bytecode, NULL);
+  const char * classNameChar = env->GetStringUTFChars(className, nullptr);
+  jbyte * arrayContent = env->GetByteArrayElements(bytecode, nullptr);
   jsize bytecodeLength = env->GetArrayLength(bytecode);
   jclass returnValue = env->DefineClass(classNameChar, classLoader, arrayContent, bytecodeLength);
   env->ReleaseByteArrayElements(bytecode, arrayContent, JNI_ABORT);
   env->ReleaseStringUTFChars(className, classNameChar);
   if (!returnValue) {
-    printf("ERROR: DefineClass call returned NULL by some reason. Classloading failed.\n");
+    printf("ERROR: DefineClass call returned null by some reason. Classloading failed.\n");
   }
 
   return returnValue;
@@ -101,7 +101,7 @@ JNIEXPORT jint JNICALL  Java_gc_g1_unloading_loading_ClassLoadingHelper_makeRede
     classDef.klass = redefCls;
     classDef.class_byte_count =
         env->GetArrayLength(classBytes);
-    jbyte * class_bytes = env->GetByteArrayElements(classBytes, NULL);
+    jbyte * class_bytes = env->GetByteArrayElements(classBytes, nullptr);
     classDef.class_bytes = (unsigned char *)class_bytes;
 
     if (fl == 2) {
@@ -167,7 +167,7 @@ JNIEXPORT void JNICALL Java_gc_g1_unloading_keepref_JNILocalRefHolder_holdWithJN
     objectToKeepField = env->GetFieldID(clazz, "objectToKeep", "Ljava/lang/Object;");
     objectToKeep = env->GetObjectField(thisObject, objectToKeepField);
     localRef = env->NewLocalRef(objectToKeep);
-    env->SetObjectField(thisObject, objectToKeepField, NULL);
+    env->SetObjectField(thisObject, objectToKeepField, nullptr);
 
     objectClazz = env->FindClass("Ljava/lang/Object;");
     waitMethod = env->GetMethodID(objectClazz, "wait", "()V");

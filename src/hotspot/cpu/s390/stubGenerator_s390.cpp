@@ -3015,7 +3015,7 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_nmethod_entry_barrier() {
+  address generate_method_entry_barrier() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "nmethod_entry_barrier");
 
@@ -3187,7 +3187,7 @@ class StubGenerator: public StubCodeGenerator {
     // nmethod entry barriers for concurrent class unloading
     BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
     if (bs_nm != nullptr) {
-      StubRoutines::zarch::_nmethod_entry_barrier = generate_nmethod_entry_barrier();
+      StubRoutines::_method_entry_barrier = generate_method_entry_barrier();
     }
 
     StubRoutines::_upcall_stub_exception_handler = generate_upcall_stub_exception_handler();

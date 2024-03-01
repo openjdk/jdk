@@ -110,7 +110,6 @@
 class BootstrapInfo;
 class ClassFileStream;
 class ConstantPoolCache;
-class ConstantPoolCacheEntry;
 class Dictionary;
 class DumpTimeClassInfo;
 class DumpTimeSharedClassTable;

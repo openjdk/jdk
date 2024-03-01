@@ -156,7 +156,7 @@ Java_sun_nio_ch_Net_socket0(JNIEnv *env, jclass cl, jboolean preferIPv6,
     if (s != INVALID_SOCKET) {
         SetHandleInformation((HANDLE)s, HANDLE_FLAG_INHERIT, 0);
 
-        /* IPV6_V6ONLY is true by default */
+        /* Attempt to disable IPV6_V6ONLY to ensure dual-socket support; ignore errors */
         if (domain == AF_INET6) {
             int opt = 0;
             setsockopt(s, IPPROTO_IPV6, IPV6_V6ONLY,

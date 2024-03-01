@@ -130,6 +130,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * as the specified {@code CharSequence}. The initial capacity of
      * the string builder is {@code 16} plus the length of the
      * {@code CharSequence} argument.
+     * <p>
+     * The contents are unspecified if the {@code CharSequence}
+     * is modified during string construction.
      *
      * @param      seq   the sequence to copy.
      */
@@ -666,6 +669,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * If {@code s} is {@code null}, then this method appends
      * characters as if the s parameter was a sequence containing the four
      * characters {@code "null"}.
+     * <p>
+     * The contents are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      *
      * @param   s the sequence to append.
      * @param   start   the starting index of the subsequence to be appended.
@@ -1241,6 +1248,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * invocation of this object's
      * {@link #insert(int,CharSequence,int,int) insert}(dstOffset, s, 0, s.length())
      * method.
+     * <p>
+     * The contents are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      *
      * <p>If {@code s} is {@code null}, then the four characters
      * {@code "null"} are inserted into this sequence.
@@ -1289,6 +1300,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * <p>If {@code s} is {@code null}, then this method inserts
      * characters as if the s parameter was a sequence containing the four
      * characters {@code "null"}.
+     * <p>
+     * The contents are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      *
      * @param      dstOffset   the offset in this sequence.
      * @param      s       the sequence to be inserted.
@@ -1675,11 +1690,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     /* for readObject() */
     void initBytes(char[] value, int off, int len) {
         if (String.COMPACT_STRINGS) {
-            this.value = StringUTF16.compress(value, off, len);
-            if (this.value != null) {
-                this.coder = LATIN1;
-                return;
-            }
+            byte[] val = StringUTF16.compress(value, off, len);
+            this.coder = StringUTF16.coderFromArrayLen(val, len);
+            this.value = val;
+            return;
         }
         this.coder = UTF16;
         this.value = StringUTF16.toBytes(value, off, len);
@@ -1720,6 +1734,9 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                     val[j++] = (byte)c;
                 } else {
                     inflate();
+                    // store c to make sure it has a UTF16 char
+                    StringUTF16.putChar(this.value, j++, c);
+                    i++;
                     StringUTF16.putCharsSB(this.value, j, s, i, end);
                     return;
                 }
@@ -1812,6 +1829,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
                 } else {
                     count = j;
                     inflate();
+                    // Store c to make sure sb has a UTF16 char
+                    StringUTF16.putChar(this.value, j++, c);
+                    count = j;
+                    i++;
                     StringUTF16.putCharsSB(this.value, j, s, i, end);
                     count += end - i;
                     return;
@@ -1923,6 +1944,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
      * <p>
      * If {@code cs} is {@code null}, then the four characters
      * {@code "null"} are repeated into this sequence.
+     * <p>
+     * The contents are unspecified if the {@code CharSequence}
+     * is modified during the method call or an exception is thrown
+     * when accessing the {@code CharSequence}.
      *
      * @param cs     a {@code CharSequence}
      * @param count  number of times to copy

@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,7 +76,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address target(SafepointSynchronize::safepoint_counter_addr());
   __ relocate(target.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(rcounter_addr, target, offset);
+    __ la(rcounter_addr, target.target(), offset);
     __ addi(rcounter_addr, rcounter_addr, offset);
   });
 
@@ -96,7 +96,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(result, target, offset);
+      __ la(result, target.target(), offset);
       __ lwu(result, Address(result, offset));
     });
     __ bnez(result, slow);
@@ -176,7 +176,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     ExternalAddress target(slow_case_addr);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ jalr(x1, t0, offset);
     });
     __ leave();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 /*************************************************************/
 
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 
 /*************************************************************/
 
@@ -67,8 +67,8 @@ static const char* file_basename(const char* fullname) {
     const char* p;
     const char* base = fullname;;
 
-    if (fullname == NULL)
-        return NULL;
+    if (fullname == nullptr)
+        return nullptr;
 
     for (p = fullname; *p != '\0'; p++) {
         if (*p == '/' || *p == '\\')
@@ -82,7 +82,7 @@ static const char* file_basename(const char* fullname) {
 void nsk_display(const char format[], ...) {
     va_list ap;
     va_start(ap,format);
-    nsk_lvdisplay(NULL,0,format,ap);
+    nsk_lvdisplay(nullptr,0,format,ap);
     va_end(ap);
 }
 
@@ -94,14 +94,14 @@ void nsk_ldisplay(const char file[], int line, const char format[], ...) {
 }
 
 void nsk_vdisplay(const char format[], va_list ap) {
-    nsk_lvdisplay(NULL,0,format,ap);
+    nsk_lvdisplay(nullptr,0,format,ap);
 }
 
 void nsk_lvdisplay(const char file[], int line, const char format[], va_list ap)
 {
     if (!nsk_context.verbose)
         return;
-    if (file != NULL)
+    if (file != nullptr)
         (void) nsk_printf("- %s, %d: ",file_basename(file),line);
     (void) nsk_vprintf(format,ap);
 }
@@ -111,7 +111,7 @@ void nsk_lvdisplay(const char file[], int line, const char format[], va_list ap)
 void nsk_complain(const char format[], ...) {
     va_list ap;
     va_start(ap,format);
-    nsk_lvcomplain(NULL,0,format,ap);
+    nsk_lvcomplain(nullptr,0,format,ap);
     va_end(ap);
 }
 
@@ -124,7 +124,7 @@ void nsk_lcomplain(const char file[], int line, const char format[], ...)
 }
 
 void nsk_vcomplain(const char format[], va_list ap) {
-    nsk_lvcomplain(NULL,0,format,ap);
+    nsk_lvcomplain(nullptr,0,format,ap);
 }
 
 void nsk_lvcomplain(const char file[], int line,
@@ -157,7 +157,7 @@ void nsk_lvcomplain(const char file[], int line,
       strncpy(msg_buf2, msg_buf, sizeof(msg_buf2));
       // Only include up to the 1st newline in the exception's error message.
       nl_ptr = strchr(msg_buf2, '\n');
-      if (nl_ptr != NULL) {
+      if (nl_ptr != nullptr) {
         nl_ptr++;       // Skip past the newline char.
         *nl_ptr = '\0'; // Terminate the string after the newline char.
       } else if (strlen(msg_buf2) != 0) {
@@ -165,14 +165,14 @@ void nsk_lvcomplain(const char file[], int line,
       }
       (void) nsk_printf("The following fake exception stacktrace is for failure analysis. \n");
       (void) nsk_printf("nsk.share.Fake_Exception_for_RULE_Creation: ");
-      if (file != NULL) {
+      if (file != nullptr) {
         (void) nsk_printf("(%s:%d) ", file_basename(file), line);
       }
       (void) nsk_printf(msg_buf2);
       (void) nsk_printf("\tat nsk_lvcomplain(%s:%d)\n", file_basename(__FILE__), __LINE__);
     }
 
-    if (file != NULL) {
+    if (file != nullptr) {
         (void) nsk_printf("# ERROR: %s, %d: ", file_basename(file), line);
     } else {
         (void) nsk_printf("# ERROR: ");
@@ -265,7 +265,7 @@ void nsk_printHexBytes(const char indent[], int columns,
 
     size_t i;
 
-    if (size <= 0 || bytes == NULL)
+    if (size <= 0 || bytes == nullptr)
         return;
 
     for (i = 0; i < size; i += columns) {
@@ -298,7 +298,7 @@ void nsk_printHexBytes(const char indent[], int columns,
 /*************************************************************/
 
 const char* nsk_null_string(const char* str) {
-    return (str == NULL)? "<NULL>" : str;
+    return (str == nullptr)? "<null>" : str;
 }
 
 /*************************************************************/

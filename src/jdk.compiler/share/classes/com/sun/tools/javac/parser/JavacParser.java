@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,9 +206,9 @@ public class JavacParser implements Parser {
         this.source = parser.source;
         this.preview = parser.preview;
         this.allowStringFolding = parser.allowStringFolding;
-        this.keepDocComments = false;
+        this.keepDocComments = parser.keepDocComments;
         this.parseModuleInfo = false;
-        this.docComments = null;
+        this.docComments = parser.docComments;
         this.errorTree = F.Erroneous();
         this.endPosTable = newEndPosTable(false);
         this.allowYieldStatement = Feature.SWITCH_EXPRESSION.allowedInSource(source);
@@ -770,7 +770,7 @@ public class JavacParser implements Parser {
                     TypeTag.INT,
                     Convert.string2int(strval(prefix), token.radix()));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case LONGLITERAL:
@@ -779,7 +779,7 @@ public class JavacParser implements Parser {
                     TypeTag.LONG,
                     Long.valueOf(Convert.string2long(strval(prefix), token.radix())));
             } catch (NumberFormatException ex) {
-                log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
+                reportIntegralLiteralError(prefix, pos);
             }
             break;
         case FLOATLITERAL: {
@@ -861,6 +861,28 @@ public class JavacParser implements Parser {
         String strval(Name prefix) {
             String s = token.stringVal();
             return prefix.isEmpty() ? s : prefix + s;
+        }
+        void reportIntegralLiteralError(Name prefix, int pos) {
+            int radix = token.radix();
+            if (radix == 2 || radix == 8) {
+                //attempt to produce more user-friendly error message for
+                //binary and octal literals with wrong digits:
+                String value = strval(prefix);
+                char[] cs = value.toCharArray();
+                for (int i = 0; i < cs.length; i++) {
+                    char c = cs[i];
+                    int d = Character.digit(c, radix);
+                    if (d == (-1)) {
+                        Error err = radix == 2 ? Errors.IllegalDigitInBinaryLiteral
+                                               : Errors.IllegalDigitInOctalLiteral;
+                        log.error(DiagnosticFlag.SYNTAX,
+                                  token.pos + i,
+                                  err);
+                        return ;
+                    }
+                }
+            }
+            log.error(DiagnosticFlag.SYNTAX, token.pos, Errors.IntNumberTooLarge(strval(prefix)));
         }
 
     /** terms can be either expressions or types.
@@ -965,6 +987,20 @@ public class JavacParser implements Parser {
         }
 
         return result;
+    }
+
+    protected JCExpression parseIntersectionType(int pos, JCExpression firstType) {
+        JCExpression t = firstType;
+        int pos1 = pos;
+        List<JCExpression> targets = List.of(t);
+        while (token.kind == AMP) {
+            accept(AMP);
+            targets = targets.prepend(parseType());
+        }
+        if (targets.length() > 1) {
+            t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
+        }
+        return t;
     }
 
     public JCExpression unannotatedType(boolean allowVar) {
@@ -1337,15 +1373,7 @@ public class JavacParser implements Parser {
                     case CAST:
                        accept(LPAREN);
                        selectTypeMode();
-                       int pos1 = pos;
-                       List<JCExpression> targets = List.of(t = parseType());
-                       while (token.kind == AMP) {
-                           accept(AMP);
-                           targets = targets.prepend(parseType());
-                       }
-                       if (targets.length() > 1) {
-                           t = toP(F.at(pos1).TypeIntersection(targets.reverse()));
-                       }
+                       t = parseIntersectionType(pos, parseType());
                        accept(RPAREN);
                        selectExprMode();
                        JCExpression t1 = term3();
@@ -2853,6 +2881,7 @@ public class JavacParser implements Parser {
                     case INTLITERAL: case LONGLITERAL: case FLOATLITERAL: case DOUBLELITERAL:
                     case NULL: case IDENTIFIER: case TRUE: case FALSE:
                     case NEW: case SWITCH: case THIS: case SUPER:
+                    case BYTE, CHAR, SHORT, INT, LONG, FLOAT, DOUBLE, VOID, BOOLEAN:
                         isYieldStatement = true;
                         break;
                     case PLUSPLUS: case SUBSUB:
@@ -3361,6 +3390,8 @@ public class JavacParser implements Parser {
                 case RPAREN: parenDepth--; break;
                 case ARROW: return parenDepth > 0 ? PatternResult.EXPRESSION
                                                    : pendingResult;
+                case FINAL:
+                    if (parenDepth > 0) return PatternResult.PATTERN;
                 default: return pendingResult;
             }
             lookahead++;
@@ -3916,8 +3947,8 @@ public class JavacParser implements Parser {
             defs.append(pd);
         }
 
-        boolean firstTypeDecl = true;   // have we see a class, enum, or interface declaration yet?
-        boolean isUnnamedClass = false;
+        boolean firstTypeDecl = true;   // have we seen a class, enum, or interface declaration yet?
+        boolean isImplicitClass = false;
         OUTER: while (token.kind != EOF) {
             if (token.pos <= endPosTable.errorEndPos) {
                 // error recovery
@@ -3980,17 +4011,17 @@ public class JavacParser implements Parser {
                 defs.appendList(semiList.toList());
                 boolean isTopLevelMethodOrField = false;
 
-                // Do to a significant number of existing negative tests
+                // Due to a significant number of existing negative tests
                 // this code speculatively tests to see if a top level method
                 // or field can parse. If the method or field can parse then
                 // it is parsed. Otherwise, parsing continues as though
-                // unnamed classes did not exist and error reporting
+                // implicitly declared classes did not exist and error reporting
                 // is the same as in the past.
-                if (Feature.UNNAMED_CLASSES.allowedInSource(source) && !isDeclaration()) {
+                if (Feature.IMPLICIT_CLASSES.allowedInSource(source) && !isDeclaration()) {
                     final JCModifiers finalMods = mods;
                     JavacParser speculative = new VirtualParser(this);
                     List<JCTree> speculativeResult =
-                            speculative.topLevelMethodOrFieldDeclaration(finalMods);
+                            speculative.topLevelMethodOrFieldDeclaration(finalMods, null);
                     if (speculativeResult.head.hasTag(METHODDEF) ||
                         speculativeResult.head.hasTag(VARDEF)) {
                         isTopLevelMethodOrField = true;
@@ -3998,9 +4029,9 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
-                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
-                    defs.appendList(topLevelMethodOrFieldDeclaration(mods));
-                    isUnnamedClass = true;
+                    checkSourceLevel(token.pos, Feature.IMPLICIT_CLASSES);
+                    defs.appendList(topLevelMethodOrFieldDeclaration(mods, docComment));
+                    isImplicitClass = true;
                 } else {
                     JCTree def = typeDeclaration(mods, docComment);
                     if (def instanceof JCExpressionStatement statement)
@@ -4012,7 +4043,7 @@ public class JavacParser implements Parser {
                 firstTypeDecl = false;
             }
         }
-        List<JCTree> topLevelDefs = isUnnamedClass ?  constructUnnamedClass(defs.toList()) : defs.toList();
+        List<JCTree> topLevelDefs = isImplicitClass ?  constructImplicitClass(defs.toList()) : defs.toList();
         JCTree.JCCompilationUnit toplevel = F.at(firstToken.pos).TopLevel(topLevelDefs);
         if (!consumedToplevelDoc)
             attach(toplevel, firstToken.docComment());
@@ -4027,14 +4058,14 @@ public class JavacParser implements Parser {
         return toplevel;
     }
 
-    // Restructure top level to be an unnamed class.
-    private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
+    // Restructure top level to be an implicitly declared class.
+    private List<JCTree> constructImplicitClass(List<JCTree> origDefs) {
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
         for (JCTree def : origDefs) {
             if (def.hasTag(Tag.PACKAGEDEF)) {
-                log.error(def.pos(), Errors.UnnamedClassShouldNotHavePackageDeclaration);
+                log.error(def.pos(), Errors.ImplicitClassShouldNotHavePackageDeclaration);
             } else if (def.hasTag(Tag.IMPORT)) {
                 topDefs.append(def);
             } else if (!def.hasTag(Tag.SKIP)) {
@@ -4053,12 +4084,12 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers unnamedMods = F.at(Position.NOPOS)
-                .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
-        JCClassDecl unnamed = F.at(primaryPos).ClassDef(
-                unnamedMods, name, List.nil(), null, List.nil(), List.nil(),
+        JCModifiers implicitMods = F.at(Position.NOPOS)
+                .Modifiers(Flags.FINAL|Flags.IMPLICIT_CLASS, List.nil());
+        JCClassDecl implicit = F.at(primaryPos).ClassDef(
+                implicitMods, name, List.nil(), null, List.nil(), List.nil(),
                 defs.toList());
-        topDefs.append(unnamed);
+        topDefs.append(implicit);
         return topDefs.toList();
     }
 
@@ -4735,10 +4766,9 @@ public class JavacParser implements Parser {
          return List.of(syntaxError(token.pos, err, Errors.Expected(LPAREN)));
     }
 
-    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods) throws AssertionError {
-        int topPos = token.pos;
+    private List<JCTree> topLevelMethodOrFieldDeclaration(JCModifiers mods, Comment dc) throws AssertionError {
         int pos = token.pos;
-        Comment dc = token.docComment();
+        dc = dc == null ? token.docComment() : dc;
         List<JCTypeParameter> typarams = typeParametersOpt();
 
         // if there are type parameters but no modifiers, save the start

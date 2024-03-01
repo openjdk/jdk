@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  */
 
 #include <string.h>
-#include "jni_tools.h"
-#include "agent_common.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "agent_common.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -70,7 +70,7 @@ JNIEXPORT jint JNI_OnLoad_setvrbflag002(JavaVM *jvm, char *options, void *reserv
 }
 #endif
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
-    jvmtiEnv *jvmti = NULL;
+    jvmtiEnv *jvmti = nullptr;
 
     /* init framework and parse options */
     if (!NSK_VERIFY(nsk_jvmti_parseOptions(options)))
@@ -83,11 +83,11 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     /* register agent proc and arg */
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

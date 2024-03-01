@@ -61,10 +61,6 @@ void Klass::set_java_mirror(Handle m) {
   _java_mirror = class_loader_data()->add_handle(m);
 }
 
-oop Klass::java_mirror_no_keepalive() const {
-  return _java_mirror.peek();
-}
-
 bool Klass::is_cloneable() const {
   return _access_flags.is_cloneable_fast() ||
          is_subtype_of(vmClasses::Cloneable_klass());
@@ -193,6 +189,10 @@ Method* Klass::uncached_lookup_method(const Symbol* name, const Symbol* signatur
 
 void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw() {
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
+}
+
+Klass::Klass() : _kind(UnknownKlassKind) {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
 }
 
 // "Normal" instantiation is preceded by a MetaspaceObj allocation

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleAnnotationValueVisitor9
  * @since 14
  */
-@SupportedSourceVersion(RELEASE_22)
+@SupportedSourceVersion(RELEASE_23)
 public class SimpleAnnotationValueVisitor14<R, P> extends SimpleAnnotationValueVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the

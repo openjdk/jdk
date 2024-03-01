@@ -30,16 +30,16 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.AccessFlag;
 import java.util.List;
 import java.util.TreeMap;
-import jdk.internal.classfile.BufWriter;
+import java.lang.classfile.BufWriter;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.attribute.StackMapFrameInfo;
-import jdk.internal.classfile.attribute.StackMapFrameInfo.*;
-import jdk.internal.classfile.ClassReader;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.attribute.StackMapFrameInfo;
+import java.lang.classfile.attribute.StackMapFrameInfo.*;
+import java.lang.classfile.ClassReader;
 
-import static jdk.internal.classfile.Classfile.*;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodModel;
+import static java.lang.classfile.ClassFile.*;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
 
 public class StackMapDecoder {
 
