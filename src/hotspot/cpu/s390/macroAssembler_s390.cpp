@@ -3273,7 +3273,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_bre(done); // acquired the lock for the first time.
 
   // Check if we are already the owner (recursive lock)
-  z_cg(Z_thread, Address(currentHeader, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+  z_cgr(Z_thread, zero); // owner is stored in zero by "z_csg" above
   z_brne(done);
 
   // Current thread already owns the lock. Just increment recursion count.
