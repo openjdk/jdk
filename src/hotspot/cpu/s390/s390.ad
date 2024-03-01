@@ -2578,24 +2578,6 @@ operand uimmI8() %{
   interface(CONST_INTER);
 %}
 
-// Integer Immediate: 6-bit
-operand uimmI6() %{
-  predicate(Immediate::is_uimm(n->get_int(), 6));
-  match(ConI);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: 5-bit
-operand uimmI5() %{
-  predicate(Immediate::is_uimm(n->get_int(), 5));
-  match(ConI);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Length for SS instructions, given in DWs,
 //   possible range [1..512], i.e. [8..4096] Bytes
 //   used     range [1..256], i.e. [8..2048] Bytes
@@ -2634,15 +2616,6 @@ operand immI_16() %{
 // Integer Immediate: the value 24.
 operand immI_24() %{
   predicate(n->get_int() == 24);
-  match(ConI);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 255
-operand immI_255() %{
-  predicate(n->get_int() == 255);
   match(ConI);
   op_cost(1);
   format %{ %}
@@ -2753,36 +2726,9 @@ operand uimmL12() %{
   interface(CONST_INTER);
 %}
 
-// Unsigned Long Immediate: 8-bit
-operand uimmL8() %{
-  predicate(Immediate::is_uimm8(n->get_long()));
-  match(ConL);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 //-------------------------------------------
 // (UN)SIGNED LONG specific values
 //-------------------------------------------
-
-// Long Immediate: the value FF
-operand immL_FF() %{
-  predicate(n->get_long() == 0xFFL);
-  match(ConL);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long Immediate: the value FFFF
-operand immL_FFFF() %{
-  predicate(n->get_long() == 0xFFFFL);
-  match(ConL);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
 
 // Long Immediate: the value FFFFFFFF
 operand immL_FFFFFFFF() %{
@@ -2852,15 +2798,6 @@ operand immL_32bits() %{
 
 // Pointer Immediate: 64-bit
 operand immP() %{
-  match(ConP);
-  op_cost(1);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate: 32-bit
-operand immP32() %{
-  predicate(Immediate::is_uimm32(n->get_ptr()));
   match(ConP);
   op_cost(1);
   format %{ %}
@@ -3166,20 +3103,6 @@ operand roddRegP() %{
   interface(REG_INTER);
 %}
 
-operand lock_ptr_RegP() %{
-  constraint(ALLOC_IN_RC(z_lock_ptr_reg));
-  match(RegP);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand rscratch2RegP() %{
-  constraint(ALLOC_IN_RC(z_rscratch2_bits64_reg));
-  match(RegP);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand iRegN() %{
   constraint(ALLOC_IN_RC(z_int_reg));
   match(RegN);
@@ -3294,14 +3217,6 @@ operand flagsReg() %{
   interface(REG_INTER);
 %}
 
-// Condition Code Flag Registers for rules with result tuples
-operand TD_flagsReg() %{
-  constraint(ALLOC_IN_RC(z_condition_reg));
-  match(RegFlags);
-  format %{ "CR" %}
-  interface(REG_TUPLE_DEST_INTER);
-%}
-
 operand regD() %{
   constraint(ALLOC_IN_RC(z_dbl_reg));
   match(RegD);
@@ -3309,22 +3224,8 @@ operand regD() %{
   interface(REG_INTER);
 %}
 
-operand rscratchRegD() %{
-  constraint(ALLOC_IN_RC(z_rscratch1_dbl_reg));
-  match(RegD);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand regF() %{
   constraint(ALLOC_IN_RC(z_flt_reg));
-  match(RegF);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand rscratchRegF() %{
-  constraint(ALLOC_IN_RC(z_rscratch1_flt_reg));
   match(RegF);
   format %{ %}
   interface(REG_INTER);
@@ -3339,26 +3240,6 @@ operand inline_cache_regP(iRegP reg) %{
   format %{ %}
   interface(REG_INTER);
 %}
-
-// Operands to remove register moves in unscaled mode.
-// Match read/write registers with an EncodeP node if neither shift nor add are required.
-operand iRegP2N(iRegP reg) %{
-  predicate(CompressedOops::shift() == 0 && _leaf->as_EncodeP()->in(0) == nullptr);
-  constraint(ALLOC_IN_RC(z_memory_ptr_reg));
-  match(EncodeP reg);
-  format %{ "$reg" %}
-  interface(REG_INTER)
-%}
-
-operand iRegN2P(iRegN reg) %{
-  predicate(CompressedOops::base() == nullptr && CompressedOops::shift() == 0 &&
-            _leaf->as_DecodeN()->in(0) == nullptr);
-  constraint(ALLOC_IN_RC(z_memory_ptr_reg));
-  match(DecodeN reg);
-  format %{ "$reg" %}
-  interface(REG_INTER)
-%}
-
 
 //----------Complex Operands---------------------------------------------------
 

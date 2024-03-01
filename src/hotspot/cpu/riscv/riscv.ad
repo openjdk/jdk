@@ -2966,19 +2966,6 @@ operand immL_M1()
 %}
 
 
-// 32 bit offset of pc in thread anchor
-
-operand immL_pc_off()
-%{
-  predicate(n->get_long() == in_bytes(JavaThread::frame_anchor_offset()) +
-                             in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 64 bit integer valid for add immediate
 operand immLAdd()
 %{
@@ -3182,17 +3169,6 @@ operand iRegLNoSp()
   constraint(ALLOC_IN_RC(no_special_reg));
   match(RegL);
   match(iRegL_R10);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Long 64 bit Register R28 only
-operand iRegL_R28()
-%{
-  constraint(ALLOC_IN_RC(r28_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
   format %{ %}
   interface(REG_INTER);
 %}
@@ -3693,22 +3669,6 @@ operand indOffLN(iRegN reg, immLOffset off)
     disp($off);
   %}
 %}
-
-// RISCV opto stubs need to write to the pc slot in the thread anchor
-operand thread_anchor_pc(javaThread_RegP reg, immL_pc_off off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary

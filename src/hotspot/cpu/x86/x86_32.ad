@@ -3602,64 +3602,6 @@ operand kReg()
   interface(REG_INTER);
 %}
 
-operand kReg_K1()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K1));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K2()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K2));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K3()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K3));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K4()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K4));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K5()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K5));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K6()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K6));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K7()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K7));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
 // Register Operands
 // Integer Register
 operand rRegI() %{
@@ -3734,18 +3676,6 @@ operand eDIRegI(xRegI reg) %{
   match(rRegI);
 
   format %{ "EDI" %}
-  interface(REG_INTER);
-%}
-
-operand naxRegI() %{
-  constraint(ALLOC_IN_RC(nax_reg));
-  match(RegI);
-  match(eCXRegI);
-  match(eDXRegI);
-  match(eSIRegI);
-  match(eDIRegI);
-
-  format %{ %}
   interface(REG_INTER);
 %}
 
@@ -3832,31 +3762,6 @@ operand eRegP_no_EBP() %{
   match(eDIRegP);
 
   op_cost(100);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand naxRegP() %{
-  constraint(ALLOC_IN_RC(nax_reg));
-  match(RegP);
-  match(eBXRegP);
-  match(eDXRegP);
-  match(eCXRegP);
-  match(eSIRegP);
-  match(eDIRegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand nabxRegP() %{
-  constraint(ALLOC_IN_RC(nabx_reg));
-  match(RegP);
-  match(eCXRegP);
-  match(eDXRegP);
-  match(eSIRegP);
-  match(eDIRegP);
-
   format %{ %}
   interface(REG_INTER);
 %}
