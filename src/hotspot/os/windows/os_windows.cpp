@@ -905,11 +905,7 @@ int os::active_processor_count() {
   } else {
     char buf[512];
     size_t buf_len = os::lasterror(buf, sizeof(buf));
-    if (buf_len != 0) {
-      warning(buf);
-    } else {
-      warning("Attempt to get the process affinity mask failed.");
-    }
+    warning("Attempt to get the process affinity mask failed: %s", buf_len != 0 ? buf : "<unknown error>");
   }
 
   if (UseAllWindowsProcessorGroups) {
@@ -4060,11 +4056,7 @@ DWORD os::win32::active_processors_in_job_object() {
   if (IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object) == 0) {
     char buf[512];
     size_t buf_len = os::lasterror(buf, sizeof(buf));
-    if (buf_len != 0) {
-      warning(buf);
-    } else {
-      warning("Attempt to determine whether the process is running in a job failed.");
-    }
+    warning("Attempt to determine whether the process is running in a job failed: %s", buf_len != 0 ? buf : "<unknown error>");
     return 0;
   }
 
@@ -4108,11 +4100,7 @@ DWORD os::win32::active_processors_in_job_object() {
         } else {
           char buf[512];
           size_t buf_len = os::lasterror(buf, sizeof(buf));
-          if (buf_len != 0) {
-            warning(buf);
-          } else {
-            warning("Attempt to query job object information failed.");
-          }
+          warning("Attempt to query job object information failed: %s", buf_len != 0 ? buf : "<unknown error>");
         }
 
         os::free(job_object_information);
@@ -4122,11 +4110,7 @@ DWORD os::win32::active_processors_in_job_object() {
   } else {
     char buf[512];
     size_t buf_len = os::lasterror(buf, sizeof(buf));
-    if (buf_len != 0) {
-      warning(buf);
-    } else {
-      warning("Attempt to query job object information failed.");
-    }
+    warning("Attempt to query job object information failed: %s", buf_len != 0 ? buf : "<unknown error>");
     assert(false, "Unexpected QueryInformationJobObject error code");
     return 0;
   }
@@ -4174,11 +4158,7 @@ DWORD os::win32::system_logical_processor_count() {
     } else {
       char buf[512];
       size_t buf_len = os::lasterror(buf, sizeof(buf));
-      if (buf_len != 0) {
-        warning(buf);
-      } else {
-        warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed.");
-      }
+      warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed: %s", buf_len != 0 ? buf : "<unknown error>");
     }
   }
 
