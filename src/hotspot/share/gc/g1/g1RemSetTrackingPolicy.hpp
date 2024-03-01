@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 #define SHARE_GC_G1_G1REMSETTRACKINGPOLICY_HPP
 
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionType.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "memory/allocation.hpp"
 
 // The remembered set tracking policy determines for a given region the state of
