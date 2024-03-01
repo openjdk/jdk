@@ -1729,6 +1729,9 @@ void MacroAssembler::klass_subtype_fallback() {
     // in which a 0 indicates missing entries.
     bind(LOOPY);
 
+    cmp(r_array_index, r_array_length);
+    csel(r_array_index, zr, r_array_index, GE);
+
     ldr(rscratch1, Address(r_array_base, r_array_index, Address::lsl(LogBytesPerWord)));
     cmp(rscratch1, r_super_klass);
     br(EQ, L_success);
@@ -1737,8 +1740,6 @@ void MacroAssembler::klass_subtype_fallback() {
 
     ror(bitmap, bitmap, 1);
     add(r_array_index, r_array_index, 1);
-    cmp(r_array_index, r_array_length);
-    csel(r_array_index, zr, r_array_index, GE);
     b(LOOPY);
   }
 
