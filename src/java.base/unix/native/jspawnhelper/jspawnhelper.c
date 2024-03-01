@@ -140,6 +140,11 @@ int main(int argc, char *argv[]) {
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
+    if (argc == 1) {
+        fprintf(stdout, "An earlier version of Java is trying to call jspawnhelper.\n");
+        fprintf(stdout, "Please restart Java process.\n");
+        exit(1);
+    }
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
