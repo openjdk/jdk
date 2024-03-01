@@ -32,22 +32,22 @@
  */
 
 /**
- * This test containst two distinct kinds of worst-case inputs:
+ * This test contains two distinct kinds of worst-case inputs:
  *
  * 1) Exact numerical results that are nearly half-way between
  * representable numbers or very close to a representable
- * number. (Half-way caess are hardest for round to nearest even;
+ * number. (Half-way cases are hardest for round to nearest even;
  * close to a representable number cases are hard for directed
  * roundings.)
  *
- * 2) Worst-case errors as observed emprically across different
+ * 2) Worst-case errors as observed empirically across different
  * implementations that are not correctly rounded.
  *
- * For the first categpory, the "Table Maker's Dilemma" results from
+ * For the first category, the "Table Maker's Dilemma" results from
  * Jean-Michel Muller and Vincent Lef&egrave;vre, are used.
- * See http://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
+ * See https://perso.ens-lyon.fr/jean-michel.muller/TMD.html for original
  * test vectors from 2000 and see
- * http://perso.ens-lyon.fr/jean-michel.muller/TMDworstcases.pdf with
+ * https://perso.ens-lyon.fr/jean-michel.muller/TMDworstcases.pdf with
  * additional test vectors from 2003.  The latter link also contains
  * some information about the methodology used to produce the test
  * vectors.
@@ -242,7 +242,7 @@ public class WorstCaseTests {
             {-0x1.85e624577c23ep-1,     -0x1.614ac15b6df5ap-1},
             {-0x1.842d8ec8f752fp+21,    -0x1.6ce864edeaffdp-1},
             {-0x1.07e4c92b5349dp+4,     +0x1.6a096375ffb23p-1},
-            // {-0x1.13a5ccd87c9bbp+1008,  -0x1.27b3964185d8dp-1}, // check -- need +/-
+            {-0x1.13a5ccd87c9bbp+1008,  -0x1.27b3964185d8dp-1},
             {-0x1.11b624b546894p+9,     -0x1.6a35f2416aba8p-1},
             {-0x1.1c49ad613ff3bp+19,    -0x1.fffe203cfabe1p-2},
             {-0x1.f05e952d81b89p+5,     +0x1.6a2319a85a544p-1},

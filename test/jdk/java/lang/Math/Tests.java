@@ -108,7 +108,7 @@ public class Tests {
      * <li> If the argument is zero, then the result is -(2<sup>28</sup>).
      * </ul>
      *
-     * @param f floating-point number whose exponent is to be extracted
+     * @param d floating-point number whose exponent is to be extracted
      * @return unbiased exponent of the argument.
      */
     public static int ilogb(double d) {
