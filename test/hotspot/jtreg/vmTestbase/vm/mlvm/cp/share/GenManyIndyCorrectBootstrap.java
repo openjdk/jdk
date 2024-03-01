@@ -43,12 +43,12 @@ import vm.mlvm.share.Env;
 public class GenManyIndyCorrectBootstrap extends GenFullCP {
 
         /**
-         * Generates a class file and writes it to a file 
+         * Generates a class file and writes it to a file
          * @see vm.mlvm.share.ClassfileGenerator
          * @param args Parameters for ClassfileGenerator.main() method
          */
         public static void main(String[] args) {
-                ClassfileGenerator.main(args);
+            ClassfileGenerator.main(args);
         }
 
         /**
