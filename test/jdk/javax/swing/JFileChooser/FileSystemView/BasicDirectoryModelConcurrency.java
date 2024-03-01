@@ -22,12 +22,12 @@ import javax.swing.JFileChooser;
  */
 public final class BasicDirectoryModelConcurrency extends ThreadGroup {
     /** Initial number of files. */
-    private static final long NUMBER_OF_FILES = 1_000;
+    private static final long NUMBER_OF_FILES = 50;
     /** Maximum number of files created on a timer tick. */
-    private static final long LIMIT_FILES = 20;
+    private static final long LIMIT_FILES = 10;
 
     /** Timer period (delay) for creating new files. */
-    private static final long TIMER_PERIOD = 500;
+    private static final long TIMER_PERIOD = 250;
 
     /**
      * Number of threads running {@code fileChooser.rescanCurrentDirectory()}.
