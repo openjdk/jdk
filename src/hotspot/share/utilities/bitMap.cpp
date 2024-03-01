@@ -106,16 +106,25 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::slice(idx_t start_bit, idx_t end
   idx_t start_word = to_words_align_down(start_bit);
   idx_t end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
-  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
 
-  bm_word_t* new_map = derived->allocate(end_word - start_word);
-  for (idx_t word = start_word; word < end_word; word++) {
-    new_map[word-start_word] = old_map[word];
-    assert(new_map[word-start_word] == old_map[word], "sanity");
+  // Allocate new map between start and end words, inclusive
+  bm_word_t* new_map = derived->allocate(end_word - start_word + 1);
+
+  // All words need to be shifted by this amount
+  idx_t shift = bit_in_word(start_bit);
+  idx_t carry = 0;
+  //tty->print_cr("Shift: %ld, Start word: 0x%016lx -> 0x%016lx", shift, old_map[start_word], old_map[start_word] >> shift);
+
+  // Iterate the map backwards as the shift will result in carry-out bits
+  for (idx_t i = end_word ; i >= start_word; i--) {
+    new_map[i-start_word] = old_map[i] >> shift;
+    new_map[i-start_word] |= carry;
+    carry = old_map[i] << (BitsPerWord - shift);
   }
 
+  //tty->print_cr("New first word: %016lx, Carry out: %ld", new_map[0], carry);
   return new_map;
 }
 
@@ -129,12 +138,17 @@ void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bi
   const size_t old_size_in_words = calc_size_in_words(size());
   idx_t start_word = to_words_align_down(start_bit);
   idx_t end_word = to_words_align_up(end_bit);
-  const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+  //const idx_t new_size_in_bits = (end_word - start_word) * BitsPerWord;
+  const idx_t new_size_in_bits = end_bit - start_bit;
   bm_word_t* const old_map = map();
+  //tty->print_cr("Size: %ld(%ld) -> %ld(%ld)", size(), old_size_in_words, new_size_in_bits, calc_size_in_words(new_size_in_bits));
+
   bm_word_t* new_map = slice(start_bit, end_bit, clear);
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+  // Free and clear old map to avoid left over bits
   derived->free(old_map, old_size_in_words);
+  update(nullptr, 0);
   update(new_map, new_size_in_bits);
 }
 

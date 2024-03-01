@@ -1577,12 +1577,12 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
   // Slice and resize bitmap
   map->truncate(old_zeros);
 
-  // Bitmap is word aligned so some leading zeros will be left over
   // We want to keep track of how many zeros were removed
   size_t new_zeros = map->find_first_set_bit(0);
   size_t removed_zeros = old_zeros - new_zeros;
+  tty->print_cr("Zeros: %ld -> %ld", old_zeros, new_zeros);
 
-  assert(new_zeros <= old_zeros, "Should have removed leading zeros");
+  assert(new_zeros == 0, "Should have removed leading zeros");
   assert(map->size_in_bytes() <= old_size, "Map size should have decreased");
   return old_zeros - new_zeros;
 }
