@@ -92,9 +92,11 @@ public class NonfocusableOwnerTest {
 
         owner.setFocusableWindowState(false);
         owner.setVisible(true);
+        robot.waitForIdle();
 
         child.add(button);
         child.setVisible(true);
+        robot.waitForIdle();
 
         Util.waitTillShown(child);
 
@@ -111,12 +113,15 @@ public class NonfocusableOwnerTest {
 
         owner.setFocusableWindowState(false);
         owner.setVisible(true);
+        robot.waitForIdle();
 
         child1.setFocusableWindowState(true);
         child1.setVisible(true);
+        robot.waitForIdle();
 
         child2.add(button);
         child2.setVisible(true);
+        robot.waitForIdle();
 
         Util.waitTillShown(child2);
 
@@ -134,13 +139,16 @@ public class NonfocusableOwnerTest {
 
         owner.setFocusableWindowState(true);
         owner.setVisible(true);
+        robot.waitForIdle();
 
         child1.setFocusableWindowState(false);
         child1.setVisible(true);
+        robot.waitForIdle();
 
         child2.setFocusableWindowState(true);
         child2.add(button);
         child2.setVisible(true);
+        robot.waitForIdle();
 
         Util.waitTillShown(child2);
 
