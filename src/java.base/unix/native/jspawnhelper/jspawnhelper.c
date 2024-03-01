@@ -140,6 +140,11 @@ int main(int argc, char *argv[]) {
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
+    if (argc == 1) {
+        fprintf(stderr, "Usage: %s <fd_number>\n", argv[0]);
+        shutItDown();
+    }
+
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
