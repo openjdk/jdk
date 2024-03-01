@@ -4772,19 +4772,21 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
 
   movptr(r_array_index, Address(r_sub_klass, Klass::bitmap_offset()));
 
+  // push_CPU_state();
+  // mov(c_rarg1, r_sub_klass);
+  // mov_metadata(c_rarg0, super_klass);
+  // call(RuntimeAddress
+  //      (CAST_FROM_FN_PTR(address, &piddle)));
+  // pop_CPU_state();
+
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
   u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
   movptr(r_bitmap, r_array_index);
   shlq(r_array_index, 63 - bit);
-  cmpq(r_array_index, 0);
+  cmpq(r_array_index, 0); // The bit we test is the MSB of r_array_indes
   jcc(Assembler::greaterEqual, L_failure);
-
-// #ifdef ASSERT
-//   mov(lr, CAST_FROM_FN_PTR(address, &piddle));
-//   blr(lr);
-// #endif
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
@@ -4811,7 +4813,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   btq(r_bitmap, (bit+1) & 63);
   jcc(Assembler::carryClear, L_failure);
 
-  // Linear probe.
+  // Linear probe. Rotate the bitmap so that the next bit to test is
+  // in Bit 0.
   if (bit != 0) {
     rorq(r_bitmap, bit);
   }
@@ -4875,17 +4878,14 @@ void MacroAssembler::klass_subtype_fallback() {
     // This is conventional linear probing, but instead of terminating
     // when a null entry is found in the table, we maintain a bitmap
     // in which a 0 indicates missing entries.
+    movl(result, 0);
+
     Label again;
     bind(again);
 
-    {
-      // Check for array wraparound
-      Label OK;
-      cmpl(r_array_index, r_array_length);
-      jcc(Assembler::less, OK);
-      movl(r_array_index, 0);
-      bind(OK);
-    }
+    // Check for array wraparound.
+    cmpl(r_array_index, r_array_length);
+    cmovl(Assembler::greaterEqual, r_array_index, result);
 
     cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
     jcc(Assembler::equal, L_success);
@@ -4951,9 +4951,6 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
     // not change flags (only scas instruction which is repeated sets flags).
     // Set Z = 0 (not equal) before 'repne' to indicate that class was not found.
-
-    Label hit, fail, done;
-
     testptr(rax,rax); // Set Z = 0
     repne_scan();
 
@@ -4961,6 +4958,8 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     pop(rdi);
     pop(rcx);
     pop(rax);
+
+    Label hit, fail, done;
 
     jcc(Assembler::equal, hit);
 
@@ -4998,8 +4997,6 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     //   }
   }
 }
-
-
 
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");
