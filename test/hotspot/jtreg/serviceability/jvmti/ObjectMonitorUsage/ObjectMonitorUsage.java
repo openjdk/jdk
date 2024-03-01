@@ -41,7 +41,9 @@
  *       - all the above scenarios are executed with platform and virtual threads
  * @requires vm.continuations
  * @requires vm.jvmti
- * @run main/othervm/native -agentlib:ObjectMonitorUsage ObjectMonitorUsage
+ * @run main/othervm/native
+ *     -Djdk.virtualThreadScheduler.parallelism=10
+ *     -agentlib:ObjectMonitorUsage ObjectMonitorUsage
  */
 
 public class ObjectMonitorUsage {
