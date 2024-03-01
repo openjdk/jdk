@@ -19,7 +19,6 @@ import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.STD_OUTPUT_HANDL
 import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.WriteConsoleW;
 import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.getLastErrorMessage;
 
-@SuppressWarnings("preview")
 class NativeWinConsoleWriter extends AbstractWindowsConsoleWriter {
 
     private final java.lang.foreign.MemorySegment console = GetStdHandle(STD_OUTPUT_HANDLE);

@@ -37,7 +37,6 @@ import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.SetConsoleTextAt
 import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.SetConsoleTitleW;
 import static jdk.internal.org.jline.terminal.impl.ffm.Kernel32.getLastErrorMessage;
 
-@SuppressWarnings("preview")
 class WindowsAnsiWriter extends AnsiWriter {
 
     private static final java.lang.foreign.MemorySegment console = GetStdHandle(STD_OUTPUT_HANDLE);

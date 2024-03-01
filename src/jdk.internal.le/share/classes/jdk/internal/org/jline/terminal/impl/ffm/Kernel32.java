@@ -14,7 +14,7 @@ import java.lang.invoke.VarHandle;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
-@SuppressWarnings({"unused", "restricted"})
+@SuppressWarnings("unused")
 final class Kernel32 {
 
     public static final int FORMAT_MESSAGE_FROM_SYSTEM = 0x00001000;

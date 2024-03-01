@@ -12,8 +12,11 @@ import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.MemoryLayout.PathElement;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.charset.Charset;
-import java.util.function.Function;
 
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Size;
@@ -52,7 +55,6 @@ public class FfmTerminalProvider implements TerminalProvider {
             SystemStream systemStream,
             Function<InputStream, InputStream> inputStreamWrapper)
             throws IOException {
-        try {
         if (OSUtils.IS_WINDOWS) {
             return NativeWinSysTerminal.createTerminal(
                     this, systemStream, name, type, ansiPassThrough, encoding, nativeSignals, signalHandler, paused, inputStreamWrapper);
@@ -68,10 +70,6 @@ public class FfmTerminalProvider implements TerminalProvider {
                     systemStream == SystemStream.Output ? FileDescriptor.out : FileDescriptor.err,
                     CLibrary.ttyName(0));
             return new PosixSysTerminal(name, type, pty, encoding, nativeSignals, signalHandler, inputStreamWrapper);
-        }
-        } catch (Throwable t) {
-            t.printStackTrace();
-            throw t;
         }
     }
 
@@ -121,5 +119,14 @@ public class FfmTerminalProvider implements TerminalProvider {
     @Override
     public String toString() {
         return "TerminalProvider[" + name() + "]";
+    }
+
+    static VarHandle lookupVarHandle(MemoryLayout layout, PathElement... element) {
+        VarHandle h = layout.varHandle(element);
+
+        //the the last parameter of the VarHandle is additional offset, hardcode zero:
+        h = MethodHandles.insertCoordinates(h, 1, 0L);
+
+        return h;
     }
 }

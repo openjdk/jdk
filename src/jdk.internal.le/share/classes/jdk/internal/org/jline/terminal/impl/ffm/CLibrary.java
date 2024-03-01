@@ -35,7 +35,6 @@ import jdk.internal.org.jline.terminal.spi.Pty;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.OSUtils;
 
-@SuppressWarnings("restricted")
 class CLibrary {
 
 //    private static final Logger logger = Logger.getLogger("org.jline");
@@ -53,12 +52,8 @@ class CLibrary {
                     ValueLayout.JAVA_SHORT.withName("ws_col"),
                     ValueLayout.JAVA_SHORT,
                     ValueLayout.JAVA_SHORT);
-            ws_row = handleFor("ws_row");
-            ws_col = handleFor("ws_col");
-        }
-
-        private static VarHandle handleFor(String name) {
-            return MethodHandles.insertCoordinates(LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(name)), 1, 0L);
+            ws_row = FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("ws_row"));
+            ws_col = FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("ws_col"));
         }
 
         private final java.lang.foreign.MemorySegment seg;
@@ -103,7 +98,7 @@ class CLibrary {
         private static final VarHandle c_oflag;
         private static final VarHandle c_cflag;
         private static final VarHandle c_lflag;
-        private static final int c_cc_offset;
+        private static final long c_cc_offset;
         private static final VarHandle c_ispeed;
         private static final VarHandle c_ospeed;
 
@@ -117,7 +112,6 @@ class CLibrary {
                         MemoryLayout.sequenceLayout(32, ValueLayout.JAVA_BYTE).withName("c_cc"),
                         ValueLayout.JAVA_LONG.withName("c_ispeed"),
                         ValueLayout.JAVA_LONG.withName("c_ospeed"));
-                c_cc_offset = 32;
             } else if (OSUtils.IS_LINUX) {
                 LAYOUT = MemoryLayout.structLayout(
                         ValueLayout.JAVA_INT.withName("c_iflag"),
@@ -129,26 +123,35 @@ class CLibrary {
                         MemoryLayout.paddingLayout(3),
                         ValueLayout.JAVA_INT.withName("c_ispeed"),
                         ValueLayout.JAVA_INT.withName("c_ospeed"));
-                c_cc_offset = 17;
             } else {
                 throw new IllegalStateException("Unsupported system!");
             }
-            c_iflag = handleFor("c_iflag");
-            c_oflag = handleFor("c_oflag");
-            c_cflag = handleFor("c_cflag");
-            c_lflag = handleFor("c_lflag");
-            c_ispeed = handleFor("c_ispeed");
-            c_ospeed = handleFor("c_ospeed");
+            c_iflag = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_iflag")));
+            c_oflag = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_oflag")));
+            c_cflag = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_cflag")));
+            c_lflag = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_lflag")));
+            c_cc_offset = LAYOUT.byteOffset(MemoryLayout.PathElement.groupElement("c_cc"));
+            c_ispeed = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_ispeed")));
+            c_ospeed = adjust2LinuxHandle(
+                    FfmTerminalProvider.lookupVarHandle(LAYOUT, MemoryLayout.PathElement.groupElement("c_ospeed")));
         }
 
-        private static VarHandle handleFor(String name) {
-            VarHandle v = MethodHandles.insertCoordinates(LAYOUT.varHandle(MemoryLayout.PathElement.groupElement(name)), 1, 0L);
-
+        private static VarHandle adjust2LinuxHandle(VarHandle v) {
             if (OSUtils.IS_LINUX) {
                 try {
-                    v = MethodHandles.filterValue(v,
-                            MethodHandles.lookup().findStatic(termios.class, "long2Int", MethodType.methodType(int.class, long.class)),
-                            MethodHandles.lookup().findStatic(termios.class, "int2Long", MethodType.methodType(long.class, int.class)));
+                    v = MethodHandles.filterValue(
+                            v,
+                            MethodHandles.lookup()
+                                    .findStatic(
+                                            termios.class, "long2Int", MethodType.methodType(int.class, long.class)),
+                            MethodHandles.lookup()
+                                    .findStatic(
+                                            termios.class, "int2Long", MethodType.methodType(long.class, int.class)));
                 } catch (NoSuchMethodException ex) {
                     ex.printStackTrace();
                 } catch (IllegalAccessException ex) {
@@ -489,7 +492,7 @@ class CLibrary {
                 suppressed.add(t);
             }
             if (openPtyAddr.isEmpty()) {
-                String libUtilPath = System.getProperty("org.jline.ffm.libutil");
+                String libUtilPath = System.getProperty("jdk.internal.org.jline.ffm.libutil");
                 if (libUtilPath != null && !libUtilPath.isEmpty()) {
                     try {
                         System.load(libUtilPath);
