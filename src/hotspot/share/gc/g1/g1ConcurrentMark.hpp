@@ -568,6 +568,8 @@ public:
   inline HeapWord* top_at_mark_start(uint region) const;
   inline bool obj_allocated_since_mark_start(oop obj) const;
 
+  void invalidate_top_at_mark_starts() NOT_DEBUG_RETURN;
+
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.

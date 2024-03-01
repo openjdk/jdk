@@ -567,7 +567,6 @@ void G1ConcurrentMark::reset() {
 
   uint max_reserved_regions = _g1h->max_reserved_regions();
   for (uint i = 0; i < max_reserved_regions; i++) {
-    _top_at_mark_starts[i] = _g1h->bottom_addr_for_region(i);
     _top_at_rebuild_starts[i] = nullptr;
     _region_mark_stats[i].clear();
   }
@@ -591,16 +590,6 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
 
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
-
-  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
-    return;
-  }
-
-  // Clear any statistics about the region gathered so far.
-  _g1h->humongous_obj_regions_iterate(r,
-                                      [&] (HeapRegion* r) {
-                                        clear_statistics(r);
-                                      });
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -856,7 +845,7 @@ public:
 
 void G1PreConcurrentStartTask::ResetMarkingStateTask::do_work(uint worker_id) {
   // Reset marking state.
-  //_cm->reset();
+  _cm->reset();
 }
 
 class NoteStartOfMarkHRClosure : public HeapRegionClosure {
@@ -868,6 +857,8 @@ public:
   bool do_heap_region(HeapRegion* r) override {
     if (r->is_old_or_humongous() && !r->is_collection_set_candidate()) {
       _cm->update_top_at_mark_start(r);
+    } else {
+      _cm->reset_top_at_mark_start(r);
     }
     return false;
   }
@@ -886,7 +877,17 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
   G1BatchedTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
   add_serial_task(new ResetMarkingStateTask(cm));
   add_parallel_task(new NoteStartOfMarkTask());
+
+  //cm->invalidate_top_at_mark_starts();
 };
+
+#ifdef ASSERT
+void G1ConcurrentMark::invalidate_top_at_mark_starts() {
+  for (uint i = 0; i < G1CollectedHeap::heap()->max_reserved_regions(); i++) {
+    _top_at_mark_starts[i] = nullptr;
+  }
+}
+#endif
 
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
@@ -895,7 +896,6 @@ void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
 
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_strong);
 
-  reset();
   G1PreConcurrentStartTask cl(cause, this);
   G1CollectedHeap::heap()->run_batch_task(&cl);
 
@@ -1481,7 +1481,6 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
           _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
-        _g1h->concurrent_mark()->clear_statistics(hr);
       }
 
       return false;
@@ -1942,7 +1941,6 @@ void G1ConcurrentMark::flush_all_task_caches() {
 void G1ConcurrentMark::clear_bitmap_for_region(HeapRegion* hr) {
   assert_at_safepoint();
   _mark_bitmap.clear_range(MemRegion(hr->bottom(), hr->end()));
-  reset_top_at_mark_start(hr);
 }
 
 HeapRegion* G1ConcurrentMark::claim_region(uint worker_id) {

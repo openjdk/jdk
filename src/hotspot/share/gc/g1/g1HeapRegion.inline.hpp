@@ -187,9 +187,9 @@ inline void HeapRegion::reset_skip_compacting_after_full_gc() {
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
-  // After a full gc the mark bitmap in a movable region is invalid.
-  // But all objects are live, we get this by setting TAMS to bottom.
-  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this); // FIXME
+  // After a full gc the mark bitmap in a movable region is invalid. Reset marking
+  // information.
+  G1CollectedHeap::heap()->concurrent_mark()->clear_statistics(this); // FIXME?
 
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();

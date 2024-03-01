@@ -190,6 +190,9 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size,
       res = _hrm.allocate_free_region(type, node_index);
     }
   }
+  if (res != nullptr) {
+    concurrent_mark()->clear_statistics(res);
+  }
   return res;
 }
 
@@ -2635,6 +2638,8 @@ void G1CollectedHeap::free_region(HeapRegion* hr, FreeRegionList* free_list) {
   if (free_list != nullptr) {
     free_list->add_ordered(hr);
   }
+
+  concurrent_mark()->clear_statistics(hr);
 }
 
 void G1CollectedHeap::retain_region(HeapRegion* hr) {

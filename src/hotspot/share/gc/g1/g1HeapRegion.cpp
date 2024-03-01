@@ -124,7 +124,6 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear();
 
-  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this); // FIXME
   _parsable_bottom = bottom();
   _garbage_bytes = 0;
 
