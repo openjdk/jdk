@@ -4135,11 +4135,7 @@ DWORD os::win32::system_logical_processor_count() {
       } else if (GetLogicalProcessorInformationEx(relationship_type, system_logical_processor_info, &returned_length) == 0) {
         char buf[512];
         size_t buf_len = os::lasterror(buf, sizeof(buf));
-        if (buf_len != 0) {
-          warning(buf);
-        } else {
-          warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed.");
-        }
+        warning("Attempt to determine logical processor count from GetLogicalProcessorInformationEx() failed: %s", buf_len != 0 ? buf : "<unknown error>");
       } else {
         DWORD processor_groups = system_logical_processor_info->Group.ActiveGroupCount;
 
