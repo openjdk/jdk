@@ -32,7 +32,23 @@ import sun.awt.windows.WToolkit;
 
 public class PlatformGraphicsInfo {
 
-    private static boolean hasDisplays = hasDisplays0();
+    private static boolean hasDisplays;
+
+    static {
+        loadAWTLibrary();
+        hasDisplays = hasDisplays0();
+    }
+
+    @SuppressWarnings("removal")
+    private static void loadAWTLibrary() {
+        java.security.AccessController.doPrivileged(
+            new java.security.PrivilegedAction<Void>() {
+                public Void run() {
+                    System.loadLibrary("awt");
+                    return null;
+                }
+            });
+    }
 
     private static native boolean hasDisplays0();
 
