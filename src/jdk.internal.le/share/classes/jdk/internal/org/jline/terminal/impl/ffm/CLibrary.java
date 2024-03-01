@@ -35,6 +35,7 @@ import jdk.internal.org.jline.terminal.spi.Pty;
 import jdk.internal.org.jline.terminal.spi.TerminalProvider;
 import jdk.internal.org.jline.utils.OSUtils;
 
+@SuppressWarnings("restricted")
 class CLibrary {
 
 //    private static final Logger logger = Logger.getLogger("org.jline");

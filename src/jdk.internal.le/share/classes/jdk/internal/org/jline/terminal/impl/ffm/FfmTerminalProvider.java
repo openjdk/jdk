@@ -17,6 +17,7 @@ import java.lang.foreign.MemoryLayout.PathElement;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.charset.Charset;
+import java.util.function.Function;
 
 import jdk.internal.org.jline.terminal.Attributes;
 import jdk.internal.org.jline.terminal.Size;
