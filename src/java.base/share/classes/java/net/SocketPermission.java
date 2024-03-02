@@ -178,7 +178,7 @@ public final class SocketPermission extends Permission
     /**
      * No actions
      */
-    private static final int NONE               = 0x0;
+    private static final int NONE       = 0x0;
 
     /**
      * All actions
@@ -224,8 +224,6 @@ public final class SocketPermission extends Permission
 
     // port range on host
     private transient int[] portrange;
-
-    private transient boolean defaultDeny = false;
 
     // true if this SocketPermission represents a hostname
     // that failed our reverse mapping heuristic test
@@ -298,10 +296,6 @@ public final class SocketPermission extends Permission
         super(getHost(host));
         // name initialized to getHost(host); NPE detected in getHost()
         init(getName(), mask);
-    }
-
-    private void setDeny() {
-        defaultDeny = true;
     }
 
     private static String getHost(String host) {
@@ -611,14 +605,13 @@ public final class SocketPermission extends Permission
         if (trusted) return false;
         if (invalid || untrusted) return true;
         try {
-            if (!trustNameService && (defaultDeny ||
-                sun.net.www.URLConnection.isProxiedHost(hostname))) {
+            if (!trustNameService && sun.net.www.URLConnection.isProxiedHost(hostname)) {
                 if (this.cname == null) {
                     this.getCanonName();
                 }
                 if (!match(cname, hostname)) {
                     // Last chance
-                    if (!authorized(hostname, addresses[0].getAddress())) {
+                    if (!authorized(addresses[0].getAddress())) {
                         untrusted = true;
                         Debug debug = getDebug();
                         if (debug != null && Debug.isOn("failure")) {
@@ -704,7 +697,7 @@ public final class SocketPermission extends Permission
         return !cdomain.isEmpty() && !hdomain.isEmpty() && cdomain.equals(hdomain);
     }
 
-    private boolean authorized(String cname, byte[] addr) {
+    private boolean authorized(byte[] addr) {
         if (addr.length == 4)
             return authorizedIPv4(addr);
         else if (addr.length == 16)
