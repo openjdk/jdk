@@ -3688,14 +3688,6 @@ JVM_ENTRY(jclass, JVM_LookupLambdaProxyClassFromArchive(JNIEnv* env,
 #endif // INCLUDE_CDS
 JVM_END
 
-JVM_LEAF(jboolean, JVM_IsCDSDumpingEnabled(JNIEnv* env))
-  return CDSConfig::is_dumping_archive();
-JVM_END
-
-JVM_LEAF(jboolean, JVM_IsSharingEnabled(JNIEnv* env))
-  return UseSharedSpaces;
-JVM_END
-
 JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   if (CDSConfig::is_dumping_static_archive()) {
     // We do this so that the default CDS archive can be deterministic.
@@ -3719,17 +3711,13 @@ JVM_ENTRY_NO_ENV(jlong, JVM_GetRandomSeedForDumping())
   }
 JVM_END
 
-JVM_LEAF(jboolean, JVM_IsDumpingClassList(JNIEnv *env))
-#if INCLUDE_CDS
-  return ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive();
-#else
-  return false;
-#endif // INCLUDE_CDS
+JVM_ENTRY_NO_ENV(jint, JVM_GetCDSConfigStatus())
+  return CDSConfig::get_status();
 JVM_END
 
 JVM_ENTRY(void, JVM_LogLambdaFormInvoker(JNIEnv *env, jstring line))
 #if INCLUDE_CDS
-  assert(ClassListWriter::is_enabled() || CDSConfig::is_dumping_dynamic_archive(),  "Should be set and open or do dynamic dump");
+  assert(CDSConfig::is_logging_lambda_form_invokers(), "sanity");
   if (line != nullptr) {
     ResourceMark rm(THREAD);
     Handle h_line (THREAD, JNIHandles::resolve_non_null(line));

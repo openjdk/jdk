@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ void ArchiveHeapLoader::fixup_region() {
     fill_failed_loaded_heap();
   }
   if (is_in_use()) {
-    if (!CDSConfig::is_loading_full_module_graph()) {
+    if (!CDSConfig::is_using_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ final class LambdaProxyClassArchive {
                          Class<?>[] altInterfaces,
                          MethodType[] altMethods) {
         if (!loadedByBuiltinLoader(caller) ||
-            !CDS.isSharingEnabled() || isSerializable || altInterfaces.length > 0 || altMethods.length > 0)
+            !CDS.isUsingArchive() || isSerializable || altInterfaces.length > 0 || altMethods.length > 0)
             return null;
 
         return findFromArchive(caller, interfaceMethodName, factoryType, interfaceMethodType,

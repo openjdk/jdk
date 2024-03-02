@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -972,7 +972,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     }
     return nullptr;
   } else {
-    if (record->is_full_module_graph() && !CDSConfig::is_loading_full_module_graph()) {
+    if (record->is_full_module_graph() && !CDSConfig::is_using_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",

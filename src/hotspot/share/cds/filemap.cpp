@@ -212,7 +212,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
-  _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
@@ -1977,7 +1977,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::stop_using_full_module_graph();
   }
 }
 
@@ -2393,13 +2393,13 @@ bool FileMapHeader::validate() {
   }
 
   if (!_use_optimized_module_handling) {
-    MetaspaceShared::disable_optimized_module_handling();
+    CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static() && !_has_full_module_graph) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::disable_loading_full_module_graph("archive was created without full module graph");
+    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
   }
 
   return true;
