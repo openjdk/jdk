@@ -821,7 +821,8 @@ public class Deflater {
 
     /**
      * Returns the total number of uncompressed bytes input so far.
-     * <p>
+     *
+     * @implSpec
      * This method returns the equivalent of {@code (int) getBytesRead()}
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
@@ -850,7 +851,8 @@ public class Deflater {
 
     /**
      * Returns the total number of compressed bytes output so far.
-     * <p>
+     *
+     * @implSpec
      * This method returns the equivalent of {@code (int) getBytesWritten()}
      * and therefore cannot return the correct value when it is greater
      * than {@link Integer#MAX_VALUE}.
