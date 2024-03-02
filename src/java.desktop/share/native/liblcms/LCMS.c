@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,8 +188,13 @@ JNIEXPORT jlong JNICALL Java_sun_java2d_cmm_lcms_LCMS_createNativeTransform
         }
     }
 
+    cmsUInt32Number dwFlags = 0;
+    if (T_EXTRA(inFormatter) > 0 && T_EXTRA(outFormatter) > 0) {
+        dwFlags |= cmsFLAGS_COPY_ALPHA;
+    }
+
     sTrans = cmsCreateMultiprofileTransform(iccArray, j,
-        inFormatter, outFormatter, renderType, cmsFLAGS_COPY_ALPHA);
+        inFormatter, outFormatter, renderType, dwFlags);
 
     (*env)->ReleaseLongArrayElements(env, profileIDs, ids, 0);
 
