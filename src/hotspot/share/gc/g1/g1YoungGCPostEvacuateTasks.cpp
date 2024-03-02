@@ -590,24 +590,18 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
-  G1RedirtyCardsQueueSet* _rdcqs;
   BufferNodeList* _rdc_buffers;
   uint _num_buffer_lists;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions, BufferNodeList* rdc_buffers, uint num_buffer_lists) :
+  RedirtyLoggedCardsTask(G1EvacFailureRegions* evac_failure_regions, BufferNodeList* rdc_buffers, uint num_buffer_lists) :
     G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
-    _rdcqs(rdcqs),
     _rdc_buffers(rdc_buffers),
     _num_buffer_lists(num_buffer_lists),
     _evac_failure_regions(evac_failure_regions) { }
 
-  virtual ~RedirtyLoggedCardsTask() {
-    G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-    dcq.merge_bufferlists(_rdcqs);
-    _rdcqs->verify_empty();
-  }
+  virtual ~RedirtyLoggedCardsTask() = default;
 
   double worker_cost() const override {
     // Needs more investigation.
@@ -982,9 +976,9 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(),
-                    evac_failure_regions, per_thread_states->rdc_buffers(),
-                    per_thread_states->num_workers()));
+  add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,
+                                               per_thread_states->rdc_buffers(),
+                                               per_thread_states->num_workers()));
 
   if (UseTLAB && ResizeTLAB) {
     add_parallel_task(new ResizeTLABsTask());

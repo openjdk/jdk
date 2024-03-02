@@ -614,6 +614,11 @@ void G1ParScanThreadStateSet::flush_stats() {
     delete pss;
     _states[worker_id] = nullptr;
   }
+
+  G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
+  dcq.merge_bufferlists(rdcqs());
+  rdcqs()->verify_empty();
+
   _flushed = true;
 }
 
