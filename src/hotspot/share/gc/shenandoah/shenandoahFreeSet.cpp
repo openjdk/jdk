@@ -849,8 +849,8 @@ void ShenandoahRegionPartitions::assert_bounds() {
 ShenandoahFreeSet::ShenandoahFreeSet(ShenandoahHeap* heap, size_t max_regions) :
   _heap(heap),
   _partitions(max_regions, this),
-  _alloc_bias_weight(0),
-  _right_to_left_bias(false)
+  _right_to_left_bias(false),
+  _alloc_bias_weight(0)
 {
   clear_internal();
 }

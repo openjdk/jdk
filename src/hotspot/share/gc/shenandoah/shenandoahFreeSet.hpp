@@ -29,9 +29,10 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
-// The API and internal implementation of ShenandoahSimpleBitMap and ShenandoahRegionPartitions uses ssize_t to
-// represent index, even though index is "inherently" unsigned.  There are several reasons for this choice:
-//  1. We use -1 as a sentinel value to represent empty partitions.
+// The API and internal implementation of ShenandoahSimpleBitMap and ShenandoahRegionPartitions use ssize_t to
+// represent index, even though index is "inherently" unsigned.  There are two reasons for this choice:
+//  1. We use -1 as a sentinel value to represent empty partitions.  This same value may be used to represent
+//     failure to find a previous set bit or previous range of set bits.
 //  2. Certain loops are written most naturally if the iterator, which may hold the sentinel -1 value, can be
 //     declared as signed and the terminating condition can be < 0.
 
@@ -62,7 +63,6 @@ public:
       FREE_C_HEAP_ARRAY(size_t, _bitmap);
     }
   }
-
   void clear_all() {
     for (size_t i = 0; i < _num_words; i++) {
       _bitmap[i] = 0;
