@@ -3054,9 +3054,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         Objects.requireNonNull(indexMap);
         Class<? extends ByteVector> vectorType = vsp.vectorType();
 
-        VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
         if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
             lsp = IntVector.SPECIES_PREFERRED;
         } else {
@@ -3810,9 +3810,9 @@ public abstract class ByteVector extends AbstractVector<Byte> {
         m.check(vsp);
         Class<? extends ByteVector> vectorType = vsp.vectorType();
 
-        VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
         if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
             lsp = IntVector.SPECIES_PREFERRED;
         } else {

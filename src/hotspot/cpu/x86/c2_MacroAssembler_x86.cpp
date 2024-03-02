@@ -1668,26 +1668,27 @@ void C2_MacroAssembler::vgather_subword(BasicType elem_ty, XMMRegister dst,
                                         Register mask_idx, Register length,
                                         int vector_len, int vlen_enc) {
   Label GATHER8_LOOP;
-  XMMRegister iota = xtmp1;
-  XMMRegister two_vec = xtmp2;
-
   assert(is_subword_type(elem_ty), "");
   movl(length, vector_len);
-  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc);
-  vpxor(dst, dst, dst, vlen_enc);
+  vpxor(xtmp1, xtmp1, xtmp1, vlen_enc); // xtmp1 = {0, ...}
+  vpxor(dst, dst, dst, vlen_enc); // dst = {0, ...}
   vallones(xtmp2, vlen_enc);
   vpsubd(xtmp2, xtmp1, xtmp2, vlen_enc);
-  vpslld(two_vec, xtmp2, 1, vlen_enc);
-  load_iota_indices(iota, vector_len * type2aelembytes(elem_ty), T_INT);
+  vpslld(xtmp2, xtmp2, 1, vlen_enc); // xtmp2 = {2, 2, ...}
+  load_iota_indices(xtmp1, vector_len * type2aelembytes(elem_ty), T_INT); // xtmp1 = {0, 1, 2, ...}
 
   bind(GATHER8_LOOP);
+    // TMP_VEC_64(temp_dst) = PICK_SUB_WORDS_FROM_GATHER_INDICES
     if (mask == noreg) {
       vgather8b_offset(elem_ty, temp_dst, base, idx_base, offset, rtmp, vlen_enc);
     } else {
       LP64_ONLY(vgather8b_masked_offset(elem_ty, temp_dst, base, idx_base, offset, mask, mask_idx, rtmp, vlen_enc));
     }
-    vpermd(temp_dst, iota, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
-    vpsubd(iota, iota, two_vec, vlen_enc);
+    // TEMP_PERM_VEC(temp_dst) = PERMUTE TMP_VEC_64(temp_dst) PERM_INDEX(xtmp1)
+    vpermd(temp_dst, xtmp1, temp_dst, vlen_enc == Assembler::AVX_512bit ? vlen_enc : Assembler::AVX_256bit);
+    // PERM_INDEX(xtmp1) = PERM_INDEX(xtmp1) - TWO_VEC(xtmp2)
+    vpsubd(xtmp1, xtmp1, xtmp2, vlen_enc);
+    // DST_VEC = DST_VEC OR TEMP_PERM_VEC
     vpor(dst, dst, temp_dst, vlen_enc);
     addptr(idx_base,  32 >> (type2aelembytes(elem_ty) - 1));
     subl(length, 8 >> (type2aelembytes(elem_ty) - 1));

@@ -3055,9 +3055,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         Objects.requireNonNull(indexMap);
         Class<? extends ShortVector> vectorType = vsp.vectorType();
 
-        VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
         if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
             lsp = IntVector.SPECIES_PREFERRED;
         } else {
@@ -3796,9 +3796,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         m.check(vsp);
         Class<? extends ShortVector> vectorType = vsp.vectorType();
 
-        VectorSpecies<Integer> lsp = null;
 
         // Constant folding should sweep out following conditonal logic.
+        VectorSpecies<Integer> lsp;
         if (isp.length() > IntVector.SPECIES_PREFERRED.length()) {
             lsp = IntVector.SPECIES_PREFERRED;
         } else {
