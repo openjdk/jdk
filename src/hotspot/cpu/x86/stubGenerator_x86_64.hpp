@@ -541,7 +541,7 @@ class StubGenerator: public StubCodeGenerator {
   void generate_libm_stubs();
 
   void string_indexof_big_loop_helper(int size, Label& bailout, Label& loop_top, StrIntrinsicNode::ArgEncoding ae);
-  void string_indexof_small_loop_helper(int size, Label& bailout, Label& loop_top, StrIntrinsicNode::ArgEncoding ae);
+  void string_indexof_small_loop_helper(int size, Label& bailout, StrIntrinsicNode::ArgEncoding ae);
   void generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding ae);
   void generate_string_indexof();
 
