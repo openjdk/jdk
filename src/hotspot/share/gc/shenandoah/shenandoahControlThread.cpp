@@ -417,6 +417,7 @@ void ShenandoahControlThread::handle_alloc_failure(ShenandoahAllocRequest& req, 
     log_info(gc)("Failed to allocate %s, " SIZE_FORMAT "%s",
                  req.type_string(),
                  byte_size_in_proper_unit(req.size() * HeapWordSize), proper_unit_for_byte_size(req.size() * HeapWordSize));
+
     // Now that alloc failure GC is scheduled, we can abort everything else
     heap->cancel_gc(GCCause::_allocation_failure);
   }

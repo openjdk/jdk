@@ -29,6 +29,14 @@
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 
+// The API and internal implementation of ShenandoahSimpleBitMap and ShenandoahRegionPartitions uses ssize_t to
+// represent index, even though index is "inherently" unsigned.  There are several reasons for this choice:
+//  1. We use -1 as a sentinel value to represent empty partitions.
+//  2. Certain loops are written most naturally if the iterator, which may hold the sentinel -1 value, can be
+//     declared as signed and the terminating condition can be < 0.
+
+
+
 // ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_contiguous_bits() and
 // find_prev_contiguous_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
@@ -372,8 +380,17 @@ private:
   ShenandoahHeap* const _heap;
   ShenandoahRegionPartitions _partitions;
 
-  ssize_t _alloc_bias_weight;
+  // Mutator allocations are biased from left-to-right or from right-to-left based on which end of mutator range
+  // is most likely to hold partially used regions.  In general, we want to finish consuming partially used
+  // regions and retire them in order to reduce the regions that must be searched for each allocation request.
   bool _right_to_left_bias;
+
+  // We re-evaluate the left-to-right allocation bias whenever _alloc_bias_weight is less than zero.  Each time
+  // we allocate an object, we decrement the count of this value.  Each time we re-evaluate whether to allocate
+  // from right-to-left or left-to-right, we reset the value of this counter to _InitialAllocBiasWeight.
+  ssize_t _alloc_bias_weight;
+
+  const ssize_t _InitialAllocBiasWeight = 256;
 
   HeapWord* try_allocate_in(ShenandoahHeapRegion* region, ShenandoahAllocRequest& req, bool& in_new_region);
 

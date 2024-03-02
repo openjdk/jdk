@@ -876,7 +876,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
       // Try to allocate in the mutator view
       if (_alloc_bias_weight-- <= 0) {
         // We have observed that regions not collected in previous GC cycle tend to congregate at one end or the other
-        // of the heap.  Typically, these are the more recently engaged regions, as the objects in these regions have not
+        // of the heap.  Typically, these are the more recently engaged regions and the objects in these regions have not
         // yet had a chance to die (and/or are treated as floating garbage).  If we use the same allocation bias on each
         // GC pass, these "most recently" engaged regions for GC pass N will also be the "most recently" engaged regions
         // for GC pass N+1, and the relatively large amount of live data and/or floating garbage introduced
@@ -893,7 +893,7 @@ HeapWord* ShenandoahFreeSet::allocate_single(ShenandoahAllocRequest& req, bool& 
         ssize_t non_empty_on_left = _partitions.leftmost_empty(Mutator) - _partitions.leftmost(Mutator);
         ssize_t non_empty_on_right = _partitions.rightmost(Mutator) - _partitions.rightmost_empty(Mutator);
         _right_to_left_bias = (non_empty_on_right > non_empty_on_left);
-        _alloc_bias_weight = 256;
+        _alloc_bias_weight = _InitialAllocBiasWeight;
       }
       if (_right_to_left_bias) {
         // Allocate within mutator free from high memory to low so as to preserve low memory for humongous allocations
