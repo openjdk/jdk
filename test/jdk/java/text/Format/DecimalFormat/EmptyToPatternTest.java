@@ -24,10 +24,9 @@
 /*
  * @test
  * @bug 8326908
- * @summary Verify an empty pattern does not cause an OutOfMemoryError when
+ * @summary Verify that an empty pattern does not cause an OutOfMemoryError when
  *          toPattern is invoked. Behavioral change of MAXIMUM_INTEGER_DIGITS
  *          replaced with DOUBLE_FRACTION_DIGITS for empty pattern initialization.
- *          In practice, this should cause minimal compatibility issues.
  * @run junit EmptyToPatternTest
  */
 
@@ -40,9 +39,11 @@ import java.text.DecimalFormat;
 public class EmptyToPatternTest {
 
     // 8326908: Verify that invoking toPattern on a DecimalFormat created
-    // with an empty String does not throw Out Of Memory Error.
+    // with an empty String does not throw an OutOfMemoryError.
     @Test
     public void emptyStringPatternTest() {
         assertDoesNotThrow(() -> new DecimalFormat("").toPattern());
+        // Check toString for coverage, as it invokes toPattern
+        assertDoesNotThrow(() -> new DecimalFormat("").toString());
     }
 }
