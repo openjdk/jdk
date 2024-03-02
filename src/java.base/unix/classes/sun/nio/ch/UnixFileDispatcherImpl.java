@@ -173,6 +173,14 @@ class UnixFileDispatcherImpl extends FileDispatcher {
         return result;
     }
 
+    /**
+     * Skip at most n bytes
+     * @return the number of bytes skipped or IOS_INTERRUPTED
+     */
+    long skip(FileDescriptor fd, long n) {
+        return skip0(fd, n);
+    }
+
     // -- Native methods --
 
     static native int read0(FileDescriptor fd, long address, int len)
@@ -225,4 +233,6 @@ class UnixFileDispatcherImpl extends FileDispatcher {
     static native int unmap0(long address, long length);
 
     static native int setDirect0(FileDescriptor fd) throws IOException;
+
+    private static native long skip0(FileDescriptor fd, long n);
 }

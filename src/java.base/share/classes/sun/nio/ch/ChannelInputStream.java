@@ -238,6 +238,15 @@ class ChannelInputStream extends InputStream {
             sbc.position(newPos);
             return newPos - pos;
         }
+
+        // special case where the channel is to a pipe
+        if (ch instanceof SourceChannelImpl sci)
+            return sci.skip(n);
+
+        // special case where the channel is to a socket
+        if (ch instanceof SocketChannelImpl sci)
+            return sci.skip(n);
+
         return super.skip(n);
     }
 

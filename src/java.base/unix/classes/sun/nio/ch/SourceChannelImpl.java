@@ -42,7 +42,7 @@ class SourceChannelImpl
     implements SelChImpl
 {
     // Used to make native read and write calls
-    private static final NativeDispatcher nd = new FileDispatcherImpl();
+    private static final NativeDispatcher nd = new PipeDispatcherImpl();
 
     // The file descriptor associated with this channel
     private final FileDescriptor fd;
@@ -364,5 +364,54 @@ class SourceChannelImpl
     @Override
     public long read(ByteBuffer[] dsts) throws IOException {
         return read(dsts, 0, dsts.length);
+    }
+
+    /**
+     * Skips over and discards {@code n} bytes of data from this source
+     * channel. The {@code skip} method may, for a variety of reasons, end
+     * up skipping over some smaller number of bytes, possibly {@code 0}.
+     * This may result from any of a number of conditions; reaching end of file
+     * before {@code n} bytes have been skipped is only one possibility.
+     * The actual number of bytes skipped is returned. If {@code n} is
+     * negative, the {@code skip} method for class {@code SourceChannelImpl} always
+     * returns 0, and no bytes are skipped. Subclasses may handle the negative
+     * value differently.
+     *
+     * @implSpec
+     * The {@code skip} method implementation of this class creates an off-heap
+     * byte array and then repeatedly reads into it until {@code n} bytes
+     * have been read or the end of the stream has been reached. Subclasses are
+     * encouraged to provide a more efficient implementation of this method.
+     * For instance, the implementation may depend on the ability to seek.
+     *
+     * @param      n   the number of bytes to be skipped.
+     * @return     the actual number of bytes skipped which might be zero.
+     * @throws     IOException  if an I/O error occurs.
+     */
+    public long skip(long n) throws IOException {
+        if (n < 1)
+            return 0;
+
+        readLock.lock();
+        try {
+            boolean blocking = isBlocking();
+            long ns = 0;
+            try {
+                beginRead(blocking);
+                configureSocketNonBlockingIfVirtualThread();
+                ns = IOUtil.skip(fd, n, nd);
+                if (blocking)
+                    while (IOStatus.okayToRetry(ns) && isOpen()) {
+                        park(Net.POLLIN);
+                        ns = IOUtil.skip(fd, n, nd);
+                    }
+            } finally {
+                endRead(blocking, ns > 0);
+                assert IOStatus.check(ns);
+            }
+            return IOStatus.normalize(ns);
+        } finally {
+            readLock.unlock();
+        }
     }
 }

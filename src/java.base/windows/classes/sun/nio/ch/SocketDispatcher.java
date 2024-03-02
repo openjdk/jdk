@@ -66,6 +66,10 @@ class SocketDispatcher extends NativeDispatcher {
         invalidateAndClose(fd);
     }
 
+    long skip(FileDescriptor fd, long n) throws IOException {
+        return skip0(fd, n);
+    }
+
     static void invalidateAndClose(FileDescriptor fd) throws IOException {
         assert fd.valid();
         int fdVal = fdAccess.get(fd);
@@ -88,6 +92,9 @@ class SocketDispatcher extends NativeDispatcher {
         throws IOException;
 
     private static native void close0(int fdVal) throws IOException;
+
+    private static native long skip0(FileDescriptor fd, long n)
+        throws IOException;
 
     static {
         IOUtil.load();
