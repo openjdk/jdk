@@ -51,6 +51,8 @@ public class Local {
 
     /**
      * Returns the last BCI at which this local has a value (inclusive).
+     * If the value returned is less than {@link #getStartBCI}, this object denotes a local
+     * variable that is never live.
      */
     public int getEndBCI() {
         return endBci;
