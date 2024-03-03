@@ -237,12 +237,14 @@ protected:
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
   void set_secondary_supers(Array<Klass*>* k);
   void set_secondary_supers(Array<Klass*>* k, uint64_t bitmap);
+  static void hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t &bitmap);
   static uint64_t hash_secondary_supers(Array<Klass*>* k, bool rewrite = true);
 
   // Hash coding used by HashSecondarySupers.
   static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
   static constexpr int secondary_shift() { return hash_size_in_bits() - 6; }
   juint hash() const { return _hash; }
+  int hash_slot() const { return hash() >> secondary_shift(); }
 
   // Return the element of the _super chain of the given depth.
   // If there is no such element, return either null or this.

@@ -318,13 +318,37 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uint64_t bitmap) {
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 #ifdef ASSERT
-  if (secondaries) {
+  if (HashSecondarySupers && secondaries) {
     uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
     assert(_bitmap == real_bitmap, "must be");
   }
 #endif
   _secondary_supers = secondaries;
 }
+
+void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t &bitmap) {
+  int longest_probe = 0;
+  int slot = sec->hash() >> secondary_shift();
+  int dist = 0;
+  for (;;) {
+    if (secondaries->at(slot) == nullptr) {
+      secondaries->at_put(slot, sec);
+      bitmap |= uint64_t(1) << slot;
+      return;
+    }
+    int existing_dist = (secondaries->at(slot)->hash_slot() - slot) & 63;
+    if (existing_dist < dist) {
+      Klass *tmp = secondaries->at(slot);
+      secondaries->at_put(slot, sec);
+      sec = tmp;
+      dist = existing_dist;
+    }
+    slot = (slot + 1) & 63;
+    ++dist;
+  }
+}
+
+#define ROBIN_HOOD true
 
 uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
   if (secondaries->length() == 0)
@@ -360,30 +384,39 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   for (int j = 0; j < length; j++) {
     Klass *k = s[j];
-    unsigned int slot = k->hash() >> secondary_shift();
+    unsigned int slot = k->hash_slot();
 
     if (j >= 64) {
       hashed_secondaries->at_put(j, k);
     } else {
+#if ROBIN_HOOD
+      hash_insert(k, hashed_secondaries, bitmap);
+#else
       for (int i = 0; i < 64; i++, slot++) {
         slot &= 63;
         if (hashed_secondaries->at(slot) == nullptr) {
-          bitmap |= uint64_t(1) << slot;
           hashed_secondaries->at_put(slot, k);
+          bitmap |= uint64_t(1) << slot;
           goto stashed;
         }
       }
       assert(false, "shouldn't happen");
     stashed:
       continue;
+#endif
     }
   }
 
   if (rewrite) {
     int i = 0;
+    int maxprobe = 0;
     for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
         secondaries->at_put(i, hashed_secondaries->at(slot));  // add secondaries on the end.
+        // maxprobe = MAX2(maxprobe, (slot - hashed_secondaries->at(slot)->hash_slot()) & 63);
+        // if (length > 60) {
+        //   fprintf(stderr, "max probe = %d\n", maxprobe);
+        // }
         i++;
       }
     }
@@ -398,9 +431,6 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
       }
     }
 #endif // ASSERT
-  }
-  if (secondaries->length() > 16) {
-    asm("nop");
   }
 
   return bitmap;
@@ -520,6 +550,9 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
+    if (secondaries->length() > 58) {
+      asm("nop");
+    }
   }
 }
 
