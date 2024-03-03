@@ -1805,7 +1805,7 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     cmp(sp, zr); // Clear Z flag; SP is never zero
     // Scan R2 words at [R5] for an occurrence of R0.
     // Set NZ/Z based on last compare.
-    repne_scan(r_array_base, r_super_klass, r_sub_klass, rscratch2);
+    repne_scan(/*addr*/r_array_base, /*value*/r_super_klass, /*count*/r_array_length, rscratch2);
     // rscratch1 == 0 iff we got a match.
     cset(rscratch1, NE);
 
