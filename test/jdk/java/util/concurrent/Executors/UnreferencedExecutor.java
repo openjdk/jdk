@@ -36,10 +36,33 @@ public class UnreferencedExecutor {
 
     private static final int DURATION_IN_SECONDS = 5;
 
+    /**
+     * An UncaughtExceptionHandler to ignore recoverable OOMEs
+     * caused by other VM threads that do allocation or create
+     * temporary strong roots to otherwise weakly referenced objects.
+     * This can happen for example when using libgraal and -Xcomp.
+     */
+    static class UEH implements Thread.UncaughtExceptionHandler {
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            if (e instanceof OutOfMemoryError err) {
+                // Ignore. An unrecoverable memory leak will still
+                // cause the VM to exit.
+            } else if (e instanceof Error err) {
+                throw err;
+            } else if (e instanceof RuntimeException re) {
+                throw re;
+            } else {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         int ncores = Runtime.getRuntime().availableProcessors();
         long durationNanos = Duration.ofSeconds(DURATION_IN_SECONDS).toNanos();
         long start = System.nanoTime();
+        Thread.setDefaultUncaughtExceptionHandler(new UEH());
         while (System.nanoTime() - start < durationNanos) {
             Executors.newFixedThreadPool(ncores);
             Executors.newCachedThreadPool();
