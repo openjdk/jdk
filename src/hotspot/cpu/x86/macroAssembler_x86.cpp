@@ -9994,7 +9994,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
     movzbl(chr, Address(ary2, limit, Address::times_1));
     cmpl(chr, Address(ary1, limit, Address::times_2));
     jccb(Assembler::notEqual, FALSE_LABEL);
-    incq(limit);
+    incrementq(limit);
     jcc(Assembler::notZero, COMPARE_VECTORS);
     jmp(TRUE_LABEL);
   } else {
