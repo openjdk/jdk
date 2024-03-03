@@ -561,7 +561,7 @@ public class DriverManager {
                 result = false;
             }
 
-             result = ( aClass == driver.getClass() ) ? true : false;
+             result = ( aClass == driver.getClass() );
         }
 
         return result;
