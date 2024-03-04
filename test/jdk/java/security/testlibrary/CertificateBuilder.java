@@ -24,14 +24,12 @@
 package sun.security.testlibrary;
 
 import java.io.*;
+import java.security.cert.*;
+import java.security.cert.Extension;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.security.*;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.Extension;
-import java.time.temporal.ChronoUnit;
-import java.time.Instant;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
 
@@ -39,22 +37,7 @@ import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;
 import sun.security.util.SignatureUtil;
-import sun.security.x509.AccessDescription;
-import sun.security.x509.AlgorithmId;
-import sun.security.x509.AuthorityInfoAccessExtension;
-import sun.security.x509.AuthorityKeyIdentifierExtension;
-import sun.security.x509.SubjectKeyIdentifierExtension;
-import sun.security.x509.BasicConstraintsExtension;
-import sun.security.x509.CertificateSerialNumber;
-import sun.security.x509.ExtendedKeyUsageExtension;
-import sun.security.x509.DNSName;
-import sun.security.x509.GeneralName;
-import sun.security.x509.GeneralNames;
-import sun.security.x509.KeyUsageExtension;
-import sun.security.x509.SerialNumber;
-import sun.security.x509.SubjectAlternativeNameExtension;
-import sun.security.x509.URIName;
-import sun.security.x509.KeyIdentifier;
+import sun.security.x509.*;
 
 /**
  * Helper class that builds and signs X.509 certificates.
@@ -412,6 +395,109 @@ public class CertificateBuilder {
         byte[] encodedCert = encodeTopLevel(issuerCert, issuerKey, algName);
         ByteArrayInputStream bais = new ByteArrayInputStream(encodedCert);
         return (X509Certificate)factory.generateCertificate(bais);
+    }
+
+    /**
+     * Creates a new certificate signed by the given CA. Certificates created
+     * by this method are valid for an hour and are given a random serial number.
+     * Default key usage specifies:
+     * <ul>
+     *     <li>Digital Signature</li>
+     *     <li>Non Repudiation</li>
+     *     <li>Key Encipherment</li>
+     *
+     * </ul>
+     *
+     * @param subjectName the subject name for the certificate
+     * @param publicKey the public key to be associated with the certificate
+     * @param caKey CA key used to sign the certificate
+     * @param extensions Optional extensions to add to the certificate
+     * @throws Exception
+     */
+    public static CertificateBuilder createClientCertificateBuilder(String subjectName, PublicKey publicKey,
+              PublicKey caKey, Extension... extensions) throws Exception {
+        SecureRandom random = new SecureRandom();
+        return new CertificateBuilder()
+                .setSubjectName(subjectName)
+                .setPublicKey(publicKey)
+                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
+                .addSubjectKeyIdExt(publicKey)
+                .addKeyUsageExt(new boolean[]{true, true, true, false, false, false, false, false, false})
+                .addAuthorityKeyIdExt(caKey)
+                .addExtensions(Arrays.asList(extensions));
+    }
+
+    /**
+     * Creates a CertificateBuilder with default values for creating self-signed
+     * CA certificates. Certificates are valid for an hour and have a random
+     * serial number.
+     * Default key usage:
+     * <ul>
+     *     <li>Certificate Sign</li>
+     *     <li>CRL sign</li>
+     * </ul>
+     *
+     * @param subject The subject name of the certificate
+     * @param caKey The keypair to be associated with the certificate
+     * @param extensions Optional extensions to add to the certificate.
+     * @throws Exception
+     */
+    public static CertificateBuilder createCACertificateBuilder(String subject, KeyPair caKey,
+                                               Extension... extensions) throws Exception {
+        SecureRandom random = new SecureRandom();
+        return new CertificateBuilder()
+                .setSubjectName(subject)
+                .setPublicKey(caKey.getPublic())
+                .setNotBefore(Date.from(Instant.now().minus(1, ChronoUnit.HOURS)))
+                .setNotAfter(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+                .setSerialNumber(BigInteger.valueOf(random.nextLong(1000000)+1))
+                .addSubjectKeyIdExt(caKey.getPublic())
+                .addBasicConstraintsExt(true, true, -1)
+                .addKeyUsageExt(new boolean[]{false, false, false, false, false, true, true, false, false})
+                .addAuthorityKeyIdExt(caKey.getPublic())
+                .addExtensions(Arrays.asList(extensions));
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given DNS name
+     * @param critical Sets the extension to critical or non-critical
+     * @param dnsName DNS name to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createDNSSubjectAltNameExt(
+            boolean critical, String dnsName) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new DNSName(dnsName)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    /**
+     * Create a Subject Alternative Name extension for the given IP address
+     * @param critical Sets the extension to critical or non-critical
+     * @param ipAddress IP address to use in the extension
+     * @throws IOException
+     */
+    public static SubjectAlternativeNameExtension createIPSubjectAltNameExt(
+            boolean critical, String ipAddress) throws IOException {
+        GeneralNames gns = new GeneralNames();
+        gns.add(new GeneralName(new IPAddressName(ipAddress)));
+        return new SubjectAlternativeNameExtension(critical, gns);
+    }
+
+    /**
+     * Print a PEM encoded version of the given certificate to the print stream.
+     */
+    public static void printCertificate(X509Certificate certificate, PrintStream ps) {
+        try {
+            Base64.Encoder encoder = Base64.getEncoder();
+            ps.println("-----BEGIN CERTIFICATE-----");
+            ps.println(encoder.encodeToString(certificate.getEncoded()));
+            ps.println("-----END CERTIFICATE-----");
+        } catch (CertificateEncodingException exc) {
+            exc.printStackTrace(ps);
+        }
     }
 
     /**
