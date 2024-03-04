@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
   // We might have extra bits at the end that we don't want to lose
   idx_t cutoff = bit_in_word(end_bit);
   idx_t start_word = to_words_align_down(start_bit);
-  idx_t end_word = cutoff > 0 ? to_words_align_up(end_bit) + 1 : to_words_align_up(end_bit);
+  idx_t end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
@@ -124,14 +124,15 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
     // First iteration is a special case:
     // There may be left over bits in the last word that we want to keep while discarding the rest
     if (i == end_word - 1 && cutoff > 0) {
-      new_map[i-start_word] = old_map[i] & ((1 << cutoff) -1) >> shift;
+      bm_word_t mask = bit_mask(cutoff) - 1;
+      new_map[i-start_word] = old_map[i] & mask >> shift;
     } else {
       new_map[i-start_word] = old_map[i] >> shift;
     }
     new_map[i-start_word] |= carry;
 
     // A full shift by BitsPerWord could be sign extended
-    carry = (shift != 0) ? old_map[i] << (BitsPerWord - shift) : 0;
+    carry = old_map[i] << (BitsPerWord - shift) % BitsPerWord;
   }
 
   return new_map;

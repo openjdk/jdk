@@ -151,7 +151,7 @@ public:
 
 };
 
-TEST_VM(BitMap, truncate_same) {
+TEST_VM(BitMapTruncate, truncate_same) {
   BitMapTruncateTest::testTruncateSame<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
 //   BitMapTruncateTest::testTruncateSame<TestCHeapBitMap>();
