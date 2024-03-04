@@ -186,6 +186,7 @@ public class EventNames {
     public static final String NativeLibraryLoad = PREFIX + "NativeLibraryLoad";
     public static final String NativeLibraryUnload = PREFIX + "NativeLibraryUnload";
     public static final String PhysicalMemory = PREFIX + "PhysicalMemory";
+    public static final String SwapSpace = PREFIX + "SwapSpace";
     public static final String NetworkUtilization = PREFIX + "NetworkUtilization";
     public static final String ProcessStart = PREFIX + "ProcessStart";
     public static final String ResidentSetSize = PREFIX + "ResidentSetSize";
@@ -209,6 +210,7 @@ public class EventNames {
     public static final String SecurityProviderService = PREFIX + "SecurityProviderService";
     public static final String DirectBufferStatistics = PREFIX + "DirectBufferStatistics";
     public static final String Deserialization = PREFIX + "Deserialization";
+    public static final String SerializationMisdeclaration = PREFIX + "SerializationMisdeclaration";
     public static final String VirtualThreadStart = PREFIX + "VirtualThreadStart";
     public static final String VirtualThreadEnd = PREFIX + "VirtualThreadEnd";
     public static final String VirtualThreadPinned = PREFIX + "VirtualThreadPinned";

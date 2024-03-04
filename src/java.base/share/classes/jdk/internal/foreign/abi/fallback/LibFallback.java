@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,6 +160,7 @@ final class LibFallback {
      * @throws IllegalStateException if the call to {@code ffi_prep_closure_loc} returns a non-zero status code
      * @throws IllegalArgumentException if {@code target} does not have the right type
      */
+    @SuppressWarnings("restricted")
     static MemorySegment createClosure(MemorySegment cif, MethodHandle target, Arena arena)
             throws IllegalStateException, IllegalArgumentException {
         if (target.type() != UPCALL_TARGET_TYPE) {
@@ -172,7 +173,8 @@ final class LibFallback {
         long execPtr = ptrs[1];
         long globalTarget = ptrs[2];
 
-        return MemorySegment.ofAddress(execPtr).reinterpret(arena, unused -> freeClosure(closurePtr, globalTarget));
+        return MemorySegment.ofAddress(execPtr)
+            .reinterpret(arena, unused -> freeClosure(closurePtr, globalTarget)); // restricted
     }
 
     // the target function for a closure call

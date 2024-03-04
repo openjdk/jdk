@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -721,6 +721,13 @@ public class Log10Tests {
             {0x1.3fffffffffadfp25,      0x1.e7d9a8edb474dp2},
             {0x1.3fffffffffebdp25,      0x1.e7d9a8edb47a2p2},
             {0x1.4p25,                  0x1.e7d9a8edb47bfp2},
+
+            // Empirical worst-case points in other libraries with
+            // larger worst-case errors than FDLIBM
+            {0x1.de02157073b31p-1,     -0x1.e8cfabf160ec6p-6},
+            {0x1.10fdf4211fd45p+0,      0x1.c946e0d48c148p-6},
+            {0x1.55535a0140a21p+0,      0x1.ffb56ebe85597p-4},
+            {0x1.803dea263187fp-1,     -0x1.fea1086f5a316p-4},
         };
 
         for (double[] testCase: testCases)

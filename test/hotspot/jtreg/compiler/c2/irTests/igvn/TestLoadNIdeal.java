@@ -28,6 +28,7 @@ import compiler.lib.ir_framework.*;
 /*
  * @test
  * @bug 8310524
+ * @requires vm.bits == 64
  * @summary Test that IGVN optimizes away one of two identical LoadNs.
  * @library /test/lib /
  * @run driver compiler.c2.irTests.igvn.TestLoadNIdeal
