@@ -54,7 +54,7 @@ protected:
   void verifyBitMapState(ShenandoahSimpleBitMap& bm, size_t size, size_t set_bits[], size_t num_set_bits) {
 
     // Verify number of bits
-    ASSERT_EQ(bm, bm.number_of_bits(), size);
+    ASSERT_EQ(bm.number_of_bits(), size);
 
     size_t set_bit_index = 0;
     // Check that is_set(idx) for every possible idx
