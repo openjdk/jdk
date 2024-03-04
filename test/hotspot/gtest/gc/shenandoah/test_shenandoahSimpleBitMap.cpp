@@ -35,8 +35,8 @@
 
 
 class ShenandoahSimpleBitMapTest: public ::testing::Test {
-  const size_t  SMALL_BITMAP_SIZE =  512;
-  const size_t LARGE_BIT_MAP_SIZE = 4096;
+  const size_t SMALL_BITMAP_SIZE =  512;
+  const size_t LARGE_BITMAP_SIZE = 4096;
   ShenandoahSimpleBitMap bm_small;
   ShenandoahSimpleBitMap bm_large;
 
