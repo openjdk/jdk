@@ -97,10 +97,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     /**
      * This method is used to interrupt file loading thread.
      */
-    public void invalidateFileCache() {
+    public synchronized void invalidateFileCache() {
         if (filesLoader != null) {
             filesLoader.loadThread.interrupt();
-            filesLoader.cancelRunnables();
             filesLoader = null;
         }
     }
@@ -159,7 +158,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         synchronized (this) {
             if (filesLoader != null) {
                 filesLoader.loadThread.interrupt();
-                filesLoader.cancelRunnables();
             }
 
             int fid = fetchID.incrementAndGet();
@@ -395,7 +393,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                         }
                         if (!fileCache.equals(newFileCache)) {
                             if (loadThread.isInterrupted()) {
-                                cancelRunnables();
+                                return null;
                             }
                             return new DoChangeContents(newFileCache, 0, fileCache, 0, fid);
                         }
@@ -406,12 +404,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             if (runnable != null && !loadThread.isInterrupted()) {
                 SwingUtilities.invokeLater(runnable);
-            }
-        }
-
-        private void cancelRunnables() {
-            if (runnable != null) {
-                runnable.cancel();
             }
         }
    }
@@ -522,7 +514,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     private final class DoChangeContents implements Runnable {
         private final List<File> addFiles;
         private final List<File> remFiles;
-        private boolean doFire = true;
         private final int fid;
         private int addStart = 0;
         private int remStart = 0;
@@ -536,12 +527,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.fid = fid;
         }
 
-        synchronized void cancel() {
-            doFire = false;
-        }
-
         public synchronized void run() {
-            if (fetchID.get() == fid && doFire) {
+            if (fetchID.get() == fid) {
                 int remSize = (remFiles == null) ? 0 : remFiles.size();
                 int addSize = (addFiles == null) ? 0 : addFiles.size();
                 synchronized(fileCache) {
