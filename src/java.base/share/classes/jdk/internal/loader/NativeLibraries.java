@@ -130,7 +130,7 @@ public final class NativeLibraries {
                                 if (file.getName().contains("(")){
                                     String pathWithMember = file.getCanonicalPath();
                                     int openBracketIndex = pathWithMember.lastIndexOf("(");
-                                    String newFileName = path.substring(0, openBracketIndex);
+                                    String newFileName = pathWithMember.substring(0, openBracketIndex);
                                     File file2 = new File(newFileName);
                                     file.renameTo(file2);
                                     if (file2.exists()){
