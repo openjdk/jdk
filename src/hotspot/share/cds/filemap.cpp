@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 
 # include <sys/stat.h>
@@ -576,12 +576,14 @@ int FileMapInfo::get_module_shared_path_index(Symbol* location) {
   const char* file = ClassLoader::skip_uri_protocol(location->as_C_string());
   for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
     SharedClassPathEntry* ent = shared_path(i);
-    assert(ent->in_named_module(), "must be");
-    bool cond = strcmp(file, ent->name()) == 0;
-    log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
-                           location->as_C_string(), ent->name(), cond ? "same" : "different");
-    if (cond) {
-      return i;
+    if (!ent->is_non_existent()) {
+      assert(ent->in_named_module(), "must be");
+      bool cond = strcmp(file, ent->name()) == 0;
+      log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
+                             location->as_C_string(), ent->name(), cond ? "same" : "different");
+      if (cond) {
+        return i;
+      }
     }
   }
 
@@ -1662,9 +1664,9 @@ void FileMapInfo::close() {
 /*
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* map_memory(int fd, const char* file_name, size_t file_offset,
-                 char *addr, size_t bytes, bool read_only,
-                 bool allow_exec, MEMFLAGS flags = mtNone) {
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, flags);
@@ -1688,9 +1690,12 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     return false;
   }
   char *addr = r->mapped_base();
-  char *base = os::remap_memory(_fd, _full_path, r->file_offset(),
-                                addr, size, false /* !read_only */,
-                                r->allow_exec());
+  // This path should not be reached for Windows; see JDK-8222379.
+  assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
+  // Replace old mapping with new one that is writable.
+  char *base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              addr, size, false /* !read_only */,
+                              r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -2154,7 +2159,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       unmap_region(MetaspaceShared::hp);

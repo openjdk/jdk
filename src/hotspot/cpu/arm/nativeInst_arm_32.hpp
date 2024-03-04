@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -385,7 +385,7 @@ class NativeMovConstReg: public NativeInstruction {
   }
   void set_pc_relative_offset(address addr, address pc);
   address next_instruction_address() const {
-    // NOTE: CompiledStaticCall::set_to_interpreted() calls this but
+    // NOTE: CompiledDirectCall::set_to_interpreted() calls this but
     // are restricted to single-instruction ldr. No need to jump over
     // several instructions.
     assert(is_ldr_literal(), "Should only use single-instructions load");
@@ -396,7 +396,7 @@ class NativeMovConstReg: public NativeInstruction {
 inline NativeMovConstReg* nativeMovConstReg_at(address address) {
   NativeInstruction* ni = nativeInstruction_at(address);
   assert(ni->is_ldr_literal() || ni->is_pc_rel() ||
-         ni->is_movw() && VM_Version::supports_movw(), "must be");
+         (ni->is_movw() && VM_Version::supports_movw()), "must be");
   return (NativeMovConstReg*)address;
 }
 
@@ -438,8 +438,8 @@ inline NativeCall* nativeCall_before(address return_address) {
 class NativePostCallNop: public NativeInstruction {
 public:
   bool check() const { return is_nop(); }
-  int displacement() const { return 0; }
-  void patch(jint diff);
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const { return false; }
+  bool patch(int32_t oopmap_slot, int32_t cb_offset) { return false; }
   void make_deopt();
 };
 

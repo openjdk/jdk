@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 #include "unittest.hpp"
 #include "utilities/ostream.hpp"
 
-LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(NULL) {
+LogTestFixture::LogTestFixture() : _n_snapshots(0), _configuration_snapshot(nullptr) {
 
   // Set up TestLogFileName to include temp_dir, PID, testcase name and test name.
   const testing::TestInfo* test_info = ::testing::UnitTest::GetInstance()->current_test_info();
@@ -98,19 +98,19 @@ void LogTestFixture::restore_config() {
     char* decorators = str;
 
     str = strchr(str, ' ');
-    if (str != NULL) {
+    if (str != nullptr) {
       // This output has options. However, UL doesn't allow the options of any
       // output to be changed, so they cannot be modified by the tests,
       // and also we cannot change them here. So just mark the end of the
       // decorators.
       *str++ = '\0';
     }
-    set_log_config(name, selection, decorators, /* options = */ NULL);
+    set_log_config(name, selection, decorators, /* options = */ nullptr);
   }
 }
 
 void LogTestFixture::clear_snapshot() {
-  if (_configuration_snapshot == NULL) {
+  if (_configuration_snapshot == nullptr) {
     return;
   }
   ASSERT_GT(_n_snapshots, size_t(0)) << "non-null array should have at least 1 element";
@@ -118,6 +118,6 @@ void LogTestFixture::clear_snapshot() {
     os::free(_configuration_snapshot[i]);
   }
   FREE_C_HEAP_ARRAY(char*, _configuration_snapshot);
-  _configuration_snapshot = NULL;
+  _configuration_snapshot = nullptr;
   _n_snapshots = 0;
 }

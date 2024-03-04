@@ -23,8 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1SurvivorRegions.hpp"
-#include "gc/g1/heapRegion.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/debug.hpp"
 

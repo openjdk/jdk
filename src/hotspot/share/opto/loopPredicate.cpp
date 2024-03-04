@@ -850,9 +850,10 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scal
     // Check if (scale * max_idx_expr) may overflow
     const TypeInt* scale_type = TypeInt::make(scale);
     MulINode* mul = new MulINode(max_idx_expr, con_scale);
-    idx_type = (TypeInt*)mul->mul_ring(idx_type, scale_type);
-    if (overflow || TypeInt::INT->higher_equal(idx_type)) {
+
+    if (overflow || MulINode::does_overflow(idx_type, scale_type)) {
       // May overflow
+      idx_type = TypeInt::INT;
       mul->destruct(&_igvn);
       if (!overflow) {
         max_idx_expr = new ConvI2LNode(max_idx_expr);
@@ -865,6 +866,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scal
     } else {
       // No overflow possible
       max_idx_expr = mul;
+      idx_type = (TypeInt*)mul->mul_ring(idx_type, scale_type);
     }
     register_new_node(max_idx_expr, ctrl);
   }
@@ -1180,6 +1182,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     return false;
   }
   BoolNode* bol = test->as_Bool();
+  bool range_check_predicate = false;
   if (invar.is_invariant(bol)) {
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_IC, 4, iff);
     // Invariant test
@@ -1212,6 +1215,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     }
 #endif
   } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA parse_predicate_proj))) {
+    range_check_predicate = true;
     C->print_method(PHASE_BEFORE_LOOP_PREDICATION_RC, 4, iff);
     // Range check for counted loops
     assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
@@ -1294,7 +1298,10 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   invar.map_ctrl(if_success_proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con);
+  // If a range check is eliminated, data dependent nodes (Load and range check CastII nodes) are now dependent on 2
+  // Hoisted Check Predicates (one for the start of the loop, one for the end) but we can only keep track of one control
+  // dependency: pin the data dependent nodes.
+  dominated_by(new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con, range_check_predicate);
 
   C->set_major_progress();
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020 Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -118,10 +118,6 @@ extern "C" {
     else
       Disassembler::decode((address)start, (address)start + len);
   }
-
-  JNIEXPORT void das1(uintptr_t insn) {
-    das(insn, 1);
-  }
 }
 
 #define __ as->
@@ -186,6 +182,26 @@ void Address::lea(MacroAssembler *as, Register r) const {
     f(1, 31), f(offset_lo, 30, 29), f(0b10000, 28, 24), sf(offset, 23, 5);
     zrf(Rd, 0);
   }
+
+// This encoding is similar (but not quite identical) to the encoding used
+// by literal ld/st. see JDK-8324123.
+// PRFM does not support writeback or pre/post index.
+void Assembler::prfm(const Address &adr, prfop pfop) {
+  Address::mode mode = adr.getMode();
+  // PRFM does not support pre/post index
+  guarantee((mode != Address::pre) && (mode != Address::post), "prfm does not support pre/post indexing");
+  if (mode == Address::literal) {
+    starti;
+    f(0b11, 31, 30), f(0b011, 29, 27), f(0b000, 26, 24);
+    f(pfop, 4, 0);
+    int64_t offset = (adr.target() - pc()) >> 2;
+    sf(offset, 23, 5);
+  } else {
+    assert((mode == Address::base_plus_offset)
+            || (mode == Address::base_plus_offset_reg), "must be base_plus_offset/base_plus_offset_reg");
+    ld_st2(as_Register(pfop), adr, 0b11, 0b10);
+  }
+}
 
 // An "all-purpose" add/subtract immediate, per ARM documentation:
 // A "programmer-friendly" assembler may accept a negative immediate

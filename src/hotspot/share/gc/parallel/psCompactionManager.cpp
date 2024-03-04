@@ -61,6 +61,7 @@ ParCompactionManager::ParCompactionManager() {
   reset_bitmap_query_cache();
 
   _deferred_obj_array = new (mtGC) GrowableArray<HeapWord*>(10, mtGC);
+  _marking_stats_cache = nullptr;
 }
 
 void ParCompactionManager::initialize(ParMarkBitMap* mbm) {

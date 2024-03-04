@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private static String toSourceString(char c) {
         StringBuilder sb = new StringBuilder(4);
         sb.append('\'');
-        sb.append(quote(c));
+        sb.append(quote(c, true));
         return sb.append('\'') .toString();
     }
 
@@ -279,15 +279,21 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * Escapes a character if it has an escape sequence or is
      * non-printable ASCII.  Leaves non-ASCII characters alone.
      */
-    private static String quote(char ch) {
+    private static String quote(char ch, boolean charContext) {
+        /*
+         * In a char context, single quote (') must be escaped and
+         * double quote (") need not be escaped. In a non-char
+         * context, in other words a string context, the reverse is
+         * true.
+         */
         switch (ch) {
         case '\b':  return "\\b";
         case '\f':  return "\\f";
         case '\n':  return "\\n";
         case '\r':  return "\\r";
         case '\t':  return "\\t";
-        case '\'':  return "\\'";
-        case '\"':  return "\\\"";
+        case '\'':  return (charContext ? "\\'" : "'");
+        case '\"':  return (charContext ? "\""  : "\\\"");
         case '\\':  return "\\\\";
         default:
             return (isPrintableAscii(ch))
@@ -323,7 +329,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append('"');
         for (int i = 0; i < s.length(); i++) {
-            sb.append(quote(s.charAt(i)));
+            sb.append(quote(s.charAt(i), false));
         }
         sb.append('"');
         return sb.toString();

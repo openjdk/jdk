@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -47,7 +48,7 @@ static const char* optiontype_names[] = {
 #undef enum_of_types
 };
 
-const char* optiontype2name(enum OptionType type) {
+static const char* optiontype2name(enum OptionType type) {
   return optiontype_names[static_cast<int>(type)];
 }
 
@@ -57,7 +58,7 @@ static enum OptionType option_types[] = {
 #undef enum_of_options
 };
 
-enum OptionType option2type(enum CompileCommand option) {
+static enum OptionType option2type(enum CompileCommand option) {
   return option_types[static_cast<int>(option)];
 }
 
@@ -67,7 +68,7 @@ static const char* option_names[] = {
 #undef enum_of_options
 };
 
-const char* option2name(enum CompileCommand option) {
+static const char* option2name(enum CompileCommand option) {
   return option_names[static_cast<int>(option)];
 }
 
@@ -107,7 +108,7 @@ static bool print_final_memstat_report = false;
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
 
-void command_set_in_filter(enum CompileCommand option) {
+static void command_set_in_filter(enum CompileCommand option) {
   assert(option != CompileCommand::Unknown, "sanity");
   assert(option2type(option) != OptionType::Unknown, "sanity");
 
@@ -119,7 +120,7 @@ void command_set_in_filter(enum CompileCommand option) {
   option_filter[static_cast<int>(option)] = true;
 }
 
-bool has_command(enum CompileCommand option) {
+static bool has_command(enum CompileCommand option) {
   return option_filter[static_cast<int>(option)];
 }
 
@@ -546,7 +547,7 @@ enum OptionType CompilerOracle::parse_option_type(const char* type_str) {
   return OptionType::Unknown;
 }
 
-void print_tip() { // CMH Update info
+static void print_tip() { // CMH Update info
   tty->cr();
   tty->print_cr("Usage: '-XX:CompileCommand=<option>,<method pattern>' - to set boolean option to true");
   tty->print_cr("Usage: '-XX:CompileCommand=<option>,<method pattern>,<value>'");
@@ -554,13 +555,13 @@ void print_tip() { // CMH Update info
   tty->cr();
 }
 
-void print_option(enum CompileCommand option, const char* name, enum OptionType type) {
+static void print_option(enum CompileCommand option, const char* name, enum OptionType type) {
   if (type != OptionType::Unknown) {
     tty->print_cr("    %s (%s)", name, optiontype2name(type));
   }
 }
 
-void print_commands() {
+static void print_commands() {
   tty->cr();
   tty->print_cr("All available options:");
 #define enum_of_options(option, name, ctype) print_option(CompileCommand::option, name, OptionType::ctype);
@@ -620,7 +621,7 @@ static void usage() {
   tty->cr();
 };
 
-int skip_whitespace(char* &line) {
+static int skip_whitespace(char* &line) {
   // Skip any leading spaces
   int whitespace_read = 0;
   sscanf(line, "%*[ \t]%n", &whitespace_read);
@@ -628,7 +629,7 @@ int skip_whitespace(char* &line) {
   return whitespace_read;
 }
 
-void skip_comma(char* &line) {
+static void skip_comma(char* &line) {
   // Skip any leading spaces
   if (*line == ',') {
     line++;
@@ -775,8 +776,14 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
-#ifndef PRODUCT
-      else if (option == CompileCommand::PrintIdealPhase) {
+#if !defined(PRODUCT) && defined(COMPILER2)
+      else if (option == CompileCommand::TraceAutoVectorization) {
+        TraceAutoVectorizationTagValidator validator(value, true);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::PrintIdealPhase) {
         PhaseNameValidator validator(value);
 
         if (!validator.is_valid()) {

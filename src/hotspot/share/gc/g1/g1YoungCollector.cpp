@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RedirtyCardsQueue.hpp"
+#include "gc/g1/g1RegionPinCache.inline.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1Trace.hpp"
@@ -403,7 +404,7 @@ class G1PrepareEvacuationTask : public WorkerTask {
         _g1h->register_region_with_region_attr(hr);
       }
       log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
-                               "marked %d pinned count %u reclaim candidate %d type array %d",
+                               "marked %d pinned count %zu reclaim candidate %d type array %d",
                                index,
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),

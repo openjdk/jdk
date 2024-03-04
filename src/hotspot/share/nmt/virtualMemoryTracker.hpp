@@ -390,7 +390,7 @@ class VirtualMemoryTracker : AllStatic {
   // Given an existing memory mapping registered with NMT, split the mapping in
   //  two. The newly created two mappings will be registered under the call
   //  stack and the memory flags of the original section.
-  static bool split_reserved_region(address addr, size_t size, size_t split);
+  static bool split_reserved_region(address addr, size_t size, size_t split, MEMFLAGS flag, MEMFLAGS split_flag);
 
   // Walk virtual memory data structure for creating baseline, etc.
   static bool walk_virtual_memory(VirtualMemoryWalker* walker);

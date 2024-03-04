@@ -1,5 +1,5 @@
 //
-// Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 
 // archDesc.cpp - Internal format for architecture definition
+#include <unordered_set>
 #include "adlc.hpp"
 
 static FILE *errfile = stderr;
@@ -684,6 +685,98 @@ bool ArchDesc::verify() {
   return true;
 }
 
+class MarkUsageFormClosure : public FormClosure {
+private:
+  ArchDesc* _ad;
+  std::unordered_set<Form*> *_visited;
+
+public:
+  MarkUsageFormClosure(ArchDesc* ad, std::unordered_set<Form*> *visit_map) {
+    _ad = ad;
+    _visited = visit_map;
+  }
+  virtual ~MarkUsageFormClosure() = default;
+
+  virtual void do_form(Form *form) {
+    if (_visited->find(form) == _visited->end()) {
+      _visited->insert(form);
+      form->forms_do(this);
+    }
+  }
+
+  virtual void do_form_by_name(const char* name) {
+    const Form* form = _ad->globalNames()[name];
+    if (form) {
+      do_form(const_cast<Form*>(form));
+      return;
+    }
+    RegisterForm* regs = _ad->get_registers();
+    if (regs->getRegClass(name)) {
+      do_form(regs->getRegClass(name));
+      return;
+    }
+  }
+};
+
+// check unused operands
+bool ArchDesc::check_usage() {
+  std::unordered_set<Form*> visited;
+  MarkUsageFormClosure callback(this, &visited);
+  _instructions.reset();
+  // iterate all instruction to mark used form
+  InstructForm* instr;
+  for ( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
+    callback.do_form(instr);
+  }
+
+  // these forms are coded in OperandForm::is_user_name_for_sReg
+  // it may happen no instruction use these operands, like stackSlotP in aarch64,
+  // but we can not desclare they are useless.
+  callback.do_form_by_name("stackSlotI");
+  callback.do_form_by_name("stackSlotP");
+  callback.do_form_by_name("stackSlotD");
+  callback.do_form_by_name("stackSlotF");
+  callback.do_form_by_name("stackSlotL");
+
+  // sReg* are initial created by adlc in ArchDesc::initBaseOpTypes()
+  // In ARM, no definition or usage in adfile, but they are reported as unused
+  callback.do_form_by_name("sRegI");
+  callback.do_form_by_name("sRegP");
+  callback.do_form_by_name("sRegD");
+  callback.do_form_by_name("sRegF");
+  callback.do_form_by_name("sRegL");
+
+  // special generic vector operands only used in Matcher::pd_specialize_generic_vector_operand
+#if defined(AARCH64)
+  callback.do_form_by_name("vecA");
+  callback.do_form_by_name("vecD");
+  callback.do_form_by_name("vecX");
+#elif defined(AMD64)
+  callback.do_form_by_name("vecS");
+  callback.do_form_by_name("vecD");
+  callback.do_form_by_name("vecX");
+  callback.do_form_by_name("vecY");
+  callback.do_form_by_name("vecZ");
+  callback.do_form_by_name("legVecS");
+  callback.do_form_by_name("legVecD");
+  callback.do_form_by_name("legVecX");
+  callback.do_form_by_name("legVecY");
+  callback.do_form_by_name("legVecZ");
+#endif
+
+  int cnt = 0;
+  _operands.reset();
+  OperandForm* operand;
+  for ( ; (operand = (OperandForm*)_operands.iter()) != nullptr; ) {
+    if(visited.find(operand) == visited.end() && !operand->ideal_only()) {
+      fprintf(stderr, "\nWarning: unused operand (%s)", operand->_ident);
+      cnt++;
+    }
+  }
+  if (cnt) fprintf(stderr, "\n-------Warning: total %d unused operands\n", cnt);
+
+  return true;
+}
 
 void ArchDesc::dump() {
   _pre_header.dump();

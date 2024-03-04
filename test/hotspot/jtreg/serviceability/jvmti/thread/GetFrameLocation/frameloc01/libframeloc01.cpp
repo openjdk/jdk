@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,14 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti_env = NULL;
+static jvmtiEnv *jvmti_env = nullptr;
 static jint result = PASSED;
 static jmethodID mid1;
 
@@ -40,7 +40,7 @@ static jmethodID mid1;
 jboolean checkFrame(jvmtiEnv *jvmti_env, JNIEnv *jni, jthread thr, jmethodID exp_mid,
                     jlocation exp_loc, jlocation exp_loc_alternative, jboolean mustPass) {
   jvmtiError err;
-  jmethodID mid = NULL;
+  jmethodID mid = nullptr;
   jlocation loc = -1;
   char *meth, *sig, *generic;
   jboolean isOk = JNI_FALSE;
@@ -88,7 +88,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   jvmtiError err;
 
   jint res = jvm->GetEnv((void **) &jvmti_env, JVMTI_VERSION_1_1);
-  if (res != JNI_OK || jvmti_env == NULL) {
+  if (res != JNI_OK || jvmti_env == nullptr) {
     LOG("Wrong result of a valid call to GetEnv !\n");
     return JNI_ERR;
   }
@@ -115,13 +115,13 @@ JNIEXPORT void JNICALL
 Java_frameloc01_getReady(JNIEnv *jni, jclass cls, jclass klass) {
   jvmtiError err;
   mid1 = jni->GetMethodID(klass, "meth01", "(I)V");
-  if (mid1 == NULL) {
+  if (mid1 == nullptr) {
     LOG("Cannot get jmethodID for method \"meth01\"\n");
     result = STATUS_FAILED;
     return;
   }
 
-  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, NULL);
+  err = jvmti_env->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_EXCEPTION_CATCH, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("(SetEventNotificationMode) unexpected error: %s (%d)\n", TranslateError(err), err);
     result = STATUS_FAILED;
@@ -134,7 +134,7 @@ Java_frameloc01_checkFrame01(JNIEnv *jni, jclass cls, jthread thr, jclass klass,
   jboolean isOk = JNI_FALSE;
 
   mid = jni->GetMethodID(klass, "run", "()V");
-  if (mid == NULL) {
+  if (mid == nullptr) {
     LOG("Cannot get jmethodID for method \"run\"\n");
     result = STATUS_FAILED;
     return JNI_TRUE;

@@ -1,5 +1,5 @@
-# 
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+#
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,34 @@
 # questions.
 #
 
+        .globl SpinPause
 
         # NOTE WELL!  The _Copy functions are called directly
-	# from server-compiler-generated code via CallLeafNoFP,
-	# which means that they *must* either not use floating
-	# point or use it in the same manner as does the server
-	# compiler.
-	
+        # from server-compiler-generated code via CallLeafNoFP,
+        # which means that they *must* either not use floating
+        # point or use it in the same manner as does the server
+        # compiler.
+
         .globl _Copy_arrayof_conjoint_bytes
-	.globl _Copy_arrayof_conjoint_jshorts
+        .globl _Copy_arrayof_conjoint_jshorts
         .globl _Copy_conjoint_jshorts_atomic
         .globl _Copy_arrayof_conjoint_jints
         .globl _Copy_conjoint_jints_atomic
         .globl _Copy_arrayof_conjoint_jlongs
         .globl _Copy_conjoint_jlongs_atomic
 
-	.text
+        .hidden SpinPause
 
-        .globl SpinPause
+        .hidden _Copy_arrayof_conjoint_bytes
+        .hidden _Copy_arrayof_conjoint_jshorts
+        .hidden _Copy_conjoint_jshorts_atomic
+        .hidden _Copy_arrayof_conjoint_jints
+        .hidden _Copy_conjoint_jints_atomic
+        .hidden _Copy_arrayof_conjoint_jlongs
+        .hidden _Copy_conjoint_jlongs_atomic
+
+        .text
+
         .align 16
         .type  SpinPause,@function
 SpinPause:
@@ -55,7 +65,7 @@ SpinPause:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_bytes,@function
+        .type    _Copy_arrayof_conjoint_bytes,@function
 _Copy_arrayof_conjoint_bytes:
         movq     %rdx,%r8             # byte count
         shrq     $3,%rdx              # qword count
@@ -63,7 +73,7 @@ _Copy_arrayof_conjoint_bytes:
         leaq     -1(%rdi,%r8,1),%rax  # from + bcount*1 - 1
         jbe      acb_CopyRight
         cmpq     %rax,%rsi
-        jbe      acb_CopyLeft 
+        jbe      acb_CopyLeft
 acb_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -157,8 +167,8 @@ acb_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_jshorts,@function
-	.type    _Copy_conjoint_jshorts_atomic,@function
+        .type    _Copy_arrayof_conjoint_jshorts,@function
+        .type    _Copy_conjoint_jshorts_atomic,@function
 _Copy_arrayof_conjoint_jshorts:
 _Copy_conjoint_jshorts_atomic:
         movq     %rdx,%r8             # word count
@@ -167,7 +177,7 @@ _Copy_conjoint_jshorts_atomic:
         leaq     -2(%rdi,%r8,2),%rax  # from + wcount*2 - 2
         jbe      acs_CopyRight
         cmpq     %rax,%rsi
-        jbe      acs_CopyLeft 
+        jbe      acs_CopyLeft
 acs_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -247,8 +257,8 @@ acs_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_jints,@function
-	.type    _Copy_conjoint_jints_atomic,@function
+        .type    _Copy_arrayof_conjoint_jints,@function
+        .type    _Copy_conjoint_jints_atomic,@function
 _Copy_arrayof_conjoint_jints:
 _Copy_conjoint_jints_atomic:
         movq     %rdx,%r8             # dword count
@@ -257,7 +267,7 @@ _Copy_conjoint_jints_atomic:
         leaq     -4(%rdi,%r8,4),%rax  # from + dcount*4 - 4
         jbe      aci_CopyRight
         cmpq     %rax,%rsi
-        jbe      aci_CopyLeft 
+        jbe      aci_CopyLeft
 aci_CopyRight:
         leaq     -8(%rdi,%rdx,8),%rax # from + qcount*8 - 8
         leaq     -8(%rsi,%rdx,8),%rcx # to + qcount*8 - 8
@@ -326,15 +336,15 @@ aci_CopyLeft:
         # rdx - count, treated as ssize_t
         #
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_jlongs,@function
-	.type    _Copy_conjoint_jlongs_atomic,@function
+        .type    _Copy_arrayof_conjoint_jlongs,@function
+        .type    _Copy_conjoint_jlongs_atomic,@function
 _Copy_arrayof_conjoint_jlongs:
 _Copy_conjoint_jlongs_atomic:
         cmpq     %rdi,%rsi
         leaq     -8(%rdi,%rdx,8),%rax # from + count*8 - 8
         jbe      acl_CopyRight
         cmpq     %rax,%rsi
-        jbe      acl_CopyLeft 
+        jbe      acl_CopyLeft
 acl_CopyRight:
         leaq     -8(%rsi,%rdx,8),%rcx # to + count*8 - 8
         negq     %rdx

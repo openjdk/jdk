@@ -170,17 +170,6 @@ void AwtList::ReleaseDragCapture(UINT flags)
 void AwtList::Reshape(int x, int y, int w, int h)
 {
     AwtComponent::Reshape(x, y, w, h);
-
-/*
-    HWND hList = GetListHandle();
-    if (hList != NULL) {
-        long flags = SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOCOPYBITS;
-        /*
-         * Fix for bug 4046446.
-         * /
-        SetWindowPos(hList, 0, 0, 0, w, h, flags);
-    }
-*/
 }
 
 //Netscape : Override the AwtComponent method so we can set the item height
