@@ -315,7 +315,7 @@ public class TestMarkdownHeadings extends JavadocTester {
                 // note only the level 1 headings in the class description
                 """
                     <div class="toc-header">Contents&nbsp;
-                    <input type="text" class="filter-input" disabled placeholder="Filter" aria-label="Filter table of contents" autocomplete="off" autocapitalize="off">
+                    <input type="text" class="filter-input" disabled placeholder="Filter" aria-label="Filter table of contents" autocomplete="off">
                     <input type="reset" class="reset-filter" disabled value="Reset">
                     </div>
                     <button class="hide-sidebar"><span>Hide sidebar&nbsp;</span>&#10094;</button><button class="show-sidebar">&#10095;<span>&nbsp;Show sidebar</span></button>
