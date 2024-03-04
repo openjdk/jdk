@@ -98,41 +98,6 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * initial mapped value or memoized result, as in:
      *
      * <pre> {@code
-     * Value witness = monotonic.computeIfUnbound(key, valueHandle);
-     * }</pre>
-     *
-     * @param supplier the supplier to compute a value
-     * @return the current (existing or computed) bound value
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code monotonic} if it holds a reference value:
-     *
-     * <pre> {@code
-     * if (!monotonic.isBound()) {
-     *     V newValue = (V) (Object) supplier.invokeExact();
-     *     monotonic.set(newValue);
-     *     return newValue;
-     * } else {
-     *     return monotonic.get();
-     * }
-     * }</pre>
-     * Except it is thread-safe and will only return the same witness value regardless if
-     * invoked by several threads.
-     *
-     * <p>The implementation is guaranteed to be lock free but may invoke suppliers
-     * from several threads. Hence, any given supplier may be invoked several times.
-     */
-    V computeIfUnbound(MethodHandle supplier);
-
-    /**
-     * If a value is {@linkplain #isBound() not bound}, attempts to compute and bind a
-     * value using the provided {@code supplier}.
-     *
-     * <p>
-     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is bound. The most common usage is to construct a new object serving as an
-     * initial mapped value or memoized result, as in:
-     *
-     * <pre> {@code
      * Value witness = monotonic.computeIfUnbound(key, Value::new);
      * }</pre>
      *
@@ -159,6 +124,41 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     V computeIfUnbound(Supplier<? extends V> supplier);
 
     /**
+     * If a value is {@linkplain #isBound() not bound}, attempts to compute and bind a
+     * value using the provided {@code supplier}.
+     *
+     * <p>
+     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
+     * value is bound. The most common usage is to construct a new object serving as an
+     * initial mapped value or memoized result, as in:
+     *
+     * <pre> {@code
+     * Value witness = monotonic.computeIfUnbound(key, valueHandle);
+     * }</pre>
+     *
+     * @param supplier the supplier to compute a value
+     * @return the current (existing or computed) bound value
+     * @implSpec The implementation logic is equivalent to the following steps for this
+     * {@code monotonic} if it holds a reference value:
+     *
+     * <pre> {@code
+     * if (!monotonic.isBound()) {
+     *     V newValue = (V) (Object) supplier.invokeExact();
+     *     monotonic.set(newValue);
+     *     return newValue;
+     * } else {
+     *     return monotonic.get();
+     * }
+     * }</pre>
+     * Except it is thread-safe and will only return the same witness value regardless if
+     * invoked by several threads.
+     *
+     * <p>The implementation is guaranteed to be lock free but may invoke suppliers
+     * from several threads. Hence, any given supplier may be invoked several times.
+     */
+    V computeIfUnbound(MethodHandle supplier);
+
+    /**
      * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
      * value of this monotonic}
      * <p>
@@ -178,6 +178,8 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param supplier for which it's get() result is to be memoized
      * @param <R>      the return type of the provided {@code supplier}
      */
+    // Only in 1a
+    // Provides very little value
     @SuppressWarnings("unchecked")
     default <R extends V> Supplier<R> asMemoized(Supplier<R> supplier) {
         Objects.requireNonNull(supplier);
@@ -222,6 +224,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      *
      * @param <V> the monotonic value type
      */
+    // Only in 1a
     sealed interface MonotonicList<V>
             extends List<Monotonic<V>>, RandomAccess
             permits InternalMonotonicList {
@@ -255,6 +258,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param <K> the type of keys maintained by this map
      * @param <V> the type of monotonic values
      */
+    // Only in 1a
     interface MonotonicMap<K, V> extends Map<K, Monotonic<V>> {
 
         /**
