@@ -1348,9 +1348,8 @@ public:
   Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
   const Unique_Node_List& find_nodes_with_same_ctrl(DataInputGraph& data_input_graph, const ProjNode* ctrl);
   Node* clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
-  void fix_cloned_data_node_controls(
-      const ProjNode* old_uncommon_proj, Node* new_uncommon_proj,
-      const ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler>& orig_to_new);
+  void fix_cloned_data_node_controls(const ProjNode* orig, Node* new_uncommon_proj,
+                                     const OrigToNewHashtable& orig_to_clone);
   bool has_dominating_loop_limit_check(Node* init_trip, Node* limit, jlong stride_con, BasicType iv_bt,
                                        Node* loop_entry);
 
@@ -1889,7 +1888,7 @@ public:
 class DataNodeGraph : public StackObj {
   PhaseIdealLoop* const _phase;
   const Unique_Node_List& _data_nodes;
-  ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler> _orig_to_new;
+  OrigToNewHashtable _orig_to_new;
 
  public:
   DataNodeGraph(const Unique_Node_List& data_nodes, PhaseIdealLoop* phase)
@@ -1914,7 +1913,7 @@ class DataNodeGraph : public StackObj {
  public:
   // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
   // Set `new_ctrl` as ctrl for the cloned nodes.
-  const ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler>& clone(Node* new_ctrl) {
+  const OrigToNewHashtable& clone(Node* new_ctrl) {
     clone_nodes(new_ctrl);
     rewire_clones_to_cloned_inputs();
     return _orig_to_new;

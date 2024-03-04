@@ -251,24 +251,24 @@ Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old
   DEBUG_ONLY(uint last_idx = C->unique();)
   const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
   DataNodeGraph data_node_graph(nodes_with_same_ctrl, this);
-  auto& orig_to_new = data_node_graph.clone(new_uncommon_proj);
-  fix_cloned_data_node_controls(old_uncommon_proj, new_uncommon_proj, orig_to_new);
-  Node** cloned_node_ptr = orig_to_new.get(start_node);
+  const OrigToNewHashtable& orig_to_clone = data_node_graph.clone(new_uncommon_proj);
+  fix_cloned_data_node_controls(old_uncommon_proj, new_uncommon_proj, orig_to_clone);
+  Node** cloned_node_ptr = orig_to_clone.get(start_node);
   assert(cloned_node_ptr != nullptr && (*cloned_node_ptr)->_idx >= last_idx, "must exist and be a proper clone");
   return *cloned_node_ptr;
 }
 
 // All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
 // projection (could not only be the last data node in the chain but also, for example, a pinned DivNode within the chain).
-void PhaseIdealLoop::fix_cloned_data_node_controls(
-    const ProjNode* old_uncommon_proj, Node* new_uncommon_proj,
-    const ResizeableResourceHashtable<Node*, Node*, AnyObj::RESOURCE_AREA, mtCompiler>& orig_to_new) {
-  orig_to_new.iterate_all([&](Node* node, Node* clone) {
-    if (node->in(0) == old_uncommon_proj) {
+void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_proj, Node* new_uncommon_proj,
+                                                   const OrigToNewHashtable& orig_to_clone) {
+  auto orig_clone_action = [&](Node* orig, Node* clone) {
+    if (orig->in(0) == old_uncommon_proj) {
       _igvn.replace_input_of(clone, 0, new_uncommon_proj);
       set_ctrl(clone, new_uncommon_proj);
     }
-  });
+  };
+  orig_to_clone.iterate_all(orig_clone_action);
 }
 
 IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj,
