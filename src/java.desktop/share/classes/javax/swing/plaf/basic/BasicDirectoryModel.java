@@ -527,7 +527,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             this.fid = fid;
         }
 
-        public synchronized void run() {
+        @Override
+        public void run() {
             if (fetchID.get() != fid) {
                 return;
             }
