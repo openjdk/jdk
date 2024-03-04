@@ -77,12 +77,8 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-G1CMIsAliveClosure::G1CMIsAliveClosure(G1CollectedHeap* g1h) :
-  _g1h(g1h), _cm(g1h->concurrent_mark()) { }
-
-void G1CMIsAliveClosure::set_concurrent_mark(G1ConcurrentMark* cm) {
-  assert(_cm == nullptr, "already set");
-  _cm = cm;
+G1CMIsAliveClosure::G1CMIsAliveClosure(G1ConcurrentMark* cm) : _cm(cm) {
+  assert(cm != nullptr, "must be");
 }
 
 bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {
@@ -857,8 +853,6 @@ public:
   bool do_heap_region(HeapRegion* r) override {
     if (r->is_old_or_humongous() && !r->is_collection_set_candidate()) {
       _cm->update_top_at_mark_start(r);
-    } else {
-      _cm->reset_top_at_mark_start(r);
     }
     return false;
   }
@@ -877,17 +871,7 @@ G1PreConcurrentStartTask::G1PreConcurrentStartTask(GCCause::Cause cause, G1Concu
   G1BatchedTask("Pre Concurrent Start", G1CollectedHeap::heap()->phase_times()) {
   add_serial_task(new ResetMarkingStateTask(cm));
   add_parallel_task(new NoteStartOfMarkTask());
-
-  //cm->invalidate_top_at_mark_starts();
 };
-
-#ifdef ASSERT
-void G1ConcurrentMark::invalidate_top_at_mark_starts() {
-  for (uint i = 0; i < G1CollectedHeap::heap()->max_reserved_regions(); i++) {
-    _top_at_mark_starts[i] = nullptr;
-  }
-}
-#endif
 
 void G1ConcurrentMark::pre_concurrent_start(GCCause::Cause cause) {
   assert_at_safepoint_on_vm_thread();
@@ -1357,7 +1341,7 @@ void G1ConcurrentMark::remark() {
 
     // Unload Klasses, String, Code Cache, etc.
     if (ClassUnloadingWithConcurrentMark) {
-      G1CMIsAliveClosure is_alive(_g1h);
+      G1CMIsAliveClosure is_alive(this);
       _g1h->unload_classes_and_code("Class Unloading", &is_alive, _gc_timer_cm);
     }
 
@@ -1704,7 +1688,7 @@ public:
 
   void work(uint worker_id) override {
     assert(worker_id < _max_workers, "sanity");
-    G1CMIsAliveClosure is_alive(&_g1h);
+    G1CMIsAliveClosure is_alive(&_cm);
     uint index = (_tm == RefProcThreadModel::Single) ? 0 : worker_id;
     G1CMKeepAliveAndDrainClosure keep_alive(&_cm, _cm.task(index), _tm == RefProcThreadModel::Single);
     BarrierEnqueueDiscoveredFieldClosure enqueue;
@@ -1783,7 +1767,7 @@ void G1ConcurrentMark::weak_refs_work() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Weak Processing", _gc_timer_cm);
-    G1CMIsAliveClosure is_alive(_g1h);
+    G1CMIsAliveClosure is_alive(this);
     WeakProcessor::weak_oops_do(_g1h->workers(), &is_alive, &do_nothing_cl, 1);
   }
 }

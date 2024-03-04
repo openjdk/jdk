@@ -54,7 +54,7 @@ inline bool G1CMIsAliveClosure::do_object_b(oop obj) {
   }
 
   // All objects that are marked are live.
-  return _g1h->is_marked(obj);
+  return _cm->is_marked_in_bitmap(obj);
 }
 
 inline bool G1CMSubjectToDiscoveryClosure::do_object_b(oop obj) {

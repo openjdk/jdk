@@ -864,7 +864,7 @@ public:
   // _is_alive_non_header field is optional but doing so prevents
   // unnecessary additions to the discovered lists during reference
   // discovery.
-  G1CMIsAliveClosure _is_alive_closure_cm;
+  G1CMIsAliveClosure* _is_alive_closure_cm;
 
   G1CMSubjectToDiscoveryClosure _is_subject_to_discovery_cm;
 public:

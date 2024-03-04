@@ -41,11 +41,11 @@
 #include "utilities/numberSeq.hpp"
 
 class ConcurrentGCTimer;
-class G1ConcurrentMarkThread;
 class G1CollectedHeap;
+class G1ConcurrentMark;
+class G1ConcurrentMarkThread;
 class G1CMOopClosure;
 class G1CMTask;
-class G1ConcurrentMark;
 class G1OldTracer;
 class G1RegionToSpaceMapper;
 class G1SurvivorRegions;
@@ -96,11 +96,9 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // are alive. An instance is also embedded into the
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
-  G1CollectedHeap* _g1h;
   G1ConcurrentMark* _cm;
 public:
-  G1CMIsAliveClosure(G1CollectedHeap* g1h);
-  void set_concurrent_mark(G1ConcurrentMark* cm);
+  G1CMIsAliveClosure(G1ConcurrentMark* cm);
 
   bool do_object_b(oop obj);
 };
@@ -542,6 +540,8 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
+  // Top pointer for each region at the start of marking. Must be valid for all committed
+  // regions.
   HeapWord* volatile* _top_at_mark_starts;
   // Top pointer for each region at the start of the rebuild remembered set process
   // for regions which remembered sets need to be rebuilt. A null for a given region
@@ -562,13 +562,15 @@ public:
   // Set live bytes for concurrent marking.
   void set_live_bytes(uint region, size_t live_bytes) { _region_mark_stats[region]._live_words = live_bytes / HeapWordSize; }
 
+  // Update the TAMS for the given region to the current top.
   inline void update_top_at_mark_start(HeapRegion* r);
+  // Reset the TAMS for the given region to bottom of that region.
   inline void reset_top_at_mark_start(HeapRegion* r);
+
   inline HeapWord* top_at_mark_start(const HeapRegion* r) const;
   inline HeapWord* top_at_mark_start(uint region) const;
+  // Returns whether the given object been allocated since marking start (i.e. >= TAMS in that region).
   inline bool obj_allocated_since_mark_start(oop obj) const;
-
-  void invalidate_top_at_mark_starts() NOT_DEBUG_RETURN;
 
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);

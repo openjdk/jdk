@@ -124,6 +124,8 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear();
 
+  G1CollectedHeap::heap()->concurrent_mark()->clear_statistics(this);
+  
   _parsable_bottom = bottom();
   _garbage_bytes = 0;
 
