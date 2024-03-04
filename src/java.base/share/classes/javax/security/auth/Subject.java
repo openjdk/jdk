@@ -109,20 +109,21 @@ import sun.security.util.ResourcesMgr;
  * input type and exceptions thrown are slightly different.
  *
  * <p><b><a id="sm-allowed">These methods behave differently depending on
- * whether a security manager is allowed or disallowed</a></b>:
+ * whether a security manager is
+ * <a href="../../../java/lang/SecurityManager.html#set-security-manager">allowed or disallowed</a></a></b>:
  * <ul>
  * <li>If a security manager is allowed, which means it is either already set
  * or allowed to be set dynamically, a {@code Subject} object is associated
  * with an {@code AccessControlContext} through a {@code doAs} or
  * {@code callAs} call, and the subject can then be retrieved using the
- * {@code getSubject(AccessControlContext)} method.
-*  <li>If a security manager is not allowed, which means it
- * {@linkplain System#setSecurityManager is not set and not allowed to be set
- * dynamically}, a {@code doAs} or {@code callAs} call binds a {@code Subject}
- * object to the period of execution of an action, and the subject can be
- * retrieved using the {@code current} method inside the action. This subject
- * can be inherited by child threads if they are started and terminate within
- * the execution of its parent thread using structured concurrency.
+ * {@code getSubject(AccessControlContext)} or {@code current} method.
+*  <li>If a security manager is not allowed, which means it is not set and
+ * not allowed to be set dynamically, a {@code doAs} or {@code callAs} call
+ * binds a {@code Subject} object to the period of execution of an action,
+ * and the subject can be retrieved using the {@code current} method inside
+ * the action. This subject can be inherited by child threads if they are
+ * started and terminate within the execution of its parent thread using
+ * structured concurrency.
  * </ul>
  *
  * @since 1.4

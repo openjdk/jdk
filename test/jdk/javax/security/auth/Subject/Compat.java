@@ -31,12 +31,11 @@ import java.util.Objects;
 
 /*
  * @test
+ * @bug 8296244
  * @run main/othervm -Djava.security.manager=allow Compat
+ * @summary ensures the old implementation still works when SM is allowed
  */
 public class Compat {
-
-//    static PrivilegedAction<AccessControlContext> action
-//            = () -> AccessController.getContext();
 
     static PrivilegedExceptionAction<AccessControlContext> action
             = () -> AccessController.getContext();

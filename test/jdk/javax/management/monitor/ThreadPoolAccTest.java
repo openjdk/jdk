@@ -33,6 +33,7 @@
  * @run main/othervm -Djava.security.manager=allow ThreadPoolAccTest
  */
 
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Date;
 import java.util.Set;
@@ -66,7 +67,7 @@ public class ThreadPoolAccTest {
             return "";
         }
         private void setPrincipal() {
-            Subject subject = Subject.current();
+            Subject subject = Subject.getSubject(AccessController.getContext());
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             principal = principals.iterator().next().getName();
         }

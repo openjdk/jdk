@@ -26,7 +26,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.AccessControlContext;
 import java.security.AccessControlException;
+import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
@@ -280,7 +282,8 @@ class Utils {
 
     static void readFile(String filename) {
         System.out.println("ReadFromFileAction: try to read " + filename);
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         System.out.println("principals = " + subject.getPrincipals());
         try (FileInputStream fis = new FileInputStream(filename)) {
             // do nothing
@@ -291,7 +294,8 @@ class Utils {
 
     static void writeFile(String filename) {
         System.out.println("WriteToFileAction: try to write to " + filename);
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         System.out.println("principals = " + subject.getPrincipals());
         try (BufferedOutputStream bos = new BufferedOutputStream(
                 new FileOutputStream(filename))) {
@@ -321,7 +325,8 @@ class WriteToFileAction implements PrivilegedAction {
     @Override
     public Object run() {
         Utils.writeFile(filename);
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         return Subject.doAs(subject, nextAction);
     }
 
@@ -345,7 +350,8 @@ class ReadFromFileAction implements PrivilegedAction {
     public Object run() {
         Utils.readFile(filename);
 
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         ReadPropertyAction readProperty = new ReadPropertyAction();
         if (anotherSubject != null) {
             return Subject.doAs(anotherSubject, readProperty);
@@ -363,7 +369,8 @@ class ReadPropertyAction implements PrivilegedAction {
         System.out.println("ReadPropertyAction: "
                 + "try to read 'java.class.path' property");
 
-        Subject s = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject s = Subject.getSubject(acc);
         System.out.println("principals = " + s.getPrincipals());
         System.out.println("java.class.path = "
                 + System.getProperty("java.class.path"));
@@ -383,7 +390,8 @@ class WriteToFileNegativeAction implements PrivilegedAction {
 
     @Override
     public Object run() {
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         System.out.println("principals = " + subject.getPrincipals());
 
         try {
@@ -414,7 +422,8 @@ class ReadFromFileNegativeAction implements PrivilegedAction {
 
     @Override
     public Object run() {
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         System.out.println("principals = " + subject.getPrincipals());
 
         try {
@@ -440,7 +449,8 @@ class ReadPropertyNegativeAction implements PrivilegedAction {
     public java.lang.Object run() {
         System.out.println("Try to read 'java.class.path' property");
 
-        Subject s = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject s = Subject.getSubject(acc);
         System.out.println("principals = " + s.getPrincipals());
 
         try {
@@ -470,7 +480,8 @@ class WriteToFileExceptionAction implements PrivilegedExceptionAction {
     @Override
     public Object run() throws Exception {
         Utils.writeFile(filename);
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         ReadFromFileExceptionAction readFromFile =
                 new ReadFromFileExceptionAction(filename);
         return Subject.doAs(subject, readFromFile);
@@ -489,7 +500,8 @@ class ReadFromFileExceptionAction implements PrivilegedExceptionAction {
     @Override
     public Object run() throws Exception {
         Utils.readFile(filename);
-        Subject subject = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject subject = Subject.getSubject(acc);
         ReadPropertyExceptionAction readProperty =
                 new ReadPropertyExceptionAction();
         return Subject.doAs(subject, readProperty);
@@ -503,7 +515,8 @@ class ReadPropertyExceptionAction implements PrivilegedExceptionAction {
     public java.lang.Object run() throws Exception {
         System.out.println("Try to read 'java.class.path' property");
 
-        Subject s = Subject.current();
+        AccessControlContext acc = AccessController.getContext();
+        Subject s = Subject.getSubject(acc);
         System.out.println("principals = " + s.getPrincipals());
 
         try {

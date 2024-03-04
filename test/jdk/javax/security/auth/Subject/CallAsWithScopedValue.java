@@ -25,7 +25,8 @@
  * @test
  * @bug 8296244
  * @enablePreview
- * @summary Implement Subject.current and Subject.callAs using scoped values
+ * @summary Implement Subject.current and Subject.callAs using scoped values.
+ *      Need @enablePreview to use StructuredTaskScope.
  * @run main/othervm -Djava.security.manager=allow CallAsWithScopedValue false
  * @run main/othervm -Djava.security.manager=disallow CallAsWithScopedValue true
  */

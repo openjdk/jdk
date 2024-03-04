@@ -56,7 +56,7 @@ public class UnsupportedSV {
         s.getPrincipals().add(new UserPrincipal("Duke"));
 
         // TODO: Still has no way to reject the following code.
-        // Here, AccessController::getContext returns a plan ACC without
+        // Here, AccessController::getContext returns a plain ACC without
         // the subject inside.
         AccessControlContext acc2 = Subject.callAs(s, AccessController::getContext);
         Subject ns = AccessController.doPrivileged(
