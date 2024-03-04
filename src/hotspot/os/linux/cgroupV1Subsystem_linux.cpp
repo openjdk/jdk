@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,9 +177,6 @@ jlong CgroupV1Subsystem::memory_and_swap_usage_in_bytes() {
       GET_CONTAINER_INFO(julong, _memory->controller(), "/memory.memsw.usage_in_bytes",
                          "mem swap usage is: ", JULONG_FORMAT, JULONG_FORMAT, memory_swap_usage);
       return (jlong)memory_swap_usage;
-    } else {
-      // no swap
-      return 0;
     }
   }
   return memory_usage_in_bytes();
