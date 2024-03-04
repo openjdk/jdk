@@ -140,24 +140,25 @@ public class PrintImage extends Frame implements ActionListener {
             printerJob.cancel();
         }
     }
-}
 
-class PrintImageCanvas extends Canvas implements Printable {
-    @Override
-    public void paint(Graphics g) {
-        Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
-        g.setFont(drawFont);
-        g.setColor(new Color(0, 0, 0, 200));
-        g.drawString("PrintSample!", 100, 150);
-    }
-
-    @Override
-    public int print(Graphics g, PageFormat pf, int pi)
-            throws PrinterException {
-        if (pi > 0) {
-            return NO_SUCH_PAGE;
+    private static class PrintImageCanvas extends Canvas implements Printable {
+        @Override
+        public void paint(Graphics g) {
+            Font drawFont = new Font("MS Mincho", Font.ITALIC, 50);
+            g.setFont(drawFont);
+            g.setColor(new Color(0, 0, 0, 200));
+            g.drawString("PrintSample!", 100, 150);
         }
-        paint(g);
-        return PAGE_EXISTS;
+
+        @Override
+        public int print(Graphics g, PageFormat pf, int pi)
+                throws PrinterException {
+            if (pi > 0) {
+                return NO_SUCH_PAGE;
+            }
+            paint(g);
+            return PAGE_EXISTS;
+        }
     }
 }
+

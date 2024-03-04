@@ -93,12 +93,12 @@ public class PrintNullString extends Frame {
         pack();
     }
 
-    static class TextCanvas extends Panel implements Printable {
-        String nullStr = null;
-        String emptyStr = "";
-        AttributedString emptyAttStr = new AttributedString(emptyStr);
-        AttributedCharacterIterator nullIterator = null;
-        AttributedCharacterIterator emptyIterator = emptyAttStr.getIterator();
+    private static class TextCanvas extends Panel implements Printable {
+        private final String nullStr = null;
+        private final String emptyStr = "";
+        private final AttributedString emptyAttStr = new AttributedString(emptyStr);
+        private final AttributedCharacterIterator nullIterator = null;
+        private final AttributedCharacterIterator emptyIterator = emptyAttStr.getIterator();
 
         @Override
         public void paint(Graphics g) {
