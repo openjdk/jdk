@@ -45,11 +45,13 @@ import java.awt.print.PrinterJob;
  * @run main/manual DrawImage
  */
 public class DrawImage {
-
-    private static final int objectBorder = 15;
+    private static final int OBJECT_BORDER = 15;
+    private static final String INSTRUCTIONS =
+            "This test will automatically initiate a print\n\n" +
+            "Test passes if you get a printout of a gray rectangle\n" +
+            "with white text without any exception.";
 
     private final BufferedImage image;
-
     private final PageFormat pageFormat;
 
     public DrawImage(BufferedImage image) {
@@ -62,22 +64,22 @@ public class DrawImage {
         if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
-        Graphics2D g2D = (Graphics2D) g;
-        g2D.transform(new AffineTransform(pageFormat.getMatrix()));
 
         int paperW = (int) pageFormat.getImageableWidth();
         int paperH = (int) pageFormat.getImageableHeight();
-
         int x = (int) pageFormat.getImageableX();
         int y = (int) pageFormat.getImageableY();
-        g2D.setClip(x, y, paperW, paperH);
 
         // make slightly smaller (25) than max possible width
-        float scaleFactor = ((float) ((paperW - 25) - objectBorder - objectBorder)
+        float scaleFactor = ((float) ((paperW - 25) - OBJECT_BORDER - OBJECT_BORDER)
                                    / (float) (image.getWidth()));
 
         BufferedImageOp scaleOp = new RescaleOp(scaleFactor, 0, null);
-        g2D.drawImage(image, scaleOp, x + objectBorder, y + objectBorder);
+
+        Graphics2D g2D = (Graphics2D) g;
+        g2D.transform(new AffineTransform(pageFormat.getMatrix()));
+        g2D.setClip(x, y, paperW, paperH);
+        g2D.drawImage(image, scaleOp, x + OBJECT_BORDER, y + OBJECT_BORDER);
 
         return Printable.PAGE_EXISTS;
     }
@@ -90,10 +92,6 @@ public class DrawImage {
             pj.print();
         }
     }
-
-    private static final String INSTRUCTIONS =
-            "The test passes if you get a printout of a gray rectangle\n" +
-            "with white text without any exception.";
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
@@ -120,12 +118,11 @@ public class DrawImage {
         // build my own test images
         BufferedImage result = new BufferedImage(400, 200,
                                    BufferedImage.TYPE_BYTE_GRAY);
+        int w = result.getWidth(), h = result.getHeight();
 
         Graphics2D g2D = (Graphics2D) result.getGraphics();
         g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                              RenderingHints.VALUE_ANTIALIAS_OFF);
-        int w = result.getWidth(), h = result.getHeight();
-
         g2D.setColor(Color.gray);
         g2D.fill(new Rectangle(0, 0, w, h));
         g2D.setColor(Color.white);
@@ -133,7 +130,6 @@ public class DrawImage {
         AffineTransform originXform = AffineTransform.getTranslateInstance(
                 w / 5.0, h / 5.0);
         g2D.transform(originXform);
-
         g2D.drawString("Front Side", 20, h / 2);
         g2D.dispose();
 
