@@ -950,9 +950,10 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         if (names == null || filters == null) {
             throw new IllegalArgumentException("Got null arguments.");
         }
-
-        Subject[] sbjs = (delegationSubjects != null) ? delegationSubjects :
-        new Subject[names.length];
+        if (delegationSubjects != null) {
+            throw new UnsupportedOperationException("Subject Delegation has been removed.");
+        }
+        Subject[] sbjs = new Subject[names.length];
         if (names.length != filters.length || filters.length != sbjs.length) {
             final String msg =
                 "The value lengths of 3 parameters are not same.";
