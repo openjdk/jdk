@@ -23,6 +23,7 @@
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
+import jdk.test.lib.Utils;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.FileUtils;
@@ -732,6 +733,7 @@ final class Executor {
 
     private void execute(boolean successExpected) throws Exception {
         List<String> command = new ArrayList<>(jvmArgs);
+        Collections.addAll(command, Utils.getTestJavaOpts());
         addSystemPropertiesAsJvmArgs(command);
         command.add(ConfigFileTest.class.getSimpleName());
         command.add(RUNNER_ARG);
