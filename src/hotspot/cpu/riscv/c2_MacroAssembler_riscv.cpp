@@ -1809,8 +1809,8 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
   auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
 
-  // in riscv, NaN needs a special process as fcvt does not work in that case.
-  // in riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, Inf does not need a special process as fcvt can handle it correctly.
   // but we consider to get the slow path to process NaN and Inf at the same time,
   // as both of them are rare cases, and if we try to get the slow path to handle
   // only NaN case it would sacrifise the performance for normal cases,
@@ -1857,7 +1857,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
 void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
   auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
 
-  // in riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
 
   // check whether it's a NaN.
   // replace fclass with feq as performance optimization.
@@ -1885,10 +1885,10 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
   // construct NaN's in 32 bits from the NaN's in 16 bits,
   // we need the payloads of non-canonical NaNs to be preserved.
 
-  // widen and sign-extend src data.
-  __ vwadd_vx(dst, src, zr, Assembler::v0_t);
   // adjust vector type to 2 * SEW.
   __ vsetvli_helper(T_FLOAT, length, Assembler::m1);
+  // widen and sign-extend src data.
+  __ vsext_vf2(dst, src, Assembler::v0_t);
   __ mv(t0, 0x7f800000);
   // sign-bit was already set via sign-extension if necessary.
   __ vsll_vi(dst, dst, 13, Assembler::v0_t);
@@ -1903,8 +1903,8 @@ void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister sr
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, uint>
               (dst, src, length, 24, float16_to_float_v_slow_path);
 
-  // in riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
-  // in riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
+  // On riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
+  // On riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
   // but we consider to get the slow path to process NaN and Inf at the same time,
   // as both of them are rare cases, and if we try to get the slow path to handle
   // only NaN case it would sacrifise the performance for normal cases,
@@ -1961,7 +1961,7 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister, uint>
               (dst, src, tmp, length, 36, float_to_float16_v_slow_path);
 
-  // in riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
+  // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
 
   vsetvli_helper(BasicType::T_FLOAT, length, Assembler::m1);
 
