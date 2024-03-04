@@ -276,8 +276,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private final boolean fileSelectionEnabled;
         private final int fid;
         private final File currentDirectory;
-        private volatile DoChangeContents runnable;
         private final Thread loadThread;
+
+        private DoChangeContents runnable;
 
         private FilesLoader(File currentDirectory, int fid) {
             this.currentDirectory = currentDirectory;
