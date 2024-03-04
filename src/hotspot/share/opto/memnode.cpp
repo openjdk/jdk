@@ -2764,7 +2764,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 #ifdef VM_LITTLE_ENDIAN
   if (MergeStores && UseUnalignedAccesses) {
     if (phase->C->post_loop_opts_phase()) {
-      Node* progress = Ideal_merge_stores(phase);
+      Node* progress = Ideal_merge_primitive_array_stores(phase);
       if (progress != nullptr) { return progress; }
     } else {
       phase->C->record_for_post_loop_opts_igvn(this);
@@ -2776,20 +2776,25 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 }
 
 // Link together multiple stores (B/S/C/I) into a longer one.
-Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
+Node* StoreNode::Ideal_merge_primitive_array_stores(PhaseGVN* phase) {
   int opc = Opcode();
   if (opc != Op_StoreB && opc != Op_StoreC && opc != Op_StoreI) {
     return nullptr;
   }
 
+  // Only merge stores on arrays.
+  if (adr_type()->isa_aryptr() == nullptr) {
+    return nullptr;
+  }
+
   // If we can merge with use, then we must process use first.
-  StoreNode* use = can_merge_with_use(phase, true);
+  StoreNode* use = can_merge_primitive_array_store_with_use(phase, true);
   if (use != nullptr) {
     return nullptr;
   }
 
   // Check if we can merge with at least one def.
-  StoreNode* def = can_merge_with_def(phase, true);
+  StoreNode* def = can_merge_primitive_array_store_with_def(phase, true);
   if (def == nullptr) {
     return nullptr;
   }
@@ -2808,7 +2813,7 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   // Collect list of stores
   while (def != nullptr && merge_list.size() <= merge_list_max_size) {
     merge_list.push(def);
-    def = def->can_merge_with_def(phase, true);
+    def = def->can_merge_primitive_array_store_with_def(phase, true);
   }
 
   int pow2size = round_down_power_of_2(merge_list.size());
@@ -2857,7 +2862,7 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   Node* new_ctrl = in(MemNode::Control); // must take last: after all RangeChecks
   Node* new_mem  = first->in(MemNode::Memory);
   Node* new_adr  = first->in(MemNode::Address);
-  const TypePtr* atp = TypeRawPtr::BOTTOM;
+  const TypePtr* new_adr_type = adr_type();
   BasicType bt = T_ILLEGAL;
   switch (new_memory_size) {
     case 2: bt = T_SHORT; break;
@@ -2866,7 +2871,9 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   }
 
   StoreNode* new_store = StoreNode::make(*phase, new_ctrl, new_mem, new_adr,
-                                         atp, new_value, bt, MemNode::unordered);
+                                         new_adr_type, new_value, bt, MemNode::unordered);
+  // Marking the store mismatched is sufficient to prevent reordering, since array stores
+  // are all on the same slice. Hence, we need no barriers.
   new_store->set_mismatched_access();
 
   // Constants above may now also be be packed -> put candidate on worklist
@@ -2886,7 +2893,7 @@ Node* StoreNode::Ideal_merge_stores(PhaseGVN* phase) {
   return new_store;
 }
 
-StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
+StoreNode* StoreNode::can_merge_primitive_array_store_with_use(PhaseGVN* phase, bool check_def) {
   int opc = Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
 
@@ -2935,7 +2942,7 @@ StoreNode* StoreNode::can_merge_with_use(PhaseGVN* phase, bool check_def) {
 
   // Having checked "def -> use", we now check "use -> def".
   if (check_def) {
-    StoreNode* use_def = use_store->can_merge_with_def(phase, false);
+    StoreNode* use_def = use_store->can_merge_primitive_array_store_with_def(phase, false);
     if (use_def == nullptr) {
       return nullptr;
     }
@@ -3015,7 +3022,8 @@ private:
 
 public:
   // Parse the structure above the pointer
-  static ArrayPointer make(const Node* pointer) {
+  static ArrayPointer make(PhaseGVN* phase, const Node* pointer) {
+    assert(phase->type(pointer)->isa_aryptr() != nullptr, "must be array pointer");
     if (!pointer->is_AddP()) { return ArrayPointer::make_invalid(pointer); }
 
     const Node* base = pointer->in(AddPNode::Base);
@@ -3106,12 +3114,14 @@ public:
 #endif
 };
 
-StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
+StoreNode* StoreNode::can_merge_primitive_array_store_with_def(PhaseGVN* phase, bool check_use) {
   int opc = Opcode();
   assert(opc == Op_StoreB || opc == Op_StoreC || opc == Op_StoreI, "precondition");
 
   StoreNode* def = in(MemNode::Memory)->isa_Store();
-  if (def == nullptr || def->Opcode() != opc) {
+  if (def == nullptr ||
+      def->Opcode() != opc ||
+      def->adr_type()->isa_aryptr() == nullptr) {
     return nullptr;
   }
 
@@ -3175,10 +3185,18 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
   }
 
   // Check address adjacency
+  // -> make sure that we are operating on an array, and the sizes match.
+  int size_ptr1 = type2aelembytes(s1->adr_type()->is_aryptr()->elem()->array_element_basic_type());
+  int size_ptr2 = type2aelembytes(s2->adr_type()->is_aryptr()->elem()->array_element_basic_type());
+  if (size_ptr1 != size_ptr2 ||
+      size_ptr1 != s1->memory_size() ||
+      s1->memory_size() != s2->memory_size()) {
+    return nullptr;
+  }
   {
     ResourceMark rm;
-    ArrayPointer array_pointer1 = ArrayPointer::make(s1->in(MemNode::Address));
-    ArrayPointer array_pointer2 = ArrayPointer::make(s2->in(MemNode::Address));
+    ArrayPointer array_pointer1 = ArrayPointer::make(phase, s1->in(MemNode::Address));
+    ArrayPointer array_pointer2 = ArrayPointer::make(phase, s2->in(MemNode::Address));
     if (!array_pointer2.is_adjacent_to(array_pointer1, s1->memory_size())) {
       return nullptr;
     }
@@ -3186,7 +3204,7 @@ StoreNode* StoreNode::can_merge_with_def(PhaseGVN* phase, bool check_use) {
 
   // Having checked "use -> def", we now check "def -> use".
   if (check_use) {
-    StoreNode* def_use = s2->can_merge_with_use(phase, false);
+    StoreNode* def_use = s2->can_merge_primitive_array_store_with_use(phase, false);
     if (def_use == nullptr) {
       return nullptr;
     }

@@ -1027,7 +1027,7 @@ public class TestMergeStores {
     // We might consider addresses (x + 0) and (x + 1) as adjacent, even if x = max_int, and therefore the second
     // address overflows and is not adjacent at all.
     // Therefore, we should only consider stores that have the same size as the element type of the array.
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8", // no merging
                   IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
                   IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
