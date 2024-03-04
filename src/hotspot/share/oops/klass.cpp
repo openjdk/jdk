@@ -91,12 +91,9 @@ void Klass::set_name(Symbol* n) {
     } else if (n == vmSymbols::java_io_Serializable()) {
       _hash = 1 << secondary_shift();
     } else {
-      ResourceMark rm;
-      const char *s
-        = (n == nullptr) ? "The Klass with no name" : n->as_C_string();
-
-      unsigned int hash_code = java_lang_String::hash_code(s, strlen(s));
-      // FIXME: We use String::hash_code here (rather than e.g.
+      const jbyte *s = (const jbyte*)n->bytes();
+      unsigned int hash_code = java_lang_String::hash_code(s, n->utf8_length());
+      // We use String::hash_code here (rather than e.g.
       // Symbol::identity_hash()) in order to have a hash code that
       // does not change from run to run. We want that because the
       // hash value for a secondary superclass appears in generated
@@ -136,7 +133,7 @@ void Klass::release_C_heap_structures(bool release_constant_pool) {
   if (_name != nullptr) _name->decrement_refcount();
 }
 
-bool Klass::linear_search_secondary_supers(Klass* k) const {
+bool Klass::search_secondary_supers(Klass* k) const {
   // Put some extra logic here out-of-line, before the search proper.
   // This cuts down the size of the inline method.
 
@@ -147,48 +144,6 @@ bool Klass::linear_search_secondary_supers(Klass* k) const {
   int cnt = secondary_supers()->length();
   for (int i = 0; i < cnt; i++) {
     if (secondary_supers()->at(i) == k) {
-      ((Klass*)this)->set_secondary_super_cache(k);
-      return true;
-    }
-  }
-  return false;
-}
-
-bool Klass::hashed_search_secondary_supers(Klass* k) const {
-  // This is necessary, since I am never in my own secondary_super list.
-  if (this == k)
-    return true;
-
-  u8 bitmap = _bitmap;
-  const auto bitpos = k->hash() >> Klass::secondary_shift();
-  if (((bitmap >> bitpos) & 1) == 0) {
-    return false;
-  }
-
-  int index = population_count(bitmap << (63 - bitpos)) - 1;
-  if (secondary_supers()->at(index) == k) {
-    ((Klass*)this)->set_secondary_super_cache(k);
-    return true;
-  }
-
-  if (bitmap == ~(u8)0) {
-    // Hash table is full, fall back to linear search
-    return linear_search_secondary_supers(k);
-  }
-
-  int length = secondary_supers()->length();
-  bitmap = rotate_right(bitmap, bitpos);
-
-  // Linear probe for hash collisions.
-  for (;;) {
-    bitmap = rotate_right(bitmap, 1);
-    if ((bitmap & 1) == 0) {
-      return false;
-    }
-    if (++index == length) {
-      index = 0;
-    }
-    if (secondary_supers()->at(index) == k) {
       ((Klass*)this)->set_secondary_super_cache(k);
       return true;
     }
@@ -362,75 +317,27 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   for (int i = 0; i < hashed_secondaries->capacity(); i++)   hashed_secondaries->push(nullptr);
 
-#ifdef ASSERT
-  GrowableArray<Klass*>* sorted_secondaries = new GrowableArray<Klass*>(length);
-  for (int i = 0; i < length; i++) {
-    sorted_secondaries->push(secondaries->at(i));
-  }
-  // Sort the secondaries in order for the hash table to be
-  // deterministic.
-  qsort(sorted_secondaries->adr_at(0),
-        length,
-        sizeof sorted_secondaries->at(0),
-        [](const void* void_a, const void* void_b) {
-          const Klass* a = *(const Klass**)void_a;
-          const Klass* b = *(const Klass**)void_b;
-          return a<b ? -1 : a==b ? 0 : 1;
-        });
-  Klass **s = sorted_secondaries->adr_at(0);
-#else
-  Klass **s = secondaries->adr_at(0);
-#endif // ASSERT
-
   for (int j = 0; j < length; j++) {
-    Klass *k = s[j];
+    Klass *k = secondaries->at(j);
     unsigned int slot = k->hash_slot();
 
     if (j >= 64) {
       hashed_secondaries->at_put(j, k);
     } else {
-#if ROBIN_HOOD
       hash_insert(k, hashed_secondaries, bitmap);
-#else
-      for (int i = 0; i < 64; i++, slot++) {
-        slot &= 63;
-        if (hashed_secondaries->at(slot) == nullptr) {
-          hashed_secondaries->at_put(slot, k);
-          bitmap |= uint64_t(1) << slot;
-          goto stashed;
-        }
-      }
-      assert(false, "shouldn't happen");
-    stashed:
-      continue;
-#endif
     }
   }
 
   if (rewrite) {
+    // Pack the secondaries array by removing all nulls.
     int i = 0;
     int maxprobe = 0;
     for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
-        secondaries->at_put(i, hashed_secondaries->at(slot));  // add secondaries on the end.
-        // maxprobe = MAX2(maxprobe, (slot - hashed_secondaries->at(slot)->hash_slot()) & 63);
-        // if (length > 60) {
-        //   fprintf(stderr, "max probe = %d\n", maxprobe);
-        // }
+        secondaries->at_put(i, hashed_secondaries->at(slot));
         i++;
       }
     }
-  } else {
-#ifdef ASSERT
-    // Check that the secondary_supers array is sorted by hash order
-    int i = 0;
-    for (int slot = 0; slot < length; slot++) {
-      if (hashed_secondaries->at(slot) != nullptr) {
-        assert(secondaries->at(i) == hashed_secondaries->at(slot), "must be");
-        i++;
-      }
-    }
-#endif // ASSERT
   }
 
   return bitmap;
@@ -550,7 +457,7 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
-    if (secondaries->length() > 58) {
+    if (secondaries->length() >= 20) {
       asm("nop");
     }
   }

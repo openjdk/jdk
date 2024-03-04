@@ -4701,45 +4701,6 @@ do {                                                                    \
          "registers must match aarch64.ad");                            \
 } while(0)
 
-// long piddle_counter;
-// void *last_piddle;
-// char * piddle_name;
-
-// void piddle() {
-//   piddle_counter++;
-//   last_piddle = __builtin_return_address(0);
-//   CodeBlob* cb = CodeCache::find_blob((address)last_piddle);
-//   if (cb != nullptr && cb->is_nmethod()) {
-//     nmethod *nm = cb->as_nmethod();
-//     ResourceMark rm;
-//     if (piddle_name) {
-//       free(piddle_name);
-//     }
-//     piddle_name = strdup(nm->method()->name_and_sig_as_C_string());
-//     if (strcmp("com.sun.tools.javac.code.Symbol$VarSymbol.getConstValue()Ljava/lang/Object;", piddle_name) == 0) {
-//       asm("nop");
-//     }
-//     if (strcmp("java.util.stream.AbstractPipeline.wrapSink(Ljava/util/stream/Sink;)Ljava/util/stream/Sink;", piddle_name) == 0) {
-//       asm("nop");
-//     }
-//     if (strcmp("com.sun.tools.javac.comp.Attr.checkIdInternal(Lcom/sun/tools/javac/tree/JCTree;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/code/Symbol;Lcom/sun/tools/javac/code/Type;Lcom/sun/tools/javac/comp/Env;Lcom/sun/tools/javac/comp/Attr$ResultInfo;)Lcom/sun/tools/javac/code/Type;", piddle_name) == 0) {
-//       asm("nop");
-//     }
-//     fprintf(stderr, "%s\n", piddle_name);
-//   }
-// }
-
-void piddle(Klass *super, Klass *sub) {
-  asm("nop");
-}
-
-static void __attribute__((unused)) debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
-  super->print();
-  sub->print();
-  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
-        sub, super, expected, result);
-}
-
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp1,
@@ -4977,26 +4938,9 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     STOP("VerifySecondarySupers failed");
 
     bind(done);
-
-    //     Label passed;
-    //     cmp(rscratch1, result);
-    //     br(EQ, passed);
-    //     mov(r7, /*expected*/rscratch1);
-    //     push_call_clobbered_registers();
-    //     mov(r0, r_sub_klass /*r4*/);
-    //     mov_metadata(r1, super_klass);
-    //     mov(r2, /*expected*/r7);
-    //     mov(r3, result);
-    //     mov(r4, (address)("mismatch"));
-    //     rt_call(CAST_FROM_FN_PTR(address, debug_helper), rscratch2);
-    //     pop_call_clobbered_registers();
-
-    //     stop("mismatch");
-
-    //     bind(passed);
-    //   }
   }
 }
+
 
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");

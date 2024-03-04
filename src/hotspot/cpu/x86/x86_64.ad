@@ -12258,7 +12258,7 @@ instruct partialSubtypeCheckI(rsi_RegP sub, immP super, rdi_RegP result,
   predicate(HashSecondarySupers);
   effect(KILL cr, TEMP temp1, TEMP temp2, TEMP temp3, TEMP temp4, TEMP temp5);
 
-  ins_cost(1000);  // smaller than the next version
+  ins_cost(700);  // smaller than the next version
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
@@ -12281,7 +12281,7 @@ instruct partialSubtypeCheck_vs_Zero(rFlagsReg cr,
   match(Set cr (CmpP (PartialSubtypeCheck sub super) zero));
   effect(KILL rcx, KILL result);
 
-  ins_cost(9999);
+  ins_cost(1000);
   format %{ "movq    rdi, [$sub + in_bytes(Klass::secondary_supers_offset())]\n\t"
             "movl    rcx, [rdi + Array<Klass*>::length_offset_in_bytes()]\t# length to scan\n\t"
             "addq    rdi, Array<Klass*>::base_offset_in_bytes()\t# Skip to start of data; set NZ in case count is zero\n\t"

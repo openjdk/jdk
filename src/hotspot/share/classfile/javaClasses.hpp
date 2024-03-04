@@ -176,15 +176,6 @@ class java_lang_String : AllStatic {
     return h;
   }
 
-  static unsigned int hash_code(const char* s, int len) {
-    unsigned int h = 0;
-    while (len-- > 0) {
-      h = 31*h + (((unsigned int) *s) & 0xFF);
-      s++;
-    }
-    return h;
-  }
-
   static unsigned int hash_code(oop java_string);
   static unsigned int hash_code_noupdate(oop java_string);
 

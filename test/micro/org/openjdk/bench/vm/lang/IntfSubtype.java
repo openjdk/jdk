@@ -110,6 +110,7 @@ public class IntfSubtype {
     static class A30 implements I30 {}
     static class A32 implements I32 {}
     static class A40 implements I40 {}
+    static class A60 implements I60 {}
     static class A64 implements I64 {}
 
     final Object obj00 = new A0();
@@ -128,6 +129,7 @@ public class IntfSubtype {
     final Object obj30 = new A30();
     final Object obj32 = new A32();
     final Object obj40 = new A40();
+    final Object obj60 = new A60();
     final Object obj64 = new A64();
 
     static Class<?> getSuper(int idx) {
@@ -214,6 +216,9 @@ public class IntfSubtype {
     @Benchmark public void testPositive40() {
         test(obj40, I40.class, true);
     }
+    @Benchmark public void testPositive60() {
+        test(obj60, I60.class, true);
+    }
     @Benchmark public void testPositive64() {
         test(obj64, I64.class, true);
     }
@@ -265,6 +270,9 @@ public class IntfSubtype {
     }
     @Benchmark public void testNegative40() {
         test(obj40, J.class, false);
+    }
+    @Benchmark public void testNegative60() {
+        test(obj60, J.class, false);
     }
 
     @Benchmark public void testNegative64() {

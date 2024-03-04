@@ -1481,21 +1481,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   Address secondary_supers_addr(sub_klass, ss_offset);
   Address super_cache_addr(     sub_klass, sc_offset);
 
-  BLOCK_COMMENT("check_klass_subtype_slow_path {");
-
-  if (HashSecondarySupers) {
-    ldr(rscratch1, Address(sub_klass, Klass::bitmap_offset()));
-    ldr(rscratch2, Address(super_klass, Klass::hash_offset()));
-    lsr(rscratch2, rscratch2, Klass::secondary_shift());
-    lsrv(rscratch1, rscratch1, rscratch2);
-    andr(rscratch1, rscratch1, (u1)1);
-    cmp(rscratch1, (u1)1);
-    br(Assembler::NE, *L_failure);
-  }
-
-#ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
-  stp(rscratch1, rscratch1, Address(pre(sp, -2 * wordSize)));
-#endif
+  BLOCK_COMMENT("check_klass_subtype_slow_path");
 
   // Do a linear scan of the secondary super-klass chain.
   // This code is rarely used, so simplicity is a virtue here.
@@ -1586,19 +1572,6 @@ do {                                                                    \
          r_sub_klass == r4 && result == r5, "registers must match aarch64.ad"); \
 } while(0)
 
-#ifdef ASSERT
-void piddle() {
-  asm("nop");
-}
-#endif
-
-static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
-  super->print();
-  sub->print();
-  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
-        sub, super, expected, result);
-}
-
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp,
@@ -1640,11 +1613,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // the secondary supers.
   u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
   tbz(r_bitmap, bit, L_failure);
-
-#ifdef ASSERT
-  mov(lr, CAST_FROM_FN_PTR(address, &piddle));
-  blr(lr);
-#endif
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {

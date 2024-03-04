@@ -387,8 +387,6 @@ protected:
     CDS_ONLY(_shared_class_flags |= _is_shared_class;)
   }
 
-  bool hashed_search_secondary_supers(Klass* k) const;
-  bool linear_search_secondary_supers(Klass* k) const;
 
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
@@ -530,21 +528,7 @@ protected:
     }
   }
 
-  bool search_secondary_supers(Klass* k) const {
-    if (HashSecondarySupers && VerifySecondarySupers) {
-      bool opinion1 = hashed_search_secondary_supers(k);
-      bool opinion2 = linear_search_secondary_supers(k);
-      guarantee(opinion1 == opinion2, "VerifySecondarySupers failed");
-      return opinion1;
-    }
-
-    if (HashSecondarySupers) {
-      return hashed_search_secondary_supers(k);
-    } else {
-      return linear_search_secondary_supers(k);
-    }
-  }
-
+  bool search_secondary_supers(Klass* k) const;
 
   // Find LCA in class hierarchy
   Klass *LCA( Klass *k );
