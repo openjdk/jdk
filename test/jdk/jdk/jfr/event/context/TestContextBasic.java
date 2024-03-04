@@ -31,6 +31,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.time.Duration;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import jdk.jfr.Event;
 import jdk.jfr.Registered;
@@ -42,6 +46,7 @@ import jdk.jfr.SettingDefinition;
 import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.Contextual;
 
+import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.Selector;
 import jdk.jfr.internal.settings.SelectorSetting;
 import jdk.test.lib.jfr.Events;
@@ -55,7 +60,9 @@ import static jdk.test.lib.Asserts.*;
  * @requires vm.hasJFR
  * @library /test/lib
  * @modules jdk.jfr/jdk.jfr.internal jdk.jfr/jdk.jfr.internal.settings
- * @run main/othervm jdk.jfr.event.context.TestContextBasic
+ * @run main/othervm -Djdk.virtualThreadScheduler.maxPoolSize=5
+ *                   -Djdk.virtualThreadScheduler.parallelism=3
+ *                   jdk.jfr.event.context.TestContextBasic
  */
 public class TestContextBasic {
     @Label("My Context Event")
@@ -85,6 +92,7 @@ public class TestContextBasic {
         checkSimpleContext();
         checkNestedContext();
         checkWithExecutionSamples();
+        checkWithVirtualThreads();
         for (String selector : Arrays.asList("", "all", "if-context", "none")) {
             checkContextWithSelector(selector);
         }
@@ -228,6 +236,36 @@ public class TestContextBasic {
         List<RecordedEvent> events = Events.fromRecording(r);
         assertEquals(1, eventCount(events, "jdk.TestContext"));
         assertEquals(1, eventCount(events, EventNames.JavaMonitorWait));
+    }
+
+    private static void checkWithVirtualThreads() throws Exception {
+        try (Recording r = new Recording()) {
+            r.enable(MyWorkEvent.class).with("select", "all");
+            r.enable(MyContextEvent.class);
+
+            r.start();
+
+            // the idea is to saturate the virtual thread pool (5 threads) such that the carrier threads must be reused
+            try (ExecutorService s = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (int i = 0; i < 50; i++) {
+                    s.submit(() -> {
+                        try {
+                            assertFalse(JVM.hasContext());
+                            assertEquals(0L, JVM.openContext());
+                            assertTrue(JVM.hasContext());
+                            new MyWorkEvent().commit();
+                            assertEquals(1L, JVM.closeContext());
+                            assertFalse(JVM.hasContext());
+                        } catch (Throwable t) {
+                            t.printStackTrace();
+                            System.exit(1);
+                        }
+                    });
+                }
+                s.shutdown();
+                s.awaitTermination(10, TimeUnit.MINUTES);
+            }
+        }
     }
 
     private static void checkContextWithSelector(String selector) throws IOException {

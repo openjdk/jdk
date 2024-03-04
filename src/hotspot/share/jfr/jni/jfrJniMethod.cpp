@@ -440,6 +440,10 @@ NO_TRANSITION(jlong, jfr_close_context(JNIEnv* env, jclass jvm))
   return JfrContext::close();
 NO_TRANSITION_END
 
+NO_TRANSITION(jlong, jfr_swap_context(JNIEnv* env, jclass jvm, jlong context))
+  return JfrContext::swap(context);
+NO_TRANSITION_END
+
 NO_TRANSITION(jboolean, jfr_has_context(JNIEnv* env, jclass jvm))
   return JfrContext::is_present();
 NO_TRANSITION_END

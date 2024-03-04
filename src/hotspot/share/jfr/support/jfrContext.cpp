@@ -74,6 +74,16 @@ u8 JfrContext::close() {
   return ctx->offset();
 }
 
+u8 JfrContext::swap(u8 other) {
+  JavaThread* const jt = JavaThread::current();
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  JfrThreadContext* ctx = tl->get_context();
+  return ctx->swap(other);
+}
+
 bool JfrContext::is_present() {
   JavaThread* const jt = JavaThread::current();
   assert(jt != nullptr, "invariant");

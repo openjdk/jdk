@@ -28,6 +28,7 @@ package jdk.jfr.internal;
 
 import java.util.List;
 
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.jfr.Event;
 import jdk.jfr.internal.event.EventConfiguration;
@@ -61,6 +62,7 @@ public final class JVM {
             subscribeLogLevel(tag, tag.id);
         }
         Options.ensureInitialized();
+        SharedSecrets.setJFRAccess(JVM::swapContext);
     }
 
     /**
@@ -703,6 +705,8 @@ public final class JVM {
      * @return the context identifier at close
      */
     public static native long closeContext();
+
+    public static native long swapContext(long contextId);
 
     /**
      * A helper function for context tracking.<br>

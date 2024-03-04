@@ -40,6 +40,7 @@ class JfrContext : public AllStatic {
   static void mark_context_in_use(JfrThreadLocal* tl);
   static u8 open();
   static u8 close();
+  static u8 swap(u8 other);
   static bool is_present();
   static bool is_present(JfrThreadLocal* tl);
 };

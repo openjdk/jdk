@@ -40,6 +40,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import jdk.internal.access.SharedSecrets;
 import jdk.internal.event.VirtualThreadEndEvent;
 import jdk.internal.event.VirtualThreadPinnedEvent;
 import jdk.internal.event.VirtualThreadStartEvent;
@@ -84,6 +85,9 @@ final class VirtualThread extends BaseVirtualThread {
 
     // virtual thread state, accessed by VM
     private volatile int state;
+
+    // JFR context state cache, accessed only by this virtual thread
+    private long jfrContextId = 0L;
 
     /*
      * Virtual thread state transitions:
@@ -358,6 +362,9 @@ final class VirtualThread extends BaseVirtualThread {
         // notify JVMTI before mount
         notifyJvmtiMount(/*hide*/true);
 
+        // TODO Probably place the JFR context support to Thread class as a package private method call
+        jfrContextId = SharedSecrets.getJFRAccess().swapContext(jfrContextId);
+
         // sets the carrier thread
         Thread carrier = Thread.currentCarrierThread();
         setCarrierThread(carrier);
@@ -385,6 +392,7 @@ final class VirtualThread extends BaseVirtualThread {
     @ChangesCurrentThread
     @ReservedStackAccess
     private void unmount() {
+        jfrContextId = SharedSecrets.getJFRAccess().swapContext(jfrContextId);
         // set Thread.currentThread() to return the platform thread
         Thread carrier = this.carrierThread;
         carrier.setCurrentThread(carrier);
@@ -1179,6 +1187,9 @@ final class VirtualThread extends BaseVirtualThread {
 
     @IntrinsicCandidate
     private static native void notifyJvmtiDisableSuspend(boolean enter);
+
+    @JvmtiMountTransition
+    private native long swapJfrContext(long newContext);
 
     private static native void registerNatives();
     static {

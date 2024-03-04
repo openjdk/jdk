@@ -34,21 +34,27 @@
 
 class JfrThreadContext : public JfrCHeapObj {
  private:
-  u2 _ctx_counter;
   u8 _offset;
+  u2 _ctx_counter;
  public:
-  JfrThreadContext() : _ctx_counter(0), _offset(0) {}
+  JfrThreadContext() : _offset(0), _ctx_counter(0) {}
   inline void open() {
-    _ctx_counter++;
+    _ctx_counter = ((_ctx_counter & 0xFFFF) + 1) & 0xFFFF;
   }
   inline void close() {
-    _ctx_counter--;
+    _ctx_counter = ((_ctx_counter & 0xFFFF)- 1) & 0xFFFF;
+  }
+  inline u8 swap(u8 ctx) {
+    u8 old_ctx = ((u8)_ctx_counter) << 6 | _offset;
+    _ctx_counter = (ctx >> 6) & 0xFFFF;
+    _offset = ctx & 0xFFFFFFFFFFFF;
+    return old_ctx;
   }
   inline bool is_active() {
     return _ctx_counter > 0;
   }
   inline void mark_context_in_use() {
-    _offset++;
+    _offset = ((_offset & 0xFFFFFFFFFFFF) + 1) & 0xFFFFFFFFFFFF;
   }
   inline u8 offset() {
     return _offset;

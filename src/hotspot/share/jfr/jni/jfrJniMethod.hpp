@@ -172,6 +172,8 @@ jlong JNICALL jfr_open_context(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_close_context(JNIEnv* env, jclass jvm);
 
+jlong JNICALL jfr_swap_context(JNIEnv* env, jclass jvm, jlong context);
+
 jboolean JNICALL jfr_has_context(JNIEnv* env, jclass jvm);
 
 void JNICALL jfr_set_selector(JNIEnv* env, jclass jvm, jlong event_type_id, jbyte selector_id);

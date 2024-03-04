@@ -107,6 +107,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"openContext", (char*)"()J", (void*)jfr_open_context,
       (char*)"closeContext", (char*)"()J", (void*)jfr_close_context,
       (char*)"hasContext", (char*)"()Z", (void*)jfr_has_context,
+      (char*)"swapContext", (char*)"(J)J", (void*)jfr_swap_context,
       (char*)"setSelector", (char*)("(JB)V"), (void*)jfr_set_selector
     };
 

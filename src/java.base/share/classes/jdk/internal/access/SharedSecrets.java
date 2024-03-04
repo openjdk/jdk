@@ -93,6 +93,8 @@ public class SharedSecrets {
     private static JavaxSecurityAccess javaxSecurityAccess;
     private static JavaTemplateAccess javaTemplateAccess;
 
+    private static JFRAccess jfrAccess;
+
     public static void setJavaUtilCollectionAccess(JavaUtilCollectionAccess juca) {
         javaUtilCollectionAccess = juca;
     }
@@ -543,6 +545,18 @@ public class SharedSecrets {
                 Class.forName("java.lang.runtime.TemplateSupport", true, null);
                 access = javaTemplateAccess;
             } catch (ClassNotFoundException e) {}
+        }
+        return access;
+    }
+
+    public static void setJFRAccess(JFRAccess access) {
+        jfrAccess = access;
+    }
+
+    public static JFRAccess getJFRAccess() {
+        var access = jfrAccess;
+        if (access == null) {
+            access = JFRAccess.NONE;
         }
         return access;
     }
