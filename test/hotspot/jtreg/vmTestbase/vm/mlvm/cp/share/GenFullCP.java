@@ -137,44 +137,41 @@ public abstract class GenFullCP extends ClassfileGenerator {
 
 
     // If set_cause is true it expects a Throwable (the cause) to be on top of the stack when called.
-    protected static void createThrowRuntimeExceptionCodeHelper(ClassModel cm, String msg, boolean set_cause) {
+    protected static CodeBuilder createThrowRuntimeExceptionCodeHelper(CodeBuilder cob, String msg, boolean set_cause) {
 
-        ClassFile.of().transform(cm,
-                ClassTransform.endHandler(cb -> cb.withMethod("throwRuntimeException",
-                        MethodTypeDesc.ofDescriptor("(Ljava/lang/String;Z)V"),
-                        ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC,
-                        mb -> mb.withCode(
-                                cob -> {
-                                    cob.new_(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION))
-                                            .dup()
-                                            .ldc(msg)
-                                            .invokespecial(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION),
-                                                    INIT_METHOD_NAME,
-                                                    MethodTypeDesc.ofDescriptor("(" + fd(JL_STRING) + ")V"));
-                                    if (set_cause) {
-                                        cob.dup_x1()
-                                                .aload(0)
-                                                .invokevirtual(ClassDesc.ofInternalName(JL_THROWABLE), "initCause",
-                                                        MethodTypeDesc.ofDescriptor(
-                                                                "(" + fd(JL_THROWABLE) + ")" + fd(JL_THROWABLE)));
-                                    }
-                                    cob.athrow();
-                                }))));
+        cob.new_(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION))
+                .dup()
+                .ldc(msg)
+                .invokespecial(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION),
+                        INIT_METHOD_NAME,
+                        MethodTypeDesc.ofDescriptor("(" + fd(JL_STRING) + ")V"));
+        if (set_cause) {
+            cob.dup_x1()
+                    .aload(0)
+                    .invokevirtual(ClassDesc.ofInternalName(JL_THROWABLE), "initCause",
+                            MethodTypeDesc.ofDescriptor(
+                                    "(" + fd(JL_THROWABLE) + ")"
+                                            + fd(JL_THROWABLE)));
+        }
+        cob.athrow();
+        return cob;
     }
 
-    protected static void createThrowRuntimeExceptionMethod(ClassModel cm, boolean isStatic, String methodName,
+    protected static byte[] createThrowRuntimeExceptionMethod(byte[] bytes, boolean isStatic, String methodName,
             String methodSignature) {
-        ClassFile.of().transform(cm, ClassTransform.endHandler(clb -> clb.withMethod(methodName,
+        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(clb -> clb.withMethod(methodName,
                 MethodTypeDesc.ofDescriptor(methodSignature),
                 ClassFile.ACC_PUBLIC | (isStatic ? ClassFile.ACC_STATIC : 0),
-                mb -> mb.withCode(cb -> cb
-                        .aload(cob.receiverSlot())
-                        .ldc("Method " + methodName + methodSignature + " should not be called!")
-                        .invokestatic(ClassDesc.of("vm/mlvm/share/GenFullCP"), "createThrowRuntimeExceptionCode",
-                                MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"))
-                        .return_()))));
+                mb -> mb.withCode(cob -> {
+                        cob.aload(cob.receiverSlot());
+                        cob.ldc("Method " + methodName + methodSignature + " should not be called!");
+                        cob.invokestatic(ClassDesc.of("vm/mlvm/share/GenFullCP"), "createThrowRuntimeExceptionCode",
+                                MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"));
+                        createThrowRuntimeExceptionCodeHelper(cb, "Method " + methodName + methodSignature + " should not be called!", false);
+                        cob.return_();
+                }))));
 
-        createThrowRuntimeExceptionCode(cm, "Method " + methodName + methodSignature + " should not be called!", false);
+        return bytes;
     }
 
     protected byte[] createClassInitMethod(byte[] bytes) {

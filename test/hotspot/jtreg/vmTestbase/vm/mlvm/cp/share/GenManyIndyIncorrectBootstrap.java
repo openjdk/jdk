@@ -23,13 +23,25 @@
 
 package vm.mlvm.cp.share;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
+import java.util.Random;
+import jdk.internal.classfile.Label;
+
+import javax.lang.model.type.TypeKind;
+
+import jdk.internal.classfile.Classfile;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ClassWriterExt;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.internal.org.objectweb.asm.Label;
 
 import vm.mlvm.share.ClassfileGenerator;
 import vm.mlvm.share.Env;
@@ -45,230 +57,306 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
         ClassfileGenerator.main(args);
     }
 
-    /**
-     * Create class constructor, which
-     * create a call site for target method
-     * and puts it into static and instance fields
-     * @param cw Class writer object
-     */
-    @Override
-    protected void createInitMethod(ClassWriter cw) {
-        MethodVisitor mw = cw.visitMethod(
-                Opcodes.ACC_PUBLIC,
-                INIT_METHOD_NAME, INIT_METHOD_SIGNATURE,
-                null,
-                new String[0]);
+        /**
+         * Create class constructor, which
+         * create a call site for target method
+         * and puts it into static and instance fields
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] createInitMethod(byte[] bytes) {
+                ClassModel cm = ClassFile.of().parse(bytes);
 
-        mw.visitVarInsn(Opcodes.ALOAD, 0);
-        mw.visitMethodInsn(Opcodes.INVOKESPECIAL, PARENT_CLASS_NAME,
-                INIT_METHOD_NAME, INIT_METHOD_SIGNATURE);
+                bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod(INIT_METHOD_NAME,
+                                MethodTypeDesc.ofDescriptor(INIT_METHOD_SIGNATURE), ClassFile.ACC_PUBLIC,
+                                mb -> mb.withCode(cob -> {
+                                        cob.aload(0)
+                                                        .invokespecial(ClassDesc.ofInternalName(PARENT_CLASS_NAME),
+                                                                        INIT_METHOD_NAME,
+                                                                        MethodTypeDesc.ofDescriptor(
+                                                                                        INIT_METHOD_SIGNATURE))
+                                                        .aload(0)
+                                                        .new_(ClassDesc.ofInternalName(JLI_CONSTANTCALLSITE))
+                                                        .dup()
+                                                        .invokestatic(ClassDesc.ofInternalName(JLI_METHODHANDLES),
+                                                                        "lookup",
+                                                                        MethodTypeDesc.ofDescriptor("()"
+                                                                                        + fd(JLI_METHODHANDLES_LOOKUP)))
+                                                        .ldc(ClassDesc.ofDescriptor(fullClassName))
+                                                        .ldc(TARGET_METHOD_NAME)
+                                                        .ldc(TARGET_METHOD_SIGNATURE)
+                                                        .ldc(ClassDesc.ofDescriptor(fullClassName))
+                                                        .invokevirtual(ClassDesc.ofInternalName(JL_CLASS),
+                                                                        "getClassLoader",
+                                                                        MethodTypeDesc.ofDescriptor(
+                                                                                        "()" + fd(JL_CLASSLOADER)))
+                                                        .invokestatic(ClassDesc.ofInternalName(JLI_METHODTYPE),
+                                                                        "fromMethodDescriptorString",
+                                                                        MethodTypeDesc.ofDescriptor("(" + fd(JL_STRING)
+                                                                                        + fd(JL_CLASSLOADER) + ")"
+                                                                                        + fd(JLI_METHODTYPE)))
+                                                        .invokevirtual(ClassDesc
+                                                                        .ofInternalName(JLI_METHODHANDLES_LOOKUP),
+                                                                        "findStatic",
+                                                                        MethodTypeDesc.ofDescriptor("(" + fd(JL_CLASS)
+                                                                                        + fd(JL_STRING)
+                                                                                        + fd(JLI_METHODTYPE) + ")"
+                                                                                        + fd(JLI_METHODHANDLE)))
+                                                        .invokespecial(ClassDesc.ofInternalName(JLI_CONSTANTCALLSITE),
+                                                                        INIT_METHOD_NAME,
+                                                                        MethodTypeDesc.ofDescriptor("("
+                                                                                        + fd(JLI_METHODHANDLE) + ")V"))
+                                                        .dup()
+                                                        .putstatic(ClassDesc.ofInternalName(fullClassName),
+                                                                        STATIC_BOOTSTRAP_FIELD_NAME,
+                                                                        ClassDesc.ofDescriptor(
+                                                                                        STATIC_BOOTSTRAP_FIELD_SIGNATURE))
+                                                        .putfield(ClassDesc.ofInternalName(fullClassName),
+                                                                        INSTANCE_BOOTSTRAP_FIELD_NAME,
+                                                                        ClassDesc.ofDescriptor(
+                                                                                        INSTANCE_BOOTSTRAP_FIELD_SIGNATURE))
+                                                        .return_();
+                                }))));
 
-        // Create a call site for the target method and store it into bootstrap fields
-        mw.visitVarInsn(Opcodes.ALOAD, 0);
-        mw.visitTypeInsn(Opcodes.NEW, JLI_CONSTANTCALLSITE);
-        mw.visitInsn(Opcodes.DUP);
-        mw.visitMethodInsn(Opcodes.INVOKESTATIC, JLI_METHODHANDLES,
-                "lookup", "()" + fd(JLI_METHODHANDLES_LOOKUP));
-        mw.visitLdcInsn(Type.getObjectType(fullClassName));
-        mw.visitLdcInsn(TARGET_METHOD_NAME);
-        mw.visitLdcInsn(TARGET_METHOD_SIGNATURE);
-        mw.visitLdcInsn(Type.getObjectType(fullClassName));
-        mw.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JL_CLASS,
-                "getClassLoader", "()" + fd(JL_CLASSLOADER));
-        mw.visitMethodInsn(Opcodes.INVOKESTATIC, JLI_METHODTYPE,
-                "fromMethodDescriptorString", "(" + fd(JL_STRING) + fd(JL_CLASSLOADER) + ")" + fd(JLI_METHODTYPE));
-        mw.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JLI_METHODHANDLES_LOOKUP,
-                "findStatic", "(" + fd(JL_CLASS) + fd(JL_STRING) + fd(JLI_METHODTYPE) + ")" + fd(JLI_METHODHANDLE));
-        mw.visitMethodInsn(Opcodes.INVOKESPECIAL, JLI_CONSTANTCALLSITE,
-                INIT_METHOD_NAME, "(" + fd(JLI_METHODHANDLE) + ")V");
-        mw.visitInsn(Opcodes.DUP);
-        mw.visitFieldInsn(Opcodes.PUTSTATIC, fullClassName, STATIC_BOOTSTRAP_FIELD_NAME, STATIC_BOOTSTRAP_FIELD_SIGNATURE);
-        mw.visitFieldInsn(Opcodes.PUTFIELD, fullClassName, INSTANCE_BOOTSTRAP_FIELD_NAME, INSTANCE_BOOTSTRAP_FIELD_SIGNATURE);
-
-        finishMethodCode(mw);
-    }
-
-    /**
-     * Creates a target method which always throw. It should not be called,
-     * since all invokedynamic instructions have invalid bootstrap method types
-     * @param cw Class writer object
-     */
-    @Override
-    protected void createTargetMethod(ClassWriter cw) {
-        createThrowRuntimeExceptionMethod(cw, true, TARGET_METHOD_NAME, TARGET_METHOD_SIGNATURE);
-    }
-
-    /**
-     * Creates a bootstrap method which always throw. It should not be called,
-     * since all invokedynamic instructions have invalid bootstrap method types
-     * @param cw Class writer object
-     */
-    @Override
-    protected void createBootstrapMethod(ClassWriter cw) {
-        createThrowRuntimeExceptionMethod(cw, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
-    }
-
-    /**
-     * Generates common data for class plus two fields that hold CallSite
-     * and used as bootstrap targets
-     * @param cw Class writer object
-     */
-    @Override
-    protected void generateCommonData(ClassWriterExt cw) {
-        cw.setCacheInvokeDynamic(false);
-
-        cw.visitField(Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
-                STATIC_BOOTSTRAP_FIELD_NAME,
-                STATIC_BOOTSTRAP_FIELD_SIGNATURE, null, null);
-
-        cw.visitField(Opcodes.ACC_PUBLIC,
-                INSTANCE_BOOTSTRAP_FIELD_NAME,
-                INSTANCE_BOOTSTRAP_FIELD_SIGNATURE, null, null);
-
-        super.generateCommonData(cw);
-
-        createThrowRuntimeExceptionMethod(cw, false, INSTANCE_BOOTSTRAP_METHOD_NAME, INSTANCE_BOOTSTRAP_METHOD_SIGNATURE);
-    }
-
-    Label throwMethodLabel;
-
-    // The exception to expect that is wrapped in a BootstrapMethodError
-    static final String WRAPPED_EXCEPTION = "java/lang/invoke/WrongMethodTypeException";
-
-    // The error to expect that is not wrapped in a BootstrapMethodError and
-    // is thrown directly
-    static final String DIRECT_ERROR = "java/lang/IncompatibleClassChangeError";
-
-    /**
-     * Generates an invokedynamic instruction (plus CP entry)
-     * which has invalid reference kind in the CP method handle entry for the bootstrap method
-     * @param cw Class writer object
-     * @param mw Method writer object
-     */
-    @Override
-    protected void generateCPEntryData(ClassWriter cw, MethodVisitor mw) {
-        HandleType[] types = HandleType.values();
-        HandleType type = types[Env.getRNG().nextInt(types.length)];
-
-        switch (type) {
-            case GETFIELD:
-            case PUTFIELD:
-            case GETSTATIC:
-            case PUTSTATIC:
-            case INVOKESPECIAL:
-            case INVOKEVIRTUAL:
-            case INVOKEINTERFACE:
-                // Handle these cases
-                break;
-            default:
-                // And don't generate code for all other cases
-                return;
+                return bytes;
         }
 
-        Label indyThrowableBegin = new Label();
-        Label indyThrowableEnd = new Label();
-        Label catchThrowableLabel = new Label();
-
-        Label indyBootstrapBegin = new Label();
-        Label indyBootstrapEnd = new Label();
-        Label catchBootstrapLabel = new Label();
-
-        mw.visitTryCatchBlock(indyBootstrapBegin, indyBootstrapEnd, catchBootstrapLabel, JL_BOOTSTRAPMETHODERROR);
-        mw.visitLabel(indyBootstrapBegin);
-
-        mw.visitTryCatchBlock(indyThrowableBegin, indyThrowableEnd, catchThrowableLabel, JL_THROWABLE);
-        mw.visitLabel(indyThrowableBegin);
-
-        Handle bsm;
-        switch (type) {
-            case GETFIELD:
-            case PUTFIELD:
-                bsm = new Handle(type.asmTag,
-                        fullClassName,
-                        INSTANCE_BOOTSTRAP_FIELD_NAME,
-                        INSTANCE_BOOTSTRAP_FIELD_SIGNATURE);
-                break;
-            case GETSTATIC:
-            case PUTSTATIC:
-                bsm = new Handle(type.asmTag,
-                        fullClassName,
-                        STATIC_BOOTSTRAP_FIELD_NAME,
-                        STATIC_BOOTSTRAP_FIELD_SIGNATURE);
-                break;
-            case INVOKESPECIAL:
-            case INVOKEVIRTUAL:
-            case INVOKEINTERFACE:
-                bsm = new Handle(type.asmTag,
-                        fullClassName,
-                        INSTANCE_BOOTSTRAP_METHOD_NAME,
-                        INSTANCE_BOOTSTRAP_METHOD_SIGNATURE);
-                break;
-            default:
-                throw new Error("Unexpected handle type " + type);
+        /**
+         * Creates a target method which always throw. It should not be called,
+         * since all invokedynamic instructions have invalid bootstrap method types
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] createTargetMethod(byte[] bytes) {
+                createThrowRuntimeExceptionMethod(ClassFile.of().parse(bytes), true, TARGET_METHOD_NAME,
+                                TARGET_METHOD_SIGNATURE);
         }
 
-        mw.visitInvokeDynamicInsn(TARGET_METHOD_NAME,
-                TARGET_METHOD_SIGNATURE,
-                bsm);
+        /**
+         * Creates a bootstrap method which always throw. It should not be called,
+         * since all invokedynamic instructions have invalid bootstrap method types
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] createBootstrapMethod(byte[] bytes) {
+                createThrowRuntimeExceptionMethod(bytes, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
+        }
 
-        mw.visitLabel(indyBootstrapEnd);
-        mw.visitLabel(indyThrowableEnd);
+        /**
+         * Generates common data for class plus two fields that hold CallSite
+         * and used as bootstrap targets
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] generateCommonData(byte[] bytes) {
 
-        // No exception at all, throw error
-        Label throwLabel = new Label();
-        mw.visitJumpInsn(Opcodes.GOTO, throwLabel);
+                ClassModel cm = ClassFile.of().parse(bytes);
 
-        // JDK-8079697 workaround: we have to generate stackmaps manually
-        mw.visitFrame(Opcodes.F_SAME1, 0, new Object[0], 1, new Object[] { JL_BOOTSTRAPMETHODERROR });
+                bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb
+                                .withField(STATIC_BOOTSTRAP_FIELD_NAME,
+                                                ClassDesc.ofDescriptor(STATIC_BOOTSTRAP_FIELD_SIGNATURE),
+                                                ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC)
+                                .withField(INSTANCE_BOOTSTRAP_FIELD_NAME,
+                                                ClassDesc.ofDescriptor(INSTANCE_BOOTSTRAP_FIELD_SIGNATURE),
+                                                ClassFile.ACC_PUBLIC)));
 
-        // Got a bootstrapmethoderror as expected, check that it is wrapping what we expect
-        mw.visitLabel(catchBootstrapLabel);
+                super.generateCommonData(bytes);
 
-        // Save error in case we need to rethrow it
-        mw.visitInsn(Opcodes.DUP);
-        mw.visitVarInsn(Opcodes.ASTORE, 1);
-        mw.visitMethodInsn(Opcodes.INVOKEVIRTUAL, JL_THROWABLE, "getCause", "()" + fd(JL_THROWABLE));
+                createThrowRuntimeExceptionMethod(ClassFile.of().parse(bytes), false, INSTANCE_BOOTSTRAP_METHOD_NAME,
+                                INSTANCE_BOOTSTRAP_METHOD_SIGNATURE);
+        }
 
-        // If it is the expected exception, goto next block
-        mw.visitTypeInsn(Opcodes.INSTANCEOF, WRAPPED_EXCEPTION);
-        Label nextBlockLabel = new Label();
-        mw.visitJumpInsn(Opcodes.IFNE, nextBlockLabel);
+        Label throwMethodLabel;
 
-        // Not the exception we were expectiong, throw error
-        mw.visitVarInsn(Opcodes.ALOAD, 1); // Use full chain as cause
-        createThrowRuntimeExceptionCodeWithCause(mw,
-                "invokedynamic got an unexpected wrapped exception (expected " + WRAPPED_EXCEPTION
-                + ", bootstrap type=" + type
-                + ", opcode=" + type.asmTag + ")!");
+        // The exception to expect that is wrapped in a BootstrapMethodError
+        static final String WRAPPED_EXCEPTION = "java/lang/invoke/WrongMethodTypeException";
 
-        // JDK-8079697 workaround: we have to generate stackmaps manually
-        mw.visitFrame(Opcodes.F_SAME1, 0, new Object[0], 1, new Object[] { JL_THROWABLE });
-        mw.visitLabel(catchThrowableLabel);
+        // The error to expect that is not wrapped in a BootstrapMethodError and
+        // is thrown directly
+        static final String DIRECT_ERROR = "java/lang/IncompatibleClassChangeError";
 
-        // Save error in case we need to rethrow it
-        mw.visitInsn(Opcodes.DUP);
-        mw.visitVarInsn(Opcodes.ASTORE, 1);
+        /**
+         * Generates an invokedynamic instruction (plus CP entry)
+         * which has invalid reference kind in the CP method handle entry for the
+         * bootstrap method
+         * 
+         * @param bytes Class file bytes
+         */
+        @Override
+        protected byte[] generateCPEntryData(byte[] bytes) {
+                ClassModel cm = ClassFile.of().parse(bytes);
 
-        // If it is the expected exception, goto next block
-        mw.visitTypeInsn(Opcodes.INSTANCEOF, DIRECT_ERROR);
-        mw.visitJumpInsn(Opcodes.IFNE, nextBlockLabel);
+                bytes = ClassFile.of().transform(cm,
+                                ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData",
+                                        MethodTypeDesc.ofDescriptor("([B)[B"), ClassFile.ACC_PROTECTED,
+                                        mb -> mb.withCode(cob -> {
 
-        // Not the exception we were expectiong, throw error
-        mw.visitVarInsn(Opcodes.ALOAD, 1); // Use full chain as cause
-        createThrowRuntimeExceptionCodeWithCause(mw,
-                "invokedynamic got an unexpected exception (expected " + DIRECT_ERROR
-                + ", bootstrap type" + type
-                + ", opcode=" + type.asmTag + ")!");
+                                                DirectMethodHandleDesc.Kind[] kinds = DirectMethodHandleDesc.Kind
+                                                                .values();
+                                                DirectMethodHandleDesc.Kind kind = kinds[new Random()
+                                                                .nextInt(kinds.length)];
+                                                                
+                                                switch (kind) {
+                                                        case GETTER:
+                                                        case SETTER:
+                                                        case STATIC_GETTER:
+                                                        case STATIC_SETTER:
+                                                        case SPECIAL:
+                                                        case VIRTUAL:
+                                                        case INTERFACE_VIRTUAL:
+                                                                break;
+                                                        default:
+                                                                return;
+                                                }
 
-        // JDK-8079697 workaround: we have to generate stackmaps manually
-        mw.visitFrame(Opcodes.F_CHOP, 0, new Object[0], 0, new Object[0]);
+                                                Label indyThrowableBegin = cob.newLabel();
+                                                Label indyThrowableEnd = cob.newLabel();
+                                                Label catchThrowableLabel = cob.newLabel();
+                                                Label indyBootstrapBegin = cob.newLabel();
+                                                Label indyBootstrapEnd = cob.newLabel();
+                                                Label catchBootstrapLabel = cob.newLabel();
 
-        // Unable to place this code once in the method epilog due to bug in ASM
-        mw.visitLabel(throwLabel);
-        createThrowRuntimeExceptionCode(mw,
-                "invokedynamic should always throw (bootstrap type" + type +", opcode=" + type.asmTag + ")!");
+                                                cob.trying(
+                                                        tryBlock -> {
+                                                                tryBlock.labelBinding(
+                                                                                indyBootstrapBegin);
+                                                                tryBlock.labelBinding(indyBootstrapEnd);
+                                                        },
+                                                        catchBuilder -> {
+                                                                catchBuilder.catching(ClassDesc.of(
+                                                                                JL_BOOTSTRAPMETHODERROR),
+                                                                                catchBlock -> {
+                                                                                        e: catchBlock.labelBinding(
+                                                                                                        catchBootstrapLabel);
+                                                                                        catchBlock.returnInstruction(
+                                                                                                        TypeKind.VoidType);
+                                                                                });
+                                                        });
+                                                cob.labelBinding(indyThrowableBegin);
 
-        mw.visitFrame(Opcodes.F_SAME, 0, new Object[0], 0, new Object[0]);
-        mw.visitLabel(nextBlockLabel);
-    }
+                                                cob.trying(
+                                                        tryBlock -> {
+                                                                tryBlock.labelBinding(
+                                                                                indyThrowableBegin);
+                                                                tryBlock.labelBinding(indyThrowableEnd);
+                                                        },
+                                                        catchBuilder -> {
+                                                                catchBuilder.catching(ClassDesc
+                                                                                .of(JL_THROWABLE),
+                                                                                catchBlock -> {
+                                                                                        catchBlock.labelBinding(
+                                                                                                        catchThrowableLabel);
+                                                                                        catchBlock.returnInstruction(
+                                                                                                        TypeKind.VoidType);
+                                                                                });
+                                                        });
+                                                cob.labelBinding(indyBootstrapBegin);
+
+                                                DirectMethodHandleDesc bsm;
+                                                switch (kind) {
+                                                        case GETTER:
+                                                        case SETTER:
+                                                                bsm = MethodHandleDesc.ofField(kind,
+                                                                                ClassDesc.of(fullClassName),
+                                                                                INSTANCE_BOOTSTRAP_FIELD_NAME,
+                                                                                ClassDesc.ofDescriptor(
+                                                                                                INSTANCE_BOOTSTRAP_FIELD_SIGNATURE));
+                                                                break;
+                                                        case STATIC_GETTER:
+                                                        case STATIC_SETTER:
+                                                                bsm = MethodHandleDesc.ofField(kind,
+                                                                                ClassDesc.of(fullClassName),
+                                                                                STATIC_BOOTSTRAP_FIELD_NAME,
+                                                                                ClassDesc.ofDescriptor(
+                                                                                                STATIC_BOOTSTRAP_FIELD_SIGNATURE));
+                                                                break;
+                                                        case SPECIAL:
+                                                        case VIRTUAL:
+                                                        case INTERFACE_VIRTUAL:
+                                                                bsm = MethodHandleDesc.ofMethod(kind,
+                                                                                ClassDesc.of(fullClassName),
+                                                                                INSTANCE_BOOTSTRAP_METHOD_NAME,
+                                                                                MethodTypeDesc.ofDescriptor(
+                                                                                                INSTANCE_BOOTSTRAP_METHOD_SIGNATURE));
+                                                                break;
+                                                        default:
+                                                                throw new Error("Unexpected handle type "
+                                                                                + kind);
+                                                }
+                                                cob.invokedynamic(DynamicCallSiteDesc.of(bsm,
+                                                                TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(
+                                                                                TARGET_METHOD_SIGNATURE)));
+                                                cob.labelBinding(indyBootstrapEnd);
+                                                cob.labelBinding(indyThrowableEnd);
+
+                                                // No exception at all, throw error
+                                                Label throwLabel = cob.newLabel();
+                                                cob.goto_(throwLabel);
+
+                                                // Got a bootstrapmethoderror as expected, check that it is
+                                                // wrapping what we expect
+                                                cob.labelBinding(catchBootstrapLabel);
+
+                                                // Save error in case we need to rethrow it
+                                                cob.dup();
+                                                cob.astore(1);
+                                                cob.invokevirtual(ClassDesc.of(JL_THROWABLE), "getCause",
+                                                                MethodTypeDesc.ofDescriptor(
+                                                                                "()" + fd(JL_THROWABLE)));
+
+                                                // If it is the expected exception, goto next block
+                                                cob.instanceof_(ClassDesc.of(WRAPPED_EXCEPTION)); 
+                                                Label nextBlockLabel = cob.newLabel();
+                                                cob.ifne(nextBlockLabel);
+
+                                                // Not the exception we were expectiong, throw error
+                                                cob.aload(1);
+                                                createThrowRuntimeExceptionCodeHelper(cob,
+                                                                "invokedynamic got an unexpected wrapped exception (expected "
+                                                                                + WRAPPED_EXCEPTION
+                                                                                + ", bootstrap type=" + kind
+                                                                                + ", opcode=" + kind.refKind
+                                                                                + ")!",
+                                                                true);
+
+                                                // JDK-8294976 workaround: we have to generate stackmaps
+                                                // manually and since ClassFile API automatically generates
+                                                // stack map frames, so there is no need to manually generate
+                                                // them.
+                                                cob.labelBinding(catchThrowableLabel);
+
+                                                // Save error in case we need to rethrow it
+                                                cob.dup();
+                                                cob.astore(1);
+
+                                                // If it is the expected exception, goto next block
+                                                cob.instanceof_(ClassDesc.of(DIRECT_ERROR)); 
+                                                cob.ifne(nextBlockLabel);
+
+                                                // Not the exception we were expectiong, throw error
+                                                cob.aload(1);
+                                                createThrowRuntimeExceptionCodeHelper(cob,
+                                                                "invokedynamic got an unexpected exception (expected "
+                                                                                + DIRECT_ERROR
+                                                                                + ", bootstrap type" + kind
+                                                                                + ", opcode=" + kind.refKind
+                                                                                + ")!",
+                                                                true);
+
+                                                // Unable to place this code once in the method epilog due to
+                                                // bug in ASM
+                                                cob.labelBinding(throwLabel);
+                                                createThrowRuntimeExceptionCodeHelper(cob,
+                                                                "invokedynamic should always throw (bootstrap type"
+                                                                                + kind + ", "
+                                                                                + "opcode=" + kind.refKind
+                                                                                + ")!",
+                                                                false);
+
+                                                cob.labelBinding(nextBlockLabel);
+                                                cob.return_();
+                                        }))));
+
+                return bytes;
+        }
 }
