@@ -27,7 +27,6 @@
 #include "precompiled.hpp"
 #include "stubGenerator_x86_64.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "opto/c2_MacroAssembler.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics
@@ -84,6 +83,7 @@
 // A value of 4 checks the first three bytes and last byte of the needle.
 // Added for performance tuning.
 #define NUMBER_OF_NEEDLE_BYTES_TO_COMPARE 4
+
 // If EARLY_BAILOUT is non-zero, each element of comparison will be checked.
 // If non-zero, all compares will be done with a final check.
 #define EARLY_BAILOUT 0
@@ -137,91 +137,95 @@
 /******************************************************************************/
 
 void StubGenerator::string_indexof_big_loop_helper(
-    int size, Label& bailout, Label& loop_top,
-    StrIntrinsicNode::ArgEncoding ae) {
+    int size, Label& bailout, Label& loop_top, Register haystack,
+    Register hsLength, Register eq_mask, Register incr, Register needle,
+    Register hsPtrRet, Register temp1, StrIntrinsicNode::ArgEncoding ae) {
   Label temp;
 
-  const Register haystack     = rbx;
-  const Register hs_temp      = rcx;
-  const Register termAddr     = rax;
-  const Register hs_length    = rsi;
-  const Register eq_mask      = rsi;
-  const Register incr         = rdx;
-  const Register r_temp       = rcx;
-  const Register needle       = r14;
+  // const Register haystack = rbx;
+  // const Register hs_temp = rcx;
+  // const Register termAddr = rax;
+  // const Register hs_length = rsi;
+  // const Register eq_mask = rsi;
+  // const Register incr = rdx;
+  const Register r_temp = hsLength;   // This parameter gets overwritten!!!!
+  // const Register needle = r14;
 
-  const XMMRegister byte_0    = XMM_BYTE_0;
-  const XMMRegister byte_k    = XMM_BYTE_K;
-  const XMMRegister byte_1    = XMM_BYTE_1;
-  const XMMRegister byte_2    = XMM_BYTE_2;
-  const XMMRegister cmp_0     = XMM_TMP3;
-  const XMMRegister cmp_k     = XMM_TMP4;
-  const XMMRegister result    = XMM_TMP3;
+  const XMMRegister byte_0 = XMM_BYTE_0;
+  const XMMRegister byte_k = XMM_BYTE_K;
+  const XMMRegister byte_1 = XMM_BYTE_1;
+  const XMMRegister byte_2 = XMM_BYTE_2;
+  const XMMRegister cmp_0 = XMM_TMP3;
+  const XMMRegister cmp_k = XMM_TMP4;
+  const XMMRegister result = XMM_TMP3;
 
   bool isLL = (ae == StrIntrinsicNode::LL);
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
-  bool isU = isUL || isUU; // At least one is UTF-16
+  bool isU = isUL || isUU;  // At least one is UTF-16
 
   int sizeIncr = isU ? 2 : 1;
 
-  assert(!(isU && (size & 1)), "No odd needle sizes allowed for UTF-16");
+  if (isU && (size & 1)) {
+    __ emit_int8(0xcc);
+    return;
+  }
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
   if (size > (isU ? 4 : 2)) {
-      // Add compare for second byte
-      if (isU) {
-        __ vpbroadcastw(byte_1, Address(needle, 2), Assembler::AVX_256bit);
-      } else {
-        __ vpbroadcastb(byte_1, Address(needle, 1), Assembler::AVX_256bit);
-      }
+    // Add compare for second byte
+    if (isU) {
+      __ vpbroadcastw(byte_1, Address(needle, 2), Assembler::AVX_256bit);
+    } else {
+      __ vpbroadcastb(byte_1, Address(needle, 1), Assembler::AVX_256bit);
+    }
   }
 #endif
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
   if (size > (isU ? 6 : 3)) {
-      // Add compare for third byte
-      if (isU) {
-        __ vpbroadcastw(byte_2, Address(needle, 4), Assembler::AVX_256bit);
-      } else {
-        __ vpbroadcastb(byte_2, Address(needle, 2), Assembler::AVX_256bit);
-      }
+    // Add compare for third byte
+    if (isU) {
+      __ vpbroadcastw(byte_2, Address(needle, 4), Assembler::AVX_256bit);
+    } else {
+      __ vpbroadcastb(byte_2, Address(needle, 2), Assembler::AVX_256bit);
+    }
   }
 #endif
 
   __ movq(r11, -1);
 
-  __ leaq(termAddr, Address(haystack, hs_length, Address::times_1));
+  __ leaq(temp1, Address(haystack, hsLength, Address::times_1));
   // Calculate first increment to ensure last read is exactly 32 bytes
-  __ leal(r_temp, Address(hs_length, 32 + sizeIncr - size));
+  __ leal(r_temp, Address(hsLength, 32 + sizeIncr - size));
   __ andl(r_temp, 0x1f);
-  __ cmpl(hs_length, 0x21);
+  __ cmpl(hsLength, 0x21);
   __ movl(incr, 0x20);
   __ cmovl(Assembler::aboveEqual, incr, r_temp);
-  __ movq(hs_temp, haystack);
+  __ movq(hsPtrRet, haystack);
   __ jmpb(temp);
 
   __ align(16);
   __ bind(loop_top);
-  __ addq(hs_temp, incr);
+  __ addq(hsPtrRet, incr);
   __ movl(incr, 0x20);
-  __ cmpq(hs_temp, termAddr);
+  __ cmpq(hsPtrRet, temp1);
   __ jae(bailout);
 
   __ bind(temp);
   // Compare first byte of needle to haystack
   if (isU) {
-    __ vpcmpeqw(cmp_0, byte_0, Address(hs_temp, 0), Assembler::AVX_256bit);
+    __ vpcmpeqw(cmp_0, byte_0, Address(hsPtrRet, 0), Assembler::AVX_256bit);
   } else {
-    __ vpcmpeqb(cmp_0, byte_0, Address(hs_temp, 0), Assembler::AVX_256bit);
+    __ vpcmpeqb(cmp_0, byte_0, Address(hsPtrRet, 0), Assembler::AVX_256bit);
   }
   if (size != (isU ? 2 : 1)) {
     // Compare last byte of needle to haystack at proper position
     if (isU) {
-      __ vpcmpeqw(cmp_k, byte_k, Address(hs_temp, size - sizeIncr),
+      __ vpcmpeqw(cmp_k, byte_k, Address(hsPtrRet, size - sizeIncr),
                   Assembler::AVX_256bit);
     } else {
-      __ vpcmpeqb(cmp_k, byte_k, Address(hs_temp, size - sizeIncr),
+      __ vpcmpeqb(cmp_k, byte_k, Address(hsPtrRet, size - sizeIncr),
                   Assembler::AVX_256bit);
     }
 
@@ -235,11 +239,9 @@ void StubGenerator::string_indexof_big_loop_helper(
       __ je_b(loop_top);
 #endif
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_1, Address(hs_temp, 2),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_1, Address(hsPtrRet, 2), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_1, Address(hs_temp, 1),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_1, Address(hsPtrRet, 1), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
@@ -253,11 +255,9 @@ void StubGenerator::string_indexof_big_loop_helper(
       __ je_b(loop_top);
 #endif
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_2, Address(hs_temp, 4),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_2, Address(hsPtrRet, 4), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_2, Address(hs_temp, 2),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_2, Address(hsPtrRet, 2), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
@@ -271,6 +271,9 @@ void StubGenerator::string_indexof_big_loop_helper(
   __ je_b(loop_top);
   // At this point, we have at least one "match" where first and last bytes
   // of the needle are found the correct distance apart.
+  // NOTE: haystack (rbx) should be preserved; hsPtrRet(rcx) is expected to
+  //    point to the haystack such that hsPtrRet[tzcntl(eq_mask)] points to
+  //    the matched string.
 }
 
 /******************************************************************************/
@@ -298,7 +301,6 @@ void StubGenerator::string_indexof_big_loop_helper(
 
 void StubGenerator::string_indexof_small_loop_helper(
     int size, Label& bailout, StrIntrinsicNode::ArgEncoding ae) {
-
   bool isLL = (ae == StrIntrinsicNode::LL);
   bool isUL = (ae == StrIntrinsicNode::UL);
   bool isUU = (ae == StrIntrinsicNode::UU);
@@ -306,39 +308,42 @@ void StubGenerator::string_indexof_small_loop_helper(
 
   const Register haystack = rbx;
   const Register eq_mask = rsi;
-  const Register needle       = r14;
+  const Register needle = r14;
 
-  const XMMRegister byte_0    = XMM_BYTE_0;
-  const XMMRegister byte_k    = XMM_BYTE_K;
-  const XMMRegister byte_1    = XMM_BYTE_1;
-  const XMMRegister byte_2    = XMM_BYTE_2;
-  const XMMRegister cmp_0     = XMM_TMP3;
-  const XMMRegister cmp_k     = XMM_TMP4;
-  const XMMRegister result    = XMM_TMP3;
+  const XMMRegister byte_0 = XMM_BYTE_0;
+  const XMMRegister byte_k = XMM_BYTE_K;
+  const XMMRegister byte_1 = XMM_BYTE_1;
+  const XMMRegister byte_2 = XMM_BYTE_2;
+  const XMMRegister cmp_0 = XMM_TMP3;
+  const XMMRegister cmp_k = XMM_TMP4;
+  const XMMRegister result = XMM_TMP3;
 
   int sizeIncr = isU ? 2 : 1;
 
-  assert(!(isU && (size & 1)), "No odd needle sizes allowed for UTF-16");
+  if (isU && (size & 1)) {
+    __ emit_int8(0xcc);
+    return;
+  }
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
   if (size > (isU ? 4 : 2)) {
-      // Add compare for second byte
-      if (isU) {
-        __ vpbroadcastw(byte_1, Address(needle, 2), Assembler::AVX_256bit);
-      } else {
-        __ vpbroadcastb(byte_1, Address(needle, 1), Assembler::AVX_256bit);
-      }
+    // Add compare for second byte
+    if (isU) {
+      __ vpbroadcastw(byte_1, Address(needle, 2), Assembler::AVX_256bit);
+    } else {
+      __ vpbroadcastb(byte_1, Address(needle, 1), Assembler::AVX_256bit);
+    }
   }
 #endif
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
   if (size > (isU ? 6 : 3)) {
-      // Add compare for third byte
-      if (isU) {
-        __ vpbroadcastw(byte_2, Address(needle, 4), Assembler::AVX_256bit);
-      } else {
-        __ vpbroadcastb(byte_2, Address(needle, 2), Assembler::AVX_256bit);
-      }
+    // Add compare for third byte
+    if (isU) {
+      __ vpbroadcastw(byte_2, Address(needle, 4), Assembler::AVX_256bit);
+    } else {
+      __ vpbroadcastb(byte_2, Address(needle, 2), Assembler::AVX_256bit);
+    }
   }
 #endif
 
@@ -351,9 +356,11 @@ void StubGenerator::string_indexof_small_loop_helper(
   if (size != (isU ? 2 : 1)) {
     // Compare last byte of needle to haystack at proper position
     if (isU) {
-      __ vpcmpeqw(cmp_k, byte_k, Address(haystack, size - sizeIncr), Assembler::AVX_256bit);
+      __ vpcmpeqw(cmp_k, byte_k, Address(haystack, size - sizeIncr),
+                  Assembler::AVX_256bit);
     } else {
-      __ vpcmpeqb(cmp_k, byte_k, Address(haystack, size - sizeIncr), Assembler::AVX_256bit);
+      __ vpcmpeqb(cmp_k, byte_k, Address(haystack, size - sizeIncr),
+                  Assembler::AVX_256bit);
     }
     __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
 
@@ -365,11 +372,9 @@ void StubGenerator::string_indexof_small_loop_helper(
       __ je(bailout);
 #endif
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_1, Address(haystack, 2),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_1, Address(haystack, 2), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_1, Address(haystack, 1),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_1, Address(haystack, 1), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
@@ -383,11 +388,9 @@ void StubGenerator::string_indexof_small_loop_helper(
       __ je(bailout);
 #endif
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_2, Address(haystack, 4),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_2, Address(haystack, 4), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_2, Address(haystack, 2),
-                    Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_2, Address(haystack, 2), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
     }
@@ -401,6 +404,239 @@ void StubGenerator::string_indexof_small_loop_helper(
   __ je(bailout);
   // At this point, we have at least one "match" where first and last bytes
   // of the needle are found the correct distance apart.
+}
+
+void StubGenerator::string_indexof_preload_needle_helper(
+    int size, Register needle, Register needleVal,
+    StrIntrinsicNode::ArgEncoding ae) {
+  // Pre-load the value (correctly sized) of the needle for comparison purposes.
+
+  bool isLL = (ae == StrIntrinsicNode::LL);
+  bool isUL = (ae == StrIntrinsicNode::UL);
+  bool isUU = (ae == StrIntrinsicNode::UU);
+  bool isU = isUL || isUU;  // At least one is UTF-16
+
+  int bytesAlreadyCompared = 0;
+  int bytesLeftToCompare = 0;
+  int offsetOfFirstByteToCompare = 0;
+
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
+  bytesAlreadyCompared = isU ? 4 : 2;
+  offsetOfFirstByteToCompare = isU ? 2 : 1;
+#endif
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
+  bytesAlreadyCompared = isU ? 6 : 3;
+  offsetOfFirstByteToCompare = isU ? 4 : 2;
+#endif
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
+  bytesAlreadyCompared = isU ? 8 : 4;
+  offsetOfFirstByteToCompare = isU ? 6 : 3;
+#endif
+  bytesLeftToCompare = size - bytesAlreadyCompared;
+  assert((bytesLeftToCompare <= 8), "Too many bytes left to compare");
+
+  if (bytesLeftToCompare <= 0) {
+    return;
+  }
+
+  // At this point, there is at least one byte of the needle that needs to be
+  // compared to the haystack.
+
+  switch (bytesLeftToCompare) {
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
+    case 1:
+    case 2:
+      __ movzwl(needleVal,
+                Address(needle, offsetOfFirstByteToCompare));  // needle value
+      break;
+
+    case 3:
+    case 4:
+    case 5:
+      __ movl(needleVal,
+              Address(needle, offsetOfFirstByteToCompare));  // needle value
+      break;
+
+    case 6:
+      __ movq(needleVal,
+              Address(needle, offsetOfFirstByteToCompare - 1));  // needle value
+      break;
+
+    case 7:
+    case 8:
+      __ movq(needleVal,
+              Address(needle, offsetOfFirstByteToCompare));  // needle value
+      break;
+#endif
+
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE >= 3
+    case 1:
+    case 2:
+      __ movl(needleVal,
+              Address(needle, offsetOfFirstByteToCompare - 2));  // needle value
+      break;
+
+    case 3:
+    case 4:
+      __ movl(needleVal,
+              Address(needle, offsetOfFirstByteToCompare));  // needle value
+      break;
+
+    case 5:
+    case 6:
+      __ movq(needleVal,
+              Address(needle, offsetOfFirstByteToCompare - 2));  // needle value
+      break;
+
+    case 7:
+    case 8:
+      __ movq(needleVal,
+              Address(needle, offsetOfFirstByteToCompare));  // needle value
+      break;
+#endif
+
+    default:
+      break;
+  }
+}
+
+void StubGenerator::string_indexof_byte_compare_helper(
+    int size, Label& L_noMatch, Label& L_matchFound, Register needle,
+    Register needleVal, Register haystack, Register mask, Register foundIndex,
+    Register tmp, StrIntrinsicNode::ArgEncoding ae) {
+  // Compare size bytes of needle to haystack
+  //
+  // At a minimum, the first and last bytes of needle already compare equal
+  // to the haystack, so there is no need to compare them again.
+
+  bool isLL = (ae == StrIntrinsicNode::LL);
+  bool isUL = (ae == StrIntrinsicNode::UL);
+  bool isUU = (ae == StrIntrinsicNode::UU);
+  bool isU = isUL || isUU;  // At least one is UTF-16
+
+  int bytesAlreadyCompared = 0;
+  int bytesLeftToCompare = 0;
+  int offsetOfFirstByteToCompare = 0;
+
+  Label temp;
+
+  if (isU) {
+    if ((size & 1) != 0) {
+      __ emit_int8(0xcc);
+      return;
+    }
+  }
+
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
+  bytesAlreadyCompared = isU ? 4 : 2;
+  offsetOfFirstByteToCompare = isU ? 2 : 1;
+#endif
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
+  bytesAlreadyCompared = isU ? 6 : 3;
+  offsetOfFirstByteToCompare = isU ? 4 : 2;
+#endif
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
+  bytesAlreadyCompared = isU ? 8 : 4;
+  offsetOfFirstByteToCompare = isU ? 6 : 3;
+#endif
+  bytesLeftToCompare = size - bytesAlreadyCompared;
+  assert((bytesLeftToCompare <= 8), "Too many bytes left to compare");
+
+  if (bytesLeftToCompare <= 0) {
+    __ tzcntl(foundIndex, mask);
+    __ jmp(L_matchFound);
+    return;
+  }
+
+  // At this point, there is at least one byte of the needle that needs to be
+  // compared to the haystack.
+
+  __ tzcntl(foundIndex, mask);  // Index of match within haystack
+
+  switch (bytesLeftToCompare) {
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
+    case 1:
+    case 2:
+      __ cmpw(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 3:
+    case 4:
+      __ cmpl(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 5:
+      __ cmpl(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ jne(L_noMatch);
+      __ movl(tmp,
+              Address(needle, offsetOfFirstByteToCompare + 1));  // needle value
+      __ cmpl(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare + 1),
+              tmp);
+      __ je(L_matchFound);
+      break;
+
+    case 6:
+      __ cmpq(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare - 1),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 7:
+    case 8:
+      __ cmpq(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+#endif
+
+#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE >= 3
+    case 1:
+    case 2:
+      __ cmpl(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare - 2),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 3:
+    case 4:
+      __ cmpl(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 5:
+    case 6:
+      __ cmpq(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare - 2),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+
+    case 7:
+    case 8:
+      __ cmpq(Address(haystack, foundIndex, Address::times_1,
+                      offsetOfFirstByteToCompare),
+              needleVal);
+      __ je(L_matchFound);
+      break;
+#endif
+
+    default:
+      break;
+  }
 }
 
 void StubGenerator::generate_string_indexof() {
@@ -452,15 +688,35 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
   //  For UL where the needle size is > MAX_NEEDLE_LEN_TO_EXPAND, we default to a
   //  byte-by-byte comparison (this will be rare).
   //
+  //  Note that the code assumes MAX_NEEDLE_LEN_TO_EXPAND is >= 32.
+  //
   //  The UU and LL cases are identical except for the loop increments and loading
   //  of the characters into registers.  UU loads and compares words, LL - bytes.
   ////////////////////////////////////////////////////////////////////////////////////////
   ////////////////////////////////////////////////////////////////////////////////////////
 
 #undef STACK_SPACE
-#define STACK_SPACE 0x170
 #undef MAX_NEEDLE_LEN_TO_EXPAND
 #define MAX_NEEDLE_LEN_TO_EXPAND 0x40
+// Stack layout:
+#define COPIED_HAYSTACK_STACK_OFFSET (0x0)
+#define COPIED_HAYSTACK_STACK_SIZE (32)
+#define EXPANDED_NEEDLE_STACK_OFFSET \
+  (COPIED_HAYSTACK_STACK_OFFSET + COPIED_HAYSTACK_STACK_SIZE)
+#define EXPANDED_NEEDLE_STACK_SIZE (MAX_NEEDLE_LEN_TO_EXPAND * 2)
+#define SAVED_HAYSTACK_STACK_OFFSET \
+  (EXPANDED_NEEDLE_STACK_OFFSET + EXPANDED_NEEDLE_STACK_SIZE)
+#define SAVED_HAYSTACK_STACK_SIZE (8)
+#define SAVED_INCREMENT_STACK_OFFSET \
+  (SAVED_HAYSTACK_STACK_OFFSET + SAVED_HAYSTACK_STACK_SIZE)
+#define SAVED_INCREMENT_STACK_SIZE (8)
+#define SAVED_TERM_ADDR_STACK_OFFSET \
+  (SAVED_INCREMENT_STACK_OFFSET + SAVED_INCREMENT_STACK_SIZE)
+#define SAVED_TERM_ADDR_STACK_SIZE (8)
+#define STACK_SPACE                                          \
+  (COPIED_HAYSTACK_STACK_SIZE + EXPANDED_NEEDLE_STACK_SIZE + \
+   SAVED_HAYSTACK_STACK_SIZE + SAVED_INCREMENT_STACK_SIZE +  \
+   SAVED_TERM_ADDR_STACK_SIZE)
 
 #define CLEAR_BIT(mask, tmp) \
   if (isU) {                 \
@@ -500,7 +756,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
     Label L_begin;
 
     Label L_returnRBP, L_checkRangeAndReturn, L_returnError;
-    Label L_bigCaseFixupAndReturn, L_small7_8_fixup, L_checkRangeAndReturnRCX;
+    Label L_bigCaseFixupAndReturn, L_checkRangeAndReturnRCX;
     Label L_returnZero, L_copyHaystackToStackDone, L_bigSwitchTop;
     Label L_bigCaseDefault, L_smallCaseDefault, L_copyHaystackToStack, L_smallSwitchTop;
 
@@ -559,181 +815,157 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
       // Small case 1:
       small_hs_jmp_table[0] = __ pc();
-      if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-      } else {
-          string_indexof_small_loop_helper(1, L_returnRBP, ae);
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_checkRangeAndReturn);
-      }
-      // Small case 2:
+      {
+        string_indexof_small_loop_helper(1, L_returnRBP, ae);
+        string_indexof_byte_compare_helper(
+            1, L_returnRBP, L_checkRangeAndReturn, needle, needle_val, haystack,
+            eq_mask, set_bit, needle_val, ae);
+      }  // Small case 2:
       small_hs_jmp_table[1] = __ pc();
       {
         string_indexof_small_loop_helper(2, L_returnRBP, ae);
-        __ tzcntl(set_bit, eq_mask);
-        __ jmp(L_checkRangeAndReturn);
+        string_indexof_byte_compare_helper(
+            2, L_returnRBP, L_checkRangeAndReturn, needle, needle_val, haystack,
+            eq_mask, set_bit, needle_val, ae);
       }
       // Small case 3:
       small_hs_jmp_table[2] = __ pc();
 
-      if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-      } else {
-          Label L_loopTop;
-          string_indexof_small_loop_helper(3, L_returnRBP, ae);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-        __ tzcntl(set_bit, eq_mask);
-        __ jmp(L_checkRangeAndReturn);
-#else
-          __ movzbl(needle_val, Address(needle, 1));
+      {
+        Label L_loopTop, L_tmp;
+        string_indexof_small_loop_helper(3, L_returnRBP, ae);
+        string_indexof_preload_needle_helper(3, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpb(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ je(L_checkRangeAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_loopTop);
-          __ jmp(L_returnRBP);
-#endif
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(3, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 4:
       small_hs_jmp_table[3] = __ pc();
       {
-        Label L_loopTop;
+        Label L_loopTop, L_tmp;
         string_indexof_small_loop_helper(4, L_returnRBP, ae);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-        __ tzcntl(set_bit, eq_mask);
-        __ jmp(L_checkRangeAndReturn);
-#else
-        __ movzwl(needle_val, Address(needle, 1));
+        string_indexof_preload_needle_helper(4, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_loopTop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpw(Address(haystack, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_checkRangeAndReturn);
+        string_indexof_byte_compare_helper(4, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
         CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_loopTop);
         __ jmp(L_returnRBP);
-#endif
       }
       // Small case 5:
       small_hs_jmp_table[4] = __ pc();
 
-      if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-      } else {
-          Label L_loopTop;
-          string_indexof_small_loop_helper(5, L_returnRBP, ae);
-          __ movl(needle_val, Address(needle, 1));
+      {
+        Label L_loopTop, L_tmp;
+        string_indexof_small_loop_helper(5, L_returnRBP, ae);
+        string_indexof_preload_needle_helper(5, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpl(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ je(L_checkRangeAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_loopTop);
-          __ jmp(L_returnRBP);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(5, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 6:
       small_hs_jmp_table[5] = __ pc();
       {
-        Label L_loopTop;
+        Label L_loopTop, L_tmp;
         string_indexof_small_loop_helper(6, L_returnRBP, ae);
-          __ movl(needle_val, Address(needle, 1));
+        string_indexof_preload_needle_helper(6, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpl(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ je(L_checkRangeAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_loopTop);
-          __ jmp(L_returnRBP);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(6, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 7:
       small_hs_jmp_table[6] = __ pc();
+      {
+        Label L_loopTop, L_tmp;
+        string_indexof_small_loop_helper(7, L_returnRBP, ae);
+        string_indexof_preload_needle_helper(7, needle, needle_val, ae);
 
-      if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-      } else {
-          Label L_loopTop, L_tmp;
-          string_indexof_small_loop_helper(7, L_returnRBP, ae);
-          __ movl(needle_val, Address(needle, 1));
-          __ jmpb(L_tmp);
-
-          __ align(8);
-          __ bind(L_loopTop);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ je(L_returnRBP);
-
-          __ bind(L_tmp);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpl(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ jne(L_loopTop);
-          __ movzbl(needle_val2, Address(needle, 5));
-          __ cmpb(needle_val2, Address(haystack, set_bit, Address::times_1, 5));
-          __ jne(L_loopTop);
-          __ jmp(L_checkRangeAndReturn);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(7, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 8:
       small_hs_jmp_table[7] = __ pc();
       {
         Label L_loopTop, L_tmp;
         string_indexof_small_loop_helper(8, L_returnRBP, ae);
-          __ movl(needle_val, Address(needle, 1));
-          __ jmpb(L_tmp);
+        string_indexof_preload_needle_helper(8, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ je(L_returnRBP);
-
-          __ bind(L_tmp);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpl(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ jne(L_loopTop);
-          __ movzwl(needle_val2, Address(needle, 5));
-          __ cmpw(Address(haystack, set_bit, Address::times_1, 5), needle_val2);
-          __ jne(L_loopTop);
-          __ jmp(L_checkRangeAndReturn);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(8, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 9:
       small_hs_jmp_table[8] = __ pc();
 
-      if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-      } else {
-          Label L_loopTop;
-          string_indexof_small_loop_helper(9, L_returnRBP, ae);
-          __ movq(needle_val, Address(needle, 1));
+      {
+        Label L_loopTop, L_tmp;
+        string_indexof_small_loop_helper(9, L_returnRBP, ae);
+        string_indexof_preload_needle_helper(9, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpq(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ je(L_checkRangeAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_loopTop);
-          __ jmp(L_returnRBP);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(9, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
       // Small case 10:
       small_hs_jmp_table[9] = __ pc();
       {
-        Label L_loopTop;
+        Label L_loopTop, L_tmp;
         string_indexof_small_loop_helper(10, L_returnRBP, ae);
-          __ movq(needle_val, Address(needle, 1));
+        string_indexof_preload_needle_helper(10, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_loopTop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpq(needle_val, Address(haystack, set_bit, Address::times_1, 1));
-          __ je(L_checkRangeAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_loopTop);
-          __ jmp(L_returnRBP);
+        __ align(8);
+        __ bind(L_loopTop);
+        string_indexof_byte_compare_helper(10, L_tmp, L_checkRangeAndReturn,
+                                           needle, needle_val, haystack,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_loopTop);
+        __ jmp(L_returnRBP);
       }
     }
 
@@ -745,7 +977,10 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
     {
       const Register haystack = rbx;
-      const Register hs_ptr = rcx;    // ASGASG ??? is nlen on entry...
+      const Register hs_length = rsi;
+      const Register incr = rdx;
+      const Register r_Tmp = rax;
+      const Register hs_ptr = rcx;
       const Register needle = r14;
       const Register needle_val = rdi;
       const Register eq_mask = rsi;
@@ -754,17 +989,17 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
       // Big case 1:
       large_hs_jmp_table[0] = __ pc();
-      {
+      if (isU) {
+        __ emit_int8(0xcc);
+      } else {
         Label L_notInFirst32, L_found, L_loopTop;
 
-        if (isU) {
-          __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
-        } else {
-          string_indexof_big_loop_helper(1, L_checkRangeAndReturn, L_loopTop,
-                                         ae);
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_bigCaseFixupAndReturn);
-        }
+        string_indexof_big_loop_helper(1, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_byte_compare_helper(
+            1, L_returnError, L_bigCaseFixupAndReturn, needle, needle_val,
+            hs_ptr, eq_mask, set_bit, rax, ae);
       }
 
       // Big case 2:
@@ -772,82 +1007,79 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       {
         Label L_loopTop;
 
-        string_indexof_big_loop_helper(2, L_checkRangeAndReturn, L_loopTop, ae);
-        __ tzcntl(set_bit, eq_mask);
-        __ jmp(L_bigCaseFixupAndReturn);
+        string_indexof_big_loop_helper(2, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_byte_compare_helper(2, L_returnError, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr,
+                                           eq_mask, set_bit, rax, ae);
       }
 
       // Big case 3:
       large_hs_jmp_table[2] = __ pc();
 
       if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
+        __ emit_int8(0xcc);
       } else {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(3, L_checkRangeAndReturn, L_loopTop, ae);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-        __ tzcntl(set_bit, eq_mask);
-        __ jmp(L_bigCaseFixupAndReturn);
-#else
-        __ movzbl(needle_val, Address(needle, 1));
+        string_indexof_big_loop_helper(3, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(3, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpb(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_bigCaseFixupAndReturn);
-        __ blsrl(eq_mask, eq_mask);
+        string_indexof_byte_compare_helper(3, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr,
+                                           eq_mask, set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
         __ jmp(L_loopTop);
-#endif
       }
 
       // Big case 4:
       large_hs_jmp_table[3] = __ pc();
       {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(4, L_checkRangeAndReturn, L_loopTop, ae);
-        if (isU) {    // 2 element needle - all compared already
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_bigCaseFixupAndReturn);
-        } else {
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_bigCaseFixupAndReturn);
-#else
-          __ movzwl(needle_val, Address(needle, 1));
+        string_indexof_big_loop_helper(4, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(4, needle, needle_val, ae);
 
-          __ align(8);
-          __ bind(L_innerLoop);
-          __ tzcntl(set_bit, eq_mask);
-          __ cmpw(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-          __ je(L_bigCaseFixupAndReturn);
-          CLEAR_BIT(eq_mask, set_bit);
-          __ jne(L_innerLoop);
-          __ jmp(L_loopTop);
-#endif
-        }
+        __ align(8);
+        __ bind(L_innerLoop);
+        string_indexof_byte_compare_helper(4, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
+        __ jne(L_innerLoop);
+        __ jmp(L_loopTop);
       }
 
       // Big case 5:
       large_hs_jmp_table[4] = __ pc();
 
       if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
+        __ emit_int8(0xcc);
       } else {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(5, L_checkRangeAndReturn, L_loopTop, ae);
-        __ movl(needle_val, Address(needle, 1));
+        string_indexof_big_loop_helper(5, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(5, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_bigCaseFixupAndReturn);
-        __ blsrl(eq_mask, eq_mask);
+        string_indexof_byte_compare_helper(5, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
         __ jmp(L_loopTop);
       }
@@ -855,28 +1087,22 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       // Big case 6:
       large_hs_jmp_table[5] = __ pc();
       {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(6, L_checkRangeAndReturn, L_loopTop, ae);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-        if (isU) {    // 3 element needle - all compared already
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_bigCaseFixupAndReturn);
-        } else {
-#endif
-        __ movl(needle_val, Address(needle, 1));
+        string_indexof_big_loop_helper(6, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(6, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_bigCaseFixupAndReturn);
+        string_indexof_byte_compare_helper(6, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
+        __ bind(L_tmp);
         CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
         __ jmp(L_loopTop);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-        }
-#endif
       }
 
       // Big case 7:
@@ -887,23 +1113,36 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       } else {
         Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(7, L_checkRangeAndReturn, L_loopTop, ae);
-        __ movl(needle_val, Address(needle, 1));
-        __ jmpb(L_tmp);
+        string_indexof_big_loop_helper(7, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        // __ movl(needle_val, Address(needle, 1));
+        // __ jmpb(L_tmp);
+
+        // __ align(8);
+        // __ bind(L_innerLoop);
+        // __ blsrl(eq_mask, eq_mask);
+        // __ je(L_loopTop);
+
+        // __ bind(L_tmp);
+        // __ tzcntl(set_bit, eq_mask);
+        // __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        // __ jne(L_innerLoop);
+        // __ movzbl(hs_val, Address(hs_ptr, set_bit, Address::times_1, 5));
+        // __ cmpb(hs_val, Address(needle, 5));
+        // __ jne(L_innerLoop);
+        // __ jmp(L_small7_8_fixup);
+        string_indexof_preload_needle_helper(7, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ blsrl(eq_mask, eq_mask);
-        __ je(L_loopTop);
-
+        string_indexof_byte_compare_helper(7, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
         __ bind(L_tmp);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
-        __ movzbl(hs_val, Address(hs_ptr, set_bit, Address::times_1, 5));
-        __ cmpb(hs_val, Address(needle, 5));
-        __ jne(L_innerLoop);
-        __ jmp(L_small7_8_fixup);
+        __ jmp(L_loopTop);
       }
 
       // Big case 8:
@@ -911,55 +1150,73 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       {
         Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(8, L_checkRangeAndReturn, L_loopTop, ae);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-        if (isU) {    // 4 element needle - all compared already
-          __ tzcntl(set_bit, eq_mask);
-          __ jmp(L_bigCaseFixupAndReturn);
-        } else {
-#endif
-        __ movl(needle_val, Address(needle, 1));
-        __ jmpb(L_tmp);
+        string_indexof_big_loop_helper(8, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        // #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
+        //         if (isU) {    // 4 element needle - all compared already
+        //           __ tzcntl(set_bit, eq_mask);
+        //           __ jmp(L_bigCaseFixupAndReturn);
+        //         } else {
+        // #endif
+        //         __ movl(needle_val, Address(needle, 1));
+        //         __ jmpb(L_tmp);
+
+        //         __ align(8);
+        //         __ bind(L_innerLoop);
+        //         CLEAR_BIT(eq_mask, set_bit);
+        //         __ je(L_loopTop);
+
+        //         __ bind(L_tmp);
+        //         __ tzcntl(set_bit, eq_mask);
+        //         __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1),
+        //         needle_val);
+        //         __ jne(L_innerLoop);
+        //         __ movzwl(hs_val, Address(hs_ptr, set_bit, Address::times_1,
+        //         5));
+        //         __ cmpw(Address(needle, 5), hs_val);
+        //         __ jne(L_innerLoop);
+
+        //         __ bind(L_small7_8_fixup);
+        //         __ subq(hs_ptr, haystack);
+        //         __ addq(hs_ptr, set_bit);
+        //         __ jmp(L_checkRangeAndReturnRCX);
+        // #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
+        //         }
+        // #endif
+        string_indexof_preload_needle_helper(8, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        CLEAR_BIT(eq_mask, set_bit);
-        __ je(L_loopTop);
-
+        string_indexof_byte_compare_helper(8, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
         __ bind(L_tmp);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpl(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
+        CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
-        __ movzwl(hs_val, Address(hs_ptr, set_bit, Address::times_1, 5));
-        __ cmpw(Address(needle, 5), hs_val);
-        __ jne(L_innerLoop);
-
-        __ bind(L_small7_8_fixup);
-        __ subq(hs_ptr, haystack);
-        __ addq(hs_ptr, set_bit);
-        __ jmp(L_checkRangeAndReturnRCX);
-#if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-        }
-#endif
+        __ jmp(L_loopTop);
       }
 
       // Big case 9:
       large_hs_jmp_table[8] = __ pc();
 
       if (isU) {
-        __ emit_int8(0xCC);  // No odd needle sizes for UTF-16
+        __ emit_int8(0xcc);
       } else {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
-        string_indexof_big_loop_helper(9, L_checkRangeAndReturn, L_loopTop, ae);
-        __ movq(needle_val, Address(needle, 1));
+        string_indexof_big_loop_helper(9, L_checkRangeAndReturn, L_loopTop,
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(9, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpq(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_bigCaseFixupAndReturn);
-        __ blsrl(eq_mask, eq_mask);
+        string_indexof_byte_compare_helper(9, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
+        __ bind(L_tmp);
+        CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
         __ jmp(L_loopTop);
       }
@@ -967,17 +1224,19 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       // Big case 10:
       large_hs_jmp_table[9] = __ pc();
       {
-        Label L_loopTop, L_innerLoop;
+        Label L_loopTop, L_innerLoop, L_tmp;
 
         string_indexof_big_loop_helper(10, L_checkRangeAndReturn, L_loopTop,
-                                       ae);
-        __ movq(needle_val, Address(needle, 1));
+                                       haystack, hs_length, eq_mask, incr,
+                                       needle, hs_ptr, r_Tmp, ae);
+        string_indexof_preload_needle_helper(10, needle, needle_val, ae);
 
         __ align(8);
         __ bind(L_innerLoop);
-        __ tzcntl(set_bit, eq_mask);
-        __ cmpq(Address(hs_ptr, set_bit, Address::times_1, 1), needle_val);
-        __ je(L_bigCaseFixupAndReturn);
+        string_indexof_byte_compare_helper(10, L_tmp, L_bigCaseFixupAndReturn,
+                                           needle, needle_val, hs_ptr, eq_mask,
+                                           set_bit, rax, ae);
+        __ bind(L_tmp);
         CLEAR_BIT(eq_mask, set_bit);
         __ jne(L_innerLoop);
         __ jmp(L_loopTop);
@@ -1032,19 +1291,23 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       //  XMM_BYTE_0 - first element of needle broadcast
       //  XMM_BYTE_K - last element of needle broadcast
 
-      const Register haystack = rbx;
-      Register hsLen = rsi;
-      const Register needle_1 = rsi;
-      const Register needle = r14;
-      const Register needleLen = r12;
-      const Register numBytes = r10;
-      const Register incr = rcx;
       const Register rTmp = rax;
-      const Register rTmp2 = rdx;
-      const Register saveHS = r8;
-      const Register eq_mask = r13;
-      const Register termAddr = r15;
+      const Register haystack = rbx;
+      const Register saveNeedleAddress = rbx; // NOTE re-use
+      const Register origNeedleLen = rcx;
+      const Register firstNeedleCompare = rdx;
+      const Register hsLen = rsi;
+      const Register origHsLen = rsi; // NOTE re-use
+      const Register rTmp2 = rdi;
+      const Register mask = rbp;
+      const Register rScratch = r8;
       const Register compLen = r9;
+      const Register needleLen = r12;
+      const Register hsIndex = r12; // NOTE re-use
+      const Register constOffset = r13;
+      const Register needle = r14;
+      const Register index = r14; // NOTE re-use
+      const Register haystackEnd = r15;
 
       const XMMRegister cmp_0 = xmm_tmp3;
       const XMMRegister cmp_k = xmm_tmp4;
@@ -1057,7 +1320,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ movq(r11, -1);
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-      // Add compare for second byte
+      // Add compare for second element
       if (isU) {
         __ vpbroadcastw(byte_1, Address(needle, 2), Assembler::AVX_256bit);
       } else {
@@ -1066,7 +1329,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 #endif
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-      // Add compare for third byte
+      // Add compare for third element
       if (isU) {
         __ vpbroadcastw(byte_2, Address(needle, 4), Assembler::AVX_256bit);
       } else {
@@ -1074,125 +1337,122 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       }
 #endif
 
-      __ leaq(r15, Address(rbx, hsLen, Address::times_1));
-
-      // hsLen out-of-scope here
-      hsLen = noreg;
+      __ leaq(haystackEnd, Address(haystack, hsLen, Address::times_1));
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
-      __ leaq(rdx, Address(r14, isU ? 2 : 1));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x4 : -0x2)); // nlen - 2 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 2 : 1));
+      __ leaq(compLen, Address(needleLen, isU ? -0x4 : -0x2)); // nlen - 2 elements
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
-      __ leaq(rdx, Address(r14, isU ? 4 : 2));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x6 : -0x3)); // nlen - 3 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 4 : 2));
+      __ leaq(compLen, Address(needleLen, isU ? -0x6 : -0x3)); // nlen - 3 elements
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
-      __ leaq(rdx, Address(r14, isU ? 6 : 3));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x8 : -0x4)); // nlen - 4 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 6 : 3));
+      __ leaq(compLen, Address(needleLen, isU ? -0x8 : -0x4)); // nlen - 4 elements
 #endif
-      //  rdx has address of second element of needle
-      //  r9 has length of comparison to do
+      //  firstNeedleCompare has address of second element of needle
+      //  compLen has length of comparison to do
 
-      __ movq(Address(rsp), rbx);   // Save haystack
+      __ movq(Address(rsp, SAVED_HAYSTACK_STACK_OFFSET), haystack);   // Save haystack
 
-      __ movq(r14, rsi);
-      __ negptr(r14); // incr
-      __ movq(r13, isU ? -30 : -31);
-      __ subq(r13, rcx); // constant offset from end for full 32-byte read
+      __ movq(index, origHsLen);
+      __ negptr(index); // incr
+      __ movq(constOffset, isU ? -30 : -31);
+      __ subq(constOffset, origNeedleLen); // constant offset from end for full 32-byte read
       __ jmpb(L_temp);
 
       __ bind(L_loopTop);
-      __ addq(r14, 32);
-      __ subq(rsi, 32);
+      __ addq(index, 32);
+      __ subq(origHsLen, 32);
       __ jle(L_returnError);
-      __ cmpq(r14, r13);
-      __ cmovq(Assembler::greater, r14, r13);
+      __ cmpq(index, constOffset);
+      __ cmovq(Assembler::greater, index, constOffset);
 
       __ bind(L_temp);
-      __ movq(r12, rcx);
-      __ addq(r12, r14);
+      __ movq(hsIndex, origNeedleLen);
+      __ addq(hsIndex, index);
 
       // Compare first byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_0, byte_0, Address(r15, r14), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_0, byte_0, Address(haystackEnd, index), Assembler::AVX_256bit);
         // Compare last byte of needle to haystack at proper position
-        __ vpcmpeqw(cmp_k, byte_k, Address(r15, r12, Address::times_1, -2),
+        __ vpcmpeqw(cmp_k, byte_k, Address(haystackEnd, hsIndex, Address::times_1, -2),
                     Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_0, byte_0, Address(r15, r14), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_0, byte_0, Address(haystackEnd, index), Assembler::AVX_256bit);
         // Compare last byte of needle to haystack at proper position
-        __ vpcmpeqb(cmp_k, byte_k, Address(r15, r12, Address::times_1, -1),
+        __ vpcmpeqb(cmp_k, byte_k, Address(haystackEnd, hsIndex, Address::times_1, -1),
                     Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
 #if EARLY_BAILOUT > 0
-      __ vpmovmskb(rbp, result, Assembler::AVX_256bit);
-      __ testl(rbp, rbp);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je_b(L_loopTop);
 #endif
       // Compare second byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_1, Address(r15, r14, Address::times_1, 2), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_1, Address(haystackEnd, index, Address::times_1, 2), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_1, Address(r15, r14, Address::times_1, 1), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_1, Address(haystackEnd, index, Address::times_1, 1), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
 #if EARLY_BAILOUT > 0
-      __ vpmovmskb(rbp, result, Assembler::AVX_256bit);
-      __ testl(rbp, rbp);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je_b(L_loopTop);
 #endif
       // Compare third byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_2, Address(r15, r14, Address::times_1, 4), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_2, Address(haystackEnd, index, Address::times_1, 4), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_2, Address(r15, r14, Address::times_1, 2), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_2, Address(haystackEnd, index, Address::times_1, 2), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
 #endif
-      __ vpmovmskb(rbp, result, Assembler::AVX_256bit);
-      __ testl(rbp, rbp);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je_b(L_loopTop);
 
       __ align(8);
       __ bind(L_innerLoop);
-      __ tzcntl(rax, rbp);
+      __ tzcntl(rTmp, mask);
 
-      __ movdq(saveIndex, rax);
-      __ movdq(saveCompLen, r9);
-      __ movq(rbx, rdx);  // Save address of 2nd element of needle
+      __ movdq(saveIndex, rTmp);
+      __ movdq(saveCompLen, compLen);
+      __ movq(saveNeedleAddress, firstNeedleCompare);  // Save address of nth element of needle
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
-      __ leaq(rdi, Address(r15, r14, Address::times_1, isU ? 2 : 1));
+      __ leaq(rTmp2, Address(haystackEnd, index, Address::times_1, isU ? 2 : 1));
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
-      __ leaq(rdi, Address(r15, r14, Address::times_1, isU ? 4 : 2));
+      __ leaq(rTmp2, Address(haystackEnd, index, Address::times_1, isU ? 4 : 2));
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
-      __ leaq(rdi, Address(r15, r14, Address::times_1, isU ? 6 : 3));
+      __ leaq(rTmp2, Address(haystackEnd, index, Address::times_1, isU ? 6 : 3));
 #endif
-      __ addq(rdi, rax);
-      __ arrays_equals(false, rdi, rdx, r9, rax, r8, xmm_tmp3, xmm_tmp4,
+      __ addq(rTmp2, rTmp);
+      __ arrays_equals(false, rTmp2, firstNeedleCompare, compLen, rTmp, rScratch, xmm_tmp3, xmm_tmp4,
                        false /* char */, knoreg);
-      __ testl(rax, rax);
+      __ testl(rTmp, rTmp);
       __ jne_b(L_found);
 
-      __ movdq(r9, saveCompLen);
-      __ movq(rdx, rbx);
-      CLEAR_BIT(rbp, rax);
+      __ movdq(compLen, saveCompLen);
+      __ movq(firstNeedleCompare, saveNeedleAddress);
+      CLEAR_BIT(mask, rTmp);
       __ jne(L_innerLoop);
       __ jmp(L_loopTop);
 
       __ bind(L_found);
-      __ movdq(rax, saveIndex);
-      __ leaq(r8, Address(r15, r14, Address::times_1));
-      __ subq(r8, Address(rsp));
-      __ addq(r8, rax);
-      __ movq(r11, r8);
+      __ movdq(rTmp, saveIndex);
+      __ leaq(rScratch, Address(haystackEnd, index, Address::times_1));
+      __ subq(rScratch, Address(rsp, SAVED_HAYSTACK_STACK_OFFSET));
+      __ addq(rScratch, rTmp);
+      __ movq(r11, rScratch);
       __ jmp(L_checkRangeAndReturn);
     }
 
@@ -1225,6 +1485,16 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       Label L_innerLoop;
 
       const Register needle = r14;
+      const Register saveCompLen = r14; // NOTE re-use
+      const Register needleLen = r12;
+      const Register saveNeedleAddress = r12; // NOTE re-use
+      const Register firstNeedleCompare = rdx;
+      const Register compLen = r9;
+      const Register haystack = rbx;
+      const Register mask = r8;
+      const Register rTmp = rdi;
+      const Register rTmp2 = r13;
+      const Register rTmp3 = rax;
 
       const XMMRegister cmp_0 = xmm_tmp3;
       const XMMRegister cmp_k = xmm_tmp4;
@@ -1249,91 +1519,90 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 #endif
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
-      __ leaq(rdx, Address(r14, isU ? 2 : 1));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x4 : -0x2)); // nlen - 2 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 2 : 1));      //////////////////////////////////////////////////
+      __ leaq(compLen, Address(needleLen, isU ? -0x4 : -0x2)); // nlen - 2 elements
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
-      __ leaq(rdx, Address(r14, isU ? 4 : 2));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x6 : -0x3)); // nlen - 3 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 4 : 2));      //////////////////////////////////////////////////
+      __ leaq(compLen, Address(needleLen, isU ? -0x6 : -0x3)); // nlen - 3 elements
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
-      __ leaq(rdx, Address(r14, isU ? 6 : 3));      //////////////////////////////////////////////////
-      __ leaq(r9, Address(r12, isU ? -0x8 : -0x4)); // nlen - 4 elements
+      __ leaq(firstNeedleCompare, Address(needle, isU ? 6 : 3));      //////////////////////////////////////////////////
+      __ leaq(compLen, Address(needleLen, isU ? -0x8 : -0x4)); // nlen - 4 elements
 #endif
-      //  rdx has address of second element of needle
-      //  r9 has length of comparison to do
+      //  firstNeedleCompare has address of second element of needle
+      //  compLen has length of comparison to do
 
 
       // Compare first byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_0, byte_0, Address(rbx, 0), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_0, byte_0, Address(haystack, 0), Assembler::AVX_256bit);
         // Compare last byte of needle to haystack at proper position
-        __ vpcmpeqw(cmp_k, byte_k, Address(rbx, r12, Address::times_1, -2),
+        __ vpcmpeqw(cmp_k, byte_k, Address(haystack, needleLen, Address::times_1, -2),
                     Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_0, byte_0, Address(rbx, 0), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_0, byte_0, Address(haystack, 0), Assembler::AVX_256bit);
         // Compare last byte of needle to haystack at proper position
-        __ vpcmpeqb(cmp_k, byte_k, Address(rbx, r12, Address::times_1, -1),
+        __ vpcmpeqb(cmp_k, byte_k, Address(haystack, needleLen, Address::times_1, -1),
                     Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, cmp_0, Assembler::AVX_256bit);
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
 #if EARLY_BAILOUT > 0
-      __ vpmovmskb(r8, result, Assembler::AVX_256bit);
-      __ testl(r8, r8);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je(L_returnRBP);
 #endif
       // Compare second byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_1, Address(rbx, 2), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_1, Address(haystack, 2), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_1, Address(rbx, 1), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_1, Address(haystack, 1), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
 #if EARLY_BAILOUT > 0
-      __ vpmovmskb(r8, result, Assembler::AVX_256bit);
-      __ testl(r8, r8);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je(L_returnRBP);
 #endif
       // Compare third byte of needle to haystack
       if (isU) {
-        __ vpcmpeqw(cmp_k, byte_2, Address(rbx, 4), Assembler::AVX_256bit);
+        __ vpcmpeqw(cmp_k, byte_2, Address(haystack, 4), Assembler::AVX_256bit);
       } else {
-        __ vpcmpeqb(cmp_k, byte_2, Address(rbx, 2), Assembler::AVX_256bit);
+        __ vpcmpeqb(cmp_k, byte_2, Address(haystack, 2), Assembler::AVX_256bit);
       }
       __ vpand(result, cmp_k, result, Assembler::AVX_256bit);
 #endif
-      __ vpmovmskb(r8, result, Assembler::AVX_256bit);
-      __ testl(r8, r8);
+      __ vpmovmskb(mask, result, Assembler::AVX_256bit);
+      __ testl(mask, mask);
       __ je(L_returnRBP);   // Not found
 
-      // __ movdq(saveIndex, rax);
-      __ movq(r14, r9);
-      __ movq(r12, rdx);  // Save address of 2nd element of needle
+      __ movq(saveCompLen, compLen);
+      __ movq(saveNeedleAddress, firstNeedleCompare);  // Save address of 2nd element of needle
 
       __ align(8);
       __ bind(L_innerLoop);
-      __ tzcntl(r11, r8);
+      __ tzcntl(r11, mask);
 
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 2
-      __ leaq(rdi, Address(rbx, r11, Address::times_1, isU ? 2 : 1));
+      __ leaq(rTmp, Address(haystack, r11, Address::times_1, isU ? 2 : 1));
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 3
-      __ leaq(rdi, Address(rbx, r11, Address::times_1, isU ? 4 : 2));
+      __ leaq(rTmp, Address(haystack, r11, Address::times_1, isU ? 4 : 2));
 #endif
 #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE == 4
-      __ leaq(rdi, Address(rbx, r11, Address::times_1, isU ? 6 : 3));
+      __ leaq(rTmp, Address(haystack, r11, Address::times_1, isU ? 6 : 3));
 #endif
-      __ arrays_equals(false, rdi, rdx, r9, rax, r13, xmm_tmp3, xmm_tmp4,
+      __ arrays_equals(false, rTmp, firstNeedleCompare, compLen, rTmp3, rTmp2, xmm_tmp3, xmm_tmp4,
                        false /* char */, knoreg);
-      __ testl(rax, rax);
+      __ testl(rTmp3, rTmp3);
       __ jne_b(L_checkRangeAndReturn);
 
-      __ movq(r9, r14);
-      __ movq(rdx, r12);
-      CLEAR_BIT(r8, rax);
+      __ movq(compLen, saveCompLen);
+      __ movq(firstNeedleCompare, saveNeedleAddress);
+      CLEAR_BIT(mask, rTmp3);
       __ jne(L_innerLoop);
       __ jmp(L_returnRBP);
 
@@ -1470,8 +1739,8 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
         __ vpbroadcastb(byte_0, Address(needle, 0), Assembler::AVX_256bit);
       }
 
-      __ cmpq(needle_len, isU ? 2 : 1);
-      __ je_b(L_short);
+      // __ cmpq(needle_len, isU ? 2 : 1);
+      // __ je_b(L_short);
 
       if (isU) {
         __ vpbroadcastw(byte_k, Address(needle, needle_len, Address::times_1, -2),
@@ -1481,7 +1750,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
                         Assembler::AVX_256bit);
       }
 
-      __ bind(L_short);
+      // __ bind(L_short);
     }
 
     __ cmpq(haystack_len, 0x20);
@@ -1489,6 +1758,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
     {
       Label L_moreThan16, L_adjustHaystack;
+
       const Register index = rax;
       const Register haystack = rbx;
 
@@ -1496,7 +1766,6 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ cmpq(haystack_len, 0x10);
       __ ja_b(L_moreThan16);
 
-#define COPIED_HAYSTACK_STACK_OFFSET 0x70
       __ movq(index, COPIED_HAYSTACK_STACK_OFFSET + 0x10);
       __ movdqu(xmm_tmp1, Address(haystack, haystack_len, Address::times_1, -0x10));
       __ movdqu(Address(rsp, COPIED_HAYSTACK_STACK_OFFSET), xmm_tmp1);
@@ -1532,8 +1801,18 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       //                         Wide char code
       ////////////////////////////////////////////////////////////////////////////////////////
       ////////////////////////////////////////////////////////////////////////////////////////
+      //
+      // Pseudo-code:
+      //
+      // If needle length less than MAX_NEEDLE_LEN_TO_EXPAND, read the needle bytes from r14
+      // and write them as words onto the stack.  Then go to the "regular" code.  This is
+      // equavilent to doing a UU comparison, since the haystack will be in UTF-16.
+      //
+      // If the needle can't be expanded, process the same way as the default cases above.
+      // That is, for each haystack chunk, compare the needle.
       __ bind(L_wcharBegin);
 
+      assert(MAX_NEEDLE_LEN_TO_EXPAND >= 32, "Small UL needles not supported");
 
       __ shlq(haystack_len, 1);
 
@@ -1563,7 +1842,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ vpmovzxbw(xmm0, Address(r12, r14, Address::times_1),
                    Assembler::AVX_256bit);  // load needle[low-16]
       __ subl(rdx, rcx);
-      __ vmovdqu(Address(rsp, 0xc0), xmm0);  // store to stack
+      __ vmovdqu(Address(rsp, EXPANDED_NEEDLE_STACK_OFFSET), xmm0);  // store to stack
       __ testl(rax, rax);
       __ je_b(L_copyDone);
 
@@ -1574,7 +1853,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ bind(L_copyHigh);
       __ vpmovzxbw(xmm0, Address(r12, rcx, Address::times_1),
                    Assembler::AVX_256bit);  // load needle[low-16]
-      __ vmovdqu(Address(rsp, rcx, Address::times_2, 0xc0),
+      __ vmovdqu(Address(rsp, rcx, Address::times_2, EXPANDED_NEEDLE_STACK_OFFSET),
                  xmm0);  // store to stack
       __ addq(rcx, 0x10);
       __ decl(rax);
@@ -1586,7 +1865,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       // Jump to L_continue here after restoring state
       __ movslq(rax, rdx);
       __ leaq(needle, Address(rsp, rax, Address::times_1));
-      __ addq(needle, 0xc0);
+      __ addq(needle, EXPANDED_NEEDLE_STACK_OFFSET);
       __ movq(needle_len, r10);
       __ jmp(L_continue);
 
@@ -1595,7 +1874,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
       __ movq(r15, r12);
       __ leaq(rax, Address(r14, r13, Address::times_1));  // &hs[hslen*2]
-      __ movq(Address(rsp, 0x60), rax);  // Save terminating address
+      __ movq(Address(rsp, SAVED_TERM_ADDR_STACK_OFFSET), rax);  // Save terminating address
       __ movzbl(rax, Address(r15));   // First byte of needle
       __ movdl(xmm0, rax);
       __ vpbroadcastw(xmm0, xmm0, Assembler::AVX_256bit); // 1st byte of needle in words
@@ -1613,20 +1892,20 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ cmovl(Assembler::aboveEqual, rcx, rax);  // Increment for 1st haystack read
       __ addq(r15, 1);  // Increment needle
       __ leaq(r14, Address(r10, -0x4)); // Length of comparison
-      __ movq(Address(rsp, 0x10), r13);  // Save haystack
+      __ movq(Address(rsp, SAVED_HAYSTACK_STACK_OFFSET), r13);  // Save haystack
       __ movq(rbx, r13);
       __ jmpb(L_wideMidLoop);
 
       __ bind(L_wideTopLoop);
 
-      __ addq(rbx, Address(rsp));  // Add increment
+      __ addq(rbx, Address(rsp, SAVED_INCREMENT_STACK_OFFSET));  // Add increment
       __ movl(rcx, 0x20);
-      __ cmpq(rbx, Address(rsp, 0x60));  // Loop termination
+      __ cmpq(rbx, Address(rsp, SAVED_TERM_ADDR_STACK_OFFSET));  // Loop termination
       __ jae(L_returnRBP);
 
       __ bind(L_wideMidLoop);
 
-      __ movq(Address(rsp), rcx);  // update increment
+      __ movq(Address(rsp, SAVED_INCREMENT_STACK_OFFSET), rcx);  // update increment
       __ vpcmpeqw(xmm_tmp3, xmm0, Address(rbx), Assembler::AVX_256bit);
       __ vpcmpeqw(xmm_tmp4, xmm1, Address(rbx, r10, Address::times_1, -0x2),
                   Assembler::AVX_256bit);
@@ -1657,7 +1936,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       __ jmp(L_wideTopLoop);
 
       __ bind(L_wideFound);
-      __ subq(rbx, Address(rsp, 0x10)); // curr_hs - hs
+      __ subq(rbx, Address(rsp, SAVED_HAYSTACK_STACK_OFFSET)); // curr_hs - hs
       __ addq(rbx, r8); // add offset of match
       __ movq(rbp, rbx);
       __ jmp(L_returnRBP);
