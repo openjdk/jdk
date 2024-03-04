@@ -23,6 +23,14 @@
 
 package vm.mlvm.cp.share;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.DirectMethodHandleDesc;
+import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodHandleDesc;
+import java.lang.constant.MethodTypeDesc;
+
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -36,16 +44,20 @@ public class GenManyIndyOneCPX extends GenFullCP {
         ClassfileGenerator.main(args);
     }
 
-    @Override
-    protected void generateCPEntryData(ClassWriter cw, MethodVisitor mw) {
-        Handle bsm = new Handle(Opcodes.H_INVOKESTATIC,
-                fullClassName,
-                BOOTSTRAP_METHOD_NAME,
-                BOOTSTRAP_METHOD_SIGNATURE);
+    protected byte[] generateCPEntryData(byte[] bytes) {
+        ClassModel cm = ClassFile.of().parse(bytes);
 
-        mw.visitInvokeDynamicInsn(TARGET_METHOD_NAME,
-                TARGET_METHOD_SIGNATURE,
-                bsm);
+        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData", MethodTypeDesc.ofDescriptor("([B)[B"), ClassFile.ACC_PROTECTED,
+                mb -> mb.withCode(cob -> {
+                    // Create the bootstrap method handle
+                    DirectMethodHandleDesc bsm = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of(fullClassName),
+                            BOOTSTRAP_METHOD_NAME, MethodTypeDesc.ofDescriptor(BOOTSTRAP_METHOD_SIGNATURE));
+
+                    // Generate the invokedynamic instruction
+                    cob.invokedynamic(DynamicCallSiteDesc.of(bsm, TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE)));
+                }))));
+
+        return bytes;
     }
 
 }

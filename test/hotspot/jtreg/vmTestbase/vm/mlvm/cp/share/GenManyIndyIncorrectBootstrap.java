@@ -115,7 +115,7 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
     /**
      * Generates common data for class plus two fields that hold CallSite
      * and used as bootstrap targets
-     * @param cw Class writer object
+     * @param bytes Class file bytes
      */
     @Override
     protected byte[] generateCommonData(byte[] bytes) {
@@ -147,8 +147,7 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
     /**
      * Generates an invokedynamic instruction (plus CP entry)
      * which has invalid reference kind in the CP method handle entry for the bootstrap method
-     * @param cw Class writer object
-     * @param mw Method writer object
+     * @param bytes Class file bytes
      */
     @Override
     protected byte[] generateCPEntryData(byte[] bytes) {
