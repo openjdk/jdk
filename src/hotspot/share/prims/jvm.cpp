@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3586,12 +3586,6 @@ JVM_ENTRY(jobject, JVM_NewInstanceFromConstructor(JNIEnv *env, jobject c, jobjec
   return res;
 JVM_END
 
-// Atomic ///////////////////////////////////////////////////////////////////////////////////////////
-
-JVM_LEAF(jboolean, JVM_SupportsCX8())
-  return VM_Version::supports_cx8();
-JVM_END
-
 JVM_ENTRY(void, JVM_InitializeFromArchive(JNIEnv* env, jclass cls))
   Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve(cls));
   assert(k->is_klass(), "just checking");
@@ -3939,8 +3933,6 @@ JVM_ENTRY(void, JVM_VirtualThreadStart(JNIEnv* env, jobject vthread))
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, false);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3956,8 +3948,6 @@ JVM_ENTRY(void, JVM_VirtualThreadEnd(JNIEnv* env, jobject vthread))
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, true);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3975,8 +3965,6 @@ JVM_ENTRY(void, JVM_VirtualThreadMount(JNIEnv* env, jobject vthread, jboolean hi
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
@@ -3994,13 +3982,11 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
     // set VTMS transition bit value in JavaThread and java.lang.VirtualThread object
     JvmtiVTMSTransitionDisabler::set_is_in_VTMS_transition(thread, vthread, hide);
   }
-#else
-  fatal("Should only be called with JVMTI enabled");
 #endif
 JVM_END
 
 // Always update the temporary VTMS transition bit.
-JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
+JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
@@ -4009,8 +3995,20 @@ JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboole
   assert(!thread->is_in_VTMS_transition(), "sanity check");
   assert(thread->is_in_tmp_VTMS_transition() != (bool)hide, "sanity check");
   thread->toggle_is_in_tmp_VTMS_transition();
-#else
-  fatal("Should only be called with JVMTI enabled");
+#endif
+JVM_END
+
+// Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
+// Needed to avoid deadlocks with JVMTI suspend mechanism.
+JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter))
+#if INCLUDE_JVMTI
+  if (!DoJVMTIVirtualThreadTransitions) {
+    assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
+    return;
+  }
+  assert(thread->is_disable_suspend() != (bool)enter,
+         "nested or unbalanced monitor enter/exit is not allowed");
+  thread->toggle_is_disable_suspend();
 #endif
 JVM_END
 

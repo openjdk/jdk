@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -45,16 +45,16 @@ typedef struct {
 
 /* list of breakpoints */
 static breakpoint breakpoints[] = {
-    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 0, NULL },
-    { 1, (char*) "finMethod", (char*) "(JIJ)V", 5, NULL },
-    { 1, (char*) "finMethod", (char*) "(JIJ)V", 4, NULL },
-    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 1, NULL },
-    { 0, (char*) "statMethod", (char*) "(III)I", 1, NULL }
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 0, nullptr },
+    { 1, (char*) "finMethod", (char*) "(JIJ)V", 5, nullptr },
+    { 1, (char*) "finMethod", (char*) "(JIJ)V", 4, nullptr },
+    { 1, (char*) "checkIt", (char*) "(Ljava/io/PrintStream;Z)I", 1, nullptr },
+    { 0, (char*) "statMethod", (char*) "(III)I", 1, nullptr }
 };
 
 static jclass redefCls; /* JNI's Java class object */
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 
@@ -141,7 +141,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_setBreakpoints(JNIEnv *env,
         if (breakpoints[i].inst) { /* an instance method */
             breakpoints[i].mid = env->GetMethodID(
                 redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
-            if (breakpoints[i].mid == NULL) {
+            if (breakpoints[i].mid == nullptr) {
                 printf(
                     "%s: Failed to get the method ID for the instance method \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
@@ -150,7 +150,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_setBreakpoints(JNIEnv *env,
         } else {                   /* a static method */
             breakpoints[i].mid = env->GetStaticMethodID(
                 redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
-            if (breakpoints[i].mid == NULL) {
+            if (breakpoints[i].mid == nullptr) {
                 printf(
                     "%s: Failed to get the method ID for the static method \"%s\" with signature \"%s\"\n",
                     __FILE__, breakpoints[i].m_name, breakpoints[i].m_sign);
@@ -174,7 +174,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_setBreakpoints(JNIEnv *env,
             return STATUS_FAILED;
         }
 
-        err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+        err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable BREAKPOINT event: %s (%d)\n",
                    TranslateError(err), err);
@@ -193,7 +193,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_makeRedefinition(JNIEnv *env,
     jvmtiError err;
     jvmtiClassDefinition classDef;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -205,7 +205,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_makeRedefinition(JNIEnv *env,
 /* fill the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     if (vrb == 1)
         printf(">>>>>>>> Invoke RedefineClasses():\n\tnew class byte count=%d\n",
@@ -243,7 +243,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
         if (breakpoints[i].inst) { /* an instance method */
             breakpoints[i].mid = env->GetMethodID(
                 redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
-            if (breakpoints[i].mid == NULL) {
+            if (breakpoints[i].mid == nullptr) {
                 printf(
                     "%s: getResult: Failed to get the method ID for the instance method"
                     "\"%s\" with signature \"%s\"\n",
@@ -253,7 +253,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass008_getResult(JNIEnv *env,
         } else {                   /* a static method */
             breakpoints[i].mid = env->GetStaticMethodID(
                 redefCls, breakpoints[i].m_name, breakpoints[i].m_sign);
-            if (breakpoints[i].mid == NULL) {
+            if (breakpoints[i].mid == nullptr) {
                 printf(
                     "%s: getResult: Failed to get the method ID for the static method"
                     "\"%s\" with signature \"%s\"\n",

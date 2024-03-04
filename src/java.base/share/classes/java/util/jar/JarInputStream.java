@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,11 @@ import sun.security.util.ManifestEntryVerifier;
  * <a href="{@docRoot}/../specs/jar/jar.html#jar-manifest">Manifest</a>
  * entry. The {@code Manifest} can be used to store
  * meta-information about the JAR file and its entries.
- *
+ * <p>
+ * Unless otherwise noted, passing a {@code null} argument to a constructor
+ * or method in this class will cause a {@link NullPointerException} to be
+ * thrown.
+ * </p>
  * <h2>Accessing the Manifest</h2>
  * <p>
  * The {@link #getManifest() getManifest} method is used to return the
@@ -120,6 +124,7 @@ public class JarInputStream extends ZipInputStream {
      * it is signed.
      * @throws    IOException if an I/O error has occurred
      */
+    @SuppressWarnings("this-escape")
     public JarInputStream(InputStream in, boolean verify) throws IOException {
         super(in);
         this.doVerify = verify;
@@ -241,7 +246,6 @@ public class JarInputStream extends ZipInputStream {
      * @param len the maximum number of bytes to read
      * @return the actual number of bytes read, or -1 if the end of the
      *         entry is reached
-     * @throws     NullPointerException If {@code b} is {@code null}.
      * @throws     IndexOutOfBoundsException If {@code off} is negative,
      * {@code len} is negative, or {@code len} is greater than
      * {@code b.length - off}

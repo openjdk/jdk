@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public final class FieldImpl
         extends AbstractElement

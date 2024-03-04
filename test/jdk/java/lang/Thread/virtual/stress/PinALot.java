@@ -25,13 +25,15 @@
  * @test
  * @summary Stress test timed park when pinned
  * @requires vm.debug != true
- * @run main PinALot 500000
+ * @library /test/lib
+ * @run main/othervm --enable-native-access=ALL-UNNAMED PinALot 500000
  */
 
 /*
  * @test
  * @requires vm.debug == true
- * @run main/othervm/timeout=300 PinALot 200000
+ * @library /test/lib
+ * @run main/othervm/timeout=300 --enable-native-access=ALL-UNNAMED PinALot 200000
  */
 
 import java.time.Duration;
@@ -39,9 +41,9 @@ import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.LockSupport;
 
-public class PinALot {
+import jdk.test.lib.thread.VThreadPinner;
 
-    static final Object lock = new Object();
+public class PinALot {
 
     public static void main(String[] args) throws Exception {
         int iterations = 1_000_000;
@@ -53,11 +55,11 @@ public class PinALot {
         AtomicInteger count = new AtomicInteger();
 
         Thread thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
+            VThreadPinner.runPinned(() -> {
                 while (count.incrementAndGet() < ITERATIONS) {
                     LockSupport.parkNanos(1);
                 }
-            }
+            });
         });
 
         boolean terminated;

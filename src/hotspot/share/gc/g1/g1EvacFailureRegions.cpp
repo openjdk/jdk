@@ -27,35 +27,41 @@
 #include "gc/g1/g1BatchedTask.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 G1EvacFailureRegions::G1EvacFailureRegions() :
-  _regions_failed_evacuation(mtGC),
-  _evac_failure_regions(nullptr),
-  _evac_failure_regions_cur_length(0) { }
+  _regions_evac_failed(mtGC),
+  _regions_pinned(mtGC),
+  _regions_alloc_failed(mtGC),
+  _evac_failed_regions(nullptr),
+  _num_regions_evac_failed(0) { }
 
 G1EvacFailureRegions::~G1EvacFailureRegions() {
-  assert(_evac_failure_regions == nullptr, "not cleaned up");
+  assert(_evac_failed_regions == nullptr, "not cleaned up");
 }
 
 void G1EvacFailureRegions::pre_collection(uint max_regions) {
-  Atomic::store(&_evac_failure_regions_cur_length, 0u);
-  _regions_failed_evacuation.resize(max_regions);
-  _evac_failure_regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
+  Atomic::store(&_num_regions_evac_failed, 0u);
+  _regions_evac_failed.resize(max_regions);
+  _regions_pinned.resize(max_regions);
+  _regions_alloc_failed.resize(max_regions);
+  _evac_failed_regions = NEW_C_HEAP_ARRAY(uint, max_regions, mtGC);
 }
 
 void G1EvacFailureRegions::post_collection() {
-  _regions_failed_evacuation.resize(0);
+  _regions_evac_failed.resize(0);
+  _regions_pinned.resize(0);
+  _regions_alloc_failed.resize(0);
 
-  FREE_C_HEAP_ARRAY(uint, _evac_failure_regions);
-  _evac_failure_regions = nullptr;
+  FREE_C_HEAP_ARRAY(uint, _evac_failed_regions);
+  _evac_failed_regions = nullptr;
 }
 
 bool G1EvacFailureRegions::contains(uint region_idx) const {
-  return _regions_failed_evacuation.par_at(region_idx, memory_order_relaxed);
+  return _regions_evac_failed.par_at(region_idx, memory_order_relaxed);
 }
 
 void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
@@ -63,7 +69,7 @@ void G1EvacFailureRegions::par_iterate(HeapRegionClosure* closure,
                                        uint worker_id) const {
   G1CollectedHeap::heap()->par_iterate_regions_array(closure,
                                                      hrclaimer,
-                                                     _evac_failure_regions,
-                                                     Atomic::load(&_evac_failure_regions_cur_length),
+                                                     _evac_failed_regions,
+                                                     Atomic::load(&_num_regions_evac_failed),
                                                      worker_id);
 }

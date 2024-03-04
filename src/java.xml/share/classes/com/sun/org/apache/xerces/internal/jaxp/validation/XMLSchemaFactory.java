@@ -162,9 +162,6 @@ public final class XMLSchemaFactory extends SchemaFactory {
 
         // use catalog
         fXMLSchemaLoader.setFeature(XMLConstants.USE_CATALOG, JdkXmlUtils.USE_CATALOG_DEFAULT);
-        for (Feature f : Feature.values()) {
-            fXMLSchemaLoader.setProperty(f.getPropertyName(), null);
-        }
 
         fXMLSchemaLoader.setProperty(JdkConstants.CDATA_CHUNK_SIZE, JdkConstants.CDATA_CHUNK_SIZE_DEFAULT);
         fXmlFeatures = new JdkXmlFeatures(fSecurityManager.isSecureProcessing());

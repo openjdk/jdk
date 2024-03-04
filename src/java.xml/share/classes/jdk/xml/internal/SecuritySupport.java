@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.CodeSource;
@@ -267,6 +268,18 @@ public class SecuritySupport {
     }
 
     /**
+     * Tests whether the input is file.
+     *
+     * @param f the file to be tested
+     * @return true if the input is file, false otherwise
+     */
+    @SuppressWarnings("removal")
+    public static boolean isFile(final File f) {
+        return (AccessController.doPrivileged((PrivilegedAction<Boolean>) ()
+                -> f.isFile()));
+    }
+
+    /**
      * Creates and returns a new FileInputStream from a file.
      * @param file the specified file
      * @return the FileInputStream
@@ -284,6 +297,23 @@ public class SecuritySupport {
     }
 
     /**
+     * Returns an InputStream from a URLConnection.
+     * @param uc the URLConnection
+     * @return the InputStream
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    @SuppressWarnings("removal")
+    public static InputStream getInputStream(final URLConnection uc)
+            throws IOException {
+        try {
+            return AccessController.doPrivileged((PrivilegedExceptionAction<InputStream>) ()
+                    -> uc.getInputStream());
+        } catch (PrivilegedActionException e) {
+            throw (IOException) e.getException();
+        }
+    }
+
+    /**
      * Returns the resource as a stream.
      * @param name the resource name
      * @return the resource stream
@@ -292,6 +322,17 @@ public class SecuritySupport {
     public static InputStream getResourceAsStream(final String name) {
         return AccessController.doPrivileged((PrivilegedAction<InputStream>) () ->
                 SecuritySupport.class.getResourceAsStream("/"+name));
+    }
+
+    /**
+     * Returns the resource by the name.
+     * @param name the resource name
+     * @return the resource
+     */
+    @SuppressWarnings("removal")
+    public static URL getResource(final String name) {
+        return AccessController.doPrivileged((PrivilegedAction<URL>) () ->
+                SecuritySupport.class.getResource(name));
     }
 
     /**
@@ -346,20 +387,21 @@ public class SecuritySupport {
     }
 
     /**
-     * Strip off path from an URI
+     * Strips off path from a URI or file path.
      *
-     * @param uri an URI with full path
+     * @param input a URI or file path
      * @return the file name only
      */
-    public static String sanitizePath(String uri) {
-        if (uri == null) {
+    public static String sanitizePath(String input) {
+        if (input == null) {
             return "";
         }
-        int i = uri.lastIndexOf("/");
+        input = input.replace('\\', '/');
+        int i = input.lastIndexOf('/');
         if (i > 0) {
-            return uri.substring(i+1, uri.length());
+            return input.substring(i+1);
         }
-        return "";
+        return input;
     }
 
     /**

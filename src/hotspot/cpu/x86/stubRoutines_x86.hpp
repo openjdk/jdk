@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ enum platform_dependent_constants {
   _continuation_stubs_code_size =  1000 LP64_ONLY(+1000),
   // AVX512 intrinsics add more code in 64-bit VM,
   // Windows have more code to save/restore registers
-  _compiler_stubs_code_size     = 20000 LP64_ONLY(+32000) WINDOWS_ONLY(+2000),
+  _compiler_stubs_code_size     = 20000 LP64_ONLY(+39000) WINDOWS_ONLY(+2000),
   _final_stubs_code_size        = 10000 LP64_ONLY(+20000) WINDOWS_ONLY(+2000) ZGC_ONLY(+20000)
 };
 
@@ -58,6 +58,10 @@ class x86 {
   static address _float_sign_flip;
   static address _double_sign_mask;
   static address _double_sign_flip;
+  static address _compress_perm_table32;
+  static address _compress_perm_table64;
+  static address _expand_perm_table32;
+  static address _expand_perm_table64;
 
  public:
 
@@ -131,8 +135,6 @@ class x86 {
 #endif // _LP64
 
   static address _verify_mxcsr_entry;
-
-  static address _method_entry_barrier;
 
   // masks and table for CRC32
   static const uint64_t _crc_by128_masks[];
@@ -340,6 +342,10 @@ class x86 {
   static address base64_decoding_table_addr() { return _decoding_table_base64; }
   static address base64_AVX2_decode_tables_addr() { return _avx2_decode_tables_base64; }
   static address base64_AVX2_decode_LUT_tables_addr() { return _avx2_decode_lut_tables_base64; }
+  static address compress_perm_table32() { return _compress_perm_table32; }
+  static address compress_perm_table64() { return _compress_perm_table64; }
+  static address expand_perm_table32() { return _expand_perm_table32; }
+  static address expand_perm_table64() { return _expand_perm_table64; }
 #endif
   static address pshuffle_byte_flip_mask_addr() { return _pshuffle_byte_flip_mask_addr; }
   static address arrays_hashcode_powers_of_31() { return (address)_arrays_hashcode_powers_of_31; }
