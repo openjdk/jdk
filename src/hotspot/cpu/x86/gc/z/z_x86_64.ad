@@ -99,6 +99,18 @@ static void z_store_barrier(MacroAssembler& _masm, const MachNode* node, Address
 
 %}
 
+operand no_rax_RegP()
+%{
+  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
+  match(RegP);
+  match(rbx_RegP);
+  match(rsi_RegP);
+  match(rdi_RegP);
+
+  format %{ %}
+  interface(REG_INTER);
+%}
+
 // Load Pointer
 instruct zLoadP(rRegP dst, memory mem, rFlagsReg cr)
 %{

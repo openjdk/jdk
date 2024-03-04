@@ -2561,18 +2561,6 @@ operand rRegN() %{
 // the RBP is used as a proper frame pointer and is not included in ptr_reg. As a
 // result, RBP is not included in the output of the instruction either.
 
-operand no_rax_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
-  match(RegP);
-  match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // This operand is not allowed to use RBP even if
 // RBP is not used to hold the frame pointer.
 operand no_rbp_RegP()
