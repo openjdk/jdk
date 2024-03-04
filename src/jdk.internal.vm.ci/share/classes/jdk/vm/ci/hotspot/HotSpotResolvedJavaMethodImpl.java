@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -632,7 +632,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
 
         for (int i = 0; i < localVariableTableLength; i++) {
             final int startBci = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementStartBciOffset);
-            final int endBci = startBci + UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementLengthOffset);
+            final int endBci = startBci + UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementLengthOffset) - 1;
             final int nameCpIndex = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementNameCpIndexOffset);
             final int typeCpIndex = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementDescriptorCpIndexOffset);
             final int slot = UNSAFE.getChar(localVariableTableElement + config.localVariableTableElementSlotOffset);

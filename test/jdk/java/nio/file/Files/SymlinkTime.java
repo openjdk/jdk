@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import java.nio.file.attribute.FileTime;
 public class SymlinkTime {
     public static void main(String[] args) throws IOException {
         Path dir = TestUtil.createTemporaryDirectory();
-        if (!TestUtil.supportsLinks(dir)) {
+        if (!TestUtil.supportsSymbolicLinks(dir)) {
             System.out.println("Links not supported: skipping test");
             return;
         }

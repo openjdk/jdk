@@ -27,10 +27,10 @@
 #include <jvmti.h>
 #include "agent_common.hpp"
 
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 #include "native_thread.hpp"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
