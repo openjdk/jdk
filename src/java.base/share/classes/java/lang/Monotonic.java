@@ -76,6 +76,21 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     void bind(V value);
 
     /**
+     * Binds the monotonic value to the provided {@code value}} returning the bound
+     * value.
+     * <p>
+     * If several threads invoke this method simultaneously, only one thread will
+     * succeed in binding a value and that (witness) value will be returned to
+     * all threads.
+     *
+     * @param  value to bind
+     * @return the bound value
+     * @throws NullPointerException  if the backing type is a primitive type and a
+     *                               {@code value} of {@code null} is provided.
+     */
+    V bindIfUnbound(V value);
+
+    /**
      * If a value is {@linkplain #isBound() not bound}, attempts to compute and bind a
      * value using the provided {@code supplier}.
      *
@@ -108,7 +123,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * <p>The implementation is guaranteed to be lock free but may invoke suppliers
      * from several threads. Hence, any given supplier may be invoked several times.
      */
-    V computeIfUnbound(Supplier<? extends V> supplier);
+    V supplyIfUnbound(Supplier<? extends V> supplier);
 
     /**
      * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
@@ -133,7 +148,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     @SuppressWarnings("unchecked")
     default <R extends V> Supplier<R> asMemoized(Supplier<R> supplier) {
         Objects.requireNonNull(supplier);
-        return () -> (R) computeIfUnbound(supplier);
+        return () -> (R) supplyIfUnbound(supplier);
     }
 
     /**
@@ -196,7 +211,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
         default <R extends V> IntFunction<R> asMemoized(IntFunction<R> mapper) {
             Objects.requireNonNull(mapper);
             return index -> (R) get(index)
-                    .computeIfUnbound(() -> mapper.apply(index));
+                    .supplyIfUnbound(() -> mapper.apply(index));
         }
 
     }
@@ -231,7 +246,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
                 if (monotonic == null) {
                     throw new NoSuchElementException(key.toString());
                 }
-                return (R) monotonic.computeIfUnbound(() -> mapper.apply(key));
+                return (R) monotonic.supplyIfUnbound(() -> mapper.apply(key));
             };
         }
 

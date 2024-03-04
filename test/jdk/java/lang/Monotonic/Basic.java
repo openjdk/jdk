@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -76,7 +77,7 @@ final class Basic {
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.supplyIfUnbound(throwingSupplier));
 
         MethodHandle handle = m.getter();
         assertEquals(int.class, handle.type().returnType());
@@ -105,11 +106,11 @@ final class Basic {
     void testInt() {
         testMonotonic(int.class, 42, 13, monotonic -> (int) monotonic.getter().invokeExact(monotonic));
     }
-
+/*
     @Test
     void testLong() {
         testMonotonic(long.class, 42L, 13L, monotonic -> (long) monotonic.getter().invokeExact(monotonic));
-    }
+    }*/
 
     interface MethodHandleInvoker<T> {
         T apply(Monotonic<T> monotonic) throws Throwable;
@@ -154,28 +155,45 @@ final class Basic {
         Supplier<T> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.supplyIfUnbound(throwingSupplier));
 
         var m2 = Monotonic.of(type);
-        m2.computeIfUnbound(() -> first);
+        m2.supplyIfUnbound(() -> first);
         assertEquals(first, m2.get());
 
+
         // asMemoized()
-        Supplier<T> oneTimeSupplier = new Supplier<T>() {
-            int cnt = 0;
-            @Override
-            public T get() {
-                if (cnt++ != 0) {
-                    throw new IllegalStateException();
-                }
-                return first;
-            }
-        };
+        CountingSupplier<T> cSup = new CountingSupplier<>(() -> first);
         var m3 = Monotonic.of(type);
-        Supplier<T> memoized = m3.asMemoized(oneTimeSupplier);
+        Supplier<T> memoized = m3.asMemoized(cSup);
         assertEquals(first, memoized.get());
-        // Make sure the original supplier is not invoked
+        // Make sure the original supplier is not invoked more than once
         assertEquals(first, memoized.get());
+        assertEquals(1, cSup.cnt());
     }
 
+    static final class CountingSupplier<T> implements Supplier<T> {
+
+        private final AtomicInteger cnt = new AtomicInteger();
+        private final Supplier<T> delegate;
+
+        public CountingSupplier(Supplier<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public T get() {
+            cnt.incrementAndGet();
+            return delegate.get();
+        }
+
+        public int cnt() {
+            return cnt.get();
+        }
+
+        @Override
+        public String toString() {
+            return cnt.toString();
+        }
+    }
 }

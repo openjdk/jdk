@@ -72,14 +72,21 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         public void bind(V value) {
             Objects.requireNonNull(value);
             freeze();
-            if (!casValue(value)) {
+            if (caeValue(value) != null) {
                 throw valueAlreadyBound(get());
             }
-
         }
 
         @Override
-        public V computeIfUnbound(Supplier<? extends V> supplier) {
+        public V bindIfUnbound(V value) {
+            Objects.requireNonNull(value);
+            freeze();
+            V witness = caeValue(value);
+            return witness == null ? value : witness;
+        }
+
+        @Override
+        public V supplyIfUnbound(Supplier<? extends V> supplier) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -90,10 +97,26 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != null) {
                 return v;
             }
-            v = supplier.get();
-            freeze();
-            Objects.requireNonNull(v);
-            V witness = caeValue(v);
+            V witness;
+            // Make sure the supplier is only invoked at most once by this method
+            synchronized (supplier) {
+                // Re-check
+                v = valueVolatile();
+                if (v != null) {
+                    return get();
+                }
+                try {
+                    v = supplier.get();
+                } catch (Throwable t) {
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    throw new NoSuchElementException(t);
+                }
+                freeze();
+                Objects.requireNonNull(v);
+                witness = caeValue(v);
+            }
             if (witness == null) {
                 return v;
             }
@@ -167,14 +190,24 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @Override
         public synchronized void bind(V value) {
-            if (!casValue(value) || !casBound()) {
+            Objects.requireNonNull(value);
+            freeze();
+            // Prevent several threads from succeeding in binding null values
+            if (caeValue(value) != null || !casBound()) {
                 throw valueAlreadyBound(get());
             }
-            freeze();
         }
 
         @Override
-        public V computeIfUnbound(Supplier<? extends V> supplier) {
+        public V bindIfUnbound(V value) {
+            Objects.requireNonNull(value);
+            freeze();
+            V witness = caeValue(value);
+            return witness == null ? value : witness;
+        }
+
+        @Override
+        public V supplyIfUnbound(Supplier<? extends V> supplier) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -191,9 +224,21 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (boundVolatile()) {
                 return null;
             }
-            synchronized (this) {
-                v = supplier.get(); // Nullable
-                V witness = caeValue(supplier.get());
+            // Make sure the supplier is only invoked at most once by this method
+            synchronized (supplier) {
+                // Re-check
+                if (boundVolatile()) {
+                    return get();
+                }
+                try {
+                    v = supplier.get(); // Nullable
+                } catch (Throwable t) {
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    throw new NoSuchElementException(t);
+                }
+                V witness = caeValue(v);
                 if (witness == null && !bound) {
                     casBound();
                 }
@@ -224,10 +269,6 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @SuppressWarnings("unchecked")
         private V valueVolatile() {
             return (V) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
-        }
-
-        private boolean casValue(V value) {
-            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, value);
         }
 
         @SuppressWarnings("unchecked")
@@ -266,7 +307,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Integer computeIfUnbound(Supplier<? extends Integer> supplier) {
+        public Integer supplyIfUnbound(Supplier<? extends Integer> supplier) {
             // Optimistically try plain semantics first
             int v = value;
             if (v != 0) {
@@ -283,10 +324,26 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (boundVolatile()) {
                 return 0;
             }
-            Integer newV = supplier.get();
-            // No freeze needed for primitive values
-            v = Objects.requireNonNull(newV);
-            int witness = caeValue(v);
+
+            int witness;
+            // Make sure the supplier is only invoked at most once by this method
+            synchronized (supplier) {
+                // Re-check
+                if (boundVolatile()) {
+                    return get();
+                }
+                try {
+                    v = supplier.get();
+                } catch (Throwable t) {
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    throw new NoSuchElementException(t);
+                }
+
+                // No freeze needed for primitive values
+                witness = caeValue(v);
+            }
             if (witness == 0 && !bound) {
                 casBound();
             }
@@ -297,10 +354,18 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         public void bind(Integer value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
-            // Prevent several threads from succeeding in binding null values
+            // Prevent several threads from succeeding in binding zero values
             if (caeValue(value) != 0 || !casBound()) {
                 throw valueAlreadyBound(get());
             }
+        }
+
+        @Override
+        public Integer bindIfUnbound(Integer value) {
+            Objects.requireNonNull(value);
+            // No freeze needed for primitive values
+            int witness = caeValue(value);
+            return witness == 0 ? value : witness;
         }
 
         @Override
@@ -359,7 +424,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Long computeIfUnbound(Supplier<? extends Long> supplier) {
+        public Long supplyIfUnbound(Supplier<? extends Long> supplier) {
             // Optimistically try plain semantics first
             long v = value;
             if (v != 0) {
@@ -376,10 +441,26 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (boundVolatile()) {
                 return 0L;
             }
-            Long newV = supplier.get();
-            // No freeze needed for primitive values
-            v = Objects.requireNonNull(newV);
-            long witness = caeValue(v);
+
+            long witness;
+            // Make sure the supplier is only invoked at most once by this method
+            synchronized (supplier) {
+                // Re-check
+                if (boundVolatile()) {
+                    return get();
+                }
+                try {
+                    v = supplier.get();
+                } catch (Throwable t) {
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    throw new NoSuchElementException(t);
+                }
+
+                // No freeze needed for primitive values
+                witness = caeValue(v);
+            }
             if (witness == 0 && !bound) {
                 casBound();
             }
@@ -391,10 +472,18 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         public void bind(Long value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
-            // Prevent several threads from succeeding in binding null values
-            if (caeValue(value) != 0L || !casBound()) {
+            // Prevent several threads from succeeding in binding zero values
+            if (caeValue(value) != 0 || !casBound()) {
                 throw valueAlreadyBound(get());
             }
+        }
+
+        @Override
+        public Long bindIfUnbound(Long value) {
+            Objects.requireNonNull(value);
+            // No freeze needed for primitive values
+            long witness = caeValue(value);
+            return witness == 0 ? value : witness;
         }
 
         @Override
