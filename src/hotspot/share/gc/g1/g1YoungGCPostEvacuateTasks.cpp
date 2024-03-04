@@ -601,8 +601,6 @@ public:
     _num_buffer_lists(num_buffer_lists),
     _evac_failure_regions(evac_failure_regions) { }
 
-  virtual ~RedirtyLoggedCardsTask() = default;
-
   double worker_cost() const override {
     // Needs more investigation.
     return G1CollectedHeap::heap()->workers()->active_workers();
