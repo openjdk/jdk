@@ -139,13 +139,6 @@ public final class NativeLibraries {
                                 }    
                                 return null;
                             }
-                            if (file.getName().contains("(")){
-                                System.out.println("need to check members");
-                                String path=file.getCanonicalPath();
-                                int index=path.lastIndexOf("(");
-                                System.out.println(path.substring(0,index));
-                            }
-                            System.out.println("file path found check and dlopen?"+file.getCanonicalPath());
                             return file.getCanonicalPath();
                         } catch (IOException e) {
                             return null;
