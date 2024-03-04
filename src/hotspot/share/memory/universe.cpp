@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -298,7 +298,7 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   }
 }
 
-void initialize_basic_type_klass(Klass* k, TRAPS) {
+static void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = vmClasses::Object_klass();
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
@@ -924,11 +924,11 @@ void universe_oopstorage_init() {
   Universe::oopstorage_init();
 }
 
-void initialize_known_method(LatestMethodCache* method_cache,
-                             InstanceKlass* ik,
-                             const char* method,
-                             Symbol* signature,
-                             bool is_static, TRAPS)
+static void initialize_known_method(LatestMethodCache* method_cache,
+                                    InstanceKlass* ik,
+                                    const char* method,
+                                    Symbol* signature,
+                                    bool is_static, TRAPS)
 {
   TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = nullptr;

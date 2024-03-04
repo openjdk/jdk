@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,13 +21,13 @@
  * questions.
  */
 
+import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.security.SecurityUtils;
 
 import javax.net.ssl.*;
 import java.io.IOException;
 import java.net.*;
 import java.nio.ByteBuffer;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -87,14 +87,13 @@ public class DTLSWontNegotiateV10 {
         Process clientProcess = null;
         try (DTLSServer server = new DTLSServer(protocol)) {
             List<String> command = List.of(
-                    Path.of(System.getProperty("java.home"), "bin", "java").toString(),
                     "DTLSWontNegotiateV10",
                     // if server is "DTLS" then the client should be v1.0 and vice versa
                     protocol.equals(DTLS) ? DTLSV_1_0 : DTLS,
                     Integer.toString(server.getListeningPortNumber())
             );
 
-            ProcessBuilder builder = new ProcessBuilder(command);
+            ProcessBuilder builder = ProcessTools.createTestJavaProcessBuilder(command);
             clientProcess = builder.inheritIO().start();
             server.run();
             System.out.println("Success: DTLSv1.0 connection was not established.");

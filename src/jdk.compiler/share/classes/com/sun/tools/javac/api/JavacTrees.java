@@ -482,14 +482,15 @@ public class JavacTrees extends DocTrees {
             }
 
             ClassSymbol sym = (ClassSymbol) types.skipTypeVars(tsym.type, false).tsym;
+            boolean explicitType = ref.qualifierExpression != null;
             Symbol msym = (memberName == sym.name)
                     ? findConstructor(sym, paramTypes, true)
-                    : findMethod(sym, memberName, paramTypes, true);
+                    : findMethod(sym, memberName, paramTypes, true, explicitType);
 
             if (msym == null) {
                 msym = (memberName == sym.name)
                         ? findConstructor(sym, paramTypes, false)
-                        : findMethod(sym, memberName, paramTypes, false);
+                        : findMethod(sym, memberName, paramTypes, false, explicitType);
             }
 
             if (paramTypes != null) {
@@ -497,7 +498,7 @@ public class JavacTrees extends DocTrees {
                 return msym;
             }
 
-            VarSymbol vsym = (ref.paramTypes != null) ? null : findField(sym, memberName);
+            VarSymbol vsym = (ref.paramTypes != null) ? null : findField(sym, memberName, explicitType);
             // prefer a field over a method with no parameters
             if (vsym != null &&
                     (msym == null ||
@@ -539,11 +540,11 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private VarSymbol findField(ClassSymbol tsym, Name fieldName) {
-        return searchField(tsym, fieldName, new HashSet<>());
+    private VarSymbol findField(ClassSymbol tsym, Name fieldName, boolean explicitType) {
+        return searchField(tsym, fieldName, explicitType, new HashSet<>());
     }
 
-    private VarSymbol searchField(ClassSymbol tsym, Name fieldName, Set<ClassSymbol> searched) {
+    private VarSymbol searchField(ClassSymbol tsym, Name fieldName, boolean explicitType, Set<ClassSymbol> searched) {
         if (searched.contains(tsym)) {
             return null;
         }
@@ -558,18 +559,20 @@ public class JavacTrees extends DocTrees {
         //### If we found a VarSymbol above, but which did not pass
         //### the modifier filter, we should return failure here!
 
-        ClassSymbol encl = tsym.owner.enclClass();
-        if (encl != null) {
-            VarSymbol vsym = searchField(encl, fieldName, searched);
-            if (vsym != null) {
-                return vsym;
+        if (!explicitType) {
+            ClassSymbol encl = tsym.owner.enclClass();
+            if (encl != null) {
+                VarSymbol vsym = searchField(encl, fieldName, explicitType, searched);
+                if (vsym != null) {
+                    return vsym;
+                }
             }
         }
 
         // search superclass
         Type superclass = tsym.getSuperclass();
         if (superclass.tsym != null) {
-            VarSymbol vsym = searchField((ClassSymbol) superclass.tsym, fieldName, searched);
+            VarSymbol vsym = searchField((ClassSymbol) superclass.tsym, fieldName, explicitType, searched);
             if (vsym != null) {
                 return vsym;
             }
@@ -580,7 +583,7 @@ public class JavacTrees extends DocTrees {
         for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
             Type intf = l.head;
             if (intf.isErroneous()) continue;
-            VarSymbol vsym = searchField((ClassSymbol) intf.tsym, fieldName, searched);
+            VarSymbol vsym = searchField((ClassSymbol) intf.tsym, fieldName, explicitType, searched);
             if (vsym != null) {
                 return vsym;
             }
@@ -600,13 +603,13 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
-    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes, boolean strict) {
-        return searchMethod(tsym, methodName, paramTypes, strict, new HashSet<>());
+    private MethodSymbol findMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes,
+                                    boolean strict, boolean explicitType) {
+        return searchMethod(tsym, methodName, paramTypes, strict, explicitType, new HashSet<>());
     }
 
-    private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName,
-                                       List<Type> paramTypes, boolean strict,
-                                       Set<ClassSymbol> searched) {
+    private MethodSymbol searchMethod(ClassSymbol tsym, Name methodName, List<Type> paramTypes,
+                                      boolean strict, boolean explicitType, Set<ClassSymbol> searched) {
         //### Note that this search is not necessarily what the compiler would do!
 
         // do not match constructors
@@ -657,7 +660,8 @@ public class JavacTrees extends DocTrees {
         // search superclass
         Type superclass = tsym.getSuperclass();
         if (superclass.tsym != null) {
-            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes, strict, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) superclass.tsym, methodName, paramTypes,
+                    strict, explicitType, searched);
             if (msym != null) {
                 return msym;
             }
@@ -668,18 +672,22 @@ public class JavacTrees extends DocTrees {
         for (List<Type> l = intfs; l.nonEmpty(); l = l.tail) {
             Type intf = l.head;
             if (intf.isErroneous()) continue;
-            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes, strict, searched);
+            MethodSymbol msym = searchMethod((ClassSymbol) intf.tsym, methodName, paramTypes,
+                    strict, explicitType, searched);
             if (msym != null) {
                 return msym;
             }
         }
 
         // search enclosing class
-        ClassSymbol encl = tsym.owner.enclClass();
-        if (encl != null) {
-            MethodSymbol msym = searchMethod(encl, methodName, paramTypes, strict, searched);
-            if (msym != null) {
-                return msym;
+        if (!explicitType) {
+            ClassSymbol encl = tsym.owner.enclClass();
+            if (encl != null) {
+                MethodSymbol msym = searchMethod(encl, methodName, paramTypes, strict,
+                        explicitType, searched);
+                if (msym != null) {
+                    return msym;
+                }
             }
         }
 

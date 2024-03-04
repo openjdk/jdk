@@ -1808,14 +1808,13 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
   assert_cond(st != nullptr);
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tlwu t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (CompressedKlassPointers::shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null t0, t0");
-    }
+    st->print_cr("\tlwu t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tlwu t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   } else {
-    st->print_cr("\tld t0, [j_rarg0, oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t0, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tld t2, [t1      + CompiledICData::speculated_klass_offset()]\t# compressed klass");
   }
-  st->print_cr("\tbeq t0, t1, ic_hit");
+  st->print_cr("\tbeq t0, t2, ic_hit");
   st->print_cr("\tj, SharedRuntime::_ic_miss_stub\t # Inline cache check");
   st->print_cr("\tic_hit:");
 }
@@ -1825,15 +1824,11 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
+  __ ic_check(CodeEntryAlignment);
 
-  Label skip;
-  __ cmp_klass(j_rarg0, t1, t0, t2 /* call-clobbered t2 as a tmp */, skip);
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  __ bind(skip);
-
-  // These NOPs are critical so that verified entry point is properly
-  // 4 bytes aligned for patching by NativeJump::patch_verified_entry()
-  __ align(NativeInstruction::instruction_size);
+  // Verified entry point must be properly 4 bytes aligned for patching by NativeJump::patch_verified_entry().
+  // ic_check() aligns to CodeEntryAlignment >= InteriorEntryAlignment(min 16) > NativeInstruction::instruction_size(4).
+  assert(((__ offset()) % CodeEntryAlignment) == 0, "Misaligned verified entry point");
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -2402,7 +2397,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
