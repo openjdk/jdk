@@ -31,11 +31,6 @@
 #include "memory/resourceArea.hpp"
 #include "metaprogramming/primitiveConversions.hpp"
 
-#if defined(TARGET_COMPILER_gcc)
-#undef JNIEXPORT
-#define JNIEXPORT
-#endif
-
 #ifndef PRODUCT
 const uintptr_t Assembler::asm_bp = 0x0000ffffac221240;
 #endif
@@ -122,10 +117,6 @@ extern "C" {
       Disassembler::decode((address)start + len, (address)start);
     else
       Disassembler::decode((address)start, (address)start + len);
-  }
-
-  JNIEXPORT void das1(uintptr_t insn) {
-    das(insn, 1);
   }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,13 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-#ifndef _NSK_SHARE_JVMTI_JVMTITOOLS_H_
-#define _NSK_SHARE_JVMTI_JVMTITOOLS_H_
+#ifndef SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
+#define SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP
 
-#include "jvmti.h"
+enum ShenandoahGenerationType {
+  NON_GEN           // non-generational
+};
 
-#include "jvmti_common.h"
+inline const char* shenandoah_generation_name(ShenandoahGenerationType mode) {
+  switch (mode) {
+    case NON_GEN:
+      return "Non-Generational";
+    default:
+      ShouldNotReachHere();
+      return "Unknown";
+  }
+}
 
-#endif /* _NSK_SHARE_JVMTI_JVMTITOOLS_H_ */
+#endif // SHARE_GC_SHENANDOAH_SHENANDOAHGENERATIONTYPE_HPP

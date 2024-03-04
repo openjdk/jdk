@@ -2356,8 +2356,13 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for locking.
-    // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
-    __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+      __ compiler_fast_lock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+    } else {
+      // fast_lock kills r_temp_1, r_temp_2, r_temp_3.
+      __ compiler_fast_lock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    }
     __ beq(CCR0, locked);
 
     // None of the above fast optimizations worked so we have to get into the
@@ -2567,7 +2572,11 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
     __ addi(r_box, R1_SP, lock_offset);
 
     // Try fastpath for unlocking.
-    __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      __ compiler_fast_unlock_lightweight_object(CCR0, r_oop, r_temp_1, r_temp_2, r_temp_3);
+    } else {
+      __ compiler_fast_unlock_object(CCR0, r_oop, r_box, r_temp_1, r_temp_2, r_temp_3);
+    }
     __ beq(CCR0, done);
 
     // Save and restore any potential method result value around the unlocking operation.
