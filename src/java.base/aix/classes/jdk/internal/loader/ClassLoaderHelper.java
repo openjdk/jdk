@@ -47,23 +47,28 @@ class ClassLoaderHelper {
      * such that if the original pathname did not exist, then the
      * file may be located at the alternate location.
      * For AIX, this replaces the final .so suffix with .a
+     * If the path name has a member, we place the member name after 
+     * .a.
      */
     static File mapAlternativeName(File lib) {
         String name = lib.toString();
-        
+        // Checking if there is a member object mentioned.
         if(name.contains("(")){
-            System.out.println("Searching inside map alternate name for "+lib);
-            System.out.println("Member file of AIX ? ");
-            int firstbracket = name.lastIndexOf('(');
-            int dot = name.lastIndexOf('.');
-            String member=name.substring(firstbracket,dot);
-            System.out.println("member function mapping");
-            System.out.println(name.substring(0, firstbracket) + ".a"+member);
-            
-            return new File(name.substring(0, firstbracket) + ".a"+member);
-
+            int openBracketIndex = name.lastIndexOf('(');
+            int closeBracketIndex = name.lastIndexOf(')');
+            long openBracketCount = name.chars().filter(ch -> ch == '(').count();
+            long closeBracketCount = name.chars().filter(ch -> ch == ')').count();
+            //Checking if the format is correct.
+            if (openBracketCount > 1 || closeBracketCount > 1 || openBracketIndex > closeBracketIndex)
+            {
+                return null;
+            }
+            int dotIndex = name.lastIndexOf('.');
+            String memberName = name.substring(openBracketIndex,dotIndex);
+            //Reconstruct <libname>.so(<member_name>) as <libname>.a(<member_name>)
+            String reconstructedFileName = name.substring(0, openBracketIndex) + ".a"+ memberName;
+            return new File(reconstructedFileName);
         }
-        System.out.println("Searching inside map alternate name for "+lib);
         int index = name.lastIndexOf('.');
         if (index < 0) {
             return null;

@@ -125,26 +125,18 @@ public final class NativeLibraries {
                     public String run() {
                         try {
                             if (loadLibraryOnlyIfPresent && !file.exists()) {
-                                System.out.println("File not found here loadLibrary");
-                                System.out.println(file.getName());
+                                //Remove member name in brackets from file pathname, as such pathnames do not exist.
+                                //Original pathname with bracket is returned,which is handled by dlopen() in AIX.
                                 if (file.getName().contains("(")){
-                                    System.out.println("need to check members");
-                                    String path=file.getCanonicalPath();
-                                    int index=path.lastIndexOf("(");
-                                    System.out.println(path.substring(0,index));
-                                    String newFileName=path.substring(0,index);
+                                    String pathWithMember = file.getCanonicalPath();
+                                    int openBracketIndex = pathWithMember.lastIndexOf("(");
+                                    String newFileName = path.substring(0, openBracketIndex);
                                     File file2 = new File(newFileName);
                                     file.renameTo(file2);
-                                    System.out.println("File renamed to"+file2.getCanonicalPath());
                                     if (file2.exists()){
-                                        System.out.println("File present"+file.getName());
-                                        System.out.println("returning "+path);
-                                        return path;
+                                        return pathWithMember;
                                     }
-                                    
                                 }    
-
-
                                 return null;
                             }
                             if (file.getName().contains("(")){
