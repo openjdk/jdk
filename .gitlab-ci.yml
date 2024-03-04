@@ -5,7 +5,7 @@ stages: [trigger]
 build:
   stage: trigger
   variables:
-    JDK_VERSION: "latest"
+    JDK_VERSION: "23"
     DEBUG_LEVEL: "fastdebug"
     HASH: "${CI_COMMIT_SHORT_SHA}"
   trigger:
@@ -19,7 +19,7 @@ test:
   stage: trigger
   needs: [build]
   variables:
-    JDK_VERSION: "latest"
+    JDK_VERSION: "23"
     DEBUG_LEVEL: "fastdebug"
     HASH: "${CI_COMMIT_SHORT_SHA}"
   trigger:
