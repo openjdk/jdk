@@ -35,8 +35,8 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -93,7 +93,7 @@ public class JspawnhelperProtocol {
         }
     }
 
-        private static void jspawnhelperWithNoArgs() throws Exception {
+    private static void jspawnhelperWithNoArgs() throws Exception {
         System.out.println("Running jspawnhelper without args");
         Process p = null;
         try {

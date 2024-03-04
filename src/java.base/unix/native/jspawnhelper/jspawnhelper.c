@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
-    if (argc == 1) {
+    if (argc != 2) {
         shutItDown();
     }
 
