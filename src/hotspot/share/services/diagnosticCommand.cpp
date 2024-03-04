@@ -1197,7 +1197,7 @@ VMDebugDCmd::VMDebugDCmd(outputStream* output, bool heap) :
 
 void VMDebugDCmd::find() {
   if (!_arg1.has_value()) {
-    output()->print_cr("missing argument");
+    output()->print_cr("Usage: VM.debug find ADDRESS");
   } else {
     intptr_t x = strtoll(_arg1.value(), nullptr, 0);
     if (!os::is_readable_pointer((intptr_t*) x)) {
@@ -1233,14 +1233,14 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
     Threads::print_on_error(output(), THREAD, buf, sizeof(buf));
   } else if (strcmp("findclass", _subcommand.value()) == 0) {
     if (!_arg1.has_value() || !_arg2.has_value()) {
-      output()->print_cr("missing argument");
+      output()->print_cr("Usage: findclass CLASS_PATTERN FLAGS");
     } else {
       long flags = strtol(_arg2.value(), nullptr, 0);
       ClassPrinter::print_classes(_arg1.value(), flags, output());
     }
   } else if (strcmp("findmethod", _subcommand.value()) == 0) {
     if (!_arg1.has_value() || !_arg2.has_value() || !_arg3.has_value()) {
-      output()->print_cr("missing argument");
+      output()->print_cr("Usage: findmethod CLASS_PATTERN METHOD_PATTERN FLAGS");
     } else {
       long flags = strtol(_arg3.value(), nullptr, 0);
       ClassPrinter::print_methods(_arg1.value(), _arg2.value(), flags, output());
@@ -1248,7 +1248,7 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp("find", _subcommand.value()) == 0) {
       find();
   } else {
-    output()->print_cr("unknown sub-command");
+    output()->print_cr("Unknown sub-command.");
   }
 }
 
