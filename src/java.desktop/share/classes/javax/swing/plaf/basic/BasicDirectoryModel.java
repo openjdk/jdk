@@ -299,13 +299,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         private void run0() {
-            FileSystemView fileSystem = fileSystemView;
-
             if (loadThread.isInterrupted()) {
                 return;
             }
 
-            File[] list = fileSystem.getFiles(currentDirectory, useFileHiding);
+            File[] list = fileSystemView.getFiles(currentDirectory, useFileHiding);
 
             if (loadThread.isInterrupted()) {
                 return;
