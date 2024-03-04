@@ -77,7 +77,7 @@ final class Basic {
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.supplyIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
 
         MethodHandle handle = m.getter();
         assertEquals(int.class, handle.type().returnType());
@@ -155,10 +155,10 @@ final class Basic {
         Supplier<T> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.supplyIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
 
         var m2 = Monotonic.of(type);
-        m2.supplyIfUnbound(() -> first);
+        m2.computeIfUnbound(() -> first);
         assertEquals(first, m2.get());
 
 

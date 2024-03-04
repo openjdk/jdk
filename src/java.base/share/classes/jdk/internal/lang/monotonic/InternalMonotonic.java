@@ -40,6 +40,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
     Unsafe UNSAFE = Unsafe.getUnsafe();
 
+    interface ThrowingFunction<T, R> {
+        R apply(T t) throws Throwable;
+    }
+
     final class ReferenceMonotonic<V> implements InternalMonotonic<V> {
 
         private static final long VALUE_OFFSET =
@@ -86,7 +90,17 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V supplyIfUnbound(Supplier<? extends V> supplier) {
+        public V computeIfUnbound(Supplier<? extends V> supplier) {
+            return computeIfUnbound0(supplier, Supplier::get);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public V computeIfUnbound(MethodHandle supplier) {
+            return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
+        }
+
+        private <T> V computeIfUnbound0(T supplier, ThrowingFunction<T, V> mapper) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -106,7 +120,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     return get();
                 }
                 try {
-                    v = supplier.get();
+                    v = mapper.apply(supplier);
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -148,10 +162,6 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @SuppressWarnings("unchecked")
         private V valueVolatile() {
             return (V) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
-        }
-
-        private boolean casValue(V value) {
-            return UNSAFE.compareAndSetReference(this, VALUE_OFFSET, null, value);
         }
 
         @SuppressWarnings("unchecked")
@@ -207,7 +217,17 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V supplyIfUnbound(Supplier<? extends V> supplier) {
+        public V computeIfUnbound(Supplier<? extends V> supplier) {
+            return computeIfUnbound0(supplier, Supplier::get);
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public V computeIfUnbound(MethodHandle supplier) {
+            return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
+        }
+
+        private <T> V computeIfUnbound0(T supplier, ThrowingFunction<T, V> mapper) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -231,7 +251,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     return get();
                 }
                 try {
-                    v = supplier.get(); // Nullable
+                    v = mapper.apply(supplier); // Nullable
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -307,7 +327,16 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Integer supplyIfUnbound(Supplier<? extends Integer> supplier) {
+        public Integer computeIfUnbound(Supplier<? extends Integer> supplier) {
+            return computeIfUnbound0(supplier, Supplier::get);
+        }
+
+        @Override
+        public Integer computeIfUnbound(MethodHandle supplier) {
+            return computeIfUnbound0(supplier, s -> (Integer) (Object)s.invokeExact());
+        }
+
+        private <T> Integer computeIfUnbound0(T supplier, ThrowingFunction<T, ? extends Integer> mapper) {
             // Optimistically try plain semantics first
             int v = value;
             if (v != 0) {
@@ -333,7 +362,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     return get();
                 }
                 try {
-                    v = supplier.get();
+                    v = mapper.apply(supplier);
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -424,7 +453,16 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Long supplyIfUnbound(Supplier<? extends Long> supplier) {
+        public Long computeIfUnbound(Supplier<? extends Long> supplier) {
+            return computeIfUnbound0(supplier, Supplier::get);
+        }
+
+        @Override
+        public Long computeIfUnbound(MethodHandle supplier) {
+            return computeIfUnbound0(supplier, s -> (Long) (Object)s.invokeExact());
+        }
+
+        private <T> Long computeIfUnbound0(T supplier, ThrowingFunction<T, ? extends Long> mapper) {
             // Optimistically try plain semantics first
             long v = value;
             if (v != 0) {
@@ -450,7 +488,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     return get();
                 }
                 try {
-                    v = supplier.get();
+                    v = mapper.apply(supplier);
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -464,7 +502,6 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (witness == 0 && !bound) {
                 casBound();
             }
-            // No freeze needed for primitive values
             return witness == 0 ? v : witness;
         }
 

@@ -68,7 +68,7 @@ final class JepDemo {
         static Logger logger() {
             // 2. Access the monotonic value with as-declared-final performance
             //    (evaluation made before the first access)
-            return LOGGER.supplyIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
+            return LOGGER.computeIfUnbound( () -> Logger.getLogger("com.foo.Bar") );
         }
     }
 
@@ -97,8 +97,8 @@ final class JepDemo {
         public int number(int n) {
             return (n < 2)
                     ? n
-                    : numberCache.get(n - 1).supplyIfUnbound(() -> number(n -1))
-                    + numberCache.get(n - 2).supplyIfUnbound(() -> number(n - 2));
+                    : numberCache.get(n - 1).computeIfUnbound(() -> number(n -1))
+                    + numberCache.get(n - 2).computeIfUnbound(() -> number(n - 2));
         }
 
     }
@@ -129,7 +129,7 @@ final class JepDemo {
 
         static Logger logger(String name) {
             return LOGGERS.get(name)
-                    .supplyIfUnbound( () -> Logger.getLogger(name) );
+                    .computeIfUnbound( () -> Logger.getLogger(name) );
         }
     }
 
