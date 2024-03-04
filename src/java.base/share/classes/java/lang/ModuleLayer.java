@@ -881,6 +881,19 @@ public final class ModuleLayer {
                 .findAny();
     }
 
+    /**
+     * Returns the module with the given name in this later only.
+     *
+     * @param  name
+     *         The name of the module to find
+     *
+     * @return The module with the given name or {@code null}
+     *         if there isn't a module with this name in this layer
+     */
+    Module findModuleInThisLayer(String name) {
+        return nameToModule.get(name);
+    }
+
 
     /**
      * Returns the {@code ClassLoader} for the module with the given name. If

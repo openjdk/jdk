@@ -2460,7 +2460,7 @@ public final class System {
                 return m.implAddEnableNativeAccess();
             }
             public boolean addEnableNativeAccess(ModuleLayer layer, String name) {
-                Module m = layer.nameToModule().get(name);
+                Module m = layer.findModuleInThisLayer(name);
                 if (m != null) {
                     m.implAddEnableNativeAccess();
                     return true;

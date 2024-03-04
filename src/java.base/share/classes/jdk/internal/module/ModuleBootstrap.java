@@ -798,17 +798,7 @@ public final class ModuleBootstrap {
     static {
         USER_NATIVE_ACCESS_MODULES = decodeEnableNativeAccess();
         HAS_ENABLE_NATIVE_ACCESS_FLAG = !USER_NATIVE_ACCESS_MODULES.isEmpty();
-
-        // add JDK modules
-        int jdkNativeAccssModulesCount =
-                ModuleLoaderMap.bootModules().size() +
-                ModuleLoaderMap.platformModules().size() +
-                ModuleLoaderMap.nativeModules().size();
-
-        JDK_NATIVE_ACCESS_MODULES = HashSet.newHashSet(jdkNativeAccssModulesCount);
-        JDK_NATIVE_ACCESS_MODULES.addAll(ModuleLoaderMap.bootModules());
-        JDK_NATIVE_ACCESS_MODULES.addAll(ModuleLoaderMap.platformModules());
-        JDK_NATIVE_ACCESS_MODULES.addAll(ModuleLoaderMap.nativeModules());
+        JDK_NATIVE_ACCESS_MODULES = ModuleLoaderMap.nativeAccessModules();
     }
 
     /**
