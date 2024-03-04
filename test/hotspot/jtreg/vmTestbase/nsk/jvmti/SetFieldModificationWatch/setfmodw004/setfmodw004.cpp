@@ -26,7 +26,7 @@
 #include <inttypes.h>
 #include "jvmti.h"
 #include "agent_common.hpp"
-#include "JVMTITools.h"
+#include "JVMTITools.hpp"
 
 extern "C" {
 

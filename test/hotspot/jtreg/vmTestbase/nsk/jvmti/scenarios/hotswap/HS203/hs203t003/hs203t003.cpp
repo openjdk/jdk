@@ -26,9 +26,9 @@
 #include "agent_common.hpp"
 #include <jni.h>
 #include <string.h>
-#include "jvmti_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
+#include "jvmti_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
 /*
    hs203T003:
    1. Set FieldAccessWatch, FieldModificatoinWatch for a field.
