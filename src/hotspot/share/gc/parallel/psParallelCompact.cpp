@@ -2424,12 +2424,7 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
     // Create closures and iterate.
     UpdateOnlyClosure update_closure(mbm, cm, space_id);
     FillClosure fill_closure(cm, space_id);
-    ParMarkBitMap::IterationStatus status;
-    status = mbm->iterate(&update_closure, &fill_closure, beg_addr, end_addr,
-                          dense_prefix_end);
-    if (status == ParMarkBitMap::incomplete) {
-      update_closure.do_addr(update_closure.source());
-    }
+    mbm->iterate(&update_closure, &fill_closure, beg_addr, end_addr, dense_prefix_end);
   }
 
   // Mark the regions as filled.
@@ -2739,25 +2734,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     HeapWord* const end_addr = MIN2(sd.region_align_up(cur_addr + 1),
                                     src_space_top);
     IterationStatus status = bitmap->iterate(&closure, cur_addr, end_addr);
-
-    if (status == ParMarkBitMap::incomplete) {
-      // The last obj that starts in the source region does not end in the
-      // region.
-      assert(closure.source() < end_addr, "sanity");
-      HeapWord* const obj_beg = closure.source();
-      HeapWord* const range_end = MIN2(obj_beg + closure.words_remaining(),
-                                       src_space_top);
-      HeapWord* const obj_end = bitmap->find_obj_end(obj_beg, range_end);
-      if (obj_end < range_end) {
-        // The end was found; the entire object will fit.
-        status = closure.do_addr(obj_beg, bitmap->obj_size(obj_beg, obj_end));
-        assert(status != ParMarkBitMap::would_overflow, "sanity");
-      } else {
-        // The end was not found; the object will not fit.
-        assert(range_end < src_space_top, "obj cannot cross space boundary");
-        status = ParMarkBitMap::would_overflow;
-      }
-    }
 
     if (status == ParMarkBitMap::would_overflow) {
       // The last object did not fit.  Note that interior oop updates were
