@@ -44,7 +44,7 @@ class BitMapTruncateTest {
   }
 
   template <class ResizableBitMapClass>
-  static void testTruncate(BitMap::idx_t start_bit, BitMap::idx_t end_bit, ResizableBitMapClass result) {
+  static void testTruncate(BitMap::idx_t start_bit, BitMap::idx_t end_bit, ResizableBitMapClass& result) {
     ResourceMark rm;
 
     ResizableBitMapClass map(BITMAP_SIZE);
@@ -154,38 +154,62 @@ public:
 TEST_VM(BitMapTruncate, truncate_same) {
   BitMapTruncateTest::testTruncateSame<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
-//   BitMapTruncateTest::testTruncateSame<TestCHeapBitMap>();
-//   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
-//   BitMapTruncateTest::testTruncateSame<TestArenaBitMap>();
-//   EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
+  BitMapTruncateTest::testTruncateSame<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateSame<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_start) {
   BitMapTruncateTest::testTruncateStart<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateStart<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateStart<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_end) {
   BitMapTruncateTest::testTruncateEnd<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateEnd<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateEnd<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_middle) {
   BitMapTruncateTest::testTruncateMiddle<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateMiddle<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateMiddle<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_start_unaligned) {
   BitMapTruncateTest::testTruncateStartUnaligned<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateStartUnaligned<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateStartUnaligned<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_end_unaligned) {
   BitMapTruncateTest::testTruncateEndUnaligned<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateEndUnaligned<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateEndUnaligned<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
 
 TEST_VM(BitMapTruncate, truncate_one_word) {
   BitMapTruncateTest::testTruncateOneWord<ResourceBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testTruncateOneWord<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testTruncateOneWord<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
