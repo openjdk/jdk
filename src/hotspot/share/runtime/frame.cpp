@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1620,6 +1620,7 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
   intptr_t* max = MAX2(v0, v1);
   intptr_t* cur = max;
   intptr_t* last = nullptr;
+  intptr_t* fp = nullptr;
   for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
@@ -1630,7 +1631,11 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       const char* spacer = "          " LP64_ONLY("        ");
       st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
+      if (*fv.description == '#' && isdigit(fv.description[1])) {
+        fp = fv.location;
+      }
+      if (fp != nullptr && *fv.description != '#' &&
+          *fv.location != 0 && *fv.location > -100 && *fv.location < 100
 #if !defined(PPC64)
           && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
 #else  // !defined(PPC64)
@@ -1639,9 +1644,10 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
               strcmp(fv.description, "locals") == 0 || strstr(fv.description, " method "))
 #endif //!defined(PPC64)
           ) {
-        st->print_cr(" " INTPTR_FORMAT ": %18d %s", p2i(fv.location), (int)*fv.location, fv.description);
+        st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %-32s (relativized: fp%+d)",
+                     p2i(fv.location), p2i(&fp[*fv.location]), fv.description, (int)*fv.location);
       } else {
-        st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
+         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       }
       last = fv.location;
       cur--;
