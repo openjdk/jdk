@@ -2402,7 +2402,6 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 #endif  // #ifdef ASSERT
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
-  _start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
