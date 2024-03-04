@@ -35,7 +35,6 @@
 class CmpNode;
 class BaseCountedLoopEndNode;
 class CountedLoopNode;
-class DataInputGraph;
 class IdealLoopTree;
 class LoopNode;
 class Node;
@@ -1906,14 +1905,15 @@ class DataNodeGraph : public StackObj {
 
  private:
   void clone(Node* node, Node* new_ctrl);
-  void clone_nodes(Node* new_ctrl);
+  void clone_data_nodes(Node* new_ctrl);
   void rewire_clones_to_cloned_inputs();
 
  public:
   // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
   // Set `new_ctrl` as ctrl for the cloned nodes.
   const OrigToNewHashtable& clone(Node* new_ctrl) {
-    clone_nodes(new_ctrl);
+    assert(_orig_to_new.number_of_entries() == 0, "should not call this method twice in a row");
+    clone_data_nodes(new_ctrl);
     rewire_clones_to_cloned_inputs();
     return _orig_to_new;
   }

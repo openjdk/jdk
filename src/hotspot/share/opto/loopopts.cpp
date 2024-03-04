@@ -4496,8 +4496,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
   }
 }
 
-// Clone all nodes in _data_nodes.
-void DataNodeGraph::clone_nodes(Node* new_ctrl) {
+void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {
   for (uint i = 0; i < _data_nodes.size(); i++) {
     clone(_data_nodes[i], new_ctrl);
   }
