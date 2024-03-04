@@ -39,7 +39,6 @@ class ShenandoahSimpleBitMapTest: public ::testing::Test {
   const size_t LARGE_BIT_MAP_SIZE = 4096;
   ShenandoahSimpleBitMap bm_small;
   ShenandoahSimpleBitMap bm_large;
-  
 
 protected:
   ShenandoahSimpleBitMapTest():
@@ -101,7 +100,7 @@ protected:
     }
     probe_point = bm.find_next_set_bit(probe_point);
     ASSERT_EQ(probe_point, size); // Verify that last failed search returns sentinel value: num bits in bit map
-    
+
     // Confirm that find_next_set_bit() with a bounded search space works correctly
     // Limit this search to the first 3/4 of the full bit map
     ssize_t boundary_idx = 3 * size / 4;
@@ -379,7 +378,7 @@ protected:
     bm_small.clear_bit(253);
     size_t set_bits_4[] = { 5, 63, 128, 140, 142, 254, 255, 271, 272, 320, 321, 322, 361 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_2, 13);
-    
+
     bm_large.clear_bit(5);
     bm_large.clear_bit(63);
     bm_large.clear_bit(128);
