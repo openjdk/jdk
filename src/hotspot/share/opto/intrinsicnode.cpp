@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "opto/intrinsicnode.hpp"
 #include "opto/addnode.hpp"
+#include "opto/cfgnode.hpp"
 #include "opto/mulnode.hpp"
 #include "opto/memnode.hpp"
 #include "opto/phaseX.hpp"
@@ -383,8 +384,9 @@ IfNode* ScopedValueGetLoadFromCacheNode::iff() const {
 void ScopedValueGetLoadFromCacheNode::verify() const {
   // check a ScopedValueGetHitsInCache guards this ScopedValueGetLoadFromCache
   assert(in(0)->Opcode() == Op_IfTrue, "unexpected ScopedValueGetLoadFromCache shape");
-  assert(in(0)->in(0)->in(1)->is_Bool(), "unexpected ScopedValueGetLoadFromCache shape");
-  assert(in(0)->in(0)->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "unexpected ScopedValueGetLoadFromCache shape");
-  assert(in(0)->in(0)->in(1)->in(1) == in(1), "unexpected ScopedValueGetLoadFromCache shape");
+  IfNode* iff = in(0)->in(0)->as_If();
+  assert(iff->in(1)->is_Bool(), "unexpected ScopedValueGetLoadFromCache shape");
+  assert(iff->in(1)->in(1)->Opcode() == Op_ScopedValueGetHitsInCache, "unexpected ScopedValueGetLoadFromCache shape");
+  assert(iff->in(1)->in(1) == in(1), "unexpected ScopedValueGetLoadFromCache shape");
 }
 #endif

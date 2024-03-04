@@ -3650,7 +3650,7 @@ bool LibraryCallKit::inline_native_scopedValueCache() {
 //------------------------inline_native_setScopedValueCache------------------
 bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* arr = argument(0);
-  Node* cache_obj_handle = scopedValueCache_helper();
+  Node* cache_obj_handle = scopedValueCache_handle();
   const Type* objects_type = scopedValueCache_type();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();

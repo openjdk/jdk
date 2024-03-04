@@ -4266,7 +4266,7 @@ const Type* GraphKit::scopedValueCache_type() {
   return objects_type;
 }
 
-Node* GraphKit::scopedValueCache_helper() {
+Node* GraphKit::scopedValueCache_handle() {
   Node* thread = _gvn.transform(new ThreadLocalNode());
   Node* p = basic_plus_adr(top()/*!oop*/, thread, in_bytes(JavaThread::scopedValueCache_offset()));
   // We cannot use immutable_memory() because we might flip onto a
@@ -4278,7 +4278,7 @@ Node* GraphKit::scopedValueCache_helper() {
 }
 
 Node* GraphKit::scopedValueCache() {
-  Node* cache_obj_handle = scopedValueCache_helper();
+  Node* cache_obj_handle = scopedValueCache_handle();
   const Type* objects_type = scopedValueCache_type();
   return access_load(cache_obj_handle, objects_type, T_OBJECT, IN_NATIVE);
 }

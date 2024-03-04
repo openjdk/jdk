@@ -1609,7 +1609,7 @@ bool PhaseIdealLoop::loop_predication_for_scoped_value_get(IdealLoopTree* loop, 
   assert(call != nullptr, "Where's the uncommon trap call?");
 
   Node* all_mem = call->in(TypeFunc::Memory);
-  MergeMemNode* mm = all_mem->is_MergeMem() ? all_mem->as_MergeMem() : nullptr;
+  MergeMemNode* mm = all_mem->isa_MergeMem();
   Node* raw_mem = mm != nullptr ? mm->memory_at(Compile::AliasIdxRaw) : all_mem;
 
   // The scoped value cache may be loop variant because it depends on raw memory which may keep the

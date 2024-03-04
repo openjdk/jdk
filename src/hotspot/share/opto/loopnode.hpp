@@ -698,7 +698,7 @@ public:
   // move some loop-invariant test (usually a null-check) before the loop.
   bool policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
 
-  uint estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_only);
+  uint estimate_peeling(PhaseIdealLoop* phase, bool peel_only_if_has_scoped_value);
 
   // Return TRUE or FALSE if the loop should be maximally unrolled. Stash any
   // known trip count in the counted loop node.
@@ -1234,8 +1234,9 @@ public:
   IdealLoopTree* ltree_root() const { return _ltree_root; }
 
   // Is 'n' a (nested) member of 'loop'?
-  int is_member( const IdealLoopTree *loop, Node *n ) const {
-    return loop->is_member(get_loop(n)); }
+  bool is_member(const IdealLoopTree *loop, Node *n) const {
+    return loop->is_member(get_loop(n));
+  }
 
   // This is the basic building block of the loop optimizations.  It clones an
   // entire loop body.  It makes an old_new loop body mapping; with this

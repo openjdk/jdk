@@ -456,7 +456,7 @@ bool IdealLoopTree::policy_peeling(PhaseIdealLoop* phase, bool scoped_value_only
 // Perform actual policy and size estimate for the loop peeling transform, and
 // return the estimated loop size if peeling is applicable, otherwise return
 // zero. No node budget is allocated.
-uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_only) {
+uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool peel_only_if_has_scoped_value) {
 
   // If nodes are depleted, some transform has miscalculated its needs.
   assert(!phase->exceeding_node_budget(), "sanity");
@@ -484,7 +484,7 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_on
   Node* test = tail();
 
   while (test != _head) {   // Scan till run off top of loop
-    if (test->is_If() && !scoped_value_only) {    // Test?
+    if (test->is_If() && !peel_only_if_has_scoped_value) {    // Test?
       Node *ctrl = phase->get_ctrl(test->in(1));
       if (ctrl->is_top()) {
         return 0;           // Found dead test on live IF?  No peeling!
@@ -500,7 +500,10 @@ uint IdealLoopTree::estimate_peeling(PhaseIdealLoop* phase, bool scoped_value_on
       if (!is_member(phase->get_loop(ctrl)) && is_loop_exit(test)) {
         return estimate;    // Found reason to peel!
       }
-    } else if (test->Opcode() == Op_ScopedValueGetResult && !is_member(phase->get_loop(phase->get_ctrl((test->as_ScopedValueGetResult())->scoped_value())))) {
+    } else if (test->Opcode() == Op_ScopedValueGetResult &&
+               !phase->is_member(this, phase->get_ctrl((test->as_ScopedValueGetResult())->scoped_value()))) {
+      // Found a ScopedValueGetResult node: peeling one iteration will allow the elimination of the ScopedValue.get()
+      // nodes in the loop body.
       return estimate;
     }
     // Walk up dominators to loop _head looking for test which is executed on
@@ -3782,8 +3785,9 @@ bool IdealLoopTree::iteration_split(PhaseIdealLoop* phase, Node_List &old_new) {
         phase->do_unswitching(this, old_new);
         return false; // need to recalculate idom data
       }
-      // if the loop body has a ScopedValueGetResult for a loop invariant ScopedValue object that dominates the backedge,
-      // then peeling one iteration of the loop body will allow the entire ScopedValue subgraph from the loop body
+      // If the loop body has a ScopedValueGetResult for a loop invariant ScopedValue object that dominates the backedge,
+      // then peeling one iteration of the loop body will allow the entire ScopedValue subgraph to be hoisted from the
+      // loop body
       if (policy_peeling(phase, true)) {
         phase->do_peeling(this, old_new);
         return false;

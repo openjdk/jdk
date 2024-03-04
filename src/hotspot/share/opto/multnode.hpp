@@ -107,6 +107,8 @@ public:
 
   // Return other proj node when this is a If proj node
   ProjNode* other_if_proj() const;
+  bool returns_pointer_from_call() const;
+  bool is_result_from_scoped_value_get() const;
 };
 
 #endif // SHARE_OPTO_MULTNODE_HPP

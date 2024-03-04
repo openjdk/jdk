@@ -292,3 +292,11 @@ bool ProjNode::is_multi_uncommon_trap_proj() {
   }
   return unc_count > 0;
 }
+
+bool ProjNode::returns_pointer_from_call() const {
+  return _con == TypeFunc::Parms && in(0)->is_Call() && in(0)->as_Call()->returns_pointer();
+}
+
+bool ProjNode::is_result_from_scoped_value_get() const {
+  return _con == ScopedValueGetResultNode::Result && in(0)->Opcode() == Op_ScopedValueGetResult;
+}

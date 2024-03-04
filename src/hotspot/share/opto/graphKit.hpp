@@ -68,7 +68,7 @@ class GraphKit : public Phase {
   BarrierSetC2*     _barrier_set;
 
   const Type* scopedValueCache_type();
-  Node* scopedValueCache_helper();
+  Node* scopedValueCache_handle();
 
  private:
   int               _sp;        // JVM Expression Stack Pointer; don't modify directly!

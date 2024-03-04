@@ -953,11 +953,12 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
     // the Thread.scopedValueCache() call. Given the shape of the method and some paths may have been trimmed and end with
     // an uncommon trap, it could reach either the first or the second cache probe if first. Figure out which is the first
     // here.
-    void adjust_order_or_first_and_second_probe_if(const Unique_Node_List &scoped_value_get_subgraph) {
+    void adjust_order_of_first_and_second_probe_if(const Unique_Node_List &scoped_value_get_subgraph) {
       if (_second_cache_probe_iff == nullptr) {
         return;
       }
       assert(_first_cache_probe_iff != nullptr, "can't have a second iff if there's no first one");
+      ResourceMark rm;
       Node_Stack stack(0);
       stack.push(_cache_not_null_iff, 0);
       while (stack.is_nonempty()) {
@@ -988,6 +989,33 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
     // first and second locations were probed. If the first if's other branch is to an uncommon trap, then that location
     // never saw a cache hit. In that case, when the ScopedValueGetHitsInCacheNode is expanded, only code to probe
     // the second location is added back to the IR.
+    //
+    // Before transformation:        After transformation:                      After expansion:                         
+    // cache = scopedValueCache();   cache = currentThread.scopedValueCache;    cache = currentThread.scopedValueCache;  
+    // if (cache == null) {          if (hits_in_cache(cache)) {                if (cache != null && second_entry_hits) {
+    //   goto slow_call;               result = load_from_cache;                  result = second_entry;                 
+    // }                             } else {                                   } else {                                 
+    // if (first_entry_hits) {         if (cache == null) {                       if (cache == null) {                   
+    //   uncommon_trap();                goto slow_call;                            goto slow_call;                      
+    // } else {                        }                                          }                                      
+    //   if (second_entry_hits) {      if (first_entry_hits) {                    if (first_entry_hits) {                
+    //     result = second_entry;        uncommon_trap();                           uncommon_trap();                     
+    //   } else {                      } else {                                   } else {                               
+    //     goto slow_call;               if (second_entry_hits) {                   if (second_entry_hits) {             
+    //   }                                  halt;                                      halt;                             
+    // }                                  } else {                                   } else {                            
+    // continue:                            goto slow_call;                            goto slow_call;                   
+    // ...                               }                                          }                                    
+    // return;                         }                                          }                                      
+    //                               }                                          }                                        
+    // slow_call:                    continue:                                  continue:                                
+    // result = slowGet();           ...                                        ...                                      
+    // goto continue;                return;                                    return;                                  
+    //                                                                                                                   
+    //                               slow_call:                                 slow_call:                               
+    //                               result = slowGet();                        result = slowGet();                      
+    //                               goto continue;                             goto continue;                           
+    //
     void remove_first_probe_if_when_it_never_hits() {
       if (_first_cache_probe_iff == nullptr || _second_cache_probe_iff == nullptr) {
         return;
@@ -1045,6 +1073,18 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
           //
           // always succeeds because the cache is of size CACHE_TABLE_SIZE * 2, CACHE_TABLE_SIZE is a power of 2 and
           // SLOT_MASK = CACHE_TABLE_SIZE - 1
+#ifdef ASSERT
+          // Verify the range check is against the return value from Thread.scopedValueCache()
+          BoolNode* rc_bol = c->in(1)->as_Bool();
+          CmpNode* rc_cmp = rc_bol->in(1)->as_Cmp();
+          assert(rc_cmp->Opcode() == Op_CmpU, "unexpected range check shape");
+          Node* rc_range = rc_cmp->in(rc_bol->_test.is_less() ? 2 : 1);
+          assert(rc_range->Opcode() == Op_LoadRange, "unexpected range check shape");
+          AddPNode* rc_range_address = rc_range->in(MemNode::Address)->as_AddP();
+          ProjNode* rc_range_base = rc_range_address->in(AddPNode::Base)->uncast()->as_Proj();
+          CallJavaNode* scoped_value_cache = rc_range_base->in(0)->as_CallJava();
+          assert(scoped_value_cache->method()->intrinsic_id() == vmIntrinsics::_scopedValueCache, "unexpected range check shape");
+#endif
           _kit.gvn().hash_delete(c);
           c->set_req(1, _kit.gvn().intcon(1));
           _kit.C->record_for_igvn(c);
@@ -1071,7 +1111,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
       // cache location, second cache location. Depending on the order of region inputs, the first or second cache
       // location test can be encountered first or second.
       // Perform another traversal to figure out which is first.
-      adjust_order_or_first_and_second_probe_if(scoped_value_get_subgraph);
+      adjust_order_of_first_and_second_probe_if(scoped_value_get_subgraph);
       remove_first_probe_if_when_it_never_hits();
     }
 
@@ -1088,6 +1128,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
             _slow_call(nullptr)
     {
       pattern_match();
+      assert(_scoped_value_cache != nullptr, "must have found Thread.scopedValueCache() call");
     }
 
     CallNode* scoped_value_cache() const {

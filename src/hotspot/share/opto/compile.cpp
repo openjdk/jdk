@@ -2349,7 +2349,7 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-    inline_scoped_value_get_calls(igvn);
+  inline_scoped_value_get_calls(igvn);
 
   print_method(PHASE_INCREMENTAL_SCOPED_VALUE_INLINE, 2);
 
