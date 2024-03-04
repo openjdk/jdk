@@ -78,7 +78,7 @@ public class VMDebugTest {
             output = executor.execute("VM.debug find 0x0");
             output.shouldContain("-XX:+UnlockDiagnosticVMOptions is required");
             return; // no more testing
-        } 
+        }
 
         // Tests with VM.debug enabled:
         output = executor.execute("help");
