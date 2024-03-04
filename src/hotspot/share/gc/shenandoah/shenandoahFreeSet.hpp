@@ -38,7 +38,7 @@
 
 
 
-// ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_contiguous_bits() and
+// ShenandoahSimpleBitMap resembles CHeapBitMap but adds missing support for find_next_consecutive_bits() and
 // find_prev_contiguous_bits.  An alternative refactoring of code would subclass CHeapBitMap, but this might
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
 // might be violatee through future software maintenance.
@@ -92,6 +92,11 @@ public:
 
   inline ssize_t alignment() const {
     return _bits_per_array_element;
+  }
+
+  // For testing
+  inline size_t number_of_bits() const {
+    return _num_bits;
   }
 
   inline size_t bits_at(ssize_t idx) const {
