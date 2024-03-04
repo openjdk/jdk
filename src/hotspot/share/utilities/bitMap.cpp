@@ -101,7 +101,7 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 
 template <class BitMapWithAllocator>
 bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, idx_t end_bit, bool clear) {
-  assert(start_bit < end_bit, "End bit must come after start bit: %ld, %ld", start_bit, end_bit);
+  assert(start_bit < end_bit, "End bit must come after start bit");
   assert(end_bit <= size(), "End bit not in bitmap");
 
   // We might have extra bits at the end that we don't want to lose
