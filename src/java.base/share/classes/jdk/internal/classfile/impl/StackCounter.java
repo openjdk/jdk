@@ -25,18 +25,18 @@
  */
 package jdk.internal.classfile.impl;
 
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-import java.util.List;
 import java.lang.classfile.TypeKind;
 import java.lang.classfile.constantpool.ConstantDynamicEntry;
 import java.lang.classfile.constantpool.DynamicConstantPoolEntry;
 import java.lang.classfile.constantpool.MemberRefEntry;
-import static java.lang.classfile.ClassFile.*;
 import java.lang.constant.MethodTypeDesc;
+import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
+import java.util.BitSet;
+import java.util.List;
 import java.util.Queue;
 
+import static java.lang.classfile.ClassFile.*;
 
 public final class StackCounter {
 

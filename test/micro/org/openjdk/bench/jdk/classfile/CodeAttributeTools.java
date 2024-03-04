@@ -54,6 +54,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
@@ -104,8 +105,8 @@ public class CodeAttributeTools {
     }
 
     @Benchmark
-    public void benchmarkStackMapsGenerator() {
-        for (var d : data) new StackMapGenerator(
+    public void benchmarkStackMapsGenerator(Blackhole bh) {
+        for (var d : data) bh.consume(new StackMapGenerator(
                 d.labelContext(),
                 d.thisClass(),
                 d.methodName(),
@@ -114,18 +115,18 @@ public class CodeAttributeTools {
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
                 (ClassFileImpl)ClassFile.of(),
-                d.handlers());
+                d.handlers()));
     }
 
     @Benchmark
-    public void benchmarkStackCounter() {
-        for (var d : data) new StackCounter(
+    public void benchmarkStackCounter(Blackhole bh) {
+        for (var d : data) bh.consume(new StackCounter(
                 d.labelContext(),
                 d.methodName(),
                 d.methodDesc(),
                 d.isStatic(),
                 d.bytecode().rewind(),
                 (SplitConstantPool)d.constantPool(),
-                d.handlers());
+                d.handlers()));
     }
 }
