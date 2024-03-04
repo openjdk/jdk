@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -675,7 +675,7 @@ final class Executor {
     private static final String CLASS_PATH = Objects.requireNonNull(
             System.getProperty("test.classes"), "unspecified test.classes");
     private static final String DEBUG_ARG =
-            "-Xrunjdwp:transport=dt_socket,address=vmhost.lab:8000,suspend=y";
+            "-Xrunjdwp:transport=dt_socket,address=localhost:8000,suspend=y";
     private final Map<String, String> systemProps = new LinkedHashMap<>(
             Map.of("java.security.debug", "all", "javax.net.debug", "all",
                     // Ensure we get UTF-8 debug outputs in Windows:
@@ -731,20 +731,24 @@ final class Executor {
     }
 
     private void execute(boolean successExpected) throws Exception {
-        List<String> allJvmArgs = new ArrayList<>(jvmArgs);
+        List<String> command = new ArrayList<>(jvmArgs);
+        addSystemPropertiesAsJvmArgs(command);
+        command.add(ConfigFileTest.class.getSimpleName());
+        command.add(RUNNER_ARG);
+        oa = ProcessTools.executeProcess(new ProcessBuilder(command));
+        oa.shouldHaveExitValue(successExpected ? 0 : 1);
+        for (String output : ALWAYS_UNEXPECTED_LOG_MSGS) {
+            oa.shouldNotContain(output);
+        }
+    }
+
+    private void addSystemPropertiesAsJvmArgs(List<String> command) {
         Map<String, String> allSystemProps = new LinkedHashMap<>(systemProps);
         if (extraPropsFile != null) {
             allSystemProps.putAll(extraPropsFile.getSystemProperties());
         }
         for (Map.Entry<String, String> e : allSystemProps.entrySet()) {
-            allJvmArgs.add("-D" + e.getKey() + "=" + e.getValue());
-        }
-        allJvmArgs.addAll(
-                List.of(ConfigFileTest.class.getSimpleName(), RUNNER_ARG));
-        oa = ProcessTools.executeProcess(new ProcessBuilder(allJvmArgs));
-        oa.shouldHaveExitValue(successExpected ? 0 : 1);
-        for (String output : ALWAYS_UNEXPECTED_LOG_MSGS) {
-            oa.shouldNotContain(output);
+            command.add("-D" + e.getKey() + "=" + e.getValue());
         }
     }
 
