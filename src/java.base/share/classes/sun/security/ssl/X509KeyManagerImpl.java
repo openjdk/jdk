@@ -34,6 +34,7 @@ import java.security.KeyStore.Entry;
 import java.security.KeyStore.PrivateKeyEntry;
 import java.security.Principal;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -80,7 +81,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
     private boolean ksP12;
     /*
-     * The credentials from the KeyStore as
+     * The credentials from the PKCS12KeyStore as
      * Map: String(builderIndex.entryAlias) -> X509Credentials(credentials)
      */
     private final Map<String, X509Credentials> credentialsMap;
@@ -118,18 +119,21 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                     break;
                 }
             } catch (Exception e) {
-                // ignore
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine("KeyMgr: error occurred during " +
+                            "getKeyStore() operation for Keystore builder");
+                }
             }
         }
 
         if (foundPKCS12) {
             ksP12 = true;
             credentialsMap = new ConcurrentHashMap<>();
-            entryCacheMap = null; // No need for entry cache for PKCS12
+            entryCacheMap = null;
             initializeCredentials();
         } else {
             ksP12 = false;
-            credentialsMap = null; // No need for credentials map for non-PKCS12
+            credentialsMap = null;
             entryCacheMap = Collections.synchronizedMap(new SizedMap<>());
         }
     }
@@ -153,45 +157,29 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 if (keyStore == null) {
                     continue;
                 }
+
                 Enumeration<String> aliases = keyStore.aliases();
                 while (aliases.hasMoreElements()) {
                     String alias = aliases.nextElement();
                     if (!keyStore.isKeyEntry(alias)) {
                         continue;
                     }
-                    Entry newEntry = keyStore.getEntry(alias,
-                            builder.getProtectionParameter(alias));
-                    if (!(newEntry instanceof PrivateKeyEntry)) {
-                        continue;
-                    }
 
-                    PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
-                    PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-                    Certificate[] certs = keyStore.getCertificateChain(alias);
-                    if ((certs == null) || (certs.length == 0) ||
-                            !(certs[0] instanceof X509Certificate)) {
-                        continue;
+                    boolean mapEntryUpdated = processCredentials(builder,
+                            i, alias);
+                    if (!mapEntryUpdated){
+                        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                            SSLLogger.fine("KeyMgr: error occurred during " +
+                                    "initializing cached map for PKCS12 " +
+                                    "keystore");
+                        }
                     }
-                    if (!(certs instanceof X509Certificate[])) {
-                        Certificate[] tmp = new X509Certificate[certs.length];
-                        System.arraycopy(certs, 0, tmp, 0, certs.length);
-                        certs = tmp;
-                    }
-
-                    String builderAlias = i + "." + alias;
-                    X509Credentials cred = new X509Credentials(privateKey,
-                            (X509Certificate[])certs);
-                    credentialsMap.put(builderAlias, cred);
-
-                    if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                        SSLLogger.fine("found key for : " +
-                                "keystore builder index = " + i +
-                                " alias = " + alias, (Object[])certs);
-                    }
-
                 }
             } catch (Exception e) {
-                // ignore
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine("KeyMgr: error occurred during " +
+                            "getKeyStore() operation for Keystore builder");
+                }
             }
         }
     }
@@ -209,7 +197,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
 
             X509Credentials cred = credentialsMap.get(builderAlias);
-            if (cred == null || !areCertChainsEqual(builderAlias, cred.certificates)) {
+            if (cred == null || !areCertChainsEqual(builderAlias,
+                    cred.certificates)) {
                 if (updateCredentialsMap(builderAlias)) {
                     cred = credentialsMap.get(builderAlias);
                     return cred.certificates.clone();
@@ -233,7 +222,8 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
 
             X509Credentials cred = credentialsMap.get(builderAlias);
-            if (cred == null || !areCertChainsEqual(builderAlias, cred.certificates)) {
+            if (cred == null || !areCertChainsEqual(builderAlias,
+                    cred.certificates)) {
                 if (updateCredentialsMap(builderAlias)) {
                     cred = credentialsMap.get(builderAlias);
                     return cred.privateKey;
@@ -325,13 +315,13 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
         return alias.substring(firstDot + 1);
     }
 
-    private boolean areCertChainsEqual(String builderAlias, X509Certificate[] cachedCerts) {
+    private boolean areCertChainsEqual(String builderAlias,
+            X509Certificate[] cachedCerts) {
+        int aDot = builderAlias.indexOf('.');
+        int builderIndex = Integer.parseInt(builderAlias.substring(0, aDot));
+        String entryAlias = builderAlias.substring(aDot + 1);
         try {
-            int aDot = builderAlias.indexOf('.');
-            int builderIndex = Integer.parseInt(builderAlias.substring(0, aDot));
-            String entryAlias = builderAlias.substring(aDot + 1);
             Builder builder = builders.get(builderIndex);
-
             KeyStore keyStore = builder.getKeyStore();
             if (keyStore == null) {
                 return false;
@@ -342,49 +332,32 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             }
 
             // Convert KeyStore certificates to X509Certificates
-            X509Certificate[] newCerts = new X509Certificate[keyStoreCerts.length];
-            for (int i = 0; i < keyStoreCerts.length; i++) {
-                if (!(keyStoreCerts[i] instanceof X509Certificate)) {
-                    return false;
-                }
-                newCerts[i] = (X509Certificate) keyStoreCerts[i];
-            }
-
-            if (cachedCerts.length != newCerts.length) {
-                return false;
-            }
-            for (int i = 0; i < cachedCerts.length; i++) {
-                if (!cachedCerts[i].equals(newCerts[i])) {
-                    return false;
-                }
-            }
-            return true;
+            X509Certificate[] newCerts = Arrays.copyOf(keyStoreCerts,
+                    keyStoreCerts.length, X509Certificate[].class);
+            return Arrays.equals(cachedCerts, newCerts);
         } catch (Exception e) {
             return false;
         }
     }
 
-    // Update the credentialsMap with the up-to-date key and certificates
-    private synchronized boolean updateCredentialsMap(String builderAlias) {
-        int aDot = builderAlias.indexOf('.');
-        int builderIndex = Integer.parseInt(builderAlias.substring(0, aDot));
-        String entryAlias = builderAlias.substring(aDot + 1);
-        Builder builder = builders.get(builderIndex);
+    private boolean processCredentials(Builder builder, int builderIndex,
+            String alias) throws Exception {
+        KeyStore keyStore = builder.getKeyStore();
+        if (keyStore == null) {
+            return false;
+        }
 
-        try {
-            KeyStore keyStore = builder.getKeyStore();
-            if (keyStore == null) {
-                return false;
-            }
-            Entry newEntry = keyStore.getEntry(entryAlias,
-                    builder.getProtectionParameter(entryAlias));
+        synchronized (keyStore) {
+            Entry newEntry = keyStore.getEntry(alias,
+                    builder.getProtectionParameter(alias));
             if (!(newEntry instanceof PrivateKeyEntry)) {
                 return false;
             }
 
             PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
             PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-            Certificate[] certs = keyStore.getCertificateChain(entryAlias);
+            Certificate[] certs = privateKeyEntry.getCertificateChain();
+
             if ((certs == null) || (certs.length == 0) ||
                     !(certs[0] instanceof X509Certificate)) {
                 return false;
@@ -396,10 +369,45 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
                 certs = tmp;
             }
 
+            X509Certificate cert = (X509Certificate) certs[0];
+            PublicKey publicKey = cert.getPublicKey();
+            if (!privateKey.getAlgorithm().equals(publicKey.getAlgorithm())) {
+                return false;
+            }
+
+            // Add to credentials map
+            String builderAlias = builderIndex + "." + alias;
             X509Credentials cred = new X509Credentials(privateKey,
                     (X509Certificate[]) certs);
             credentialsMap.put(builderAlias, cred);
+
+            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                SSLLogger.fine("found key for : " +
+                        "keystore builder index = " + builderIndex +
+                        " alias = " + alias, (Object[]) certs);
+            }
+
             return true;
+        }
+    }
+
+    // Update the credentialsMap with the up-to-date key and certificates
+    private boolean updateCredentialsMap(String builderAlias) {
+        int aDot = builderAlias.indexOf('.');
+        int builderIndex = Integer.parseInt(builderAlias.substring(0, aDot));
+        String entryAlias = builderAlias.substring(aDot + 1);
+        Builder builder = builders.get(builderIndex);
+
+        try {
+            boolean mapEntryUpdated = processCredentials(builder,
+                    builderIndex, entryAlias);
+            if (!mapEntryUpdated) {
+                if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+                    SSLLogger.fine("KeyMgr: error occurred during updating " +
+                            "cached map for PKCS12 keystore");
+                }
+            }
+            return mapEntryUpdated;
         } catch (Exception e) {
             return false;
         }
