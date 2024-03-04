@@ -156,14 +156,16 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         if (currentDirectory == null) {
             return;
         }
-        if (filesLoader != null) {
-            filesLoader.loadThread.interrupt();
-            filesLoader.cancelRunnables();
-        }
+        synchronized (this) {
+            if (filesLoader != null) {
+                filesLoader.loadThread.interrupt();
+                filesLoader.cancelRunnables();
+            }
 
-        int fid = fetchID.incrementAndGet();
-        setBusy(true, fid);
-        filesLoader = new FilesLoader(currentDirectory, fid);
+            int fid = fetchID.incrementAndGet();
+            setBusy(true, fid);
+            filesLoader = new FilesLoader(currentDirectory, fid);
+        }
     }
 
     /**
