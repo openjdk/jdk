@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -322,7 +322,7 @@ public final class TypeLibrary {
             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
             if (vd != null) {
                 if (!vd.getTypeName().equals(field.getType().getName())) {
-                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getName() + " but got " + vd.getName());
+                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getType().getName() + " but got " + vd.getTypeName());
                 }
                 for (AnnotationElement ae : vd.getAnnotationElements()) {
                     newTypes.add(PrivateAccess.getInstance().getType(ae));
