@@ -118,7 +118,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * monotonic value. The getter can be used to obtain the bound value without boxing
      * but will otherwise behave as the {@linkplain #get()} method.
      * <p>
-     * The returned getter will have one parameter of type {@linkplain Monotonic} which
+     * The returned getter will have a sole parameter of type {@linkplain Monotonic} which
      * represents the "this" parameter.
      */
     MethodHandle getter();
