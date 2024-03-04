@@ -268,22 +268,15 @@ public final class NativeLibraries {
 
     private NativeLibrary findFromPaths(String[] paths, Class<?> fromClass, String name) {
         for (String path : paths) {
-
-
             File libfile = new File(path, System.mapLibraryName(name));
-            NativeLibrary nl = loadLibrary(fromClass, libfile);
-            
+            NativeLibrary nl = loadLibrary(fromClass, libfile);      
             if (nl != null) {
                 return nl;
             }
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
-
             if (libfile != null) {
-
                 nl = loadLibrary(fromClass, libfile);
-                
                 if (nl != null) {
-
                     return nl;
                 }
             }
