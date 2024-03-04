@@ -1346,7 +1346,6 @@ public:
   // Helper functions for create_new_if_for_predicate()
   void set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
   Unique_Node_List find_nodes_with_same_ctrl(Node* node, const ProjNode* ctrl);
-  const Unique_Node_List& find_nodes_with_same_ctrl(DataInputGraph& data_input_graph, const ProjNode* ctrl);
   Node* clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj);
   void fix_cloned_data_node_controls(const ProjNode* orig, Node* new_uncommon_proj,
                                      const OrigToNewHashtable& orig_to_clone);
