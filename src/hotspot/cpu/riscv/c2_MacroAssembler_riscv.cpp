@@ -1937,7 +1937,7 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
   uint length = stub.data<3>();
   __ bind(stub.entry());
 
-  __ vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2);
+  // mul is already set to mf2 in float_to_float16_v.
 
   // preserve the payloads of non-canonical NaNs.
   __ vnsra_wi(dst, src, 13, Assembler::v0_t);
@@ -1968,9 +1968,12 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   // check whether there is a NaN.
   // replace v_fclass with vmseq_vv as performance optimization.
   vmfne_vv(v0, src, src);
+
+  // move vsetvli_helper forward here, as t0 is used as default temp register in vsetvli_helper in some situations.
+  // and also moving vsetvli_helper(..., mf2) here does not impact vcpop_m.
+  vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2);
   vcpop_m(t0, v0);
 
-  vsetvli_helper(BasicType::T_SHORT, length, Assembler::mf2, zr);
   // non-NaN cases, just use built-in instructions.
   vfncvt_f_f_w(dst, src);
 
