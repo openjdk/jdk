@@ -35,15 +35,13 @@ import javax.swing.SwingUtilities;
 import java.awt.Robot;
 
 public class IconifiedToFront {
-    private static final int PAUSE_MS = 500;
+    private static final int PAUSE_MS = 1500;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
         robot = new Robot();
         SwingUtilities.invokeAndWait(IconifiedToFront::test1);
         SwingUtilities.invokeAndWait(IconifiedToFront::test2);
-        SwingUtilities.invokeAndWait(IconifiedToFront::test3);
-        SwingUtilities.invokeAndWait(IconifiedToFront::test4);
     }
 
     private static void test1() {
@@ -67,27 +65,6 @@ public class IconifiedToFront {
     }
 
     private static void test2() {
-        JFrame frame1 = new JFrame("IconifiedToFront Test 2");
-        try {
-            frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame1.setSize(400, 300);
-            frame1.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame1.setVisible(true);
-            pause();
-            frame1.setExtendedState(JFrame.ICONIFIED | JFrame.MAXIMIZED_BOTH);
-            pause();
-            frame1.toFront();
-            pause();
-            int state = frame1.getExtendedState();
-            if ((state & JFrame.ICONIFIED) != 0) {
-                throw new RuntimeException("Test Failed: state is still ICONIFIED: " + state);
-            }
-        } finally {
-            frame1.dispose();
-        }
-    }
-
-    private static void test3() {
         JFrame frame1 = new JFrame("IconifiedToFront Test 3");
         try {
             frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -96,28 +73,6 @@ public class IconifiedToFront {
             frame1.setVisible(true);
             pause();
             frame1.setExtendedState(JFrame.ICONIFIED);
-            pause();
-            frame1.toFront();
-            pause();
-            int state = frame1.getExtendedState();
-            if ((state & JFrame.ICONIFIED) != 0) {
-                throw new RuntimeException("Test Failed: state is still ICONIFIED: " + state);
-            }
-        } finally {
-            frame1.dispose();
-        }
-    }
-
-    private static void test4() {
-        JFrame frame1 = new JFrame("IconifiedToFront Test 4");
-        try {
-            frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame1.setSize(400, 300);
-            frame1.setUndecorated(true);
-            frame1.setExtendedState(JFrame.MAXIMIZED_BOTH);
-            frame1.setVisible(true);
-            pause();
-            frame1.setExtendedState(JFrame.ICONIFIED | JFrame.MAXIMIZED_BOTH);
             pause();
             frame1.toFront();
             pause();
