@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -43,7 +43,7 @@ typedef struct {
     iface_info *ifaces;
 } class_info;
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 static jboolean printdump = JNI_FALSE;
 
@@ -68,17 +68,17 @@ static iface_info i9[] = {
 };
 
 static class_info classes[] = {
-    { "InnerClass1", 0, NULL },
-    { "InnerInterface1", 0, NULL },
+    { "InnerClass1", 0, nullptr },
+    { "InnerInterface1", 0, nullptr },
     { "InnerInterface2", 1, i2 },
     { "InnerClass2", 1, i3 },
-    { "OuterClass1", 0, NULL },
-    { "OuterClass2", 0, NULL },
-    { "OuterInterface1", 0, NULL },
+    { "OuterClass1", 0, nullptr },
+    { "OuterClass2", 0, nullptr },
+    { "OuterInterface1", 0, nullptr },
     { "OuterClass3", 1, i7 },
     { "OuterInterface2", 1, i8 },
     { "OuterClass4", 1, i9 },
-    { "OuterClass5", 0, NULL }
+    { "OuterClass5", 0, nullptr }
 };
 
 #ifdef STATIC_BUILD
@@ -95,12 +95,12 @@ JNIEXPORT jint JNI_OnLoad_getintrf007(JavaVM *jvm, char *options, void *reserved
 jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
-    if (options != NULL && strcmp(options, "printdump") == 0) {
+    if (options != nullptr && strcmp(options, "printdump") == 0) {
         printdump = JNI_TRUE;
     }
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -116,7 +116,7 @@ Java_nsk_jvmti_GetImplementedInterfaces_getintrf007_check(JNIEnv *env, jclass cl
     char *sig, *generic;
     int j;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         result = STATUS_FAILED;
         return;
@@ -141,7 +141,7 @@ Java_nsk_jvmti_GetImplementedInterfaces_getintrf007_check(JNIEnv *env, jclass cl
     }
 
     for (j = 0; j < icount; j++) {
-        if (interfaces[j] == NULL) {
+        if (interfaces[j] == nullptr) {
             printf("(%d:%d) null reference\n", i, j);
         } else {
             err = jvmti->GetClassSignature(interfaces[j],
@@ -153,7 +153,7 @@ Java_nsk_jvmti_GetImplementedInterfaces_getintrf007_check(JNIEnv *env, jclass cl
                 if (printdump == JNI_TRUE) {
                     printf(">>>   [%d]: %s\n", j, sig);
                 }
-                if ((j < classes[i].icount) && (sig == NULL ||
+                if ((j < classes[i].icount) && (sig == nullptr ||
                         strcmp(sig, classes[i].ifaces[j].sig) != 0)) {
                     printf("(%d:%d) wrong interface: \"%s\"", i, j, sig);
                     printf(", expected: \"%s\"\n", classes[i].ifaces[j].sig);

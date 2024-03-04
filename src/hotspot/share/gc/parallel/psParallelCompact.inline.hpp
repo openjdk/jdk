@@ -100,7 +100,6 @@ inline void PSParallelCompact::check_new_location(HeapWord* old_addr, HeapWord* 
 inline bool PSParallelCompact::mark_obj(oop obj) {
   const size_t obj_size = obj->size();
   if (mark_bitmap()->mark_obj(obj, obj_size)) {
-    _summary_data.add_obj(obj, obj_size);
     ContinuationGCSupport::transform_stack_chunk(obj);
     return true;
   } else {
@@ -130,9 +129,9 @@ class PCAdjustPointerClosure: public BasicOopIterateClosure {
 public:
   PCAdjustPointerClosure(ParCompactionManager* cm) : _cm(cm) {
   }
-  template <typename T> void do_oop_nv(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
-  virtual void do_oop(oop* p)                { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)          { do_oop_nv(p); }
+  template <typename T> void do_oop_work(T* p) { PSParallelCompact::adjust_pointer(p, _cm); }
+  virtual void do_oop(oop* p)                { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)          { do_oop_work(p); }
 
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 private:

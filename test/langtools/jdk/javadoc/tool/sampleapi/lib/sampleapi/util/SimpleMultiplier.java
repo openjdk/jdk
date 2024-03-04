@@ -23,8 +23,8 @@
 
 package sampleapi.util;
 
-import java.util.StringTokenizer;
 import java.util.ArrayList;
+import java.util.StringTokenizer;
 
 /*
  * The class implements unknown number of nested loops. The number of modifiers

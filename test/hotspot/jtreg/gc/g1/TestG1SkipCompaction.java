@@ -54,8 +54,7 @@ public class TestG1SkipCompaction {
             "-XX:G1HeapRegionSize=1m",
             GCTest.class.getName()
             };
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(arguments);
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(arguments);
         System.out.println(output.getStdout());
 
         String pattern = ".*skip compaction region.*";

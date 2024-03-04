@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8267532
  * @summary check that uncommon trap is generated for unhandled catch block
  * @library /test/lib /
+ * @requires vm.opt.DeoptimizeALot != true
  * @run driver compiler.c2.irTests.TestPrunedExHandler
  */
 

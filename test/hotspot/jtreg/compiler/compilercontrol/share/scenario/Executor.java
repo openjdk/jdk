@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.lang.reflect.Executable;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
@@ -80,8 +82,9 @@ public class Executor {
         // Add class name that would be executed in a separate VM
         vmOptions.add(execClass);
         OutputAnalyzer output;
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
+        try (ServerSocket serverSocket = new ServerSocket()) {
             {
+                serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
                 // Get port test VM will connect to
                 int port = serverSocket.getLocalPort();
                 if (port == -1) {
@@ -101,7 +104,7 @@ public class Executor {
                     vmInputArgs.length + vmOptions.size());
             System.arraycopy(vmOptions.toArray(), 0, cmds, vmInputArgs.length,
                     vmOptions.size());
-            output = ProcessTools.executeTestJvm(cmds);
+            output = ProcessTools.executeTestJava(cmds);
         } catch (Throwable thr) {
             throw new Error("Execution failed: " + thr.getMessage(), thr);
         }
