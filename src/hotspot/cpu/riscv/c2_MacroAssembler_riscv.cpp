@@ -1872,96 +1872,6 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   bind(stub->continuation());
 }
 
-void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
-  vsetvli_helper(bt, vlen);
-
-  // check if input is -0, +0, signaling NaN or quiet NaN
-  vfclass_v(v0, dst);
-  mv(t0, fclass_mask::zero | fclass_mask::nan);
-  vand_vx(v0, v0, t0);
-  vmseq_vi(v0, v0, 0);
-
-  // use floating-point 1.0 with a sign of input
-  vfsgnj_vv(dst, one, dst, v0_t);
-}
-
-void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
-  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
-  // intrinsic is enabled when MaxVectorSize >= 16
-  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
-  long len = is_long ? 64 : 32;
-
-  // load the src data(in bits) to be compressed.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, src);
-  // reset the src data(in bytes) to zero.
-  mv(t0, len);
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vmv_v_i(v4, 0);
-  // convert the src data from bits to bytes.
-  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
-  // reset the dst data(in bytes) to zero.
-  vmv_v_i(v8, 0);
-  // load the mask data(in bits).
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, mask);
-  // compress the src data(in bytes) to dst(in bytes).
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vcompress_vm(v8, v4, v0);
-  // convert the dst data from bytes to bits.
-  vmseq_vi(v0, v8, 1);
-  // store result back.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_x_s(dst, v0);
-}
-
-void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register mask) {
-  compress_bits_v(dst, src, mask, /* is_long */ false);
-}
-
-void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
-  compress_bits_v(dst, src, mask, /* is_long */ true);
-}
-
-void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
-  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
-  // intrinsic is enabled when MaxVectorSize >= 16
-  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
-  long len = is_long ? 64 : 32;
-
-  // load the src data(in bits) to be expanded.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, src);
-  // reset the src data(in bytes) to zero.
-  mv(t0, len);
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  vmv_v_i(v4, 0);
-  // convert the src data from bits to bytes.
-  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
-  // reset the dst data(in bytes) to zero.
-  vmv_v_i(v12, 0);
-  // load the mask data(in bits).
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_s_x(v0, mask);
-  // expand the src data(in bytes) to dst(in bytes).
-  vsetvli(x0, t0, Assembler::e8, lmul);
-  viota_m(v8, v0);
-  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
-  // convert the dst data from bytes to bits.
-  vmseq_vi(v0, v12, 1);
-  // store result back.
-  vsetivli(x0, 1, sew, Assembler::m1);
-  vmv_x_s(dst, v0);
-}
-
-void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
-  expand_bits_v(dst, src, mask, /* is_long */ false);
-}
-
-void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
-  expand_bits_v(dst, src, mask, /* is_long */ true);
-}
-
 static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<VectorRegister, VectorRegister, uint>& stub) {
 #define __ masm.
   VectorRegister dst = stub.data<0>();
@@ -2068,6 +1978,96 @@ void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister sr
   bnez(t0, stub->entry());
 
   bind(stub->continuation());
+}
+
+void C2_MacroAssembler::signum_fp_v(VectorRegister dst, VectorRegister one, BasicType bt, int vlen) {
+  vsetvli_helper(bt, vlen);
+
+  // check if input is -0, +0, signaling NaN or quiet NaN
+  vfclass_v(v0, dst);
+  mv(t0, fclass_mask::zero | fclass_mask::nan);
+  vand_vx(v0, v0, t0);
+  vmseq_vi(v0, v0, 0);
+
+  // use floating-point 1.0 with a sign of input
+  vfsgnj_vv(dst, one, dst, v0_t);
+}
+
+void C2_MacroAssembler::compress_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be compressed.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as the implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v8, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // compress the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vcompress_vm(v8, v4, v0);
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v8, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::compress_bits_i_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::compress_bits_l_v(Register dst, Register src, Register mask) {
+  compress_bits_v(dst, src, mask, /* is_long */ true);
+}
+
+void C2_MacroAssembler::expand_bits_v(Register dst, Register src, Register mask, bool is_long) {
+  Assembler::SEW sew = is_long ? Assembler::e64 : Assembler::e32;
+  // intrinsic is enabled when MaxVectorSize >= 16
+  Assembler::LMUL lmul = is_long ? Assembler::m4 : Assembler::m2;
+  long len = is_long ? 64 : 32;
+
+  // load the src data(in bits) to be expanded.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, src);
+  // reset the src data(in bytes) to zero.
+  mv(t0, len);
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  vmv_v_i(v4, 0);
+  // convert the src data from bits to bytes.
+  vmerge_vim(v4, v4, 1); // v0 as implicit mask register
+  // reset the dst data(in bytes) to zero.
+  vmv_v_i(v12, 0);
+  // load the mask data(in bits).
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_s_x(v0, mask);
+  // expand the src data(in bytes) to dst(in bytes).
+  vsetvli(x0, t0, Assembler::e8, lmul);
+  viota_m(v8, v0);
+  vrgather_vv(v12, v4, v8, VectorMask::v0_t); // v0 as implicit mask register
+  // convert the dst data from bytes to bits.
+  vmseq_vi(v0, v12, 1);
+  // store result back.
+  vsetivli(x0, 1, sew, Assembler::m1);
+  vmv_x_s(dst, v0);
+}
+
+void C2_MacroAssembler::expand_bits_i_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ false);
+}
+
+void C2_MacroAssembler::expand_bits_l_v(Register dst, Register src, Register mask) {
+  expand_bits_v(dst, src, mask, /* is_long */ true);
 }
 
 void C2_MacroAssembler::element_compare(Register a1, Register a2, Register result, Register cnt, Register tmp1, Register tmp2,
