@@ -139,7 +139,7 @@ public interface JMXConnector extends Closeable {
      * than {@link #getMBeanServerConnection()}.
      *
      * @param delegationSubject must be null, since the removal of the
-     * Subject Delegation feature.  If non-null, UnsupportedOperationException is thrown.
+     * Subject Delegation feature.
      *
      * @return an object that implements the <code>MBeanServerConnection</code>
      * interface by forwarding its methods to the remote MBean server.
@@ -148,6 +148,9 @@ public interface JMXConnector extends Closeable {
      * cannot be created, for instance because the connection to the remote
      * MBean server has not yet been established (with the {@link #connect(Map)
      * connect} method), or it has been closed, or it has broken.
+     *
+     * @exception UnsupportedOperationException if a non-null delegationSubject
+     * is specifed. Subject Delegation has been removed.
      *
      * @deprecated This method supported the legacy Subject Delegation feature,
      * and is only useful in conjunction with other APIs which are deprecated and
