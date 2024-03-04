@@ -39,8 +39,10 @@ module jdk.management.agent {
     requires java.management.rmi;
     requires jdk.httpserver;
 
-    exports jdk.internal.agent to jdk.jconsole;
-
+    exports jdk.internal.agent to jdk.jconsole, jdk.management.rest;
     exports jdk.internal.agent.spi to jdk.management.rest;
+
+    opens jdk.internal.agent to jdk.management.rest;
+
     uses jdk.internal.agent.spi.AgentProvider;
 }

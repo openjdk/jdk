@@ -25,6 +25,7 @@
 
 package jdk.internal.management.remote.rest;
 
+import jdk.internal.agent.AgentConfigurationError;
 import jdk.internal.management.remote.rest.http.MBeanServerCollectionResource;
 import jdk.internal.management.remote.rest.http.MBeanServerResource;
 import com.sun.net.httpserver.HttpServer;
@@ -137,16 +138,11 @@ public final class PlatformRestAdapter {
             boolean useSSL = Boolean.parseBoolean(properties.getProperty(
                     PropertyNames.USE_SSL, DefaultValues.USE_SSL));
             if (useSSL) {
-                final String sslConfigFileName
-                        = properties.getProperty(PropertyNames.SSL_CONFIG_FILE_NAME);
-                SSLContext ctx = getSSlContext(sslConfigFileName);
-                if (ctx != null) {
-                    HttpsServer server = HttpsServer.create(new InetSocketAddress(host, port), 0);
-                    server.setHttpsConfigurator(new HttpsConfigurator(ctx));
-                    httpServer = server;
-                } else {
-                    httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
-                }
+                // Do not fall back to plain HTTP if SSL was requested.
+                SSLContext ctx = getSSLContext(properties);
+                HttpsServer server = HttpsServer.create(new InetSocketAddress(host, port), 0);
+                server.setHttpsConfigurator(new HttpsConfigurator(ctx));
+                httpServer = server;
             } else {
                 httpServer = HttpServer.create(new InetSocketAddress(host, port), 0);
             }
@@ -268,8 +264,9 @@ public final class PlatformRestAdapter {
         return getDomain() + "/jmx/servers";
     }
 
-    private static SSLContext getSSlContext(String sslConfigFileName) {
+    private static SSLContext getSSLContext(Properties properties) throws AgentConfigurationError {
         final String keyStore, keyStorePassword, trustStore, trustStorePassword;
+        final String sslConfigFileName = properties.getProperty(PropertyNames.SSL_CONFIG_FILE_NAME);
 
         try {
             if (sslConfigFileName == null || sslConfigFileName.isEmpty()) {
@@ -322,8 +319,8 @@ public final class PlatformRestAdapter {
             ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
             return ctx;
         } catch (Exception ex) {
+            throw new AgentConfigurationError("Cannot create SSLContext", ex);
         }
-        return null;
     }
 
     /**

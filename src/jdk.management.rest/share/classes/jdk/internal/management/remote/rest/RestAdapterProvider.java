@@ -47,7 +47,7 @@ public class RestAdapterProvider extends AgentProvider {
     public synchronized void startAgent(Properties props) {
         try {
             PlatformRestAdapter.init(props);
-        } catch (IOException e) {
+        } catch (Throwable e)  {
             throw new RuntimeException(e);
         }
     }
