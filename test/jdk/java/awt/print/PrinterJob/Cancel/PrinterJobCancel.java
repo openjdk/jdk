@@ -40,10 +40,8 @@ import java.awt.print.PrinterJob;
  * @run main/manual PrinterJobCancel
  */
 public class PrinterJobCancel extends Thread implements Printable {
-
     private final PrinterJob pj;
     private final boolean okayed;
-
     private static final String INSTRUCTIONS =
             "Test that print job cancellation works.\n\n" +
             "This test starts after clicking OK / Print button, while the job is\n" +
@@ -52,7 +50,6 @@ public class PrinterJobCancel extends Thread implements Printable {
             "was properly cancelled.";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -97,8 +94,7 @@ public class PrinterJobCancel extends Thread implements Printable {
         } finally {
             System.out.println("DONE PRINTING");
             if (!cancelWorked) {
-                PassFailJFrame.forceFail("Looks like the test failed - we didn't get " +
-                                         "the expected PrintAbortException ");
+                PassFailJFrame.forceFail("Didn't get the expected PrintAbortException");
             }
         }
     }
@@ -115,10 +111,10 @@ public class PrinterJobCancel extends Thread implements Printable {
 
         g2d.drawString(("This is page" + (pidx + 1)), 60, 80);
         // Need to slow things down a bit .. important not to try this
-        // on the event dispathching thread of course.
+        // on the event dispatching thread of course.
         try {
             Thread.sleep(2000);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException ignored) {
         }
 
         return Printable.PAGE_EXISTS;

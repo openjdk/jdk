@@ -170,7 +170,7 @@ public class ValidatePage extends Frame implements Printable {
             displayPageFormatAttributes();
         });
 
-        Button pageButton = new Button("Page Setup..");
+        Button pageButton = new Button("Page Setup...");
         pageButton.addActionListener(e -> {
             myPageFormat = myPrinterJob.pageDialog(myPageFormat);
             displayPageFormatAttributes();
@@ -186,7 +186,7 @@ public class ValidatePage extends Frame implements Printable {
             }
         });
 
-        Button chooseButton = new Button("Printer..");
+        Button chooseButton = new Button("Printer...");
         chooseButton.addActionListener(e -> myPrinterJob.printDialog());
 
         Button validateButton = new Button("Validate Page");

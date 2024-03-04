@@ -47,7 +47,6 @@ import java.awt.print.PrinterJob;
  * @run main/manual RasterTest
  */
 public class RasterTest extends Frame implements ActionListener {
-
     private final RasterCanvas c;
 
     private static final String INSTRUCTIONS =
@@ -101,7 +100,7 @@ public class RasterTest extends Frame implements ActionListener {
         }
     }
 
-    static class RasterCanvas extends Canvas implements Printable {
+    private static class RasterCanvas extends Canvas implements Printable {
 
         public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
 
