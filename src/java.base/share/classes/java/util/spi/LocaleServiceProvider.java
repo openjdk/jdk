@@ -32,9 +32,10 @@ import java.util.Locale;
  * This is the super class of all the locale sensitive service provider
  * interfaces (SPIs).
  * <p>
- * Locale sensitive  service provider interfaces are interfaces that
+ * Locale sensitive service provider interfaces are interfaces that
  * correspond to locale sensitive classes in the {@code java.text}
- * and {@code java.util} packages. The interfaces enable the
+ * and {@code java.util} packages in order to provide the locale
+ * data used for each service. The interfaces enable the
  * construction of locale sensitive objects and the retrieval of
  * localized names for these packages. Locale sensitive factory methods
  * and methods for name retrieval in the {@code java.text} and
@@ -143,6 +144,51 @@ import java.util.Locale;
  * so specifying "CLDR" is identical to the default behavior. Applications which
  * require implementations of the locale sensitive services must explicitly specify
  * "SPI" in order for the Java runtime to load them from the classpath.
+ *
+ * @implNote The JDK uses locale data from the Unicode Common Locale Data Repository
+ * (CLDR) to implement locale-sensitive APIs in the {@code java.util} and
+ * {@code java.text} packages. This locale data makes the set of locales
+ * supported by the Java runtime environment. The following table lists the
+ * version of CLDR used in each JDK release.
+ * <table class="striped">
+ * <caption style="display:none">Shows JDK releases and supported CLDR versions</caption>
+ * <thead>
+ * <tr><th scope="col">JDK release</th>
+ *     <th scope="col">CLDR version</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 22</th>
+ *     <td>CLDR 44</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 21</th>
+ *     <td>CLDR 43</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 20</th>
+ *     <td>CLDR 42</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 19</th>
+ *     <td>CLDR 41</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 18</th>
+ *     <td>CLDR 39</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 17</th>
+ *     <td>CLDR 39</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 16</th>
+ *     <td>CLDR 38</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 15</th>
+ *     <td>CLDR 37</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 14</th>
+ *     <td>CLDR 36</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 13</th>
+ *     <td>CLDR 35.1</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 12</th>
+ *     <td>CLDR 33</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 11</th>
+ *     <td>CLDR 33</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 10</th>
+ *     <td>CLDR 29</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 9</th>
+ *     <td>CLDR 29</td></tr>
+ * <tr><th scope="row" style="text-align:left">JDK 8</th>
+ *     <td>CLDR 21.0.1</td></tr>
+ * </tbody>
+ * </table>
  *
  * @since        1.6
  */
