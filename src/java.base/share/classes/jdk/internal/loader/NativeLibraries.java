@@ -259,13 +259,9 @@ public final class NativeLibraries {
      */
     public NativeLibrary loadLibrary(Class<?> fromClass, String name) {
         assert name.indexOf(File.separatorChar) < 0;
-        System.out.println("Calling loadlibrary in native for library named : "+name);
         NativeLibrary lib = findFromPaths(LibraryPaths.SYS_PATHS, fromClass, name);
         if (lib == null && searchJavaLibraryPath) {
-            System.out.println("Search of lib done ,now search  in another set of paths");
             lib = findFromPaths(LibraryPaths.USER_PATHS, fromClass, name);
-            if(lib==null)
-            System.out.println("not found anywehere in the paths ");
         }
         return lib;
     }
@@ -275,16 +271,11 @@ public final class NativeLibraries {
 
 
             File libfile = new File(path, System.mapLibraryName(name));
-            System.out.println("path being searched :"+path);
-            System.out.println("File  being searced :"+name);
             NativeLibrary nl = loadLibrary(fromClass, libfile);
             
             if (nl != null) {
-                System.out.println("libarry found in path ");
-                System.out.println("Is dlopen done after this ? ");
                 return nl;
             }
-            System.out.println("Trying to do mapAlternate name.");
             libfile = ClassLoaderHelper.mapAlternativeName(libfile);
 
             if (libfile != null) {
