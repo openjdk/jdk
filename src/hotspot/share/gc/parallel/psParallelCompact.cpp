@@ -139,14 +139,6 @@ SpaceInfo PSParallelCompact::_space_info[PSParallelCompact::last_space_id];
 SpanSubjectToDiscoveryClosure PSParallelCompact::_span_based_discoverer;
 ReferenceProcessor* PSParallelCompact::_ref_processor = nullptr;
 
-double PSParallelCompact::_dwl_mean;
-double PSParallelCompact::_dwl_std_dev;
-double PSParallelCompact::_dwl_first_term;
-double PSParallelCompact::_dwl_adjustment;
-#ifdef  ASSERT
-bool   PSParallelCompact::_dwl_initialized = false;
-#endif  // #ifdef ASSERT
-
 void SplitInfo::record(size_t src_region_idx, size_t partial_obj_size,
                        HeapWord* destination)
 {
@@ -831,7 +823,6 @@ bool PSParallelCompact::initialize_aux_data() {
   assert(mr.byte_size() != 0, "heap should be reserved");
 
   initialize_space_info();
-  initialize_dead_wood_limiter();
 
   if (!_mark_bitmap.initialize(mr)) {
     vm_shutdown_during_initialization(
@@ -865,16 +856,6 @@ void PSParallelCompact::initialize_space_info()
   _space_info[to_space_id].set_space(young_gen->to_space());
 
   _space_info[old_space_id].set_start_array(heap->old_gen()->start_array());
-}
-
-void PSParallelCompact::initialize_dead_wood_limiter()
-{
-  const size_t max = 100;
-  _dwl_mean = double(MIN2(ParallelOldDeadWoodLimiterMean, max)) / 100.0;
-  _dwl_std_dev = double(MIN2(ParallelOldDeadWoodLimiterStdDev, max)) / 100.0;
-  _dwl_first_term = 1.0 / (sqrt(2.0 * M_PI) * _dwl_std_dev);
-  DEBUG_ONLY(_dwl_initialized = true;)
-  _dwl_adjustment = normal_distribution(1.0);
 }
 
 void
@@ -1007,60 +988,6 @@ void PSParallelCompact::post_compact()
   Universe::heap()->record_whole_heap_examined_timestamp();
 }
 
-// Return a fraction indicating how much of the generation can be treated as
-// "dead wood" (i.e., not reclaimed).  The function uses a normal distribution
-// based on the density of live objects in the generation to determine a limit,
-// which is then adjusted so the return value is min_percent when the density is
-// 1.
-//
-// The following table shows some return values for a different values of the
-// standard deviation (ParallelOldDeadWoodLimiterStdDev); the mean is 0.5 and
-// min_percent is 1.
-//
-//                          fraction allowed as dead wood
-//         -----------------------------------------------------------------
-// density std_dev=70 std_dev=75 std_dev=80 std_dev=85 std_dev=90 std_dev=95
-// ------- ---------- ---------- ---------- ---------- ---------- ----------
-// 0.00000 0.01000000 0.01000000 0.01000000 0.01000000 0.01000000 0.01000000
-// 0.05000 0.03193096 0.02836880 0.02550828 0.02319280 0.02130337 0.01974941
-// 0.10000 0.05247504 0.04547452 0.03988045 0.03537016 0.03170171 0.02869272
-// 0.15000 0.07135702 0.06111390 0.05296419 0.04641639 0.04110601 0.03676066
-// 0.20000 0.08831616 0.07509618 0.06461766 0.05622444 0.04943437 0.04388975
-// 0.25000 0.10311208 0.08724696 0.07471205 0.06469760 0.05661313 0.05002313
-// 0.30000 0.11553050 0.09741183 0.08313394 0.07175114 0.06257797 0.05511132
-// 0.35000 0.12538832 0.10545958 0.08978741 0.07731366 0.06727491 0.05911289
-// 0.40000 0.13253818 0.11128511 0.09459590 0.08132834 0.07066107 0.06199500
-// 0.45000 0.13687208 0.11481163 0.09750361 0.08375387 0.07270534 0.06373386
-// 0.50000 0.13832410 0.11599237 0.09847664 0.08456518 0.07338887 0.06431510
-// 0.55000 0.13687208 0.11481163 0.09750361 0.08375387 0.07270534 0.06373386
-// 0.60000 0.13253818 0.11128511 0.09459590 0.08132834 0.07066107 0.06199500
-// 0.65000 0.12538832 0.10545958 0.08978741 0.07731366 0.06727491 0.05911289
-// 0.70000 0.11553050 0.09741183 0.08313394 0.07175114 0.06257797 0.05511132
-// 0.75000 0.10311208 0.08724696 0.07471205 0.06469760 0.05661313 0.05002313
-// 0.80000 0.08831616 0.07509618 0.06461766 0.05622444 0.04943437 0.04388975
-// 0.85000 0.07135702 0.06111390 0.05296419 0.04641639 0.04110601 0.03676066
-// 0.90000 0.05247504 0.04547452 0.03988045 0.03537016 0.03170171 0.02869272
-// 0.95000 0.03193096 0.02836880 0.02550828 0.02319280 0.02130337 0.01974941
-// 1.00000 0.01000000 0.01000000 0.01000000 0.01000000 0.01000000 0.01000000
-
-double PSParallelCompact::dead_wood_limiter(double density, size_t min_percent)
-{
-  assert(_dwl_initialized, "uninitialized");
-
-  // The raw limit is the value of the normal distribution at x = density.
-  const double raw_limit = normal_distribution(density);
-
-  // Adjust the raw limit so it becomes the minimum when the density is 1.
-  //
-  // First subtract the adjustment value (which is simply the precomputed value
-  // normal_distribution(1.0)); this yields a value of 0 when the density is 1.
-  // Then add the minimum value, so the minimum is returned when the density is
-  // 1.  Finally, prevent negative values, which occur when the mean is not 0.5.
-  const double min = double(min_percent) / 100.0;
-  const double limit = raw_limit - _dwl_adjustment + min;
-  return MAX2(limit, 0.0);
-}
-
 ParallelCompactData::RegionData*
 PSParallelCompact::first_dead_space_region(const RegionData* beg,
                                            const RegionData* end)
@@ -1089,67 +1016,6 @@ PSParallelCompact::first_dead_space_region(const RegionData* beg,
     }
   }
   return sd.region(left);
-}
-
-ParallelCompactData::RegionData*
-PSParallelCompact::dead_wood_limit_region(const RegionData* beg,
-                                          const RegionData* end,
-                                          size_t dead_words)
-{
-  ParallelCompactData& sd = summary_data();
-  size_t left = sd.region(beg);
-  size_t right = end > beg ? sd.region(end) - 1 : left;
-
-  // Binary search.
-  while (left < right) {
-    // Equivalent to (left + right) / 2, but does not overflow.
-    const size_t middle = left + (right - left) / 2;
-    RegionData* const middle_ptr = sd.region(middle);
-    HeapWord* const dest = middle_ptr->destination();
-    HeapWord* const addr = sd.region_to_addr(middle);
-    assert(dest != nullptr, "sanity");
-    assert(dest <= addr, "must move left");
-
-    const size_t dead_to_left = pointer_delta(addr, dest);
-    if (middle > left && dead_to_left > dead_words) {
-      right = middle - 1;
-    } else if (middle < right && dead_to_left < dead_words) {
-      left = middle + 1;
-    } else {
-      return middle_ptr;
-    }
-  }
-  return sd.region(left);
-}
-
-// The result is valid during the summary phase, after the initial summarization
-// of each space into itself, and before final summarization.
-inline double
-PSParallelCompact::reclaimed_ratio(const RegionData* const cp,
-                                   HeapWord* const bottom,
-                                   HeapWord* const top,
-                                   HeapWord* const new_top)
-{
-  ParallelCompactData& sd = summary_data();
-
-  assert(cp != nullptr, "sanity");
-  assert(bottom != nullptr, "sanity");
-  assert(top != nullptr, "sanity");
-  assert(new_top != nullptr, "sanity");
-  assert(top >= new_top, "summary data problem?");
-  assert(new_top > bottom, "space is empty; should not be here");
-  assert(new_top >= cp->destination(), "sanity");
-  assert(top >= sd.region_to_addr(cp), "sanity");
-
-  HeapWord* const destination = cp->destination();
-  const size_t dense_prefix_live  = pointer_delta(destination, bottom);
-  const size_t compacted_region_live = pointer_delta(new_top, destination);
-  const size_t compacted_region_used = pointer_delta(top,
-                                                     sd.region_to_addr(cp));
-  const size_t reclaimable = compacted_region_used - compacted_region_live;
-
-  const double divisor = dense_prefix_live + 1.25 * compacted_region_live;
-  return double(reclaimable) / divisor;
 }
 
 // Return the address of the end of the dense prefix, a.k.a. the start of the
@@ -1201,45 +1067,29 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
     return sd.region_to_addr(full_cp);
   }
 
-  const size_t space_live = pointer_delta(new_top, bottom);
-  const size_t space_used = space->used_in_words();
-  const size_t space_capacity = space->capacity_in_words();
+  // Iteration starts with the region *after* the full-region-prefix-end.
+  const RegionData* const start_region = full_cp;
+  // If final region is not full, iteration stops before that region,
+  // because fill_dense_prefix_end assumes that prefix_end <= top.
+  const RegionData* const end_region = sd.addr_to_region_ptr(space->top());
+  assert(start_region <= end_region, "inv");
 
-  const double density = double(space_live) / double(space_capacity);
-  const size_t min_percent_free = MarkSweepDeadRatio;
-  const double limiter = dead_wood_limiter(density, min_percent_free);
-  const size_t dead_wood_max = space_used - space_live;
-  const size_t dead_wood_limit = MIN2(size_t(space_capacity * limiter),
-                                      dead_wood_max);
-
-  log_develop_debug(gc, compaction)(
-      "space_live=" SIZE_FORMAT " space_used=" SIZE_FORMAT " "
-      "space_cap=" SIZE_FORMAT,
-      space_live, space_used,
-      space_capacity);
-  log_develop_debug(gc, compaction)(
-      "dead_wood_limiter(%6.4f, " SIZE_FORMAT ")=%6.4f "
-      "dead_wood_max=" SIZE_FORMAT " dead_wood_limit=" SIZE_FORMAT,
-      density, min_percent_free, limiter,
-      dead_wood_max, dead_wood_limit);
-
-  // Locate the region with the desired amount of dead space to the left.
-  const RegionData* const limit_cp =
-    dead_wood_limit_region(full_cp, top_cp, dead_wood_limit);
-
-  // Scan from the first region with dead space to the limit region and find the
-  // one with the best (largest) reclaimed ratio.
-  double best_ratio = 0.0;
-  const RegionData* best_cp = full_cp;
-  for (const RegionData* cp = full_cp; cp < limit_cp; ++cp) {
-    double tmp_ratio = reclaimed_ratio(cp, bottom, top, new_top);
-    if (tmp_ratio > best_ratio) {
-      best_cp = cp;
-      best_ratio = tmp_ratio;
+  size_t max_waste = space->capacity_in_words() * (MarkSweepDeadRatio / 100.0);
+  const RegionData* cur_region = start_region;
+  for (/* empty */; cur_region < end_region; ++cur_region) {
+    assert(region_size >= cur_region->data_size(), "inv");
+    size_t dead_size = region_size - cur_region->data_size();
+    if (max_waste < dead_size) {
+      break;
     }
+    max_waste -= dead_size;
   }
 
-  return sd.region_to_addr(best_cp);
+  HeapWord* const prefix_end = sd.region_to_addr(cur_region);
+  assert(sd.is_region_aligned(prefix_end), "postcondition");
+  assert(prefix_end >= sd.region_to_addr(full_cp), "in-range");
+  assert(prefix_end <= space->top(), "in-range");
+  return prefix_end;
 }
 
 void PSParallelCompact::summarize_spaces_quick()
