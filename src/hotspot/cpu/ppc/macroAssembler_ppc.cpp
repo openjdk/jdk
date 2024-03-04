@@ -2471,14 +2471,14 @@ void MacroAssembler::compiler_fast_lock_lightweight_object(ConditionRegister fla
   inc_held_monitor_count(tmp1);
 
 #ifdef ASSERT
-  // Check that locked label is reached with flags == EQ.
+  // Check that locked label is reached with flag == EQ.
   Label flag_correct;
   beq(flag, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags == NE.
+  // Check that slow_path label is reached with flag == NE.
   bne(flag, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
@@ -2627,14 +2627,14 @@ void MacroAssembler::compiler_fast_unlock_lightweight_object(ConditionRegister f
   dec_held_monitor_count(t);
 
 #ifdef ASSERT
-  // Check that unlocked label is reached with flags == EQ.
+  // Check that unlocked label is reached with flag == EQ.
   Label flag_correct;
   beq(flag, flag_correct);
   stop("Fast Lock Flag != EQ");
 #endif
   bind(slow_path);
 #ifdef ASSERT
-  // Check that slow_path label is reached with flags == NE.
+  // Check that slow_path label is reached with flag == NE.
   bne(flag, flag_correct);
   stop("Fast Lock Flag != NE");
   bind(flag_correct);
