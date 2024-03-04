@@ -310,9 +310,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             }
 
             final Vector<File> newFileCache = new Vector<File>();
-            Vector<File> newFiles = new Vector<File>();
+            final Vector<File> newFiles = new Vector<File>();
 
-            // run through the file list, add directories and selectable files to fileCache
+            // Run through the file list, add directories and selectable files to fileCache
             // Note that this block must be OUTSIDE of Invoker thread because of
             // deadlock possibility with custom synchronized FileSystemView
             for (File file : list) {
