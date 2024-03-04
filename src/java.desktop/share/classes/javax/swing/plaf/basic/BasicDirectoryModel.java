@@ -515,8 +515,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private final List<File> addFiles;
         private final List<File> remFiles;
         private final int fid;
-        private int addStart = 0;
-        private int remStart = 0;
+        private final int addStart;
+        private final int remStart;
 
         DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles,
                          int remStart, int fid) {
