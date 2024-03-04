@@ -528,26 +528,28 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         }
 
         public synchronized void run() {
-            if (fetchID.get() == fid) {
-                int remSize = (remFiles == null) ? 0 : remFiles.size();
-                int addSize = (addFiles == null) ? 0 : addFiles.size();
-                synchronized(fileCache) {
-                    if (remSize > 0) {
-                        fileCache.removeAll(remFiles);
-                    }
-                    if (addSize > 0) {
-                        fileCache.addAll(addStart, addFiles);
-                    }
-                    files = null;
-                    directories = null;
+            if (fetchID.get() != fid) {
+                return;
+            }
+
+            int remSize = (remFiles == null) ? 0 : remFiles.size();
+            int addSize = (addFiles == null) ? 0 : addFiles.size();
+            synchronized(fileCache) {
+                if (remSize > 0) {
+                    fileCache.removeAll(remFiles);
                 }
-                if (remSize > 0 && addSize == 0) {
-                    fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
-                } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
-                    fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
-                } else {
-                    fireContentsChanged();
+                if (addSize > 0) {
+                    fileCache.addAll(addStart, addFiles);
                 }
+                files = null;
+                directories = null;
+            }
+            if (remSize > 0 && addSize == 0) {
+                fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
+            } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
+                fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
+            } else {
+                fireContentsChanged();
             }
         }
     }
