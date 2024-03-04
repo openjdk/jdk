@@ -1659,7 +1659,7 @@ private:
                                                      Deoptimization::DeoptReason reason, IfProjNode* old_predicate_proj,
                                                      ParsePredicateSuccessProj* fast_loop_parse_predicate_proj,
                                                      ParsePredicateSuccessProj* slow_loop_parse_predicate_proj);
-  IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* iff, IfProjNode* predicate,
+  IfProjNode* clone_assertion_predicate_for_unswitched_loops(Node* template_assertion_predicate, IfProjNode* predicate,
                                                              Deoptimization::DeoptReason reason,
                                                              ParsePredicateSuccessProj* parse_predicate_proj);
   static void check_cloned_parse_predicate_for_unswitching(const Node* new_entry, bool is_fast_loop) PRODUCT_RETURN;
@@ -1672,6 +1672,12 @@ public:
   void set_created_loop_node() { _created_loop_node = true; }
   bool created_loop_node()     { return _created_loop_node; }
   void register_new_node(Node* n, Node* blk);
+
+  Node* clone_and_register(Node* n, Node* ctrl) {
+    n = n->clone();
+    register_new_node(n, ctrl);
+    return n;
+  }
 
 #ifdef ASSERT
   void dump_bad_graph(const char* msg, Node* n, Node* early, Node* LCA);
@@ -1880,6 +1886,13 @@ public:
   float to(Node* n);
 };
 
+// Interface to transform OpaqueLoopInit and OpaqueLoopStride nodes of a Template Assertion Predicate Expression.
+class TransformStrategyForOpaqueLoopNodes : public StackObj {
+ public:
+  virtual Node* transform_opaque_init(OpaqueLoopInitNode* opaque_init) = 0;
+  virtual Node* transform_opaque_stride(OpaqueLoopStrideNode* opaque_stride) = 0;
+};
+
 // Class to clone a data node graph by taking a list of data nodes. This is done in 2 steps:
 //   1. Clone the data nodes
 //   2. Fix the cloned data inputs pointing to the old nodes to the cloned inputs by using an old->new mapping.
@@ -1906,7 +1919,10 @@ class DataNodeGraph : public StackObj {
  private:
   void clone(Node* node, Node* new_ctrl);
   void clone_data_nodes(Node* new_ctrl);
+  void clone_data_nodes_and_transform_opaque_loop_nodes(TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                                        Node* new_ctrl);
   void rewire_clones_to_cloned_inputs();
+  void transform_opaque_node(TransformStrategyForOpaqueLoopNodes& transform_strategy, Node* node);
 
  public:
   // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
@@ -1914,6 +1930,18 @@ class DataNodeGraph : public StackObj {
   const OrigToNewHashtable& clone(Node* new_ctrl) {
     assert(_orig_to_new.number_of_entries() == 0, "should not call this method twice in a row");
     clone_data_nodes(new_ctrl);
+    rewire_clones_to_cloned_inputs();
+    return _orig_to_new;
+  }
+
+  // Create a copy of the provided data node collection by doing the following:
+  // Clone all non-OpaqueLoop* nodes and rewire them to create an identical subgraph copy. For the OpaqueLoop* nodes,
+  // apply the provided transformation strategy and include the transformed node into the subgraph copy to get a complete
+  // "cloned-and-transformed" graph copy. For all newly cloned nodes (which could also be new OpaqueLoop* nodes), set
+  // `new_ctrl` as ctrl.
+  const OrigToNewHashtable& clone_with_opaque_loop_transform_strategy(TransformStrategyForOpaqueLoopNodes& transform_strategy,
+                                                                      Node* new_ctrl) {
+    clone_data_nodes_and_transform_opaque_loop_nodes(transform_strategy, new_ctrl);
     rewire_clones_to_cloned_inputs();
     return _orig_to_new;
   }
