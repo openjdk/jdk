@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,12 @@ public final class Utils {
         p1.setMaximumPacketSize(p.getMaximumPacketSize());
         // JDK 8 EXCL END
         p1.setEndpointIdentificationAlgorithm(p.getEndpointIdentificationAlgorithm());
-        p1.setNeedClientAuth(p.getNeedClientAuth());
+        if (p.getNeedClientAuth()) {
+            p1.setNeedClientAuth(true);
+        }
+        if (p.getWantClientAuth()) {
+            p1.setWantClientAuth(true);
+        }
         String[] protocols = p.getProtocols();
         if (protocols != null) {
             p1.setProtocols(protocols.clone());
@@ -633,7 +638,6 @@ public final class Utils {
         p1.setSNIMatchers(p.getSNIMatchers());
         p1.setServerNames(p.getServerNames());
         p1.setUseCipherSuitesOrder(p.getUseCipherSuitesOrder());
-        p1.setWantClientAuth(p.getWantClientAuth());
         return p1;
     }
 

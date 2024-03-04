@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -930,12 +930,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 
@@ -1061,12 +1063,14 @@ abstract class UnixFileSystem
             } catch (UnixException x) {
                 // target is non-empty directory that can't be replaced.
                 if (targetAttrs.isDirectory() &&
-                   (x.errno() == EEXIST || x.errno() == ENOTEMPTY))
-                {
+                    (x.errno() == EEXIST || x.errno() == ENOTEMPTY)) {
                     throw new DirectoryNotEmptyException(
                         target.getPathForExceptionMessage());
                 }
-                x.rethrowAsIOException(target);
+                // ignore file not found otherwise rethrow
+                if (x.errno() != ENOENT) {
+                    x.rethrowAsIOException(target);
+                }
             }
         }
 

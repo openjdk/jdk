@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,13 +51,14 @@ ifeq ($(call isTargetOs, aix), false)
       -DUSE_PLATFORM_MIDI_IN=TRUE \
       #
 
+  LIBJSOUND_LINK_TYPE := C
   ifeq ($(call isTargetOs, macosx), true)
-    LIBJSOUND_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+    LIBJSOUND_LINK_TYPE := C++
   endif
 
   $(eval $(call SetupJdkLibrary, BUILD_LIBJSOUND, \
       NAME := jsound, \
-      TOOLCHAIN := $(LIBJSOUND_TOOLCHAIN), \
+      LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKLIB) \
           $(LIBJSOUND_CFLAGS), \

@@ -727,6 +727,14 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   } // End of while merge point has phis
 
   _igvn.remove_dead_node(region);
+  if (iff->Opcode() == Op_RangeCheck) {
+    // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+    // into the region is left, an array load could become dependent on a condition that's not a range check for
+    // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+    // floating above its range check.
+    pin_array_access_nodes_dependent_on(new_true);
+    pin_array_access_nodes_dependent_on(new_false);
+  }
 
   if (new_false_region != nullptr) {
     *new_false_region = new_false;
@@ -736,4 +744,19 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   }
 
   DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+}
+
+void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
+  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
+      continue;
+    }
+    Node* pinned_clone = use->pin_array_access_node();
+    if (pinned_clone != nullptr) {
+      register_new_node(pinned_clone, get_ctrl(use));
+      _igvn.replace_node(use, pinned_clone);
+      --i;
+    }
+  }
 }

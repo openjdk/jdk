@@ -434,7 +434,7 @@ public class TestSearch extends JavadocTester {
                 """
                     <div class="nav-list-search">
                     <input type="text" id="search-input" disabled placeholder="Search" aria-label="S\
-                    earch in documentation" autocomplete="off" autocapitalize="off">
+                    earch in documentation" autocomplete="off">
                     <input type="reset" id="reset-search" disabled value="Reset">
                     </div>""");
     }
@@ -784,8 +784,8 @@ public class TestSearch extends JavadocTester {
                     ck="show('all-classes-table', 'all-classes-table-tab6', 2)" class="table-tab">An\
                     notation Interfaces</button>\
                     </div>
-                    <div id="all-classes-table.tabpanel" role="tabpanel">
-                    <div class="summary-table two-column-summary" aria-labelledby="all-classes-table-tab0">
+                    <div id="all-classes-table.tabpanel" role="tabpanel" aria-labelledby="all-classes-table-tab0">
+                    <div class="summary-table two-column-summary">
                     <div class="table-header col-first">Class</div>
                     <div class="table-header col-last">Description</div>""");
         checkOutput("allpackages-index.html", true,

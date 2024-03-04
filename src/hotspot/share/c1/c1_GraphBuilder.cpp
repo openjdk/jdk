@@ -523,7 +523,7 @@ inline bool BlockListBuilder::is_successor(BlockBegin* block, BlockBegin* sux) {
 
 #ifndef PRODUCT
 
-int compare_depth_first(BlockBegin** a, BlockBegin** b) {
+static int compare_depth_first(BlockBegin** a, BlockBegin** b) {
   return (*a)->depth_first_number() - (*b)->depth_first_number();
 }
 
