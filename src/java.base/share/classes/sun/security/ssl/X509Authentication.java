@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,8 +270,8 @@ enum X509Authentication implements SSLAuthentication {
     private static SSLPossession createServerPossession(
             ServerHandshakeContext shc, String[] keyTypes) {
         X509ExtendedKeyManager km = shc.sslContext.getX509KeyManager();
-        String serverAlias = null;
         for (String keyType : keyTypes) {
+            String serverAlias = null;
             if (shc.conContext.transport instanceof SSLSocketImpl socket) {
                 serverAlias = km.chooseServerAlias(keyType,
                         shc.peerSupportedAuthorities == null ? null :
