@@ -815,6 +815,7 @@ public class Flow {
                 }
             }
             Set<PatternDescription> patterns = patternSet;
+            boolean genericPatternsExpanded = false;
             try {
                 boolean repeat = true;
                 while (repeat) {
@@ -824,10 +825,22 @@ public class Flow {
                     updatedPatterns = reduceRecordPatterns(updatedPatterns);
                     updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                     repeat = !updatedPatterns.equals(patterns);
-                    patterns = updatedPatterns;
                     if (checkCovered(selector.type, patterns)) {
                         return true;
                     }
+                    if (!repeat && !genericPatternsExpanded) {
+                        //there may be situation like:
+                        //class B extends S1, S2
+                        //patterns: R(S1, B), R(S2, S2)
+                        //this should be joined to R(B, S2),
+                        //but hashing in reduceNestedPatterns will not allow that
+                        //attempt to once expand all types to their transitive permitted types,
+                        //on all depth of nesting:
+                        updatedPatterns = expandGenericPatterns(updatedPatterns);
+                        genericPatternsExpanded = true;
+                        repeat = !updatedPatterns.equals(patterns);
+                    }
+                    patterns = updatedPatterns;
                 }
                 return checkCovered(selector.type, patterns);
             } catch (CompletionFailure cf) {
@@ -1128,6 +1141,40 @@ public class Flow {
                 }
             }
             return pattern;
+        }
+
+        private Set<PatternDescription> expandGenericPatterns(Set<PatternDescription> patterns) {
+            var newPatterns = new HashSet<PatternDescription>(patterns);
+            boolean modified;
+            do {
+                modified = false;
+                for (PatternDescription pd : patterns) {
+                    if (pd instanceof RecordPattern rpOne) {
+                        for (int i = 0; i < rpOne.nested.length; i++) {
+                            Set<PatternDescription> toExpand = Set.of(rpOne.nested[i]);
+                            Set<PatternDescription> expanded = expandGenericPatterns(toExpand);
+                            if (expanded != toExpand) {
+                                expanded.removeAll(toExpand);
+                                for (PatternDescription exp : expanded) {
+                                    PatternDescription[] newNested = Arrays.copyOf(rpOne.nested, rpOne.nested.length);
+                                    newNested[i] = exp;
+                                    modified |= newPatterns.add(new RecordPattern(rpOne.recordType(), rpOne.fullComponentTypes(), newNested));
+                                }
+                            }
+                        }
+                    } else if (pd instanceof BindingPattern bp) {
+                        Set<Symbol> permittedSymbols = allPermittedSubTypes((ClassSymbol) bp.type.tsym, cs -> true);
+
+                        if (!permittedSymbols.isEmpty()) {
+                            for (Symbol permitted : permittedSymbols) {
+                                //TODO infer.instantiatePatternType(selectorType, csym); (?)
+                                modified |= newPatterns.add(new BindingPattern(permitted.type));
+                            }
+                        }
+                    }
+                }
+            } while (modified);
+            return newPatterns;
         }
 
         private Set<PatternDescription> removeCoveredRecordPatterns(Set<PatternDescription> patterns) {

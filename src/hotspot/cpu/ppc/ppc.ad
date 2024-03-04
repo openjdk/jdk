@@ -12122,6 +12122,7 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 // inlined locking and unlocking
 
 instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
 
@@ -12137,6 +12138,7 @@ instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1,
 %}
 
 instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
@@ -12144,6 +12146,38 @@ instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    // If unlocking was successful, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set crx (FastLock oop box));
+  effect(TEMP tmp1, TEMP tmp2);
+
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
+  ins_encode %{
+    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
+    // If locking was successful, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_locking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastUnlockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set crx (FastUnlock oop box));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
