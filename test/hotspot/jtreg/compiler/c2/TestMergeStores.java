@@ -141,6 +141,10 @@ public class TestMergeStores {
         testGroups.put("test300", new HashMap<String,TestFunction>());
         testGroups.get("test300").put("test300R", () -> { return test300R(aI.clone()); });
         testGroups.get("test300").put("test300a", () -> { return test300a(aI.clone()); });
+
+        testGroups.put("test400", new HashMap<String,TestFunction>());
+        testGroups.get("test400").put("test400R", () -> { return test400R(aI.clone()); });
+        testGroups.get("test400").put("test400a", () -> { return test400a(aI.clone()); });
     }
 
     @Warmup(100)
@@ -168,7 +172,8 @@ public class TestMergeStores {
                  "test200a",
                  "test201a",
                  "test202a",
-                 "test300a"})
+                 "test300a",
+                 "test400a"})
     public void runTests() {
         // Write random values to inputs
         set_random(aB);
@@ -1001,5 +1006,40 @@ public class TestMergeStores {
         a[5] = 42;
         int x = a[3]; // dependent load
         return new Object[]{ a, new int[]{ x } };
+    }
+
+    @DontCompile
+    static Object[] test400R(int[] a) {
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 7, (byte)0xde);
+        return new Object[]{ a };
+    }
+
+    @Test
+    // We must be careful with mismatched accesses on arrays:
+    // An int-array can have about 2x max_int size, and hence if we address bytes in it, we can have int-overflows.
+    // We might consider addresses (x + 0) and (x + 1) as adjacent, even if x = max_int, and therefore the second
+    // address overflows and is not adjacent at all.
+    // Therefore, we should only consider stores that have the same size as the element type of the array.
+    @IR(counts = {IRNode.STORE_B_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_C_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_I_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
+                  IRNode.STORE_L_OF_CLASS, "int\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
+    static Object[] test400a(int[] a) {
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 0, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 1, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 2, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 3, (byte)0xba);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 4, (byte)0xef);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 5, (byte)0xbe);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 6, (byte)0xad);
+        UNSAFE.putByte(a, UNSAFE.ARRAY_INT_BASE_OFFSET + 7, (byte)0xde);
+        return new Object[]{ a };
     }
 }
