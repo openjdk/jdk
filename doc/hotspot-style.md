@@ -725,12 +725,17 @@ for further discussion.
 
 ### nullptr
 
-Prefer `nullptr`
+Use `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-to `NULL`.  Don't use (constexpr or literal) 0 for pointers.
+rather than `NULL`.  Don't use (constant expression or literal) 0 for pointers.
 
-For historical reasons there are widespread uses of both `NULL` and of
-integer 0 as a pointer value.
+For historical reasons there may be some lingering uses of 0 as a pointer.
+These should be fixed when discovered.
+
+The C++11 definition of _null pointer constant_ included integral constant
+expressions with value zero.  C++14 replaced that with integer literals with
+value zero.  Some compilers continue to treat a zero-valued integral constant
+expressions as a _null pointer constant_ even in C++14 mode.
 
 ### &lt;atomic&gt;
 
