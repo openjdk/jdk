@@ -5143,7 +5143,8 @@ assert(vector_len == AVX_128bit? VM_Version::supports_avx() :
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
-  assert(vector_len == AVX_512bit ? VM_Version::supports_avx512ifma() : VM_Version::supports_avxifma(), "");
+  assert ((VM_Version::supports_avxifma() && vector_len <= AVX_256bit) || (VM_Version::supports_avx512ifma() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl())), "");
+
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
@@ -5153,7 +5154,8 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len) {
-  assert(vector_len == AVX_512bit ? VM_Version::supports_avx512ifma() : VM_Version::supports_avxifma(), "");
+  assert ((VM_Version::supports_avxifma() && vector_len <= AVX_256bit) || (VM_Version::supports_avx512ifma() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl())), "");
+
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -5178,7 +5180,8 @@ void Assembler::evpmadd52luq(XMMRegister dst, KRegister mask, XMMRegister src1, 
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int vector_len) {
-  assert(vector_len == AVX_512bit ? VM_Version::supports_avx512ifma() : VM_Version::supports_avxifma(), "");
+  assert ((VM_Version::supports_avxifma() && vector_len <= AVX_256bit) || (VM_Version::supports_avx512ifma() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl())), "");
+
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
@@ -5188,7 +5191,8 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int
 }
 
 void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2, int vector_len) {
-  assert(vector_len == AVX_512bit ? VM_Version::supports_avx512ifma() : VM_Version::supports_avxifma(), "");
+  assert ((VM_Version::supports_avxifma() && vector_len <= AVX_256bit) || (VM_Version::supports_avx512ifma() && (vector_len == AVX_512bit || VM_Version::supports_avx512vl())), "");
+
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
