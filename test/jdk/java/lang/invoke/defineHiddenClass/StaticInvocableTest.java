@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,28 @@
  * @test
  * @bug 8266925
  * @summary hidden class members can't be statically invocable
- * @modules java.base/jdk.internal.misc java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.misc
+ * @enablePreview
  * @build java.base/*
  * @run testng StaticInvocableTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.LookupHelper;
-import jdk.internal.org.objectweb.asm.*;
+import java.lang.reflect.AccessFlag;
 import org.testng.annotations.Test;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.ACC_PUBLIC;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 
 public class StaticInvocableTest {
     public static void main(String[] args) throws Throwable {
@@ -106,28 +115,19 @@ public class StaticInvocableTest {
      * }
      */
     public static byte[] dumpClass(String pkg) {
-        ClassWriter cw = new ClassWriter(0);
-        MethodVisitor mv;
-
-        cw.visit(52, ACC_SUPER | ACC_PUBLIC, pkg+"/MyClass", null, "java/lang/Object", null);
-        {
-            mv = cw.visitMethod(0, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V", false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        {
-            mv = cw.visitMethod(ACC_PUBLIC + ACC_STATIC, "get", "(I)Ljava/lang/Object;", null, null);
-            mv.visitCode();
-            mv.visitInsn(ACONST_NULL);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(1, 1);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.of(pkg.replace('/', '.'), "MyClass"), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
+            clb.withMethodBody(INIT_NAME, MTD_void, 0, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody("get", MethodTypeDesc.of(CD_Object, CD_int),
+                    ACC_PUBLIC | ACC_STATIC, cob -> {
+                cob.aconst_null();
+                cob.areturn();
+            });
+        });
     }
 }

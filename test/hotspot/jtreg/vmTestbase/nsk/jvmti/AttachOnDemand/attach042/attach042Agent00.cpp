@@ -25,8 +25,8 @@
 #include <string.h>
 #include <jni.h>
 #include <jvmti.h>
-#include <aod.h>
-#include <jvmti_aod.h>
+#include <aod.hpp>
+#include <jvmti_aod.hpp>
 
 extern "C" {
 

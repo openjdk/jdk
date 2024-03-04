@@ -112,6 +112,7 @@
 
 class  Compile;
 class  Node;
+class  AbstractLockNode;
 class  CallNode;
 class  PhiNode;
 class  PhaseTransform;
@@ -629,6 +630,8 @@ public:
   static void do_analysis(Compile *C, PhaseIterGVN *igvn);
 
   bool not_global_escape(Node *n);
+
+  bool can_eliminate_lock(AbstractLockNode* alock);
 
   // To be used by, e.g., BarrierSetC2 impls
   Node* get_addp_base(Node* addp);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -202,8 +202,14 @@ ifeq ($(HAS_SPEC),)
           matching_confs := $$(strip $$(all_confs))
         else
           # Otherwise select those that contain the given CONF string
-          matching_confs := $$(strip $$(foreach var, $$(all_confs), \
-              $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          ifeq ($$(patsubst !%,,$$(CONF)),)
+            # A CONF starting with ! means we should negate the search term
+            matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+               $$(if $$(findstring $$(subst !,,$$(CONF)), $$(var)), ,$$(var))))
+          else
+            matching_confs := $$(strip $$(foreach var, $$(all_confs), \
+                $$(if $$(findstring $$(CONF), $$(var)), $$(var))))
+          endif
           ifneq ($$(filter $$(CONF), $$(matching_confs)), )
             # If we found an exact match, use that
             matching_confs := $$(CONF)
@@ -421,8 +427,9 @@ else # $(HAS_SPEC)=true
 
   # Cleanup after a compare build
   define CleanupCompareBuild
-        # If running with a COMPARE_BUILD patch, reverse-apply it
-	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
+        # If running with a COMPARE_BUILD patch, reverse-apply it, but continue
+        # even if that fails (can happen with removed files).
+	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH) || true)
         # Move this build away and restore the original build
 	$(MKDIR) -p $(topdir)/build/compare-build
 	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)

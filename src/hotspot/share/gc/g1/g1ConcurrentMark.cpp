@@ -34,16 +34,16 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -152,7 +152,8 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-      if (!expand()) {
+      size_t desired_capacity = bucket_size(bucket) * 2;
+      if (!try_expand_to(desired_capacity)) {
         return nullptr;
       }
     }
@@ -196,21 +197,26 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   return true;
 }
 
-bool G1CMMarkStack::ChunkAllocator::expand() {
+bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   if (_capacity == _max_capacity) {
     log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
     return false;
   }
-  size_t old_capacity = _capacity;
-  // Double capacity if possible.
-  size_t new_capacity = MIN2(old_capacity * 2, _max_capacity);
 
-  if (reserve(new_capacity)) {
+  size_t old_capacity = _capacity;
+  desired_capacity = MIN2(desired_capacity, _max_capacity);
+
+  if (reserve(desired_capacity)) {
     log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
-                  old_capacity, new_capacity);
+                  old_capacity, desired_capacity);
     return true;
   }
   return false;
+}
+
+bool G1CMMarkStack::ChunkAllocator::try_expand() {
+  size_t new_capacity = _capacity * 2;
+  return try_expand_to(new_capacity);
 }
 
 G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
@@ -234,6 +240,9 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
 
+  // Allocate all buckets associated with indexes between the current capacity (_capacity)
+  // and the new capacity (new_capacity). This step ensures that there are no gaps in the
+  // array and that the capacity accurately reflects the reserved memory.
   for (; i <= highest_bucket; i++) {
     if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
@@ -261,7 +270,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
 }
 
 void G1CMMarkStack::expand() {
-  _chunk_allocator.expand();
+  _chunk_allocator.try_expand();
 }
 
 void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {
@@ -480,12 +489,10 @@ G1ConcurrentMark::G1ConcurrentMark(G1CollectedHeap* g1h,
 
   // _verbose_level set below
 
-  _init_times(),
   _remark_times(),
   _remark_mark_times(),
   _remark_weak_ref_times(),
   _cleanup_times(),
-  _total_cleanup_time(0.0),
 
   _accum_task_vtime(nullptr),
 
@@ -1549,9 +1556,7 @@ void G1ConcurrentMark::cleanup() {
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupAfter);
 
   // Local statistics
-  double recent_cleanup_time = (os::elapsedTime() - start);
-  _total_cleanup_time += recent_cleanup_time;
-  _cleanup_times.add(recent_cleanup_time);
+  _cleanup_times.add((os::elapsedTime() - start) * 1000.0);
 
   {
     GCTraceTime(Debug, gc, phases) debug("Finalize Concurrent Mark Cleanup", _gc_timer_cm);
@@ -2117,7 +2122,6 @@ void G1ConcurrentMark::print_summary_info() {
   }
 
   log.trace(" Concurrent marking:");
-  print_ms_time_info("  ", "init marks", _init_times);
   print_ms_time_info("  ", "remarks", _remark_times);
   {
     print_ms_time_info("     ", "final marks", _remark_mark_times);
@@ -2126,9 +2130,9 @@ void G1ConcurrentMark::print_summary_info() {
   }
   print_ms_time_info("  ", "cleanups", _cleanup_times);
   log.trace("    Finalize live data total time = %8.2f s (avg = %8.2f ms).",
-            _total_cleanup_time, (_cleanup_times.num() > 0 ? _total_cleanup_time * 1000.0 / (double)_cleanup_times.num() : 0.0));
+            _cleanup_times.sum() / 1000.0, _cleanup_times.avg());
   log.trace("  Total stop_world time = %8.2f s.",
-            (_init_times.sum() + _remark_times.sum() + _cleanup_times.sum())/1000.0);
+            (_remark_times.sum() + _cleanup_times.sum())/1000.0);
   log.trace("  Total concurrent time = %8.2f s (%8.2f s marking).",
             cm_thread()->vtime_accum(), cm_thread()->vtime_mark_accum());
 }

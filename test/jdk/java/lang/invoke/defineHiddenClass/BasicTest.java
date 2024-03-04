@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
 /*
  * @test
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          jdk.compiler
+ * @modules jdk.compiler
  * @library /test/lib
+ * @enablePreview
+ * @comment Change enablePreview with the flag in setup's compileSources
  * @compile BadClassFile.jcod
  *          BadClassFile2.jcod
  *          BadClassFileVersion.jcod
@@ -36,11 +37,9 @@
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.lang.invoke.MethodHandles.Lookup;
-
-import static java.lang.invoke.MethodHandles.lookup;
-import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
-
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
@@ -51,8 +50,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.Type;
 import jdk.test.lib.compiler.CompilerUtils;
 import jdk.test.lib.Utils;
 
@@ -60,7 +57,11 @@ import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.CD_Enum;
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.invoke.MethodHandles.lookup;
+import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import static org.testng.Assert.*;
 
 interface HiddenTest {
@@ -77,7 +78,7 @@ public class BasicTest {
 
     @BeforeTest
     static void setup() throws IOException {
-        compileSources(SRC_DIR, CLASSES_DIR);
+        compileSources(SRC_DIR, CLASSES_DIR, "--enable-preview", "--release", "23");
         hiddenClassBytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenClass.class"));
 
         // compile with --release 10 with no NestHost and NestMembers attribute
@@ -264,8 +265,8 @@ public class BasicTest {
      */
     @Test(dataProvider = "emptyClasses")
     public void emptyHiddenClass(String name, int accessFlags) throws Exception {
-        byte[] bytes = (accessFlags == ACC_ENUM) ? classBytes(name, Enum.class, accessFlags)
-                                                 : classBytes(name, accessFlags);
+        byte[] bytes = (accessFlags == ACC_ENUM) ? classBytes(name, CD_Enum, accessFlags)
+                : classBytes(name, accessFlags);
         Class<?> hc = lookup().defineHiddenClass(bytes, false).lookupClass();
         switch (accessFlags) {
             case ACC_SYNTHETIC:
@@ -514,14 +515,13 @@ public class BasicTest {
     }
 
     private static byte[] classBytes(String classname, int accessFlags) {
-        return classBytes(classname, Object.class, accessFlags);
+        return classBytes(classname, CD_Object, accessFlags);
     }
 
-    private static byte[] classBytes(String classname, Class<?> supertType, int accessFlags) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V14, ACC_PUBLIC|accessFlags, classname, null, Type.getInternalName(supertType), null);
-        cw.visitEnd();
-
-        return cw.toByteArray();
+    private static byte[] classBytes(String classname, ClassDesc superType, int accessFlags) {
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), clb -> clb
+                .withVersion(JAVA_14_VERSION, 0)
+                .withFlags(accessFlags | ACC_PUBLIC)
+                .withSuperclass(superType));
     }
 }
