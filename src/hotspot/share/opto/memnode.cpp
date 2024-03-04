@@ -2881,12 +2881,14 @@ Node* StoreNode::Ideal_merge_primitive_array_stores(PhaseGVN* phase) {
 
 #ifdef ASSERT
   if (TraceMergeStores) {
-    tty->print_cr("[TraceMergeStores]: Replace");
+    stringStream ss;
+    ss.print_cr("[TraceMergeStores]: Replace");
     for (int i = pow2size - 1; i >= 0; i--) {
-      merge_list.at(i)->dump();
+      merge_list.at(i)->dump("\n", false, &ss);
     }
-    tty->print_cr("[TraceMergeStores]: with");
-    new_store->dump();
+    ss.print_cr("[TraceMergeStores]: with");
+    new_store->dump("\n", false, &ss);
+    tty->print("%s", ss.as_string());
   }
 #endif
 
