@@ -35,33 +35,38 @@ private:
   enum LockState { unlocked = 0, locked = 1 };
 
   shenandoah_padding(0);
-  volatile int _state;
+  volatile LockState _state;
   shenandoah_padding(1);
   volatile Thread* _owner;
   shenandoah_padding(2);
 
+  template<typename BlockOp>
+  void contended_lock_internal(JavaThread* java_thread);
+
 public:
   ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
-  void lock() {
-#ifdef ASSERT
-    assert(_owner != Thread::current(), "reentrant locking attempt, would deadlock");
-#endif
-    Thread::SpinAcquire(&_state, "Shenandoah Heap Lock");
-#ifdef ASSERT
-    assert(_state == locked, "must be locked");
-    assert(_owner == nullptr, "must not be owned");
-    _owner = Thread::current();
-#endif
+  void lock(bool allow_block_for_safepoint) {
+    assert(Atomic::load(&_owner) != Thread::current(), "reentrant locking attempt, would deadlock");
+
+    // Try to lock fast, or dive into contended lock handling.
+    if (Atomic::cmpxchg(&_state, unlocked, locked) != unlocked) {
+      contended_lock(allow_block_for_safepoint);
+    }
+
+    assert(Atomic::load(&_state) == locked, "must be locked");
+    assert(Atomic::load(&_owner) == nullptr, "must not be owned");
+    DEBUG_ONLY(Atomic::store(&_owner, Thread::current());)
   }
 
   void unlock() {
-#ifdef ASSERT
-    assert (_owner == Thread::current(), "sanity");
-    _owner = nullptr;
-#endif
-    Thread::SpinRelease(&_state);
+    assert(Atomic::load(&_owner) == Thread::current(), "sanity");
+    DEBUG_ONLY(Atomic::store(&_owner, (Thread*)nullptr);)
+    OrderAccess::fence();
+    Atomic::store(&_state, unlocked);
   }
+
+  void contended_lock(bool allow_block_for_safepoint);
 
   bool owned_by_self() {
 #ifdef ASSERT
@@ -77,9 +82,9 @@ class ShenandoahLocker : public StackObj {
 private:
   ShenandoahLock* const _lock;
 public:
-  ShenandoahLocker(ShenandoahLock* lock) : _lock(lock) {
+  ShenandoahLocker(ShenandoahLock* lock, bool allow_block_for_safepoint = false) : _lock(lock) {
     if (_lock != nullptr) {
-      _lock->lock();
+      _lock->lock(allow_block_for_safepoint);
     }
   }
 

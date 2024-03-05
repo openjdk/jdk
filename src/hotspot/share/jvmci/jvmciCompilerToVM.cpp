@@ -182,7 +182,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 // Entry to native method implementation that transitions
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY(result_type, name, signature)        \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
@@ -193,7 +193,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   JVMCITraceMark jtm("CompilerToVM::" #name);
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
@@ -209,7 +209,7 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
 // Entry to native method implementation that does not transition
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY_PREFIX(result_type, name, signature) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
+  result_type JNICALL c2v_ ## name signature {           \
   JavaThread* thread = JavaThread::current_or_null();
 
 #define C2V_END }
@@ -2442,7 +2442,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, arrayBaseOffset, (JNIEnv* env, jobject, jchar type_char))
   BasicType type = JVMCIENV->typeCharToBasicType(type_char, JVMCI_CHECK_0);
-  return arrayOopDesc::header_size(type) * HeapWordSize;
+  return arrayOopDesc::base_offset_in_bytes(type);
 C2V_END
 
 C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))

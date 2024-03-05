@@ -3408,6 +3408,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           my_mem = load_node;
         } else {
           assert(my_mem->unique_out() == this, "sanity");
+          assert(!trailing_load_store(), "load store node can't be eliminated");
           del_req(Precedent);
           phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
           my_mem = nullptr;
