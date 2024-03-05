@@ -44,19 +44,22 @@ import java.util.stream.Stream;
 
 public class ToPatternTest {
 
+    // DecimalFormat constant
+    private static final int DOUBLE_FRACTION_DIGITS = 340;
+
     // Ensure that toPattern() provides the correct amount of minimum
     // and maximum digits for integer/fraction.
     @ParameterizedTest
     @MethodSource("minMaxDigits")
     public void basicTest(int maxInt, int minInt, int maxFrac, int minFrac) {
-        // Use a US dFmt, which uses '.' as the decimal separator
-        DecimalFormat dFmt = (DecimalFormat) NumberFormat.getInstance(Locale.US);
+        DecimalFormat dFmt = new DecimalFormat();
 
         dFmt.setMaximumIntegerDigits(maxInt);
         dFmt.setMinimumIntegerDigits(minInt);
         dFmt.setMaximumFractionDigits(maxFrac);
         dFmt.setMinimumFractionDigits(minFrac);
 
+        // Non-localized separator always uses '.'
         String[] patterns = dFmt.toPattern().split("\\.");
         assertEquals(2, patterns.length,
                 dFmt.toPattern() + " should be split into an integer/fraction portion");
@@ -112,6 +115,9 @@ public class ToPatternTest {
     @Test
     public void emptyStringPatternTest() {
         DecimalFormat empty = new DecimalFormat("");
+        // Verify new maximum fraction digits value
+        assertEquals(DOUBLE_FRACTION_DIGITS, empty.getMaximumFractionDigits());
+        // Verify no OOME for empty pattern
         assertDoesNotThrow(empty::toPattern);
         // Check toString for coverage, as it invokes toPattern
         assertDoesNotThrow(empty::toString);

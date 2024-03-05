@@ -3353,18 +3353,16 @@ public class DecimalFormat extends NumberFormat {
      * is required.
      */
     private boolean posEqualsNegPattern() {
-        if ((negSuffixPattern == posSuffixPattern && // n == p == null
+        // Check suffix
+        return ((negSuffixPattern == posSuffixPattern && // n == p == null
                 negativeSuffix.equals(positiveSuffix))
                 || (negSuffixPattern != null &&
-                negSuffixPattern.equals(posSuffixPattern))) {
-            if ((negPrefixPattern != null && posPrefixPattern != null &&
-                    negPrefixPattern.equals("'-" + posPrefixPattern)) ||
-                    (negPrefixPattern == posPrefixPattern && // n == p == null
-                            negativePrefix.equals(symbols.getMinusSignText() + positivePrefix))) {
-                return true;
-            }
-        }
-        return false;
+                negSuffixPattern.equals(posSuffixPattern)))
+                && // Check prefix
+                ((negPrefixPattern != null && posPrefixPattern != null &&
+                negPrefixPattern.equals("'-" + posPrefixPattern)) ||
+                (negPrefixPattern == posPrefixPattern && // n == p == null
+                negativePrefix.equals(symbols.getMinusSignText() + positivePrefix)));
     }
 
     /**
