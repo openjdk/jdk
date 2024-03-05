@@ -1286,6 +1286,8 @@ public:
     _fast_reclaim_handled(false)
   {
     if (initial_evacuation) {
+      Ticks start = Ticks::now();
+
       _dirty_card_buffers = NEW_C_HEAP_ARRAY(BufferNode::Stack, num_workers, mtGC);
       for (uint i = 0; i < num_workers; i++)
       {
@@ -1295,6 +1297,7 @@ public:
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
       BufferNode* cur = buffers._head;
+
       uint worker = 0;
       while (cur != nullptr) {
         BufferNode* next = cur->next();
@@ -1302,6 +1305,9 @@ public:
         _dirty_card_buffers[worker++ % num_workers].push(*cur);
         cur = next;
       }
+
+      Tickspan total = Ticks::now() - start;
+      G1CollectedHeap::heap()->phase_times()->record_distribute_log_buffers_time_ms(total.seconds() * 1000.0);
     }
   }
 
@@ -1415,13 +1421,7 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
                                                 MIN2(workers->active_workers(), (uint)increment_length);
 
   {
-    Ticks start = Ticks::now();
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
-    OrderAccess::fence();
-    Tickspan total = Ticks::now() - start;
-    if (initial_evacuation) {
-      g1h->phase_times()->record_distribute_log_buffers_time_ms(total.seconds() * 1000.0);
-    }
     log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
