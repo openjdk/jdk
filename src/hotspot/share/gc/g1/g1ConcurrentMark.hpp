@@ -561,7 +561,7 @@ public:
   // Sets the internal top_at_region_start for the given region to current top of the region.
   inline void update_top_at_rebuild_start(HeapRegion* r);
   // TARS for the given region during remembered set rebuilding.
-  inline HeapWord* top_at_rebuild_start(uint region) const;
+  inline HeapWord* top_at_rebuild_start(HeapRegion* r) const;
 
   // Clear statistics gathered during the concurrent cycle for the given region after
   // it has been reclaimed.

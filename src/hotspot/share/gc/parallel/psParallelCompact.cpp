@@ -527,35 +527,6 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
   return result;
 }
 
-void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
-{
-  const size_t obj_ofs = pointer_delta(addr, _heap_start);
-  const size_t beg_region = obj_ofs >> Log2RegionSize;
-  // end_region is inclusive
-  const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  if (beg_region == end_region) {
-    // All in one region.
-    _region_data[beg_region].add_live_obj(len);
-    return;
-  }
-
-  // First region.
-  const size_t beg_ofs = region_offset(addr);
-  _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
-
-  // Middle regions--completely spanned by this object.
-  for (size_t region = beg_region + 1; region < end_region; ++region) {
-    _region_data[region].set_partial_obj_size(RegionSize);
-    _region_data[region].set_partial_obj_addr(addr);
-  }
-
-  // Last region.
-  const size_t end_ofs = region_offset(addr + len - 1);
-  _region_data[end_region].set_partial_obj_size(end_ofs + 1);
-  _region_data[end_region].set_partial_obj_addr(addr);
-}
-
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
@@ -862,14 +833,10 @@ void PSParallelCompact::post_initialize() {
   ParCompactionManager::initialize(mark_bitmap());
 }
 
-bool PSParallelCompact::initialize() {
+bool PSParallelCompact::initialize_aux_data() {
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   MemRegion mr = heap->reserved_region();
-
-  // Was the old gen get allocated successfully?
-  if (!heap->old_gen()->is_allocated()) {
-    return false;
-  }
+  assert(mr.byte_size() != 0, "heap should be reserved");
 
   initialize_space_info();
   initialize_dead_wood_limiter();
@@ -1047,142 +1014,6 @@ void PSParallelCompact::post_compact()
   // Signal that we have completed a visit to all live objects.
   Universe::heap()->record_whole_heap_examined_timestamp();
 }
-
-HeapWord*
-PSParallelCompact::compute_dense_prefix_via_density(const SpaceId id,
-                                                    bool maximum_compaction)
-{
-  const size_t region_size = ParallelCompactData::RegionSize;
-  const ParallelCompactData& sd = summary_data();
-
-  const MutableSpace* const space = _space_info[id].space();
-  HeapWord* const top_aligned_up = sd.region_align_up(space->top());
-  const RegionData* const beg_cp = sd.addr_to_region_ptr(space->bottom());
-  const RegionData* const end_cp = sd.addr_to_region_ptr(top_aligned_up);
-
-  // Skip full regions at the beginning of the space--they are necessarily part
-  // of the dense prefix.
-  size_t full_count = 0;
-  const RegionData* cp;
-  for (cp = beg_cp; cp < end_cp && cp->data_size() == region_size; ++cp) {
-    ++full_count;
-  }
-
-  const uint total_invocations = ParallelScavengeHeap::heap()->total_full_collections();
-  assert(total_invocations >= _maximum_compaction_gc_num, "sanity");
-  const size_t gcs_since_max = total_invocations - _maximum_compaction_gc_num;
-  const bool interval_ended = gcs_since_max > HeapMaximumCompactionInterval;
-  if (maximum_compaction || cp == end_cp || interval_ended) {
-    _maximum_compaction_gc_num = total_invocations;
-    return sd.region_to_addr(cp);
-  }
-
-  HeapWord* const new_top = _space_info[id].new_top();
-  const size_t space_live = pointer_delta(new_top, space->bottom());
-  const size_t space_used = space->used_in_words();
-  const size_t space_capacity = space->capacity_in_words();
-
-  const double cur_density = double(space_live) / space_capacity;
-  const double deadwood_density =
-    (1.0 - cur_density) * (1.0 - cur_density) * cur_density * cur_density;
-  const size_t deadwood_goal = size_t(space_capacity * deadwood_density);
-
-  log_develop_debug(gc, compaction)(
-      "cur_dens=%5.3f dw_dens=%5.3f dw_goal=" SIZE_FORMAT,
-      cur_density, deadwood_density, deadwood_goal);
-  log_develop_debug(gc, compaction)(
-      "space_live=" SIZE_FORMAT " space_used=" SIZE_FORMAT " "
-      "space_cap=" SIZE_FORMAT,
-      space_live, space_used,
-      space_capacity);
-
-  // XXX - Use binary search?
-  HeapWord* dense_prefix = sd.region_to_addr(cp);
-  const RegionData* full_cp = cp;
-  const RegionData* const top_cp = sd.addr_to_region_ptr(space->top() - 1);
-  while (cp < end_cp) {
-    HeapWord* region_destination = cp->destination();
-    const size_t cur_deadwood = pointer_delta(dense_prefix, region_destination);
-
-    log_develop_trace(gc, compaction)(
-        "c#=" SIZE_FORMAT_W(4) " dst=" PTR_FORMAT " "
-        "dp=" PTR_FORMAT " cdw=" SIZE_FORMAT_W(8),
-        sd.region(cp), p2i(region_destination),
-        p2i(dense_prefix), cur_deadwood);
-
-    if (cur_deadwood >= deadwood_goal) {
-      // Found the region that has the correct amount of deadwood to the left.
-      // This typically occurs after crossing a fairly sparse set of regions, so
-      // iterate backwards over those sparse regions, looking for the region
-      // that has the lowest density of live objects 'to the right.'
-      size_t space_to_left = sd.region(cp) * region_size;
-      size_t live_to_left = space_to_left - cur_deadwood;
-      size_t space_to_right = space_capacity - space_to_left;
-      size_t live_to_right = space_live - live_to_left;
-      double density_to_right = double(live_to_right) / space_to_right;
-      while (cp > full_cp) {
-        --cp;
-        const size_t prev_region_live_to_right = live_to_right -
-          cp->data_size();
-        const size_t prev_region_space_to_right = space_to_right + region_size;
-        double prev_region_density_to_right =
-          double(prev_region_live_to_right) / prev_region_space_to_right;
-        if (density_to_right <= prev_region_density_to_right) {
-          return dense_prefix;
-        }
-
-        log_develop_trace(gc, compaction)(
-            "backing up from c=" SIZE_FORMAT_W(4) " d2r=%10.8f "
-            "pc_d2r=%10.8f",
-            sd.region(cp), density_to_right,
-            prev_region_density_to_right);
-
-        dense_prefix -= region_size;
-        live_to_right = prev_region_live_to_right;
-        space_to_right = prev_region_space_to_right;
-        density_to_right = prev_region_density_to_right;
-      }
-      return dense_prefix;
-    }
-
-    dense_prefix += region_size;
-    ++cp;
-  }
-
-  return dense_prefix;
-}
-
-#ifndef PRODUCT
-void PSParallelCompact::print_dense_prefix_stats(const char* const algorithm,
-                                                 const SpaceId id,
-                                                 const bool maximum_compaction,
-                                                 HeapWord* const addr)
-{
-  const size_t region_idx = summary_data().addr_to_region_idx(addr);
-  RegionData* const cp = summary_data().region(region_idx);
-  const MutableSpace* const space = _space_info[id].space();
-  HeapWord* const new_top = _space_info[id].new_top();
-
-  const size_t space_live = pointer_delta(new_top, space->bottom());
-  const size_t dead_to_left = pointer_delta(addr, cp->destination());
-  const size_t space_cap = space->capacity_in_words();
-  const double dead_to_left_pct = double(dead_to_left) / space_cap;
-  const size_t live_to_right = new_top - cp->destination();
-  const size_t dead_to_right = space->top() - addr - live_to_right;
-
-  log_develop_debug(gc, compaction)(
-      "%s=" PTR_FORMAT " dpc=" SIZE_FORMAT_W(5) " "
-      "spl=" SIZE_FORMAT " "
-      "d2l=" SIZE_FORMAT " d2l%%=%6.4f "
-      "d2r=" SIZE_FORMAT " l2r=" SIZE_FORMAT " "
-      "ratio=%10.8f",
-      algorithm, p2i(addr), region_idx,
-      space_live,
-      dead_to_left, dead_to_left_pct,
-      dead_to_right, live_to_right,
-      double(dead_to_right) / live_to_right);
-}
-#endif  // #ifndef PRODUCT
 
 // Return a fraction indicating how much of the generation can be treated as
 // "dead wood" (i.e., not reclaimed).  The function uses a normal distribution
@@ -1432,68 +1263,36 @@ void PSParallelCompact::summarize_spaces_quick()
   }
 }
 
-void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
-{
+void PSParallelCompact::fill_dense_prefix_end(SpaceId id) {
+  // Since both markword and klass takes 1 heap word, the min-obj-size is 2
+  // heap words.
+  // If min-fill-size decreases to 1, this whole method becomes redundant.
+  assert(CollectedHeap::min_fill_size() == 2, "inv");
+#ifndef _LP64
+  // In 32-bit system, min-obj-alignment is >= 8 bytes, so the gap (if any)
+  // right before denses-prefix must be greater than min-fill-size; nothing to
+  // do.
+  return;
+#endif
   HeapWord* const dense_prefix_end = dense_prefix(id);
-  const RegionData* region = _summary_data.addr_to_region_ptr(dense_prefix_end);
-  const idx_t dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
-  if (dead_space_crosses_boundary(region, dense_prefix_bit)) {
-    // Only enough dead space is filled so that any remaining dead space to the
-    // left is larger than the minimum filler object.  (The remainder is filled
-    // during the copy/update phase.)
-    //
-    // The size of the dead space to the right of the boundary is not a
-    // concern, since compaction will be able to use whatever space is
-    // available.
-    //
-    // Here '||' is the boundary, 'x' represents a don't care bit and a box
-    // surrounds the space to be filled with an object.
-    //
-    // In the 32-bit VM, each bit represents two 32-bit words:
-    //                              +---+
-    // a) beg_bits:  ...  x   x   x | 0 | ||   0   x  x  ...
-    //    end_bits:  ...  x   x   x | 0 | ||   0   x  x  ...
-    //                              +---+
-    //
-    // In the 64-bit VM, each bit represents one 64-bit word:
-    //                              +------------+
-    // b) beg_bits:  ...  x   x   x | 0   ||   0 | x  x  ...
-    //    end_bits:  ...  x   x   1 | 0   ||   0 | x  x  ...
-    //                              +------------+
-    //                          +-------+
-    // c) beg_bits:  ...  x   x | 0   0 | ||   0   x  x  ...
-    //    end_bits:  ...  x   1 | 0   0 | ||   0   x  x  ...
-    //                          +-------+
-    //                      +-----------+
-    // d) beg_bits:  ...  x | 0   0   0 | ||   0   x  x  ...
-    //    end_bits:  ...  1 | 0   0   0 | ||   0   x  x  ...
-    //                      +-----------+
-    //                          +-------+
-    // e) beg_bits:  ...  0   0 | 0   0 | ||   0   x  x  ...
-    //    end_bits:  ...  0   0 | 0   0 | ||   0   x  x  ...
-    //                          +-------+
+  RegionData* const region_after_dense_prefix = _summary_data.addr_to_region_ptr(dense_prefix_end);
+  idx_t const dense_prefix_bit = _mark_bitmap.addr_to_bit(dense_prefix_end);
 
-    // Initially assume case a, c or e will apply.
-    size_t obj_len = CollectedHeap::min_fill_size();
-    HeapWord* obj_beg = dense_prefix_end - obj_len;
+  if (region_after_dense_prefix->partial_obj_size() != 0 ||
+      _mark_bitmap.is_obj_beg(dense_prefix_bit)) {
+    // The region after the dense prefix starts with live bytes.
+    return;
+  }
 
-#ifdef  _LP64
-    if (MinObjAlignment > 1) { // object alignment > heap word size
-      // Cases a, c or e.
-    } else if (_mark_bitmap.is_obj_end(dense_prefix_bit - 2)) {
-      // Case b above.
-      obj_beg = dense_prefix_end - 1;
-    } else if (!_mark_bitmap.is_obj_end(dense_prefix_bit - 3) &&
-               _mark_bitmap.is_obj_end(dense_prefix_bit - 4)) {
-      // Case d above.
-      obj_beg = dense_prefix_end - 3;
-      obj_len = 3;
-    }
-#endif  // #ifdef _LP64
-
+  if (_mark_bitmap.is_obj_end(dense_prefix_bit - 2)) {
+    // There is exactly one heap word gap right before the dense prefix end, so we need a filler object.
+    // The filler object will extend into the region after the last dense prefix region.
+    const size_t obj_len = 2; // min-fill-size
+    HeapWord* const obj_beg = dense_prefix_end - 1;
     CollectedHeap::fill_with_object(obj_beg, obj_len);
     _mark_bitmap.mark_obj(obj_beg, obj_len);
-    _summary_data.add_obj(obj_beg, obj_len);
+    _summary_data.addr_to_region_ptr(obj_beg)->add_live_obj(1);
+    region_after_dense_prefix->set_partial_obj_size(1);
     assert(start_array(id) != nullptr, "sanity");
     start_array(id)->update_for_block(obj_beg, obj_beg + obj_len);
   }
@@ -1510,15 +1309,6 @@ PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
   if (_space_info[id].new_top() != space->bottom()) {
     HeapWord* dense_prefix_end = compute_dense_prefix(id, maximum_compaction);
     _space_info[id].set_dense_prefix(dense_prefix_end);
-
-#ifndef PRODUCT
-    if (log_is_enabled(Debug, gc, compaction)) {
-      print_dense_prefix_stats("ratio", id, maximum_compaction,
-                               dense_prefix_end);
-      HeapWord* addr = compute_dense_prefix_via_density(id, maximum_compaction);
-      print_dense_prefix_stats("density", id, maximum_compaction, addr);
-    }
-#endif  // #ifndef PRODUCT
 
     // Recompute the summary data, taking into account the dense prefix.  If
     // every last byte will be reclaimed, then the existing summary data which
@@ -2551,7 +2341,6 @@ void PSParallelCompact::verify_complete(SpaceId space_id) {
 #endif  // #ifdef ASSERT
 
 inline void UpdateOnlyClosure::do_addr(HeapWord* addr) {
-  _start_array->update_for_block(addr, addr + cast_to_oop(addr)->size());
   compaction_manager()->update_contents(cast_to_oop(addr));
 }
 
@@ -2576,8 +2365,10 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
     assert(sd.region(claim_region)->claim_unsafe(), "claim() failed");
   }
 #endif  // #ifdef ASSERT
+  HeapWord* const space_bottom = space(space_id)->bottom();
 
-  if (beg_addr != space(space_id)->bottom()) {
+  // Check if it's the first region in this space.
+  if (beg_addr != space_bottom) {
     // Find the first live object or block of dead space that *starts* in this
     // range of regions.  If a partial object crosses onto the region, skip it;
     // it will be marked for 'deferred update' when the object head is
@@ -2589,8 +2380,11 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
     const RegionData* const cp = sd.region(beg_region);
     if (cp->partial_obj_size() != 0) {
       beg_addr = sd.partial_obj_end(beg_region);
-    } else if (dead_space_crosses_boundary(cp, mbm->addr_to_bit(beg_addr))) {
-      beg_addr = mbm->find_obj_beg(beg_addr, end_addr);
+    } else {
+      idx_t beg_bit = mbm->addr_to_bit(beg_addr);
+      if (!mbm->is_obj_beg(beg_bit) && !mbm->is_obj_end(beg_bit - 1)) {
+        beg_addr = mbm->find_obj_beg(beg_addr, end_addr);
+      }
     }
   }
 
@@ -2601,12 +2395,7 @@ PSParallelCompact::update_and_deadwood_in_dense_prefix(ParCompactionManager* cm,
     // Create closures and iterate.
     UpdateOnlyClosure update_closure(mbm, cm, space_id);
     FillClosure fill_closure(cm, space_id);
-    ParMarkBitMap::IterationStatus status;
-    status = mbm->iterate(&update_closure, &fill_closure, beg_addr, end_addr,
-                          dense_prefix_end);
-    if (status == ParMarkBitMap::incomplete) {
-      update_closure.do_addr(update_closure.source());
-    }
+    mbm->iterate(&update_closure, &fill_closure, beg_addr, end_addr, dense_prefix_end);
   }
 
   // Mark the regions as filled.
@@ -2916,25 +2705,6 @@ void PSParallelCompact::fill_region(ParCompactionManager* cm, MoveAndUpdateClosu
     HeapWord* const end_addr = MIN2(sd.region_align_up(cur_addr + 1),
                                     src_space_top);
     IterationStatus status = bitmap->iterate(&closure, cur_addr, end_addr);
-
-    if (status == ParMarkBitMap::incomplete) {
-      // The last obj that starts in the source region does not end in the
-      // region.
-      assert(closure.source() < end_addr, "sanity");
-      HeapWord* const obj_beg = closure.source();
-      HeapWord* const range_end = MIN2(obj_beg + closure.words_remaining(),
-                                       src_space_top);
-      HeapWord* const obj_end = bitmap->find_obj_end(obj_beg, range_end);
-      if (obj_end < range_end) {
-        // The end was found; the entire object will fit.
-        status = closure.do_addr(obj_beg, bitmap->obj_size(obj_beg, obj_end));
-        assert(status != ParMarkBitMap::would_overflow, "sanity");
-      } else {
-        // The end was not found; the object will not fit.
-        assert(range_end < src_space_top, "obj cannot cross space boundary");
-        status = ParMarkBitMap::would_overflow;
-      }
-    }
 
     if (status == ParMarkBitMap::would_overflow) {
       // The last object did not fit.  Note that interior oop updates were

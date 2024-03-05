@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4052440 8003267 8062588 8210406
+ * @bug 4052440 8003267 8062588 8210406 8174269
  * @summary TimeZoneNameProvider tests
  * @library providersrc/foobarutils
  *          providersrc/barprovider
@@ -31,7 +31,7 @@
  *          java.base/sun.util.resources
  * @build com.foobar.Utils
  *        com.bar.*
- * @run main/othervm -Djava.locale.providers=JRE,SPI TimeZoneNameProviderTest
+ * @run main/othervm -Djava.locale.providers=CLDR,SPI TimeZoneNameProviderTest
  */
 
 import java.text.DateFormatSymbols;
@@ -70,13 +70,13 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
     void test1() {
         Locale[] available = Locale.getAvailableLocales();
-        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forJRE().getTimeZoneNameProvider().getAvailableLocales());
+        List<Locale> jreimplloc = Arrays.asList(LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR).getTimeZoneNameProvider().getAvailableLocales());
         List<Locale> providerLocales = Arrays.asList(tznp.getAvailableLocales());
         String[] ids = TimeZone.getAvailableIDs();
 
         for (Locale target: available) {
             // pure JRE implementation
-            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forJRE()).getLocaleData().getTimeZoneNames(target);
+            OpenListResourceBundle rb = ((ResourceBundleBasedAdapter)LocaleProviderAdapter.forType(LocaleProviderAdapter.Type.CLDR)).getLocaleData().getTimeZoneNames(target);
             boolean jreSupportsTarget = jreimplloc.contains(target);
 
             for (String id: ids) {
@@ -103,7 +103,7 @@ public class TimeZoneNameProviderTest extends ProviderTest {
 
                     // JRE's name
                     String jresname = null;
-                    if (jrearray != null) {
+                    if (jrearray != null && !jrearray[i].isEmpty() && !jrearray[i].equals("\u2205\u2205\u2205")) {
                         jresname = jrearray[i];
                     }
 

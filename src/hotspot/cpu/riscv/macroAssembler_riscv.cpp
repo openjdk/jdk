@@ -49,6 +49,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
@@ -5042,98 +5043,124 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object.
-// Falls through upon success.
 //
 //  - obj: the object to be locked
-//  - hdr: the header, already loaded from obj, will be destroyed
-//  - tmp1, tmp2: temporary registers, will be destroyed
-void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+//  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
+//  - slow: branched to if locking fails
+void MacroAssembler::lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
-  // Check if we would have space on lock-stack for the object.
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  mv(tmp2, (unsigned)LockStack::end_offset());
-  bge(tmp1, tmp2, slow, /* is_far */ true);
+  Label push;
+  const Register top = tmp1;
+  const Register mark = tmp2;
+  const Register t = tmp3;
 
-  // Load (object->mark() | 1) into hdr
-  ori(hdr, hdr, markWord::unlocked_value);
-  // Clear lock-bits, into tmp2
-  xori(tmp2, hdr, markWord::unlocked_value);
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  // Try to swing header from unlocked to locked
-  Label success;
-  cmpxchgptr(hdr, tmp2, obj, tmp1, success, &slow);
-  bind(success);
+  // Check if the lock-stack is full.
+  lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  mv(t, (unsigned)LockStack::end_offset());
+  bge(top, t, slow, /* is_far */ true);
 
-  // After successful lock, push object on lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  add(tmp2, xthread, tmp1);
-  sd(obj, Address(tmp2, 0));
-  addw(tmp1, tmp1, oopSize);
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+  // Check for recursion.
+  add(t, xthread, top);
+  ld(t, Address(t, -oopSize));
+  beq(obj, t, push);
+
+  // Check header for monitor (0b10).
+  test_bit(t, mark, exact_log2(markWord::monitor_value));
+  bnez(t, slow, /* is_far */ true);
+
+  // Try to lock. Transition lock-bits 0b01 => 0b00
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
+  ori(mark, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::unlocked_value);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
+          /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
+  bne(mark, t, slow, /* is_far */ true);
+
+  bind(push);
+  // After successful lock, push object on lock-stack.
+  add(t, xthread, top);
+  sd(obj, Address(t));
+  addw(top, top, oopSize);
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
 // Implements ligthweight-unlocking.
-// Branches to slow upon failure.
-// Falls through upon success.
 //
 // - obj: the object to be unlocked
-// - hdr: the (pre-loaded) header of the object
-// - tmp1, tmp2: temporary registers
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+// - tmp1, tmp2, tmp3: temporary registers
+// - slow: branched to if unlocking fails
+void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT
   {
-    // The following checks rely on the fact that LockStack is only ever modified by
-    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
-    // entries after inflation will happen delayed in that case.
-
     // Check for lock-stack underflow.
     Label stack_ok;
     lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
     mv(tmp2, (unsigned)LockStack::start_offset());
-    bgt(tmp1, tmp2, stack_ok);
+    bge(tmp1, tmp2, stack_ok);
     STOP("Lock-stack underflow");
     bind(stack_ok);
   }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    subw(tmp1, tmp1, oopSize);
-    add(tmp1, xthread, tmp1);
-    ld(tmp1, Address(tmp1, 0));
-    beq(tmp1, obj, tos_ok);
-    STOP("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
-  }
-  {
-    // Check that hdr is fast-locked.
-   Label hdr_ok;
-    andi(tmp1, hdr, markWord::lock_mask_in_place);
-    beqz(tmp1, hdr_ok);
-    STOP("Header is not fast-locked");
-    bind(hdr_ok);
-  }
 #endif
 
-  // Load the new header (unlocked) into tmp1
-  ori(tmp1, hdr, markWord::unlocked_value);
+  Label unlocked, push_and_slow;
+  const Register top = tmp1;
+  const Register mark = tmp2;
+  const Register t = tmp3;
 
-  // Try to swing header from locked to unlocked
-  Label success;
-  cmpxchgptr(hdr, tmp1, obj, tmp2, success, &slow);
-  bind(success);
+  // Check if obj is top of lock-stack.
+  lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  subw(top, top, oopSize);
+  add(t, xthread, top);
+  ld(t, Address(t));
+  bne(obj, t, slow, /* is_far */ true);
 
-  // After successful unlock, pop object from lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  subw(tmp1, tmp1, oopSize);
+  // Pop lock-stack.
+  DEBUG_ONLY(add(t, xthread, top);)
+  DEBUG_ONLY(sd(zr, Address(t));)
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+
+  // Check if recursive.
+  add(t, xthread, top);
+  ld(t, Address(t, -oopSize));
+  beq(obj, t, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+  test_bit(t, mark, exact_log2(markWord::monitor_value));
+  bnez(t, push_and_slow);
+
 #ifdef ASSERT
-  add(tmp2, xthread, tmp1);
-  sd(zr, Address(tmp2, 0));
+  // Check header not unlocked (0b01).
+  Label not_unlocked;
+  test_bit(t, mark, exact_log2(markWord::unlocked_value));
+  beqz(t, not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
 #endif
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+
+  // Try to unlock. Transition lock bits 0b00 => 0b01
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
+  ori(t, mark, markWord::unlocked_value);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
+          /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
+  beq(mark, t, unlocked);
+
+  bind(push_and_slow);
+  // Restore lock-stack and handle the unlock in runtime.
+  DEBUG_ONLY(add(t, xthread, top);)
+  DEBUG_ONLY(sd(obj, Address(t));)
+  addw(top, top, oopSize);
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  j(slow);
+
+  bind(unlocked);
 }

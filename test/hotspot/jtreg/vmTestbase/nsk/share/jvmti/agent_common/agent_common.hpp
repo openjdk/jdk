@@ -24,7 +24,7 @@
 #define NSK_JVMTI_AGENT_COMMON_DEFINED
 
 #include "jvmti.h"
-#include "../jvmti_tools.h"
+#include "../jvmti_tools.hpp"
 
 extern "C" {
 
