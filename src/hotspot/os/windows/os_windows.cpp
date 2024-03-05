@@ -1947,7 +1947,7 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
     }
 
     if (same_vals_for_all_cpus && max_mhz != -1) {
-      st->print_cr("Processor Information for all %d processors :", proc_count);
+      st->print_cr("Processor Information for the first %d processors :", proc_count);
       st->print_cr("  Max Mhz: %d, Current Mhz: %d, Mhz Limit: %d", max_mhz, current_mhz, mhz_limit);
       return;
     }
