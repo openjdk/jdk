@@ -1486,26 +1486,27 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     mon = mark.monitor();
     assert(mon != nullptr, "must have monitor");
     // this object has a heavyweight monitor
-    nWant = mon->contentions(); // # of threads contending for monitor
-    nWait = mon->waiters();     // # of threads in Object.wait()
-    wantList =  Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
+    nWant = mon->contentions(); // # of threads contending for monitor entry, but not re-entry
+    nWait = mon->waiters();     // # of threads waiting for notification,
+                                // or to re-enter monitor, in Object.wait()
+
+    // Get the actual set of threads trying to enter, or re-enter, the monitor.
+    wantList = Threads::get_pending_threads(tlh.list(), nWant + nWait, (address)mon);
     nWant = wantList->length();
   } else {
     // this object has a lightweight monitor
   }
 
   if (mon != nullptr) {
-    ObjectWaiter *waiter = mon->first_waiter();
-    for (int i = 0; i < nWait; i++) {
-      if (waiter == nullptr || (i != 0 && waiter == mon->first_waiter())) {
-        // robustness: the waiting list has gotten smaller
-        // The nWait count we got from the mon->waiters() may include the re-entering
-        // the monitor threads after being notified. Here we are correcting the actual
-        // number of the waiting threads by excluding those re-entering the monitor.
-        nWait = i;
-        break;
-      }
-      waiter = mon->next_waiter(waiter);
+    // Robustness: the actual waiting list can be smaller.
+    // The nWait count we got from the mon->waiters() may include the re-entering
+    // the monitor threads after being notified. Here we are correcting the actual
+    // number of the waiting threads by excluding those re-entering the monitor.
+    nWait = 0;
+    for (ObjectWaiter* waiter = mon->first_waiter();
+         waiter != nullptr && (nWait == 0 || waiter != mon->first_waiter());
+         waiter = mon->next_waiter(waiter)) {
+      nWait++;
     }
   }
   ret.waiter_count = nWant;
@@ -1546,10 +1547,9 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
       ObjectWaiter *waiter = mon->first_waiter();
       for (int i = 0; i < nWait; i++) {
         JavaThread *w = mon->thread_of_waiter(waiter);
-        assert(w != nullptr, "DBG: sanity check");
+        assert(w != nullptr, "sanity check");
         // If the thread was found on the ObjectWaiter list, then
-        // it has not been notified. This thread can't change the
-        // state of the monitor so it doesn't need to be suspended.
+        // it has not been notified.
         Handle th(current_thread, get_vthread_or_thread_oop(w));
         ret.notify_waiters[i] = (jthread)jni_reference(calling_thread, th);
         waiter = mon->next_waiter(waiter);

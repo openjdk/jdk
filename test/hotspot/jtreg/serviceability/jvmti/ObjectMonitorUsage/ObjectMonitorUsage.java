@@ -28,18 +28,17 @@
  * @summary converted from VM Testbase nsk/jvmti/GetObjectMonitorUsage/objmonusage003
  * DESCRIPTION
  *     The test checks if the JVMTI function GetObjectMonitorUsage returns
- *     the expected values for the owner, entry_count, water_count
+ *     the expected values for the owner, entry_count, waiter_count
  *     fields of JVMTI_monitor_info.
  *     The testcases are the following:
- *       - unowned object without any waitings
- *       - unowned object with waitings to be notified
- *       - owned object without any waitings
- *       - owned object with N waitings to enter the monitor
- *       - owned object with N waitings to be notified
- *       - owned object with N waitings to enter, from 0 to N waitings to re-enter,
- *         from N to 0 waitings to be notified
+ *       - unowned object without any waiting threads
+ *       - unowned object with threads waiting to be notified
+ *       - owned object without any waiting threads
+ *       - owned object with N threads waiting to enter the monitor
+ *       - owned object with N threads waiting to be notified
+ *       - owned object with N threads waiting to enter, from 0 to N threads
+ *         waiting to re-enter, from N to 0 threads waiting to be notified
  *       - all the above scenarios are executed with platform and virtual threads
- * @requires vm.continuations
  * @requires vm.jvmti
  * @run main/othervm/native
  *     -Djdk.virtualThreadScheduler.parallelism=10
@@ -55,6 +54,7 @@ public class ObjectMonitorUsage {
 
     native static int getRes();
     native static int waitsToEnter();
+    native static int waitsToBeNotified();
     native static int setTestedMonitor(Object monitor);
     native static void check(Object obj, Thread owner,
                              int entryCount, int waiterCount, int notifyWaiterCount);
@@ -87,6 +87,9 @@ public class ObjectMonitorUsage {
         for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
             threads[i] = startTask(i, new WaitingTask(), isVirtual, "Waiting");
+        }
+        while (waitsToBeNotified() < NUMBER_OF_WAITING_THREADS) {
+            sleep(1);
         }
         return threads;
     }
@@ -123,6 +126,7 @@ public class ObjectMonitorUsage {
         String vtag = vtag(isVirtual);
         log("\n###test0: started " + vtag);
 
+        setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
 
         // entry count: 0
@@ -131,11 +135,12 @@ public class ObjectMonitorUsage {
         // count of threads waiting to be notified: NUMBER_OF_WAITING_THREADS
         check(lockCheck, null, 0, // no owner thread
               0, // count of threads waiting to enter: 0
-              NUMBER_OF_ENTERING_THREADS);
+              NUMBER_OF_WAITING_THREADS);
 
         synchronized (lockCheck) {
             lockCheck.notifyAll();
         }
+        setTestedMonitor(null);
         joinThreads(wThreads);
         log("###test0: finished " + vtag);
     }
@@ -312,7 +317,7 @@ public class ObjectMonitorUsage {
     }
 
     static class WaitingTask extends TestTask {
-         public void run() {
+        public void run() {
             synchronized (lockCheck) {
                 try {
                     ready = true;

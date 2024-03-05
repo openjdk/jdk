@@ -36,6 +36,7 @@ static jrawMonitorID event_lock = nullptr;
 static jint result = PASSED;
 static int check_idx = 0;
 static int waits_to_enter = 0;
+static int waits_to_be_notified = 0;
 static jobject tested_monitor = nullptr;
 
 static bool is_tested_monitor(JNIEnv *jni, jobject monitor) {
@@ -61,8 +62,23 @@ MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject mo
   }
 }
 
+JNIEXPORT void JNICALL
+MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor, jlong timeout) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  if (is_tested_monitor(jni, monitor)) {
+    waits_to_be_notified++;
+  }
+}
 
-jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
+JNIEXPORT void JNICALL
+MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor, jboolean timed_out) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  if (is_tested_monitor(jni, monitor)) {
+    waits_to_be_notified--;
+  }
+}
+
+jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   jint res;
   jvmtiError err;
   jvmtiCapabilities caps;
@@ -92,6 +108,8 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
   memset(&callbacks, 0, sizeof(callbacks));
   callbacks.MonitorContendedEnter   = &MonitorContendedEnter;
   callbacks.MonitorContendedEntered = &MonitorContendedEntered;
+  callbacks.MonitorWait = &MonitorWait;
+  callbacks.MonitorWaited = &MonitorWaited;
 
   err = jvmti->SetEventCallbacks(&callbacks, sizeof(jvmtiEventCallbacks));
   check_jvmti_error(err, "Agent_Initialize: error in JVMTI SetEventCallbacks");
@@ -203,6 +221,12 @@ Java_ObjectMonitorUsage_setTestedMonitor(JNIEnv *jni, jclass cls, jobject monito
 
   err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_CONTENDED_ENTERED, nullptr);
   check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #2");
+
+  err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_WAIT, nullptr);
+  check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #3");
+
+  err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_WAITED, nullptr);
+  check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #4");
 }
 
 JNIEXPORT jint JNICALL
@@ -212,8 +236,14 @@ Java_ObjectMonitorUsage_waitsToEnter(JNIEnv *jni, jclass cls) {
 }
 
 JNIEXPORT jint JNICALL
+Java_ObjectMonitorUsage_waitsToBeNotified(JNIEnv *jni, jclass cls) {
+  RawMonitorLocker rml(jvmti, jni, event_lock);
+  return waits_to_be_notified;
+}
+
+JNIEXPORT jint JNICALL
 Java_ObjectMonitorUsage_getRes(JNIEnv *jni, jclass cls) {
   return result;
 }
 
-} // exnern "C"
+} // extern "C"
