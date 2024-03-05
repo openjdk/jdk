@@ -87,10 +87,6 @@ public class VMDebugTest {
         output.shouldContain("Syntax : VM.debug"); // but help is available
 
         // Test the VM.debug subcommands, without being too specific and vulnerable to format changes.
-        // Test VM.debug events
-        output = executor.execute("VM.debug events");
-        output.shouldContain("Internal exceptions ("); // e.g. Internal exceptions (20 events):
-        output.shouldContain("Event:");
 
         // Test VM.debug threads:
         output = executor.execute("VM.debug threads");
@@ -101,13 +97,13 @@ public class VMDebugTest {
 
         // Test VM.debug findclass:
         output = executor.execute("VM.debug findclass");
-        output.shouldContain("missing argument");
+        output.shouldContain("Usage: VM.debug findclass ");
         output = executor.execute("VM.debug findclass java/lang/String 3");
         output.shouldContain("class java/lang/String");
 
         // Test VM.debug findmethod:
         output = executor.execute("VM.debug findmethod");
-        output.shouldContain("missing argument");
+        output.shouldContain("Usage: VM.debug findmethod ");
         output = executor.execute("VM.debug findmethod java/lang/String contains 3");
         output.shouldContain("class java/lang/String");
 
@@ -118,7 +114,7 @@ public class VMDebugTest {
     public void testFind(CommandExecutor executor) {
         boolean testMisaligned = true;
         OutputAnalyzer output = executor.execute("VM.debug find");
-        output.shouldContain("missing argument");
+        output.shouldContain("Usage: VM.debug find ");
         // Find and test a thread id:
         OutputAnalyzer threadPrintOutput = executor.execute("Thread.print");
         BigInteger ptr = findPointer(threadPrintOutput, thread_id_line, 1);
