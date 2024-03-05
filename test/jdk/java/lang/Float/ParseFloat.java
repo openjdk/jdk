@@ -276,22 +276,21 @@ public class ParseFloat {
      */
     private static void testParsing(String [] input,
                                     boolean exceptionalInput) {
-        for(int i = 0; i < input.length; i++) {
+        for (String s : input) {
             try {
-                Float.parseFloat(input[i]);
-                check(input[i]);
-            }
-            catch (NumberFormatException e) {
-                if (! exceptionalInput) {
+                Float.parseFloat(s);
+                check(s);
+            } catch (NumberFormatException e) {
+                if (!exceptionalInput) {
                     throw new RuntimeException("Float.parseFloat rejected " +
-                                               "good string `" + input[i] +
+                                               "good string `" + s +
                                                "'.");
                 }
                 continue;
             }
             if (exceptionalInput) {
                 throw new RuntimeException("Float.parseFloat accepted " +
-                                           "bad string `" + input[i] +
+                                           "bad string `" + s +
                                            "'.");
             }
         }
