@@ -30,33 +30,42 @@
  * @run main IconifiedToFront
  */
 
-import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.Frame;
+import java.awt.Label;
 import java.awt.Robot;
+import java.awt.Toolkit;
 
 public class IconifiedToFront {
     private static final int PAUSE_MS = 1500;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
+        if (!Toolkit.getDefaultToolkit().isFrameStateSupported(Frame.ICONIFIED)) {
+            return; // Nothing to test
+        }
+
         robot = new Robot();
-        SwingUtilities.invokeAndWait(IconifiedToFront::test1);
-        SwingUtilities.invokeAndWait(IconifiedToFront::test2);
+        IconifiedToFront.test1();
+        IconifiedToFront.test2();
     }
 
     private static void test1() {
-        JFrame frame1 = new JFrame("IconifiedToFront Test 1");
+        Frame frame1 = new Frame("IconifiedToFront Test 1");
         try {
-            frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame1.setLayout(new FlowLayout());
             frame1.setSize(400, 300);
+            frame1.setBackground(Color.green);
+            frame1.add(new Label("test"));
             frame1.setVisible(true);
             pause();
-            frame1.setExtendedState(JFrame.ICONIFIED);
+            frame1.setExtendedState(Frame.ICONIFIED);
             pause();
             frame1.toFront();
             pause();
             int state = frame1.getExtendedState();
-            if ((state & JFrame.ICONIFIED) != 0) {
+            if ((state & Frame.ICONIFIED) != 0) {
                 throw new RuntimeException("Test Failed: state is still ICONIFIED: " + state);
             }
         } finally {
@@ -65,19 +74,21 @@ public class IconifiedToFront {
     }
 
     private static void test2() {
-        JFrame frame1 = new JFrame("IconifiedToFront Test 3");
+        Frame frame1 = new Frame("IconifiedToFront Test 3");
         try {
-            frame1.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame1.setLayout(new FlowLayout());
             frame1.setSize(400, 300);
+            frame1.setBackground(Color.green);
+            frame1.add(new Label("test"));
             frame1.setUndecorated(true);
             frame1.setVisible(true);
             pause();
-            frame1.setExtendedState(JFrame.ICONIFIED);
+            frame1.setExtendedState(Frame.ICONIFIED);
             pause();
             frame1.toFront();
             pause();
             int state = frame1.getExtendedState();
-            if ((state & JFrame.ICONIFIED) != 0) {
+            if ((state & Frame.ICONIFIED) != 0) {
                 throw new RuntimeException("Test Failed: state is still ICONIFIED: " + state);
             }
         } finally {
