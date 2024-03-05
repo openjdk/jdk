@@ -534,7 +534,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             int remSize = (remFiles == null) ? 0 : remFiles.size();
             int addSize = (addFiles == null) ? 0 : addFiles.size();
-            synchronized(fileCache) {
+            synchronized (fileCache) {
                 if (remSize > 0) {
                     fileCache.removeAll(remFiles);
                 }
