@@ -727,15 +727,12 @@ for further discussion.
 
 Use `nullptr`
 ([n2431](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2007/n2431.pdf))
-rather than `NULL`.  Don't use (constant expression or literal) 0 for pointers.
+rather than `NULL`.  See the paper for reasons to avoid `NULL`.
 
-For historical reasons there may be some lingering uses of 0 as a pointer.
-These should be fixed when discovered.
-
-The C++11 definition of _null pointer constant_ included integral constant
-expressions with value zero.  C++14 replaced that with integer literals with
-value zero.  Some compilers continue to treat a zero-valued integral constant
-expressions as a _null pointer constant_ even in C++14 mode.
+Don't use (constant expression or literal) 0 for pointers.  Note that C++14
+removed non-literal 0 constants from _null pointer constants_, though some
+compilers continue to treat them as such.  For historical reasons there may be
+lingering uses of 0 as a pointer.
 
 ### &lt;atomic&gt;
 
