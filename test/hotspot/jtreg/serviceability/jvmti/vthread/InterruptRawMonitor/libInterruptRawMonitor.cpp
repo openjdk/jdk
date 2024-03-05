@@ -29,11 +29,11 @@ extern "C" {
 
 static jvmtiEnv *jvmti = nullptr;
 
-static void check_thread_state(JNIEnv *jni, int check_idx) {
+static void check_thread_not_interrupted(JNIEnv *jni, int check_idx) {
   jint state = get_thread_state(jvmti, jni, nullptr);
 
   LOG("check #%d: Thread State: (0x%x) %s\n", check_idx, state, TranslateState(state));
-  if (state & JVMTI_THREAD_STATE_INTERRUPTED) {
+  if ((state & JVMTI_THREAD_STATE_INTERRUPTED) != 0) {
     fatal(jni, "Failed: JVMTI_THREAD_STATE_INTERRUPTED bit expected to be cleared");
   }
 }
@@ -48,7 +48,7 @@ Java_InterruptRawMonitor_test(JNIEnv *jni, jclass clazz) {
   err = jvmti->RawMonitorEnter(monitor);
   check_jvmti_status(jni, err, "Failed in RawMonitorEnter");
 
-  check_thread_state(jni, 0);
+  check_thread_not_interrupted(jni, 0);
 
   // expected to be interrupted
   err = jvmti->RawMonitorWait(monitor, 0);
@@ -57,13 +57,13 @@ Java_InterruptRawMonitor_test(JNIEnv *jni, jclass clazz) {
     fatal(jni, "Failed: expected JVMTI_ERROR_INTERRUPT from RawMonitorWait");
   }
 
-  check_thread_state(jni, 1);
+  check_thread_not_interrupted(jni, 1);
 
   // expected to be non-interrupted
   err = jvmti->RawMonitorWait(monitor, 1000);
   check_jvmti_status(jni, err, "Failed in RawMonitorWait");
 
-  check_thread_state(jni, 2);
+  check_thread_not_interrupted(jni, 2);
 
   err = jvmti->RawMonitorExit(monitor);
   check_jvmti_status(jni, err, "Failed in RawMonitorExit");
