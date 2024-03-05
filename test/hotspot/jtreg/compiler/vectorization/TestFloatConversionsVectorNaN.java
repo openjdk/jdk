@@ -26,7 +26,7 @@
  * @bug 8320646
  * @summary Auto-vectorize Float.floatToFloat16, Float.float16ToFloat APIs, with NaN
  * @requires vm.compiler2.enabled
- * @requires os.arch == "riscv64"
+ * @requires (os.arch == "riscv64" & vm.cpu.features ~= ".*zvfh.*")
  * @library /test/lib /
  * @run driver compiler.vectorization.TestFloatConversionsVectorNaN
  */
