@@ -1,4 +1,4 @@
-## SipHash reference C implementation
+## SipHash v1.0-68c8a7c
 
 ### SipHash copyright
  
