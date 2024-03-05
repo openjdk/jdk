@@ -239,7 +239,7 @@ class ReductionNode : public Node {
   // Other reductions don't need strict-ordering.
   virtual bool requires_strict_order() const {
     return false;
-  };
+  }
 };
 
 //------------------------------AddReductionVINode--------------------------------------
@@ -262,10 +262,15 @@ public:
 // Vector add float as a reduction
 class AddReductionVFNode : public ReductionNode {
 private:
-  bool _requires_strict_order; // false in Vector API.
+  // True if add reduction operation for floats requires strict ordering.
+  // The value is true when add reduction for floats is auto-vectorized as auto-vectorization
+  // mandates strict ordering but the value is false when this node is generated through VectorAPI
+  // as VectorAPI does not impose any such rules on ordering.
+  bool _requires_strict_order;
 public:
   AddReductionVFNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
 
   virtual bool requires_strict_order() const { return _requires_strict_order; }
@@ -273,7 +278,7 @@ public:
   virtual uint hash() const { return Node::hash() + _requires_strict_order; }
 
   virtual bool cmp(const Node& n) const {
-    return Node::cmp(n) && _requires_strict_order== ((ReductionNode&)n).requires_strict_order();
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
   virtual uint size_of() const { return sizeof(*this); }
@@ -283,10 +288,15 @@ public:
 // Vector add double as a reduction
 class AddReductionVDNode : public ReductionNode {
 private:
-  bool _requires_strict_order; // false in Vector API.
+  // True if add reduction operation for doubles requires strict ordering.
+  // The value is true when add reduction for doubles is auto-vectorized as auto-vectorization
+  // mandates strict ordering but the value is false when this node is generated through VectorAPI
+  // as VectorAPI does not impose any such rules on ordering.
+  bool _requires_strict_order;
 public:
   AddReductionVDNode(Node *ctrl, Node* in1, Node* in2, bool requires_strict_order) :
     ReductionNode(ctrl, in1, in2), _requires_strict_order(requires_strict_order) {}
+
   virtual int Opcode() const;
 
   virtual bool requires_strict_order() const { return _requires_strict_order; }
@@ -294,7 +304,7 @@ public:
   virtual uint hash() const { return Node::hash() + _requires_strict_order; }
 
   virtual bool cmp(const Node& n) const {
-    return Node::cmp(n) && _requires_strict_order== ((ReductionNode&)n).requires_strict_order();
+    return Node::cmp(n) && _requires_strict_order == ((ReductionNode&)n).requires_strict_order();
   }
 
   virtual uint size_of() const { return sizeof(*this); }
