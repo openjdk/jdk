@@ -18,7 +18,7 @@ SipHash reference C implementation
 
 ### Licenses
 The code is dual-licensed CCO and MIT
- 
+
 #### MIT License
 ```
 Copyright 2012-2024 JP Aumasson
