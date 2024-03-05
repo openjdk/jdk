@@ -400,7 +400,7 @@ public final class ProviderList {
      * The List returned is NOT thread safe.
      */
     public Iterator<Service> getServices(String type, String algorithm) {
-        return new ServiceList(type, algorithm);
+        return new ServiceIterator(type, algorithm);
     }
 
     /**
@@ -418,7 +418,7 @@ public final class ProviderList {
     }
 
     public Iterator<Service> getServices(List<ServiceId> ids) {
-        return new ServiceList(ids);
+        return new ServiceIterator(ids);
     }
 
     /**
@@ -426,7 +426,7 @@ public final class ProviderList {
      * order to delay Provider initialization and lookup.
      * Not thread safe.
      */
-    private final class ServiceList implements Iterator<Service> {
+    private final class ServiceIterator implements Iterator<Service> {
 
         // type and algorithm for simple lookup
         // avoid allocating/traversing the ServiceId list for these lookups
@@ -453,13 +453,13 @@ public final class ProviderList {
         ArrayList<PreferredEntry> preferredList = null;
         private int preferredIndex = 0;
 
-        ServiceList(String type, String algorithm) {
+        ServiceIterator(String type, String algorithm) {
             this.type = type;
             this.algorithm = algorithm;
             this.ids = null;
         }
 
-        ServiceList(List<ServiceId> ids) {
+        ServiceIterator(List<ServiceId> ids) {
             this.type = null;
             this.algorithm = null;
             this.ids = ids;
@@ -562,7 +562,7 @@ public final class ProviderList {
          * Return a list of all preferred entries that match the passed
          * ServiceList.
          */
-        ArrayList<PreferredEntry> getAll(ServiceList s) {
+        ArrayList<PreferredEntry> getAll(ServiceIterator s) {
             if (s.ids == null) {
                 return getAll(s.type, s.algorithm);
 
