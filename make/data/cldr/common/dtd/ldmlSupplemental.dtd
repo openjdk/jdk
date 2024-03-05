@@ -394,13 +394,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
     <!--@MATCH:set/regex/[a-z]+[0-9]*-->
     <!--@VALUE-->
 
-
 <!ELEMENT unitPrefixes ( unitPrefix* ) >
 
 <!ELEMENT unitPrefix EMPTY >
-<!--		<unitPrefix type='quecto' symbol='q' power10='-30'>
-		<unitPrefix type='kibi' symbol='Ki' power2='10'>
--->
+    <!-- <unitPrefix type='quecto' symbol='q' power10='-30'>
+		<unitPrefix type='kibi' symbol='Ki' power2='10'> -->
 <!ATTLIST unitPrefix type NMTOKEN #REQUIRED >
     <!--@MATCH:regex/[A-Za-z]{3,6}-->
 <!ATTLIST unitPrefix symbol NMTOKEN #REQUIRED >
@@ -940,12 +938,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 <!-- # Parent locales -->
 
 <!ELEMENT parentLocales ( parentLocale* ) >
-<!ATTLIST parentLocales component NMTOKEN #IMPLIED >
-    <!--@MATCH:literal/segmentations, collations-->
+<!ATTLIST parentLocales component NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/segmentations, collations, plurals, grammaticalFeatures-->
 
 <!ELEMENT parentLocale EMPTY >
 <!ATTLIST parentLocale parent NMTOKEN #REQUIRED >
     <!--@MATCH:validity/locale-->
+<!ATTLIST parentLocale localeRules NMTOKENS #IMPLIED >
+    <!--@MATCH:set/literal/nonlikelyScript-->
+    <!--@VALUE-->
 <!ATTLIST parentLocale locales NMTOKENS #REQUIRED >
     <!--@MATCH:set/validity/locale-->
     <!--@VALUE-->

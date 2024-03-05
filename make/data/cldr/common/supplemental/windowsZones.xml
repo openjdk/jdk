@@ -537,7 +537,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC+05:00) Ashgabat, Tashkent -->
 			<mapZone other="West Asia Standard Time" territory="001" type="Asia/Tashkent"/>
 			<mapZone other="West Asia Standard Time" territory="AQ" type="Antarctica/Mawson"/>
-			<mapZone other="West Asia Standard Time" territory="KZ" type="Asia/Oral Asia/Aqtau Asia/Aqtobe Asia/Atyrau"/>
+			<!-- Microsoft may create a new zone dedicated for Almaty and Qostanay. -->
+			<mapZone other="West Asia Standard Time" territory="KZ" type="Asia/Oral Asia/Almaty Asia/Aqtau Asia/Aqtobe Asia/Atyrau Asia/Qostanay"/>
 			<mapZone other="West Asia Standard Time" territory="MV" type="Indian/Maldives"/>
 			<mapZone other="West Asia Standard Time" territory="TF" type="Indian/Kerguelen"/>
 			<mapZone other="West Asia Standard Time" territory="TJ" type="Asia/Dushanbe"/>
@@ -569,13 +570,12 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="Nepal Standard Time" territory="001" type="Asia/Katmandu"/>
 			<mapZone other="Nepal Standard Time" territory="NP" type="Asia/Katmandu"/>
 
-			<!-- (UTC+06:00) Astana -->
-			<mapZone other="Central Asia Standard Time" territory="001" type="Asia/Almaty"/>
+			<!-- (UTC+06:00) Astana --> <!-- Microsoft probably keeps Central Asia Standard Time, but change Astana to something else. -->
+			<mapZone other="Central Asia Standard Time" territory="001" type="Asia/Bishkek"/>
 			<mapZone other="Central Asia Standard Time" territory="AQ" type="Antarctica/Vostok"/>
 			<mapZone other="Central Asia Standard Time" territory="CN" type="Asia/Urumqi"/>
 			<mapZone other="Central Asia Standard Time" territory="IO" type="Indian/Chagos"/>
 			<mapZone other="Central Asia Standard Time" territory="KG" type="Asia/Bishkek"/>
-			<mapZone other="Central Asia Standard Time" territory="KZ" type="Asia/Almaty Asia/Qostanay"/>
 			<mapZone other="Central Asia Standard Time" territory="ZZ" type="Etc/GMT-6"/>
 
 			<!-- (UTC+06:00) Dhaka -->

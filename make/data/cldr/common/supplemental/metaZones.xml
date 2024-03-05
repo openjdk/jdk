@@ -802,7 +802,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 			</timezone>
 			<timezone type="Asia/Almaty">
 				<usesMetazone to="2004-10-30 20:00" mzone="Almaty"/>
-				<usesMetazone from="2004-10-30 20:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 20:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan_Western"/>
 			</timezone>
 			<timezone type="Asia/Amman">
 				<usesMetazone to="2022-10-27 22:00" mzone="Europe_Eastern"/>
@@ -1011,7 +1012,8 @@ For terms of use, see http://www.unicode.org/copyright.html
 				<usesMetazone from="1972-05-31 20:00" mzone="Arabian"/>
 			</timezone>
 			<timezone type="Asia/Qostanay">
-				<usesMetazone from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone to="2024-02-29 18:00" from="2004-10-30 21:00" mzone="Kazakhstan_Eastern"/>
+				<usesMetazone from="2024-02-29 18:00" mzone="Kazakhstan_Western"/>
 			</timezone>
 			<timezone type="Asia/Qyzylorda">
 				<usesMetazone to="1991-12-15 19:00" mzone="Kizilorda"/>
