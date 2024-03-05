@@ -168,9 +168,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {}
-
   // Generations may keep statistics about collection. This method
   // updates those statistics. current_generation is the generation
   // that was most recently collected. This allows the generation to
