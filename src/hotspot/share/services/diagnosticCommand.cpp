@@ -1246,7 +1246,8 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
   } else if (strcmp("find", _subcommand.value()) == 0) {
       find();
   } else {
-    output()->print_cr("Unknown sub-command.");
+    output()->print_cr("VM.debug: unknown sub-command.");
+    output()->print_cr("%s", description());
   }
 }
 
