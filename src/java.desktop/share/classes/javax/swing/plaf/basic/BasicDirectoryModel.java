@@ -278,8 +278,6 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private final File currentDirectory;
         private final Thread loadThread;
 
-        private DoChangeContents runnable;
-
         private FilesLoader(File currentDirectory, int fid) {
             this.currentDirectory = currentDirectory;
             this.fid = fid;
@@ -338,7 +336,7 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
 
             // To avoid loads of synchronizations with Invoker and improve performance we
             // execute the whole block on the COM thread
-            runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
+            DoChangeContents runnable = ShellFolder.invoke(new Callable<DoChangeContents>() {
                 public DoChangeContents call() {
                     synchronized (fileCache) {
                         int newSize = newFileCache.size();
