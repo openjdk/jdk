@@ -29,9 +29,7 @@
 #include "gc/shared/referenceProcessorPhaseTimes.hpp"
 #include "gc/shared/weakProcessorTimes.hpp"
 #include "logging/logLevel.hpp"
-#include "logging/log.hpp"
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/enumIterator.hpp"
 #include "utilities/macros.hpp"
 

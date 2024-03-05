@@ -783,9 +783,13 @@ double G1Policy::logged_cards_processing_time() const {
   // counts are zero, which happens especially during early GCs.  So ascribe
   // all of the time to the logged cards unless there are more total cards.
   if (logged_dirty_cards >= scan_heap_roots_cards) {
-    return all_cards_processing_time + average_time_ms(G1GCPhaseTimes::MergeLB) + phase_times()->cur_distribute_log_buffers_time_ms();
+    return all_cards_processing_time +
+           average_time_ms(G1GCPhaseTimes::MergeLB) +
+           phase_times()->cur_distribute_log_buffers_time_ms();
   }
-  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) + average_time_ms(G1GCPhaseTimes::MergeLB) + phase_times()->cur_distribute_log_buffers_time_ms();
+  return (all_cards_processing_time * logged_dirty_cards / scan_heap_roots_cards) +
+         average_time_ms(G1GCPhaseTimes::MergeLB) +
+         phase_times()->cur_distribute_log_buffers_time_ms();
 }
 
 // Anything below that is considered to be zero
