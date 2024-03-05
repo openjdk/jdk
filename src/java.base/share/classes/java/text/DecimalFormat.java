@@ -3357,7 +3357,6 @@ public class DecimalFormat extends NumberFormat {
                 negativeSuffix.equals(positiveSuffix))
                 || (negSuffixPattern != null &&
                 negSuffixPattern.equals(posSuffixPattern))) {
-            // Fix this with null safe comparisons
             if ((negPrefixPattern != null && posPrefixPattern != null &&
                     negPrefixPattern.equals("'-" + posPrefixPattern)) ||
                     (negPrefixPattern == posPrefixPattern && // n == p == null
@@ -3735,7 +3734,7 @@ public class DecimalFormat extends NumberFormat {
             setMinimumIntegerDigits(0);
             setMaximumIntegerDigits(MAXIMUM_INTEGER_DIGITS);
             setMinimumFractionDigits(0);
-            // As maxFracDigittos are fully displayed unlike maxIntDigits
+            // As maxFracDigits are fully displayed unlike maxIntDigits
             // Prevent OOME by setting to a much more reasonable value.
             setMaximumFractionDigits(DOUBLE_FRACTION_DIGITS);
         }
