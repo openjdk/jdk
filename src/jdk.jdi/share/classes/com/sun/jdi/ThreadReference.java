@@ -311,7 +311,7 @@ public interface ThreadReference extends ObjectReference {
      * The thread can be waiting for a monitor through entry into a
      * synchronized method, the synchronized statement, or
      * {@link Object#wait} waiting to re-enter the monitor
-     * after being notified, interrupted, or timeout.
+     * after being notified, interrupted, or timed-out.
      * <p>
      * Not all target virtual machines support this operation.
      * Use {@link VirtualMachine#canGetCurrentContendedMonitor()}
