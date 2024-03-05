@@ -34,9 +34,12 @@
 
 #include "unittest.hpp"
 
+static bool _success;
+static size_t _assertion_failures;
 
 class ShenandoahSimpleBitMapTest: public ::testing::Test {
 protected:
+
   const ssize_t SMALL_BITMAP_SIZE =  512;
   const ssize_t LARGE_BITMAP_SIZE = 4096;
 
@@ -49,14 +52,18 @@ protected:
   }
 };
 
+#define BitMapAssertEqual(a, b)  ASSERT_EQ((a), (b)); if ((a) != (b)) { _assertion_failures++; }
+
 class BasicShenandoahSimpleBitMapTest: public ShenandoahSimpleBitMapTest {
 protected:
 
   // set_bits[] is an array of indexes holding bits that are supposed to be set, in increasing order.
   void verifyBitMapState(ShenandoahSimpleBitMap& bm, ssize_t size, ssize_t set_bits[], ssize_t num_set_bits) {
+    _success = false;
+    _assertion_failures = 0;
 
     // Verify number of bits
-    ASSERT_EQ(bm.number_of_bits(), size);
+    BitMapAssertEqual(bm.number_of_bits(), size);
 
     ssize_t set_bit_index = 0;
     // Check that is_set(idx) for every possible idx
@@ -69,7 +76,7 @@ protected:
           set_bit_index++;
         }
       }
-      ASSERT_EQ(is_set, intended_value);
+      BitMapAssertEqual(is_set, intended_value);
     }
 
     // Check that bits_at(array_idx) matches intended value for every valid array_idx value
@@ -88,7 +95,7 @@ protected:
         }
         size_t bit_mask = ((size_t) 0x01) << b;
         bool is_set = (bits & bit_mask) != 0;
-        ASSERT_EQ(is_set, intended_value);
+        BitMapAssertEqual(is_set, intended_value);
       }
     }
 
@@ -97,11 +104,11 @@ protected:
     for (ssize_t i = 0; i < num_set_bits; i++) {
       ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_next_set_bit(probe_point);
-      ASSERT_EQ(probe_point, next_expected_bit);
+      BitMapAssertEqual(probe_point, next_expected_bit);
       probe_point++;            // Prepare to look beyond the most recent bit.
     }
     probe_point = bm.find_next_set_bit(probe_point);
-    ASSERT_EQ(probe_point, size); // Verify that last failed search returns sentinel value: num bits in bit map
+    BitMapAssertEqual(probe_point, size); // Verify that last failed search returns sentinel value: num bits in bit map
 
     // Confirm that find_next_set_bit() with a bounded search space works correctly
     // Limit this search to the first 3/4 of the full bit map
@@ -112,17 +119,17 @@ protected:
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
       if (next_expected_bit >= boundary_idx) {
         // Verify that last failed search returns sentinel value: boundary_idx
-        ASSERT_EQ(probe_point, boundary_idx);
+        BitMapAssertEqual(probe_point, boundary_idx);
         break;
       } else {
-        ASSERT_EQ(probe_point, next_expected_bit);
+        BitMapAssertEqual(probe_point, next_expected_bit);
         probe_point++;            // Prepare to look beyond the most recent bit.
       }
     }
     if (probe_point < boundary_idx) {
       // In case there are no set bits in the last 1/4 of bit map, confirm that last failed search returns sentinel: boundary_idx
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
-      ASSERT_EQ(probe_point, boundary_idx);
+      BitMapAssertEqual(probe_point, boundary_idx);
     }
 
     // Make sure find_prev_set_bit() works correctly
@@ -130,11 +137,11 @@ protected:
     for (ssize_t i = num_set_bits - 1; i >= 0; i--) {
       ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_prev_set_bit(probe_point);
-      ASSERT_EQ(probe_point, next_expected_bit);
+      BitMapAssertEqual(probe_point, next_expected_bit);
       probe_point--;            // Prepare to look before the most recent bit.
     }
     probe_point = bm.find_prev_set_bit(probe_point);
-    ASSERT_EQ(probe_point, -1); // Verify that last failed search returns sentinel value: -1
+    BitMapAssertEqual(probe_point, (ssize_t) -1); // Verify that last failed search returns sentinel value: -1
 
     // Confirm that find_prev_set_bit() with a bounded search space works correctly
     // Limit this search to the last 3/4 of the full bit map
@@ -145,17 +152,17 @@ protected:
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
       if (next_expected_bit <= boundary_idx) {
         // Verify that last failed search returns sentinel value: boundary_idx
-        ASSERT_EQ(probe_point, boundary_idx);
+        BitMapAssertEqual(probe_point, boundary_idx);
         break;
       } else {
-        ASSERT_EQ(probe_point, next_expected_bit);
+        BitMapAssertEqual(probe_point, next_expected_bit);
         probe_point--;            // Prepare to look beyond the most recent bit.
       }
     }
     if (probe_point >= boundary_idx) {
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
         // Verify that last failed search returns sentinel value: boundary_idx
-      ASSERT_EQ(probe_point, boundary_idx);
+      BitMapAssertEqual(probe_point, boundary_idx);
     }
 
     // What's the longest cluster of consecutive bits
@@ -196,7 +203,7 @@ protected:
         if (cluster_found) {
           ssize_t next_expected_cluster = bit_idx;
           probe_point = bm.find_next_consecutive_bits(cluster_size, probe_point);
-          ASSERT_EQ(next_expected_cluster, probe_point);
+          BitMapAssertEqual(next_expected_cluster, probe_point);
           probe_point++;
           bit_idx++;
         } else {
@@ -205,7 +212,7 @@ protected:
       }
       // Confirm that the last request, which fails to find a cluster, returns sentinel value: num_bits
       probe_point = bm.find_next_consecutive_bits(cluster_size, probe_point);
-      ASSERT_EQ(probe_point, size);
+      BitMapAssertEqual(probe_point, size);
 
       // Repeat the above experiment, using 3/4 size as the search boundary_idx
       bit_idx = 0;
@@ -225,7 +232,7 @@ protected:
         if (cluster_found) {
           ssize_t next_expected_cluster = set_bits[bit_idx];
           probe_point = bm.find_next_consecutive_bits(cluster_size, probe_point, boundary_idx);
-          ASSERT_EQ(next_expected_cluster, probe_point);
+          BitMapAssertEqual(next_expected_cluster, probe_point);
           probe_point++;
           bit_idx++;
         } else {
@@ -234,7 +241,7 @@ protected:
       }
       // Confirm that the last request, which fails to find a cluster, returns sentinel value: boundary_idx
       probe_point = bm.find_prev_consecutive_bits(cluster_size, probe_point, boundary_idx);
-      ASSERT_EQ(probe_point, boundary_idx);
+      BitMapAssertEqual(probe_point, boundary_idx);
 
       // Verify that find_prev_consecutive_bits() works
       bit_idx = num_set_bits - 1;
@@ -253,7 +260,7 @@ protected:
         if (cluster_found) {
           ssize_t next_expected_cluster = set_bits[bit_idx];
           probe_point = bm.find_prev_consecutive_bits(cluster_size, probe_point);
-          ASSERT_EQ(next_expected_cluster, probe_point);
+          BitMapAssertEqual(next_expected_cluster, probe_point);
           probe_point--;
           bit_idx--;
         } else {
@@ -262,7 +269,7 @@ protected:
       }
       // Confirm that the last request, which fails to find a cluster, returns sentinel value: -1
       probe_point = bm.find_prev_consecutive_bits(cluster_size, probe_point);
-      ASSERT_EQ(probe_point, -1);
+      BitMapAssertEqual(probe_point, (ssize_t) -1);
 
       // Verify that find_prev_consecutive_bits() works with the search range bounded at 1/4 size
       bit_idx = num_set_bits - 1;
@@ -282,7 +289,7 @@ protected:
         if (cluster_found) {
           ssize_t next_expected_cluster = set_bits[bit_idx];
           probe_point = bm.find_prev_consecutive_bits(cluster_size, probe_point, boundary_idx);
-          ASSERT_EQ(next_expected_cluster, probe_point);
+          BitMapAssertEqual(next_expected_cluster, probe_point);
           probe_point--;
           bit_idx--;
         } else {
@@ -291,23 +298,23 @@ protected:
       }
       // Confirm that the last request, which fails to find a cluster, returns sentinel value: boundary_idx
       probe_point = bm.find_prev_consecutive_bits(cluster_size, probe_point, boundary_idx);
-      ASSERT_EQ(probe_point, boundary_idx);
+      BitMapAssertEqual(probe_point, boundary_idx);
     }
 
     // Confirm that find_next_consecutive_bits() works for each cluster sizes known not to have any matches
     probe_point = bm.find_next_consecutive_bits(longest_run + 1, 0);
-    ASSERT_EQ(probe_point, size);  // Confirm: failed search returns sentinel: size
+    BitMapAssertEqual(probe_point, size);  // Confirm: failed search returns sentinel: size
 
     probe_point = bm.find_prev_consecutive_bits(longest_run + 1, size);
-    ASSERT_EQ(probe_point, -1);    // Confirm: failed search returns sentinel: -1
+    BitMapAssertEqual(probe_point, (ssize_t) -1);    // Confirm: failed search returns sentinel: -1
 
     boundary_idx = 3 * size / 4;
     probe_point = bm.find_next_consecutive_bits(longest_run + 1, 0, boundary_idx);
-    ASSERT_EQ(probe_point, boundary_idx); // Confirm: failed search returns sentinel: boundary_idx
+    BitMapAssertEqual(probe_point, boundary_idx); // Confirm: failed search returns sentinel: boundary_idx
 
     boundary_idx = size / 4;
     probe_point = bm.find_prev_consecutive_bits(longest_run + 1, size, boundary_idx);
-    ASSERT_EQ(probe_point, -1);           // Confirm: failed search returns sentinel: -1
+    BitMapAssertEqual(probe_point, (ssize_t) -1);           // Confirm: failed search returns sentinel: -1
   }
 
 
@@ -388,8 +395,15 @@ protected:
     bm_small.clear_all();
     bm_large.clear_all();
 
+    verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_0, 0);
+    verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_0, 0);
+
+    _success = true;
   }
+
 };
 
 TEST(BasicShenandoahSimpleBitMapTest, minimum_test) {
+  ASSERT_EQ(_success, true);
+  ASSERT_EQ(_assertion_failures, (size_t) 0);
 }
