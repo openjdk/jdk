@@ -63,7 +63,7 @@ void ShenandoahRegulatorThread::regulate_young_and_old_cycles() {
     ShenandoahGenerationalControlThread::GCMode mode = _control_thread->gc_mode();
     if (mode == ShenandoahGenerationalControlThread::none) {
       if (should_start_metaspace_gc()) {
-        if (request_concurrent_gc(GLOBAL_GEN)) {
+        if (request_concurrent_gc(GLOBAL)) {
           log_info(gc)("Heuristics request for global (unload classes) accepted.");
         }
       } else {
@@ -134,7 +134,7 @@ bool ShenandoahRegulatorThread::start_young_cycle() {
 }
 
 bool ShenandoahRegulatorThread::start_global_cycle() {
-  return _global_heuristics->should_start_gc() && request_concurrent_gc(GLOBAL_GEN);
+  return _global_heuristics->should_start_gc() && request_concurrent_gc(GLOBAL);
 }
 
 bool ShenandoahRegulatorThread::request_concurrent_gc(ShenandoahGenerationType generation) {

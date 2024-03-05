@@ -157,8 +157,8 @@ static int encode_phase(ShenandoahHeap* heap) {
 
 static int get_generation_shift(ShenandoahGeneration* generation) {
   switch (generation->type()) {
-    case GLOBAL_NON_GEN:
-    case GLOBAL_GEN:
+    case NON_GEN:
+    case GLOBAL:
       return 0;
     case OLD:
       return 2;

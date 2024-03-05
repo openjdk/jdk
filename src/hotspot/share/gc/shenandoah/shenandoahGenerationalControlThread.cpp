@@ -51,7 +51,7 @@ ShenandoahGenerationalControlThread::ShenandoahGenerationalControlThread() :
   _control_lock(Mutex::nosafepoint - 2, "ShenandoahControlGC_lock", true),
   _regulator_lock(Mutex::nosafepoint - 2, "ShenandoahRegulatorGC_lock", true),
   _requested_gc_cause(GCCause::_no_gc),
-  _requested_generation(GLOBAL_GEN),
+  _requested_generation(GLOBAL),
   _degen_point(ShenandoahGC::_degenerated_outside_cycle),
   _degen_generation(nullptr),
   _mode(none) {
@@ -64,7 +64,7 @@ void ShenandoahGenerationalControlThread::run_service() {
   ShenandoahHeap* const heap = ShenandoahHeap::heap();
 
   const GCMode default_mode = concurrent_normal;
-  ShenandoahGenerationType generation = GLOBAL_GEN;
+  ShenandoahGenerationType generation = GLOBAL;
 
   double last_shrink_time = os::elapsedTime();
   uint age_period = 0;
@@ -137,11 +137,11 @@ void ShenandoahGenerationalControlThread::run_service() {
 
         heuristics->record_allocation_failure_gc();
         policy->record_alloc_failure_to_full();
-        generation = GLOBAL_GEN;
+        generation = GLOBAL;
         set_gc_mode(stw_full);
       }
     } else if (is_gc_requested) {
-      generation = GLOBAL_GEN;
+      generation = GLOBAL;
       log_info(gc)("Trigger: GC request (%s)", GCCause::to_string(cause));
       global_heuristics->record_requested_gc();
 
@@ -174,7 +174,7 @@ void ShenandoahGenerationalControlThread::run_service() {
           set_gc_mode(servicing_old);
         }
 
-        if (generation == GLOBAL_GEN) {
+        if (generation == GLOBAL) {
           heap->set_unload_classes(global_heuristics->should_unload_classes());
         } else {
           heap->set_unload_classes(false);
@@ -199,7 +199,7 @@ void ShenandoahGenerationalControlThread::run_service() {
     if (gc_requested) {
       // Blow away all soft references on this cycle, if handling allocation failure,
       // either implicit or explicit GC request, or we are requested to do so unconditionally.
-      if (generation == GLOBAL_GEN && (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs)) {
+      if (generation == GLOBAL && (alloc_failure_pending || is_gc_requested || ShenandoahAlwaysClearSoftRefs)) {
         heap->soft_ref_policy()->set_should_clear_all_soft_refs(true);
       }
 
@@ -423,7 +423,7 @@ void ShenandoahGenerationalControlThread::service_concurrent_normal_cycle(Shenan
       service_concurrent_old_cycle(heap, cause);
       break;
     }
-    case GLOBAL_GEN: {
+    case GLOBAL: {
       log_info(gc, ergo)("Start GC cycle (GLOBAL)");
       service_concurrent_cycle(heap->global_generation(), cause, false);
       break;

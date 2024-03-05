@@ -28,6 +28,8 @@
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shenandoah/shenandoahGC.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
+#include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPadding.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
 

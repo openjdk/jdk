@@ -504,8 +504,8 @@ size_t ShenandoahHeap::max_size_for(ShenandoahGeneration* generation) const {
       return _generation_sizer.max_young_size();
     case OLD:
       return max_capacity() - _generation_sizer.min_young_size();
-    case GLOBAL_GEN:
-    case GLOBAL_NON_GEN:
+    case GLOBAL:
+    case NON_GEN:
       return max_capacity();
     default:
       ShouldNotReachHere();
@@ -519,8 +519,8 @@ size_t ShenandoahHeap::min_size_for(ShenandoahGeneration* generation) const {
       return _generation_sizer.min_young_size();
     case OLD:
       return max_capacity() - _generation_sizer.max_young_size();
-    case GLOBAL_GEN:
-    case GLOBAL_NON_GEN:
+    case GLOBAL:
+    case NON_GEN:
       return min_capacity();
     default:
       ShouldNotReachHere();
@@ -3460,12 +3460,12 @@ void ShenandoahGenerationRegionClosure<OLD>::heap_region_do(ShenandoahHeapRegion
 }
 
 template<>
-void ShenandoahGenerationRegionClosure<GLOBAL_GEN>::heap_region_do(ShenandoahHeapRegion* region) {
+void ShenandoahGenerationRegionClosure<GLOBAL>::heap_region_do(ShenandoahHeapRegion* region) {
   _cl->heap_region_do(region);
 }
 
 template<>
-void ShenandoahGenerationRegionClosure<GLOBAL_NON_GEN>::heap_region_do(ShenandoahHeapRegion* region) {
+void ShenandoahGenerationRegionClosure<NON_GEN>::heap_region_do(ShenandoahHeapRegion* region) {
   _cl->heap_region_do(region);
 }
 

@@ -31,6 +31,7 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
@@ -147,13 +148,13 @@ void ShenandoahSTWMark::mark() {
 
 void ShenandoahSTWMark::mark_roots(uint worker_id) {
   switch (_generation->type()) {
-    case GLOBAL_NON_GEN: {
-      ShenandoahInitMarkRootsClosure<GLOBAL_NON_GEN> init_mark(task_queues()->queue(worker_id));
+    case NON_GEN: {
+      ShenandoahInitMarkRootsClosure<NON_GEN> init_mark(task_queues()->queue(worker_id));
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
-    case GLOBAL_GEN: {
-      ShenandoahInitMarkRootsClosure<GLOBAL_GEN> init_mark(task_queues()->queue(worker_id));
+    case GLOBAL: {
+      ShenandoahInitMarkRootsClosure<GLOBAL> init_mark(task_queues()->queue(worker_id));
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
@@ -162,6 +163,7 @@ void ShenandoahSTWMark::mark_roots(uint worker_id) {
       _root_scanner.roots_do(&init_mark, worker_id);
       break;
     }
+    case OLD:
     default:
       ShouldNotReachHere();
   }
@@ -173,8 +175,7 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
   ShenandoahReferenceProcessor* rp = ShenandoahHeap::heap()->active_generation()->ref_processor();
   StringDedup::Requests requests;
 
-  mark_loop(_generation->type(),
-            worker_id, &_terminator, rp,
-            false /* not cancellable */,
+  mark_loop(worker_id, &_terminator, rp,
+            _generation->type(), false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }

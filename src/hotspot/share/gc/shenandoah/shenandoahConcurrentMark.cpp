@@ -66,8 +66,7 @@ public:
     ShenandoahReferenceProcessor* rp = heap->active_generation()->ref_processor();
     assert(rp != nullptr, "need reference processor");
     StringDedup::Requests requests;
-    _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   true /*cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, true /*cancellable*/,
                    ShenandoahStringDedup::is_enabled() ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
   }
@@ -129,8 +128,7 @@ public:
                                                ShenandoahIUBarrier ? &mark_cl : nullptr);
       Threads::possibly_parallel_threads_do(true /* is_par */, &tc);
     }
-    _cm->mark_loop(GENERATION, worker_id, _terminator, rp,
-                   false /*not cancellable*/,
+    _cm->mark_loop(worker_id, _terminator, rp, GENERATION, false /*not cancellable*/,
                    _dedup_string ? ENQUEUE_DEDUP : NO_DEDUP,
                    &requests);
     assert(_cm->task_queues()->is_empty(), "Should be empty");
@@ -197,17 +195,17 @@ void ShenandoahConcurrentMark::mark_concurrent_roots() {
       workers->run_task(&task);
       break;
     }
-    case GLOBAL_GEN: {
+    case GLOBAL: {
       assert(old_task_queues() == nullptr, "Global mark should not have old gen mark queues");
-      ShenandoahMarkConcurrentRootsTask<GLOBAL_GEN> task(task_queues(), nullptr, rp,
-                                                         ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      ShenandoahMarkConcurrentRootsTask<GLOBAL> task(task_queues(), nullptr, rp,
+                                                     ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;
     }
-    case GLOBAL_NON_GEN: {
+    case NON_GEN: {
       assert(old_task_queues() == nullptr, "Non-generational mark should not have old gen mark queues");
-      ShenandoahMarkConcurrentRootsTask<GLOBAL_NON_GEN> task(task_queues(), nullptr, rp,
-                                                         ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
+      ShenandoahMarkConcurrentRootsTask<NON_GEN> task(task_queues(), nullptr, rp,
+                                                      ShenandoahPhaseTimings::conc_mark_roots, workers->active_workers());
       workers->run_task(&task);
       break;
     }
@@ -259,18 +257,18 @@ void ShenandoahConcurrentMark::concurrent_mark() {
         workers->run_task(&task);
         break;
       }
-      case GLOBAL_GEN: {
+      case GLOBAL: {
         // Clear any old/partial local census data before the start of marking.
         heap->age_census()->reset_local();
         assert(heap->age_census()->is_clear_local(), "Error");
         TaskTerminator terminator(nworkers, task_queues());
-        ShenandoahConcurrentMarkingTask<GLOBAL_GEN> task(this, &terminator);
+        ShenandoahConcurrentMarkingTask<GLOBAL> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
-      case GLOBAL_NON_GEN: {
+      case NON_GEN: {
         TaskTerminator terminator(nworkers, task_queues());
-        ShenandoahConcurrentMarkingTask<GLOBAL_NON_GEN> task(this, &terminator);
+        ShenandoahConcurrentMarkingTask<NON_GEN> task(this, &terminator);
         workers->run_task(&task);
         break;
       }
@@ -336,13 +334,13 @@ void ShenandoahConcurrentMark::finish_mark_work() {
       heap->workers()->run_task(&task);
       break;
     }
-    case GLOBAL_GEN:{
-      ShenandoahFinalMarkingTask<GLOBAL_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+    case GLOBAL:{
+      ShenandoahFinalMarkingTask<GLOBAL> task(this, &terminator, ShenandoahStringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }
-    case GLOBAL_NON_GEN:{
-      ShenandoahFinalMarkingTask<GLOBAL_NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
+    case NON_GEN:{
+      ShenandoahFinalMarkingTask<NON_GEN> task(this, &terminator, ShenandoahStringDedup::is_enabled());
       heap->workers()->run_task(&task);
       break;
     }

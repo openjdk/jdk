@@ -29,6 +29,7 @@
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskTerminator.hpp"
+#include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
@@ -105,11 +106,11 @@ private:
   inline void dedup_string(oop obj, StringDedup::Requests* const req);
 protected:
   template<bool CANCELLABLE, StringDedupMode STRING_DEDUP>
-  void mark_loop(ShenandoahGenerationType generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 StringDedup::Requests* const req);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+                 ShenandoahGenerationType generation, StringDedup::Requests* const req);
 
-  void mark_loop(ShenandoahGenerationType generation, uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
-                 bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
+  void mark_loop(uint worker_id, TaskTerminator* terminator, ShenandoahReferenceProcessor *rp,
+                 ShenandoahGenerationType generation, bool cancellable, StringDedupMode dedup_mode, StringDedup::Requests* const req);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHMARK_HPP

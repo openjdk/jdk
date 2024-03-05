@@ -33,7 +33,7 @@
 class ShenandoahGlobalGeneration : public ShenandoahGeneration {
 public:
   ShenandoahGlobalGeneration(bool generational, uint max_queues, size_t max_capacity, size_t soft_max_capacity)
-  : ShenandoahGeneration(generational ? GLOBAL_GEN : GLOBAL_NON_GEN, max_queues, max_capacity, soft_max_capacity) { }
+  : ShenandoahGeneration(generational ? GLOBAL : NON_GEN, max_queues, max_capacity, soft_max_capacity) { }
 
 public:
   const char* name() const override;
