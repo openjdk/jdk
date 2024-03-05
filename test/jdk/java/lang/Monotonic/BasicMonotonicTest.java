@@ -22,8 +22,8 @@
  */
 
 /* @test
- * @summary Basic test for Monotonic.
- * @run junit Basic
+ * @summary Basic tests for Monotonic implementations
+ * @run junit BasicMonotonicTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -35,19 +35,19 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-final class Basic {
+final class BasicMonotonicTest {
 
     @Test
     void testIntegerOld() {
         Monotonic<Integer> m = Monotonic.of(Integer.class);
-        assertFalse(m.isBound());
+        assertFalse(m.isPresent());
         assertThrows(NoSuchElementException.class, m::get);
 
-        m.bind(42);
-        assertTrue(m.isBound());
+        m.put(42);
+        assertTrue(m.isPresent());
         assertEquals(42, m.get());
-        assertThrows(IllegalStateException.class, () -> m.bind(13));
-        assertTrue(m.isBound());
+        assertThrows(IllegalStateException.class, () -> m.put(13));
+        assertTrue(m.isPresent());
         assertEquals(42, m.get());
 
         MethodHandle handle = m.getter();
@@ -65,19 +65,19 @@ final class Basic {
     @Test
     void testIntOld() {
         Monotonic<Integer> m = Monotonic.of(int.class);
-        assertFalse(m.isBound());
+        assertFalse(m.isPresent());
         assertThrows(NoSuchElementException.class, m::get);
 
-        m.bind(42);
-        assertTrue(m.isBound());
+        m.put(42);
+        assertTrue(m.isPresent());
         assertEquals(42, m.get());
-        assertThrows(IllegalStateException.class, () -> m.bind(13));
-        assertTrue(m.isBound());
+        assertThrows(IllegalStateException.class, () -> m.put(13));
+        assertTrue(m.isPresent());
         assertEquals(42, m.get());
         Supplier<Integer> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfAbsent(throwingSupplier));
 
         MethodHandle handle = m.getter();
         assertEquals(int.class, handle.type().returnType());
@@ -106,11 +106,11 @@ final class Basic {
     void testInt() {
         testMonotonic(int.class, 42, 13, monotonic -> (int) monotonic.getter().invokeExact(monotonic));
     }
-/*
+
     @Test
     void testLong() {
         testMonotonic(long.class, 42L, 13L, monotonic -> (long) monotonic.getter().invokeExact(monotonic));
-    }*/
+    }
 
     interface MethodHandleInvoker<T> {
         T apply(Monotonic<T> monotonic) throws Throwable;
@@ -123,15 +123,15 @@ final class Basic {
 
         // unbound
         Monotonic<T> m = Monotonic.of(type);
-        assertFalse(m.isBound());
+        assertFalse(m.isPresent());
         assertThrows(NoSuchElementException.class, m::get);
 
         // bind()
-        m.bind(first);
-        assertTrue(m.isBound());
+        m.put(first);
+        assertTrue(m.isPresent());
         assertEquals(first, m.get());
-        assertThrows(IllegalStateException.class, () -> m.bind(second));
-        assertTrue(m.isBound());
+        assertThrows(IllegalStateException.class, () -> m.put(second));
+        assertTrue(m.isPresent());
         assertEquals(first, m.get());
 
         // getter()
@@ -151,21 +151,21 @@ final class Basic {
             fail(t);
         }
 
-        // computeIfUnbound()
+        // computeIfAbsent()
         Supplier<T> throwingSupplier = () -> {
             throw new UnsupportedOperationException();
         };
-        assertDoesNotThrow(() -> m.computeIfUnbound(throwingSupplier));
+        assertDoesNotThrow(() -> m.computeIfAbsent(throwingSupplier));
 
         var m2 = Monotonic.of(type);
-        m2.computeIfUnbound(() -> first);
+        m2.computeIfAbsent(() -> first);
         assertEquals(first, m2.get());
 
 
-        // asMemoized()
+        // Memoized
         CountingSupplier<T> cSup = new CountingSupplier<>(() -> first);
-        var m3 = Monotonic.of(type);
-        Supplier<T> memoized = m3.asMemoized(cSup);
+        Monotonic<T> m3 = Monotonic.of(type);
+        Supplier<T> memoized = () -> m3.computeIfAbsent(cSup);
         assertEquals(first, memoized.get());
         // Make sure the original supplier is not invoked more than once
         assertEquals(first, memoized.get());

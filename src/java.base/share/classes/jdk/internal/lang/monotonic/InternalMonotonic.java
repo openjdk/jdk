@@ -68,12 +68,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public boolean isBound() {
+        public boolean isPresent() {
             return value != null || valueVolatile() != null;
         }
 
         @Override
-        public void bind(V value) {
+        public void put(V value) {
             Objects.requireNonNull(value);
             freeze();
             if (caeValue(value) != null) {
@@ -82,7 +82,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V bindIfUnbound(V value) {
+        public V putIfAbsent(V value) {
             Objects.requireNonNull(value);
             freeze();
             V witness = caeValue(value);
@@ -90,13 +90,13 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V computeIfUnbound(Supplier<? extends V> supplier) {
+        public V computeIfAbsent(Supplier<? extends V> supplier) {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public V computeIfUnbound(MethodHandle supplier) {
+        public V computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
         }
 
@@ -127,8 +127,8 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     }
                     throw new NoSuchElementException(t);
                 }
-                freeze();
                 Objects.requireNonNull(v);
+                freeze();
                 witness = caeValue(v);
             }
             if (witness == null) {
@@ -144,7 +144,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 static {
                     try {
                         HANDLE = MethodHandles.lookup()
-                                .findGetter(ReferenceMonotonic.class, "value", Object.class)
+                                .findVirtual(ReferenceMonotonic.class, "get", MethodType.methodType(Object.class))
                                 .asType(MethodType.methodType(Object.class, Monotonic.class));;
                     } catch (ReflectiveOperationException e) {
                         throw new ExceptionInInitializerError(e);
@@ -199,7 +199,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public synchronized void bind(V value) {
+        public synchronized void put(V value) {
             Objects.requireNonNull(value);
             freeze();
             // Prevent several threads from succeeding in binding null values
@@ -209,7 +209,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V bindIfUnbound(V value) {
+        public V putIfAbsent(V value) {
             Objects.requireNonNull(value);
             freeze();
             V witness = caeValue(value);
@@ -217,13 +217,13 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public V computeIfUnbound(Supplier<? extends V> supplier) {
+        public V computeIfAbsent(Supplier<? extends V> supplier) {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public V computeIfUnbound(MethodHandle supplier) {
+        public V computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
         }
 
@@ -276,7 +276,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 static {
                     try {
                         HANDLE = MethodHandles.lookup()
-                                .findGetter(NullableReferenceMonotonic.class, "value", Object.class)
+                                .findVirtual(NullableReferenceMonotonic.class, "get", MethodType.methodType(Object.class))
                                 .asType(MethodType.methodType(Object.class, Monotonic.class));;
                     } catch (ReflectiveOperationException e) {
                         throw new ExceptionInInitializerError(e);
@@ -307,6 +307,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @Override
         public Integer get() {
+            return get0();
+        }
+
+        private int get0() {
             // Optimistically try plain semantics first
             int v = value;
             if (v != 0) {
@@ -327,12 +331,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Integer computeIfUnbound(Supplier<? extends Integer> supplier) {
+        public Integer computeIfAbsent(Supplier<? extends Integer> supplier) {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
         @Override
-        public Integer computeIfUnbound(MethodHandle supplier) {
+        public Integer computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (Integer) (Object)s.invokeExact());
         }
 
@@ -380,7 +384,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public void bind(Integer value) {
+        public void put(Integer value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             // Prevent several threads from succeeding in binding zero values
@@ -390,7 +394,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Integer bindIfUnbound(Integer value) {
+        public Integer putIfAbsent(Integer value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             int witness = caeValue(value);
@@ -404,7 +408,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 static {
                     try {
                         HANDLE = MethodHandles.lookup()
-                                .findGetter(IntMonotonic.class, "value", int.class)
+                                .findVirtual(IntMonotonic.class, "get0", MethodType.methodType(int.class))
                                 .asType(MethodType.methodType(int.class, Monotonic.class));
                     } catch (ReflectiveOperationException e) {
                         throw new ExceptionInInitializerError(e);
@@ -433,6 +437,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @Override
         public Long get() {
+            return get0();
+        }
+
+        private long get0() {
             // Optimistically try plain semantics first
             long v = value;
             if (v != 0) {
@@ -453,12 +461,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Long computeIfUnbound(Supplier<? extends Long> supplier) {
+        public Long computeIfAbsent(Supplier<? extends Long> supplier) {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
         @Override
-        public Long computeIfUnbound(MethodHandle supplier) {
+        public Long computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (Long) (Object)s.invokeExact());
         }
 
@@ -506,7 +514,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public void bind(Long value) {
+        public void put(Long value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             // Prevent several threads from succeeding in binding zero values
@@ -516,7 +524,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         @Override
-        public Long bindIfUnbound(Long value) {
+        public Long putIfAbsent(Long value) {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             long witness = caeValue(value);
@@ -530,7 +538,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 static {
                     try {
                         HANDLE = MethodHandles.lookup()
-                                .findGetter(LongMonotonic.class, "value", long.class)
+                                .findVirtual(LongMonotonic.class, "get0", MethodType.methodType(long.class))
                                 .asType(MethodType.methodType(long.class, Monotonic.class));
                     } catch (ReflectiveOperationException e) {
                         throw new ExceptionInInitializerError(e);
@@ -562,14 +570,14 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         boolean bound;
 
         @Override
-        public boolean isBound() {
+        public boolean isPresent() {
             return bound || boundVolatile();
         }
 
         @Override
         public final String toString() {
             return "Monotonic" +
-                    (isBound()
+                    (isPresent()
                             ? "[" + get() + "]"
                             : ".unbound");
         }
@@ -586,7 +594,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
     static String toString(Monotonic<?> monotonic) {
         return "Monotonic" +
-                (monotonic.isBound()
+                (monotonic.isPresent()
                         ? "[" + monotonic.get() + "]"
                         : ".unbound");
     }
@@ -600,10 +608,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
     }
 
     @SuppressWarnings("unchecked")
-    static <V> Monotonic<V> of(Class<V> backingType) {
+    static <V extends R, R> Monotonic<V> of(Class<R> backingType) {
         return (Monotonic<V>) switch (backingType) {
-            case Class<V> c when c.equals(int.class) -> new IntMonotonic();
-            case Class<V> c when c.equals(long.class) -> new LongMonotonic();
+            case Class<R> c when c.equals(int.class) -> new IntMonotonic();
+            case Class<R> c when c.equals(long.class) -> new LongMonotonic();
             default -> new ReferenceMonotonic<>();
         };
     }
@@ -626,15 +634,14 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         return new NullableReferenceMonotonic<>();
     }
 
-    static <V> MonotonicList<V> ofList(Class<V> backingElementType,
-                                       int size) {
+    static <V> List<V> ofList(Class<V> backingElementType,
+                              int size) {
         Objects.requireNonNull(backingElementType);
-        return new InternalMonotonicList.MonotonicListImpl<>(backingElementType, size);
+        return new InternalMonotonicList.ReferenceList<>(backingElementType, size);
     }
 
-    static <K, V> MonotonicMap<K, V> ofMap(Class<V> backingValueType,
-                                           Collection<? extends K> keys) {
-
-        throw new UnsupportedOperationException();
+    static <K, V> Map<K, V> ofMap(Class<V> backingValueType,
+                                  Collection<? extends K> keys) {
+        return new InternalMonotonicMap.MonotonicMapImpl<>(backingValueType, keys.toArray());
     }
 }

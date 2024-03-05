@@ -7,13 +7,17 @@ import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
+/**
+ * Variant 1b
+ */
 public final class Monotonics1b {
 
     private Monotonics1b() {}
 
+/*
     public static <T> Supplier<T> asMemoized(Monotonic<T> monotonic,
                                              Supplier<T> supplier) {
-        return () -> monotonic.computeIfUnbound(supplier);
+        return () -> monotonic.computeIfAbsent(supplier);
     }
 
 
@@ -22,11 +26,11 @@ public final class Monotonics1b {
         return i -> {
             Monotonic<V> monotonic = monotonicList.get(i);
             // Prevent capturing if possible
-            if (monotonic.isBound()) {
+            if (monotonic.isPresent()) {
                 return monotonic.get();
             }
             Supplier<V> supplier = () -> mapper.apply(i); // Captures!
-            return monotonic.computeIfUnbound(supplier);
+            return monotonic.computeIfAbsent(supplier);
         };
     }
 
@@ -35,18 +39,18 @@ public final class Monotonics1b {
         return k -> {
             Monotonic<V> monotonic = monotonicList.get(k);
             // Prevent capturing if possible
-            if (monotonic.isBound()) {
+            if (monotonic.isPresent()) {
                 return monotonic.get();
             }
             Supplier<V> supplier = () -> mapper.apply(k); // Captures!
-            return monotonic.computeIfUnbound(supplier);
+            return monotonic.computeIfAbsent(supplier);
         };
     }
 
     public static void main(String[] args) {
         Monotonic<Integer> monotonicInt = Monotonic.of(int.class);
         Supplier<Integer> supplier = () -> 42;
-        Supplier<Integer> memoizedSupplier = () -> monotonicInt.computeIfUnbound(supplier);
+        Supplier<Integer> memoizedSupplier = () -> monotonicInt.computeIfAbsent(supplier);
         Supplier<Integer> memoizedSupplier2 = asMemoized(monotonicInt, () -> 42);
 
         List<Monotonic<Integer>> monotonicIntList = Monotonic.ofList(int.class, 10);
@@ -56,5 +60,6 @@ public final class Monotonics1b {
 
         Function<Integer, Integer> memoizedFunction = asMemoized(monotonicIntMap, k -> k);
     }
+*/
 
 }

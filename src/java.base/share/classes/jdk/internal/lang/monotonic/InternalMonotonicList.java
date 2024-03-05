@@ -27,8 +27,15 @@ package jdk.internal.lang.monotonic;
 
 import jdk.internal.vm.annotation.Stable;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.AbstractList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.NoSuchElementException;
+import java.util.Objects;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import static jdk.internal.lang.monotonic.InternalMonotonic.UNSAFE;
@@ -37,57 +44,141 @@ import static jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static jdk.internal.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE;
 
 public sealed interface InternalMonotonicList<V>
-        extends Monotonic.MonotonicList<V> {
+        extends Monotonic.List<V> {
 
-    final class MonotonicListImpl<V>
-            extends AbstractList<Monotonic<V>>
+    final class ReferenceList<V>
+            extends AbstractList<V>
             implements InternalMonotonicList<V> {
 
         @Stable
-        private final Class<V> backingElementType;
+        private final V[] elements;
 
-        @Stable
-        private final Monotonic<V>[] elements;
-
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        public MonotonicListImpl(Class<V> backingElementType,
+        //@SuppressWarnings({"unchecked", "rawtypes"})
+        @SuppressWarnings("unchecked")
+        public ReferenceList(Class<V> backingElementType,
                                  int size) {
-            this.backingElementType = backingElementType;
-            this.elements = (Monotonic<V>[]) new Monotonic[size];
+            this.elements = (V[]) new Object[size];
         }
 
         @Override
         public int size() {
-            return elements.length;
+            return (int) Arrays.stream(elements)
+                    .filter(Objects::nonNull)
+                    .count();
         }
 
         @Override
-        public Monotonic<V> get(int index) {
+        public V get(int index) {
             // Try normal memory semantics first
-            Monotonic<V> e = elements[index];
-            if (e != null) {
-                return e;
+            V v = elements[index];
+            if (v != null) {
+                return v;
             }
-            return slowPath(index);
+            // Now, fall back to volatile semantics
+            v = elementVolatile(index);
+            if (v != null) {
+                return v;
+            }
+            throw new NoSuchElementException(Integer.toString(index));
         }
 
-        private Monotonic<V> slowPath(int index) {
-            // Another thread might have created the element
-            Monotonic<V> e = elementVolatile(index);
-            if (e != null) {
-                return e;
+        @Override
+        public boolean isPresent(int index) {
+            return elements[index] != null || elementVolatile(index) != null;
+        }
+
+        @Override
+        public V set(int index, V element) {
+            Objects.requireNonNull(element);
+            freeze();
+            V previous = caeElement(index, element);
+            if (previous == null) {
+                return element;
             }
-            Monotonic<V> newElement = Monotonic.of(backingElementType);
-            return caeElement(index, newElement);
+            throw new IllegalStateException("Value already bound at index " + index + ": " + previous);
+        }
+
+        @Override
+        public V putIfAbsent(int index, V element) {
+            Objects.requireNonNull(element);
+            freeze();
+            V previous = caeElement(index, element);
+            return previous == null ? element : previous;
+        }
+
+        @Override
+        public V computeIfAbsent(int index, IntFunction<? extends V> mapper) {
+            return computeIfAbsent0(index, mapper, m -> m.apply(index));
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public V computeIfAbsent(int index, MethodHandle mapper) {
+            return computeIfAbsent0(index, mapper, m -> (V) (Object) m.invokeExact(index));
+        }
+
+        private <T> V computeIfAbsent0(int index,
+                                       T supplier,
+                                       InternalMonotonic.ThrowingFunction<T, V> mapper) {
+            Objects.requireNonNull(supplier);
+            // Try normal memory semantics first
+            V v = elements[index];
+            if (v != null) {
+                return v;
+            }
+            // Now, fall back to volatile semantics
+            v = elementVolatile(index);
+            if (v != null) {
+                return v;
+            }
+            V witness;
+            // Make sure the supplier is only invoked at most once by this method
+            synchronized (supplier) {
+                // Re-check
+                v = elementVolatile(index);
+                if (v != null) {
+                    return get(index);
+                }
+                try {
+                    v = mapper.apply(supplier);
+                } catch (Throwable t) {
+                    if (t instanceof Error e) {
+                        throw e;
+                    }
+                    throw new NoSuchElementException(t);
+                }
+                Objects.requireNonNull(v);
+                freeze();
+                witness = caeElement(index, v);
+            }
+            return witness == null ? v : witness;
+        }
+
+        @Override
+        public MethodHandle getter() {
+            final class Holder {
+                static final MethodHandle HANDLE;
+
+                static {
+                    try {
+                        HANDLE = MethodHandles.lookup()
+                                .findVirtual(ReferenceList.class, "get", MethodType.methodType(Object.class, int.class))
+                                .asType(MethodType.methodType(Object.class, Monotonic.class));
+                    } catch (ReflectiveOperationException e) {
+                        throw new ExceptionInInitializerError(e);
+                    }
+                }
+            }
+            return Holder.HANDLE;
         }
 
         // all mutating methods throw UnsupportedOperationException
-        @Override public boolean add(Monotonic<V> vMonotonic) { throw uoe(); }
-        @Override public boolean addAll(int index, Collection<? extends Monotonic<V>> c) { throw uoe(); }
+        @Override public boolean add(V v) { throw uoe(); }
+        @Override public boolean addAll(int index, Collection<? extends V> c) { throw uoe(); }
         @Override public void    clear() { throw uoe(); }
         @Override public boolean remove(Object o) { throw uoe(); }
         @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
-        @Override public boolean removeIf(Predicate<? super Monotonic<V>> filter) { throw uoe(); }
+        @Override public boolean removeIf(Predicate<? super V> filter) { throw uoe(); }
         @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
 
         // Todo: Make sure sub-lists, iterators etc. upholds the monotonic invariants
@@ -96,21 +187,13 @@ public sealed interface InternalMonotonicList<V>
         // Accessors
 
         @SuppressWarnings("unchecked")
-        private Monotonic<V> elementVolatile(int index) {
-            return (Monotonic<V>) UNSAFE.getReferenceVolatile(elements, offset(index));
+        private V elementVolatile(int index) {
+            return (V) UNSAFE.getReferenceVolatile(elements, offset(index));
         }
 
-        private Monotonic<V> caeElement(int index, Monotonic<V> created) {
-            // try to store our newly-created Monotonic
-            @SuppressWarnings("unchecked")
-            var witness = (Monotonic<V>) UNSAFE.compareAndExchangeReference(elements, offset(index), null, created);
-            // will use the witness Monotonic someone else created if it exists
-            if (witness == null) {
-                freeze();
-                return created;
-            } else {
-                return witness;
-            }
+        @SuppressWarnings("unchecked")
+        private V caeElement(int index, V created) {
+            return (V) UNSAFE.compareAndExchangeReference(elements, offset(index), null, created);
         }
 
         private static long offset(int index) {

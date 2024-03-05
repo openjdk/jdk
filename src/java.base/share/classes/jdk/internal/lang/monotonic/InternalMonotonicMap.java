@@ -28,6 +28,7 @@ package jdk.internal.lang.monotonic;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
+import java.lang.invoke.MethodHandle;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 import java.util.Iterator;
@@ -42,11 +43,11 @@ import static jdk.internal.lang.monotonic.InternalMonotonic.UNSAFE;
 import static jdk.internal.lang.monotonic.InternalMonotonicList.uoe;
 
 public sealed interface InternalMonotonicMap<K, V>
-        extends Monotonic.MonotonicMap<K, V> {
+        extends Monotonic.Map<K, V> {
 
-      final class MonotonicMapImpl<K, V>
-              extends AbstractMap<K, Monotonic<V>>
-              implements InternalMonotonicMap<K, V> {
+    final class MonotonicMapImpl<K, V>
+            extends AbstractMap<K, V>
+            implements InternalMonotonicMap<K, V> {
 
         private static final long SALT32L = Long.MAX_VALUE; // TODO dummy; also investigate order
         private static final int EXPAND_FACTOR = 2;
@@ -91,7 +92,7 @@ public sealed interface InternalMonotonicMap<K, V>
             int idx = Math.floorMod(pk.hashCode(), table.length >> 1) << 1;
             while (true) {
                 @SuppressWarnings("unchecked")
-                K ek = (K)table[idx];
+                K ek = (K) table[idx];
                 if (ek == null) {
                     return -idx - 1;
                 } else if (pk.equals(ek)) {
@@ -102,24 +103,23 @@ public sealed interface InternalMonotonicMap<K, V>
             }
         }
 
-        private Monotonic<V> value(int keyIndex) {
+        private V value(int keyIndex) {
             @SuppressWarnings("unchecked")
-            Monotonic<V> cc = (Monotonic<V>) table[keyIndex + 1];
+            V cc = (V) table[keyIndex + 1];
             if (cc != null) {
                 return cc;
             }
-
             return slowValue(keyIndex);
         }
 
         @SuppressWarnings("unchecked")
-        private Monotonic<V> slowValue(int keyIndex) {
-            Monotonic<V> cc = (Monotonic<V>) getTableItemVolatile(keyIndex + 1);
+        private V slowValue(int keyIndex) {
+            V cc = (V) getTableItemVolatile(keyIndex + 1);
             if (cc != null) {
                 return cc;
             }
             // racy, only use the one who uploaded first
-            return (Monotonic<V>) caeTableItemVolatile(keyIndex, Monotonic.of(backingValueType));
+            return (V) caeTableItemVolatile(keyIndex, Monotonic.of(backingValueType));
         }
 
         private Object getTableItemVolatile(int index) {
@@ -133,6 +133,17 @@ public sealed interface InternalMonotonicMap<K, V>
 
         private static long offset(int index) {
             return Unsafe.ARRAY_OBJECT_BASE_OFFSET + (long) index * Unsafe.ARRAY_OBJECT_INDEX_SCALE;
+        }
+
+
+        @Override
+        public V computeIfAbsent(K key, MethodHandle mapper) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public MethodHandle getter() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -152,7 +163,7 @@ public sealed interface InternalMonotonicMap<K, V>
         }
 
         @Override
-        public Monotonic<V> get(Object key) {
+        public V get(Object key) {
             if (size == 0) {
                 return null;
             }
@@ -165,7 +176,7 @@ public sealed interface InternalMonotonicMap<K, V>
         }
 
         @Override
-        public Set<Entry<K, Monotonic<V>>> entrySet() {
+        public Set<Entry<K, V>> entrySet() {
             return new AbstractSet<>() {
                 @Override
                 public int size() {
@@ -173,13 +184,13 @@ public sealed interface InternalMonotonicMap<K, V>
                 }
 
                 @Override
-                public Iterator<Entry<K, Monotonic<V>>> iterator() {
+                public Iterator<Entry<K, V>> iterator() {
                     return new Itr();
                 }
             };
         }
 
-        final class Itr implements Iterator<Entry<K, Monotonic<V>>> {
+        final class Itr implements Iterator<Entry<K, V>> {
             private int remaining;
 
             private int idx;
@@ -205,13 +216,14 @@ public sealed interface InternalMonotonicMap<K, V>
             }
 
             @Override
-            public Map.Entry<K, Monotonic<V>> next() {
+            public Map.Entry<K, V> next() {
                 if (remaining > 0) {
                     int idx;
-                    while (table[idx = nextIndex()] == null) {}
+                    while (table[idx = nextIndex()] == null) {
+                    }
                     @SuppressWarnings("unchecked")
-                    Map.Entry<K, Monotonic<V>> e =
-                            Map.entry((K)table[idx], value(idx));
+                    Map.Entry<K, V> e =
+                            java.util.Map.entry((K) table[idx], value(idx));
                     remaining--;
                     return e;
                 } else {
@@ -221,18 +233,18 @@ public sealed interface InternalMonotonicMap<K, V>
         }
 
         // all mutating methods throw UnsupportedOperationException
-        public Monotonic<V> put(K key, Monotonic<V> value) { throw uoe(); }
-        public Monotonic<V> remove(Object key) { throw uoe(); }
-        public void putAll(Map<? extends K, ? extends Monotonic<V>> m) { throw uoe(); }
-        public void clear() { throw new UnsupportedOperationException(); }
-        public void replaceAll(BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> function) { throw uoe(); }
-        public Monotonic<V> putIfAbsent(K key, Monotonic<V> value) { throw uoe(); }
-        public boolean remove(Object key, Object value) { throw uoe(); }
-        public boolean replace(K key, Monotonic<V> oldValue, Monotonic<V> newValue) { throw uoe(); }
-        public Monotonic<V> replace(K key, Monotonic<V> value) { throw uoe(); }
-        public Monotonic<V> computeIfAbsent(K key, Function<? super K, ? extends Monotonic<V>> mappingFunction) { throw uoe(); }
-        public Monotonic<V> computeIfPresent(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) { throw uoe(); }
-        public Monotonic<V> compute(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) { throw uoe(); }
-        public Monotonic<V> merge(K key, Monotonic<V> value, BiFunction<? super Monotonic<V>, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) { throw uoe(); }
+        @Override public V put(K key, V value) {throw uoe();}
+        @Override public V remove(Object key) {throw uoe();}
+        @Override public void putAll(Map<? extends K, ? extends V> m) {throw uoe();}
+        @Override public void clear() {throw uoe();}
+        @Override public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {throw uoe();}
+        @Override public V putIfAbsent(K key, V value) {throw uoe();}
+        @Override public boolean remove(Object key, Object value) {throw uoe();}
+        @Override public boolean replace(K key, V oldValue, V newValue) {throw uoe();}
+        @Override public V replace(K key, V value) {throw uoe();}
+        @Override public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {throw uoe();}
+        @Override public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {throw uoe();}
+        @Override public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {throw uoe();}
+        @Override public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {throw uoe();}
     }
 }
