@@ -95,7 +95,7 @@ public:
   }
 
   // For testing
-  inline size_t number_of_bits() const {
+  inline ssize_t number_of_bits() const {
     return _num_bits;
   }
 

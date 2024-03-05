@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.inline.hpp"
 
 #include "utilities/ostream.hpp"
 
@@ -35,12 +36,13 @@
 
 
 class ShenandoahSimpleBitMapTest: public ::testing::Test {
-  const size_t SMALL_BITMAP_SIZE =  512;
-  const size_t LARGE_BITMAP_SIZE = 4096;
+protected:
+  const ssize_t SMALL_BITMAP_SIZE =  512;
+  const ssize_t LARGE_BITMAP_SIZE = 4096;
+
   ShenandoahSimpleBitMap bm_small;
   ShenandoahSimpleBitMap bm_large;
 
-protected:
   ShenandoahSimpleBitMapTest():
       bm_small(SMALL_BITMAP_SIZE),
       bm_large(LARGE_BITMAP_SIZE) {
@@ -51,12 +53,12 @@ class BasicShenandoahSimpleBitMapTest: public ShenandoahSimpleBitMapTest {
 protected:
 
   // set_bits[] is an array of indexes holding bits that are supposed to be set, in increasing order.
-  void verifyBitMapState(ShenandoahSimpleBitMap& bm, size_t size, size_t set_bits[], size_t num_set_bits) {
+  void verifyBitMapState(ShenandoahSimpleBitMap& bm, ssize_t size, ssize_t set_bits[], ssize_t num_set_bits) {
 
     // Verify number of bits
     ASSERT_EQ(bm.number_of_bits(), size);
 
-    size_t set_bit_index = 0;
+    ssize_t set_bit_index = 0;
     // Check that is_set(idx) for every possible idx
     for (ssize_t i = 0; i < size; i++) {
       bool is_set = bm_small.is_set(i);
@@ -72,12 +74,12 @@ protected:
 
     // Check that bits_at(array_idx) matches intended value for every valid array_idx value
     set_bit_index = 0;
-    size_t alignment = bm_small.alignment();
-    size_t small_words = size / alignment;
+    ssize_t alignment = bm_small.alignment();
+    ssize_t small_words = size / alignment;
     for (ssize_t i = 0; i < small_words; i += alignment) {
       size_t bits = bm_small.bits_at(i);
-      for (size_t b = 0; b < alignment; b++) {
-        size_t bit_value = i * alignment + b;
+      for (ssize_t b = 0; b < alignment; b++) {
+        ssize_t bit_value = i * alignment + b;
         bool intended_value = false;;
         if (set_bit_index < num_set_bits) {
           if (set_bits[set_bit_index] == bit_value) {
@@ -85,7 +87,7 @@ protected:
           }
         }
         size_t bit_mask = 0x01 << b;
-        is_set = (bits & bit_mask) != 0;
+        bool is_set = (bits & bit_mask) != 0;
         ASSERT_EQ(is_set, intended_value);
       }
     }
@@ -93,7 +95,7 @@ protected:
     // Make sure find_next_set_bit() works correctly
     ssize_t probe_point = 0;
     for (ssize_t i = 0; i < num_set_bits; i++) {
-      size_t next_expected_bit = set_bits[i];
+      ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_next_set_bit(probe_point);
       ASSERT_EQ(probe_point, next_expected_bit);
       probe_point++;            // Prepare to look beyond the most recent bit.
@@ -104,9 +106,9 @@ protected:
     // Confirm that find_next_set_bit() with a bounded search space works correctly
     // Limit this search to the first 3/4 of the full bit map
     ssize_t boundary_idx = 3 * size / 4;
-    ssize_t probe_point = 0;
+    probe_point = 0;
     for (ssize_t i = 0; i < num_set_bits; i++) {
-      size_t next_expected_bit = set_bits[i];
+      ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
       if (next_expected_bit >= boundary_idx) {
         // Verify that last failed search returns sentinel value: boundary_idx
@@ -124,9 +126,9 @@ protected:
     }
 
     // Make sure find_prev_set_bit() works correctly
-    size_t probe_point = size - 1;
+    probe_point = size - 1;
     for (ssize_t i = num_set_bits - 1; i >= 0; i--) {
-      size_t next_expected_bit = set_bits[i];
+      ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_prev_set_bit(probe_point);
       ASSERT_EQ(probe_point, next_expected_bit);
       probe_point--;            // Prepare to look before the most recent bit.
@@ -139,7 +141,7 @@ protected:
     boundary_idx = size / 4;
     probe_point = size - 1;
     for (ssize_t i = num_set_bits - 1; i >= 0; i--) {
-      size_t next_expected_bit = set_bits[i];
+      ssize_t next_expected_bit = set_bits[i];
       probe_point = bm.find_next_set_bit(probe_point, boundary_idx);
       if (next_expected_bit <= boundary_idx) {
         // Verify that last failed search returns sentinel value: boundary_idx
@@ -158,10 +160,10 @@ protected:
 
     // What's the longest cluster of consecutive bits
     ssize_t previous_value = -2;
-    size_t longest_run = 0;
-    size_t current_run = 0;
-    for (size_t i = 0; i < num_set_bits; i++) {
-      next_expected_bit = set_bits[i];
+    ssize_t longest_run = 0;
+    ssize_t current_run = 0;
+    for (ssize_t i = 0; i < num_set_bits; i++) {
+      ssize_t next_expected_bit = set_bits[i];
       if (next_expected_bit == previous_value + 1) {
         current_run++;
       } else {
@@ -175,18 +177,18 @@ protected:
     }
 
     // Confirm that find_next_consecutive_bits() works for each cluster size known to have at least one match
-    for (size_t cluster_size = 1; cluster_size <= longest_run; cluster_size++) {
+    for (ssize_t cluster_size = 1; cluster_size <= longest_run; cluster_size++) {
 
       // Verify that find_next_consecutive_bits() works
-      size_t bit_idx = 0;
+      ssize_t bit_idx = 0;
       ssize_t probe_point = 0;
       while (probe_point <= size - cluster_size) {
-        size_t cluster_found = false;
-        size_t next_expected_custer;
+        bool cluster_found = false;
+        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx <= num_set_bits - cluster_size)) {
           cluster_found = true;
-          for (int i = 1; i < cluster_size; i++) {
-            if (set_bits[bit_idx] + i != set_bit[bit_idx + i]) {
+          for (ssize_t i = 1; i < cluster_size; i++) {
+            if (set_bits[bit_idx] + i != set_bits[bit_idx + i]) {
               cluster_found = false;
               break;
             }
@@ -211,12 +213,12 @@ protected:
       probe_point = 0;
       boundary_idx = 4 * size / 4;
       while (probe_point <= boundary_idx - cluster_size) {
-        size_t cluster_found = false;
-        size_t next_expected_custer;
+        bool cluster_found = false;
+        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx <= num_set_bits - cluster_size)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
-            if (set_bits[bit_idx] + i != set_bit[bit_idx + i]) {
+            if (set_bits[bit_idx] + i != set_bits[bit_idx + i]) {
               cluster_found = false;
               break;
             }
@@ -240,12 +242,12 @@ protected:
       bit_idx = num_set_bits - 1;
       probe_point = size - 1;
       while (probe_point >= cluster_size - 1) {
-        size_t cluster_found = false;
-        size_t next_expected_custer;
+        bool cluster_found = false;
+        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx - cluster_size >= -1)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
-            if (set_bits[bit_idx] - i != set_bit[bit_idx - i]) {
+            if (set_bits[bit_idx] - i != set_bits[bit_idx - i]) {
               cluster_found = false;
               break;
             }
@@ -270,12 +272,12 @@ protected:
       probe_point = size - 1;
       boundary_idx = size / 4;
       while (probe_point >= boundary_idx - 1 + cluster_size) {
-        size_t cluster_found = false;
-        size_t next_expected_custer;
+        bool cluster_found = false;
+        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx - cluster_size >= -1)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
-            if (set_bits[bit_idx] - i != set_bit[bit_idx - i]) {
+            if (set_bits[bit_idx] - i != set_bits[bit_idx - i]) {
               cluster_found = false;
               break;
             }
@@ -316,14 +318,14 @@ protected:
   BasicShenandoahSimpleBitMapTest() {
 
     // Initial state of each bitmap is all bits are clear.  Confirm this:
-    size_t set_bits_0[] = { };
+    ssize_t set_bits_0[] = { };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_0, 0);
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_0, 0);
 
     bm_small.set_bit(5);
     bm_small.set_bit(63);
     bm_small.set_bit(128);
-    size_t set_bits_1[] = { 5, 63, 128 };
+    ssize_t set_bits_1[] = { 5, 63, 128 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_1, 3);
 
     bm_large.set_bit(5);
@@ -349,7 +351,7 @@ protected:
 
     bm_small.set_bit(361);
 
-    size_t set_bits_2[] = { 5, 63, 128, 140, 141, 142, 253, 254, 255, 271, 272, 320, 321, 322, 361 };
+    ssize_t set_bits_2[] = { 5, 63, 128, 140, 141, 142, 253, 254, 255, 271, 272, 320, 321, 322, 361 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_2, 15);
 
     bm_large.set_bit(140);
@@ -370,20 +372,20 @@ protected:
     bm_large.set_bit(1301);
     bm_large.set_bit(1302);
 
-    size_t set_bits_3[] = { 5, 63, 128, 140, 141, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 }
+    ssize_t set_bits_3[] = { 5, 63, 128, 140, 141, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_3, 16);
 
     // Test clear_bit
     bm_small.clear_bit(141);
     bm_small.clear_bit(253);
-    size_t set_bits_4[] = { 5, 63, 128, 140, 142, 254, 255, 271, 272, 320, 321, 322, 361 };
+    ssize_t set_bits_4[] = { 5, 63, 128, 140, 142, 254, 255, 271, 272, 320, 321, 322, 361 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_2, 13);
 
     bm_large.clear_bit(5);
     bm_large.clear_bit(63);
     bm_large.clear_bit(128);
     bm_large.clear_bit(141);
-    size_t set_bits_5[] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 }
+    ssize_t set_bits_5[] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_5, 12);
 
     // Test clear_all()

@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahFreeSet.inline.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegionSet.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
@@ -141,87 +142,6 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   }
 }
 
-inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssize_t boundary_idx) const {
-  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-  assert((boundary_idx > start_idx) && (boundary_idx <= _num_bits), "precondition");
-  do {
-    size_t array_idx = start_idx / _bits_per_array_element;
-    size_t bit_number = start_idx % _bits_per_array_element;
-    size_t element_bits = _bitmap[array_idx];
-    if (bit_number > 0) {
-      size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
-      element_bits &= ~mask_out;
-    }
-    if (element_bits) {
-      // The next set bit is here
-      size_t the_bit = ((size_t) 0x01) << bit_number;
-      while (bit_number < _bits_per_array_element) {
-        if (element_bits & the_bit) {
-          ssize_t candidate_result = (array_idx * _bits_per_array_element) + bit_number;
-          if (candidate_result < boundary_idx) return candidate_result;
-          else return boundary_idx;
-        } else {
-          the_bit <<= 1;
-          bit_number++;
-        }
-      }
-      assert(false, "should not reach here");
-    } else {
-      // Next bit is not here.  Try the next array element
-      start_idx += _bits_per_array_element - bit_number;
-    }
-  } while (start_idx < boundary_idx);
-  return boundary_idx;
-}
-
-inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx) const {
-  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-  return find_next_set_bit(start_idx, _num_bits);
-}
-
-inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize_t boundary_idx) const {
-  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-  assert((boundary_idx >= -1) && (boundary_idx < last_idx), "precondition");
-  do {
-    ssize_t array_idx = last_idx / _bits_per_array_element;
-    size_t bit_number = last_idx % _bits_per_array_element;
-    size_t element_bits = _bitmap[array_idx];
-    if (bit_number < _bits_per_array_element - 1){
-      size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
-      element_bits &= mask_in;
-    }
-    if (element_bits) {
-      // The prev set bit is here
-      size_t the_bit = ((size_t) 0x01) << bit_number;
-
-      for (ssize_t bit_iterator = bit_number; bit_iterator >= 0; bit_iterator--) {
-        if (element_bits & the_bit) {
-          ssize_t candidate_result = (array_idx * _bits_per_array_element) + bit_number;
-          if (candidate_result > boundary_idx) return candidate_result;
-          else return boundary_idx;
-        } else {
-          the_bit >>= 1;
-          bit_number--;
-        }
-      }
-      assert(false, "should not reach here");
-    } else {
-      // Next bit is not here.  Try the previous array element
-      last_idx -= (bit_number + 1);
-    }
-  } while (last_idx > boundary_idx);
-  return boundary_idx;
-}
-
-inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx) const {
-  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-  return find_prev_set_bit(last_idx, -1);
-}
-
-inline ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssize_t start_idx) const {
-  assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-  return find_next_consecutive_bits(num_bits, start_idx, _num_bits);
-}
 
 ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
@@ -259,11 +179,6 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
   }
   // No match found.
   return boundary_idx;
-}
-
-inline ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx) const {
-  assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-  return find_prev_consecutive_bits(num_bits, last_idx, (ssize_t) -1);
 }
 
 ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx, ssize_t boundary_idx) const {
