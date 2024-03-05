@@ -521,15 +521,15 @@ operand immLlowRot() %{
   interface(CONST_INTER);
 %}
 
-#operand immLRot2() %{
-#  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
-#            AsmOperand::is_rotated_imm((int)(n->get_long())));
-#  match(ConL);
-#  op_cost(0);
-#
-#  format %{ %}
-#  interface(CONST_INTER);
-#%}
+//operand immLRot2() %{
+//  predicate(AsmOperand::is_rotated_imm((int)(n->get_long() >> 32)) &&
+//            AsmOperand::is_rotated_imm((int)(n->get_long())));
+//  match(ConL);
+//  op_cost(0);
+//
+//  format %{ %}
+//  interface(CONST_INTER);
+//%}
 
 // Integer Immediate: 12-bit - for addressing mode
 operand immI12() %{

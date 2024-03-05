@@ -720,6 +720,10 @@ public:
 
 // check unused operands
 bool ArchDesc::check_usage() {
+  if (_disable_warnings) {
+    return true;
+  }
+
   std::unordered_set<Form*> visited;
   MarkUsageFormClosure callback(this, &visited);
   _instructions.reset();
