@@ -159,7 +159,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
 
     protected static byte[] createThrowRuntimeExceptionMethod(byte[] bytes, boolean isStatic, String methodName,
             String methodSignature) {
-        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(clb -> clb.withMethod(methodName,
+        bytes = ClassFile.of().transform(ClassFile.of().parse(bytes), ClassTransform.endHandler(clb -> clb.withMethod(methodName,
                 MethodTypeDesc.ofDescriptor(methodSignature),
                 ClassFile.ACC_PUBLIC | (isStatic ? ClassFile.ACC_STATIC : 0),
                 mb -> mb.withCode(cob -> {
@@ -330,8 +330,8 @@ public abstract class GenFullCP extends ClassfileGenerator {
     protected abstract byte[] generateCPEntryData(byte[] bytes);
 
     protected byte[] generateTestMethodEpilog(byte[] bytes) {
-        return ClassFile.of().transform(cm, ClassTransform.endHandler(
-                cb -> cb.withMethod("testMethodEpilog", MethodTypeDesc.ofDescriptor("()V"), ClassFile.ACC_PUBLIC,
+        return ClassFile.of().transform(ClassFile.of().parse(bytes), ClassTransform.endHandler(
+                cb -> cb.withMethod(methodName, MethodTypeDesc.ofDescriptor(TEST_METHOD_SIGNATURE), ClassFile.ACC_PUBLIC,
                         mb -> mb.withCode(CodeBuilder::return_))));
     }
 
