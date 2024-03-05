@@ -3108,10 +3108,10 @@ public:
       tty->print("ArrayPointer[%d %s, invalid]", _pointer->_idx, _pointer->Name());
       return;
     }
-    tty->print("ArrayPointer[%d %s, base[%d %s] + %ld",
+    tty->print("ArrayPointer[%d %s, base[%d %s] + %lld",
                _pointer->_idx, _pointer->Name(),
                _base->_idx, _base->Name(),
-               _constant_offset);
+               (long long)_constant_offset);
     if (_int_offset != 0) {
       tty->print(" + I2L[%d %s] << %d",
                  _int_offset->_idx, _int_offset->Name(), _int_offset_shift);
