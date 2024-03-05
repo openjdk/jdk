@@ -513,10 +513,8 @@ class Bundle {
                     value = new String[] {"", value[0]};
                     break;
                 }
-                if (!key.equals(realKey)) {
-                    map.put(realKey, value);
-                    map.put("java.time." + realKey, value);
-                }
+                map.put(realKey, value);
+                map.put("java.time." + realKey, value);
             }
             realKeys[index] = realKey;
             eraNames[index++] = value;

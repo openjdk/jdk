@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -119,7 +120,7 @@ import jdk.internal.vm.annotation.Stable;
  * The range must be at least 1 to 2<sup>500000000</sup>.
  *
  * @apiNote
- * <a id=algorithmicComplexity>As {@code BigInteger} values are
+ * <span id="algorithmicComplexity">As {@code BigInteger} values are
  * arbitrary precision integers, the algorithmic complexity of the
  * methods of this class varies and may be superlinear in the size of
  * the input. For example, a method like {@link intValue()} would be
@@ -138,7 +139,7 @@ import jdk.internal.vm.annotation.Stable;
  * algorithms between the bounds of the naive and theoretical cases
  * include the Karatsuba multiplication
  * (<i>O</i>(<i>n<sup>1.585</sup></i>)) and 3-way Toom-Cook
- * multiplication (<i>O</i>(<i>n<sup>1.465</sup></i>)).</a>
+ * multiplication (<i>O</i>(<i>n<sup>1.465</sup></i>)).</span>
  *
  * <p>A particular implementation of {@link multiply(BigInteger)
  * multiply} is free to switch between different algorithms for
@@ -351,12 +352,18 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             throw new NumberFormatException("Zero length BigInteger");
         }
         Objects.checkFromIndexSize(off, len, val.length);
+        if (len == 0) {
+            mag = ZERO.mag;
+            signum = ZERO.signum;
+            return;
+        }
 
-        if (val[off] < 0) {
-            mag = makePositive(val, off, len);
+        int b = val[off];
+        if (b < 0) {
+            mag = makePositive(b, val, off, len);
             signum = -1;
         } else {
-            mag = stripLeadingZeroBytes(val, off, len);
+            mag = stripLeadingZeroBytes(b, val, off, len);
             signum = (mag.length == 0 ? 0 : 1);
         }
         if (mag.length >= MAX_MAG_LENGTH) {
@@ -1768,7 +1775,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             carry = product >>> 32;
         }
         if (carry == 0L) {
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         } else {
             rmag[rstart] = (int)carry;
         }
@@ -1813,7 +1820,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             rmag[0] = (int)carry;
         }
         if (carry == 0L)
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         return new BigInteger(rmag, rsign);
     }
 
@@ -3957,6 +3964,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return -1, 0 or 1 as this BigInteger is numerically less than, equal
      *         to, or greater than {@code val}.
      */
+    @Override
     public int compareTo(BigInteger val) {
         if (signum == val.signum) {
             return switch (signum) {
@@ -3985,12 +3993,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return -1;
         if (len1 > len2)
             return 1;
-        for (int i = 0; i < len1; i++) {
-            int a = m1[i];
-            int b = m2[i];
-            if (a != b)
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
-        }
+        int i = ArraysSupport.mismatch(m1, m2, len1);
+        if (i != -1)
+            return Integer.compareUnsigned(m1[i], m2[i]) < 0 ? -1 : 1;
         return 0;
     }
 
@@ -4017,7 +4022,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         } else {
@@ -4026,12 +4031,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = highWord;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             a = m1[1];
             b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         }
@@ -4044,6 +4049,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code true} if and only if the specified Object is a
      *         BigInteger whose value is numerically equal to this BigInteger.
      */
+    @Override
     public boolean equals(Object x) {
         // This test is just an optimization, which may or may not help
         if (x == this)
@@ -4055,17 +4061,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (xInt.signum != signum)
             return false;
 
-        int[] m = mag;
-        int len = m.length;
-        int[] xm = xInt.mag;
-        if (len != xm.length)
+        if (mag.length != xInt.mag.length)
             return false;
 
-        for (int i = 0; i < len; i++)
-            if (xm[i] != m[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(mag, xInt.mag, mag.length) == -1;
     }
 
     /**
@@ -4094,17 +4093,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     // Hash Function
 
     /**
-     * Returns the hash code for this BigInteger.
-     *
-     * @return hash code for this BigInteger.
+     * {@return the hash code for this BigInteger}
      */
+    @Override
     public int hashCode() {
-        int hashCode = 0;
-
-        for (int i=0; i < mag.length; i++)
-            hashCode = (int)(31*hashCode + (mag[i] & LONG_MASK));
-
-        return hashCode * signum;
+        return ArraysSupport.vectorizedHashCode(mag, 0, mag.length, 0,
+                ArraysSupport.T_INT) * signum;
     }
 
     /**
@@ -4587,7 +4581,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return java.util.Arrays.copyOfRange(val, keep, vlen);
+        return Arrays.copyOfRange(val, keep, vlen);
     }
 
     /**
@@ -4601,80 +4595,170 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return keep == 0 ? val : java.util.Arrays.copyOfRange(val, keep, vlen);
+        return keep == 0 ? val : Arrays.copyOfRange(val, keep, vlen);
     }
 
-    /**
+    private static int[] stripLeadingZeroBytes(byte[] a, int from, int len) {
+        return stripLeadingZeroBytes(Integer.MIN_VALUE, a, from, len);
+    }
+
+    /*
      * Returns a copy of the input array stripped of any leading zero bytes.
+     * The returned array is either empty, or its 0-th element is non-zero,
+     * meeting the "minimal" requirement for field mag (see comment on mag).
+     *
+     * The range [from, from + len) must be well-formed w.r.t. array a.
+     *
+     * b < -128 means that a[from] has not yet been read.
+     * Otherwise, b must be a[from], have been read only once before invoking
+     * this method, and len > 0 must hold.
      */
-    private static int[] stripLeadingZeroBytes(byte[] a, int off, int len) {
-        int indexBound = off + len;
-        int keep;
-
-        // Find first nonzero byte
-        for (keep = off; keep < indexBound && a[keep] == 0; keep++)
-            ;
-
-        // Allocate new array and copy relevant part of input array
-        int intLength = ((indexBound - keep) + 3) >>> 2;
-        int[] result = new int[intLength];
-        int b = indexBound - 1;
-        for (int i = intLength-1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
-            int bytesRemaining = b - keep + 1;
-            int bytesToTransfer = Math.min(3, bytesRemaining);
-            for (int j=8; j <= (bytesToTransfer << 3); j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
+    private static int[] stripLeadingZeroBytes(int b, byte[] a, int from, int len) {
+        /*
+         * Except for the first byte, each read access to the input array a
+         * is of the form a[from++].
+         * The index from is never otherwise altered, except right below,
+         * and only increases in steps of 1, always up to index to.
+         * Hence, each byte in the array is read exactly once, from lower to
+         * higher indices (from most to least significant byte).
+         */
+        if (len == 0) {
+            return ZERO.mag;
         }
-        return result;
+        int to = from + len;
+        if (b < -128) {
+            b = a[from];
+        }
+        /* Either way, a[from] has now been read exactly once, skip to next. */
+        ++from;
+        /*
+         * Set up the shortest int[] for the sequence of the bytes
+         *      b, a[from+1], ..., a[to-1]    (len > 0)
+         * Shortest means first skipping leading zeros.
+         */
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
+        if (b == 0) {
+            /* Here, from == to as well. All bytes are zeros. */
+            return ZERO.mag;
+        }
+        /*
+         * Allocate just enough ints to hold (to - from + 1) bytes, that is
+         *      ((to - from + 1) + 3) / 4 = (to - from) / 4 + 1
+         */
+        int[] res = new int[((to - from) >> 2) + 1];
+        /*
+         * A "digit" is a group of 4 adjacent bytes aligned w.r.t. index to.
+         * (Implied 0 bytes are prepended as needed.)
+         * b is the most significant byte not 0.
+         * Digit d0 spans the range of indices that includes current (from - 1).
+         */
+        int d0 = b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d0 = d0 << 8 | a[from++] & 0xFF;
+        }
+        res[0] = d0;
+        /*
+         * Prepare the remaining digits.
+         * (to - from) is a multiple of 4, so prepare an int for every 4 bytes.
+         * This is a candidate for Unsafe.copy[Swap]Memory().
+         */
+        int i = 1;
+        while (from < to) {
+            res[i++] = a[from++] << 24 | (a[from++] & 0xFF) << 16
+                    | (a[from++] & 0xFF) << 8 | (a[from++] & 0xFF);
+        }
+        return res;
     }
 
-    /**
+    /*
      * Takes an array a representing a negative 2's-complement number and
      * returns the minimal (no leading zero bytes) unsigned whose value is -a.
+     *
+     * len > 0 must hold.
+     * The range [from, from + len) must be well-formed w.r.t. array a.
+     * b is assumed to be the result of reading a[from] and to meet b < 0.
      */
-    private static int[] makePositive(byte[] a, int off, int len) {
-        int keep, k;
-        int indexBound = off + len;
-
-        // Find first non-sign (0xff) byte of input
-        for (keep=off; keep < indexBound && a[keep] == -1; keep++)
-            ;
-
-
-        /* Allocate output array.  If all non-sign bytes are 0x00, we must
-         * allocate space for one extra output byte. */
-        for (k=keep; k < indexBound && a[k] == 0; k++)
-            ;
-
-        int extraByte = (k == indexBound) ? 1 : 0;
-        int intLength = ((indexBound - keep + extraByte) + 3) >>> 2;
-        int result[] = new int[intLength];
-
-        /* Copy one's complement of input into output, leaving extra
-         * byte (if it exists) == 0x00 */
-        int b = indexBound - 1;
-        for (int i = intLength-1; i >= 0; i--) {
-            result[i] = a[b--] & 0xff;
-            int numBytesToTransfer = Math.min(3, b-keep+1);
-            if (numBytesToTransfer < 0)
-                numBytesToTransfer = 0;
-            for (int j=8; j <= 8*numBytesToTransfer; j += 8)
-                result[i] |= ((a[b--] & 0xff) << j);
-
-            // Mask indicates which bits must be complemented
-            int mask = -1 >>> (8*(3-numBytesToTransfer));
-            result[i] = ~result[i] & mask;
+    private static int[] makePositive(int b, byte[] a, int from, int len) {
+        /*
+         * By assumption, b == a[from] < 0 and len > 0.
+         *
+         * First collect the bytes into the resulting array res.
+         * Then convert res to two's complement.
+         *
+         * Except for b == a[from], each read access to the input array a
+         * is of the form a[from++].
+         * The index from is never otherwise altered, except right below,
+         * and only increases in steps of 1, always up to index to.
+         * Hence, each byte in the array is read exactly once, from lower to
+         * higher indices (from most to least significant byte).
+         */
+        int to = from + len;
+        /* b == a[from] has been read exactly once, skip to next index. */
+        ++from;
+        /* Skip leading -1 bytes. */
+        for (; b == -1 && from < to; b = a[from++])
+            ;  //empty body
+        /*
+         * A "digit" is a group of 4 adjacent bytes aligned w.r.t. index to.
+         * b is the most significant byte not -1, or -1 only if from == to.
+         * Digit d0 spans the range of indices that includes current (from - 1).
+         * (Implied -1 bytes are prepended to array a as needed.)
+         * It usually corresponds to res[0], except for the special case below.
+         */
+        int d0 = -1 << 8 | b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d0 = d0 << 8 | (b = a[from++]) & 0xFF;
         }
-
-        // Add one to one's complement to generate two's complement
-        for (int i=result.length-1; i >= 0; i--) {
-            result[i] = (int)((result[i] & LONG_MASK) + 1);
-            if (result[i] != 0)
-                break;
+        int f = from;  // keeps the current from for sizing purposes later
+        /* Skip zeros adjacent to d0, if at all. */
+        for (; b == 0 && from < to; b = a[from++])
+            ;  //empty body
+        /*
+         * b is the most significant non-zero byte at or after (f - 1),
+         * or 0 only if from == to.
+         * Digit d spans the range of indices that includes (f - 1).
+         */
+        int d = b & 0xFF;
+        while (((to - from) & 0x3) != 0) {
+            d = d << 8 | a[from++] & 0xFF;
         }
-
-        return result;
+        /*
+         * If the situation here is like this:
+         * index:                      f                        to == from
+         *      ..., -1,-1,  0,0,0,0,  0,0,0,0,  ...,  0,0,0,0
+         * digit:               d0                        d
+         * then, as shown, the number of zeros is a positive multiple of 4.
+         * The array res needs a minimal length of (1 + 1 + (to - f) / 4)
+         * to accommodate the two's complement, including a leading 1.
+         * In any other case, there is at least one byte that is non-zero.
+         * The array for the two's complement has length (0 + 1 + (to - f) / 4).
+         * c is 1, resp., 0 for the two situations.
+         */
+        int c = (to - from | d0 | d) == 0 ? 1 : 0;
+        int[] res = new int[c + 1 + ((to - f) >> 2)];
+        res[0] = c == 0 ? d0 : -1;
+        int i = res.length - ((to - from) >> 2);
+        if (i > 1) {
+            res[i - 1] = d;
+        }
+        /*
+         * Prepare the remaining digits.
+         * (to - from) is a multiple of 4, so prepare an int for every 4 bytes.
+         * This is a candidate for Unsafe.copy[Swap]Memory().
+         */
+        while (from < to) {
+            res[i++] = a[from++] << 24 | (a[from++] & 0xFF) << 16
+                    | (a[from++] & 0xFF) << 8 | (a[from++] & 0xFF);
+        }
+        /* Convert to two's complement. Here, i == res.length */
+        while (--i >= 0 && res[i] == 0)
+            ;  // empty body
+        res[i] = -res[i];
+        while (--i >= 0) {
+            res[i] = ~res[i];
+        }
+        return res;
     }
 
     /**

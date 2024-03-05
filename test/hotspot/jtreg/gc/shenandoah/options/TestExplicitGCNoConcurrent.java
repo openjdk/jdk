@@ -60,7 +60,7 @@ public class TestExplicitGCNoConcurrent {
         };
 
         for (String opt : opts) {
-            ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+            OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                     "-Xmx128m",
                     "-XX:+UnlockExperimentalVMOptions",
                     "-XX:+UseShenandoahGC",
@@ -70,7 +70,6 @@ public class TestExplicitGCNoConcurrent {
                     "-XX:ShenandoahGCHeuristics=passive",
                     TestExplicitGCNoConcurrent.class.getName(),
                     "test");
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
             for (String p : concurrent) {
                 output.shouldNotContain(p);
             }

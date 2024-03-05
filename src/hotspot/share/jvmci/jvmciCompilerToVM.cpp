@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
-#include "runtime/reflectionUtils.hpp"
+#include "runtime/reflection.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
 #include "runtime/timerTrace.hpp"
 #include "runtime/vframe.inline.hpp"
@@ -179,20 +179,11 @@ Handle JavaArgumentUnboxer::next_arg(BasicType expectedType) {
   CompilerThreadCanCallJava ccj(thread, __is_hotspot);     \
   JVMCIENV_FROM_JNI(JVMCI::compilation_tick(thread), env); \
 
-static JavaThread* get_current_thread(bool allow_null=true) {
-  Thread* thread = Thread::current_or_null_safe();
-  if (thread == nullptr) {
-    assert(allow_null, "npe");
-    return nullptr;
-  }
-  return JavaThread::cast(thread);
-}
-
 // Entry to native method implementation that transitions
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY(result_type, name, signature)        \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  result_type JNICALL c2v_ ## name signature {           \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -202,8 +193,8 @@ static JavaThread* get_current_thread(bool allow_null=true) {
   JVMCITraceMark jtm("CompilerToVM::" #name);
 
 #define C2V_VMENTRY_(result_type, name, signature, result) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();             \
+  result_type JNICALL c2v_ ## name signature {           \
+  JavaThread* thread = JavaThread::current_or_null();    \
   if (thread == nullptr) {                               \
     env->ThrowNew(JNIJVMCI::InternalError::clazz(),      \
         err_msg("Cannot call into HotSpot from JVMCI shared library without attaching current thread")); \
@@ -218,8 +209,8 @@ static JavaThread* get_current_thread(bool allow_null=true) {
 // Entry to native method implementation that does not transition
 // current thread to '_thread_in_vm'.
 #define C2V_VMENTRY_PREFIX(result_type, name, signature) \
-  JNIEXPORT result_type JNICALL c2v_ ## name signature { \
-  JavaThread* thread = get_current_thread();
+  result_type JNICALL c2v_ ## name signature {           \
+  JavaThread* thread = JavaThread::current_or_null();
 
 #define C2V_END }
 
@@ -934,11 +925,6 @@ C2V_VMENTRY_NULL(jobject, lookupMethodInPool, (JNIEnv* env, jobject, ARGUMENT_PA
   return JVMCIENV->get_jobject(result);
 C2V_END
 
-C2V_VMENTRY_0(jint, constantPoolRemapInstructionOperandFromCache, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
-  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  return cp->remap_instruction_operand_from_cache(index);
-C2V_END
-
 C2V_VMENTRY_NULL(jobject, resolveFieldInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, ARGUMENT_PAIR(method), jbyte opcode, jintArray info_handle))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   Bytecodes::Code code = (Bytecodes::Code)(((int) opcode) & 0xFF);
@@ -1394,7 +1380,7 @@ C2V_END
 /*
  * Used by matches() to convert a ResolvedJavaMethod[] to an array of Method*.
  */
-GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
+static GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JVMCIENV) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
   GrowableArray<Method*>* resolved_methods = new GrowableArray<Method*>(methods_oop->length());
   for (int i = 0; i < methods_oop->length(); i++) {
@@ -1413,7 +1399,7 @@ GrowableArray<Method*>* init_resolved_methods(jobjectArray methods, JVMCIEnv* JV
  * The ResolvedJavaMethod[] array is converted to a Method* array that is then cached in the resolved_methods_ref in/out parameter.
  * In case of a match, the matching ResolvedJavaMethod is returned in matched_jvmci_method_ref.
  */
-bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
+static bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** resolved_methods_ref, Handle* matched_jvmci_method_ref, Thread* THREAD, JVMCIEnv* JVMCIENV) {
   GrowableArray<Method*>* resolved_methods = *resolved_methods_ref;
   if (resolved_methods == nullptr) {
     resolved_methods = init_resolved_methods(methods, JVMCIENV);
@@ -1434,7 +1420,7 @@ bool matches(jobjectArray methods, Method* method, GrowableArray<Method*>** reso
 /*
  * Resolves an interface call to a concrete method handle.
  */
-methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
+static methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* signature, JavaCallArguments* args, TRAPS) {
   CallInfo callinfo;
   Handle receiver = args->receiver();
   Klass* recvrKlass = receiver.is_null() ? (Klass*)nullptr : receiver->klass();
@@ -1449,7 +1435,7 @@ methodHandle resolve_interface_call(Klass* spec_klass, Symbol* name, Symbol* sig
 /*
  * Used by c2v_iterateFrames to make a new vframeStream at the given compiled frame id (stack pointer) and vframe id.
  */
-void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
+static void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_pointer, int vframe_id, JavaThread* thread, TRAPS) {
   vfst = vframeStream(thread);
   while (vfst.frame_id() != stack_pointer && !vfst.at_end()) {
     vfst.next();
@@ -1472,7 +1458,7 @@ void resync_vframestream_to_compiled_frame(vframeStream& vfst, intptr_t* stack_p
 /*
  * Used by c2v_iterateFrames. Returns an array of any unallocated scope objects or null if none.
  */
-GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
+static GrowableArray<ScopeValue*>* get_unallocated_objects_or_null(GrowableArray<ScopeValue*>* scope_objects) {
   GrowableArray<ScopeValue*>* unallocated = nullptr;
   for (int i = 0; i < scope_objects->length(); i++) {
     ObjectValue* sv = (ObjectValue*) scope_objects->at(i);
@@ -1660,6 +1646,14 @@ C2V_VMENTRY_0(int, decodeFieldIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PA
   return cp->resolved_field_entry_at(field_index)->constant_pool_index();
 C2V_END
 
+C2V_VMENTRY_0(int, decodeMethodIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint method_index))
+  constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
+  if (method_index < 0 || method_index >= cp->resolved_method_entries_length()) {
+    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("invalid method index %d", method_index));
+  }
+  return cp->resolved_method_entry_at(method_index)->constant_pool_index();
+C2V_END
+
 C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   Klass* holder = cp->klass_ref_at(index, Bytecodes::_invokehandle, CHECK);
@@ -1667,15 +1661,14 @@ C2V_VMENTRY(void, resolveInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAI
   if (MethodHandles::is_signature_polymorphic_name(holder, name)) {
     CallInfo callInfo;
     LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokehandle, CHECK);
-    ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-    cp_cache_entry->set_method_handle(cp, callInfo);
+    cp->cache()->set_method_handle(index, callInfo);
   }
 C2V_END
 
 C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  ConstantPoolCacheEntry* cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
-  if (cp_cache_entry->is_resolved(Bytecodes::_invokehandle)) {
+  ResolvedMethodEntry* entry = cp->cache()->resolved_method_entry_at(index);
+  if (entry->is_resolved(Bytecodes::_invokehandle)) {
     // MethodHandle.invoke* --> LambdaForm?
     ResourceMark rm;
 
@@ -1688,7 +1681,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     vmassert(MethodHandles::is_method_handle_invoke_name(resolved_klass, name_sym), "!");
     vmassert(MethodHandles::is_signature_polymorphic_name(resolved_klass, name_sym), "!");
 
-    methodHandle adapter_method(THREAD, cp_cache_entry->f1_as_method());
+    methodHandle adapter_method(THREAD, entry->method());
 
     methodHandle resolved_method(adapter_method);
 
@@ -1697,7 +1690,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
       vmassert(!resolved_method->is_static(),"!");
       vmassert(MethodHandles::is_signature_polymorphic_method(resolved_method()),"!");
       vmassert(!MethodHandles::is_signature_polymorphic_static(resolved_method->intrinsic_id()), "!");
-      vmassert(cp_cache_entry->appendix_if_resolved(cp) == nullptr, "!");
+      vmassert(cp->cache()->appendix_if_resolved(entry) == nullptr, "!");
 
       methodHandle m(THREAD, LinkResolver::linktime_resolve_virtual_method_or_null(link_info));
       vmassert(m == resolved_method, "!!");
@@ -1707,7 +1700,7 @@ C2V_VMENTRY_0(jint, isResolvedInvokeHandleInPool, (JNIEnv* env, jobject, ARGUMEN
     return Bytecodes::_invokevirtual;
   }
   if (cp->is_invokedynamic_index(index)) {
-    if (cp->resolved_indy_entry_at(cp->decode_cpcache_index(index))->is_resolved()) {
+    if (cp->resolved_indy_entry_at(cp->decode_invokedynamic_index(index))->is_resolved()) {
       return Bytecodes::_invokedynamic;
     }
   }
@@ -1887,7 +1880,10 @@ C2V_END
 
 C2V_VMENTRY_0(jint, methodDataExceptionSeen, (JNIEnv* env, jobject, jlong method_data_pointer, jint bci))
   MethodData* mdo = (MethodData*) method_data_pointer;
-  MutexLocker mu(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+  MutexLocker mu(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   DataLayout* data    = mdo->extra_data_base();
   DataLayout* end   = mdo->args_data_limit();
   for (;; data = mdo->next_extra(data)) {
@@ -2446,7 +2442,7 @@ C2V_END
 
 C2V_VMENTRY_0(jint, arrayBaseOffset, (JNIEnv* env, jobject, jchar type_char))
   BasicType type = JVMCIENV->typeCharToBasicType(type_char, JVMCI_CHECK_0);
-  return arrayOopDesc::header_size(type) * HeapWordSize;
+  return arrayOopDesc::base_offset_in_bytes(type);
 C2V_END
 
 C2V_VMENTRY_0(jint, arrayIndexScale, (JNIEnv* env, jobject, jchar type_char))
@@ -2611,7 +2607,7 @@ static void attachSharedLibraryThread(JNIEnv* env, jbyteArray name, jboolean as_
   if (res != JNI_OK) {
     JNI_THROW("attachSharedLibraryThread", InternalError, err_msg("Trying to attach thread returned %d", res));
   }
-  JavaThread* thread = get_current_thread(false);
+  JavaThread* thread = JavaThread::thread_from_jni_environment(hotspotEnv);
   const char* attach_error;
   {
     // Transition to VM
@@ -3035,6 +3031,13 @@ C2V_VMENTRY_0(jboolean, addFailedSpeculation, (JNIEnv* env, jobject, jlong faile
 C2V_END
 
 C2V_VMENTRY(void, callSystemExit, (JNIEnv* env, jobject, jint status))
+  if (!JVMCIENV->is_hotspot()) {
+    // It's generally not safe to call Java code before the module system is initialized
+    if (!Universe::is_module_initialized()) {
+      JVMCI_event_1("callSystemExit(%d) before Universe::is_module_initialized() -> direct VM exit", status);
+      vm_exit_during_initialization();
+    }
+  }
   CompilerThreadCanCallJava canCallJava(thread, true);
   JavaValue result(T_VOID);
   JavaCallArguments jargs(1);
@@ -3062,7 +3065,7 @@ C2V_VMENTRY_0(jint, registerCompilerPhase, (JNIEnv* env, jobject, jstring jphase
 C2V_END
 
 C2V_VMENTRY(void, notifyCompilerPhaseEvent, (JNIEnv* env, jobject, jlong startTime, jint phase, jint compileId, jint level))
-  EventCompilerPhase event;
+  EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, startTime, phase, compileId, level);
   }
@@ -3220,13 +3223,13 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "I)" OBJECTCONSTANT,                                         FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
   {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
-  {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(constantPoolRemapInstructionOperandFromCache)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
   {CC "bootstrapArgumentIndexAt",                     CC "(" HS_CONSTANT_POOL2 "II)I",                                                      FN_PTR(bootstrapArgumentIndexAt)},
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL2 "I)" HS_KLASS,                                               FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL2 "I" HS_METHOD2 "B[I)" HS_KLASS,                              FN_PTR(resolveFieldInPool)},
   {CC "decodeFieldIndexToCPIndex",                    CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(decodeFieldIndexToCPIndex)},
+  {CC "decodeMethodIndexToCPIndex",                   CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(decodeMethodIndexToCPIndex)},
   {CC "decodeIndyIndexToCPIndex",                     CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(decodeIndyIndexToCPIndex)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL2 "I)V",                                                       FN_PTR(resolveInvokeHandleInPool)},
   {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(isResolvedInvokeHandleInPool)},

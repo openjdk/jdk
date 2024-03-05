@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -46,7 +46,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
@@ -1684,9 +1684,8 @@ instruct vreduce_minD_masked(fRegD dst, fRegD src1, vReg src2, vRegMask_V0 v0, v
 // vector replicate
 
 instruct replicate(vReg dst, iRegIorL2I src) %{
-  match(Set dst (ReplicateB src));
-  match(Set dst (ReplicateS src));
-  match(Set dst (ReplicateI src));
+  predicate(Matcher::is_non_long_integral_vector(n));
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicate $dst, $src" %}
   ins_encode %{
@@ -1698,7 +1697,8 @@ instruct replicate(vReg dst, iRegIorL2I src) %{
 %}
 
 instruct replicateL(vReg dst, iRegL src) %{
-  match(Set dst (ReplicateL src));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateL $dst, $src" %}
   ins_encode %{
@@ -1709,9 +1709,8 @@ instruct replicateL(vReg dst, iRegL src) %{
 %}
 
 instruct replicate_imm5(vReg dst, immI5 con) %{
-  match(Set dst (ReplicateB con));
-  match(Set dst (ReplicateS con));
-  match(Set dst (ReplicateI con));
+  predicate(Matcher::is_non_long_integral_vector(n));
+  match(Set dst (Replicate con));
   ins_cost(VEC_COST);
   format %{ "replicate_imm5 $dst, $con" %}
   ins_encode %{
@@ -1723,7 +1722,8 @@ instruct replicate_imm5(vReg dst, immI5 con) %{
 %}
 
 instruct replicateL_imm5(vReg dst, immL5 con) %{
-  match(Set dst (ReplicateL con));
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (Replicate con));
   ins_cost(VEC_COST);
   format %{ "replicateL_imm5 $dst, $con" %}
   ins_encode %{
@@ -1734,7 +1734,8 @@ instruct replicateL_imm5(vReg dst, immL5 con) %{
 %}
 
 instruct replicateF(vReg dst, fRegF src) %{
-  match(Set dst (ReplicateF src));
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateF $dst, $src" %}
   ins_encode %{
@@ -1745,7 +1746,8 @@ instruct replicateF(vReg dst, fRegF src) %{
 %}
 
 instruct replicateD(vReg dst, fRegD src) %{
-  match(Set dst (ReplicateD src));
+  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
+  match(Set dst (Replicate src));
   ins_cost(VEC_COST);
   format %{ "replicateD $dst, $src" %}
   ins_encode %{
@@ -2612,24 +2614,7 @@ instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct vstring_equalsU(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V2 v2,
-                         vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, rFlagsReg cr)
-%{
-  predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
-
-  format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsU" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 2);
+                       $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -2878,6 +2863,116 @@ instruct vclearArray_reg_reg(iRegL_R29 cnt, iRegP_R28 base, Universe dummy,
   ins_pipe(pipe_class_memory);
 %}
 
+// CompressBits of Long & Integer
+
+instruct compressBitsI(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask, vRegMask_V0 v0,
+                       vReg_V4 v4, vReg_V5 v5, vReg_V8 v8, vReg_V9 v9) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP v0, TEMP v4, TEMP v5, TEMP v8, TEMP v9);
+  format %{ "vsetivli x0, 1, e32, m1, tu, mu\t#@compressBitsI\n\t"
+            "vmv.s.x $v0, $src\n\t"
+            "mv t0, 32\n\t"
+            "vsetvli x0, t0, e8, m2, tu, mu\n\t"
+            "vmv.v.i $v4, 0\n\t"
+            "vmerge.vim $v4, $v4, 1, $v0\n\t"
+            "vmv.v.i $v8, 0\n\t"
+            "vsetivli x0, 1, e32, m1, tu, mu\n\t"
+            "vmv.s.x $v0, $mask\n\t"
+            "vsetvli x0, t0, e8, m2, tu, mu\n\t"
+            "vcompress.vm $v8, $v4, $v0\n\t"
+            "vmseq.vi $v0, $v8, 1\n\t"
+            "vsetivli x0, 1, e32, m1, tu, mu\n\t"
+            "vmv.x.s $dst, $v0\t#@compressBitsI\n\t"
+          %}
+  ins_encode %{
+    __ compress_bits_i_v(as_Register($dst$$reg), as_Register($src$$reg), as_Register($mask$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct compressBitsL(iRegLNoSp dst, iRegL src, iRegL mask, vRegMask_V0 v0,
+                       vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                       vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11) %{
+  match(Set dst (CompressBits src mask));
+  effect(TEMP v0, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11);
+  format %{ "vsetivli x0, 1, e64, m1, tu, mu\t#@compressBitsL\n\t"
+            "vmv.s.x $v0, $src\n\t"
+            "mv t0, 64\n\t"
+            "vsetvli x0, t0, e8, m4, tu, mu\n\t"
+            "vmv.v.i $v4, 0\n\t"
+            "vmerge.vim $v4, $v4, 1, $v0\n\t"
+            "vmv.v.i $v8, 0\n\t"
+            "vsetivli x0, 1, e64, m1, tu, mu\n\t"
+            "vmv.s.x $v0, $mask\n\t"
+            "vsetvli x0, t0, e8, m4, tu, mu\n\t"
+            "vcompress.vm $v8, $v4, $v0\n\t"
+            "vmseq.vi $v0, $v8, 1\n\t"
+            "vsetivli x0, 1, e64, m1, tu, mu\n\t"
+            "vmv.x.s $dst, $v0\t#@compressBitsL\n\t"
+          %}
+  ins_encode %{
+    __ compress_bits_l_v(as_Register($dst$$reg), as_Register($src$$reg), as_Register($mask$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ExpandBits of Long & Integer
+
+instruct expandBitsI(iRegINoSp dst, iRegIorL2I src, iRegIorL2I mask, vRegMask_V0 v0,
+                     vReg_V4 v4, vReg_V5 v5, vReg_V8 v8, vReg_V9 v9, vReg_V12 v12, vReg_V13 v13) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP v0, TEMP v4, TEMP v5, TEMP v8, TEMP v9, TEMP v12, TEMP v13);
+  format %{ "vsetivli x0, 1, e32, m1, tu, mu\t#@expandBitsI\n\t"
+            "vmv.s.x $v0, $src\n\t"
+            "mv t0, 32\n\t"
+            "vsetvli x0, t0, e8, m2, tu, mu\n\t"
+            "vmv.v.i $v4, 0\n\t"
+            "vmerge.vim $v4, $v4, 1, $v0\n\t"
+            "vmv.v.i $v12, 0\n\t"
+            "vsetivli x0, 1, e32, m1, tu, mu\n\t"
+            "vmv.s.x $v0, $mask\n\t"
+            "vsetvli x0, t0, e8, m2, tu, mu\n\t"
+            "viota.m $v8, $v0\n\t"
+            "vrgather.vv $v12, $v4, $v8, $v0.t\n\t"
+            "vmseq.vi $v0, $v12, 1\n\t"
+            "vsetivli x0, 1, e32, m1, tu, mu\n\t"
+            "vmv.x.s $dst, $v0\t#@expandBitsI\n\t"
+          %}
+  ins_encode %{
+    __ expand_bits_i_v(as_Register($dst$$reg), as_Register($src$$reg), as_Register($mask$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct expandBitsL(iRegLNoSp dst, iRegL src, iRegL mask, vRegMask_V0 v0,
+                      vReg_V4 v4, vReg_V5 v5, vReg_V6 v6, vReg_V7 v7,
+                      vReg_V8 v8, vReg_V9 v9, vReg_V10 v10, vReg_V11 v11,
+                      vReg_V12 v12, vReg_V13 v13, vReg_V14 v14, vReg_V15 v15) %{
+  match(Set dst (ExpandBits src mask));
+  effect(TEMP v0, TEMP v4, TEMP v5, TEMP v6, TEMP v7, TEMP v8, TEMP v9, TEMP v10, TEMP v11,
+         TEMP v12, TEMP v13, TEMP v14, TEMP v15);
+  format %{ "vsetivli x0, 1, e64, m1, tu, mu\t#@expandBitsL\n\t"
+            "vmv.s.x $v0, $src\n\t"
+            "mv t0, 64\n\t"
+            "vsetvli x0, t0, e8, m4, tu, mu\n\t"
+            "vmv.v.i $v4, 0\n\t"
+            "vmerge.vim $v4, $v4, 1, $v0\n\t"
+            "vmv.v.i $v12, 0\n\t"
+            "vsetivli x0, 1, e64, m1, tu, mu\n\t"
+            "vmv.s.x $v0, $mask\n\t"
+            "vsetvli x0, t0, e8, m4, tu, mu\n\t"
+            "viota.m $v8, $v0\n\t"
+            "vrgather.vv $v12, $v4, $v8, $v0.t\n\t"
+            "vmseq.vi $v0, $v12, 1\n\t"
+            "vsetivli x0, 1, e64, m1, tu, mu\n\t"
+            "vmv.x.s $dst, $v0\t#@expandBitsL\n\t"
+          %}
+  ins_encode %{
+    __ expand_bits_l_v(as_Register($dst$$reg), as_Register($src$$reg), as_Register($mask$$reg));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // Vector Load Const
 instruct vloadcon(vReg dst, immI0 src) %{
   match(Set dst (VectorLoadConst src));
@@ -3105,7 +3200,7 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
       __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
-      __ integer_extend_v(as_VectorRegister($dst$$reg), bt, 
+      __ integer_extend_v(as_VectorRegister($dst$$reg), bt,
                           Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE);
     }
   %}
@@ -3544,6 +3639,23 @@ instruct vexpand(vReg dst, vReg src, vRegMask_V0 v0, vReg tmp) %{
                as_VectorRegister($dst$$reg));
     __ vrgather_vv(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
                    as_VectorRegister($tmp$$reg), Assembler::v0_t);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ------------------------------ Vector signum --------------------------------
+
+// Vector Math.signum
+
+instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
+  match(Set dst (SignumVF dst (Binary zero one)));
+  match(Set dst (SignumVD dst (Binary zero one)));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vsignum $dst, $dst\t" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
+                   bt, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

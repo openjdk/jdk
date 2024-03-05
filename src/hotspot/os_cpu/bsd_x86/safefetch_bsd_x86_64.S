@@ -1,6 +1,6 @@
 #
 # Copyright (c) 2022 SAP SE. All rights reserved.
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,22 @@
     .globl SYMBOL(_SafeFetch32_continuation)
     .globl SYMBOL(_SafeFetchN_continuation)
 
+#ifdef __APPLE__
+    .private_extern SYMBOL(SafeFetch32_impl)
+    .private_extern SYMBOL(SafeFetchN_impl)
+    .private_extern SYMBOL(_SafeFetch32_fault)
+    .private_extern SYMBOL(_SafeFetchN_fault)
+    .private_extern SYMBOL(_SafeFetch32_continuation)
+    .private_extern SYMBOL(_SafeFetchN_continuation)
+#endif
+
     .text
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
     #  %rdi : address
     #  %esi : defaultval
-	ELF_TYPE(SafeFetch32_impl,@function)
+    ELF_TYPE(SafeFetch32_impl,@function)
 SYMBOL(SafeFetch32_impl:)
 SYMBOL(_SafeFetch32_fault:)
     movl (%rdi), %eax

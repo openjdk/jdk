@@ -24,7 +24,7 @@
 /**
 * @test
 * @summary Test intrinsic for divideUnsigned() and remainderUnsigned() methods for Long
-* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64"
+* @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="riscv64" | os.arch=="aarch64"
 * @library /test/lib /
 * @run driver compiler.intrinsics.TestLongUnsignedDivMod
 */
@@ -140,7 +140,8 @@ public class TestLongUnsignedDivMod {
 
     @Test // needs to be run in (fast) debug mode
     @Warmup(10000)
-    @IR(counts = {IRNode.UDIV_MOD_L, ">= 1"}) // Atleast one UDivModL node is generated if intrinsic is used
+    @IR(applyIfPlatform = {"x64", "true"},
+        counts = {IRNode.UDIV_MOD_L, ">= 1"}) // At least one UDivModL node is generated if intrinsic is used
     public void testDivModUnsigned() {
         for (int i = 0; i < BUFFER_SIZE; i++) {
             try {

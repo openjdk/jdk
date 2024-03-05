@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile Code Adaptation.
+ * @summary Testing ClassFile Code Adaptation.
  * @run junit AdaptCodeTest
  */
 
@@ -35,13 +35,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
 import helpers.ByteArrayClassLoader;
 import helpers.TestUtil;
 import helpers.Transforms;
-import jdk.internal.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -56,7 +56,7 @@ class AdaptCodeTest {
 
     @Test
     void testNullAdaptIterator() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
             byte[] newBytes = cc.transform(cm, t);
@@ -76,7 +76,7 @@ class AdaptCodeTest {
     })
     void testNullAdaptIterator2(String path) throws Exception {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
             byte[] newBytes = cc.transform(cm, t);
@@ -85,7 +85,7 @@ class AdaptCodeTest {
 
     @Test
     void testSevenOfThirteenIterator() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
 
         var transform = ClassTransform.transformingMethodBodies((codeB, codeE) -> {
@@ -112,7 +112,7 @@ class AdaptCodeTest {
 
     @Test
     void testCopy() throws Exception {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         ClassModel cm = cc.parse(testClassPath);
         byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
 //        TestUtil.writeClass(newBytes, "TestClass.class");

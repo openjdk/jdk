@@ -82,14 +82,10 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
   SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
-  size_t         _count;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
-  MallocAllocationSiteWalker() : _count(0) { }
-
-  inline size_t count() const { return _count; }
 
   LinkedList<MallocSite>* malloc_sites() {
     return &_malloc_sites;
@@ -98,7 +94,6 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   bool do_malloc_site(const MallocSite* site) {
     if (site->size() > 0) {
       if (_malloc_sites.add(*site) != nullptr) {
-        _count++;
         return true;
       } else {
         return false;  // OOM
@@ -110,25 +105,23 @@ class MallocAllocationSiteWalker : public MallocSiteWalker {
   }
 };
 
-// Compare virtual memory region's base address
-int compare_virtual_memory_base(const ReservedMemoryRegion& r1, const ReservedMemoryRegion& r2) {
-  return r1.compare(r2);
-}
-
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
  private:
-  SortedLinkedList<ReservedMemoryRegion, compare_virtual_memory_base>
-                _virtual_memory_regions;
-  size_t        _count;
-
+  typedef LinkedListImpl<ReservedMemoryRegion, AnyObj::C_HEAP, mtNMT,
+                         AllocFailStrategy::RETURN_NULL> EntryList;
+  EntryList _virtual_memory_regions;
+  DEBUG_ONLY(address _last_base;)
  public:
-  VirtualMemoryAllocationWalker() : _count(0) { }
+  VirtualMemoryAllocationWalker() {
+    DEBUG_ONLY(_last_base = nullptr);
+  }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
+    assert(rgn->base() >= _last_base, "region unordered?");
+    DEBUG_ONLY(_last_base = rgn->base());
     if (rgn->size() > 0) {
       if (_virtual_memory_regions.add(*rgn) != nullptr) {
-        _count ++;
         return true;
       } else {
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,6 +74,8 @@ public class PropertyWriter extends AbstractMemberWriter {
         if (!properties.isEmpty()) {
             Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
             Content memberList = getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.PROPERTY_DETAIL, contents.propertyDetailsLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element property : properties) {
                 currentProperty = (ExecutableElement)property;
@@ -86,9 +88,12 @@ public class PropertyWriter extends AbstractMemberWriter {
                 buildTagInfo(div);
                 propertyContent.add(div);
                 memberList.add(getMemberListItem(propertyContent));
+                writer.tableOfContents.addLink(htmlIds.forProperty(currentProperty),
+                        Text.of(utils.getPropertyLabel(name(property))));
             }
             Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
             detailsList.add(propertyDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 

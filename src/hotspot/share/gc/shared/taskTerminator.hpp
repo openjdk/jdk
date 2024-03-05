@@ -72,9 +72,9 @@ class TaskTerminator : public CHeapObj<mtGC> {
   uint _n_threads;
   TaskQueueSetSuper* _queue_set;
 
-  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_CACHE_LINE_SIZE, 0);
+  DEFINE_PAD_MINUS_SIZE(0, DEFAULT_PADDING_SIZE, 0);
   volatile uint _offered_termination;
-  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_CACHE_LINE_SIZE, sizeof(volatile uint));
+  DEFINE_PAD_MINUS_SIZE(1, DEFAULT_PADDING_SIZE, sizeof(volatile uint));
 
   Monitor _blocker;
   Thread* _spin_master;

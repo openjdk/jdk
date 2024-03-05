@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -86,7 +86,7 @@
     Register len,                      // array length
     Register t1,                       // temp register
     Register t2,                       // temp register
-    int      hdr_size,                 // object header size in words
+    int      base_offset_in_bytes,     // elements offset in bytes
     int      elt_size,                 // element size in bytes
     Register klass,                    // object klass
     Label&   slow_case                 // Continuation point if fast allocation fails.

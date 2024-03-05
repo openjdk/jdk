@@ -91,9 +91,10 @@ public:
   // Override Abstract_VM_Version implementation
   static void print_platform_virtualization_info(outputStream*);
 
-  // PPC64 supports fast class initialization checks for static methods.
+  // PPC64 supports fast class initialization checks
   static bool supports_fast_class_init_checks() { return true; }
   constexpr static bool supports_stack_watermark_barrier() { return true; }
+  constexpr static bool supports_recursive_lightweight_locking() { return true; }
 
   static bool is_determine_features_test_running() { return _is_determine_features_test_running; }
   // CPU instruction support

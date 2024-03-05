@@ -252,10 +252,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â b c d ḍ e è ê f g h i í î j l m n o ò ô p q r s t u ú û v z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ç đ é ë ə ḥ ì k š ù w x y]</exemplarCharacters>
+		<exemplarCharacters>[aàâ b c dḍ eèê f g h iíî j l m n oòô p q r s t uúû v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ç đ éë ə ḥ ì k š ù w x y]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J L M N O P Q R S T U V Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -276,20 +276,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">nuv</month>
 							<month type="12" draft="unconfirmed">dic</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">J</month>
-							<month type="2" draft="unconfirmed">F</month>
-							<month type="3" draft="unconfirmed">M</month>
-							<month type="4" draft="unconfirmed">A</month>
-							<month type="5" draft="unconfirmed">M</month>
-							<month type="6" draft="unconfirmed">G</month>
-							<month type="7" draft="unconfirmed">G</month>
-							<month type="8" draft="unconfirmed">A</month>
-							<month type="9" draft="unconfirmed">S</month>
-							<month type="10" draft="unconfirmed">U</month>
-							<month type="11" draft="unconfirmed">N</month>
-							<month type="12" draft="unconfirmed">D</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1" draft="unconfirmed">jinnaru</month>
 							<month type="2" draft="unconfirmed">frivaru</month>
@@ -306,20 +292,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">jin</month>
-							<month type="2" draft="unconfirmed">fri</month>
-							<month type="3" draft="unconfirmed">mar</month>
-							<month type="4" draft="unconfirmed">apr</month>
-							<month type="5" draft="unconfirmed">maj</month>
-							<month type="6" draft="unconfirmed">giu</month>
-							<month type="7" draft="unconfirmed">gnt</month>
-							<month type="8" draft="unconfirmed">agu</month>
-							<month type="9" draft="unconfirmed">sit</month>
-							<month type="10" draft="unconfirmed">utt</month>
-							<month type="11" draft="unconfirmed">nuv</month>
-							<month type="12" draft="unconfirmed">dic</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">J</month>
 							<month type="2" draft="unconfirmed">F</month>
@@ -333,20 +305,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">U</month>
 							<month type="11" draft="unconfirmed">N</month>
 							<month type="12" draft="unconfirmed">D</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">jinnaru</month>
-							<month type="2" draft="unconfirmed">frivaru</month>
-							<month type="3" draft="unconfirmed">marzu</month>
-							<month type="4" draft="unconfirmed">aprili</month>
-							<month type="5" draft="unconfirmed">maju</month>
-							<month type="6" draft="unconfirmed">giugnu</month>
-							<month type="7" draft="unconfirmed">giugnettu</month>
-							<month type="8" draft="unconfirmed">agustu</month>
-							<month type="9" draft="unconfirmed">sittèmmiru</month>
-							<month type="10" draft="unconfirmed">uttòviru</month>
-							<month type="11" draft="unconfirmed">nuvèmmiru</month>
-							<month type="12" draft="unconfirmed">dicèmmiru</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -383,16 +341,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year-short">
 				<displayName draft="unconfirmed">a.</displayName>
 			</field>
-			<field type="year-narrow">
-				<displayName draft="unconfirmed">a.</displayName>
-			</field>
 			<field type="month">
 				<displayName draft="unconfirmed">misi</displayName>
 			</field>
 			<field type="month-short">
-				<displayName draft="unconfirmed">m.</displayName>
-			</field>
-			<field type="month-narrow">
 				<displayName draft="unconfirmed">m.</displayName>
 			</field>
 			<field type="week">
@@ -401,16 +353,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="week-short">
 				<displayName draft="unconfirmed">smn.</displayName>
 			</field>
-			<field type="week-narrow">
-				<displayName draft="unconfirmed">smn.</displayName>
-			</field>
 			<field type="weekOfMonth">
 				<displayName draft="unconfirmed">simana dû misi</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName draft="unconfirmed">smn. dû m.</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName draft="unconfirmed">smn. dû m.</displayName>
 			</field>
 			<field type="day">
@@ -425,19 +371,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0" draft="unconfirmed">oji</relative>
 				<relative type="1" draft="unconfirmed">dumani</relative>
 			</field>
-			<field type="day-narrow">
-				<displayName draft="unconfirmed">j.</displayName>
-				<relative type="-1" draft="unconfirmed">ajeri</relative>
-				<relative type="0" draft="unconfirmed">oji</relative>
-				<relative type="1" draft="unconfirmed">dumani</relative>
-			</field>
 			<field type="dayOfYear">
 				<displayName draft="unconfirmed">jornu di l’annu</displayName>
 			</field>
 			<field type="dayOfYear-short">
-				<displayName draft="unconfirmed">j. di l’a.</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName draft="unconfirmed">j. di l’a.</displayName>
 			</field>
 			<field type="weekday">
@@ -446,16 +383,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday-short">
 				<displayName draft="unconfirmed">j. dâ smn.</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName draft="unconfirmed">j. dâ smn.</displayName>
-			</field>
 			<field type="hour">
 				<displayName draft="unconfirmed">ura</displayName>
 			</field>
 			<field type="hour-short">
-				<displayName draft="unconfirmed">u.</displayName>
-			</field>
-			<field type="hour-narrow">
 				<displayName draft="unconfirmed">u.</displayName>
 			</field>
 			<field type="minute">
@@ -464,20 +395,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="minute-short">
 				<displayName draft="unconfirmed">min.</displayName>
 			</field>
-			<field type="minute-narrow">
-				<displayName draft="unconfirmed">min.</displayName>
-			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">sicunnu</displayName>
 				<relative type="0" draft="unconfirmed">ora</relative>
 			</field>
 			<field type="second-short">
 				<displayName draft="unconfirmed">sic.</displayName>
-				<relative type="0" draft="unconfirmed">ora</relative>
-			</field>
-			<field type="second-narrow">
-				<displayName draft="unconfirmed">sic.</displayName>
-				<relative type="0" draft="unconfirmed">ora</relative>
 			</field>
 			<field type="zone">
 				<displayName draft="unconfirmed">fusu urariu</displayName>
@@ -485,239 +408,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="zone-short">
 				<displayName draft="unconfirmed">fusu</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName draft="unconfirmed">fusu</displayName>
-			</field>
 		</fields>
 	</dates>
 	<numbers>
-		<symbols numberSystem="adlm">
-			<decimal draft="unconfirmed">,</decimal>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="bali">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="beng">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="brah">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="cakm">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="cham">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="deva">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="fullwide">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="gong">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="gonm">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="gujr">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="guru">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="hanidec">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed">.</group>
-			<list draft="unconfirmed">;</list>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
-			<approximatelySign draft="unconfirmed">~</approximatelySign>
-			<exponential draft="unconfirmed">E</exponential>
-			<superscriptingExponent draft="unconfirmed">×</superscriptingExponent>
-			<perMille draft="unconfirmed">‰</perMille>
-			<infinity draft="unconfirmed">∞</infinity>
-			<nan draft="unconfirmed">NaN</nan>
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="java">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="kali">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="khmr">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="knda">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="lana">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="lanatham">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="laoo">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">,</decimal>
 			<group draft="unconfirmed">.</group>
-		</symbols>
-		<symbols numberSystem="lepc">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="limb">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="mlym">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="mong">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="mtei">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="mymr">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="mymrshan">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="nkoo">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="olck">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="orya">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="osma">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="rohg">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="saur">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="shrd">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="sora">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="sund">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="takr">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="talu">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="tamldec">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="telu">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="thai">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="tibt">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="vaii">
-			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
 	</numbers>
 	<posix>

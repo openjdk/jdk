@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,6 +73,8 @@ final class LibFallback {
     static int intSize() { return NativeConstants.SIZEOF_INT; }
     static int longSize() {return NativeConstants.SIZEOF_LONG; }
     static int wcharSize() {return NativeConstants.SIZEOF_WCHAR; }
+    static int longLongAlign() { return NativeConstants.ALIGNOF_LONG_LONG; }
+    static int doubleAlign() { return NativeConstants.ALIGNOF_DOUBLE; }
 
     static short structTag() { return NativeConstants.STRUCT_TAG; }
 
@@ -93,10 +95,12 @@ final class LibFallback {
      * @see jdk.internal.foreign.abi.CapturableState
      */
     static void doDowncall(MemorySegment cif, MemorySegment target, MemorySegment retPtr, MemorySegment argPtrs,
-                                  MemorySegment capturedState, int capturedStateMask) {
+                           MemorySegment capturedState, int capturedStateMask,
+                           Object[] heapBases, int numArgs) {
             doDowncall(cif.address(), target.address(),
-                    retPtr == null ? 0 : retPtr.address(), argPtrs.address(),
-                    capturedState == null ? 0 : capturedState.address(), capturedStateMask);
+                       retPtr == null ? 0 : retPtr.address(), argPtrs.address(),
+                       capturedState == null ? 0 : capturedState.address(), capturedStateMask,
+                       heapBases, numArgs);
     }
 
     /**
@@ -158,6 +162,7 @@ final class LibFallback {
      * @throws IllegalStateException if the call to {@code ffi_prep_closure_loc} returns a non-zero status code
      * @throws IllegalArgumentException if {@code target} does not have the right type
      */
+    @SuppressWarnings("restricted")
     static MemorySegment createClosure(MemorySegment cif, MethodHandle target, Arena arena)
             throws IllegalStateException, IllegalArgumentException {
         if (target.type() != UPCALL_TARGET_TYPE) {
@@ -170,7 +175,8 @@ final class LibFallback {
         long execPtr = ptrs[1];
         long globalTarget = ptrs[2];
 
-        return MemorySegment.ofAddress(execPtr).reinterpret(arena, unused -> freeClosure(closurePtr, globalTarget));
+        return MemorySegment.ofAddress(execPtr)
+            .reinterpret(arena, unused -> freeClosure(closurePtr, globalTarget)); // restricted
     }
 
     // the target function for a closure call
@@ -210,7 +216,9 @@ final class LibFallback {
 
     private static native int createClosure(long cif, Object userData, long[] ptrs);
     private static native void freeClosure(long closureAddress, long globalTarget);
-    private static native void doDowncall(long cif, long fn, long rvalue, long avalues, long capturedState, int capturedStateMask);
+    private static native void doDowncall(long cif, long fn, long rvalue, long avalues,
+                                          long capturedState, int capturedStateMask,
+                                          Object[] heapBases, int numArgs);
 
     private static native int ffi_prep_cif(long cif, int abi, int nargs, long rtype, long atypes);
     private static native int ffi_prep_cif_var(long cif, int abi, int nfixedargs, int ntotalargs, long rtype, long atypes);
@@ -236,6 +244,9 @@ final class LibFallback {
     private static native int ffi_sizeof_long();
     private static native int ffi_sizeof_wchar();
 
+    private static native int alignof_long_long();
+    private static native int alignof_double();
+
     // put these in a separate class to avoid an UnsatisfiedLinkError
     // when LibFallback is initialized but the library is not present
     private static final class NativeConstants {
@@ -257,6 +268,8 @@ final class LibFallback {
         static final int SIZEOF_LONG = ffi_sizeof_long();
         static final int SIZEOF_WCHAR = ffi_sizeof_wchar();
 
+        static final int ALIGNOF_LONG_LONG = alignof_long_long();
+        static final int ALIGNOF_DOUBLE = alignof_double();
 
         static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
         static final short STRUCT_TAG = ffi_type_struct();

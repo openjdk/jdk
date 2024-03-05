@@ -24,9 +24,9 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.Label;
+import java.lang.classfile.constantpool.Utf8Entry;
 
 public class AbstractBoundLocalVariable
         extends AbstractElement {
