@@ -517,8 +517,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
         private final int addStart;
         private final int remStart;
 
-        DoChangeContents(List<File> addFiles, int addStart, List<File> remFiles,
-                         int remStart, int fid) {
+        private DoChangeContents(List<File> addFiles, int addStart,
+                                 List<File> remFiles, int remStart,
+                                 int fid) {
             this.addFiles = addFiles;
             this.addStart = addStart;
             this.remFiles = remFiles;
