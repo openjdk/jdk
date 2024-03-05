@@ -780,9 +780,9 @@ public class TextComponentPrintable implements CountingPrintable {
                     if (height != 0
                             && (y != previousY || height != previousHeight)) {
                         /*
-                         * we do not store the same value as previous. in our
-                         * documents it is often for consecutive positions to have
-                         * the same modelToView y and height.
+                         * We do not store the same value as previous.
+                         * In our documents, it is common for consecutive
+                         * positions to have the same modelToView y and height.
                          */
                         previousY = y;
                         previousHeight = height;
