@@ -1130,6 +1130,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
       pattern_match();
       assert(_scoped_value_cache != nullptr, "must have found Thread.scopedValueCache() call");
     }
+    NONCOPYABLE(ScopedValueGetPatternMatcher);
 
     CallNode* scoped_value_cache() const {
       return _scoped_value_cache;
@@ -1441,6 +1442,7 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
             _kit(kit), _scoped_value_object(scopedValueObject), _pattern_matcher(patternMatcher) {
       transform_get_subgraph();
     }
+    NONCOPYABLE(ScopedValueTransformer);
   };
 
  public:
