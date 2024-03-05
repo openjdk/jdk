@@ -724,7 +724,6 @@
   /************/                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
-  nonstatic_field(ciEnv,                       _failure_reason,                               const char*)                           \
   nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \
   nonstatic_field(ciEnv,                       _dependencies,                                 Dependencies*)                         \
   nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
