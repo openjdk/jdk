@@ -314,7 +314,7 @@ protected:
   BasicShenandoahSimpleBitMapTest() {
 
     // Initial state of each bitmap is all bits are clear.  Confirm this:
-    ssize_t set_bits_0[] = { };
+    ssize_t set_bits_0[1] = { 0 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_0, 0);
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_0, 0);
 
