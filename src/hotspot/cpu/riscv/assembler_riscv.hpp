@@ -1191,7 +1191,7 @@ static Assembler::SEW elemtype_to_sew(BasicType etype) {
   void NAME(Register Rd, uint32_t imm, SEW sew, LMUL lmul = m1,           \
             VMA vma = mu, VTA vta = tu, bool vill = false) {              \
     unsigned insn = 0;                                                    \
-    guarantee(is_uimm5(imm), "imm is invalid");                           \
+    guarantee(is_uimm5(imm), "uimm is invalid");                           \
     patch((address)&insn, 6, 0, op);                                      \
     patch((address)&insn, 14, 12, funct3);                                \
     patch((address)&insn, 19, 15, imm);                                   \
@@ -1327,7 +1327,7 @@ enum VectorMask {
 // r_vm
 #define INSN(NAME, op, funct3, funct6)                                                             \
   void NAME(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {       \
-    guarantee(is_uimm5(imm), "imm is invalid");                                                    \
+    guarantee(is_uimm5(imm), "uimm is invalid");                                                    \
     patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);                         \
   }
 
@@ -1339,6 +1339,9 @@ enum VectorMask {
   // Vector Slide Instructions
   INSN(vslideup_vi,   0b1010111, 0b011, 0b001110);
   INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
+
+  // Vector Narrowing Integer Right Shift Instructions
+  INSN(vnsra_wi, 0b1010111, 0b011, 0b101101);
 
 #undef INSN
 
@@ -1623,9 +1626,6 @@ enum VectorMask {
 
   // Vector Integer reverse subtract
   INSN(vrsub_vi,  0b1010111, 0b011, 0b000011);
-
-  // Vector Narrowing Integer Right Shift Instructions
-  INSN(vnsra_wi,  0b1010111, 0b011, 0b101101);
 
 #undef INSN
 

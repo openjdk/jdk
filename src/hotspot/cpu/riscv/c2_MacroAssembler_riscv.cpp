@@ -1902,6 +1902,7 @@ static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<
 void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, uint length) {
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, uint>
               (dst, src, length, 24, float16_to_float_v_slow_path);
+  assert_different_registers(dst, src);
 
   // On riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
   // On riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
@@ -1942,9 +1943,8 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
   // preserve the payloads of non-canonical NaNs.
   __ vnsra_wi(dst, src, 13, Assembler::v0_t);
 
-  __ mv(t0, 26);
   // preserve the sign bit.
-  __ vnsra_wx(tmp, src, t0, Assembler::v0_t);
+  __ vnsra_wi(tmp, src, 26, Assembler::v0_t);
   __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
   __ mv(t0, 0x3ff);
   __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
@@ -1958,6 +1958,8 @@ static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
 
 // j.l.Float.float16ToFloat
 void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister tmp, uint length) {
+  assert_different_registers(dst, src, tmp);
+
   auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister, uint>
               (dst, src, tmp, length, 36, float_to_float16_v_slow_path);
 
