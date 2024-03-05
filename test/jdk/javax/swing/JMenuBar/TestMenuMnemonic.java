@@ -31,17 +31,18 @@
  * @run main TestMenuMnemonic
  */
 
-import java.awt.event.KeyEvent;
 import java.awt.Robot;
+import java.awt.event.KeyEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
 public class TestMenuMnemonic {
@@ -49,51 +50,33 @@ public class TestMenuMnemonic {
     private static JFrame frame;
     private static JMenuBar menuBar;
     private static JMenu fileMenu;
+    private static final AtomicInteger mnemonicHideCount = new AtomicInteger(0);
+    private static final AtomicInteger mnemonicShowCount = new AtomicInteger(0);
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        int expectedMnemonicShowHideCount = 5;
+        final int EXPECTED = 5;
         Robot robot = new Robot();
         robot.setAutoDelay(100);
-        AtomicInteger mnemonicHideCount = new AtomicInteger(0);
-        AtomicInteger mnemonicShowCount = new AtomicInteger(0);
+
 
         try {
             SwingUtilities.invokeAndWait(TestMenuMnemonic::createAndShowUI);
             robot.waitForIdle();
             robot.delay(1000);
 
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < EXPECTED * 2; i++) {
                 robot.keyPress(KeyEvent.VK_F10);
                 robot.waitForIdle();
                 robot.delay(50);
                 robot.keyRelease(KeyEvent.VK_F10);
                 robot.waitForIdle();
                 robot.delay(50);
-                SwingUtilities.invokeAndWait(() -> {
-                    MenuSelectionManager msm =
-                            MenuSelectionManager.defaultManager();
-                    MenuElement[] selectedPath = msm.getSelectedPath();
-                    if (WindowsLookAndFeel.isMnemonicHidden()) {
-                        mnemonicHideCount.getAndIncrement();
-                        // check if selection is cleared when mnemonics are hidden
-                        if (selectedPath.length != 0) {
-                            throw new RuntimeException("Menubar is active after" +
-                                    " mnemonics are hidden");
-                        }
-                    } else {
-                        mnemonicShowCount.getAndIncrement();
-                        if (selectedPath.length != 2 &&
-                                (selectedPath[0] != menuBar || selectedPath[1] != fileMenu)) {
-                            throw new RuntimeException("No Menu and Menubar is active when" +
-                                    " mnemonics are shown");
-                        }
-                    }
-                });
+                SwingUtilities.invokeAndWait(TestMenuMnemonic::verifyMnemonicsState);
             }
 
-            if (mnemonicShowCount.get() != expectedMnemonicShowHideCount
-                && mnemonicHideCount.get() != expectedMnemonicShowHideCount) {
+            if (mnemonicShowCount.get() != EXPECTED
+                && mnemonicHideCount.get() != EXPECTED) {
                 throw new RuntimeException("Mismatch in Mnemonic show/hide on F10 press");
             }
         } finally {
@@ -102,6 +85,27 @@ public class TestMenuMnemonic {
                     frame.dispose();
                 }
             });
+        }
+    }
+
+    private static void verifyMnemonicsState() {
+        MenuSelectionManager msm =
+                MenuSelectionManager.defaultManager();
+        MenuElement[] selectedPath = msm.getSelectedPath();
+        if (WindowsLookAndFeel.isMnemonicHidden()) {
+            mnemonicHideCount.getAndIncrement();
+            // check if selection is cleared when mnemonics are hidden
+            if (selectedPath.length != 0) {
+                throw new RuntimeException("Menubar is active after" +
+                        " mnemonics are hidden");
+            }
+        } else {
+            mnemonicShowCount.getAndIncrement();
+            if (selectedPath.length != 2
+                && (selectedPath[0] != menuBar || selectedPath[1] != fileMenu)) {
+                throw new RuntimeException("No Menu and Menubar is active when" +
+                        " mnemonics are shown");
+            }
         }
     }
 

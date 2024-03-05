@@ -139,7 +139,7 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private static class TakeFocus extends AbstractAction {
-        static boolean mnemonicShowHideFlag = false;
+        @Override
         public void actionPerformed(ActionEvent e) {
             JMenuBar menuBar = (JMenuBar)e.getSource();
             JMenu menu = menuBar.getMenu(0);
