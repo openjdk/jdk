@@ -1108,8 +1108,9 @@ bool G1CollectedHeap::do_full_collection(bool explicit_gc,
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
-  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
+  G1FullGCMark gc_mark;
   GCTraceTime(Info, gc) tm("Pause Full", NULL, gc_cause(), true);
+  G1FullCollector collector(this, explicit_gc, do_clear_all_soft_refs, do_maximum_compaction);
 
   collector.prepare_collection();
   collector.collect();
@@ -2998,8 +2999,15 @@ void G1CollectedHeap::do_collection_pause_at_safepoint_helper(double target_paus
     G1MonitoringScope ms(g1mm(),
                          false /* full_gc */,
                          collector_state()->in_mixed_phase() /* all_memory_pools_affected */);
-
+    // Create the heap printer before internal pause timing to have
+    // heap information printed as last part of detailed GC log.
     G1HeapPrinterMark hpm(this);
+    // Young GC internal pause timing
+    // Not (yet) in 17: G1YoungGCNotifyPauseMark npm;
+
+    // Verification may use the gang workers, so they must be set up before.
+    // Individual parallel phases may override this.
+    // Not (yet) in 17: set_young_collection_default_active_worker_threads();
 
     {
       IsGCActiveMark x;
