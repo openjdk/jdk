@@ -367,6 +367,9 @@ class MacroAssembler: public Assembler {
                            Register toc);
 #endif
 
+  static int ic_check_size();
+  int ic_check(int end_alignment);
+
  protected:
 
   // It is imperative that all calls into the VM are handled via the
@@ -417,6 +420,12 @@ class MacroAssembler: public Assembler {
   inline void call_stub_and_return_to(Register function_entry, Register return_pc);
 
   void post_call_nop();
+  static bool is_post_call_nop(int instr_bits) {
+    const uint32_t nineth_bit = opp_u_field(1, 9, 9);
+    const uint32_t opcode_mask = 0b111110 << OPCODE_SHIFT;
+    const uint32_t pcn_mask = opcode_mask | nineth_bit;
+    return (instr_bits & pcn_mask) == (Assembler::CMPLI_OPCODE | nineth_bit);
+  }
 
   //
   // Java utilities
@@ -606,8 +615,8 @@ class MacroAssembler: public Assembler {
   void inc_held_monitor_count(Register tmp);
   void dec_held_monitor_count(Register tmp);
   void atomically_flip_locked_state(bool is_unlock, Register obj, Register tmp, Label& failed, int semantics);
-  void lightweight_lock(Register obj, Register hdr, Register t1, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Label& slow);
+  void lightweight_lock(Register obj, Register t1, Register t2, Label& slow);
+  void lightweight_unlock(Register obj, Register t1, Label& slow);
 
   // allocation (for C1)
   void tlab_allocate(
@@ -627,6 +636,12 @@ class MacroAssembler: public Assembler {
 
   void compiler_fast_unlock_object(ConditionRegister flag, Register oop, Register box,
                                    Register tmp1, Register tmp2, Register tmp3);
+
+  void compiler_fast_lock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
+                                             Register tmp2, Register tmp3);
+
+  void compiler_fast_unlock_lightweight_object(ConditionRegister flag, Register oop, Register tmp1,
+                                               Register tmp2, Register tmp3);
 
   // Check if safepoint requested and if so branch
   void safepoint_poll(Label& slow_path, Register temp, bool at_return, bool in_nmethod);

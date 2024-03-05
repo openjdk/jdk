@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 
- Copyright (c) 2002, 2020, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -177,7 +177,7 @@
     <xsl:value-of select="../../@id"/>
   </code>
   is
-  <code>NULL</code>, <xsl:apply-templates/>.
+  <code>nullptr</code>, <xsl:apply-templates/>.
 </xsl:template>
 
 <xsl:template match="vmbuf|allocfieldbuf|struct" mode="funcdescription">
@@ -378,7 +378,7 @@
       <xsl:value-of select="../@id"/>
     </code>
     is
-    <code>NULL</code>, the current thread is used.
+    <code>nullptr</code>, the current thread is used.
   </xsl:if>
 </xsl:template>
 
@@ -1010,7 +1010,7 @@ typedef </xsl:text>
 </xsl:template>
 
 <xsl:template match="varargs" mode="HotSpotValue">
-  <xsl:text>NULL</xsl:text>
+  <xsl:text>nullptr</xsl:text>
 </xsl:template>
 
 </xsl:stylesheet>

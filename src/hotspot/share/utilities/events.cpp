@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/symbol.hpp"
@@ -97,7 +98,9 @@ void Events::init() {
   if (LogEvents) {
     _messages = new StringEventLog("Events", "events");
     _vm_operations = new StringEventLog("VM Operations", "vmops");
-    _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
+    if (UseZGC) {
+      _zgc_phase_switch = new StringEventLog("ZGC Phase Switch", "zgcps");
+    }
     _exceptions = new ExceptionsEventLog("Internal exceptions", "exc");
     _redefinitions = new StringEventLog("Classes redefined", "redef");
     _class_unloading = new UnloadingEventLog("Classes unloaded", "unload");

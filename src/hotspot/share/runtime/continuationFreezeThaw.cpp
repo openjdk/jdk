@@ -390,7 +390,7 @@ public:
   inline int size_if_fast_freeze_available();
 
 #ifdef ASSERT
-  bool interpreted_native_or_deoptimized_on_stack();
+  bool check_valid_fast_path();
 #endif
 
 protected:
@@ -1514,7 +1514,10 @@ static bool monitors_on_stack(JavaThread* thread) {
   return false;
 }
 
-bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+// There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
+// adapter or called Deoptimization::unpack_frames. As for native frames, upcalls from JNI also go through the
+// interpreter (see JavaCalls::call_helper), while the UpcallLinker explicitly sets cont_fastpath.
+bool FreezeBase::check_valid_fast_path() {
   ContinuationEntry* ce = _thread->last_continuation();
   RegisterMap map(_thread,
                   RegisterMap::UpdateMap::skip,
@@ -1522,11 +1525,11 @@ bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
-      return true;
+    if (!f.is_compiled_frame() || f.is_deoptimized_frame()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 #endif // ASSERT
 
@@ -1588,11 +1591,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   Freeze<ConfigT> freeze(current, cont, sp);
 
-  // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
-  // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
-  // (see JavaCalls::call_helper).
-  assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
+  assert(!current->cont_fastpath() || freeze.check_valid_fast_path(), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
@@ -2181,7 +2180,7 @@ void ThawBase::clear_bitmap_bits(address start, address end) {
   log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
   chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
-  assert(chunk->bitmap().count_one_bits(chunk->bit_index_for(effective_end), chunk->bit_index_for(end)) == 0, "bits should not be set");
+  assert(effective_end == end || !chunk->bitmap().at(chunk->bit_index_for(effective_end)), "bit should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {

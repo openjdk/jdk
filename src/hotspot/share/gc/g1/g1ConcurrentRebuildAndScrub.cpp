@@ -28,9 +28,9 @@
 
 #include "gc/g1/g1ConcurrentMark.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.inline.hpp"
 #include "gc/g1/g1_globals.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.inline.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "logging/log.hpp"
@@ -105,7 +105,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
     //  - been allocated after rebuild start, or
     //  - been reclaimed by a collection.
     bool should_rebuild_or_scrub(HeapRegion* hr) const {
-      return _cm->top_at_rebuild_start(hr->hrm_index()) != nullptr;
+      return _cm->top_at_rebuild_start(hr) != nullptr;
     }
 
     // Helper used by both humongous objects and when chunking an object larger than the
@@ -229,7 +229,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       assert(should_rebuild_or_scrub(hr), "must be");
 
       log_trace(gc, marking)("Scrub and rebuild region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT " TAMS: " PTR_FORMAT,
-                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())), p2i(hr->top_at_mark_start()));
+                             HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)), p2i(hr->top_at_mark_start()));
 
       if (scan_and_scrub_to_pb(hr, hr->bottom(), pb)) {
         log_trace(gc, marking)("Scan and scrub aborted for region: %u", hr->hrm_index());
@@ -246,7 +246,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
       hr->note_end_of_scrubbing();
 
       // Rebuild from TAMS (= parsable_bottom) to TARS.
-      if (scan_from_pb_to_tars(hr, pb, _cm->top_at_rebuild_start(hr->hrm_index()))) {
+      if (scan_from_pb_to_tars(hr, pb, _cm->top_at_rebuild_start(hr))) {
         log_trace(gc, marking)("Rebuild aborted for region: %u (%s)", hr->hrm_index(), hr->get_short_type_str());
         return true;
       }
@@ -272,7 +272,7 @@ class G1RebuildRSAndScrubTask : public WorkerTask {
              "Humongous object not live");
 
       log_trace(gc, marking)("Rebuild for humongous region: " HR_FORMAT " pb: " PTR_FORMAT " TARS: " PTR_FORMAT,
-                              HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr->hrm_index())));
+                              HR_FORMAT_PARAMS(hr), p2i(pb), p2i(_cm->top_at_rebuild_start(hr)));
 
       // Scan the humongous object in chunks from bottom to top to rebuild remembered sets.
       HeapWord* humongous_end = hr->humongous_start_region()->bottom() + humongous->size();

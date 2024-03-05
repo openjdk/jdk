@@ -233,16 +233,6 @@ public:
   ObjectToOopClosure(OopIterateClosure* cl) : _cl(cl) {}
 };
 
-// SpaceClosure is used for iterating over spaces
-
-class Space;
-
-class SpaceClosure : public StackObj {
- public:
-  // Called for each space
-  virtual void do_space(Space* s) = 0;
-};
-
 // CodeBlobClosure is used for iterating through code blobs
 // in the code cache or on thread stacks
 

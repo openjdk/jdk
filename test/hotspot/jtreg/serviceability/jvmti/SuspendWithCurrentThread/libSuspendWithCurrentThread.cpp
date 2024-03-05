@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,12 +24,12 @@
 #include <string.h>
 #include <atomic>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
-static jvmtiEnv* jvmti = NULL;
-static jthread* threads = NULL;
+static jvmtiEnv* jvmti = nullptr;
+static jthread* threads = nullptr;
 static jsize threads_count = 0;
 
 JNIEXPORT void JNICALL
@@ -51,9 +51,9 @@ Java_SuspendWithCurrentThread_registerTestedThreads(JNIEnv *jni, jclass cls, job
 /* This function is executed on the suspender thread which is not Main thread */
 JNIEXPORT void JNICALL
 Java_ThreadToSuspend_suspendTestedThreads(JNIEnv *jni, jclass cls) {
-  jvmtiError* results = NULL;
+  jvmtiError* results = nullptr;
   jvmtiError err;
-  const char* tname = get_thread_name(jvmti, jni, NULL); // current thread name
+  const char* tname = get_thread_name(jvmti, jni, nullptr); // current thread name
 
   LOG("\nsuspendTestedThreads: started by thread: %s\n", tname);
   err = jvmti->Allocate((threads_count * sizeof(jvmtiError)),
@@ -105,7 +105,7 @@ Java_SuspendWithCurrentThread_checkTestedThreadsSuspended(JNIEnv *jni, jclass cl
 
 JNIEXPORT void JNICALL
 Java_SuspendWithCurrentThread_resumeTestedThreads(JNIEnv *jni, jclass cls) {
-  jvmtiError* results = NULL;
+  jvmtiError* results = nullptr;
   jvmtiError err;
 
   LOG("\nresumeTestedThreads: started\n");
@@ -135,7 +135,7 @@ Java_SuspendWithCurrentThread_releaseTestedThreadsInfo(JNIEnv *jni, jclass cls) 
 
   LOG("\nreleaseTestedThreadsInfo: started\n");
   for (int i = 0; i < threads_count; i++) {
-    if (threads[i] != NULL) {
+    if (threads[i] != nullptr) {
       jni->DeleteGlobalRef(threads[i]);
     }
   }

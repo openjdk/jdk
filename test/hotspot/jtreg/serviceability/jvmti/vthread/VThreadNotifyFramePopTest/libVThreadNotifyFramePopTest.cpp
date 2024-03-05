@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,38 +23,38 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 #define MAX_FRAME_COUNT 20
 
-static jvmtiEnv *jvmti = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int breakpoint_count = 0;
 static int frame_pop_count = 0;
 static int brkptBreakpointHit = 0;
 static jboolean received_frame_pop_event = JNI_FALSE;
 static jboolean passed = JNI_TRUE;
 
-static jmethodID *test_methods = NULL;
+static jmethodID *test_methods = nullptr;
 jint test_method_count = 0;
-jclass test_class = NULL;
+jclass test_class = nullptr;
 
-static jmethodID *url_methods = NULL;
+static jmethodID *url_methods = nullptr;
 jint url_method_count = 0;
-jclass url_class = NULL;
+jclass url_class = nullptr;
 
 static void
 print_frame_event_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID method,
                        const char* event_name, int event_count) {
   char* tname = get_thread_name(jvmti, jni, thread);
   char* cname = get_method_class_name(jvmti, jni, method);
-  char* mname = NULL;
-  char* msign = NULL;
+  char* mname = nullptr;
+  char* msign = nullptr;
   jvmtiError err;
 
-  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  err = jvmti->GetMethodName(method, &mname, &msign, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
 
  LOG("%s #%d: thread: %s, method: %s.%s%s\n",
@@ -84,7 +84,7 @@ static void
 set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
                      jclass klass, jmethodID methods[], int method_count) {
   jlocation location = (jlocation)0L;
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jvmtiError err;
 
   // Find the jmethodID of the specified method
@@ -98,7 +98,7 @@ set_or_clear_breakpoint(JNIEnv *jni, jboolean set, const char *methodName,
     }
     deallocate(jvmti, jni, (void*)mname);
   }
-  if (method == NULL) {
+  if (method == nullptr) {
      LOG("setupBreakpoint: not found method %s() to %s a breakpoint\n",
              methodName, set ? "set" : "clear");
       jni->FatalError("Error in setupBreakpoint: not found method");
@@ -237,7 +237,7 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
    LOG("Agent_OnLoad: Error in JVMTI SetEventCallbacks: %d\n", err);
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_FRAME_POP, nullptr);
   if (err != JVMTI_ERROR_NONE) {
    LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
   }
@@ -268,7 +268,7 @@ Java_VThreadNotifyFramePopTest_enableEvents(JNIEnv *jni, jclass klass, jthread t
   set_breakpoint(jni, "openStream", urlKlass, url_methods, url_method_count);
 
   // Enable Breakpoint events globally
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
  LOG("enableEvents: finished\n");
