@@ -35,11 +35,13 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1000, timeUnit = TimeUnit.MILLISECONDS)
 @Fork(3)
 public class IfMinMax {
-    private static final int SIZE = 300;
+    private static final int SIZE = 10_000;
 
     @Benchmark
     public void testSingleInt(Blackhole blackhole, BenchState state) {
-        blackhole.consume(state.i1[0] > state.i2[0] ? state.i1[0] : state.i2[0]);
+        int a = state.i1[state.random.nextInt(SIZE)];
+        int b = state.i2[state.random.nextInt(SIZE)];
+        blackhole.consume(a > b ? a : b);
     }
 
     @Benchmark
@@ -66,7 +68,9 @@ public class IfMinMax {
 
     @Benchmark
     public void testSingleLong(Blackhole blackhole, BenchState state) {
-        blackhole.consume(state.l1[0] > state.l2[0] ? state.l1[0] : state.l2[0]);
+        long a = state.l1[state.random.nextInt(SIZE)];
+        long b = state.l2[state.random.nextInt(SIZE)];
+        blackhole.consume(a > b ? a : b);
     }
 
     @Benchmark
@@ -101,20 +105,23 @@ public class IfMinMax {
         private final long[] l2 = new long[SIZE];
         private final long[] l3 = new long[SIZE];
 
+        private Random random;
+
         public BenchState() {
         }
 
         @Setup
         public void setup() {
-            Random random = new Random(1000);
-            for (int i = 0; i < SIZE; i++) {
-                i1[i] = random.nextInt();
-                i2[i] = random.nextInt();
-                i3[i] = random.nextInt();
+            this.random = new Random(1000);
 
-                l1[i] = random.nextLong();
-                l2[i] = random.nextLong();
-                l3[i] = random.nextLong();
+            for (int i = 0; i < SIZE; i++) {
+                i1[i] = this.random.nextInt();
+                i2[i] = this.random.nextInt();
+                i3[i] = this.random.nextInt();
+
+                l1[i] = this.random.nextLong();
+                l2[i] = this.random.nextLong();
+                l3[i] = this.random.nextLong();
             }
         }
     }
