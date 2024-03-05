@@ -98,5 +98,6 @@ public class IconifiedToFront {
 
     private static void pause() {
         robot.delay(PAUSE_MS);
+        robot.waitForIdle();
     }
 }
