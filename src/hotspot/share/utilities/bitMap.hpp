@@ -635,7 +635,7 @@ class CHeapBitMap : public GrowableBitMap<CHeapBitMap> {
   NONCOPYABLE(CHeapBitMap);
 
  public:
-  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(0, false), _flags(flags) {}
+  explicit CHeapBitMap(MEMFLAGS flags) : GrowableBitMap(), _flags(flags) {}
   CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear = true);
   ~CHeapBitMap();
 

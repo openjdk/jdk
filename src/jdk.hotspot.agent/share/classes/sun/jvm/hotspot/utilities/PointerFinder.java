@@ -27,6 +27,7 @@ package sun.jvm.hotspot.utilities;
 import sun.jvm.hotspot.code.*;
 import sun.jvm.hotspot.debugger.*;
 import sun.jvm.hotspot.debugger.cdbg.*;
+import sun.jvm.hotspot.gc.g1.*;
 import sun.jvm.hotspot.gc.serial.*;
 import sun.jvm.hotspot.gc.shared.*;
 import sun.jvm.hotspot.interpreter.*;
@@ -85,43 +86,50 @@ public class PointerFinder {
 
     // Check if address is in the java heap.
     CollectedHeap heap = VM.getVM().getUniverse().heap();
-    if (heap instanceof SerialHeap) {
-      SerialHeap sh = (SerialHeap) heap;
-      if (sh.isIn(a)) {
-        loc.heap = heap;
-        for (int i = 0; i < sh.nGens(); i++) {
-          Generation g = sh.getGen(i);
-          if (g.isIn(a)) {
-            loc.gen = g;
+    if (heap.isIn(a)) {
+      loc.heap = heap;
+
+      // See if the address is in a TLAB
+      if (VM.getVM().getUseTLAB()) {
+        // Try to find thread containing it
+        for (int i = 0; i < threads.getNumberOfThreads(); i++) {
+          JavaThread t = threads.getJavaThreadAt(i);
+          ThreadLocalAllocBuffer tlab = t.tlab();
+          if (tlab.contains(a)) {
+            loc.tlabThread = t;
+            loc.tlab = tlab;
             break;
           }
         }
+      }
+
+      // If we are using the SerialHeap, find out which generation the address is in
+      if (heap instanceof SerialHeap) {
+        SerialHeap sh = (SerialHeap)heap;
+        if (sh.youngGen().isIn(a)) {
+          loc.gen = sh.youngGen();
+        } else if (sh.oldGen().isIn(a)) {
+          loc.gen = sh.oldGen();
+        }
 
         if (Assert.ASSERTS_ENABLED) {
-          Assert.that(loc.gen != null, "Should have found this in a generation");
+          Assert.that(loc.gen != null, "Should have found this address in a generation");
         }
-
-        if (VM.getVM().getUseTLAB()) {
-          // Try to find thread containing it
-          for (int i = 0; i < threads.getNumberOfThreads(); i++) {
-            JavaThread t = threads.getJavaThreadAt(i);
-            ThreadLocalAllocBuffer tlab = t.tlab();
-            if (tlab.contains(a)) {
-              loc.inTLAB = true;
-              loc.tlabThread = t;
-              loc.tlab = tlab;
-              break;
-            }
-          }
-        }
-
-        return loc;
       }
-    } else {
-      if (heap.isIn(a)) {
-        loc.heap = heap;
-        return loc;
+
+      // If we are using the G1CollectedHeap, find out which region the address is in
+      if (heap instanceof G1CollectedHeap) {
+        G1CollectedHeap g1 = (G1CollectedHeap)heap;
+        loc.hr = g1.heapRegionForAddress(a);
+        // We don't assert that loc.hr is not null like we do for the SerialHeap. This is
+        // because heap.isIn(a) can return true if the address is anywhere in G1's mapped
+        // memory, even if that area of memory is not in use by a G1 HeapRegion. So there
+        // may in fact be no HeapRegion for the address even though it is in the heap.
+        // Leaving loc.hr == null in this case will result in PointerFinder saying that
+        // the address is "In unknown section of Java the heap", which is what we want.
       }
+
+      return loc;
     }
 
     // Check if address is in the interpreter

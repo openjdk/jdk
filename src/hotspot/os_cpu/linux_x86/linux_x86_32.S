@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,41 @@
 # questions.
 #
 
+        .globl  SpinPause
 
         # NOTE WELL!  The _Copy functions are called directly
-	# from server-compiler-generated code via CallLeafNoFP,
-	# which means that they *must* either not use floating
-	# point or use it in the same manner as does the server
-	# compiler.
+        # from server-compiler-generated code via CallLeafNoFP,
+        # which means that they *must* either not use floating
+        # point or use it in the same manner as does the server
+        # compiler.
 
         .globl _Copy_arrayof_conjoint_bytes
         .globl _Copy_conjoint_jshorts_atomic
-	.globl _Copy_arrayof_conjoint_jshorts
+        .globl _Copy_arrayof_conjoint_jshorts
         .globl _Copy_conjoint_jints_atomic
         .globl _Copy_arrayof_conjoint_jints
-	.globl _Copy_conjoint_jlongs_atomic
-	.globl _mmx_Copy_arrayof_conjoint_jshorts
+        .globl _Copy_conjoint_jlongs_atomic
+        .globl _mmx_Copy_arrayof_conjoint_jshorts
 
         .globl _Atomic_cmpxchg_long
         .globl _Atomic_move_long
 
-	.text
+        .hidden  SpinPause
 
-        .globl  SpinPause
-	.type   SpinPause,@function
+        .hidden _Copy_arrayof_conjoint_bytes
+        .hidden _Copy_conjoint_jshorts_atomic
+        .hidden _Copy_arrayof_conjoint_jshorts
+        .hidden _Copy_conjoint_jints_atomic
+        .hidden _Copy_arrayof_conjoint_jints
+        .hidden _Copy_conjoint_jlongs_atomic
+        .hidden _mmx_Copy_arrayof_conjoint_jshorts
+
+        .hidden _Atomic_cmpxchg_long
+        .hidden _Atomic_move_long
+
+        .text
+
+        .type   SpinPause,@function
         .p2align 4,,15
 SpinPause:
         rep
@@ -55,7 +68,7 @@ SpinPause:
         #                                               size_t count)
         #
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_bytes,@function
+        .type    _Copy_arrayof_conjoint_bytes,@function
 _Copy_arrayof_conjoint_bytes:
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -115,7 +128,7 @@ acb_CopyLeft:
         jbe      2f                   # <= 32 dwords
         rep;     smovl
         jmp      4f
-	.space 8
+        .space 8
 2:      subl     %esi,%edi
         .p2align 4,,15
 3:      movl     (%esi),%edx
@@ -131,7 +144,7 @@ acb_CopyLeft:
         addl     $3,%esi
 6:      movb     (%esi),%dl
         movb     %dl,(%edi,%esi,1)
-	subl     $1,%esi
+        subl     $1,%esi
         subl     $1,%ecx
         jnz      6b
 7:      cld
@@ -143,7 +156,7 @@ acb_CopyLeft:
         #                                                void* to,
         #                                                size_t count)
         .p2align 4,,15
-	.type    _Copy_conjoint_jshorts_atomic,@function
+        .type    _Copy_conjoint_jshorts_atomic,@function
 _Copy_conjoint_jshorts_atomic:
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -230,7 +243,7 @@ cs_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-	.type    _Copy_arrayof_conjoint_jshorts,@function
+        .type    _Copy_arrayof_conjoint_jshorts,@function
 _Copy_arrayof_conjoint_jshorts:
         pushl    %esi
         movl     4+12(%esp),%ecx      # count
@@ -307,8 +320,8 @@ acs_CopyLeft:
         # Equivalent to
         #   arrayof_conjoint_jints
         .p2align 4,,15
-	.type    _Copy_conjoint_jints_atomic,@function
-	.type    _Copy_arrayof_conjoint_jints,@function
+        .type    _Copy_conjoint_jints_atomic,@function
+        .type    _Copy_arrayof_conjoint_jints,@function
 _Copy_conjoint_jints_atomic:
 _Copy_arrayof_conjoint_jints:
         pushl    %esi
@@ -384,7 +397,7 @@ ci_CopyLeft:
         # }
         */
         .p2align 4,,15
-	.type    _Copy_conjoint_jlongs_atomic,@function
+        .type    _Copy_conjoint_jlongs_atomic,@function
 _Copy_conjoint_jlongs_atomic:
         movl     4+8(%esp),%ecx       # count
         movl     4+0(%esp),%eax       # from
@@ -413,7 +426,7 @@ cla_CopyLeft:
         #                                                 void* to,
         #                                                 size_t count)
         .p2align 4,,15
-	.type    _mmx_Copy_arrayof_conjoint_jshorts,@function
+        .type    _mmx_Copy_arrayof_conjoint_jshorts,@function
 _mmx_Copy_arrayof_conjoint_jshorts:
         pushl    %esi
         movl     4+12(%esp),%ecx
@@ -465,8 +478,8 @@ mmx_acs_CopyRight:
         cmpl     $16,%ecx
         jge      4b
         emms
-	testl    %ecx,%ecx
-	ja       1b
+        testl    %ecx,%ecx
+        ja       1b
 5:      andl     $1,%eax
         je       7f
 6:      movw     (%esi),%dx
@@ -511,7 +524,7 @@ mmx_acs_CopyLeft:
         #                                   jlong exchange_value)
         #
         .p2align 4,,15
-	.type    _Atomic_cmpxchg_long,@function
+        .type    _Atomic_cmpxchg_long,@function
 _Atomic_cmpxchg_long:
                                    #  8(%esp) : return PC
         pushl    %ebx              #  4(%esp) : old %ebx
@@ -530,7 +543,7 @@ _Atomic_cmpxchg_long:
         # Support for jlong Atomic::load and Atomic::store.
         # void _Atomic_move_long(const volatile jlong* src, volatile jlong* dst)
         .p2align 4,,15
-	.type    _Atomic_move_long,@function
+        .type    _Atomic_move_long,@function
 _Atomic_move_long:
         movl     4(%esp), %eax   # src
         fildll    (%eax)

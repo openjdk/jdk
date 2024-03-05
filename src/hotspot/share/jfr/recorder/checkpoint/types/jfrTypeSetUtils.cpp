@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,6 @@ void JfrArtifactSet::initialize(bool class_unload) {
   _klass_list = new GrowableArray<const Klass*>(initial_klass_list_size);
   _klass_loader_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
   _klass_loader_leakp_set = new GrowableArray<const Klass*>(initial_klass_loader_set_size);
-
-  if (class_unload) {
-    _unloading_set = new GrowableArray<const Klass*>(initial_klass_list_size);
-  }
 }
 
 void JfrArtifactSet::clear() {
@@ -117,18 +113,9 @@ bool JfrArtifactSet::should_do_cld_klass(const Klass* k, bool leakp) {
   return not_in_set(leakp ? _klass_loader_leakp_set : _klass_loader_set, k);
 }
 
-bool JfrArtifactSet::should_do_unloading_artifact(const void* ptr) {
-  assert(ptr != nullptr, "invariant");
-  assert(_class_unload, "invariant");
-  assert(_unloading_set != nullptr, "invariant");
-  // The incoming pointers are of all kinds of different types.
-  // However, we are only interested in set membership.
-  // Treat them uniformly as const Klass* for simplicity and code reuse.
-  return not_in_set(_unloading_set, static_cast<const Klass*>(ptr));
-}
-
 void JfrArtifactSet::register_klass(const Klass* k) {
   assert(k != nullptr, "invariant");
+  assert(IS_SERIALIZED(k), "invariant");
   assert(_klass_list != nullptr, "invariant");
   _klass_list->append(k);
 }

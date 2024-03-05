@@ -421,6 +421,9 @@ public:
     init_req(0,control);
     init_req(1,b);
   }
+
+  static IfNode* make_with_same_profile(IfNode* if_node_profile, Node* ctrl, BoolNode* bol);
+
   virtual int Opcode() const;
   virtual bool pinned() const { return true; }
   virtual const Type *bottom_type() const { return TypeTuple::IFBOTH; }

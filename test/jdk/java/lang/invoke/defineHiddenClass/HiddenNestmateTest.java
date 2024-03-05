@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,28 +24,35 @@
 /*
  * @test
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @build  HiddenNestmateTest
  * @run testng/othervm HiddenNestmateTest
  */
 
+import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.reflect.AccessFlag;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.stream.Stream;
 import java.util.Arrays;
 
-import jdk.internal.org.objectweb.asm.*;
 import org.testng.annotations.Test;
 
+import static java.lang.constant.ConstantDescs.CD_Object;
+import static java.lang.constant.ConstantDescs.CD_int;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static java.lang.invoke.MethodHandles.Lookup.ClassOption.*;
 import static java.lang.invoke.MethodHandles.Lookup.*;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import static org.testng.Assert.*;
 
 public class HiddenNestmateTest {
+    private static final ClassDesc CD_HiddenNestmateTest = HiddenNestmateTest.class.describeConstable().orElseThrow();
     private static final byte[] bytes = classBytes("HiddenInjected");
 
     private static void assertNestmate(Lookup lookup) {
@@ -165,34 +172,20 @@ public class HiddenNestmateTest {
     }
 
     private static byte[] classBytes(String classname) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS + ClassWriter.COMPUTE_FRAMES);
-        MethodVisitor mv;
-
-        cw.visit(V12, ACC_FINAL, classname, null, "java/lang/Object", null);
-
-        {
-            mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "java/lang/Object", "<init>", "()V");
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-        {
-            // access a private member of the nest host class
-            mv = cw.visitMethod(ACC_PUBLIC, "test", "(LHiddenNestmateTest;)I", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 1);
-            mv.visitMethodInsn(INVOKEVIRTUAL, "HiddenNestmateTest", "privMethod", "()I");
-            mv.visitInsn(IRETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-        }
-        cw.visitEnd();
-
-        return cw.toByteArray();
+        return ClassFile.of().build(ClassDesc.ofInternalName(classname), clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(AccessFlag.FINAL);
+            clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+            clb.withMethodBody("test", MethodTypeDesc.of(CD_int, CD_HiddenNestmateTest), PUBLIC, cob -> {
+                cob.aload(1);
+                cob.invokevirtual(CD_HiddenNestmateTest, "privMethod", MethodTypeDesc.of(CD_int));
+                cob.ireturn();
+            });
+        });
     }
 
     private int privMethod() { return 1234; }
