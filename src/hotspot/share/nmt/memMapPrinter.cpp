@@ -246,6 +246,9 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
       for (int i = 0; i < mt_number_of_types; i++) {
         const MEMFLAGS flag = (MEMFLAGS)i;
         if (flags.has_flag(flag)) {
+          if (i > 0) {
+            _out->put(' ');
+          }
           _out->print("%s", get_shortname_for_nmt_flag(flag));
           if (flag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
@@ -255,7 +258,6 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
             CodeCache::print_name_for_heap_containing(_out, vma_from);
             _out->print(")");
           }
-          _out->put(' ');
         }
       }
     }

@@ -36,10 +36,6 @@ class outputStream;
 class CachedNMTInformation;
 
 struct MappingPrintOptions {
-  // Depending the the platform specifics, prints
-  // more information at higher costs (e.g. on Linux,
-  // scans /proc/pid/smaps instead of /proc/pid/maps)
-  bool detail_mode;
   // Don't print individual mappings. Only
   // print accumulated summary.
   bool only_summary;

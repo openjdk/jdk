@@ -33,79 +33,17 @@
 #include "utilities/globalDefinitions.hpp"
 #include <limits.h>
 
-class ProcMapsSummary {
-  unsigned _num_mappings;
-  size_t _vsize;
-public:
-  ProcMapsSummary() : _num_mappings(0), _vsize(0) {}
-  void add_mapping(ProcMapsInfo& info) {
-    _num_mappings ++;
-    _vsize += info.vsize();
-  }
-  void print_on(const MappingPrintSession& session) const {
-    outputStream* st = session.out();
-    st->print_cr("Number of mappings: %u", _num_mappings);
-    st->print_cr("             vsize: %zu (" PROPERFMT ")", _vsize, PROPERFMTARGS(_vsize));
-  }
-};
-
-class ProcMapsPrinter {
-  const MappingPrintSession& _session;
-public:
-  ProcMapsPrinter(const MappingPrintSession& session) :
-    _session(session)
-  {}
-
-  void print_single_mapping(const ProcMapsInfo& info) const {
-    assert(!_session.options().detail_mode, "Should be called only for simple mode");
-    outputStream* st = _session.out();
-    int pos = 0;
-#define INDENT_BY(n) pos += n; st->fill_to(pos);
-    st->print(PTR_FORMAT " - " PTR_FORMAT " ", p2i(info.from), p2i(info.to));
-    INDENT_BY(40);
-    st->print("%10zu", info.vsize());
-    INDENT_BY(11);
-    st->print("%s ", info.prot);
-    INDENT_BY(5);
-    _session.print_nmt_info_for_region(info.from, info.to);
-    INDENT_BY(10);
-    st->print_raw(info.filename);
-#undef INDENT
-    st->cr();
-  }
-
-  void print_legend() const {
-    outputStream* st = _session.out();
-    st->print_cr("from, to, vsize: address range and size");
-    st->print_cr("prot:            protection");
-    st->print_cr("vm info:         VM information (requires NMT)");
-    _session.print_nmt_flag_legend(16);
-    st->print_cr("file:            file mapped, if mapping is not anonymous");
-  }
-
-  void print_header() const {
-    outputStream* st = _session.out();
-    //            .         .         .         .         .         .         .         .         .         .         .
-    //            01234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p JAVAHEAP  /shared/tmp.txt
-    st->print_cr("from                 to                      vsize prot vm-info   file");
-  }
-};
-
-// A simple histogram for sizes by pagesize. We keep pagesizes in an array by page size bit
-// index. Smallest page size we expect is 4k (2^12), largest pagesize we expect is 16G (powerpc)
-// - 2^34. So we store 34-12 = 22 sizes.
 class PageSizeHistogram {
   static constexpr int log_smallest_pagesize = 12; // 4K
-  static constexpr int log_largest_pagesize = 34;  // 16G, ppc
+  static constexpr int log_largest_pagesize = 34;  // 16G, (ppc) (increase if we ever get larger page sizes)
   static constexpr int num_pagesizes = log_largest_pagesize - log_smallest_pagesize;
   size_t _v[num_pagesizes];
 public:
   PageSizeHistogram() { memset(_v, 0, sizeof(_v)); }
   void add(size_t pagesize, size_t size) {
-    assert(is_aligned(size, pagesize), "strange");
+    assert(is_aligned(size, pagesize), "Size %zu unaligned to page size %zu", size, pagesize);
     const int n = exact_log2(pagesize) - log_smallest_pagesize;
-    assert(n >= 0 && n < num_pagesizes, "strange");
+    assert(n >= 0 && n < num_pagesizes, "unexpected pagesize %zu", pagesize);
     _v[n] += size;
   }
   void print_on(outputStream* st) const {
@@ -122,13 +60,13 @@ public:
 
 class ProcSmapsSummary {
   unsigned _num_mappings;
-  size_t _vsize;
-  size_t _rss;
-  size_t _committed;
-  size_t _shared;
-  size_t _swapped_out;
-  size_t _hugetlb;
-  size_t _thp;
+  size_t _vsize;        // combined virtual size
+  size_t _rss;          // combined resident set size
+  size_t _committed;    // combined committed space
+  size_t _shared;       // combined shared size
+  size_t _swapped_out;  // combined amount of swapped-out memory
+  size_t _hugetlb;      // combined amount of memory backed by explicit huge pages
+  size_t _thp;          // combined amount of memory backed by THPs
   PageSizeHistogram _pagesizes;
 public:
   ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
@@ -173,7 +111,6 @@ public:
   {}
 
   void print_single_mapping(const ProcSmapsInfo& info) const {
-    assert(_session.options().detail_mode, "Should be called only for detail mode");
     outputStream* st = _session.out();
     int pos = 0;
   #define INDENT_BY(n) pos += n; st->fill_to(pos);
@@ -209,9 +146,12 @@ public:
     }
   #undef PRINTIF
     INDENT_BY(17);
+    int posnow = st->position();
     _session.print_nmt_info_for_region(info.from, info.to);
-    INDENT_BY(10);
-    st->print_raw(info.filename);
+    if (info.filename[0] != '\0' && posnow < st->position()) {
+      st->print(" ");
+      st->print_raw(info.filename);
+    }
   #undef INDENT_BY
     st->cr();
   }
@@ -241,15 +181,21 @@ public:
     outputStream* st = _session.out();
     //            .         .         .         .         .         .         .         .         .         .         .         .
     //            012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789
-    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p 1234567890 1234567890 16g  thp,thpadv       JAVAHEAP  /shared/tmp.txt
-    st->print_cr("from                 to                      vsize prot        rss    hugetlb pgsz notes            vm-info   file");
+    //            0x0000000414000000 - 0x0000000453000000 1234567890 rw-p 1234567890 1234567890 16g  thp,thpadv       JAVAHEAP /shared/tmp.txt
+    st->print_cr("from                 to                      vsize prot        rss    hugetlb pgsz notes            info");
   }
 };
 
-template <class SUMMARY, class PRINTER, class PARSER, class INFO>
-static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
-  PRINTER printer(session);
-  SUMMARY summary;
+void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
+  constexpr char filename[] = "/proc/self/smaps";
+  FILE* f = os::fopen(filename, "r");
+  if (f == nullptr) {
+    session.out()->print_cr("Cannot open %s", filename);
+    return;
+  }
+
+  ProcSmapsPrinter printer(session);
+  ProcSmapsSummary summary;
 
   const bool print_each_mapping = !session.options().only_summary;
   outputStream* const st = session.out();
@@ -260,17 +206,13 @@ static void print_mappings_helper(FILE* f, const MappingPrintSession& session) {
     printer.print_header();
   }
 
-  INFO info;
-  PARSER parser(f);
-unsigned i = 0;
+  ProcSmapsInfo info;
+  ProcSmapsParser parser(f);
   while (parser.parse_next(info)) {
     if (print_each_mapping) {
       printer.print_single_mapping(info);
     }
     summary.add_mapping(info);
-if ((++i % 1000) == 0) {printf("*");
-if ((i%100000) == 0) {printf("\n%u", i); }
-}
   }
   st->cr();
 
@@ -281,23 +223,6 @@ if ((i%100000) == 0) {printf("\n%u", i); }
 
   summary.print_on(session);
   st->cr();
-}
-
-
-void MemMapPrinter::pd_print_all_mappings(const MappingPrintSession& session) {
-  const bool is_detail_mode = session.options().detail_mode;
-  const char* filename = is_detail_mode ? "/proc/self/smaps" : "/proc/self/maps";
-  FILE* f = os::fopen(filename, "r");
-  if (f == nullptr) {
-    session.out()->print_cr("Cannot open %s", filename);
-    return;
-  }
-
-  if (is_detail_mode) {
-    print_mappings_helper<ProcSmapsSummary, ProcSmapsPrinter, ProcSmapsParser, ProcSmapsInfo>(f, session);
-  } else {
-    print_mappings_helper<ProcMapsSummary, ProcMapsPrinter, ProcMapsParser, ProcMapsInfo>(f, session);
-  }
 
   ::fclose(f);
 }

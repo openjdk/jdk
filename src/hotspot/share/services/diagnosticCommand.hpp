@@ -1016,15 +1016,14 @@ public:
 
 class SystemMapDCmd : public DCmdWithParser {
   DCmdArgument<bool> _only_summary;
-  DCmdArgument<bool> _detail_mode;
 public:
-  static int num_arguments() { return 2; }
+  static int num_arguments() { return 1; }
   SystemMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.map"; }
   static const char* description() {
     return "Prints an annotated process memory map of the VM process (linux only).";
   }
-  static const char* impact() { return "Medium to High. Printing in detail mode may be costly if the process size is very large."; }
+  static const char* impact() { return "Medium; higher for large and very fragmented address space (e.g. when using ZGC)."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};
@@ -1035,16 +1034,15 @@ public:
 
 class SystemDumpMapDCmd : public DCmdWithParser {
   DCmdArgument<bool> _only_summary;
-  DCmdArgument<bool> _detail_mode;
   DCmdArgument<char*> _filename;
 public:
-  static int num_arguments() { return 3; }
+  static int num_arguments() { return 2; }
   SystemDumpMapDCmd(outputStream* output, bool heap);
   static const char* name() { return "System.dump_map"; }
   static const char* description() {
     return "Dumps an annotated process memory map to an output file (linux only).";
   }
-  static const char* impact() { return "Medium to High. Printing in detail mode may be costly if the process size is very large."; }
+  static const char* impact() { return "Medium; higher for large and very fragmented address space (e.g. when using ZGC)."; }
   static const JavaPermission permission() {
     JavaPermission p = {"java.lang.management.ManagementPermission",
                         "control", nullptr};

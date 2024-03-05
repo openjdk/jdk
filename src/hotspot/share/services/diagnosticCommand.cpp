@@ -1242,15 +1242,12 @@ void CompilationMemoryStatisticDCmd::execute(DCmdSource source, TRAPS) {
 
 SystemMapDCmd::SystemMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
-  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false"),
-  _detail_mode("details", "Print more information at a potentially higher cost.", "BOOLEAN", false, "false") {
+  _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false") {
   _dcmdparser.add_dcmd_option(&_only_summary);
-  _dcmdparser.add_dcmd_option(&_detail_mode);
 }
 
 void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
   MappingPrintOptions options;
-  options.detail_mode = _detail_mode.value();
   options.only_summary = _only_summary.value();
   MemMapPrinter::print_all_mappings(output(), options);
 }
@@ -1258,10 +1255,8 @@ void SystemMapDCmd::execute(DCmdSource source, TRAPS) {
 SystemDumpMapDCmd::SystemDumpMapDCmd(outputStream* output, bool heap) :
   DCmdWithParser(output, heap),
   _only_summary("summary", "Omit printing individual mappings, only print the summary.", "BOOLEAN", false, "false"),
-  _detail_mode("details", "Print more information at a potentially higher cost.", "BOOLEAN", false, "false"),
   _filename("-F", "file path (defaults: \"vm_memory_map_<pid>.txt\")", "STRING", false) {
   _dcmdparser.add_dcmd_option(&_only_summary);
-  _dcmdparser.add_dcmd_option(&_detail_mode);
   _dcmdparser.add_dcmd_option(&_filename);
 }
 
@@ -1275,7 +1270,6 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
       output()->print_cr("(NMT is disabled, will not annotate mappings).");
     }
     MappingPrintOptions options;
-    options.detail_mode = _detail_mode.value();
     options.only_summary = _only_summary.value();
     MemMapPrinter::print_all_mappings(&fs, options);
     // For the readers convenience, resolve path name.
