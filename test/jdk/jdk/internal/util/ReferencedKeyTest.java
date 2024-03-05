@@ -128,10 +128,10 @@ public class ReferencedKeyTest {
         assertTrue(intern2 != null, "intern failed");
         assertTrue(element3 == intern3, "intern failed");
 
-        Long value1 = new Long(BASE_KEY + 999);
-        Long value2 = new Long(BASE_KEY + 999);
+        Long value1 = Long.valueOf(BASE_KEY + 999);
+        Long value2 = Long.valueOf(BASE_KEY + 999);
         assertTrue(set.add(value1), "key not added");
-        assertTrue(set.add(value1), "key not added after second attempt");
+        assertTrue(!set.add(value1), "key added after second attempt");
         assertTrue(!set.add(value2), "key should not have been added");
     }
 
