@@ -50,15 +50,16 @@ public class TestMenuMnemonic {
     private static JFrame frame;
     private static JMenuBar menuBar;
     private static JMenu fileMenu;
+
     private static final AtomicInteger mnemonicHideCount = new AtomicInteger(0);
     private static final AtomicInteger mnemonicShowCount = new AtomicInteger(0);
 
+    private static final int EXPECTED = 5;
+
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
-        final int EXPECTED = 5;
         Robot robot = new Robot();
         robot.setAutoDelay(100);
-
 
         try {
             SwingUtilities.invokeAndWait(TestMenuMnemonic::createAndShowUI);
@@ -94,7 +95,7 @@ public class TestMenuMnemonic {
         MenuElement[] selectedPath = msm.getSelectedPath();
         if (WindowsLookAndFeel.isMnemonicHidden()) {
             mnemonicHideCount.getAndIncrement();
-            // check if selection is cleared when mnemonics are hidden
+            // Check if selection is cleared when mnemonics are hidden
             if (selectedPath.length != 0) {
                 throw new RuntimeException("Menubar is active after" +
                         " mnemonics are hidden");
