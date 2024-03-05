@@ -77,6 +77,11 @@ jlong OSContainer::memory_and_swap_limit_in_bytes() {
   return cgroup_subsystem->memory_and_swap_limit_in_bytes();
 }
 
+jlong OSContainer::memory_and_swap_usage_in_bytes() {
+  assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
+  return cgroup_subsystem->memory_and_swap_usage_in_bytes();
+}
+
 jlong OSContainer::memory_soft_limit_in_bytes() {
   assert(cgroup_subsystem != nullptr, "cgroup subsystem not available");
   return cgroup_subsystem->memory_soft_limit_in_bytes();
