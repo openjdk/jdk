@@ -1317,10 +1317,6 @@ public class CLDRConverter {
      * "US<NBSP>std" -> "S"
      * "US<NBSP>dst" -> "D"
      *
-     * `tzdbLinks` retains `Link`s of time zones. if the value
-     *
-     * "US/Hawaii" -> "Pacific/Honolulu"
-     *
      * These mappings resolve the short names for time zones in each type,
      * such as:
      *
@@ -1328,8 +1324,13 @@ public class CLDRConverter {
      * DST short name for "America/Los_Angeles" -> "PDT"
      * Generic short name for "America/Los_Angeles" -> "PT"
      *
-     * Also the link `US/Pacific` can be resolved to `America/Los_Angeles`
-     * names correctly with the `tzdbLinks`.
+     * The map, `tzdbLinks` retains `Link`s of time zones. For example,
+     * the mapping:
+     *
+     * "US/Hawaii" -> "Pacific/Honolulu"
+     *
+     * resolves names for "US/Hawaii" correctly with "Pacific/Honolulu"
+     * names.
      */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)

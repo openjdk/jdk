@@ -27,7 +27,7 @@
  * This class contains a map which records the locale list string for
  * each resource in sun.util.resources & sun.text.resources.
  * It is used to avoid loading non-existent localized resources so that
- * jar files won't be opened unnecessary to look up them.
+ * jar files won't be opened unnecessarily to look up them.
  */
 package sun.util.resources.provider;
 
