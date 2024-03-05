@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,16 +23,17 @@
  * questions.
  */
 
-/**
- * Provides the locale data for locales other than {@linkplain java.util.Locale#US US locale}.
- *
- * @moduleGraph
- * @since 9
- */
-module jdk.localedata {
-    provides sun.util.locale.provider.LocaleDataMetaInfo with
-        sun.util.resources.cldr.provider.CLDRLocaleDataMetaInfo,
-        sun.util.resources.provider.NonBaseLocaleDataMetaInfo;
-    provides sun.util.resources.LocaleData.CommonResourceBundleProvider with
-        sun.util.resources.provider.LocaleDataProvider;
+package sun.text.resources.ext;
+
+import sun.util.resources.ParallelListResourceBundle;
+
+public class FormatData extends ParallelListResourceBundle {
+    /**
+     * Exists to keep sun.text.resources.ext package alive
+     * with IncludeLocales jlink plugin
+     */
+    @Override
+    protected final Object[][] getContents() {
+        return new Object[][]{};
+    }
 }

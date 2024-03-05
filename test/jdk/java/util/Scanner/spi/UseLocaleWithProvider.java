@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  */
 /*
  * @test
- * @bug 8190278
+ * @bug 8190278 8174269
  * @summary checks the Scanner.useLocale() with java.locale.providers=SPI,
- *          COMPAT. It should not throw ClassCastException if any SPI is
+ *          CLDR. It should not throw ClassCastException if any SPI is
  *          used and NumberFormat.getInstance() does not return a
  *          DecimalFormat object. Also, to test the behaviour of Scanner
  *          while scanning numbers in the format of Scanner's locale.
@@ -32,7 +32,7 @@
  * @library provider
  * @build provider/module-info provider/test.NumberFormatProviderImpl
  *        provider/test.NumberFormatImpl
- * @run main/othervm -Djava.locale.providers=SPI,COMPAT UseLocaleWithProvider
+ * @run main/othervm -Djava.locale.providers=SPI,CLDR UseLocaleWithProvider
  */
 
 import java.util.Locale;
@@ -49,7 +49,7 @@ public class UseLocaleWithProvider {
             testScannerUseLocale("4.334,65", Locale.GERMAN, 4334.65);
         } catch (ClassCastException ex) {
             throw new RuntimeException("[FAILED: With" +
-                    " java.locale.providers=SPI,COMPAT, Scanner.useLocale()" +
+                    " java.locale.providers=SPI,CLDR, Scanner.useLocale()" +
                     " shouldn't throw ClassCastException]");
         }
     }
@@ -59,7 +59,7 @@ public class UseLocaleWithProvider {
         Scanner sc = new Scanner(number).useLocale(locale);
         if (!sc.hasNextFloat() || sc.nextFloat() != actual.floatValue()) {
             throw new RuntimeException("[FAILED: With" +
-                    " java.locale.providers=SPI,COMPAT, Scanner" +
+                    " java.locale.providers=SPI,CLDR, Scanner" +
                     ".hasNextFloat() or Scanner.nextFloat() is unable to" +
                     " scan the given number: " + number + ", in the given" +
                     " locale:" + locale + "]");

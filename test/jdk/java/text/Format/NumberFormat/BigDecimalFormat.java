@@ -23,9 +23,9 @@
 
 /*
  * @test
- * @bug 4018937 8008577
+ * @bug 4018937 8008577 8174269
  * @summary Confirm that methods which are newly added to support BigDecimal and BigInteger work as expected.
- * @run junit/othervm -Djava.locale.providers=COMPAT,SPI BigDecimalFormat
+ * @run junit BigDecimalFormat
  */
 
 import java.math.BigDecimal;
@@ -916,10 +916,10 @@ public class BigDecimalFormat {
         };
         int multipliers[] = {0, 5, -5};
         String[][] expected = {
-            {"-0", "0", "\ufffd", "\ufffd", "0", "0", "\ufffd", "-0", "-0"},
-            {"-0", "0", "\ufffd", "\u221e", "25.5", "25", "-\u221e", "-25.5",
+            {"-0", "0", "NaN", "NaN", "0", "0", "NaN", "-0", "-0"},
+            {"-0", "0", "NaN", "\u221e", "25.5", "25", "-\u221e", "-25.5",
              "-25"},
-            {"0", "-0", "\ufffd", "-\u221e", "-25.5", "-25", "\u221e", "25.5",
+            {"0", "-0", "NaN", "-\u221e", "-25.5", "-25", "\u221e", "25.5",
              "25"},
         };
 
@@ -987,7 +987,7 @@ public class BigDecimalFormat {
             "  {1, number, currency}\n" +
             "  {1, number, percent}\n" +
             "  {1, number,0.#######E0}\n",
-            Locale.US
+            Locale.forLanguageTag("en-US-u-cf-account")
         );
         Object[] testArgs = {
             new BigInteger("9876543210987654321098765432109876543210"),

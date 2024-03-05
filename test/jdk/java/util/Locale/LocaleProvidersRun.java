@@ -24,13 +24,14 @@
 /*
  * @test
  * @bug 6336885 7196799 7197573 8008577 8010666 8013233 8015960 8028771
- *      8054482 8062006 8150432 8215913 8220227 8236495
+ *      8054482 8062006 8150432 8215913 8220227 8236495 8174269
  * @summary General Locale provider test (ex: adapter loading). See the
  *          other LocaleProviders* test classes for more specific tests (ex:
  *          java.text.Format related bugs).
  * @library /test/lib
  * @build LocaleProviders
  * @modules java.base/sun.util.locale.provider
+ *          jdk.localedata
  * @run junit/othervm LocaleProvidersRun
  */
 
@@ -94,13 +95,13 @@ public class LocaleProvidersRun {
     private static Stream<Arguments> adapterTest() {
         // Testing HOST is selected for the default locale if specified on Windows or MacOSX
         String osName = System.getProperty("os.name");
-        String param1 = "JRE";
+        String param1 = "FALLBACK";
         if (osName.startsWith("Windows") || osName.startsWith("Mac")) {
             param1 = "HOST";
         }
 
         // Testing HOST is NOT selected for the non-default locale, if specified
-        // try to find the locale JRE supports which is not the platform default
+        // try to find the locale CLDR supports which is not the platform default
         // (HOST supports that one)
         String param2;
         String param3;
@@ -116,27 +117,25 @@ public class LocaleProvidersRun {
         }
 
         return Stream.of(
-                Arguments.of("HOST,JRE", param1, defLang, defCtry),
-                Arguments.of("HOST,JRE", "JRE", param2, param3),
+                Arguments.of("HOST", param1, defLang, defCtry),
+                Arguments.of("HOST", "FALLBACK", param2, param3),
 
                 // Testing SPI is NOT selected, as there is none.
-                Arguments.of("SPI,JRE", "JRE", "en", "US"),
-                Arguments.of("SPI,COMPAT", "JRE", "en", "US"),
+                Arguments.of("SPI,FALLBACK", "FALLBACK", "en", "US"),
+                Arguments.of("SPI", "FALLBACK", "en", "US"),
 
-                // Testing the order, variant #1. This assumes en_GB DateFormat data are
-                // available both in JRE & CLDR
-                Arguments.of("CLDR,JRE", "CLDR", "en", "GB"),
-                Arguments.of("CLDR,COMPAT", "CLDR", "en", "GB"),
+                // Testing the order, variant #1. This assumes root DateFormat data are
+                // available both in FALLBACK & CLDR
+                Arguments.of("CLDR,FALLBACK", "CLDR", "", ""),
+                Arguments.of("CLDR", "CLDR", "", ""),
 
-                // Testing the order, variant #2. This assumes en_GB DateFormat data are
-                // available both in JRE & CLDR
-                Arguments.of("JRE,CLDR", "JRE", "en", "GB"),
-                Arguments.of("COMPAT,CLDR", "JRE", "en", "GB"),
+                // Testing the order, variant #2. This assumes root DateFormat data are
+                // available both in FALLBACK & CLDR
+                Arguments.of("FALLBACK,CLDR", "FALLBACK", "", ""),
 
-                // Testing the order, variant #3 for non-existent locale in JRE
-                // assuming "haw" is not in JRE.
-                Arguments.of("JRE,CLDR", "CLDR", "haw", ""),
-                Arguments.of("COMPAT,CLDR", "CLDR", "haw", ""),
+                // Testing the order, variant #3 for non-existent locale in FALLBACK
+                // assuming "haw" is not in FALLBACK.
+                Arguments.of("FALLBACK,CLDR", "CLDR", "haw", ""),
 
                 // Testing the order, variant #4 for the bug 7196799. CLDR's "zh" data
                 // should be used in "zh_CN"

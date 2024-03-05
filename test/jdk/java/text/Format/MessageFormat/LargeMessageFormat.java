@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 4112090 8008577
+ * @bug 4112090 8008577 8174269
  * @summary verify that MessageFormat can handle large numbers of arguments
  * @modules jdk.localedata
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI LargeMessageFormat
+ * @run main LargeMessageFormat
  */
 
 import java.text.MessageFormat;
@@ -88,7 +88,7 @@ public class LargeMessageFormat {
             expected.append("string: hello; ");
             expected.append("date: 09.11.1989; ");
             expected.append("integer: 567.890; ");
-            expected.append("currency: 1.234,50 \u20AC;\n");
+            expected.append("currency: 1.234,50\u00a0\u20AC;\n");
         }
 
         // create message format

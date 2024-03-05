@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @bug 4474409
+ * @bug 4474409 8174269
  * @summary Tests some localized methods with Thai locale
  * @author John O'Conner
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=COMPAT ThaiGov
+ * @run junit ThaiGov
  */
 
 import java.text.DateFormat;
@@ -58,7 +58,7 @@ public class ThaiGov {
     // Test currency formatting for Thai
     @Test
     public void currencyTest() {
-        final String strExpected = "\u0E3F\u0E51\u0E52\u002C\u0E53\u0E54\u0E55\u002C\u0E56\u0E57\u0E58\u002E\u0E52\u0E53";
+        final String strExpected = "\u0e3f\u00a0\u0e51\u0e52,\u0e53\u0e54\u0e55,\u0e56\u0e57\u0e58.\u0e52\u0e53";
         NumberFormat nf = NumberFormat.getCurrencyInstance(TH);
         String str = nf.format(VALUE);
         assertEquals(strExpected, str);
@@ -77,7 +77,7 @@ public class ThaiGov {
         cal.setTime(date);
 
 
-        final String strExpected = "\u0E27\u0E31\u0E19\u0E1E\u0E38\u0E18\u0E17\u0E35\u0E48\u0020\u0E51\u0020\u0E1E\u0E24\u0E29\u0E20\u0E32\u0E04\u0E21\u0020\u0E1E\u002E\u0E28\u002E\u0020\u0E52\u0E55\u0E54\u0E55\u002C\u0020\u0E58\u0020\u0E19\u0E32\u0E2C\u0E34\u0E01\u0E32\u0020\u0E53\u0E50\u0020\u0E19\u0E32\u0E17\u0E35\u0020\u0E50\u0E50\u0020\u0E27\u0E34\u0E19\u0E32\u0E17\u0E35";
+        final String strExpected = "\u0e27\u0e31\u0e19\u0e1e\u0e38\u0e18\u0e17\u0e35\u0e48 \u0e51 \u0e1e\u0e24\u0e29\u0e20\u0e32\u0e04\u0e21 \u0e1e\u0e38\u0e17\u0e18\u0e28\u0e31\u0e01\u0e23\u0e32\u0e0a \u0e52\u0e55\u0e54\u0e55 \u0e58 \u0e19\u0e32\u0e2c\u0e34\u0e01\u0e32 \u0e53\u0e50 \u0e19\u0e32\u0e17\u0e35 \u0e50\u0e50 \u0e27\u0e34\u0e19\u0e32\u0e17\u0e35 \u0e40\u0e27\u0e25\u0e32\u0e2d\u0e2d\u0e21\u0e41\u0e2a\u0e07\u0e41\u0e1b\u0e0b\u0e34\u0e1f\u0e34\u0e01\u0e43\u0e19\u0e2d\u0e40\u0e21\u0e23\u0e34\u0e01\u0e32\u0e40\u0e2b\u0e19\u0e37\u0e2d";
         Date value = cal.getTime();
 
         // th_TH_TH test
