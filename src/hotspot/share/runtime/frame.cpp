@@ -1634,8 +1634,8 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       if (*fv.description == '#' && isdigit(fv.description[1])) {
         fp = fv.location;
       }
-      if (fp != nullptr && *fv.description != '#' &&
-          *fv.location != 0 && *fv.location > -100 && *fv.location < 100
+      if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
+          && fp != nullptr && *fv.description != '#'
 #if !defined(PPC64)
           && (strncmp(fv.description, "interpreter_frame_", 18) == 0 || strstr(fv.description, " method "))
 #else  // !defined(PPC64)
@@ -1647,7 +1647,7 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %-32s (relativized: fp%+d)",
                      p2i(fv.location), p2i(&fp[*fv.location]), fv.description, (int)*fv.location);
       } else {
-         st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
+        st->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       }
       last = fv.location;
       cur--;
