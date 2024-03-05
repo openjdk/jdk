@@ -3998,20 +3998,23 @@ void os::win32::initialize_windows_version() {
   VS_FIXEDFILEINFO *file_info;
   TCHAR kernel32_path[MAX_PATH];
   UINT len, ret;
+  char error_msg_buffer[512];
 
   // Get the full path to \Windows\System32\kernel32.dll and use that for
   // determining what version of Windows we're running on.
   len = MAX_PATH - (UINT)strlen("\\kernel32.dll") - 1;
   ret = GetSystemDirectory(kernel32_path, len);
   if (ret == 0 || ret > len) {
-    warning("GetSystemDirectory() failed: GetLastError->%ld.", GetLastError());
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to determine system directory failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
   strncat(kernel32_path, "\\kernel32.dll", MAX_PATH - ret);
 
   DWORD version_size = GetFileVersionInfoSize(kernel32_path, nullptr);
   if (version_size == 0) {
-    warning("GetFileVersionInfoSize() failed: GetLastError->%ld.", GetLastError());
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Failed to determine whether the OS can retrieve version information from kernel32.dll: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
 
@@ -4023,13 +4026,15 @@ void os::win32::initialize_windows_version() {
 
   if (!GetFileVersionInfo(kernel32_path, 0, version_size, version_info)) {
     os::free(version_info);
-    warning("GetFileVersionInfo() failed: GetLastError->%ld.", GetLastError());
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to retrieve version information from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
 
   if (!VerQueryValue(version_info, TEXT("\\"), (LPVOID*)&file_info, &len)) {
     os::free(version_info);
-    warning("VerQueryValue() failed. Cannot determine Windows version.");
+    size_t buf_len = os::lasterror(error_msg_buffer, sizeof(error_msg_buffer));
+    warning("Attempt to determine Windows version from kernel32.dll failed: %s", buf_len != 0 ? error_msg_buffer : "<unknown error>");
     return;
   }
 
