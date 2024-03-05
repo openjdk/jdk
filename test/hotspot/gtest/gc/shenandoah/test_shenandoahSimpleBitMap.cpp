@@ -86,7 +86,7 @@ protected:
             intended_value = true;
           }
         }
-        size_t bit_mask = 0x01 << b;
+        size_t bit_mask = ((size_t) 0x01) << b;
         bool is_set = (bits & bit_mask) != 0;
         ASSERT_EQ(is_set, intended_value);
       }
@@ -184,7 +184,6 @@ protected:
       ssize_t probe_point = 0;
       while (probe_point <= size - cluster_size) {
         bool cluster_found = false;
-        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx <= num_set_bits - cluster_size)) {
           cluster_found = true;
           for (ssize_t i = 1; i < cluster_size; i++) {
@@ -214,7 +213,6 @@ protected:
       boundary_idx = 4 * size / 4;
       while (probe_point <= boundary_idx - cluster_size) {
         bool cluster_found = false;
-        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx <= num_set_bits - cluster_size)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
@@ -243,7 +241,6 @@ protected:
       probe_point = size - 1;
       while (probe_point >= cluster_size - 1) {
         bool cluster_found = false;
-        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx - cluster_size >= -1)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
@@ -273,7 +270,6 @@ protected:
       boundary_idx = size / 4;
       while (probe_point >= boundary_idx - 1 + cluster_size) {
         bool cluster_found = false;
-        ssize_t next_expected_custer;
         while (!cluster_found && (bit_idx - cluster_size >= -1)) {
           cluster_found = true;
           for (int i = 1; i < cluster_size; i++) {
@@ -325,7 +321,7 @@ protected:
     bm_small.set_bit(5);
     bm_small.set_bit(63);
     bm_small.set_bit(128);
-    ssize_t set_bits_1[] = { 5, 63, 128 };
+    ssize_t set_bits_1[3] = { 5, 63, 128 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_1, 3);
 
     bm_large.set_bit(5);
@@ -351,7 +347,7 @@ protected:
 
     bm_small.set_bit(361);
 
-    ssize_t set_bits_2[] = { 5, 63, 128, 140, 141, 142, 253, 254, 255, 271, 272, 320, 321, 322, 361 };
+    ssize_t set_bits_2[15] = { 5, 63, 128, 140, 141, 142, 253, 254, 255, 271, 272, 320, 321, 322, 361 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_2, 15);
 
     bm_large.set_bit(140);
@@ -372,20 +368,20 @@ protected:
     bm_large.set_bit(1301);
     bm_large.set_bit(1302);
 
-    ssize_t set_bits_3[] = { 5, 63, 128, 140, 141, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
+    ssize_t set_bits_3[16] = { 5, 63, 128, 140, 141, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_3, 16);
 
     // Test clear_bit
     bm_small.clear_bit(141);
     bm_small.clear_bit(253);
-    ssize_t set_bits_4[] = { 5, 63, 128, 140, 142, 254, 255, 271, 272, 320, 321, 322, 361 };
+    ssize_t set_bits_4[13] = { 5, 63, 128, 140, 142, 254, 255, 271, 272, 320, 321, 322, 361 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_2, 13);
 
     bm_large.clear_bit(5);
     bm_large.clear_bit(63);
     bm_large.clear_bit(128);
     bm_large.clear_bit(141);
-    ssize_t set_bits_5[] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
+    ssize_t set_bits_5[12] = { 140, 142, 1021, 1022, 1023, 1051, 1280, 1281, 1282, 1300, 1301, 1302 };
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_5, 12);
 
     // Test clear_all()
