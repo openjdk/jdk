@@ -319,7 +319,7 @@ protected:
     verifyBitMapState(bm_large, LARGE_BITMAP_SIZE, set_bits_0, 0);
 
     bm_small.set_bit(5);
-    bm_small.set_bit(63);
+//    bm_small.set_bit(63);  confirm that this test actually runs
     bm_small.set_bit(128);
     ssize_t set_bits_1[3] = { 5, 63, 128 };
     verifyBitMapState(bm_small, SMALL_BITMAP_SIZE, set_bits_1, 3);
