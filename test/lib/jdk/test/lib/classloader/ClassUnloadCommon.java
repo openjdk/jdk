@@ -71,7 +71,7 @@ public class ClassUnloadCommon {
     }
 
     /**
-     * Calls triggerUnloading() in a retry loop for 2 seconds until WhiteBox.isClassAlive
+     * Calls triggerUnloading() in a retry loop for 2 seconds or until WhiteBox.isClassAlive
      * determines that no classes named in classNames are alive.
      *
      * This variant of triggerUnloading() accommodates the inherent raciness
@@ -79,6 +79,7 @@ public class ClassUnloadCommon {
      * strong roots to types (e.g. in virtual call or instanceof profiles) that
      * are not released or converted to weak roots until the compilation completes.
      *
+     * @param classNames the set of classes that are expected to be unloaded
      * @return the set of classes that have not been unloaded after exiting the retry loop
      */
     public static Set<String> triggerUnloading(List<String> classNames) {
