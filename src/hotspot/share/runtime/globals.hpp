@@ -220,10 +220,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
-  product(uintx, NUMAPageScanRate, 256,                                     \
-          "Maximum number of pages to include in the page scan procedure")  \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions are used when available")       \
                                                                             \
