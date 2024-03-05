@@ -21,25 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @summary Basic test for ofFileDownload
- * @bug 8196965 8302475
- * @modules java.base/sun.net.www.http
- *          java.net.http/jdk.internal.net.http.common
- *          java.net.http/jdk.internal.net.http.frame
- *          java.net.http/jdk.internal.net.http.hpack
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib http2/server
- * @build Http2TestServer
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build jdk.test.lib.Platform
- * @build jdk.test.lib.util.FileUtils
- * @run testng/othervm AsFileDownloadTest
- * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
- */
-
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
@@ -80,6 +61,25 @@ import static java.nio.file.StandardOpenOption.*;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
+
+/*
+ * @test
+ * @summary Basic test for ofFileDownload
+ * @bug 8196965 8302475
+ * @modules java.base/sun.net.www.http
+ *          java.net.http/jdk.internal.net.http.common
+ *          java.net.http/jdk.internal.net.http.frame
+ *          java.net.http/jdk.internal.net.http.hpack
+ *          java.logging
+ *          jdk.httpserver
+ * @library /test/lib http2/server
+ * @build Http2TestServer
+ * @build jdk.test.lib.net.SimpleSSLContext
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
+ * @run testng/othervm AsFileDownloadTest
+ * @run testng/othervm/java.security.policy=AsFileDownloadTest.policy AsFileDownloadTest
+ */
 
 public class AsFileDownloadTest {
 
@@ -267,8 +267,10 @@ public class AsFileDownloadTest {
     // -- Infrastructure
 
     static String serverAuthority(HttpServer server) {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + server.getAddress().getPort();
+        final String hostIP = InetAddress.getLoopbackAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + server.getAddress().getPort();
     }
 
     @BeforeTest
