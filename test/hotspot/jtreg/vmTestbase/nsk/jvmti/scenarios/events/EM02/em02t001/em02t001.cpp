@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,21 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "ExceptionCheckingJniEnv.hpp"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
-static jrawMonitorID syncLock = NULL;
+static jrawMonitorID syncLock = nullptr;
 
 /* constant names */
 #define DEBUGEE_CLASS_NAME      "nsk/jvmti/scenarios/events/EM02/em02t001"
@@ -48,10 +48,10 @@ static jrawMonitorID syncLock = NULL;
 #define OBJECT_FIELD_SIG        "Ljava/lang/Object;"
 #define THREAD_FIELD_SIG        "Ljava/lang/Thread;"
 
-static jthread mainThread = NULL;
-static jthread debuggeeThread = NULL;
-static jobject startObject = NULL;
-static jobject endObject = NULL;
+static jthread mainThread = nullptr;
+static jthread debuggeeThread = nullptr;
+static jobject startObject = nullptr;
+static jobject endObject = nullptr;
 
 #define STEP_AMOUNT 3
 #define JVMTI_EVENT_COUNT   (int)(JVMTI_MAX_EVENT_TYPE_VAL - JVMTI_MIN_EVENT_TYPE_VAL + 1)
@@ -63,21 +63,21 @@ static int newEventCount[JVMTI_EVENT_COUNT];
 static jthread
 findThread(const char *threadName) {
     jvmtiThreadInfo info;
-    jthread *threads = NULL;
+    jthread *threads = nullptr;
     jint threads_count = 0;
-    jthread returnValue = NULL;
+    jthread returnValue = nullptr;
     int i;
 
     /* get all live threads */
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&threads_count, &threads)))
-        return NULL;
+        return nullptr;
 
-    if (!NSK_VERIFY(threads != NULL))
-        return NULL;
+    if (!NSK_VERIFY(threads != nullptr))
+        return nullptr;
 
     /* find tested thread */
     for (i = 0; i < threads_count; i++) {
-        if (!NSK_VERIFY(threads[i] != NULL))
+        if (!NSK_VERIFY(threads[i] != nullptr))
             break;
 
         /* get thread information */
@@ -85,14 +85,14 @@ findThread(const char *threadName) {
             break;
 
         /* find by name */
-        if (info.name != NULL && (strcmp(info.name, threadName) == 0)) {
+        if (info.name != nullptr && (strcmp(info.name, threadName) == 0)) {
             returnValue = threads[i];
         }
     }
 
     /* deallocate threads list */
     if (!NSK_JVMTI_VERIFY(jvmti->Deallocate((unsigned char*)threads)))
-        return NULL;
+        return nullptr;
 
     return returnValue;
 }
@@ -105,7 +105,7 @@ getStaticObjField(const char* className, const char* objFieldName,
 
     ExceptionCheckingJniEnvPtr ec_jni(jni);
     jfieldID fieldID;
-    jclass klass = NULL;
+    jclass klass = nullptr;
 
     klass = ec_jni->FindClass(className, TRACE_JNI_CALL);
     fieldID = ec_jni->GetStaticFieldID(klass, objFieldName, signature, TRACE_JNI_CALL);
@@ -118,7 +118,7 @@ static bool prepare() {
 
     ExceptionCheckingJniEnvPtr ec_jni(jni);
     mainThread = findThread(MAIN_THREAD_NAME);
-    if (!NSK_VERIFY(mainThread != NULL)) {
+    if (!NSK_VERIFY(mainThread != nullptr)) {
         NSK_COMPLAIN1("<%s> thread not found\n", MAIN_THREAD_NAME);
         return false;
     }
@@ -126,14 +126,14 @@ static bool prepare() {
     /* make thread accessable for a long time */
     mainThread = ec_jni->NewGlobalRef(mainThread, TRACE_JNI_CALL);
     startObject = getStaticObjField(DEBUGEE_CLASS_NAME, START_FIELD_NAME, OBJECT_FIELD_SIG);
-    if (!NSK_VERIFY(startObject != NULL))
+    if (!NSK_VERIFY(startObject != nullptr))
         return false;
 
     /*make object accessable for a long time*/
     startObject = ec_jni->NewGlobalRef(startObject, TRACE_JNI_CALL);
 
     endObject = getStaticObjField(DEBUGEE_CLASS_NAME, END_FIELD_NAME, OBJECT_FIELD_SIG);
-    if (!NSK_VERIFY(endObject != NULL))
+    if (!NSK_VERIFY(endObject != nullptr))
         return false;
 
     /*make object accessable for a long time*/
@@ -142,7 +142,7 @@ static bool prepare() {
     debuggeeThread = (jthread) getStaticObjField(DEBUGEE_CLASS_NAME,
                                                  THREAD_FIELD_NAME,
                                                  THREAD_FIELD_SIG);
-    if (!NSK_VERIFY(debuggeeThread != NULL))
+    if (!NSK_VERIFY(debuggeeThread != nullptr))
         return false;
 
     /* make thread accessable for a long time */
@@ -158,7 +158,7 @@ static bool clean() {
     /* disable MonitorContendedEnter event */
     if (!NSK_JVMTI_VERIFY(
             jvmti->SetEventNotificationMode(
-                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, NULL)))
+                JVMTI_DISABLE, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr)))
         nsk_jvmti_setFailStatus();
 
     /* dispose global references */
@@ -167,10 +167,10 @@ static bool clean() {
     ec_jni->DeleteGlobalRef(debuggeeThread, TRACE_JNI_CALL);
     ec_jni->DeleteGlobalRef(mainThread, TRACE_JNI_CALL);
 
-    startObject = NULL;
-    endObject = NULL;
-    debuggeeThread = NULL;
-    mainThread = NULL;
+    startObject = nullptr;
+    endObject = nullptr;
+    debuggeeThread = nullptr;
+    mainThread = nullptr;
 
     return true;
 }
@@ -396,7 +396,7 @@ handlerMC1(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
                             jthread expectedThread, jobject expectedObject) {
     ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
-    if (expectedThread == NULL || expectedObject == NULL)
+    if (expectedThread == nullptr || expectedObject == nullptr)
         return;
 
     /* check if event is for tested thread and for tested object */
@@ -483,7 +483,7 @@ handlerMC2(jvmtiEvent event, jvmtiEnv* jvmti, JNIEnv* jni_env,
                             jthread expectedThread, jobject expectedObject) {
     ExceptionCheckingJniEnvPtr ec_jni(jni_env);
 
-    if (expectedThread == NULL || expectedObject == NULL)
+    if (expectedThread == nullptr || expectedObject == nullptr)
         return;
 
     /* check if event is for tested thread and for tested object */
@@ -553,13 +553,13 @@ static bool enableEvent(jvmtiEvent event) {
             && (event != JVMTI_EVENT_MONITOR_WAIT)
             && (event != JVMTI_EVENT_MONITOR_WAITED)) {
         if (!NSK_JVMTI_VERIFY_CODE(JVMTI_ERROR_MUST_POSSESS_CAPABILITY,
-                jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
+                jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, nullptr))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return false;
         }
     } else {
-        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, NULL))) {
+        if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE, event, nullptr))) {
             NSK_COMPLAIN1("Unexpected error enabling %s\n",
                 TranslateEvent(event));
             return false;
@@ -743,7 +743,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("_syncLock", &syncLock))) {
@@ -770,7 +770,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

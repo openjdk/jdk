@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
 TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="10.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
 TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
 
@@ -389,6 +389,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_POST_DETECTION],
   # This is necessary since AC_PROG_CC defaults CFLAGS to "-g -O2"
   CFLAGS="$ORG_CFLAGS"
   CXXFLAGS="$ORG_CXXFLAGS"
+
+  # filter out some unwanted additions autoconf may add to CXX; we saw this on macOS with autoconf 2.72
+  UTIL_GET_NON_MATCHING_VALUES(cxx_filtered, $CXX, -std=c++11 -std=gnu++11)
+  CXX="$cxx_filtered"
 ])
 
 # Check if a compiler is of the toolchain type we expect, and save the version
@@ -728,11 +732,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   AC_SUBST(AS)
 
   #
-  # Setup the archiver (AR)
+  # Setup tools for creating static libraries (AR/LIB)
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LIB, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else

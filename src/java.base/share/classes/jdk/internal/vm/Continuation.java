@@ -296,10 +296,10 @@ public class Continuation {
     }
 
     @IntrinsicCandidate
-    private native static int doYield();
+    private static native int doYield();
 
     @IntrinsicCandidate
-    private native static void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
+    private static native void enterSpecial(Continuation c, boolean isContinue, boolean isVirtualThread);
 
 
     @Hidden
@@ -448,7 +448,7 @@ public class Continuation {
         return res != 0;
     }
 
-    static private native int isPinned0(ContinuationScope scope);
+    private static native int isPinned0(ContinuationScope scope);
 
     private boolean fence() {
         U.storeFence(); // needed to prevent certain transformations by the compiler

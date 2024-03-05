@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,19 +24,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "ExceptionCheckingJniEnv.hpp"
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
-#include "jvmti_tools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 #define OBJ_MAX_COUNT 100000
 
-static JNIEnv *jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv *jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 
@@ -45,19 +45,19 @@ static jlong timeout = 0;
 static const char* DEBUGEE_SIGNATURE = "Lnsk/jvmti/scenarios/allocation/AP04/ap04t003;";
 static const char* ROOT_SIGNATURE    = "[Lnsk/jvmti/scenarios/allocation/AP04/ap04t003;";
 
-static jclass debugeeClass = NULL;
+static jclass debugeeClass = nullptr;
 static jfieldID rootFieldID;
 
-static jrawMonitorID startLock = NULL;
-static jrawMonitorID runLock = NULL;
-static jrawMonitorID endLock = NULL;
+static jrawMonitorID startLock = nullptr;
+static jrawMonitorID runLock = nullptr;
+static jrawMonitorID endLock = nullptr;
 
 static volatile int iterationCount = 0;
 static volatile int objectCount = 0;
 
 /***********************************************************************/
 
-static jrawMonitorID counterMonitor_ptr = NULL;
+static jrawMonitorID counterMonitor_ptr = nullptr;
 
 static void increaseCounter(volatile int* counterPtr) {
 
@@ -210,7 +210,7 @@ objectReferenceCallback(jvmtiObjectReferenceKind reference_kind,
 void JNICALL agent_start(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
 
     jint taggedObjectsCount = 0;
-    jobject* taggedObjectsList = NULL;
+    jobject* taggedObjectsList = nullptr;
 
     NSK_DISPLAY0("Agent thread: started.\n");
 
@@ -219,7 +219,7 @@ void JNICALL agent_start(jvmtiEnv* jvmti, JNIEnv* jni, void *p) {
         jlong tag = (jlong)1;
 
         if (!NSK_JVMTI_VERIFY(jvmti->GetObjectsWithTags(
-                1, &tag, &taggedObjectsCount, &taggedObjectsList, NULL))) {
+                1, &tag, &taggedObjectsCount, &taggedObjectsList, nullptr))) {
             nsk_jvmti_setFailStatus();
             return;
         }
@@ -315,7 +315,7 @@ static int startThread(jthread threadObj) {
 
     /* start thread */
     if (!NSK_JVMTI_VERIFY(
-            jvmti->RunAgentThread(threadObj, agent_start, NULL, JVMTI_THREAD_NORM_PRIORITY))) {
+            jvmti->RunAgentThread(threadObj, agent_start, nullptr, JVMTI_THREAD_NORM_PRIORITY))) {
         success = NSK_FALSE;
         nsk_jvmti_setFailStatus();
     } else {
@@ -348,7 +348,7 @@ static jthread newThreadObj(JNIEnv* jni_env) {
 
 /** Clean counters and start new agent thread with agent_start() body. */
 static int prepareToIteration(JNIEnv* jni) {
-    jthread threadObj = NULL;
+    jthread threadObj = nullptr;
 
     setCounter(&iterationCount, 0);
     setCounter(&objectCount, 0);
@@ -408,7 +408,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverHeap(JNIEnv* jni
     NSK_DISPLAY0("Calling IterateOverHeap...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverHeap(JVMTI_HEAP_OBJECT_TAGGED,
                                                  heapObjectCallback,
-                                                 NULL /*user_data*/))) {
+                                                 nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverHeap finished.\n");
@@ -439,7 +439,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverReachableObjects
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverReachableObjects(heapRootCallback,
                                                              stackReferenceCallback,
                                                              objectReferenceCallback,
-                                                             NULL /*user_data*/))) {
+                                                             nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverReachableObjects finished.\n");
@@ -470,7 +470,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverInstancesOfClass
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverInstancesOfClass(debugeeClass,
                                                              JVMTI_HEAP_OBJECT_TAGGED,
                                                              heapObjectCallback,
-                                                             NULL /*user_data*/))) {
+                                                             nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverInstancesOfClass finished.\n");
@@ -492,7 +492,7 @@ JNIEXPORT void JNICALL
 Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverObjectsReachableFromObject(JNIEnv* jni_env,
                                                                                            jclass  klass) {
     ExceptionCheckingJniEnvPtr ec_jni(jni_env);
-    jobject root = NULL;
+    jobject root = nullptr;
     int modified = 0;
     int found = 0;
 
@@ -504,7 +504,7 @@ Java_nsk_jvmti_scenarios_allocation_AP04_ap04t003_runIterateOverObjectsReachable
     NSK_DISPLAY0("Calling IterateOverObjectsReachableFromObject...\n");
     if (!NSK_JVMTI_VERIFY(jvmti->IterateOverObjectsReachableFromObject(root,
                                                                        objectReferenceCallback,
-                                                                       NULL /*user_data*/))) {
+                                                                       nullptr /*user_data*/))) {
         nsk_jvmti_setFailStatus();
     }
     NSK_DISPLAY0("IterateOverObjectsReachableFromObject finished.\n");
@@ -531,7 +531,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* jni_env, void* arg) {
 
     NSK_DISPLAY1("Find debugee class: %s\n", DEBUGEE_SIGNATURE);
     debugeeClass = nsk_jvmti_classBySignature(DEBUGEE_SIGNATURE);
-    if (debugeeClass == NULL) {
+    if (debugeeClass == nullptr) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -579,7 +579,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
 
     /* create JVMTI environment */
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     if (!NSK_JVMTI_VERIFY(jvmti->CreateRawMonitor("counterMonitor", &counterMonitor_ptr))) {
@@ -608,7 +608,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     if (!caps.can_tag_objects)
         NSK_DISPLAY0("Warning: tagging objects is not available\n");
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
     NSK_DISPLAY0("agentProc has been set\n\n");
 

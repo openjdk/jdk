@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,6 @@
  * @library /test/lib
  */
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.util.JarUtils;
@@ -51,6 +50,7 @@ public class SecurityManagerWarnings {
                     };
                     """);
 
+            System.setProperty("test.noclasspath", "true");
             String testClasses = System.getProperty("test.classes");
 
             disallowTest(null, testClasses);
@@ -131,13 +131,11 @@ public class SecurityManagerWarnings {
     static OutputAnalyzer run(String prop, String cp) throws Exception {
         ProcessBuilder pb;
         if (prop == null) {
-            pb = new ProcessBuilder(
-                    JDKToolFinder.getJDKTool("java"),
+            pb = ProcessTools.createTestJavaProcessBuilder(
                     "-cp", cp,
                     "SecurityManagerWarnings", "run");
         } else {
-            pb = new ProcessBuilder(
-                    JDKToolFinder.getJDKTool("java"),
+            pb = ProcessTools.createTestJavaProcessBuilder(
                     "-cp", cp,
                     "-Djava.security.manager=" + prop,
                     "-Djava.security.policy=policy",

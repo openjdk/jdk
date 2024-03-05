@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeBlob.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "code/compressedStream.hpp"
 #include "code/location.hpp"
 #include "code/nmethod.hpp"
@@ -63,7 +64,6 @@
 #include "oops/array.hpp"
 #include "oops/arrayKlass.hpp"
 #include "oops/arrayOop.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/constMethod.hpp"
 #include "oops/constantPool.hpp"
 #include "oops/cpCache.hpp"
@@ -211,8 +211,6 @@
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
-  nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
-  nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
   nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
   nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
@@ -726,7 +724,6 @@
   /************/                                                                                                                     \
                                                                                                                                      \
   nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
-  nonstatic_field(ciEnv,                       _failure_reason,                               const char*)                           \
   nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \
   nonstatic_field(ciEnv,                       _dependencies,                                 Dependencies*)                         \
   nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
@@ -1162,7 +1159,6 @@
   /* MetadataOopDesc hierarchy (NOTE: some missing) */                    \
   /**************************************************/                    \
                                                                           \
-  declare_toplevel_type(CompiledICHolder)                                 \
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
@@ -1884,7 +1880,6 @@
   /* all enum types */                                                    \
                                                                           \
    declare_integer_type(Bytecodes::Code)                                  \
-   declare_integer_type(Generation::Name)                                 \
    declare_integer_type(InstanceKlass::ClassState)                        \
    declare_integer_type(JavaThreadState)                                  \
    declare_integer_type(ThreadState)                                      \

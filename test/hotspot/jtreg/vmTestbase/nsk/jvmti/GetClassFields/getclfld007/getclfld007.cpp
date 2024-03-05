@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,16 +33,16 @@ extern "C" {
 #define PASSED 0
 #define STATUS_FAILED 2
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jint result = PASSED;
 
 
 // compares 'value' with jobject_arr[index]
 static bool equals_str(JNIEnv *env, const char *value, jobjectArray jobject_arr, jint index) {
     jstring jstr = (jstring)env->GetObjectArrayElement(jobject_arr, index);
-    const char* utf = env->GetStringUTFChars(jstr, NULL);
+    const char* utf = env->GetStringUTFChars(jstr, nullptr);
     bool res = false;
-    if (utf != NULL) {
+    if (utf != nullptr) {
         res = strcmp(value, utf) == 0;
         env->ReleaseStringUTFChars(jstr, utf);
     } else {
@@ -68,7 +68,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jint res;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv!\n");
         return JNI_ERR;
     }
@@ -84,7 +84,7 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
     char *name, *sig;
     int j;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         fflush(0);
         result = STATUS_FAILED;
@@ -109,12 +109,12 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
         result = STATUS_FAILED;
     }
     for (j = 0; j < fcount; j++) {
-        if (fields[j] == NULL) {
+        if (fields[j] == nullptr) {
             printf("(%d) fieldID = null\n", j);
             result = STATUS_FAILED;
             continue;
         }
-        err = jvmti->GetFieldName(clazz, fields[j], &name, &sig, NULL);
+        err = jvmti->GetFieldName(clazz, fields[j], &name, &sig, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("(GetFieldName#%d) unexpected error: %s (%d)\n",
                    j, TranslateError(err), err);
@@ -123,7 +123,7 @@ Java_nsk_jvmti_GetClassFields_getclfld007_check(JNIEnv *env, jclass cls, jclass 
         }
         printf(">>>   [%d]: %s, sig = \"%s\"\n", j, name, sig);
         if ((j < field_count) &&
-               (name == NULL || sig == NULL ||
+               (name == nullptr || sig == nullptr ||
                 !equals_str(env, name, fieldArr, j * 2) ||
                 !equals_str(env, sig, fieldArr, j * 2 + 1))) {
             printf("(%d) wrong field: \"%s%s\"", j, name, sig);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,28 +57,27 @@ public class Array extends Oop {
   private static long lengthOffsetInBytes=0;
   private static long typeSize;
 
+  // Check whether an element of a arrayOop with the given type must be
+  // aligned 0 mod 8.  The arrayOop itself must be aligned at least this
+  // strongly.
+  private static boolean elementTypeShouldBeAligned(BasicType type) {
+    if (VM.getVM().isLP64()) {
+      if (type == BasicType.T_OBJECT || type == BasicType.T_ARRAY) {
+        return !VM.getVM().isCompressedOopsEnabled();
+      }
+    }
+    return type == BasicType.T_DOUBLE || type == BasicType.T_LONG;
+  }
+
   private static long headerSizeInBytes() {
     if (headerSize != 0) {
       return headerSize;
     }
-    if (VM.getVM().isCompressedKlassPointersEnabled()) {
-      headerSize = typeSize;
-    } else {
-      headerSize = VM.getVM().alignUp(typeSize + VM.getVM().getIntSize(),
-                                      VM.getVM().getHeapWordSize());
-    }
+    headerSize = lengthOffsetInBytes() + VM.getVM().getIntSize();
     return headerSize;
   }
 
-  private static long headerSize(BasicType type) {
-    if (Universe.elementTypeShouldBeAligned(type)) {
-       return alignObjectSize(headerSizeInBytes())/VM.getVM().getHeapWordSize();
-    } else {
-      return headerSizeInBytes()/VM.getVM().getHeapWordSize();
-    }
-  }
-
-  private long lengthOffsetInBytes() {
+  private static long lengthOffsetInBytes() {
     if (lengthOffsetInBytes != 0) {
       return lengthOffsetInBytes;
     }
@@ -108,7 +107,13 @@ public class Array extends Oop {
   }
 
   public static long baseOffsetInBytes(BasicType type) {
-    return headerSize(type) * VM.getVM().getHeapWordSize();
+    long typeSizeInBytes = headerSizeInBytes();
+    if (elementTypeShouldBeAligned(type)) {
+      VM vm = VM.getVM();
+      return vm.alignUp(typeSizeInBytes, vm.getVM().getHeapWordSize());
+    } else {
+      return typeSizeInBytes;
+    }
   }
 
   public boolean isArray()             { return true; }
