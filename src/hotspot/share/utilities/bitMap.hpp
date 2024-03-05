@@ -569,9 +569,9 @@ class GrowableBitMap : public BitMap {
  private:
   // Copy the region [start, end) of the bitmap
   // Bits in the selected range are copied to a newly allocated map
-  bm_word_t* copy_of_range(idx_t start_bit, idx_t end_bit, bool clear = true);
+  bm_word_t* copy_of_range(idx_t start_bit, idx_t end_bit);
   // Copy the region from the start bit to the end of the map
-  bm_word_t* copy_of_range(idx_t start_bit, bool clear = true);
+  bm_word_t* copy_of_range(idx_t start_bit);
 
  public:
   // Set up and optionally clear the bitmap memory.
@@ -594,9 +594,7 @@ class GrowableBitMap : public BitMap {
   void resize(idx_t new_size_in_bits, bool clear = true);
   // Reduce bitmap to the region [start, end)
   // Previous map is deallocated and replaced with the newly allocated map from copy_of_range
-  void truncate(idx_t start_bit, idx_t end_bit, bool clear = true);
-  // Truncate from the start bit to the end of the map
-  void truncate(idx_t start_bit, bool clear = true);
+  void truncate(idx_t start_bit, idx_t end_bit);
 };
 
 // A concrete implementation of the "abstract" BitMap class.

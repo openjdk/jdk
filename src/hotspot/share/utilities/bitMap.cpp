@@ -100,14 +100,14 @@ void GrowableBitMap<BitMapWithAllocator>::resize(idx_t new_size_in_bits, bool cl
 }
 
 template <class BitMapWithAllocator>
-bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, idx_t end_bit, bool clear) {
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, idx_t end_bit) {
   assert(start_bit < end_bit, "End bit must come after start bit");
   assert(end_bit <= size(), "End bit not in bitmap");
 
   // We might have extra bits at the end that we don't want to lose
-  idx_t cutoff = bit_in_word(end_bit);
-  idx_t start_word = to_words_align_down(start_bit);
-  idx_t end_word = to_words_align_up(end_bit);
+  idx_t const cutoff = bit_in_word(end_bit);
+  idx_t const start_word = to_words_align_down(start_bit);
+  idx_t const end_word = to_words_align_up(end_bit);
   bm_word_t* const old_map = map();
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
@@ -120,47 +120,36 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
   idx_t carry = 0;
 
   // Iterate the map backwards as the shift will result in carry-out bits
-  for (idx_t i = end_word; i --> start_word;) {
-    // First iteration is a special case:
-    // There may be left over bits in the last word that we want to keep while discarding the rest
-    if (i == end_word - 1 && cutoff > 0) {
-      bm_word_t mask = bit_mask(cutoff) - 1;
-      new_map[i-start_word] = old_map[i] & mask >> shift;
-    } else {
-      new_map[i-start_word] = old_map[i] >> shift;
-    }
-    new_map[i-start_word] |= carry;
+  for (idx_t i = end_word; i-- > start_word;) {
+    new_map[i-start_word] = old_map[i] >> shift;
 
-    // A full shift by BitsPerWord could be sign extended
-    carry = old_map[i] << (BitsPerWord - shift) % BitsPerWord;
+    if (shift != 0) {
+      new_map[i-start_word] |= carry;
+      carry = old_map[i] << (BitsPerWord - shift);
+    }
   }
 
   return new_map;
 }
 
 template <class BitMapWithAllocator>
-bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, bool clear) {
-  return copy_of_range(start_bit, size(), clear);
+bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit) {
+  return copy_of_range(start_bit, size());
 }
 
 template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit, bool clear) {
+void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bit) {
   const size_t old_size_in_words = calc_size_in_words(size());
   const idx_t new_size_in_bits = end_bit - start_bit;
   bm_word_t* const old_map = map();
 
-  bm_word_t* new_map = copy_of_range(start_bit, end_bit, clear);
+  bm_word_t* new_map = copy_of_range(start_bit, end_bit);
 
   BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
   // Free and clear old map to avoid left over bits
   derived->free(old_map, old_size_in_words);
   update(nullptr, 0);
   update(new_map, new_size_in_bits);
-}
-
-template <class BitMapWithAllocator>
-void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, bool clear) {
-  truncate(start_bit, size(), clear);
 }
 
 ArenaBitMap::ArenaBitMap(Arena* arena, idx_t size_in_bits, bool clear)

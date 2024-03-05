@@ -68,7 +68,7 @@ class BitMapTruncateTest {
     result.set_bit(0);
     result.set_bit(1);
 
-    map.truncate(1, 3, true);
+    map.truncate(1, 3);
 
     EXPECT_TRUE(map.is_same(result));
   }
