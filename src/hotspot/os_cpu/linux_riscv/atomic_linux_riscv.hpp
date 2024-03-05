@@ -154,7 +154,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
   if (order != memory_order_relaxed) {
     FULL_MEM_BARRIER;
   }
-  return old_value;
+  return (T)old_value;
 }
 #endif
 
