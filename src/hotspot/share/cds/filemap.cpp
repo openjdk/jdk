@@ -1575,7 +1575,7 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
   size_t old_size = map->size_in_bytes();
 
   // Slice and resize bitmap
-  map->truncate(old_zeros);
+  map->truncate(old_zeros, map->size_in_bits());
 
   // We want to keep track of how many zeros were removed
   size_t new_zeros = map->find_first_set_bit(0);
