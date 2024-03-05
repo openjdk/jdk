@@ -97,10 +97,12 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
     /**
      * This method is used to interrupt file loading thread.
      */
-    public synchronized void invalidateFileCache() {
-        if (filesLoader != null) {
-            filesLoader.loadThread.interrupt();
-            filesLoader = null;
+    public void invalidateFileCache() {
+        synchronized (this) {
+            if (filesLoader != null) {
+                filesLoader.loadThread.interrupt();
+                filesLoader = null;
+            }
         }
     }
 
