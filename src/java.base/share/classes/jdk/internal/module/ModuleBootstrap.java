@@ -803,7 +803,6 @@ public final class ModuleBootstrap {
 
     /**
      * Process the --enable-native-access option to grant access to restricted methods to selected modules.
-     * Also add Enable native access from JDK modules.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
         addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, true);

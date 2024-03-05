@@ -882,7 +882,7 @@ public final class ModuleLayer {
     }
 
     /**
-     * Returns the module with the given name in this later only.
+     * Returns the module with the given name in this layer only.
      *
      * @param  name
      *         The name of the module to find
