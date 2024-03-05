@@ -898,9 +898,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
                                                                             \
-  develop(bool, FLSVerifyDictionary, false,                                 \
-          "Do lots of (expensive) FLS dictionary verification")             \
-                                                                            \
   product(uintx, ProcessDistributionStride, 4,                              \
           "Stride through processors when distributing processes")          \
           range(0, max_juint)                                               \

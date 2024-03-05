@@ -1012,14 +1012,8 @@ class PSParallelCompact : AllStatic {
   static HeapWord* compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction);
 
-  // Return true if dead space crosses onto the specified Region; bit must be
-  // the bit index corresponding to the first word of the Region.
-  static inline bool dead_space_crosses_boundary(const RegionData* region,
-                                                 idx_t bit);
-
-  // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the dense prefix is
-  // non-empty.
+  // Create a filler obj (if needed) right before the dense-prefix-boundary to
+  // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
   static void summarize_spaces_quick();

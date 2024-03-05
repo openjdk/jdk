@@ -571,7 +571,7 @@ loop:   while (true) {
      *               valid modified UTF-8 encoding of a Unicode string.
      * @see        java.io.DataInputStream#readUnsignedShort()
      */
-    public static String readUTF(DataInput in) throws IOException {
+    public static final String readUTF(DataInput in) throws IOException {
         int utflen = in.readUnsignedShort();
         byte[] bytearr;
         char[] chararr;
