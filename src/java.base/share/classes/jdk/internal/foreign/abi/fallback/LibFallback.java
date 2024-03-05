@@ -73,6 +73,8 @@ final class LibFallback {
     static int intSize() { return NativeConstants.SIZEOF_INT; }
     static int longSize() {return NativeConstants.SIZEOF_LONG; }
     static int wcharSize() {return NativeConstants.SIZEOF_WCHAR; }
+    static int longLongAlign() { return NativeConstants.ALIGNOF_LONG_LONG; }
+    static int doubleAlign() { return NativeConstants.ALIGNOF_DOUBLE; }
 
     static short structTag() { return NativeConstants.STRUCT_TAG; }
 
@@ -242,6 +244,9 @@ final class LibFallback {
     private static native int ffi_sizeof_long();
     private static native int ffi_sizeof_wchar();
 
+    private static native int alignof_long_long();
+    private static native int alignof_double();
+
     // put these in a separate class to avoid an UnsatisfiedLinkError
     // when LibFallback is initialized but the library is not present
     private static final class NativeConstants {
@@ -263,6 +268,8 @@ final class LibFallback {
         static final int SIZEOF_LONG = ffi_sizeof_long();
         static final int SIZEOF_WCHAR = ffi_sizeof_wchar();
 
+        static final int ALIGNOF_LONG_LONG = alignof_long_long();
+        static final int ALIGNOF_DOUBLE = alignof_double();
 
         static final MemorySegment VOID_TYPE = MemorySegment.ofAddress(ffi_type_void());
         static final short STRUCT_TAG = ffi_type_struct();
