@@ -165,8 +165,6 @@ class Generation: public CHeapObj<mtGC> {
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
 
-  virtual void update_gc_stats(Generation* current_generation, bool full) {}
-
   // Printing
   virtual const char* name() const = 0;
   virtual const char* short_name() const = 0;
