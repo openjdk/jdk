@@ -744,7 +744,6 @@ class ParMarkBitMapClosure: public StackObj {
  private:
   ParMarkBitMap* const        _bitmap;
   ParCompactionManager* const _compaction_manager;
-  DEBUG_ONLY(const size_t     _initial_words_remaining;) // Useful in debugger.
   size_t                      _words_remaining; // Words left to copy.
 
  protected:
@@ -756,9 +755,6 @@ ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
                                            ParCompactionManager* cm,
                                            size_t words):
   _bitmap(bitmap), _compaction_manager(cm)
-#ifdef  ASSERT
-  , _initial_words_remaining(words)
-#endif
 {
   _words_remaining = words;
   _source = nullptr;
@@ -975,11 +971,6 @@ class PSParallelCompact : AllStatic {
   // Mark live objects
   static void marking_phase(ParallelOldTracer *gc_tracer);
 
-  // Compute the dense prefix for the designated space.  This is an experimental
-  // implementation currently not used in production.
-  static HeapWord* compute_dense_prefix_via_density(const SpaceId id,
-                                                    bool maximum_compaction);
-
   // Methods used to compute the dense prefix.
 
   // Compute the value of the normal distribution at x = density.  The mean and
@@ -1021,14 +1012,8 @@ class PSParallelCompact : AllStatic {
   static HeapWord* compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction);
 
-  // Return true if dead space crosses onto the specified Region; bit must be
-  // the bit index corresponding to the first word of the Region.
-  static inline bool dead_space_crosses_boundary(const RegionData* region,
-                                                 idx_t bit);
-
-  // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the dense prefix is
-  // non-empty.
+  // Create a filler obj (if needed) right before the dense-prefix-boundary to
+  // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
   static void summarize_spaces_quick();
@@ -1069,7 +1054,7 @@ class PSParallelCompact : AllStatic {
   // allocations.  This should be called during the VM initialization
   // at a pointer where it would be appropriate to return a JNI_ENOMEM
   // in the event of a failure.
-  static bool initialize();
+  static bool initialize_aux_data();
 
   // Closure accessors
   static BoolObjectClosure* is_alive_closure()     { return &_is_alive_closure; }
@@ -1170,10 +1155,6 @@ class PSParallelCompact : AllStatic {
   // Debugging support.
   static const char* space_names[last_space_id];
   static void print_region_ranges();
-  static void print_dense_prefix_stats(const char* const algorithm,
-                                       const SpaceId id,
-                                       const bool maximum_compaction,
-                                       HeapWord* const addr);
   static void summary_phase_msg(SpaceId dst_space_id,
                                 HeapWord* dst_beg, HeapWord* dst_end,
                                 SpaceId src_space_id,
