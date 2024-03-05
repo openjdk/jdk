@@ -41,7 +41,7 @@
 
 #if defined(__clang_major__)
 #define CORRECT_COMPILER_ATOMIC_SUPPORT
-#elif defined(__GNUC__) && __riscv_xlen <= 32
+#elif defined(__GNUC__) && (__riscv_xlen <= 32 || __GNUC__ > 13)
 #define CORRECT_COMPILER_ATOMIC_SUPPORT
 #endif
 
@@ -122,7 +122,7 @@ inline T Atomic::PlatformCmpxchg<1>::operator()(T volatile* dest __attribute__((
 
 #ifndef CORRECT_COMPILER_ATOMIC_SUPPORT
 // The implementation of `__atomic_compare_exchange` lacks sign extensions
-// in some version of GCC when using with 32-bit unsigned integers on RV64,
+// in GCC 13 and lower when using with 32-bit unsigned integers on RV64,
 // so we should implement it manually.
 // GCC bug: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114130.
 // See also JDK-8326936.
@@ -134,7 +134,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
                                                 atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(T));
 
-  T old_value;
+  int32_t old_value;
   uint64_t rc_temp;
 
   if (order != memory_order_relaxed) {
@@ -148,7 +148,7 @@ inline T Atomic::PlatformCmpxchg<4>::operator()(T volatile* dest __attribute__((
     "    bnez      %1, 1b      \n\t"
     "2:                        \n\t"
     : /*%0*/"=&r" (old_value), /*%1*/"=&r" (rc_temp), /*%2*/"+A" (*dest)
-    : /*%3*/"r" (compare_value), /*%4*/"r" (exchange_value)
+    : /*%3*/"r" ((int64_t)(int32_t)compare_value), /*%4*/"r" (exchange_value)
     : "memory" );
 
   if (order != memory_order_relaxed) {
