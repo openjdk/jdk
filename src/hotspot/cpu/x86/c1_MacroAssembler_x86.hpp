@@ -83,12 +83,12 @@
   };
 
   // allocation of arrays
-  // obj        : must be rax, will contain pointer to allocated object
-  // len        : array length in number of elements
-  // t          : scratch register - contents destroyed
-  // header_size: size of object header in words
-  // f          : element scale factor
-  // slow_case  : exit to slow case implementation if fast allocation fails
+  // obj                 : must be rax, will contain pointer to allocated object
+  // len                 : array length in number of elements
+  // t                   : scratch register - contents destroyed
+  // base_offset_in_bytes: offset of the first array element, in bytes
+  // f                   : element scale factor
+  // slow_case           : exit to slow case implementation if fast allocation fails
   void allocate_array(Register obj, Register len, Register t, Register t2, int base_offset_in_bytes, Address::ScaleFactor f, Register klass, Label& slow_case);
 
   int  rsp_offset() const { return _rsp_offset; }
