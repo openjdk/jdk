@@ -1226,9 +1226,7 @@ void VMDebugDCmd::execute(DCmdSource source, TRAPS) {
     return;
   }
   // Interpret _subcommand, using further args _arg1, etc as required.
-  if (strcmp("events", _subcommand.value()) == 0) {
-    Events::print_all(output(), 100);
-  } else if (strcmp("threads", _subcommand.value()) == 0) {
+  if (strcmp("threads", _subcommand.value()) == 0) {
     char buf[1024];
     Threads::print_on_error(output(), THREAD, buf, sizeof(buf));
   } else if (strcmp("findclass", _subcommand.value()) == 0) {

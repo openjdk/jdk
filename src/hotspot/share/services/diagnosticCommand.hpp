@@ -591,7 +591,7 @@ public:
     return "VM.debug";
   }
   static const char* description() {
-    return "Inspect VM state. Requires -XX:+UnlockDiagnosticVMOptions. Subcommands: events, threads, find ADDRESS, findclass CLASS_PATTERN FLAGS, findmethod CLASS_PATTERN METHOD_PATTERN FLAGS";
+    return "Inspect VM state. Requires -XX:+UnlockDiagnosticVMOptions. Subcommands: threads, find ADDRESS, findclass CLASS_PATTERN FLAGS, findmethod CLASS_PATTERN METHOD_PATTERN FLAGS";
   }
   static const char* impact() {
       return "High: not recommended for live production use.";
