@@ -210,7 +210,7 @@
   develop(bool, StressLinearScan, false,                                    \
           "scramble block order used by LinearScan (stress test)")          \
                                                                             \
-  product(bool, TimeLinearScan, false,                                      \
+  develop(bool, TimeLinearScan, false,                                      \
           "detailed timing of LinearScan phases")                           \
                                                                             \
   develop(bool, TimeEachLinearScan, false,                                  \
