@@ -3935,7 +3935,7 @@ class StubGenerator: public StubCodeGenerator {
       // ma: mask agnostic (don't care about those lanes)
       // x0 is not written, we known the number of vector elements.
 
-      if (vset_sew == Assembler::e64 && MaxVectorSize == 16) { // SHA512 and VLEN = 128
+      if (vset_sew == Assembler::e64 && VM_Version::_initial_vector_length == 16) { // SHA512 and VLEN = 128
         __ vsetivli(x0, 4, vset_sew, Assembler::m2, Assembler::ma, Assembler::ta);
       } else {
         __ vsetivli(x0, 4, vset_sew, Assembler::m1, Assembler::ma, Assembler::ta);
