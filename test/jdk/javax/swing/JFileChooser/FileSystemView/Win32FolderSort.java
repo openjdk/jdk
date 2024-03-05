@@ -62,6 +62,10 @@ public class Win32FolderSort {
             throw new RuntimeException("personal is not special");
         }
         File fakePersonal = (File) getChildByPath.invoke(desktop, personal.getPath());
+        if (fakePersonal == null) {
+            fakePersonal = (File) createShellFolder.invoke(null, desktop,
+                                                           new File(personal.getPath()));
+        }
         if ((Boolean) isSpecial.invoke(fakePersonal)) {
             throw new RuntimeException("fakePersonal is special");
         }
