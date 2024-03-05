@@ -71,6 +71,10 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
+  // Avg amount promoted; used for avoiding promotion undo
+  // This class does not update deviations if the sample is zero.
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
+
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
   // necessarily the full "bytes") was done.
@@ -80,7 +84,8 @@ class TenuredGeneration: public Generation {
   void shrink(size_t bytes);
 
   void compute_new_size_inner();
- public:
+
+public:
   void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
