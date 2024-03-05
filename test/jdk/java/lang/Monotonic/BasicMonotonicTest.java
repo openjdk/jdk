@@ -38,6 +38,15 @@ import static org.junit.jupiter.api.Assertions.*;
 final class BasicMonotonicTest {
 
     @Test
+    void testTypes() {
+        Monotonic<Integer> m1 = Monotonic.of(Integer.class);
+        Monotonic<Integer> m2 = Monotonic.of(int.class);
+        Monotonic<Number> m3 = Monotonic.of(Integer.class);
+        Monotonic<Object> m4 = Monotonic.of(Integer.class);
+        Monotonic<Object> m5 = Monotonic.of(int.class);
+    }
+
+    @Test
     void testIntegerOld() {
         Monotonic<Integer> m = Monotonic.of(Integer.class);
         assertFalse(m.isPresent());

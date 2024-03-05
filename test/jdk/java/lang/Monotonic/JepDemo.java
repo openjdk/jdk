@@ -52,7 +52,7 @@ final class JepDemo {
         }
 
         static Logger logger() {
-            // 2. Access the monotonic value with as-declared-final performance
+            // 3. Access the monotonic value with as-declared-final performance
             return LOGGER.get();
         }
 
@@ -72,8 +72,9 @@ final class JepDemo {
 
     static
     class Bar3 {
-        private static final Monotonic<Logger> MONOTONIC = Monotonic.of(Object.class);
-        // 1. Declare a memoized (cached) Supplier backed by a monotonic value
+        // 1. Declare a monotonic value
+        private static final Monotonic<Logger> MONOTONIC = Monotonic.of(Logger.class);
+        // 2. Declare a memoized (cached) Supplier backed by the monotonic value
         private static final Supplier<Logger> LOGGER = () -> MONOTONIC
                 .computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
 

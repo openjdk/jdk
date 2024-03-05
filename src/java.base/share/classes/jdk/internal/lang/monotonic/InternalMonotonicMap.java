@@ -39,8 +39,8 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import static jdk.internal.lang.monotonic.InternalMonotonic.UNSAFE;
-import static jdk.internal.lang.monotonic.InternalMonotonicList.uoe;
+import static jdk.internal.lang.monotonic.MonotonicUtil.UNSAFE;
+import static jdk.internal.lang.monotonic.MonotonicUtil.uoe;
 
 public sealed interface InternalMonotonicMap<K, V>
         extends Monotonic.Map<K, V> {
@@ -60,8 +60,9 @@ public sealed interface InternalMonotonicMap<K, V>
         private final int size; // number of pairs
 
         // keys array not trusted
-        public MonotonicMapImpl(Class<V> backingValueType, Object[] keys) {
-            this.backingValueType = backingValueType;
+        @SuppressWarnings("unchecked")
+        public MonotonicMapImpl(Class<? extends V> backingValueType, Object[] keys) {
+            this.backingValueType = (Class<V>)backingValueType;
             this.size = keys.length;
 
             int len = EXPAND_FACTOR * keys.length * 2;

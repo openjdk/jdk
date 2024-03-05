@@ -195,6 +195,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          *
          * @throws IndexOutOfBoundsException if the index is out of range
          *                                   ({@code index < 0 || index >= size()})
+         * // Todo: return 'null" instead as the Map::get operator does?
          * @throws NoSuchElementException    if no value is present at the provided
          *                                   {@code index}
          */
@@ -348,7 +349,6 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          * @see #get(int)
          */
         MethodHandle getter();
-
     }
 
     /**
@@ -373,8 +373,6 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          * {@inheritDoc}
          *
          * @throws NullPointerException   if the specified key is null
-         * @throws NoSuchElementException if no value is present for the associated
-         *                                {@code key}
          */
         @Override
         V get(Object key);
@@ -419,7 +417,6 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          */
         @Override
         V putIfAbsent(K key, V value);
-
 
         /**
          * {@inheritDoc}
@@ -502,8 +499,9 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param backingType a class literal that (optionally) can be used to store a bound
      *                    value
      * @param <V>         the type to bind
+     * @param <T>         the type of the backing class
      */
-    static <V> Monotonic<V> of(Class<? super V> backingType) {
+    static <T extends V, V> Monotonic<V> of(Class<T> backingType) {
         Objects.requireNonNull(backingType);
         return InternalMonotonic.of(backingType);
     }
@@ -518,9 +516,10 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param backingType a class literal that (optionally) can be used to store a bound
      *                    non-null value
      * @param <V>         the type to bind
+     * @param <T>         the type of the backing class
      */
     // Todo: Valhalla makes this redundant?
-    static <V> Monotonic<V> ofNullable(Class<V> backingType) {
+    static <T extends V, V> Monotonic<V> ofNullable(Class<T> backingType) {
         Objects.requireNonNull(backingType);
         return InternalMonotonic.ofNullable(backingType);
     }
@@ -535,7 +534,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param size               the maximum size of the returned monotonic list
      * @param <V>                the type of the monotonic values in the returned list
      */
-    static <V> Monotonic.List<V> ofList(Class<V> backingElementType,
+    static <V> Monotonic.List<V> ofList(Class<? extends V> backingElementType,
                                         int size) {
         Objects.requireNonNull(backingElementType);
         return InternalMonotonic.ofList(backingElementType, size);
@@ -553,7 +552,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param <K>              the type of keys maintained by the returned map
      * @param <V>              the type of the values in the returned map
      */
-    static <K, V> Monotonic.Map<K, V> ofMap(Class<V> backingValueType,
+    static <K, V> Monotonic.Map<K, V> ofMap(Class<? extends V> backingValueType,
                                             Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
         return InternalMonotonic.ofMap(backingValueType, keys);

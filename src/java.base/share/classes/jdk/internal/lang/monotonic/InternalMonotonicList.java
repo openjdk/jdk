@@ -31,55 +31,61 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.AbstractList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.ConcurrentModificationException;
+import java.util.Iterator;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
-import static jdk.internal.lang.monotonic.InternalMonotonic.UNSAFE;
+import static jdk.internal.lang.monotonic.MonotonicUtil.UNSAFE;
 import static jdk.internal.lang.monotonic.InternalMonotonic.freeze;
+import static jdk.internal.lang.monotonic.MonotonicUtil.uoe;
 import static jdk.internal.misc.Unsafe.ARRAY_OBJECT_BASE_OFFSET;
 import static jdk.internal.misc.Unsafe.ARRAY_OBJECT_INDEX_SCALE;
 
-public sealed interface InternalMonotonicList<V>
-        extends Monotonic.List<V> {
+public sealed interface InternalMonotonicList<E>
+        extends Monotonic.List<E> {
 
-    final class ReferenceList<V>
-            extends AbstractList<V>
-            implements InternalMonotonicList<V> {
+    final class ReferenceList<E>
+            extends AbstractList<E>
+            implements InternalMonotonicList<E> {
+
+        private static final long SIZE_OFFSET =
+                UNSAFE.objectFieldOffset(ReferenceList.class, "size");
+
+        private int size;
 
         @Stable
-        private final V[] elements;
+        private final E[] elements;
 
-        //@SuppressWarnings({"unchecked", "rawtypes"})
         @SuppressWarnings("unchecked")
-        public ReferenceList(Class<V> backingElementType,
-                                 int size) {
-            this.elements = (V[]) new Object[size];
+        public ReferenceList(int size) {
+            this.elements = (E[]) new Object[size];
         }
 
         @Override
         public int size() {
-            return (int) Arrays.stream(elements)
-                    .filter(Objects::nonNull)
-                    .count();
+            return UNSAFE.getIntVolatile(this, SIZE_OFFSET);
         }
 
         @Override
-        public V get(int index) {
+        public E get(int index) {
             // Try normal memory semantics first
-            V v = elements[index];
-            if (v != null) {
-                return v;
+            E e = elements[index];
+            if (e != null) {
+                return e;
             }
             // Now, fall back to volatile semantics
-            v = elementVolatile(index);
-            if (v != null) {
-                return v;
+            e = elementVolatile(index);
+            if (e != null) {
+                return e;
             }
-            throw new NoSuchElementException(Integer.toString(index));
+            return null;
+            //throw new NoSuchElementException(Integer.toString(index));
         }
 
         @Override
@@ -88,10 +94,9 @@ public sealed interface InternalMonotonicList<V>
         }
 
         @Override
-        public V set(int index, V element) {
+        public E set(int index, E element) {
             Objects.requireNonNull(element);
-            freeze();
-            V previous = caeElement(index, element);
+            E previous = caeElement(index, element);
             if (previous == null) {
                 return element;
             }
@@ -99,59 +104,57 @@ public sealed interface InternalMonotonicList<V>
         }
 
         @Override
-        public V putIfAbsent(int index, V element) {
+        public E putIfAbsent(int index, E element) {
             Objects.requireNonNull(element);
-            freeze();
-            V previous = caeElement(index, element);
+            E previous = caeElement(index, element);
             return previous == null ? element : previous;
         }
 
         @Override
-        public V computeIfAbsent(int index, IntFunction<? extends V> mapper) {
+        public E computeIfAbsent(int index, IntFunction<? extends E> mapper) {
             return computeIfAbsent0(index, mapper, m -> m.apply(index));
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public V computeIfAbsent(int index, MethodHandle mapper) {
-            return computeIfAbsent0(index, mapper, m -> (V) (Object) m.invokeExact(index));
+        public E computeIfAbsent(int index, MethodHandle mapper) {
+            return computeIfAbsent0(index, mapper, m -> (E) (Object) m.invokeExact(index));
         }
 
-        private <T> V computeIfAbsent0(int index,
+        private <T> E computeIfAbsent0(int index,
                                        T supplier,
-                                       InternalMonotonic.ThrowingFunction<T, V> mapper) {
+                                       MonotonicUtil.ThrowingFunction<T, E> mapper) {
             Objects.requireNonNull(supplier);
             // Try normal memory semantics first
-            V v = elements[index];
-            if (v != null) {
-                return v;
+            E e = elements[index];
+            if (e != null) {
+                return e;
             }
             // Now, fall back to volatile semantics
-            v = elementVolatile(index);
-            if (v != null) {
-                return v;
+            e = elementVolatile(index);
+            if (e != null) {
+                return e;
             }
-            V witness;
+            E witness;
             // Make sure the supplier is only invoked at most once by this method
             synchronized (supplier) {
                 // Re-check
-                v = elementVolatile(index);
-                if (v != null) {
+                e = elementVolatile(index);
+                if (e != null) {
                     return get(index);
                 }
                 try {
-                    v = mapper.apply(supplier);
+                    e = mapper.apply(supplier);
                 } catch (Throwable t) {
-                    if (t instanceof Error e) {
-                        throw e;
+                    if (t instanceof Error error) {
+                        throw error;
                     }
                     throw new NoSuchElementException(t);
                 }
-                Objects.requireNonNull(v);
-                freeze();
-                witness = caeElement(index, v);
+                Objects.requireNonNull(e);
+                witness = caeElement(index, e);
             }
-            return witness == null ? v : witness;
+            return witness == null ? e : witness;
         }
 
         @Override
@@ -172,14 +175,177 @@ public sealed interface InternalMonotonicList<V>
             return Holder.HANDLE;
         }
 
+        @Override
+        public Iterator<E> iterator() {
+            return new Itr();
+        }
+
+        @Override
+        public ListIterator<E> listIterator() {
+            return new ListItr(0);
+        }
+
         // all mutating methods throw UnsupportedOperationException
-        @Override public boolean add(V v) { throw uoe(); }
-        @Override public boolean addAll(int index, Collection<? extends V> c) { throw uoe(); }
-        @Override public void    clear() { throw uoe(); }
-        @Override public boolean remove(Object o) { throw uoe(); }
-        @Override public boolean removeAll(Collection<?> c) { throw uoe(); }
-        @Override public boolean removeIf(Predicate<? super V> filter) { throw uoe(); }
-        @Override public boolean retainAll(Collection<?> c) { throw uoe(); }
+        @Override
+        public boolean add(E v) {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public boolean addAll(int index, Collection<? extends E> c) {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public void clear() {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public boolean removeIf(Predicate<? super E> filter) {
+            throw MonotonicUtil.uoe();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c) {
+            throw MonotonicUtil.uoe();
+        }
+
+        private class Itr implements Iterator<E> {
+            /**
+             * Index of element to be returned by subsequent call to next.
+             */
+            int cursor = 0;
+
+            /**
+             * Index of element returned by most recent call to next or
+             * previous.
+             */
+            int lastRet = -1;
+
+            E next;
+
+            @Override
+            public boolean hasNext() {
+                if (next != null) {
+                    return true;
+                }
+                while ((next = get(cursor++)) == null && isInRange(cursor)) {
+                }
+                return next != null;
+            }
+
+            @Override
+            public E next() {
+                E candidate = next;
+                if (candidate != null) {
+                    // Mark as consumed
+                    next = null;
+                    markLastRet();
+                    return candidate;
+                }
+                if (hasNext()) {
+                    markLastRet();
+                    return next;
+                }
+                throw new NoSuchElementException();
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super E> action) {
+                Objects.requireNonNull(action);
+                E candidate = next;
+                if (candidate != null) {
+                    // Mark as consumed
+                    next = null;
+                    markLastRet();
+                    action.accept(candidate);
+                }
+                for (; cursor < elements.length; cursor++) {
+                    E e = get(cursor);
+                    if (e != null) {
+                        action.accept(e);
+                    }
+                }
+                markLastRet();
+            }
+
+            @Override public void remove() {
+                throw MonotonicUtil.uoe();
+            }
+
+            boolean isInRange(int i) {
+                return i >= 0 && i < elements.length;
+            }
+
+            void markLastRet() {
+                lastRet = cursor;
+            }
+
+        }
+
+        private class ListItr extends Itr implements ListIterator<E> {
+
+            private E previous;
+
+            ListItr(int index) {
+                cursor = index;
+            }
+
+            public boolean hasPrevious() {
+                int i = cursor -1 ;
+                while ((previous = get(i)) == null && isInRange(cursor)) {
+                }
+                return previous != null;
+            }
+
+            public E previous() {
+                E candidate = previous;
+                if (candidate != null) {
+                    // Mark as consumed
+                    previous = null;
+                    markLastRet();
+                    return candidate;
+                }
+                if (hasPrevious()) {
+                    markLastRet();
+                    return previous;
+                }
+                throw new NoSuchElementException();
+            }
+
+            public int nextIndex() {
+                return cursor;
+            }
+
+            public int previousIndex() {
+                return cursor-1;
+            }
+
+            public void set(E e) {
+                if (lastRet < 0)
+                    throw new IllegalStateException();
+                try {
+                    ReferenceList.this.set(lastRet, e);
+                } catch (IndexOutOfBoundsException ex) {
+                    throw new ConcurrentModificationException();
+                }
+            }
+
+            public void add(E e) {
+                throw uoe();
+            }
+        }
 
         // Todo: Make sure sub-lists, iterators etc. upholds the monotonic invariants
         // Todo: Investigate if we can reuse the ImmutableCollections types...
@@ -187,20 +353,25 @@ public sealed interface InternalMonotonicList<V>
         // Accessors
 
         @SuppressWarnings("unchecked")
-        private V elementVolatile(int index) {
-            return (V) UNSAFE.getReferenceVolatile(elements, offset(index));
+        private E elementVolatile(int index) {
+            return (E) UNSAFE.getReferenceVolatile(elements, offset(index));
         }
 
         @SuppressWarnings("unchecked")
-        private V caeElement(int index, V created) {
-            return (V) UNSAFE.compareAndExchangeReference(elements, offset(index), null, created);
+        private E caeElement(int index, E created) {
+            // Make sure no reordering of store operations
+            freeze();
+            E e = (E) UNSAFE.compareAndExchangeReference(elements, offset(index), null, created);
+            if (e == null) {
+                // We have added another element
+                UNSAFE.getAndAddInt(this, SIZE_OFFSET, 1);
+            }
+            return e;
         }
 
         private static long offset(int index) {
             return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
         }
+
     }
-
-    static UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
-
 }

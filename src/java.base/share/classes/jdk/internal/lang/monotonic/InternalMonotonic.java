@@ -25,7 +25,6 @@
 
 package jdk.internal.lang.monotonic;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.MethodHandle;
@@ -38,16 +37,10 @@ import java.util.function.Supplier;
 
 public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
-    Unsafe UNSAFE = Unsafe.getUnsafe();
-
-    interface ThrowingFunction<T, R> {
-        R apply(T t) throws Throwable;
-    }
-
     final class ReferenceMonotonic<V> implements InternalMonotonic<V> {
 
         private static final long VALUE_OFFSET =
-                UNSAFE.objectFieldOffset(ReferenceMonotonic.class, "value");
+                MonotonicUtil.UNSAFE.objectFieldOffset(ReferenceMonotonic.class, "value");
 
         @Stable
         private V value;
@@ -100,7 +93,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
         }
 
-        private <T> V computeIfUnbound0(T supplier, ThrowingFunction<T, V> mapper) {
+        private <T> V computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, V> mapper) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -161,18 +154,18 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @SuppressWarnings("unchecked")
         private V valueVolatile() {
-            return (V) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+            return (V) MonotonicUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
         }
 
         @SuppressWarnings("unchecked")
         private V caeValue(V value) {
-            return (V) UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
+            return (V) MonotonicUtil.UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
         }
     }
 
     final class NullableReferenceMonotonic<V> extends AbstractNullableMonotonic<V> implements InternalMonotonic<V> {
 
-        private static final long VALUE_OFFSET = UNSAFE.objectFieldOffset(NullableReferenceMonotonic.class, "value");
+        private static final long VALUE_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(NullableReferenceMonotonic.class, "value");
 
         @Stable
         private V value;
@@ -227,7 +220,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
         }
 
-        private <T> V computeIfUnbound0(T supplier, ThrowingFunction<T, V> mapper) {
+        private <T> V computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, V> mapper) {
             // Optimistically try plain semantics first
             V v = value;
             if (v != null) {
@@ -288,19 +281,19 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @SuppressWarnings("unchecked")
         private V valueVolatile() {
-            return (V) UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+            return (V) MonotonicUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
         }
 
         @SuppressWarnings("unchecked")
         private V caeValue(V value) {
-            return (V) UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
+            return (V) MonotonicUtil.UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
         }
 
     }
 
     final class IntMonotonic extends AbstractNullableMonotonic<Integer> implements InternalMonotonic<Integer> {
 
-        private static final long VALUE_OFFSET = UNSAFE.objectFieldOffset(IntMonotonic.class, "value");
+        private static final long VALUE_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(IntMonotonic.class, "value");
 
         @Stable
         private int value;
@@ -340,7 +333,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, s -> (Integer) (Object)s.invokeExact());
         }
 
-        private <T> Integer computeIfUnbound0(T supplier, ThrowingFunction<T, ? extends Integer> mapper) {
+        private <T> Integer computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, ? extends Integer> mapper) {
             // Optimistically try plain semantics first
             int v = value;
             if (v != 0) {
@@ -419,18 +412,18 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         private int valueVolatile() {
-            return UNSAFE.getIntVolatile(this, VALUE_OFFSET);
+            return MonotonicUtil.UNSAFE.getIntVolatile(this, VALUE_OFFSET);
         }
 
         private int caeValue(int value) {
-            return UNSAFE.compareAndExchangeInt(this, VALUE_OFFSET, 0, value);
+            return MonotonicUtil.UNSAFE.compareAndExchangeInt(this, VALUE_OFFSET, 0, value);
         }
 
     }
 
     final class LongMonotonic extends AbstractNullableMonotonic<Long> implements InternalMonotonic<Long> {
 
-        private static final long VALUE_OFFSET = UNSAFE.objectFieldOffset(LongMonotonic.class, "value");
+        private static final long VALUE_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(LongMonotonic.class, "value");
 
         @Stable
         private long value;
@@ -470,7 +463,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, s -> (Long) (Object)s.invokeExact());
         }
 
-        private <T> Long computeIfUnbound0(T supplier, ThrowingFunction<T, ? extends Long> mapper) {
+        private <T> Long computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, ? extends Long> mapper) {
             // Optimistically try plain semantics first
             long v = value;
             if (v != 0) {
@@ -549,22 +542,22 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
 
         private int valueVolatile() {
-            return UNSAFE.getIntVolatile(this, VALUE_OFFSET);
+            return MonotonicUtil.UNSAFE.getIntVolatile(this, VALUE_OFFSET);
         }
 
         private boolean casValue(long value) {
-            return UNSAFE.compareAndSetLong(this, VALUE_OFFSET, 0, value);
+            return MonotonicUtil.UNSAFE.compareAndSetLong(this, VALUE_OFFSET, 0, value);
         }
 
         private long caeValue(long value) {
-            return UNSAFE.compareAndExchangeLong(this, VALUE_OFFSET, 0, value);
+            return MonotonicUtil.UNSAFE.compareAndExchangeLong(this, VALUE_OFFSET, 0, value);
         }
 
     }
 
     abstract sealed class AbstractNullableMonotonic<V> implements InternalMonotonic<V> {
 
-        private static final long BOUND_OFFSET = UNSAFE.objectFieldOffset(AbstractNullableMonotonic.class, "bound");
+        private static final long BOUND_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(AbstractNullableMonotonic.class, "bound");
 
         @Stable
         boolean bound;
@@ -584,11 +577,11 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
 
         protected final boolean boundVolatile() {
-            return UNSAFE.getBooleanVolatile(this, BOUND_OFFSET);
+            return MonotonicUtil.UNSAFE.getBooleanVolatile(this, BOUND_OFFSET);
         }
 
         protected final boolean casBound() {
-            return UNSAFE.compareAndSetBoolean(this, BOUND_OFFSET, false, true);
+            return MonotonicUtil.UNSAFE.compareAndSetBoolean(this, BOUND_OFFSET, false, true);
         }
     }
 
@@ -608,10 +601,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
     }
 
     @SuppressWarnings("unchecked")
-    static <V extends R, R> Monotonic<V> of(Class<R> backingType) {
+    static <V> Monotonic<V> of(Class<? extends V> backingType) {
         return (Monotonic<V>) switch (backingType) {
-            case Class<R> c when c.equals(int.class) -> new IntMonotonic();
-            case Class<R> c when c.equals(long.class) -> new LongMonotonic();
+            case Class<? extends V> c when c.equals(int.class) -> new IntMonotonic();
+            case Class<? extends V> c when c.equals(long.class) -> new LongMonotonic();
             default -> new ReferenceMonotonic<>();
         };
     }
@@ -627,20 +620,20 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         // Issue a store fence, which is sufficient
         // to provide protection against store/store reordering.
         // See VarHandle::releaseFence
-        UNSAFE.storeFence();
+        MonotonicUtil.UNSAFE.storeFence();
     }
 
-    static <V> Monotonic<V> ofNullable(Class<V> backingType) {
+    static <V> Monotonic<V> ofNullable(Class<? extends V> backingType) {
         return new NullableReferenceMonotonic<>();
     }
 
-    static <V> List<V> ofList(Class<V> backingElementType,
+    static <V> List<V> ofList(Class<? extends V> backingElementType,
                               int size) {
         Objects.requireNonNull(backingElementType);
-        return new InternalMonotonicList.ReferenceList<>(backingElementType, size);
+        return new InternalMonotonicList.ReferenceList<>(size);
     }
 
-    static <K, V> Map<K, V> ofMap(Class<V> backingValueType,
+    static <K, V> Map<K, V> ofMap(Class<? extends V> backingValueType,
                                   Collection<? extends K> keys) {
         return new InternalMonotonicMap.MonotonicMapImpl<>(backingValueType, keys.toArray());
     }
