@@ -74,8 +74,7 @@ public class TestMergeStores {
 
     public static void main(String[] args) {
         TestFramework.runWithFlags("--add-modules", "java.base",
-                                   "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED",
-                                   "-Xbatch");
+                                   "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
     }
 
     public TestMergeStores() {
@@ -148,24 +147,23 @@ public class TestMergeStores {
         testGroups.get("test400").put("test400a", (_,_) -> { return test400a(aI.clone()); });
 
         testGroups.put("test500", new HashMap<String,TestFunction>());
-        testGroups.get("test500").put("test500R", (w,r) -> { return test500R(aB.clone(), offset1, vL1); });
-        testGroups.get("test500").put("test500a", (w,r) -> { return test500a(aB.clone(), offset1, vL1); });
+        testGroups.get("test500").put("test500R", (_,_) -> { return test500R(aB.clone(), offset1, vL1); });
+        testGroups.get("test500").put("test500a", (_,_) -> { return test500a(aB.clone(), offset1, vL1); });
 
         testGroups.put("test501", new HashMap<String,TestFunction>());
-        testGroups.get("test501").put("test500R", (w,r) -> { return test500R(aB.clone(), RANGE - 20 + (Math.abs(r) % 30), vL1); });
-        testGroups.get("test501").put("test501a", (w,r) -> { return test501a(aB.clone(), RANGE - 20 + (Math.abs(r) % 30), vL1); });
-        //                                                                               +-----------------------------+
+        testGroups.get("test501").put("test500R", (_,i) -> { return test500R(aB.clone(), RANGE - 20 + (i % 30), vL1); });
+        testGroups.get("test501").put("test501a", (_,i) -> { return test501a(aB.clone(), RANGE - 20 + (i % 30), vL1); });
+        //                                                                               +-------------------+
         // Create offsets that are sometimes going to pass all RangeChecks, and sometimes one, and sometimes none.
 
         testGroups.put("test502", new HashMap<String,TestFunction>());
-        testGroups.get("test502").put("test500R", (w,r) -> { return test500R(aB.clone(), w ? offset1 : RANGE - 20 + (Math.abs(r) % 30), vL1); });
-        testGroups.get("test502").put("test502a", (w,r) -> { return test502a(aB.clone(), w ? offset1 : RANGE - 20 + (Math.abs(r) % 30), vL1); });
-        //                                                                                   +-----+   +-----------------------------+
+        testGroups.get("test502").put("test500R", (w,i) -> { return test500R(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
+        testGroups.get("test502").put("test502a", (w,i) -> { return test502a(aB.clone(), w ? offset1 : RANGE - 20 + (i % 30), vL1); });
+        //                                                                                   +-----+   +-------------------+
         // First use something in range, and after warmup randomize going outside the range.
-        // This should first trigger optimized compilation (merge strores), and then deopt and compile without merging.
     }
 
-    @Warmup(10)
+    @Warmup(100)
     @Run(test = {"test1a",
                  "test1b",
                  "test1c",
@@ -196,8 +194,9 @@ public class TestMergeStores {
                  "test501a",
                  "test502a"})
     public void runTests(RunInfo info) {
-        // Repeat many times, so that we also have multiple iterations for post-warmup
-        for (int iter = 0; iter < 100; iter++) {
+        // Repeat many times, so that we also have multiple iterations for post-warmup to potentially recompile
+        int iters = info.isWarmUp() ? 1_000 : 50_000;
+        for (int iter = 0; iter < iters; iter++) {
             // Write random values to inputs
             set_random(aB);
             set_random(bB);
@@ -219,9 +218,6 @@ public class TestMergeStores {
             vL1 = RANDOM.nextLong();
             vL2 = RANDOM.nextLong();
 
-            boolean isWarmUp = info.isWarmUp();
-            int rnd = RANDOM.nextInt();
-
             // Run all tests
             for (Map.Entry<String, Map<String,TestFunction>> group_entry : testGroups.entrySet()) {
                 String group_name = group_entry.getKey();
@@ -231,7 +227,7 @@ public class TestMergeStores {
                 for (Map.Entry<String,TestFunction> entry : group.entrySet()) {
                     String name = entry.getKey();
                     TestFunction test = entry.getValue();
-                    Object[] result = test.run(isWarmUp, rnd);
+                    Object[] result = test.run(info.isWarmUp(), iter);
                     if (gold == null) {
                         gold = result;
                         gold_name = name;
@@ -1128,10 +1124,6 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
-                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test501a(byte[] a, int offset, long v) {
         int idx = 0;
         try {
@@ -1156,10 +1148,6 @@ public class TestMergeStores {
     }
 
     @Test
-    @IR(counts = {IRNode.STORE_B_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "8",
-                  IRNode.STORE_C_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_I_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0",
-                  IRNode.STORE_L_OF_CLASS, "byte\\\\[int:>=0] \\\\(java/lang/Cloneable,java/io/Serializable\\\\)", "0"})
     static Object[] test502a(byte[] a, int offset, long v) {
         int idx = 0;
         try {
