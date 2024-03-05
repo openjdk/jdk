@@ -40,8 +40,8 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class Padding {
 
-    private static final String tenMillionZeros = "0".repeat(10000000);
-    private static final String tenMillionBlanks = " ".repeat(10000000);
+    private static final String tenMillionZeros = "0".repeat(10_000_000);
+    private static final String tenMillionBlanks = " ".repeat(10_000_000);
 
     static Arguments[] padding() {
         return new Arguments[] {
