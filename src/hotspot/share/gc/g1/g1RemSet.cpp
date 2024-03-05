@@ -1415,7 +1415,13 @@ void G1RemSet::merge_heap_roots(bool initial_evacuation) {
                                                 MIN2(workers->active_workers(), (uint)increment_length);
 
   {
+    Ticks start = Ticks::now();
     G1MergeHeapRootsTask cl(_scan_state, num_workers, initial_evacuation);
+    OrderAccess::fence();
+    Tickspan total = Ticks::now() - start;
+    if (initial_evacuation) {
+      g1h->phase_times()->record_distribute_log_buffers_time_ms(total.seconds() * 1000.0);
+    }
     log_debug(gc, ergo)("Running %s using %u workers for " SIZE_FORMAT " regions",
                         cl.name(), num_workers, increment_length);
     workers->run_task(&cl, num_workers);
