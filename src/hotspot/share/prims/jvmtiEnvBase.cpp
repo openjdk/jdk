@@ -813,6 +813,17 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
   return state;
 }
 
+jint
+JvmtiEnvBase::get_thread_or_vthread_state(oop thread_oop, JavaThread* java_thread) {
+  jint state = 0;
+  if (java_lang_VirtualThread::is_instance(thread_oop)) {
+    state = JvmtiEnvBase::get_vthread_state(thread_oop, java_thread);
+  } else {
+    state = JvmtiEnvBase::get_thread_state(thread_oop, java_thread);
+  }
+  return state;
+}
+
 jvmtiError
 JvmtiEnvBase::get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p) {
   jint count = 0;
@@ -936,9 +947,7 @@ JvmtiEnvBase::get_current_contended_monitor(JavaThread *calling_thread, JavaThre
   } else {
     // thread is doing an Object.wait() call
     oop thread_oop = get_vthread_or_thread_oop(java_thread);
-    bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-    jint state = is_virtual ? JvmtiEnvBase::get_vthread_state(thread_oop, java_thread)
-                            : JvmtiEnvBase::get_thread_state(thread_oop, java_thread);
+    jint state = get_thread_or_vthread_state(thread_oop, java_thread);
 
     if (state & JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER) {
       // thread is re-entering the monitor in an Object.wait() call
