@@ -382,7 +382,7 @@ one-to-one correlation between target operating system and toolchain.
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
-| AIX                | IBM XL C/C++              |
+| AIX                | IBM Open XL C/C++         |
 | Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
@@ -403,7 +403,7 @@ C, and C++14 for C++.
 
 ### gcc
 
-The minimum accepted version of gcc is 6.0. Older versions will not be accepted
+The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
 The JDK is currently known to compile successfully with gcc version 13.2 or
@@ -413,7 +413,7 @@ In general, any version between these two should be usable.
 
 ### clang
 
-The minimum accepted version of clang is 3.5. Older versions will not be
+The minimum accepted version of clang is 13. Older versions will not be
 accepted by `configure`.
 
 To use clang instead of gcc on Linux, use `--with-toolchain-type=clang`.
