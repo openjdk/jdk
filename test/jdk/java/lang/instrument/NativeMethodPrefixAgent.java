@@ -83,8 +83,8 @@ class NativeMethodPrefixAgent {
                     byte[] newcf = Instrumentor.instrFor(classfileBuffer)
                                    .addNativeMethodTrackingInjection(
                                         "wrapped_" + trname + "_", (name, h) -> {
-                                            h.constantInstruction(name);
-                                            h.constantInstruction(transformId);
+                                            h.loadConstant(name);
+                                            h.loadConstant(transformId);
                                             h.invokestatic(
                                                     CD_StringIdCallbackReporter,
                                                     "tracker",

@@ -164,7 +164,7 @@ public class SpecialStatic {
             });
             clb.withMethodBody("getMethodHandle", MethodTypeDesc.of(CD_MethodHandle),
                     ACC_PUBLIC | ACC_STATIC, cob -> {
-                cob.constantInstruction(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
+                cob.loadConstant(MethodHandleDesc.ofMethod(SPECIAL, CD_T1, METHOD_NAME, MTD_int));
                 cob.areturn();
             });
             clb.withMethodBody("getLookup", MTD_Lookup,

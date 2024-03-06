@@ -68,7 +68,7 @@ public class TestPrivateInterfaceMethodReflect {
                     clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), ACC_PRIVATE, cob -> {
-                        cob.constantInstruction(EXPECTED);
+                        cob.loadConstant(EXPECTED);
                         cob.ireturn();
                     });
                 });
