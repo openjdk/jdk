@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1779,66 +1779,6 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
   return x;
 }
 
-static Node* is_minmax(PhaseGVN* phase, PhiNode* phi_root, int true_path) {
-  assert(true_path != 0, "only diamond shape graph expected");
-
-  Node* region = phi_root->in(0);
-  IfNode* iff = region->in(1)->in(0)->as_If();
-  BoolNode* bol = iff->in(1)->as_Bool();
-  Node* cmp = bol->in(1);
-
-  // Don't transform if the branch is highly predictable
-  constexpr float infrequent_prob = PROB_UNLIKELY_MAG(2);
-  if (iff->_prob < infrequent_prob || iff->_prob > (1.0f - infrequent_prob)) {
-    return nullptr;
-  }
-
-  int opcode = cmp->Opcode();
-
-  // Ensure comparison is an integral type
-  if (opcode != Op_CmpI && opcode != Op_CmpL) {
-    return nullptr;
-  }
-
-  // Only accept canonicalized le and lt comparisons
-  int test = bol->_test._test;
-  if (test != BoolTest::le && test != BoolTest::lt) {
-    return nullptr;
-  }
-
-  int false_path = 3 - true_path;
-
-  // The values being compared
-  Node* cmp_true = cmp->in(true_path);
-  Node* cmp_false = cmp->in(false_path);
-
-  // The values being selected
-  Node* phi_true = phi_root->in(true_path);
-  Node* phi_false = phi_root->in(false_path);
-
-  // For this transformation to be valid, the values being compared must be the same as the values being selected.
-  // We accept two different forms, "a < b ? a : b", and "a < b ? b : a". For the first form, the comparison is a minimum
-  // if 'a' (true_path == 1) is selected when the comparison is true. If 'b' (true_path == 2) is selected when it is true,
-  // the comparison will be a maximum. For the second form, as the order of the selected values is swapped, the selected
-  // paths must also be swapped, so the path to choose maximum is 2 instead of 1. If neither form is found, bail out.
-
-  int max_path;
-  if (cmp_true == phi_true && cmp_false == phi_false) {
-    max_path = 2;
-  } else if (cmp_true == phi_false && cmp_false == phi_true) {
-    max_path = 1;
-  } else {
-    return nullptr;
-  }
-
-  // Create the Min/Max node based on the type and kind
-  if (opcode == Op_CmpL) {
-    return MaxNode::build_min_max_long(phase, cmp_true, cmp_false, true_path == max_path);
-  } else {
-    return MaxNode::build_min_max_int(cmp_true, cmp_false, true_path == max_path);
-  }
-}
-
 //------------------------------split_once-------------------------------------
 // Helper for split_flow_path
 static void split_once(PhaseIterGVN *igvn, Node *phi, Node *val, Node *n, Node *newn) {
@@ -2276,31 +2216,22 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // Check for CMove'ing identity. If it would be unsafe,
     // handle it here. In the safe case, let Identity handle it.
     Node* unsafe_id = is_cmove_id(phase, true_path);
-    if (unsafe_id != nullptr && is_unsafe_data_reference(unsafe_id)) {
+    if( unsafe_id != nullptr && is_unsafe_data_reference(unsafe_id) )
       opt = unsafe_id;
-    }
 
     // Check for simple convert-to-boolean pattern
-    if (opt == nullptr) {
+    if( opt == nullptr )
       opt = is_x2logic(phase, this, true_path);
-    }
 
     // Check for absolute value
-    if (opt == nullptr) {
+    if( opt == nullptr )
       opt = is_absolute(phase, this, true_path);
-    }
-
-    // Check for min/max patterns
-    if (opt == nullptr) {
-      opt = is_minmax(phase, this, true_path);
-    }
 
     // Check for conditional add
-    if (opt == nullptr && can_reshape) {
+    if( opt == nullptr && can_reshape )
       opt = is_cond_add(phase, this, true_path);
-    }
 
-    // These optimizations could subsume the phi:
+    // These 4 optimizations could subsume the phi:
     // have to check for a dead data loop creation.
     if( opt != nullptr ) {
       if( opt == unsafe_id || is_unsafe_data_reference(opt) ) {
