@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,14 +51,18 @@ public class Extensions {
             {"aa",             ""},
             {"a.",             ""},
             {".a",             ""},
-            {"..a",            "a"},
-            {"...a",           "a"},
-            {"....a",          "a"},
+            {"..a",            ""},
+            {"...a",           ""},
+            {"....a",          ""},
+            {"a...gus",        "gus"},
             {".a.b",           "b"},
             {"...a.b",         "b"},
             {"...a.b.",        ""},
-            {"..foo",          "foo"},
+            {".foo",           ""},
+            {"..foo",          ""},
             {"foo.",           ""},
+            {"foo..",          ""},
+            {"foo..b",         "b"},
             {"test.",          ""},
             {"test..",         ""},
             {"test...",        ""},
@@ -69,6 +73,7 @@ public class Extensions {
             {".profile",       ""},
             {".profile.sh",    "sh"},
             {"foo.tar.gz",     "gz"},
+            {"foo.bar",        "bar"},
             {"foo.bar.",       ""},
             {"archive.zip",    "zip"},
             {"compress.gzip",  "gzip"},
@@ -84,10 +89,20 @@ public class Extensions {
     }
 
     @Test(dataProvider = "pathExtProvider")
-    public static void replace(String pathname, String extension) {
+    public static void with(String pathname, String extension) {
         Path p = Path.of(pathname);
         Path expected = p;
-        Path actual = p.removeExtension().addExtension(extension);
+        Path actual = p.withExtension(extension);
+        Assert.assertEquals(actual, expected);
+    }
+
+    @Test(dataProvider = "pathExtProvider")
+    public static void without(String pathname, String extension) {
+        Path p = Path.of(pathname);
+        Path expected = p;
+        String ext = p.getExtension();
+        Path actual = Path.of(p.withoutExtension().toString()
+                              + (ext.isEmpty() ? "" : ("." + extension)));
         Assert.assertEquals(actual, expected);
     }
 }

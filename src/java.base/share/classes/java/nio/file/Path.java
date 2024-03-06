@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -258,32 +258,26 @@ public interface Path
      * FULL STOP) within the file name string. If the file name element is
      * {@code null}, or if the file name string does not contain a period
      * character, or if the last character in the file name string is a period,
-     * or if the first character in the file name string is the only period,
-     * then the extension is {@linkplain String#isEmpty empty}.
-     *
-     * @apiNote
-     * This method and the methods {@linkplain #removeExtension removeExtension}
-     * and {@linkplain #addExtension addExtension} must satisfy the invariant:
-     * {@snippet lang="java" :
-     * assert equals(removeExtension().addExtension(getExtension()));
-     * }
+     * or if the prefix of the file name string is a sequence of periods
+     * including the last period, then the extension is
+     * {@linkplain String#isEmpty empty}.
      *
      * @implSpec
-     * The default implementation is equivalent for this path to:
+     * The default implementation is in most cases equivalent for this path to:
      * {@snippet lang="java" :
-     * int lastPeriod = fileName.lastIndexOf('.');
-     * return lastPeriod <= 0
-     *    ? ""
-     *    : fileName.substring(lastPeriod + 1);
+     *     int lastPeriod = fileNameString.lastIndexOf('.');
+     *     return lastPeriod <= 0
+     *        ? ""
+     *        : fileNameString.substring(lastPeriod + 1);
      * }
      *
      * @return  the file name extension of this path, which might be the
      *          empty string
      *
-     * @see #addExtension
-     * @see #removeExtension
+     * @see #withExtension
+     * @see #withoutExtension
      *
-     * @since 22
+     * @since 23
      */
     default String getExtension() {
         Path fileName = getFileName();
@@ -296,101 +290,222 @@ public interface Path
         if (lastPeriodIndex <= 0)
             return "";
 
+        boolean prefixIsPeriods = true;
+        for (int idx = lastPeriodIndex - 1; idx >= 0; idx--) {
+            if (fileNameString.charAt(idx) != '.') {
+                prefixIsPeriods = false;
+                break;
+            }
+        }
+        if (prefixIsPeriods)
+            return "";
+
         // If lastPeriodIndex == fileNameString.length() - 1 then "" is returned
         return fileNameString.substring(lastPeriodIndex + 1);
     }
 
     /**
-     * Removes the file extension from this path's file name. If there is no
-     * file extension ({@linkplain #getExtension getExtension} returns the
-     * empty string), unless that is due to the last character in the file name
-     * being a period, then this path is returned unmodified. Otherwise the
-     * last period and all subsequent characters are removed from this path's
-     * file name and the result is returned.
+     * Returns a copy of this {@code Path} with the file name extension removed.
+     * If this path has no extension, then the path is returned unchanged.
+     *
+     * <p> A compound extension may be replaced by invoking this method and
+     * then the {@linkplain #withExtension withExtension} method on the result.
+     * For example, to convert the {@code "tar.gz"} compound extension
+     * to {@code "zip"}:
+     * {@snippet lang="java" :
+     *    Path p = Path.of("archive.tar.gz");
+     *    Path q = p.withoutExtension().withExtension("zip");
+     * }
+     * where {@code q.toString()} would return {@code "archive.zip"}.
      *
      * @apiNote
-     * Replacing an extension may be accomplished by first removing the current
-     * extension and then appending the new extension. For example, the
-     * extension of an audio track might be changed as:
+     * This method must satisfy the invariant:
      * {@snippet lang="java" :
-     * Path lossless = Path.of("library/audio/track.flac");
-     * Path lossy = lossless.removeExtension().addExtension("mp3");
+     *     assert equals(Path.of(withoutExtension().toString()
+     *         + (getExtension().isEmpty() ? "" : ("." + getExtension())));
+     * }
+     * wherein the {@code Path}-{@code String} conversions are assumed to be
+     * lossless.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * {@snippet lang="java" :
+     *     if (getExtension().isEmpty()) {
+     *         return this;
+     *     } else {
+     *         return Path.of(toString().substring(0,
+     *             toString().length() - getExtension().length() - 1));
+     *     }
+     * }
+     *
+     * @return the resulting path or this path if it does not contain a file
+     *         name extension
+     *
+     * @see #getExtension
+     * @see #withExtension
+     *
+     * @since 23
+     */
+    default Path withoutExtension() {
+        String ext = getExtension();
+        if (ext.isEmpty())
+            return this;
+        String str = toString();
+        return Path.of(str.substring(0, str.length() - ext.length() - 1));
+    }
+
+    /**
+     * Returns a copy of this {@code Path} with the file name extension altered.
+     * If the specified extension is non-{@code null},
+     * non-{@linkplain String#isEmpty empty}, and not
+     * {@linkplain String#isBlank blank}, then a {@code '.'} and then
+     * {@code extension} are appended to the path returned by
+     * {@linkplain #withoutExtension wihoutExtension}, otherwise the path
+     * returned by {@linkplain #withoutExtension wihoutExtension} is returned.
+     *
+     * <p> For example, an audio track's extension might be changed as:
+     * {@snippet lang="java" :
+     *     Path lossless = Path.of("library/audio/track.flac");
+     *     Path lossy = lossless.withExtension("mp3");
      * }
      * where {@code lossy.toString()} would return
      * {@code "library/audio/track.mp3"}.
      *
-     * @implSpec
-     * The default implementation is equivalent for this path to:
+     * <p> An additional extension may be appended so as to form a compound
+     * extension as:
      * {@snippet lang="java" :
-     * String oldName = getFileName().toString();
-     * String newName = oldName.substring(0, oldName.lastIndexOf('.'));
-     * return getParent().resolve(newName);
+     *     Path p = Path.of("archive.tar");
+     *     Path q = p.withExtension(p.getExtension() + "." + "gz");
      * }
-     *
-     * @return this path without the file extension of its file name
-     *
-     * @see #addExtension
-     * @see #getExtension
-     *
-     * @since 22
-     */
-    default Path removeExtension() {
-        Path fileName = getFileName();
-        if (getExtension().isEmpty())
-            return fileName;
-
-        // As the extension is non-empty, the file name must be non-null
-        // and contain a period character
-        String fileNameString = fileName.toString();
-        int lastPeriodIndex = fileNameString.lastIndexOf('.');
-        Path newName = of(fileNameString.substring(0, lastPeriodIndex));
-
-        Path parent = getParent();
-        return parent == null ? newName : parent.resolve(newName);
-    }
-
-    /**
-     * Adds an extension to this path's file name. If the supplied parameter is
-     * {@code null} or empty, or this path's file name is {@code null}, then
-     * this path is returned unmodified. Otherwise, a period character is
-     * appended to this path's file name followed by the supplied extension
-     * parameter and the result is returned.
+     * where {@code q.toString()} would return {@code "archive.tar.gz"}.
      *
      * @apiNote
-     * No account is taken as to whether this path's file name has a non-empty
-     * extension. The supplied extension is not examined but appended as given.
+     * This method must satisfy the invariant:
+     * {@snippet lang="java" :
+     *     assert equals(withExtension(getExtension()));
+     * }
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
      *
      * {@snippet lang="java" :
-     * String oldName = getFileName().toString();
-     * String newName = oldName + "." + extension;
-     * return getParent().resolve(newName);
+     *     Path p = withoutExtension();
+     *     if (extension == null || extension.isEmpty() || extension.isBlank()) {
+     *         return p;
+     *     } else {
+     *         return p.resolveSibling(p.getFileName() + "." + extension);
+     *     }
      * }
-     *
      * @param extension
-     *        the extension to add
+     *        the extension to add, may be {@code null}
      *
-     * @return this path with the supplied extension appended to its file name
+     * @return a {@code Path} with the requested extension replacing the
+     *         existing extension, if any
      *
      * @see #getExtension
-     * @see #removeExtension
+     * @see #withoutExtension
      *
-     * @since 22
+     * @since 23
      */
-    default Path addExtension(String extension) {
-        Path fileName = null;
-        if (extension == null || extension.isEmpty() ||
-            (fileName = getFileName()) == null)
-            return this;
+    default Path withExtension(String extension) {
+        Path path = withoutExtension();
+        if (extension == null || extension.isEmpty() || extension.isBlank())
+            return path;
 
-        String s = fileName.toString();
-        Path name = Path.of(s + "." + extension);
-
-        Path parent = getParent();
-        return parent == null ? name : parent.resolve(name);
+        return path.resolveSibling(path.getFileName() + "." + extension.trim());
     }
+
+    // /**
+    //  * Removes the file extension from this path's file name. If there is no
+    //  * file extension ({@linkplain #getExtension getExtension} returns the
+    //  * empty string), unless that is due to the last character in the file name
+    //  * being a period, then this path is returned unmodified. Otherwise the
+    //  * last period and all subsequent characters are removed from this path's
+    //  * file name and the result is returned.
+    //  *
+    //  * @apiNote
+    //  * Replacing an extension may be accomplished by first removing the current
+    //  * extension and then appending the new extension. For example, the
+    //  * extension of an audio track might be changed as:
+    //  * {@snippet lang="java" :
+    //  * Path lossless = Path.of("library/audio/track.flac");
+    //  * Path lossy = lossless.removeExtension().addExtension("mp3");
+    //  * }
+    //  * where {@code lossy.toString()} would return
+    //  * {@code "library/audio/track.mp3"}.
+    //  *
+    //  * @implSpec
+    //  * The default implementation is equivalent for this path to:
+    //  * {@snippet lang="java" :
+    //  * String oldName = getFileName().toString();
+    //  * String newName = oldName.substring(0, oldName.lastIndexOf('.'));
+    //  * return getParent().resolve(newName);
+    //  * }
+    //  *
+    //  * @return this path without the file extension of its file name
+    //  *
+    //  * @see #addExtension
+    //  * @see #getExtension
+    //  *
+    //  * @since 23
+    //  */
+    // default Path removeExtension() {
+    //     Path fileName = getFileName();
+    //     if (getExtension().isEmpty())
+    //         return fileName;
+
+    //     // As the extension is non-empty, the file name must be non-null
+    //     // and contain a period character
+    //     String fileNameString = fileName.toString();
+    //     int lastPeriodIndex = fileNameString.lastIndexOf('.');
+    //     Path newName = of(fileNameString.substring(0, lastPeriodIndex));
+
+    //     Path parent = getParent();
+    //     return parent == null ? newName : parent.resolve(newName);
+    // }
+
+    // /**
+    //  * Adds an extension to this path's file name. If the supplied parameter is
+    //  * {@code null} or empty, or this path's file name is {@code null}, then
+    //  * this path is returned unmodified. Otherwise, a period character is
+    //  * appended to this path's file name followed by the supplied extension
+    //  * parameter and the result is returned.
+    //  *
+    //  * @apiNote
+    //  * No account is taken as to whether this path's file name has a non-empty
+    //  * extension. The supplied extension is not examined but appended as given.
+    //  *
+    //  * @implSpec
+    //  * The default implementation is equivalent for this path to:
+    //  *
+    //  * {@snippet lang="java" :
+    //  * String oldName = getFileName().toString();
+    //  * String newName = oldName + "." + extension;
+    //  * return getParent().resolve(newName);
+    //  * }
+    //  *
+    //  * @param extension
+    //  *        the extension to add
+    //  *
+    //  * @return this path with the supplied extension appended to its file name
+    //  *
+    //  * @see #getExtension
+    //  * @see #removeExtension
+    //  *
+    //  * @since 23
+    //  */
+    // default Path addExtension(String extension) {
+    //     Path fileName = null;
+    //     if (extension == null || extension.isEmpty() ||
+    //         (fileName = getFileName()) == null)
+    //         return this;
+
+    //     String s = fileName.toString();
+    //     Path name = Path.of(s + "." + extension);
+
+    //     Path parent = getParent();
+    //     return parent == null ? name : parent.resolve(name);
+    // }
 
     /**
      * Returns the <em>parent path</em>, or {@code null} if this path does not
