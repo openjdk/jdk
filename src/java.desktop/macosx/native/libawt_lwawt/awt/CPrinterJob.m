@@ -468,7 +468,8 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
     DECLARE_METHOD(jm_getPageFormat, sjc_CPrinterJob, "getPageFormatFromAttributes", "()Ljava/awt/print/PageFormat;");
     DECLARE_METHOD(jm_getDestinationFile, sjc_CPrinterJob, "getDestinationFile", "()Ljava/lang/String;");
     DECLARE_METHOD(jm_getSides, sjc_CPrinterJob, "getSides", "()I");
-
+    DECLARE_METHOD(jm_getChromaticity, sjc_CPrinterJob, "getChromaticity", "()I");
+    DECLARE_METHOD(jm_getChromaticityKeyValues, sjc_CPrinterJob, "getChromaticityKeyValues", "(I)[Ljava/lang/String;");
 
     NSMutableDictionary* printingDictionary = [dst dictionary];
 
@@ -536,6 +537,30 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
         PMPrintSettings printSettings = dst.PMPrintSettings;
         if (PMSetDuplex(printSettings, duplexMode) == noErr) {
             [dst updateFromPMPrintSettings];
+        }
+    }
+
+    jint chromaticity = (*env)->CallIntMethod(env, srcPrinterJob, jm_getChromaticity);
+    CHECK_EXCEPTION();
+
+    if (chromaticity >= 0) {
+
+        jobject chromaticityKeyValues = (*env)->CallObjectMethod(env, srcPrinterJob, jm_getChromaticityKeyValues, chromaticity);
+
+        if (chromaticityKeyValues == nil) {
+
+            NSString* colorValue = (chromaticity == 0) ? @"Gray" : @"Color";
+            [[dst printSettings] setObject: colorValue forKey: @"ColorModel"];
+        } else {
+
+            jint len = (*env)->GetArrayLength(env, chromaticityKeyValues);
+            for (int i = 0; i < len; i += 2) {
+                jstring key =  (*env)->GetObjectArrayElement(env, chromaticityKeyValues, i);
+                jstring value =  (*env)->GetObjectArrayElement(env, chromaticityKeyValues, i + 1);
+                NSString* nsKey = JavaStringToNSString(env, key);
+                NSString* nsValue = JavaStringToNSString(env, value);
+                [[dst printSettings] setObject: nsValue forKey: nsKey];
+            }
         }
     }
 }
