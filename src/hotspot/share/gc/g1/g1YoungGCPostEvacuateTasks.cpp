@@ -51,7 +51,7 @@
 #include "runtime/threadSMR.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/ticks.hpp"
-  
+
 class G1PostEvacuateCollectionSetCleanupTask1::MergePssTask : public G1AbstractSubTask {
   G1ParScanThreadStateSet* _per_thread_states;
 
@@ -555,7 +555,6 @@ class G1PostEvacuateCollectionSetCleanupTask2::ProcessEvacuationFailedRegionsTas
       bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
                              g1h->policy()->should_retain_evac_failed_region(r);
 
-      cm->clear_statistics(r);
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
       } else {

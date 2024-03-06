@@ -575,7 +575,6 @@ void G1ConcurrentMark::clear_statistics(HeapRegion* r) {
   for (uint j = 0; j < _max_num_tasks; ++j) {
     _tasks[j]->clear_mark_stats_cache(region_idx);
   }
-  _top_at_mark_starts[region_idx] = _g1h->bottom_addr_for_region(region_idx);
   _top_at_rebuild_starts[region_idx] = nullptr;
   _region_mark_stats[region_idx].clear();
 }
@@ -586,6 +585,16 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
 
   // Need to clear mark bit of the humongous object. Doing this unconditionally is fine.
   mark_bitmap()->clear(r->bottom());
+
+  if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
+    return;
+}
+
+  // Clear any statistics about the region gathered so far.
+  _g1h->humongous_obj_regions_iterate(r,
+                                      [&] (HeapRegion* r) {
+                                        clear_statistics(r);
+                                      });
 }
 
 void G1ConcurrentMark::reset_marking_for_restart() {
@@ -1465,6 +1474,7 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
           _g1h->free_region(hr, _local_cleanup_list);
         }
         hr->clear_cardtable();
+        _g1h->concurrent_mark()->clear_statistics(hr);
       }
 
       return false;
