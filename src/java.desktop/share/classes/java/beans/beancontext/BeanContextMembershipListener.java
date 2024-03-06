@@ -40,6 +40,8 @@ import java.util.EventListener;
  * @see         java.beans.beancontext.BeanContext
  */
 
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public interface BeanContextMembershipListener extends EventListener {
 
     /**

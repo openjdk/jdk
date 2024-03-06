@@ -54,6 +54,8 @@ import java.io.Serializable;
  * @see java.beans.beancontext.BeanContextChild
  */
 
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class BeanContextChildSupport implements BeanContextChild, BeanContextServicesListener, Serializable {
 
     /**

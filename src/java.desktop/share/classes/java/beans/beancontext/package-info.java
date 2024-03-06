@@ -33,4 +33,5 @@
  *
  * @since 1.2
  */
+
 package java.beans.beancontext;

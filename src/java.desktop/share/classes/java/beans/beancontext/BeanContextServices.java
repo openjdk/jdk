@@ -42,6 +42,9 @@ import java.beans.beancontext.BeanContextServicesListener;
  * to expose generic "services" to the BeanContextChild objects within.
  * </p>
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public interface BeanContextServices extends BeanContext, BeanContextServicesListener {
 
     /**

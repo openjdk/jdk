@@ -65,6 +65,8 @@ import java.beans.beancontext.BeanContext;
  * @see java.beans.VetoableChangeListener
  */
 
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public interface BeanContextChild {
 
     /**
