@@ -566,15 +566,22 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     assert(this == Thread::current(), "invariant");
     return false;
   }
+  oop thread_oop = vthread_or_thread();
+  bool interrupted = java_lang_Thread::interrupted(thread_oop);
+
+  if (!(interrupted && clear_interrupted)) {
+    return interrupted;
+  }
+
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
-
-  Handle thread_h(current, vthread_or_thread());
+  Handle thread_h(current, thread_oop);
   ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
 
-  bool interrupted = java_lang_Thread::interrupted(thread_h());
+  // re-check under the interruptLock protection
+  interrupted = java_lang_Thread::interrupted(thread_h());
 
-  if (interrupted && clear_interrupted) {
+  if (interrupted) {
     assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(thread_h(), false);
     if (thread_h() != threadObj()) {
