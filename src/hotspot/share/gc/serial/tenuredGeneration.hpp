@@ -27,7 +27,6 @@
 
 #include "gc/serial/cSpaceCounters.hpp"
 #include "gc/serial/generation.hpp"
-#include "gc/shared/gcStats.hpp"
 #include "gc/shared/generationCounters.hpp"
 #include "gc/shared/space.hpp"
 #include "utilities/macros.hpp"
@@ -71,6 +70,10 @@ class TenuredGeneration: public Generation {
   GenerationCounters* _gen_counters;
   CSpaceCounters*     _space_counters;
 
+  // Avg amount promoted; used for avoiding promotion undo
+  // This class does not update deviations if the sample is zero.
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
+
   // Attempt to expand the generation by "bytes".  Expand by at a
   // minimum "expand_bytes".  Return true if some amount (not
   // necessarily the full "bytes") was done.
@@ -80,7 +83,8 @@ class TenuredGeneration: public Generation {
   void shrink(size_t bytes);
 
   void compute_new_size_inner();
- public:
+
+public:
   void compute_new_size();
 
   TenuredSpace* space() const { return _the_space; }
@@ -158,7 +162,7 @@ class TenuredGeneration: public Generation {
 
   // Statistics
 
-  virtual void update_gc_stats(Generation* current_generation, bool full);
+  void update_gc_stats(Generation* current_generation, bool full);
 
   // Returns true if promotions of the specified amount are
   // likely to succeed without a promotion failure.

@@ -527,35 +527,6 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
   return result;
 }
 
-void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
-{
-  const size_t obj_ofs = pointer_delta(addr, _heap_start);
-  const size_t beg_region = obj_ofs >> Log2RegionSize;
-  // end_region is inclusive
-  const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  if (beg_region == end_region) {
-    // All in one region.
-    _region_data[beg_region].add_live_obj(len);
-    return;
-  }
-
-  // First region.
-  const size_t beg_ofs = region_offset(addr);
-  _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
-
-  // Middle regions--completely spanned by this object.
-  for (size_t region = beg_region + 1; region < end_region; ++region) {
-    _region_data[region].set_partial_obj_size(RegionSize);
-    _region_data[region].set_partial_obj_addr(addr);
-  }
-
-  // Last region.
-  const size_t end_ofs = region_offset(addr + len - 1);
-  _region_data[end_region].set_partial_obj_size(end_ofs + 1);
-  _region_data[end_region].set_partial_obj_addr(addr);
-}
-
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
