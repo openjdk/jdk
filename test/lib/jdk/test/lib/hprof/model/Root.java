@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,11 +46,11 @@ import jdk.test.lib.hprof.util.Misc;
 public class Root {
 
     private long id;            // ID of the JavaThing we refer to
-    private long refererId;     // Thread or Class responsible for this, or 0
-    private int index = -1;             // Index in Snapshot.roots
+    private long referrerId;    // Thread or Class responsible for this, or 0
+    private int index = -1;     // Index in Snapshot.roots
     private int type;
     private String description;
-    private JavaHeapObject referer = null;
+    private JavaHeapObject referrer = null;
     private StackTrace stackTrace = null;
 
     // Values for type.  Higher values are more interesting -- see getType().
@@ -68,15 +68,15 @@ public class Root {
     public final static int JAVA_STATIC = 9;
 
 
-    public Root(long id, long refererId, int type, String description) {
-        this(id, refererId, type, description, null);
+    public Root(long id, long referrerId, int type, String description) {
+        this(id, referrerId, type, description, null);
     }
 
 
-    public Root(long id, long refererId, int type, String description,
+    public Root(long id, long referrerId, int type, String description,
                 StackTrace stackTrace) {
         this.id = id;
-        this.refererId = refererId;
+        this.referrerId = referrerId;
         this.type = type;
         this.description = description;
         this.stackTrace = stackTrace;
@@ -137,8 +137,12 @@ public class Root {
      * Get the object that's responsible for this root, if there is one.
      * This will be null, a Thread object, or a Class object.
      */
-    public JavaHeapObject getReferer() {
-        return referer;
+    public JavaHeapObject getReferrer() {
+        return referrer;
+    }
+
+    public long getReferrerId() {
+        return referrerId;
     }
 
     /**
@@ -157,8 +161,8 @@ public class Root {
     }
 
     void resolve(Snapshot ss) {
-        if (refererId != 0) {
-            referer = ss.findThing(refererId);
+        if (referrerId != 0) {
+            referrer = ss.findThing(referrerId);
         }
         if (stackTrace != null) {
             stackTrace.resolve(ss);

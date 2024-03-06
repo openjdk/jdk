@@ -23,8 +23,6 @@
 
 /*
  * @test id=default_gc
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @library ../
@@ -42,8 +40,6 @@
 
 /*
  * @test id=ZSinglegen
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.ZSinglegen
  * @library /test/lib
  * @library ../
@@ -62,8 +58,6 @@
 
 /*
  * @test id=ZGenerational
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.ZGenerational
  * @library /test/lib
  * @library ../
@@ -82,8 +76,6 @@
 
 /*
  * @test id=shenandoah
- * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires vm.gc.Shenandoah
  * @library /test/lib
  * @library ../

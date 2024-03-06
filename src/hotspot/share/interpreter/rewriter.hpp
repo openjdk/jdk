@@ -29,6 +29,7 @@
 #include "oops/constantPool.hpp"
 #include "oops/resolvedFieldEntry.hpp"
 #include "oops/resolvedIndyEntry.hpp"
+#include "oops/resolvedMethodEntry.hpp"
 #include "utilities/growableArray.hpp"
 
 // The Rewriter adds caches to the constant pool and rewrites bytecode indices
@@ -40,8 +41,6 @@ class Rewriter: public StackObj {
   constantPoolHandle  _pool;
   Array<Method*>*     _methods;
   GrowableArray<int>  _cp_map;
-  GrowableArray<int>  _cp_cache_map;  // for Methodref, Fieldref,
-                                      // InterfaceMethodref and InvokeDynamic
   GrowableArray<int>  _reference_map; // maps from cp index to resolved_refs index (or -1)
   GrowableArray<int>  _resolved_references_map; // for strings, methodHandle, methodType
   GrowableArray<int>  _invokedynamic_references_map; // for invokedynamic resolved refs
@@ -49,17 +48,20 @@ class Rewriter: public StackObj {
   int                 _resolved_reference_limit;
   int                 _invokedynamic_index;
   int                 _field_entry_index;
+  int                 _method_entry_index;
 
-  // For collecting information about invokedynamic bytecodes before resolution
-  // With this, we can know how many indy calls there are and resolve them later
+  // For collecting initialization information for field, method, and invokedynamic
+  // constant pool cache entries. The number of entries of each type will be known
+  // at the end of rewriting and these arrays will be used to build the proper arrays
+  // in the Constant Pool Cache.
   GrowableArray<ResolvedIndyEntry> _initialized_indy_entries;
   GrowableArray<ResolvedFieldEntry> _initialized_field_entries;
+  GrowableArray<ResolvedMethodEntry> _initialized_method_entries;
 
   void init_maps(int length) {
     _cp_map.trunc_to(0);
     _cp_map.at_grow(length, -1);
 
-    _cp_cache_map.trunc_to(0);
     // Also cache resolved objects, in another different cache.
     _reference_map.trunc_to(0);
     _reference_map.at_grow(length, -1);
@@ -68,22 +70,12 @@ class Rewriter: public StackObj {
     _resolved_references_map.trunc_to(0);
     _invokedynamic_references_map.trunc_to(0);
     _resolved_reference_limit = -1;
-    _first_iteration_cp_cache_limit = -1;
   }
 
-  int _first_iteration_cp_cache_limit;
   void record_map_limits() {
     // Record initial size of the two arrays generated for the CP cache
     // relative to walking the constant pool.
-    _first_iteration_cp_cache_limit = _cp_cache_map.length();
     _resolved_reference_limit = _resolved_references_map.length();
-  }
-
-  int cp_cache_delta() {
-    // How many cp cache entries were added since recording map limits after
-    // cp cache initialization?
-    assert(_first_iteration_cp_cache_limit != -1, "only valid after first iteration");
-    return _cp_cache_map.length() - _first_iteration_cp_cache_limit;
   }
 
   int  cp_entry_to_cp_cache(int i) { assert(has_cp_cache(i), "oob"); return _cp_map.at(i); }
@@ -93,32 +85,6 @@ class Rewriter: public StackObj {
     assert(cp_map->at(cp_index) == -1, "not twice on same cp_index");
     int cache_index = cp_cache_map->append(cp_index);
     cp_map->at_put(cp_index, cache_index);
-    return cache_index;
-  }
-
-  int add_cp_cache_entry(int cp_index) {
-    assert(_pool->tag_at(cp_index).value() != JVM_CONSTANT_InvokeDynamic, "use indy version");
-    assert(_first_iteration_cp_cache_limit == -1, "do not add cache entries after first iteration");
-    int cache_index = add_map_entry(cp_index, &_cp_map, &_cp_cache_map);
-    assert(cp_entry_to_cp_cache(cp_index) == cache_index, "");
-    assert(cp_cache_entry_pool_index(cache_index) == cp_index, "");
-    return cache_index;
-  }
-
-  // add a new CP cache entry beyond the normal cache for the special case of
-  // invokespecial with InterfaceMethodref as cpool operand.
-  int add_invokespecial_cp_cache_entry(int cp_index) {
-    assert(_first_iteration_cp_cache_limit >= 0, "add these special cache entries after first iteration");
-    // Don't add InterfaceMethodref if it already exists at the end.
-    for (int i = _first_iteration_cp_cache_limit; i < _cp_cache_map.length(); i++) {
-      if (cp_cache_entry_pool_index(i) == cp_index) {
-        return i;
-      }
-    }
-    int cache_index = _cp_cache_map.append(cp_index);
-    assert(cache_index >= _first_iteration_cp_cache_limit, "");
-    // do not update _cp_map, since the mapping is one-to-many
-    assert(cp_cache_entry_pool_index(cache_index) == cp_index, "");
     return cache_index;
   }
 
@@ -153,12 +119,6 @@ class Rewriter: public StackObj {
     return cp_index;
   }
 
-  // Access the contents of _cp_cache_map to determine CP cache layout.
-  int cp_cache_entry_pool_index(int cache_index) {
-    int cp_index = _cp_cache_map.at(cache_index);
-    return cp_index;
-  }
-
   // All the work goes in here:
   Rewriter(InstanceKlass* klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS);
 
@@ -167,6 +127,7 @@ class Rewriter: public StackObj {
   void scan_method(Thread* thread, Method* m, bool reverse, bool* invokespecial_error);
   void rewrite_Object_init(const methodHandle& m, TRAPS);
   void rewrite_field_reference(address bcp, int offset, bool reverse);
+  void rewrite_method_reference(address bcp, int offset, bool reverse);
   void rewrite_member_reference(address bcp, int offset, bool reverse);
   void maybe_rewrite_invokehandle(address opc, int cp_index, int cache_index, bool reverse);
   void rewrite_invokedynamic(address bcp, int offset, bool reverse);

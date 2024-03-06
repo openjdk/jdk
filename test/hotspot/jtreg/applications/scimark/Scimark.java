@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @key external-dep
  * @library /test/lib
  * @run driver Scimark
  */
@@ -48,7 +49,7 @@ public class Scimark {
 
         System.setProperty("test.noclasspath", "true");
 
-        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createTestJvm(
+        OutputAnalyzer output = new OutputAnalyzer(ProcessTools.createTestJavaProcessBuilder(
             "-cp", artifacts.get("gov.nist.math.scimark-2.0").toString(),
             "jnt.scimark2.commandline", "-large")
             .start());

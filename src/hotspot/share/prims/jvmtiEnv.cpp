@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1711,47 +1711,9 @@ JvmtiEnv::GetThreadGroupChildren(jthreadGroup group, jint* thread_count_ptr, jth
 // count_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetStackTrace(jthread thread, jint start_depth, jint max_frame_count, jvmtiFrameInfo* frame_buffer, jint* count_ptr) {
-  JavaThread* current_thread = JavaThread::current();
-  HandleMark hm(current_thread);
-
-  JvmtiVTMSTransitionDisabler disabler(thread);
-  ThreadsListHandle tlh(current_thread);
-
-  JavaThread* java_thread = nullptr;
-  oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
-
-  if (java_lang_VirtualThread::is_instance(thread_obj)) {
-    if (java_thread == nullptr) {  // Target virtual thread is unmounted.
-      ResourceMark rm(current_thread);
-
-      VM_VirtualThreadGetStackTrace op(this, Handle(current_thread, thread_obj),
-                                       start_depth, max_frame_count,
-                                       frame_buffer, count_ptr);
-      VMThread::execute(&op);
-      return op.result();
-    }
-    VirtualThreadGetStackTraceClosure op(this, Handle(current_thread, thread_obj),
-                                         start_depth, max_frame_count, frame_buffer, count_ptr);
-    Handshake::execute(&op, java_thread);
-    return op.result();
-  }
-
-  // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_stack_trace(java_thread, start_depth, max_frame_count, frame_buffer, count_ptr);
-  } else {
-    // Get stack trace with handshake.
-    GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
-    Handshake::execute(&op, java_thread);
-    err = op.result();
-  }
-
-  return err;
+  GetStackTraceClosure op(this, start_depth, max_frame_count, frame_buffer, count_ptr);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end GetStackTrace */
 
 
@@ -1829,41 +1791,9 @@ JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list
 // count_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetFrameCount(jthread thread, jint* count_ptr) {
-  JavaThread* current_thread = JavaThread::current();
-  HandleMark hm(current_thread);
-
-  JvmtiVTMSTransitionDisabler disabler(thread);
-  ThreadsListHandle tlh(current_thread);
-
-  JavaThread* java_thread = nullptr;
-  oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
-
-  if (java_lang_VirtualThread::is_instance(thread_obj)) {
-    if (java_thread == nullptr) {  // Target virtual thread is unmounted.
-      VM_VirtualThreadGetFrameCount op(this, Handle(current_thread, thread_obj),  count_ptr);
-      VMThread::execute(&op);
-      return op.result();
-    }
-    VirtualThreadGetFrameCountClosure op(this, Handle(current_thread, thread_obj), count_ptr);
-    Handshake::execute(&op, java_thread);
-    return op.result();
-  }
-
-  // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_frame_count(java_thread, count_ptr);
-  } else {
-    // get java stack frame count with handshake.
-    GetFrameCountClosure op(this, count_ptr);
-    Handshake::execute(&op, java_thread);
-    err = op.result();
-  }
-  return err;
+  GetFrameCountClosure op(this, count_ptr);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end GetFrameCount */
 
 
@@ -1923,41 +1853,9 @@ JvmtiEnv::PopFrame(jthread thread) {
 // location_ptr - pre-checked for null
 jvmtiError
 JvmtiEnv::GetFrameLocation(jthread thread, jint depth, jmethodID* method_ptr, jlocation* location_ptr) {
-  JavaThread* current_thread = JavaThread::current();
-  HandleMark hm(current_thread);
-
-  JvmtiVTMSTransitionDisabler disabler(thread);
-  ThreadsListHandle tlh(current_thread);
-
-  JavaThread* java_thread = nullptr;
-  oop thread_obj = nullptr;
-  jvmtiError err = get_threadOop_and_JavaThread(tlh.list(), thread, &java_thread, &thread_obj);
-  if (err != JVMTI_ERROR_NONE) {
-    return err;
-  }
-
-  if (java_lang_VirtualThread::is_instance(thread_obj)) {
-    if (java_thread == nullptr) {  // Target virtual thread is unmounted.
-      err = get_frame_location(thread_obj, depth, method_ptr, location_ptr);
-      return err;
-    }
-    VirtualThreadGetFrameLocationClosure op(this, Handle(current_thread, thread_obj),
-                                            depth, method_ptr, location_ptr);
-    Handshake::execute(&op, java_thread);
-    return op.result();
-  }
-
-  // It is only safe to perform the direct operation on the current
-  // thread. All other usage needs to use a direct handshake for safety.
-  if (java_thread == JavaThread::current()) {
-    err = get_frame_location(java_thread, depth, method_ptr, location_ptr);
-  } else {
-    // JVMTI get java stack frame location via direct handshake.
-    GetFrameLocationClosure op(this, depth, method_ptr, location_ptr);
-    Handshake::execute(&op, java_thread);
-    err = op.result();
-  }
-  return err;
+  GetFrameLocationClosure op(this, depth, method_ptr, location_ptr);
+  JvmtiHandshake::execute(&op, thread);
+  return op.result();
 } /* end GetFrameLocation */
 
 
@@ -1984,25 +1882,9 @@ JvmtiEnv::NotifyFramePop(jthread thread, jint depth) {
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
   }
 
-  if (java_lang_VirtualThread::is_instance(thread_handle())) {
-    VirtualThreadSetFramePopClosure op(this, thread_handle, state, depth);
-    MutexLocker mu(current, JvmtiThreadState_lock);
-    if (java_thread == nullptr || java_thread == current) {
-      // Target virtual thread is unmounted or current.
-      op.doit(java_thread, true /* self */);
-    } else {
-      Handshake::execute(&op, java_thread);
-    }
-    return op.result();
-  }
-
   SetFramePopClosure op(this, state, depth);
   MutexLocker mu(current, JvmtiThreadState_lock);
-  if (java_thread == current) {
-    op.doit(java_thread, true /* self */);
-  } else {
-    Handshake::execute(&op, java_thread);
-  }
+  JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
   return op.result();
 } /* end NotifyFramePop */
 
@@ -3014,26 +2896,20 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
     return JVMTI_ERROR_NONE;
   }
 
-
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  int result_count = 0;
-  // First, count the fields.
-  FilteredFieldStream flds(ik, true, true);
-  result_count = flds.field_count();
+  FilteredJavaFieldStream flds(ik);
 
-  // Allocate the result and fill it in
-  jfieldID* result_list = (jfieldID*) jvmtiMalloc(result_count * sizeof(jfieldID));
-  // The JVMTI spec requires fields in the order they occur in the class file,
-  // this is the reverse order of what FieldStream hands out.
-  int id_index = (result_count - 1);
+  int result_count = flds.field_count();
 
-  for (FilteredFieldStream src_st(ik, true, true); !src_st.eos(); src_st.next()) {
-    result_list[id_index--] = jfieldIDWorkaround::to_jfieldID(
-                                            ik, src_st.offset(),
-                                            src_st.access_flags().is_static());
+  // Allocate the result and fill it in.
+  jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
+  for (int i = 0; i < result_count; i++, flds.next()) {
+    result_list[i] = jfieldIDWorkaround::to_jfieldID(ik, flds.offset(),
+                                                     flds.access_flags().is_static());
   }
-  assert(id_index == -1, "just checking");
+  assert(flds.done(), "just checking");
+
   // Fill in the results
   *field_count_ptr = result_count;
   *fields_ptr = result_list;

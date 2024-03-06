@@ -26,11 +26,14 @@
 package sun.awt.screencast;
 
 import sun.awt.UNIXToolkit;
+import sun.java2d.pipe.Region;
 import sun.security.action.GetPropertyAction;
 
+import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.geom.AffineTransform;
 import java.security.AccessController;
 import java.util.Arrays;
 import java.util.List;
@@ -109,9 +112,20 @@ public class ScreencastHelper {
                 .stream(GraphicsEnvironment
                         .getLocalGraphicsEnvironment()
                         .getScreenDevices())
-                .map(graphicsDevice ->
-                        graphicsDevice.getDefaultConfiguration().getBounds()
-                ).toList();
+                .map(graphicsDevice -> {
+                    GraphicsConfiguration gc =
+                            graphicsDevice.getDefaultConfiguration();
+                    Rectangle screen = gc.getBounds();
+                    AffineTransform tx = gc.getDefaultTransform();
+
+                    return new Rectangle(
+                            Region.clipRound(screen.x * tx.getScaleX()),
+                            Region.clipRound(screen.y * tx.getScaleY()),
+                            Region.clipRound(screen.width * tx.getScaleX()),
+                            Region.clipRound(screen.height * tx.getScaleY())
+                    );
+                })
+                .toList();
     }
 
     private static synchronized native void closeSession();

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile ExampleGallery compilation.
+ * @summary Testing ClassFile ExampleGallery compilation.
  * @compile ExampleGallery.java
  */
 import java.lang.constant.ClassDesc;
@@ -31,56 +31,56 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileVersion;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.Interfaces;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Signature.ClassTypeSig;
-import jdk.internal.classfile.Signature.TypeArg;
-import jdk.internal.classfile.Superclass;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassSignature;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileVersion;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.CodeElement;
+import java.lang.classfile.CodeTransform;
+import java.lang.classfile.FieldModel;
+import java.lang.classfile.Interfaces;
+import java.lang.classfile.MethodBuilder;
+import java.lang.classfile.MethodElement;
+import java.lang.classfile.MethodTransform;
+import java.lang.classfile.Signature;
+import java.lang.classfile.Signature.ClassTypeSig;
+import java.lang.classfile.Signature.TypeArg;
+import java.lang.classfile.Superclass;
+import java.lang.classfile.attribute.ExceptionsAttribute;
+import java.lang.classfile.attribute.SignatureAttribute;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 /**
  * ExampleGallery
  */
 public class ExampleGallery {
     public byte[] changeClassVersion(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
-                case ClassfileVersion cv -> cb.withVersion(57, 0);
+                case ClassFileVersion cv -> cb.withVersion(57, 0);
                 default -> cb.with(ce);
             }
         });
     }
 
     public byte[] incrementClassVersion(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
-                case ClassfileVersion cv -> cb.withVersion(cv.majorVersion() + 1, 0);
+                case ClassFileVersion cv -> cb.withVersion(cv.majorVersion() + 1, 0);
                 default -> cb.with(ce);
             }
         });
     }
 
     public byte[] changeSuperclass(ClassModel cm, ClassDesc superclass) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case Superclass sc -> cb.withSuperclass(superclass);
                 default -> cb.with(ce);
@@ -89,11 +89,11 @@ public class ExampleGallery {
     }
 
     public byte[] overrideSuperclass(ClassModel cm, ClassDesc superclass) {
-        return Classfile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withSuperclass(superclass)));
+        return ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withSuperclass(superclass)));
     }
 
     public byte[] removeInterface(ClassModel cm, String internalName) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case Interfaces i -> cb.withInterfaces(i.interfaces().stream()
                                                         .filter(e -> !e.asInternalName().equals(internalName))
@@ -104,7 +104,7 @@ public class ExampleGallery {
     }
 
     public byte[] addInterface(ClassModel cm, ClassDesc newIntf) {
-        return Classfile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
+        return ClassFile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
             boolean seen = false;
 
             @Override
@@ -133,7 +133,7 @@ public class ExampleGallery {
 
     }
     public byte[] addInterface1(ClassModel cm, ClassDesc newIntf) {
-        return Classfile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
+        return ClassFile.of().transform(cm, ClassTransform.ofStateful(()  -> new ClassTransform() {
             Interfaces interfaces;
 
             @Override
@@ -160,11 +160,11 @@ public class ExampleGallery {
     }
 
     public byte[] removeSignature(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute));
+        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute));
     }
 
     public byte[] changeSignature(ClassModel cm) {
-        return Classfile.of().transform(cm, (cb, ce) -> {
+        return ClassFile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case SignatureAttribute sa -> {
                     String result = sa.signature().stringValue();
@@ -176,7 +176,7 @@ public class ExampleGallery {
     }
 
     public byte[] setSignature(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute)
+        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof SignatureAttribute)
                                           .andThen(ClassTransform.endHandler(b -> b.with(SignatureAttribute.of(
                                               ClassSignature.of(
                                                       ClassTypeSig.of(ClassDesc.of("impl.Fox"),
@@ -187,16 +187,16 @@ public class ExampleGallery {
     // @@@ strip annos (class, all)
 
     public byte[] stripFields(ClassModel cm, Predicate<String> filter) {
-        return Classfile.of().transform(cm, ClassTransform.dropping(e -> e instanceof FieldModel fm
+        return ClassFile.of().transform(cm, ClassTransform.dropping(e -> e instanceof FieldModel fm
                                                          && filter.test(fm.fieldName().stringValue())));
     }
 
     public byte[] addField(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withField("cool", ClassDesc.ofDescriptor("(I)D"), Classfile.ACC_PUBLIC)));
+        return ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withField("cool", ClassDesc.ofDescriptor("(I)D"), ClassFile.ACC_PUBLIC)));
     }
 
     public byte[] changeFieldSig(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
+        return ClassFile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
             if (fe instanceof SignatureAttribute sa)
                 fb.with(SignatureAttribute.of(Signature.parseFrom(sa.signature().stringValue().replace("this/", "that/"))));
             else
@@ -205,16 +205,16 @@ public class ExampleGallery {
     }
 
     public byte[] changeFieldFlags(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
+        return ClassFile.of().transform(cm, ClassTransform.transformingFields((fb, fe) -> {
             switch (fe) {
-                case AccessFlags a -> fb.with(AccessFlags.ofField(a.flagsMask() & ~Classfile.ACC_PUBLIC & ~Classfile.ACC_PROTECTED));
+                case AccessFlags a -> fb.with(AccessFlags.ofField(a.flagsMask() & ~ClassFile.ACC_PUBLIC & ~ClassFile.ACC_PROTECTED));
                 default -> fb.with(fe);
             }
         }));
     }
 
     public byte[] addException(ClassModel cm, ClassDesc ex) {
-        return Classfile.of().transform(cm, ClassTransform.transformingMethods(
+        return ClassFile.of().transform(cm, ClassTransform.transformingMethods(
                 MethodTransform.ofStateful(() -> new MethodTransform() {
                     ExceptionsAttribute attr;
 
@@ -258,11 +258,11 @@ public class ExampleGallery {
             }
         });
 
-        return Classfile.of().transform(cm, ClassTransform.transformingMethodBodies(transform));
+        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies(transform));
     }
 
     public byte[] addInstrumentationBeforeInvoke(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
+        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case InvokeInstruction i -> {
                     codeB.nopInstruction();
@@ -274,7 +274,7 @@ public class ExampleGallery {
     }
 
     public byte[] replaceIntegerConstant(ClassModel cm) {
-        return Classfile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
+        return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case ConstantInstruction ci -> {
                         if (ci.constantValue() instanceof Integer i) codeB.constantInstruction(i + 1);

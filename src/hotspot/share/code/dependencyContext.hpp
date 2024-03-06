@@ -75,6 +75,7 @@ class DependencyContext : public StackObj {
   volatile uint64_t*       _last_cleanup_addr;
 
   bool claim_cleanup();
+  static bool delete_on_release();
   void set_dependencies(nmethodBucket* b);
   nmethodBucket* dependencies();
   nmethodBucket* dependencies_not_unloading();

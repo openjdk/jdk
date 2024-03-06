@@ -163,7 +163,7 @@ public class Launcher extends DebugeeBinder {
         args.add(jdbExecPath.trim());
 
         if (argumentHandler.isLaunchingConnector()) {
-            boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+            boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
             if (vthreadMode) {
                 /* Some tests need more carrier threads than the default provided. */
                 args.add("-R-Djdk.virtualThreadScheduler.parallelism=15");
@@ -230,8 +230,8 @@ public class Launcher extends DebugeeBinder {
                 if (argumentHandler.verbose()) {
                     cmdline += " -verbose";
                 }
-                if (System.getProperty("main.wrapper") != null) {
-                    cmdline = MainWrapper.class.getName() + " " + System.getProperty("main.wrapper") +  " " + cmdline;
+                if (System.getProperty("test.thread.factory") != null) {
+                    cmdline = MainWrapper.class.getName() + " " + System.getProperty("test.thread.factory") +  " " + cmdline;
                 }
                 connect.append(",main=" + cmdline.trim());
 

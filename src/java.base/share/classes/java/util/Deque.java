@@ -622,9 +622,9 @@ public interface Deque<E> extends Queue<E>, SequencedCollection<E> {
      * to this Deque. Other operations on the view are implemented via calls to
      * public methods on this Deque. The exact relationship between calls on the
      * view and calls on this Deque is unspecified. However, order-sensitive
-     * operations generally delegate to the appropriate method with the opposite
-     * orientation. For example, calling {@code getFirst} on the view results in
-     * a call to {@code getLast} on this Deque.
+     * operations generally behave as if they delegate to the appropriate method
+     * with the opposite orientation. For example, calling {@code getFirst} on
+     * the view might result in a call to {@code getLast} on this Deque.
      *
      * @return a reverse-ordered view of this collection, as a {@code Deque}
      * @since 21

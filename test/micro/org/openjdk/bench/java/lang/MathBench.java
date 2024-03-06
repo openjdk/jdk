@@ -471,7 +471,7 @@ public class MathBench {
     }
 
     @Benchmark
-    public double  sigNumDouble() {
+    public double  signumDouble() {
         return  Math.signum(double4Dot1);
     }
 

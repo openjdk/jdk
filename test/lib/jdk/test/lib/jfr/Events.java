@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -271,7 +271,12 @@ public class Events {
      * @throws IOException if an event set could not be created due to I/O
      *         errors.
      */
+    private static long lastId = -1;
     public static List<RecordedEvent> fromRecording(Recording recording) throws IOException {
+        if (recording.getId() == lastId) {
+            throw new IOException("Recording with id " + lastId + " has already been dumped. Store the results in a List<RecordedEvent> instead of dumping the recording again");
+        }
+        lastId = recording.getId();
         return RecordingFile.readAllEvents(makeCopy(recording));
     }
 
@@ -365,20 +370,42 @@ public class Events {
         return false;
     }
 
+    public static void assertTopFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {
+        assertTopFrame(event, expectedClass.getName(), expectedMethodName);
+    }
+
+    public static void assertTopFrame(RecordedEvent event, String expectedClass, String expectedMethodName) {
+        RecordedStackTrace stackTrace = event.getStackTrace();
+        Asserts.assertNotNull(stackTrace, "Missing stack trace");
+        RecordedFrame topFrame =  stackTrace.getFrames().get(0);
+        if (isFrame(topFrame, expectedClass, expectedMethodName)) {
+            return;
+        }
+        String expected = expectedClass + "::" + expectedMethodName;
+        Asserts.fail("Expected top frame " + expected + ". Found " + topFrame);
+    }
+
     public static void assertFrame(RecordedEvent event, Class<?> expectedClass, String expectedMethodName) {
         RecordedStackTrace stackTrace = event.getStackTrace();
         Asserts.assertNotNull(stackTrace, "Missing stack trace");
         for (RecordedFrame frame : stackTrace.getFrames()) {
-            if (frame.isJavaFrame()) {
-                RecordedMethod method = frame.getMethod();
-                RecordedClass type = method.getType();
-                if (expectedClass.getName().equals(type.getName())) {
-                    if (expectedMethodName.equals(method.getName())) {
-                        return;
-                    }
-                }
+            if (isFrame(frame, expectedClass.getName(), expectedMethodName)) {
+                return;
             }
         }
         Asserts.fail("Expected " + expectedClass.getName() + "::"+ expectedMethodName + " in stack trace");
+    }
+
+    private static boolean isFrame(RecordedFrame frame, String expectedClass, String expectedMethodName) {
+        if (frame.isJavaFrame()) {
+            RecordedMethod method = frame.getMethod();
+            RecordedClass type = method.getType();
+            if (expectedClass.equals(type.getName())) {
+                if (expectedMethodName.equals(method.getName())) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -222,9 +222,6 @@ class BytecodeStream: public BaseBytecodeStream {
   // Get an unsigned 2-byte index, swapping the bytes if necessary.
   u2              get_index_u2() const           { assert_raw_stream(false);
                                                    return bytecode().get_index_u2(raw_code(), false); }
-  // Get an unsigned 2-byte index in native order.
-  int             get_index_u2_cpcache() const   { assert_raw_stream(false);
-                                                   return bytecode().get_index_u2_cpcache(raw_code()); }
   int             get_index_u4() const           { assert_raw_stream(false);
                                                    return bytecode().get_index_u4(raw_code()); }
   bool            has_index_u4() const           { return bytecode().has_index_u4(raw_code()); }

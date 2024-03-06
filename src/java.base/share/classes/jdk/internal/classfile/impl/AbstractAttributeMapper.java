@@ -24,18 +24,15 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.AttributeMapper;
-import jdk.internal.classfile.BufWriter;
-
-import static jdk.internal.classfile.Classfile.JAVA_1_VERSION;
+import java.lang.classfile.Attribute;
+import java.lang.classfile.AttributeMapper;
+import java.lang.classfile.BufWriter;
 
 public abstract class AbstractAttributeMapper<T extends Attribute<T>>
         implements AttributeMapper<T> {
 
     private final String name;
     private final boolean allowMultiple;
-    private final int majorVersion;
 
     protected abstract void writeBody(BufWriter buf, T attr);
 
@@ -45,20 +42,8 @@ public abstract class AbstractAttributeMapper<T extends Attribute<T>>
 
     public AbstractAttributeMapper(String name,
                                    boolean allowMultiple) {
-        this(name, allowMultiple, JAVA_1_VERSION);
-    }
-
-    public AbstractAttributeMapper(String name,
-                                   int majorVersion) {
-        this(name, false, majorVersion);
-    }
-
-    public AbstractAttributeMapper(String name,
-                                   boolean allowMultiple,
-                                   int majorVersion) {
         this.name = name;
         this.allowMultiple = allowMultiple;
-        this.majorVersion = majorVersion;
     }
 
     @Override
@@ -82,13 +67,8 @@ public abstract class AbstractAttributeMapper<T extends Attribute<T>>
     }
 
     @Override
-    public int validSince() {
-        return majorVersion;
-    }
-
-    @Override
     public String toString() {
-        return String.format("AttributeMapper[name=%s, allowMultiple=%b, validSince=%d]",
-                name, allowMultiple, majorVersion);
+        return String.format("AttributeMapper[name=%s, allowMultiple=%b, stability=%s]",
+                name, allowMultiple, stability());
     }
 }

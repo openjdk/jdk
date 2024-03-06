@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -159,7 +159,7 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
                                 CatalogFeatures.DEFER_TRUE : CatalogFeatures.DEFER_FALSE;
                     }
                     if (resolve == null) {
-                        resolve = catalog.getResolve().literal;
+                        resolve = catalog.getResolve().toString();
                     }
                     //override property settings with those from the catalog file
                     catalog.setResolve(resolve);
@@ -172,7 +172,7 @@ class CatalogReader extends DefaultHandler implements EntityResolver, URIResolve
                 return;
             } else {
                 inGroup = true;
-                group = new GroupEntry(catalog, base, prefer);
+                group = new GroupEntry(catalog, Util.getAbsoluteURI(catalog.systemId, base), prefer);
                 catalog.addEntry(group);
                 return;
             }

@@ -41,29 +41,9 @@
  */
 
 /*
- * @test id=default-debug
- * @summary Tests that we pass at least one jcstress-like test with all verification turned on
- * @requires vm.gc.Shenandoah
- * @requires vm.debug
- * @modules java.base/jdk.internal.misc
- *          java.management
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=adaptive
- *      -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
- *      TestVerifyJCStress
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
- *      -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
- *      TestVerifyJCStress
- */
-
-/*
  * @test id=default
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
- * @requires !vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
  *
@@ -75,20 +55,6 @@
  * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
  *      -XX:+UseShenandoahGC -XX:ShenandoahGCHeuristics=compact
  *      -XX:+ShenandoahVerify
- *      TestVerifyJCStress
- */
-
-/*
- * @test id=iu-debug
- * @summary Tests that we pass at least one jcstress-like test with all verification turned on
- * @requires vm.gc.Shenandoah
- * @requires vm.debug
- * @modules java.base/jdk.internal.misc
- *          java.management
- *
- * @run main/othervm -Xmx1g -Xms1g -XX:+UnlockExperimentalVMOptions -XX:+UnlockDiagnosticVMOptions
- *      -XX:+UseShenandoahGC -XX:ShenandoahGCMode=iu
- *      -XX:+ShenandoahVerify -XX:+ShenandoahVerifyOptoBarriers
  *      TestVerifyJCStress
  */
 
@@ -96,7 +62,6 @@
  * @test id=iu
  * @summary Tests that we pass at least one jcstress-like test with all verification turned on
  * @requires vm.gc.Shenandoah
- * @requires !vm.debug
  * @modules java.base/jdk.internal.misc
  *          java.management
  *

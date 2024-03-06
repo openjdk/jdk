@@ -63,6 +63,7 @@ public abstract class SignatureElementProxy extends ElementProxy {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getBaseNamespace() {
         return Constants.SignatureSpecNS;
     }

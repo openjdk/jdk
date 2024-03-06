@@ -37,6 +37,7 @@ import sun.security.util.*;
 
 public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
+    @java.io.Serial
     private static final long serialVersionUID = 1L;
 
     @SuppressWarnings("serial") // Type of field is not Serializable
@@ -103,7 +104,7 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
 
     @Override
     public PublicKey calculatePublicKey() {
-        XECParameters params = paramSpec.getName().equals("X25519")
+        XECParameters params = paramSpec.getName().equalsIgnoreCase("X25519")
                 ? XECParameters.X25519
                 : XECParameters.X448;
         try {
@@ -114,5 +115,20 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
                     "Unexpected error calculating public key", e);
         }
     }
-}
 
+    /**
+     * Restores the state of this object from the stream.
+     * <p>
+     * Deserialization of this object is not supported.
+     *
+     * @param  stream the {@code ObjectInputStream} from which data is read
+     * @throws IOException if an I/O error occurs
+     * @throws ClassNotFoundException if a serialized class cannot be loaded
+     */
+    @java.io.Serial
+    private void readObject(ObjectInputStream stream)
+            throws IOException, ClassNotFoundException {
+        throw new InvalidObjectException(
+                "XDHPrivateKeyImpl keys are not directly deserializable");
+    }
+}

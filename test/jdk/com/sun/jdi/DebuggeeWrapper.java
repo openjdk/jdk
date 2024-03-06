@@ -26,20 +26,20 @@ import java.util.concurrent.ThreadFactory;
 
 public class DebuggeeWrapper {
 
-    public static String PROPERTY_NAME = "main.wrapper";
+    public static String PROPERTY_NAME = "test.thread.factory";
 
     private static final String OLD_MAIN_THREAD_NAME = "old-m-a-i-n";
 
     private static ThreadFactory threadFactory = r -> new Thread(r);
 
-    private static final String wrapperName = System.getProperty(PROPERTY_NAME);
+    private static final String testThreadFactoryName = System.getProperty(PROPERTY_NAME);
 
-    public static String getWrapperName() {
-        return wrapperName;
+    public static String getTestThreadFactoryName() {
+        return testThreadFactoryName;
     }
 
     public static boolean isVirtual() {
-        return "Virtual".equals(wrapperName);
+        return "Virtual".equals(testThreadFactoryName);
     }
 
     public static Thread newThread(Runnable task) {
@@ -85,7 +85,7 @@ public class DebuggeeWrapper {
                 tg.uncaughtThrowable.printStackTrace(System.out);
                 System.exit(1);
             }
-        } else if (getWrapperName().equals("Kernel")) {
+        } else if (getTestThreadFactoryName().equals("Kernel")) {
             MainThreadGroup tg = new MainThreadGroup();
             Thread t = new Thread(tg, () -> {
                 try {

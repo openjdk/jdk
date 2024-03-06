@@ -100,7 +100,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Ἰρλανδία</territory>
 			<territory type="IL">Ἰσραήλ</territory>
 			<territory type="IN">Ἰνδία</territory>
-			<territory type="IO">Βρετανικὰ Ἐδάφη Ἰνδικοῦ Ὠκεανοῦ</territory>
+			<territory type="IO" draft="provisional">Βρετανικὰ Ἐδάφη Ἰνδικοῦ Ὠκεανοῦ</territory>
 			<territory type="IQ">Ἰράκ</territory>
 			<territory type="IR">Ἰράν, Ἰσλαμικὴ Δημοκρατία τοῦ</territory>
 			<territory type="IS">Ἰσλανδία</territory>
@@ -159,8 +159,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="chinese">Κινεζικὸ ἡμερολόγιο</type>
 			<type key="calendar" type="gregorian">Γρηγοριανὸ ἡμερολόγιο</type>
 			<type key="calendar" type="hebrew">Ἑβραϊκὸ ἡμερολόγιο</type>
-			<type key="calendar" type="islamic">Ἰσλαμικὸ ἡμερολόγιο</type>
-			<type key="calendar" type="islamic-civil">Ἰσλαμικὸ ἀστικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="islamic" draft="provisional">Ἰσλαμικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Ἰσλαμικὸ ἀστικὸ ἡμερολόγιο</type>
 			<type key="calendar" type="japanese">Ἰαπωνικὸ ἡμερολόγιο</type>
 			<type key="collation" type="phonebook">Σειρὰ τηλεφωνικοῦ καταλόγου</type>
 			<type key="collation" type="pinyin">Σειρὰ Πίνγιν</type>
@@ -168,7 +168,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[α ἀ ἄ ἂ ἆ ἁ ἅ ἃ ἇ ά ὰ ᾶ β γ δ ε ἐ ἔ ἒ ἑ ἕ ἓ έ ὲ ζ η ἠ ἤ ἢ ἦ ἡ ἥ ἣ ἧ ή ὴ ῆ θ ι ἰ ἴ ἲ ἶ ἱ ἵ ἳ ἷ ί ὶ ῖ ϊ ΐ ῒ ῗ κ λ μ ν ξ ο ὄ ὂ ὃ ό ὸ π ρ σ ς τ υ ὐ ὔ ὒ ὖ ὑ ὕ ὓ ὗ ύ ὺ ῦ ϋ ΰ ῢ ῧ φ χ ψ ω ὤ ὢ ὦ ὥ ὣ ὧ ώ ὼ ῶ]</exemplarCharacters>
+		<exemplarCharacters>[αἀἄἂἆἁἅἃἇάὰᾶ β γ δ εἐἔἒἑἕἓέὲ ζ ηἠἤἢἦἡἥἣἧήὴῆ θ ιἰἴἲἶἱἵἳἷίὶῖϊΐῒῗ κ λ μ ν ξ οὄὂὃόὸ π ρ σς τ υὐὔὒὖὑὕὓὗύὺῦϋΰῢῧ φ χ ψ ωὤὢὦὥὣὧώὼῶ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 	</characters>
 	<delimiters>

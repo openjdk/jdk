@@ -24,6 +24,7 @@
  */
 
 #include <poll.h>
+#include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
@@ -854,7 +855,10 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_Net_available(JNIEnv *env, jclass cl, jobject fdo)
 {
     int count = 0;
-    if (NET_SocketAvailable(fdval(env, fdo), &count) != 0) {
+    int result;
+    RESTARTABLE(ioctl(fdval(env, fdo), FIONREAD, &count), result);
+
+    if (result != 0) {
         handleSocketError(env, errno);
         return IOS_THROWN;
     }

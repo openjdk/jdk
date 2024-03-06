@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -153,6 +154,8 @@ class StubRoutines: AllStatic {
   static BufferBlob* _compiler_stubs_code;                 // code buffer for C2 intrinsics
   static BufferBlob* _final_stubs_code;                    // code buffer for all other routines
 
+  static address _array_sort;
+  static address _array_partition;
   // Leaf routines which implement arraycopy and their addresses
   // arraycopy operands aligned on element type boundary
   static address _jbyte_arraycopy;
@@ -254,6 +257,8 @@ class StubRoutines: AllStatic {
   static address _f2hf;
   static address _hf2f;
 
+  static address _method_entry_barrier;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -266,6 +271,8 @@ class StubRoutines: AllStatic {
   // Vector Math Routines
   static address _vector_f_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
   static address _vector_d_math[VectorSupport::NUM_VEC_SIZES][VectorSupport::NUM_SVML_OP];
+
+  static address _upcall_stub_exception_handler;
 
  public:
   // Initialization/Testing
@@ -375,6 +382,8 @@ class StubRoutines: AllStatic {
   static UnsafeArrayCopyStub UnsafeArrayCopy_stub()         { return CAST_TO_FN_PTR(UnsafeArrayCopyStub,  _unsafe_arraycopy); }
 
   static address generic_arraycopy()   { return _generic_arraycopy; }
+  static address select_arraysort_function() { return _array_sort; }
+  static address select_array_partition_function() { return _array_partition; }
 
   static address jbyte_fill()          { return _jbyte_fill; }
   static address jshort_fill()         { return _jshort_fill; }
@@ -445,14 +454,18 @@ class StubRoutines: AllStatic {
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
+
+  static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }
@@ -460,6 +473,11 @@ class StubRoutines: AllStatic {
 
   JFR_ONLY(static address jfr_write_checkpoint() { return _jfr_write_checkpoint; })
   JFR_ONLY(static address jfr_return_lease() { return _jfr_return_lease; })
+
+  static address upcall_stub_exception_handler() {
+    assert(_upcall_stub_exception_handler != nullptr, "not implemented");
+    return _upcall_stub_exception_handler;
+  }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

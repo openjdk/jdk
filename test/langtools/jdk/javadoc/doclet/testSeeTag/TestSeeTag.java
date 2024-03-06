@@ -62,7 +62,7 @@ public class TestSeeTag extends JavadocTester {
                 <li><a href="Test.InnerOne.html#foo()"><code>Test.InnerOne.foo()</code></a></li>
                 <li><a href="Test.InnerOne.html#bar(java.lang.Object)"><code>Test.InnerOne.bar(Object)</code></a></li>
                 <li><a href="http://docs.oracle.com/javase/7/docs/technotes/tools/windows/javadoc.html#see">Javadoc</a></li>
-                <li><a href="Test.InnerOne.html#baz(float)"><code>something</code></a></li>
+                <li><a href="Test.InnerOne.html#baz(float)">something</a></li>
                 <li><a href="Test.InnerOne.html#format(java.lang.String,java.lang.Object...)"><code>\
                 Test.InnerOne.format(java.lang.String, java.lang.Object...)</code></a></li>
                 </ul>
@@ -80,7 +80,7 @@ public class TestSeeTag extends JavadocTester {
                 <dd>
                 <ul class="tag-list-long">
                 <li><code>Serializable</code></li>
-                <li><a href="Test.html" title="class in pkg"><code>See tag with very long label text</code></a></li>
+                <li><a href="Test.html" title="class in pkg">See tag with very long label text</a></li>
                 </ul>
                 </dd>
                 </dl>""");
@@ -213,17 +213,17 @@ public class TestSeeTag extends JavadocTester {
                 "<section class=\"detail\" id=\"noComma()\">",
                 """
                     <ul class="tag-list">
-                    <li><a href="#noArgs()"><code>no args</code></a></li>
-                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
-                    <li><a href="#twoArgs(int,int)"><code>two args</code></a></li>
+                    <li><a href="#noArgs()">no args</a></li>
+                    <li><a href="#oneArg(int)">one arg</a></li>
+                    <li><a href="#twoArgs(int,int)">two args</a></li>
                     </ul>""",
 
                 "<section class=\"detail\" id=\"commaInDescription()\">",
                 """
                     <ul class="tag-list-long">
-                    <li><a href="#noArgs()"><code>no args</code></a></li>
-                    <li><a href="#oneArg(int)"><code>one arg</code></a></li>
-                    <li><a href="#twoArgs(int,int)"><code>two args with a comma , in the description</code></a></li>
+                    <li><a href="#noArgs()">no args</a></li>
+                    <li><a href="#oneArg(int)">one arg</a></li>
+                    <li><a href="#twoArgs(int,int)">two args with a comma , in the description</a></li>
                     </ul>""",
 
                 "<section class=\"detail\" id=\"commaInDefaultDescription()\">",

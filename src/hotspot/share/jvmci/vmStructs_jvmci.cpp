@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "jvmci/jvmciCodeInstaller.hpp"
@@ -42,7 +43,7 @@
 #include "runtime/vm_version.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CardTable.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #endif
 
@@ -122,6 +123,8 @@
                                                                                                                                      \
   static_field(CompilerToVM::Data,             data_section_item_alignment,            int)                                          \
                                                                                                                                      \
+  static_field(CompilerToVM::Data,             _should_notify_object_alloc,            int*)                                         \
+                                                                                                                                     \
   static_field(Abstract_VM_Version,            _features,                              uint64_t)                                     \
                                                                                                                                      \
   nonstatic_field(Annotations,                 _class_annotations,                     AnnotationArray*)                             \
@@ -141,6 +144,11 @@
   nonstatic_field(CollectedHeap,               _total_collections,                     unsigned int)                                 \
                                                                                                                                      \
   nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                 int)                                          \
+                                                                                                                                     \
+  volatile_nonstatic_field(CompiledICData,     _speculated_method,                     Method*)                                      \
+  volatile_nonstatic_field(CompiledICData,     _speculated_klass,                      uintptr_t)                                    \
+  nonstatic_field(CompiledICData,              _itable_defc_klass,                     Klass*)                                       \
+  nonstatic_field(CompiledICData,              _itable_refc_klass,                     Klass*)                                       \
                                                                                                                                      \
   nonstatic_field(ConstantPool,                _tags,                                  Array<u1>*)                                   \
   nonstatic_field(ConstantPool,                _pool_holder,                           InstanceKlass*)                               \
@@ -217,8 +225,12 @@
   nonstatic_field(JavaThread,                  _poll_data,                                    SafepointMechanism::ThreadData)        \
   nonstatic_field(JavaThread,                  _stack_overflow_state._reserved_stack_activation, address)                            \
   nonstatic_field(JavaThread,                  _held_monitor_count,                           intx)                                  \
+  nonstatic_field(JavaThread,                  _lock_stack,                                   LockStack)                             \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_VTMS_transition,                        bool))                                 \
   JVMTI_ONLY(nonstatic_field(JavaThread,       _is_in_tmp_VTMS_transition,                    bool))                                 \
+  JVMTI_ONLY(nonstatic_field(JavaThread,       _is_disable_suspend,                           bool))                                 \
+                                                                                                                                     \
+  nonstatic_field(LockStack,                   _top,                                          uint32_t)                              \
                                                                                                                                      \
   JVMTI_ONLY(static_field(JvmtiVTMSTransitionDisabler, _VTMS_notify_jvmti_events,             bool))                                 \
                                                                                                                                      \
@@ -328,6 +340,8 @@
   static_field(StubRoutines,                _checkcast_arraycopy_uninit,                      address)                               \
   static_field(StubRoutines,                _unsafe_arraycopy,                                address)                               \
   static_field(StubRoutines,                _generic_arraycopy,                               address)                               \
+  static_field(StubRoutines,                _array_sort,                                      address)                               \
+  static_field(StubRoutines,                _array_partition,                                 address)                               \
                                                                                                                                      \
   static_field(StubRoutines,                _aescrypt_encryptBlock,                           address)                               \
   static_field(StubRoutines,                _aescrypt_decryptBlock,                           address)                               \
@@ -422,6 +436,7 @@
   declare_toplevel_type(oopDesc)                                          \
     declare_type(arrayOopDesc, oopDesc)                                   \
                                                                           \
+  declare_toplevel_type(CompiledICData)                                   \
   declare_toplevel_type(MetaspaceObj)                                     \
     declare_type(Metadata, MetaspaceObj)                                  \
     declare_type(Klass, Metadata)                                         \
@@ -494,6 +509,7 @@
   declare_constant(BranchData::not_taken_off_set)                         \
                                                                           \
   declare_constant_with_value("CardTable::dirty_card", CardTable::dirty_card_val()) \
+  declare_constant_with_value("LockStack::_end_offset", LockStack::end_offset()) \
                                                                           \
   declare_constant(CodeInstaller::VERIFIED_ENTRY)                         \
   declare_constant(CodeInstaller::UNVERIFIED_ENTRY)                       \
@@ -606,7 +622,6 @@
   declare_constant(vmIntrinsics::_invokeGeneric)                          \
   declare_constant(vmIntrinsics::_compiledLambdaForm)                     \
                                                                           \
-  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
   declare_constant(ConstantPool::_has_dynamic_constant)                   \
                                                                           \
   declare_constant(ConstMethodFlags::_misc_has_linenumber_table)          \
@@ -680,6 +695,10 @@
   declare_constant(InstanceKlass::being_initialized)                      \
   declare_constant(InstanceKlass::fully_initialized)                      \
                                                                           \
+  declare_constant(LockingMode::LM_MONITOR)                               \
+  declare_constant(LockingMode::LM_LEGACY)                                \
+  declare_constant(LockingMode::LM_LIGHTWEIGHT)                           \
+                                                                          \
   /*********************************/                                     \
   /* InstanceKlass _misc_flags */                                         \
   /*********************************/                                     \
@@ -726,6 +745,8 @@
   AARCH64_ONLY(declare_constant(NMethodPatchingType::stw_instruction_and_data_patch))  \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_instruction_and_data_patch)) \
   AARCH64_ONLY(declare_constant(NMethodPatchingType::conc_data_patch))                 \
+                                                                          \
+  declare_constant(ObjectMonitor::ANONYMOUS_OWNER)                        \
                                                                           \
   declare_constant(ReceiverTypeData::receiver_type_row_cell_count)        \
   declare_constant(ReceiverTypeData::receiver0_offset)                    \
@@ -1000,14 +1021,6 @@ int JVMCIVMStructs::localHotSpotVMLongConstants_count() {
 int JVMCIVMStructs::localHotSpotVMAddresses_count() {
   // Ignore sentinel entry at the end
   return (sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry)) - 1;
-}
-
-extern "C" {
-JNIEXPORT VMStructEntry* jvmciHotSpotVMStructs = JVMCIVMStructs::localHotSpotVMStructs;
-JNIEXPORT VMTypeEntry* jvmciHotSpotVMTypes = JVMCIVMStructs::localHotSpotVMTypes;
-JNIEXPORT VMIntConstantEntry* jvmciHotSpotVMIntConstants = JVMCIVMStructs::localHotSpotVMIntConstants;
-JNIEXPORT VMLongConstantEntry* jvmciHotSpotVMLongConstants = JVMCIVMStructs::localHotSpotVMLongConstants;
-JNIEXPORT VMAddressEntry* jvmciHotSpotVMAddresses = JVMCIVMStructs::localHotSpotVMAddresses;
 }
 
 #ifdef ASSERT

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,11 +80,13 @@ public class TestValueFormats extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <h3>i65535</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span clas\
                     s="return-type">int</span>&nbsp;<span class="element-name">i65535</span></div>
                     <div class="block">The value 65535 is ffff or 0xffff.</div>""",
                 """
                     <h3>pi</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type">double</span>&nbsp;<span class="element-name">pi</span></div>
                     <div class="block">The value 3.1415926525 is %5.2f.</div>""".formatted(3.14));
     }
@@ -113,6 +115,7 @@ public class TestValueFormats extends JavadocTester {
         checkOutput("p/C.html", true,
                 """
                     <h3>i65535</h3>
+                    <div class="horizontal-scroll">
                     <div class="member-signature"><span class="modifiers">public static final</span>&nbsp;<span class="return-type">int</span>&nbsp;<span class="element-name">i65535</span></div>
                     <div class="block">The value 65535 is <span class="invalid-tag">invalid format: %a</span>.</div>""");
     }

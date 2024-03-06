@@ -934,7 +934,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
     /**
      * Sets the invoker of this popup menu -- the component in which
-     * the popup menu menu is to be displayed.
+     * the popup menu is to be displayed.
      *
      * @param invoker the <code>Component</code> in which the popup
      *          menu is displayed

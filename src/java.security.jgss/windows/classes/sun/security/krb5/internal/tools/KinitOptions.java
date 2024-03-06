@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ import java.io.FileInputStream;
  */
 class KinitOptions {
 
-    // 1. acquire, 2. renew, 3. validate
+    // 0. Help, 1. acquire, 2. renew, 3. validate
     public int action = 1;
 
     // forwardable and proxiable flags have two states:
@@ -143,7 +143,8 @@ class KinitOptions {
                        // -help: legacy.
                        args[i].equalsIgnoreCase("-help")) {
                 printHelp();
-                System.exit(0);
+                action = 0;
+                return;
             } else if (p == null) { // Haven't yet processed a "principal"
                 p = args[i];
                 try {

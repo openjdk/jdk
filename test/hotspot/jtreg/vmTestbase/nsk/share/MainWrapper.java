@@ -47,7 +47,7 @@ public final class MainWrapper {
         finalizableObject.registerCleanup();
 
         // Some tests use this property to understand if virtual threads are used
-        System.setProperty("main.wrapper", wrapperName);
+        System.setProperty("test.thread.factory", wrapperName);
 
         Runnable task = () -> {
             try {

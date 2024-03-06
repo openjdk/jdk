@@ -26,6 +26,7 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
+ * @enablePreview
  * @run testng CondyNestedTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */
@@ -34,21 +35,17 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 public class CondyNestedTest {
 
     static final Class[] THROWABLES = {InvocationTargetException.class, StackOverflowError.class};
+    private static final MethodHandles.Lookup L = MethodHandles.lookup();
 
     Class<?> c;
 
-// Add the following annotations to the test description if uncommenting the
-// following code
-//
-// * @library /lib/testlibrary/bytecode
-// * @build jdk.experimental.bytecode.BasicClassBuilder
-//
 //    static final MethodHandles.Lookup L = MethodHandles.lookup();
 //
 //    /**
@@ -65,97 +62,178 @@ public class CondyNestedTest {
 //     */
 //    public static byte[] generator() throws Exception {
 //        String genClassName = L.lookupClass().getSimpleName() + "_Code";
-//        String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class).toMethodDescriptorString();
-//        String bsmIndyDescriptor = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class, Object.class, Object.class).toMethodDescriptorString();
+//        ClassDesc genClassDesc = ClassDesc.of(genClassName);
+//        String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class, String.class, Object.class,
+//                Object.class).toMethodDescriptorString();
+//        String bsmIndyDescriptor = MethodType.methodType(CallSite.class, MethodHandles.Lookup.class, String.class,
+//                Object.class, Object.class).toMethodDescriptorString();
+//        DirectMethodHandleDesc bsmMhDesc = MethodHandleDesc.of(
+//                DirectMethodHandleDesc.Kind.STATIC,
+//                genClassDesc,
+//                "bsm",
+//                bsmDescriptor
+//        );
+//        DirectMethodHandleDesc bsmIndyMhDesc = MethodHandleDesc.of(
+//                DirectMethodHandleDesc.Kind.STATIC,
+//                genClassDesc,
+//                "bsmIndy",
+//                bsmIndyDescriptor
+//        );
+//        byte[] byteArray = ClassFile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
+//                .withVersion(55, 0)
+//                .withSuperclass(ConstantDescs.CD_Object)
+//                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
+//                        .withCode(codeBuilder -> codeBuilder
+//                                .aload(0)
+//                                .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+//                                .return_()
+//                        )
+//                )
+//                .withMethod("main", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType()),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> {
+//                                            codeBuilder
+//                                                    .aload(0)
+//                                                    .iconst_0()
+//                                                    .aaload()
+//                                                    .invokevirtual(ConstantDescs.CD_String, "intern",
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_String))
+//                                                    .astore(1);
+//                                            Label case1 = codeBuilder.newLabel();
+//                                            codeBuilder
+//                                                    .aload(1)
+//                                                    .ldc("condy_bsm_condy_bsm")
+//                                                    .if_acmpne(case1)
+//                                                    .invokestatic(genClassDesc, "condy_bsm_condy_bsm",
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_Object))
+//                                                    .return_();
+//                                            Label case2 = codeBuilder.newLabel();
+//                                            codeBuilder
+//                                                    .labelBinding(case1)
+//                                                    .aload(1)
+//                                                    .ldc("indy_bsmIndy_condy_bsm")
+//                                                    .if_acmpne(case2)
+//                                                    .invokestatic(genClassDesc, "indy_bsmIndy_condy_bsm",
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_Object))
+//                                                    .return_();
+//                                            Label case3 = codeBuilder.newLabel();
+//                                            codeBuilder
+//                                                    .labelBinding(case2)
+//                                                    .aload(1)
+//                                                    .ldc("indy_bsm_condy_bsm")
+//                                                    .if_acmpne(case3)
+//                                                    .invokestatic(genClassDesc, "indy_bsm_condy_bsm",
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_Object))
+//                                                    .return_();
+//                                            codeBuilder
+//                                                    .labelBinding(case3)
+//                                                    .return_();
+//                                        }
+//                                )
+//                )
+//                // bsm that when used with indy returns a call site whose target is MethodHandles.constant(String.class, name), and
+//                // when used with condy returns the name
+//                .withMethod("bsm", MethodTypeDesc.ofDescriptor(bsmDescriptor),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> {
+//                                            codeBuilder
+//                                                    .aload(2)
+//                                                    .instanceof_(ConstantDescs.CD_MethodType)
+//                                                    .iconst_0();
+//                                            Label condy = codeBuilder.newLabel();
+//                                            codeBuilder
+//                                                    .if_acmpeq(condy)
+//                                                    .new_(ClassDesc.ofDescriptor(ConstantCallSite.class.descriptorString()))
+//                                                    .dup()
+//                                                    .ldc(ConstantDescs.CD_String)
+//                                                    .aload(1)
+//                                                    .invokestatic(ConstantDescs.CD_MethodHandles, "constant",
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_MethodHandle, ConstantDescs.CD_Class,
+//                                                                    ConstantDescs.CD_Object))
+//                                                    .invokespecial(ClassDesc.ofDescriptor(ConstantCallSite.class.descriptorString()),
+//                                                            ConstantDescs.INIT_NAME,
+//                                                            MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_MethodHandle))
+//                                                    .areturn();
+//                                            codeBuilder
+//                                                    .labelBinding(condy)
+//                                                    .aload(1)
+//                                                    .areturn();
+//                                        }
 //
-//        byte[] byteArray = new BasicClassBuilder(genClassName, 55, 0)
-//                .withSuperclass("java/lang/Object")
-//                .withMethod("<init>", "()V", M ->
-//                        M.withFlags(Flag.ACC_PUBLIC)
-//                                .withCode(TypedCodeBuilder::new, C ->
-//                                        C.aload_0().invokespecial("java/lang/Object", "<init>", "()V", false).return_()
-//                                ))
-//                .withMethod("main", "([Ljava/lang/String;)V", M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C -> {
-//                                    C.aload_0().iconst_0().aaload();
-//                                    C.invokevirtual("java/lang/String", "intern", "()Ljava/lang/String;", false);
-//                                    C.astore_1();
-//
-//                                    C.aload_1();
-//                                    C.ldc("condy_bsm_condy_bsm");
-//                                    C.ifcmp(TypeTag.A, MacroCodeBuilder.CondKind.NE, "CASE1");
-//                                    C.invokestatic(genClassName, "condy_bsm_condy_bsm", "()Ljava/lang/Object;", false).return_();
-//
-//                                    C.label("CASE1");
-//                                    C.aload_1();
-//                                    C.ldc("indy_bsmIndy_condy_bsm");
-//                                    C.ifcmp(TypeTag.A, MacroCodeBuilder.CondKind.NE, "CASE2");
-//                                    C.invokestatic(genClassName, "indy_bsmIndy_condy_bsm", "()Ljava/lang/Object;", false).return_();
-//
-//                                    C.label("CASE2");
-//                                    C.aload_1();
-//                                    C.ldc("indy_bsm_condy_bsm");
-//                                    C.ifcmp(TypeTag.A, MacroCodeBuilder.CondKind.NE, "CASE3");
-//                                    C.invokestatic(genClassName, "indy_bsm_condy_bsm", "()Ljava/lang/Object;", false).return_();
-//
-//                                    C.label("CASE3");
-//                                    C.return_();
-//                                }))
-//                .withMethod("bsm", bsmDescriptor, M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C -> {
-//                                    C.aload_2();
-//                                    C.instanceof_("java/lang/invoke/MethodType");
-//                                    C.iconst_0();
-//                                    C.ifcmp(TypeTag.I, MacroCodeBuilder.CondKind.EQ, "CONDY");
-//                                    C.new_("java/lang/invoke/ConstantCallSite").dup();
-//                                    C.ldc("java/lang/String", PoolHelper::putClass);
-//                                    C.aload_1();
-//                                    C.invokestatic("java/lang/invoke/MethodHandles", "constant", "(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;", false);
-//                                    C.invokespecial("java/lang/invoke/ConstantCallSite", "<init>", "(Ljava/lang/invoke/MethodHandle;)V", false);
-//                                    C.areturn();
-//                                    C.label("CONDY");
-//                                    C.aload_1().areturn();
-//                                }))
-//                .withMethod("bsmIndy", bsmIndyDescriptor, M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C -> {
-//                                    C.new_("java/lang/invoke/ConstantCallSite").dup();
-//                                    C.ldc("java/lang/String", PoolHelper::putClass);
-//                                    C.aload_1();
-//                                    C.invokestatic("java/lang/invoke/MethodHandles", "constant", "(Ljava/lang/Class;Ljava/lang/Object;)Ljava/lang/invoke/MethodHandle;", false);
-//                                    C.invokespecial("java/lang/invoke/ConstantCallSite", "<init>", "(Ljava/lang/invoke/MethodHandle;)V", false);
-//                                    C.areturn();
-//                                }))
-//                .withMethod("condy_bsm_condy_bsm", "()Ljava/lang/Object;", M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C ->
-//                                        C.ldc("name", "Ljava/lang/String;", genClassName, "bsm", bsmDescriptor,
-//                                              S -> S.add(null, (P, v) -> {
-//                                                  return P.putDynamicConstant("name", "Ljava/lang/String;", genClassName, "bsm", bsmDescriptor,
-//                                                                              S2 -> S2.add("DUMMY_ARG", PoolHelper::putString));
-//                                              }))
-//                                                .areturn()))
-//                .withMethod("indy_bsmIndy_condy_bsm", "()Ljava/lang/Object;", M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C ->
-//                                        C.invokedynamic("name", "()Ljava/lang/String;", genClassName, "bsmIndy", bsmIndyDescriptor,
-//                                                        S -> S.add(null, (P, v) -> {
-//                                                            return P.putDynamicConstant("name", "Ljava/lang/String;", genClassName, "bsm", bsmDescriptor,
-//                                                                                        S2 -> S2.add("DUMMY_ARG", PoolHelper::putString));
-//                                                        }))
-//                                                .areturn()))
-//                .withMethod("indy_bsm_condy_bsm", "()Ljava/lang/Object;", M ->
-//                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-//                                .withCode(TypedCodeBuilder::new, C ->
-//                                        C.invokedynamic("name", "()Ljava/lang/String;", genClassName, "bsm", bsmDescriptor,
-//                                                        S -> S.add(null, (P, v) -> {
-//                                                            return P.putDynamicConstant("name", "Ljava/lang/String;", genClassName, "bsm", bsmDescriptor,
-//                                                                                        S2 -> S2.add("DUMMY_ARG", PoolHelper::putString));
-//                                                        }))
-//                                                .areturn()))
-//                .build();
+//                                )
+//                )
+//                // an indy bsm, that returns a call site whose target is MethodHandles.constant(String.class, methodName)
+//                .withMethod("bsmIndy", MethodTypeDesc.ofDescriptor(bsmIndyDescriptor),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> codeBuilder
+//                                        .new_(ClassDesc.ofDescriptor(ConstantCallSite.class.descriptorString()))
+//                                        .dup()
+//                                        .ldc(ConstantDescs.CD_String)
+//                                        .aload(1)
+//                                        .invokestatic(ConstantDescs.CD_MethodHandles, "constant",
+//                                                MethodTypeDesc.of(ConstantDescs.CD_MethodHandle, ConstantDescs.CD_Class,
+//                                                        ConstantDescs.CD_Object))
+//                                        .invokespecial(ClassDesc.ofDescriptor(ConstantCallSite.class.descriptorString()),
+//                                                ConstantDescs.INIT_NAME,
+//                                                MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_MethodHandle))
+//                                        .areturn()
+//                                )
+//                )
+//                .withMethod("condy_bsm_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> codeBuilder
+//                                        .ldc(DynamicConstantDesc.ofNamed(
+//                                                        bsmMhDesc,
+//                                                        "name",
+//                                                        ConstantDescs.CD_String,
+//                                                        DynamicConstantDesc.ofNamed(
+//                                                                bsmMhDesc,
+//                                                                "name",
+//                                                                ConstantDescs.CD_String,
+//                                                                "DUMMY_ARG"
+//                                                        )
+//                                                )
+//                                        )
+//                                        .areturn()
+//                                )
+//                )
+//                .withMethod("indy_bsmIndy_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> codeBuilder
+//                                        .invokedynamic(DynamicCallSiteDesc.of(
+//                                                        bsmIndyMhDesc,
+//                                                        "name",
+//                                                        MethodTypeDesc.of(ConstantDescs.CD_String),
+//                                                        DynamicConstantDesc.ofNamed(
+//                                                                bsmMhDesc,
+//                                                                "name",
+//                                                                ConstantDescs.CD_String,
+//                                                                "DUMMY_ARG"
+//                                                        )
+//                                                )
+//                                        )
+//                                        .areturn()
+//                                )
+//                )
+//                .withMethod("indy_bsm_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+//                                .withCode(codeBuilder -> codeBuilder
+//                                        .invokedynamic(DynamicCallSiteDesc.of(
+//                                                        bsmMhDesc,
+//                                                        "name",
+//                                                        MethodTypeDesc.of(ConstantDescs.CD_String),
+//                                                        DynamicConstantDesc.ofNamed(
+//                                                                bsmMhDesc,
+//                                                                "name",
+//                                                                ConstantDescs.CD_String,
+//                                                                "DUMMY_ARG"
+//                                                        )
+//                                                )
+//                                        )
+//                                        .areturn()
+//                                )
+//                )
+//        );
 //
 //        File f = new File(genClassName + ".class");
 //        if (f.getParentFile() != null) {
@@ -163,15 +241,13 @@ public class CondyNestedTest {
 //        }
 //        new FileOutputStream(f).write(byteArray);
 //        return byteArray;
-//
 //    }
 
     static void test(Method m, Class<? extends Throwable>... ts) {
         Throwable caught = null;
         try {
             m.invoke(null);
-        }
-        catch (Throwable t) {
+        } catch (Throwable t) {
             caught = t;
         }
 

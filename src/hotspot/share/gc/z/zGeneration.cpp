@@ -24,6 +24,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
@@ -283,6 +284,10 @@ void ZGeneration::synchronize_relocation() {
 
 void ZGeneration::desynchronize_relocation() {
   _relocate.desynchronize();
+}
+
+bool ZGeneration::is_relocate_queue_active() const {
+  return _relocate.is_queue_active();
 }
 
 void ZGeneration::reset_statistics() {
@@ -860,7 +865,7 @@ void ZGenerationYoung::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Flip remembered set bits
@@ -1212,7 +1217,7 @@ void ZGenerationOld::mark_start() {
   // Enter mark phase
   set_phase(Phase::Mark);
 
-  // Reset marking information and mark roots
+  // Reset marking information
   _mark.start();
 
   // Update statistics
@@ -1315,6 +1320,10 @@ void ZGenerationOld::process_non_strong_references() {
 
   // Process weak roots
   _weak_roots_processor.process_weak_roots();
+
+  ClassUnloadingContext ctx(_workers.active_workers(),
+                            true /* unregister_nmethods_during_purge */,
+                            true /* lock_codeblob_free_separately */);
 
   // Unlink stale metadata and nmethods
   _unload.unlink();
@@ -1492,7 +1501,7 @@ void ZGenerationOld::remap_young_roots() {
   uint remap_nworkers = clamp(ZGeneration::young()->workers()->active_workers() + prev_nworkers, 1u, ZOldGCThreads);
   _workers.set_active_workers(remap_nworkers);
 
-  // TODO: The STS joiner is only needed to satisfy z_assert_is_barrier_safe that doesn't
+  // TODO: The STS joiner is only needed to satisfy ZBarrier::assert_is_state_barrier_safe that doesn't
   // understand the driver locker. Consider making the assert aware of the driver locker.
   SuspendibleThreadSetJoiner sts_joiner;
 

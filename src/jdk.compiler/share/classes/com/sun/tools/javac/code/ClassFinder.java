@@ -444,9 +444,6 @@ public class ClassFinder {
         if (c.members_field == null) {
             try {
                 c.complete();
-                if ((c.flags_field & UNNAMED_CLASS) != 0) {
-                    syms.removeClass(ps.modle, flatname);
-                }
             } catch (CompletionFailure ex) {
                 if (absent) {
                     syms.removeClass(ps.modle, flatname);

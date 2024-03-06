@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,23 +22,26 @@
  */
 
 #include "jni.h"
-#include "testlib_threads.h"
+#include "testlib_threads.hpp"
 
 typedef struct {
    JavaVM* jvm;
    jobject linker;
    jobject desc;
    jobject opts;
+   jthrowable exception;
 } Context;
 
 void call(void* arg) {
     Context* context = (Context*)arg;
     JNIEnv* env;
-    context->jvm->AttachCurrentThread((void**)&env, NULL);
+    context->jvm->AttachCurrentThread((void**)&env, nullptr);
     jclass linkerClass = env->FindClass("java/lang/foreign/Linker");
     jmethodID nativeLinkerMethod = env->GetMethodID(linkerClass, "downcallHandle",
             "(Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle;");
     env->CallVoidMethod(context->linker, nativeLinkerMethod, context->desc, context->opts);
+    context->exception = (jthrowable) env->NewGlobalRef(env->ExceptionOccurred());
+    env->ExceptionClear();
     context->jvm->DetachCurrentThread();
 }
 
@@ -51,8 +54,12 @@ extern "C" {
         context.desc = env->NewGlobalRef(desc);
         context.opts = env->NewGlobalRef(opts);
         run_in_new_thread_and_join(call, &context);
+        if (context.exception != nullptr) {
+            env->Throw(context.exception); // transfer exception to this thread
+        }
         env->DeleteGlobalRef(context.linker);
         env->DeleteGlobalRef(context.desc);
         env->DeleteGlobalRef(context.opts);
+        env->DeleteGlobalRef(context.exception);
     }
 }

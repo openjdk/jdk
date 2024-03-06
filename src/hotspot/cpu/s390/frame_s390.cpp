@@ -672,7 +672,6 @@ intptr_t *frame::initial_deoptimization_info() {
   return fp();
 }
 
-// Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
 BasicObjectLock* frame::interpreter_frame_monitor_end() const {
   return interpreter_frame_monitors();
 }

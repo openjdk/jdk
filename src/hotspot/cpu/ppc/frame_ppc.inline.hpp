@@ -35,14 +35,14 @@
 // Inline functions for ppc64 frames:
 
 // Initialize frame members (_sp must be given)
-inline void frame::setup() {
+inline void frame::setup(kind knd) {
   if (_pc == nullptr) {
     _pc = (address)own_abi()->lr;
     assert(_pc != nullptr, "must have PC");
   }
 
   if (_cb == nullptr) {
-    _cb = CodeCache::find_blob(_pc);
+    _cb = (knd == kind::nmethod) ? CodeCache::find_blob_fast(_pc) : CodeCache::find_blob(_pc);
   }
 
   if (_unextended_sp == nullptr) {
@@ -78,8 +78,8 @@ inline void frame::setup() {
   // Continuation frames on the java heap are not aligned.
   // When thawing interpreted frames the sp can be unaligned (see new_stack_frame()).
   assert(_on_heap ||
-         (is_aligned(_sp, alignment_in_bytes) || is_interpreted_frame()) &&
-         (is_aligned(_fp, alignment_in_bytes) || !is_fully_initialized()),
+         ((is_aligned(_sp, alignment_in_bytes) || is_interpreted_frame()) &&
+          (is_aligned(_fp, alignment_in_bytes) || !is_fully_initialized())),
          "invalid alignment sp:" PTR_FORMAT " unextended_sp:" PTR_FORMAT " fp:" PTR_FORMAT, p2i(_sp), p2i(_unextended_sp), p2i(_fp));
 }
 
@@ -89,21 +89,27 @@ inline void frame::setup() {
 inline frame::frame() : _sp(nullptr), _pc(nullptr), _cb(nullptr), _oop_map(nullptr), _deopt_state(unknown),
                         _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(nullptr), _fp(nullptr) {}
 
-inline frame::frame(intptr_t* sp) : frame(sp, nullptr) {}
+inline frame::frame(intptr_t* sp) : frame(sp, nullptr, kind::nmethod) {}
 
 inline frame::frame(intptr_t* sp, intptr_t* fp, address pc) : frame(sp, pc, nullptr, fp, nullptr) {}
+
+inline frame::frame(intptr_t* sp, address pc, kind knd)
+  : _sp(sp), _pc(pc), _cb(nullptr), _oop_map(nullptr),
+    _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(sp), _fp(nullptr) {
+  setup(knd);
+}
 
 inline frame::frame(intptr_t* sp, address pc, intptr_t* unextended_sp, intptr_t* fp, CodeBlob* cb)
   : _sp(sp), _pc(pc), _cb(cb), _oop_map(nullptr),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
-  setup();
+  setup(kind::nmethod);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb, const ImmutableOopMap* oop_map)
   : _sp(sp), _pc(pc), _cb(cb), _oop_map(oop_map),
     _on_heap(false), DEBUG_ONLY(_frame_index(-1) COMMA) _unextended_sp(unextended_sp), _fp(fp) {
   assert(_cb != nullptr, "pc: " INTPTR_FORMAT, p2i(pc));
-  setup();
+  setup(kind::nmethod);
 }
 
 inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address pc, CodeBlob* cb,
@@ -113,7 +119,7 @@ inline frame::frame(intptr_t* sp, intptr_t* unextended_sp, intptr_t* fp, address
   // In thaw, non-heap frames use this constructor to pass oop_map.  I don't know why.
   assert(_on_heap || _cb != nullptr, "these frames are always heap frames");
   if (cb != nullptr) {
-    setup();
+    setup(kind::nmethod);
   }
 #ifdef ASSERT
   // The following assertion has been disabled because it would sometime trap for Continuation.run,
@@ -224,7 +230,7 @@ inline oop* frame::interpreter_frame_temp_oop_addr() const {
 }
 
 inline intptr_t* frame::interpreter_frame_esp() const {
-  return (intptr_t*) at(ijava_idx(esp));
+  return (intptr_t*) at_relative(ijava_idx(esp));
 }
 
 // Convenient setters
@@ -235,7 +241,12 @@ inline void frame::interpreter_frame_set_monitor_end(BasicObjectLock* end) {
 }
 
 inline void frame::interpreter_frame_set_cpcache(ConstantPoolCache* cp)       { *interpreter_frame_cache_addr() = cp; }
-inline void frame::interpreter_frame_set_esp(intptr_t* esp)                   { get_ijava_state()->esp = (intptr_t) esp; }
+
+inline void frame::interpreter_frame_set_esp(intptr_t* esp) {
+  assert(is_interpreted_frame(), "interpreted frame expected");
+  // set relativized esp
+  get_ijava_state()->esp = (intptr_t) (esp - fp());
+}
 
 inline void frame::interpreter_frame_set_top_frame_sp(intptr_t* top_frame_sp) {
   assert(is_interpreted_frame(), "interpreted frame expected");
@@ -252,7 +263,7 @@ inline intptr_t* frame::interpreter_frame_expression_stack() const {
 
 // top of expression stack
 inline intptr_t* frame::interpreter_frame_tos_address() const {
-  return (intptr_t*)at(ijava_idx(esp)) + Interpreter::stackElementWords;
+  return interpreter_frame_esp() + Interpreter::stackElementWords;
 }
 
 inline int frame::interpreter_frame_monitor_size() {
@@ -295,7 +306,7 @@ inline frame frame::sender_raw(RegisterMap* map) const {
 
   // Must be native-compiled frame, i.e. the marshaling code for native
   // methods that exists in the core system.
-  return frame(sender_sp(), sender_pc());
+  return frame(sender_sp(), sender_pc(), kind::code_blob);
 }
 
 inline frame frame::sender(RegisterMap* map) const {
@@ -354,20 +365,6 @@ inline void frame::set_saved_oop_result(RegisterMap* map, oop obj) {
   guarantee(result_adr != nullptr, "bad register save location");
 
   *result_adr = obj;
-}
-
-inline const ImmutableOopMap* frame::get_oop_map() const {
-  if (_cb == nullptr) return nullptr;
-  if (_cb->oop_maps() != nullptr) {
-    NativePostCallNop* nop = nativePostCallNop_at(_pc);
-    if (nop != nullptr && nop->displacement() != 0) {
-      int slot = ((nop->displacement() >> 24) & 0xff);
-      return _cb->oop_map_for_slot(slot, _pc);
-    }
-    const ImmutableOopMap* oop_map = OopMapSet::find_map(this);
-    return oop_map;
-  }
-  return nullptr;
 }
 
 inline int frame::compiled_frame_stack_argsize() const {

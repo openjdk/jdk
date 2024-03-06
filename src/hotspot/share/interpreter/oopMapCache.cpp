@@ -55,6 +55,8 @@ class OopMapCacheEntry: private InterpreterOopMap {
   // Deallocate bit masks and initialize fields
   void flush();
 
+  static void deallocate(OopMapCacheEntry* const entry);
+
  private:
   void allocate_bit_mask();   // allocates the bit mask on C heap f necessary
   void deallocate_bit_mask(); // allocates the bit mask on C heap f necessary
@@ -401,6 +403,10 @@ void OopMapCacheEntry::flush() {
   initialize();
 }
 
+void OopMapCacheEntry::deallocate(OopMapCacheEntry* const entry) {
+  entry->flush();
+  FREE_C_HEAP_OBJ(entry);
+}
 
 // Implementation of OopMapCache
 
@@ -476,8 +482,7 @@ void OopMapCache::flush() {
     OopMapCacheEntry* entry = _array[i];
     if (entry != nullptr) {
       _array[i] = nullptr;  // no barrier, only called in OopMapCache destructor
-      entry->flush();
-      FREE_C_HEAP_OBJ(entry);
+      OopMapCacheEntry::deallocate(entry);
     }
   }
 }
@@ -496,8 +501,7 @@ void OopMapCache::flush_obsolete_entries() {
            entry->method()->name()->as_C_string(), entry->method()->signature()->as_C_string(), i);
       }
       _array[i] = nullptr;
-      entry->flush();
-      FREE_C_HEAP_OBJ(entry);
+      OopMapCacheEntry::deallocate(entry);
     }
   }
 }
@@ -544,8 +548,7 @@ void OopMapCache::lookup(const methodHandle& method,
     // at this time. We give the caller of lookup() a copy of the
     // interesting info via parameter entry_for, but we don't add it to
     // the cache. See the gory details in Method*.cpp.
-    tmp->flush();
-    FREE_C_HEAP_OBJ(tmp);
+    OopMapCacheEntry::deallocate(tmp);
     return;
   }
 
@@ -568,7 +571,7 @@ void OopMapCache::lookup(const methodHandle& method,
   if (put_at(probe + 0, tmp, old)) {
     enqueue_for_cleanup(old);
   } else {
-    enqueue_for_cleanup(tmp);
+    OopMapCacheEntry::deallocate(tmp);
   }
 
   assert(!entry_for->is_empty(), "A non-empty oop map should be returned");
@@ -603,8 +606,7 @@ void OopMapCache::cleanup_old_entries() {
                           entry->method()->name_and_sig_as_C_string(), entry->bci());
     }
     OopMapCacheEntry* next = entry->_next;
-    entry->flush();
-    FREE_C_HEAP_OBJ(entry);
+    OopMapCacheEntry::deallocate(entry);
     entry = next;
   }
 }
@@ -617,6 +619,5 @@ void OopMapCache::compute_one_oop_map(const methodHandle& method, int bci, Inter
   if (tmp->has_valid_mask()) {
     entry->resource_copy(tmp);
   }
-  tmp->flush();
-  FREE_C_HEAP_OBJ(tmp);
+  OopMapCacheEntry::deallocate(tmp);
 }

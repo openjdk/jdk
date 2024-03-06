@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,14 +33,23 @@ AC_DEFUN([FLAGS_SETUP_ARFLAGS],
   # FIXME: figure out if we should select AR flags depending on OS or toolchain.
   if test "x$OPENJDK_TARGET_OS" = xaix; then
     ARFLAGS="-X64"
-  elif test "x$OPENJDK_TARGET_OS" = xwindows; then
-    # lib.exe is used as AR to create static libraries.
-    ARFLAGS="-nologo -NODEFAULTLIB:MSVCRT"
   else
     ARFLAGS=""
   fi
 
   AC_SUBST(ARFLAGS)
+])
+
+AC_DEFUN([FLAGS_SETUP_LIBFLAGS],
+[
+  # LIB is used to create static libraries on Windows
+  if test "x$OPENJDK_TARGET_OS" = xwindows; then
+    LIBFLAGS="-nodefaultlib:msvcrt"
+  else
+    LIBFLAGS=""
+  fi
+
+  AC_SUBST(LIBFLAGS)
 ])
 
 AC_DEFUN([FLAGS_SETUP_STRIPFLAGS],

@@ -11,11 +11,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="prg"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern draft="unconfirmed">{0} ({1})</localePattern>
-			<localeSeparator draft="unconfirmed">{0}, {1}</localeSeparator>
-			<localeKeyTypePattern draft="unconfirmed">{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ar" draft="unconfirmed">arābiskan</language>
 			<language type="da" draft="unconfirmed">dāniskan</language>
@@ -23,7 +18,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="de_AT" draft="unconfirmed">Āustrarīkis miksiskan</language>
 			<language type="de_CH" draft="unconfirmed">Šwēicis aūktamiksiskan</language>
 			<language type="el" draft="unconfirmed">grēkiskan</language>
-			<language type="en" draft="unconfirmed">ēngliskan</language>
+			<language type="en" draft="contributed">ēngliskan</language>
 			<language type="en_AU" draft="unconfirmed">Austrālijas ēngliskan</language>
 			<language type="en_CA" draft="unconfirmed">Kanādas ēngliskan</language>
 			<language type="en_GB" draft="unconfirmed">brītiskan ēngliskan</language>
@@ -66,10 +61,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Jpan" draft="unconfirmed">japāniskas</script>
 			<script type="Latn" draft="unconfirmed">lātiniskan</script>
 			<script type="Zxxx" draft="unconfirmed">nienpeisātan</script>
-			<script type="Zzzz" draft="unconfirmed">niwaīstan skriptan</script>
+			<script type="Zzzz" draft="contributed">niwaīstan skriptan</script>
 		</scripts>
 		<territories>
-			<territory type="001" draft="unconfirmed">swītai</territory>
+			<territory type="001" draft="contributed">swītai</territory>
 			<territory type="002" draft="unconfirmed">Afrika</territory>
 			<territory type="003" draft="unconfirmed">Zēimanamērika</territory>
 			<territory type="005" draft="unconfirmed">Pussideinanamērika</territory>
@@ -143,7 +138,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="NZ" draft="unconfirmed">Nawazēlandan</territory>
 			<territory type="PA" draft="unconfirmed">Panāma</territory>
 			<territory type="PE" draft="unconfirmed">Perū</territory>
-			<territory type="PL" draft="unconfirmed">Pōli</territory>
+			<territory type="PL" draft="contributed">Pōli</territory>
 			<territory type="PT" draft="unconfirmed">Pōrtugalin</territory>
 			<territory type="PW" draft="unconfirmed">Palau</territory>
 			<territory type="PY" draft="unconfirmed">Paragwājs</territory>
@@ -176,28 +171,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="latn" draft="unconfirmed">lātiniskas cipperis</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="metric" draft="unconfirmed">mētriskan</measurementSystemName>
-			<measurementSystemName type="UK" draft="unconfirmed">brītiskan</measurementSystemName>
-			<measurementSystemName type="US" draft="unconfirmed">amērikaniskan</measurementSystemName>
+			<measurementSystemName type="metric" draft="contributed">mētriskan</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">brītiskan</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">amērikaniskan</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Bilā: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Skriptan: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Regiōni: {0}</codePattern>
+			<codePattern type="language" draft="contributed">Bilā: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Skriptan: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Regiōni: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ā b c d ḑ e ē f g ģ h i ī j k ķ l m n ņ o ō p q r ŗ s š t ț u ū v w x y z ž]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Ā B C D Ḑ E Ē F G Ģ H I Ī J K Ķ L M N Ņ O Ō P Q R Ŗ S Š T Ț U Ū V W X Y Z Ž]</exemplarCharacters>
+		<exemplarCharacters>[aā b c dḑ eē f gģ h iī j kķ l m nņ oō p q rŗ sš tț uū v w x y zž]</exemplarCharacters>
+		<exemplarCharacters type="index">[AĀ B C DḐ EĒ F GĢ H IĪ J KĶ L M NŅ OŌ P Q RŖ SŠ TȚ UŪ V W X Y ZŽ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … “ „ ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
 	</characters>
 	<delimiters>
-		<quotationStart draft="unconfirmed">„</quotationStart>
-		<quotationEnd draft="unconfirmed">“</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">„</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">“</alternateQuotationEnd>
+		<quotationStart draft="contributed">„</quotationStart>
+		<quotationEnd draft="contributed">“</quotationEnd>
+		<alternateQuotationStart draft="contributed">„</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">“</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -206,13 +200,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, y 'mettas' d. MMMM G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">y 'mettas' d. MMMM G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -224,7 +216,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="unconfirmed">dd.MM.y GGGGG</pattern>
-							<datetimeSkeleton draft="unconfirmed">GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -249,9 +240,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<pattern draft="unconfirmed">{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
-					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
-					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
 			<calendar type="gregorian">
@@ -271,50 +259,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">lap</month>
 							<month type="12" draft="unconfirmed">sal</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">R</month>
-							<month type="2" draft="unconfirmed">W</month>
-							<month type="3" draft="unconfirmed">P</month>
-							<month type="4" draft="unconfirmed">S</month>
-							<month type="5" draft="unconfirmed">Z</month>
-							<month type="6" draft="unconfirmed">S</month>
-							<month type="7" draft="unconfirmed">L</month>
-							<month type="8" draft="unconfirmed">D</month>
-							<month type="9" draft="unconfirmed">S</month>
-							<month type="10" draft="unconfirmed">S</month>
-							<month type="11" draft="unconfirmed">L</month>
-							<month type="12" draft="unconfirmed">S</month>
-						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">rags</month>
-							<month type="2" draft="unconfirmed">wassarins</month>
-							<month type="3" draft="unconfirmed">pūlis</month>
-							<month type="4" draft="unconfirmed">sakkis</month>
-							<month type="5" draft="unconfirmed">zallaws</month>
-							<month type="6" draft="unconfirmed">sīmenis</month>
-							<month type="7" draft="unconfirmed">līpa</month>
-							<month type="8" draft="unconfirmed">daggis</month>
-							<month type="9" draft="unconfirmed">sillins</month>
-							<month type="10" draft="unconfirmed">spallins</month>
-							<month type="11" draft="unconfirmed">lapkrūtis</month>
-							<month type="12" draft="unconfirmed">sallaws</month>
+							<month type="1" draft="contributed">rags</month>
+							<month type="2" draft="contributed">wassarins</month>
+							<month type="3" draft="contributed">pūlis</month>
+							<month type="4" draft="contributed">sakkis</month>
+							<month type="5" draft="contributed">zallaws</month>
+							<month type="6" draft="contributed">sīmenis</month>
+							<month type="7" draft="contributed">līpa</month>
+							<month type="8" draft="contributed">daggis</month>
+							<month type="9" draft="contributed">sillins</month>
+							<month type="10" draft="contributed">spallins</month>
+							<month type="11" draft="contributed">lapkrūtis</month>
+							<month type="12" draft="contributed">sallaws</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">rag</month>
-							<month type="2" draft="unconfirmed">was</month>
-							<month type="3" draft="unconfirmed">pūl</month>
-							<month type="4" draft="unconfirmed">sak</month>
-							<month type="5" draft="unconfirmed">zal</month>
-							<month type="6" draft="unconfirmed">sīm</month>
-							<month type="7" draft="unconfirmed">līp</month>
-							<month type="8" draft="unconfirmed">dag</month>
-							<month type="9" draft="unconfirmed">sil</month>
-							<month type="10" draft="unconfirmed">spa</month>
-							<month type="11" draft="unconfirmed">lap</month>
-							<month type="12" draft="unconfirmed">sal</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">R</month>
 							<month type="2" draft="unconfirmed">W</month>
@@ -328,20 +288,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="10" draft="unconfirmed">S</month>
 							<month type="11" draft="unconfirmed">L</month>
 							<month type="12" draft="unconfirmed">S</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">rags</month>
-							<month type="2" draft="unconfirmed">wassarins</month>
-							<month type="3" draft="unconfirmed">pūlis</month>
-							<month type="4" draft="unconfirmed">sakkis</month>
-							<month type="5" draft="unconfirmed">zallaws</month>
-							<month type="6" draft="unconfirmed">sīmenis</month>
-							<month type="7" draft="unconfirmed">līpa</month>
-							<month type="8" draft="unconfirmed">daggis</month>
-							<month type="9" draft="unconfirmed">sillins</month>
-							<month type="10" draft="unconfirmed">spallins</month>
-							<month type="11" draft="unconfirmed">lapkrūtis</month>
-							<month type="12" draft="unconfirmed">sallaws</month>
 						</monthWidth>
 					</monthContext>
 				</months>
@@ -356,35 +302,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">pēn</day>
 							<day type="sat" draft="unconfirmed">sab</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">N</day>
-							<day type="mon" draft="unconfirmed">P</day>
-							<day type="tue" draft="unconfirmed">W</day>
-							<day type="wed" draft="unconfirmed">P</day>
-							<day type="thu" draft="unconfirmed">K</day>
-							<day type="fri" draft="unconfirmed">P</day>
-							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">nadīli</day>
-							<day type="mon" draft="unconfirmed">panadīli</day>
-							<day type="tue" draft="unconfirmed">wisasīdis</day>
-							<day type="wed" draft="unconfirmed">pussisawaiti</day>
-							<day type="thu" draft="unconfirmed">ketwirtiks</day>
-							<day type="fri" draft="unconfirmed">pēntniks</day>
-							<day type="sat" draft="unconfirmed">sabattika</day>
+							<day type="sun" draft="contributed">nadīli</day>
+							<day type="mon" draft="contributed">panadīli</day>
+							<day type="tue" draft="contributed">wisasīdis</day>
+							<day type="wed" draft="contributed">pussisawaiti</day>
+							<day type="thu" draft="contributed">ketwirtiks</day>
+							<day type="fri" draft="contributed">pēntniks</day>
+							<day type="sat" draft="contributed">sabattika</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">nad</day>
-							<day type="mon" draft="unconfirmed">pan</day>
-							<day type="tue" draft="unconfirmed">wis</day>
-							<day type="wed" draft="unconfirmed">pus</day>
-							<day type="thu" draft="unconfirmed">ket</day>
-							<day type="fri" draft="unconfirmed">pēn</day>
-							<day type="sat" draft="unconfirmed">sab</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">N</day>
 							<day type="mon" draft="unconfirmed">P</day>
@@ -393,15 +321,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">K</day>
 							<day type="fri" draft="unconfirmed">P</day>
 							<day type="sat" draft="unconfirmed">S</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">nadīli</day>
-							<day type="mon" draft="unconfirmed">panadīli</day>
-							<day type="tue" draft="unconfirmed">wisasīdis</day>
-							<day type="wed" draft="unconfirmed">pussisawaiti</day>
-							<day type="thu" draft="unconfirmed">ketwirtiks</day>
-							<day type="fri" draft="unconfirmed">pēntniks</day>
-							<day type="sat" draft="unconfirmed">sabattika</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -412,12 +331,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="2" draft="unconfirmed">2. k.</quarter>
 							<quarter type="3" draft="unconfirmed">3. k.</quarter>
 							<quarter type="4" draft="unconfirmed">4. k.</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">1. ketwirts</quarter>
@@ -433,29 +346,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3" draft="unconfirmed">3. ketw.</quarter>
 							<quarter type="4" draft="unconfirmed">4. ketw.</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">1</quarter>
-							<quarter type="2" draft="unconfirmed">2</quarter>
-							<quarter type="3" draft="unconfirmed">3</quarter>
-							<quarter type="4" draft="unconfirmed">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">1. ketwirts</quarter>
-							<quarter type="2" draft="unconfirmed">2. ketwirts</quarter>
-							<quarter type="3" draft="unconfirmed">3. ketwirts</quarter>
-							<quarter type="4" draft="unconfirmed">4. ketwirts</quarter>
-						</quarterWidth>
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">AM</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">PM</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="am" draft="unconfirmed">ankstāinan</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">pa pussideinan</dayPeriod>
+							<dayPeriod type="am" draft="contributed">ankstāinan</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">pa pussideinan</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
@@ -469,13 +366,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, y 'mettas' d. MMMM</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">y 'mettas' d. MMMM</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
@@ -495,25 +390,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm:ss z</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm:ss</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern draft="unconfirmed">HH:mm</pattern>
-							<datetimeSkeleton draft="unconfirmed">HHmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -540,7 +431,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="d" draft="unconfirmed">d.</dateFormatItem>
-						<dateFormatItem id="E" draft="unconfirmed">ccc</dateFormatItem>
 						<dateFormatItem id="Ed" draft="unconfirmed">E, d.</dateFormatItem>
 						<dateFormatItem id="Ehm" draft="unconfirmed">E, h:mm a</dateFormatItem>
 						<dateFormatItem id="EHm" draft="unconfirmed">E, HH:mm</dateFormatItem>
@@ -551,37 +441,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="GyMMMd" draft="unconfirmed">dd.MM 'st'. y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd" draft="unconfirmed">E, dd.MM 'st'. y G</dateFormatItem>
 						<dateFormatItem id="h" draft="unconfirmed">h a</dateFormatItem>
-						<dateFormatItem id="H" draft="unconfirmed">HH</dateFormatItem>
-						<dateFormatItem id="hm" draft="unconfirmed">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm" draft="unconfirmed">HH:mm</dateFormatItem>
-						<dateFormatItem id="hms" draft="unconfirmed">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms" draft="unconfirmed">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="hmsv" draft="unconfirmed">h:mm:ss a; v</dateFormatItem>
-						<dateFormatItem id="Hmsv" draft="unconfirmed">HH:mm:ss; v</dateFormatItem>
+						<dateFormatItem id="hm" draft="contributed">h:mm a</dateFormatItem>
+						<dateFormatItem id="hms" draft="contributed">h:mm:ss a</dateFormatItem>
+						<dateFormatItem id="hmsv" draft="contributed">h:mm:ss a; v</dateFormatItem>
+						<dateFormatItem id="Hmsv" draft="contributed">HH:mm:ss; v</dateFormatItem>
 						<dateFormatItem id="hmv" draft="unconfirmed">h:mm a; v</dateFormatItem>
 						<dateFormatItem id="Hmv" draft="unconfirmed">HH:mm; v</dateFormatItem>
 						<dateFormatItem id="M" draft="unconfirmed">L.</dateFormatItem>
 						<dateFormatItem id="Md" draft="unconfirmed">d.M</dateFormatItem>
 						<dateFormatItem id="MEd" draft="unconfirmed">E, d.M</dateFormatItem>
-						<dateFormatItem id="MMM" draft="unconfirmed">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd" draft="unconfirmed">d. MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd" draft="unconfirmed">E, d. MMM</dateFormatItem>
-						<dateFormatItem id="ms" draft="unconfirmed">mm:ss</dateFormatItem>
 						<dateFormatItem id="y" draft="unconfirmed">y 'm'.</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">M.y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="unconfirmed">d.M.y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">d.M.y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, d.M.y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">y 'm'. MMM</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">dd.MM 'st'. y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">dd.MM 'st'. y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, dd.MM 'st'. y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">y 'm'. QQQ</dateFormatItem>
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">y 'm'. QQQQ</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone" draft="unconfirmed">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="d">
 							<greatestDifference id="d" draft="unconfirmed">d.–d.</greatestDifference>
 						</intervalFormatItem>
@@ -589,33 +470,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a" draft="unconfirmed">h a – h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a – h:mm a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M" draft="unconfirmed">M.–M.</greatestDifference>
@@ -638,9 +505,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="unconfirmed">E, d. – E, d. MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, d. MMM – E, d. MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M" draft="unconfirmed">MM.y–MM.y</greatestDifference>
@@ -691,16 +555,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="year-short">
 				<displayName draft="unconfirmed">m.</displayName>
 			</field>
-			<field type="year-narrow">
-				<displayName draft="unconfirmed">m.</displayName>
-			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">ketwirts</displayName>
 			</field>
 			<field type="quarter-short">
-				<displayName draft="unconfirmed">ketw.</displayName>
-			</field>
-			<field type="quarter-narrow">
 				<displayName draft="unconfirmed">ketw.</displayName>
 			</field>
 			<field type="month">
@@ -709,16 +567,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="month-short">
 				<displayName draft="unconfirmed">mī.</displayName>
 			</field>
-			<field type="month-narrow">
-				<displayName draft="unconfirmed">mī.</displayName>
-			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">sawaīti</displayName>
 			</field>
 			<field type="week-short">
-				<displayName draft="unconfirmed">saw.</displayName>
-			</field>
-			<field type="week-narrow">
 				<displayName draft="unconfirmed">saw.</displayName>
 			</field>
 			<field type="day">
@@ -728,9 +580,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1" draft="unconfirmed">ankstāinan</relative>
 			</field>
 			<field type="day-short">
-				<displayName draft="unconfirmed">d.</displayName>
-			</field>
-			<field type="day-narrow">
 				<displayName draft="unconfirmed">d.</displayName>
 			</field>
 			<field type="weekday">
@@ -745,16 +594,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-short">
 				<displayName draft="unconfirmed">st.</displayName>
 			</field>
-			<field type="hour-narrow">
-				<displayName draft="unconfirmed">st.</displayName>
-			</field>
 			<field type="minute">
 				<displayName draft="unconfirmed">minūti</displayName>
 			</field>
 			<field type="minute-short">
-				<displayName draft="unconfirmed">min.</displayName>
-			</field>
-			<field type="minute-narrow">
 				<displayName draft="unconfirmed">min.</displayName>
 			</field>
 			<field type="second">
@@ -763,21 +606,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="second-short">
 				<displayName draft="unconfirmed">sek.</displayName>
 			</field>
-			<field type="second-narrow">
-				<displayName draft="unconfirmed">sek.</displayName>
-			</field>
 			<field type="zone">
 				<displayName draft="unconfirmed">kerdaszōni</displayName>
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">GMT{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">Kerdā: {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">Daggas kerdā: {0}</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">Zēimas kerdā: {0}</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<regionFormat draft="contributed">Kerdā: {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">Daggas kerdā: {0}</regionFormat>
+			<regionFormat type="standard" draft="contributed">Zēimas kerdā: {0}</regionFormat>
 			<metazone type="America_Central">
 				<long>
 					<generic draft="unconfirmed">Centrālas Amērikas kerdā</generic>
@@ -836,48 +672,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">Greenwich kerdā</standard>
+					<standard draft="contributed">Greenwich kerdā</standard>
 				</long>
 			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem draft="unconfirmed">latn</defaultNumberingSystem>
-		<otherNumberingSystems>
-			<native draft="unconfirmed">latn</native>
-		</otherNumberingSystems>
 		<symbols numberSystem="latn">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed"> </group>
-			<percentSign draft="unconfirmed">%</percentSign>
-			<plusSign draft="unconfirmed">+</plusSign>
-			<minusSign draft="unconfirmed">-</minusSign>
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed"> </group>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern draft="unconfirmed">#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="unconfirmed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="standard">
-					<pattern draft="unconfirmed">#,##0.00 ¤</pattern>
+					<pattern draft="contributed">#,##0.00 ¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 			<unitPattern count="zero" draft="unconfirmed">{0} {1}</unitPattern>
@@ -899,9 +707,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="EUR">
 				<displayName draft="unconfirmed">eurō</displayName>
-				<displayName count="zero" draft="unconfirmed">eurō</displayName>
-				<displayName count="one" draft="unconfirmed">eurō</displayName>
-				<displayName count="other" draft="unconfirmed">eurō</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName draft="unconfirmed">punds sterlings</displayName>
@@ -941,21 +746,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 		</currencies>
 	</numbers>
-	<units>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
-	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0} be {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} be {1}</listPatternPart>
 		</listPattern>

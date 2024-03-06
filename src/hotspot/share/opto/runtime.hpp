@@ -268,6 +268,8 @@ private:
 
   static const TypeFunc* array_fill_Type();
 
+  static const TypeFunc* array_sort_Type();
+  static const TypeFunc* array_partition_Type();
   static const TypeFunc* aescrypt_block_Type();
   static const TypeFunc* cipherBlockChaining_aescrypt_Type();
   static const TypeFunc* electronicCodeBook_aescrypt_Type();

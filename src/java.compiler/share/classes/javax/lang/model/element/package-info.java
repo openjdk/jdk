@@ -75,7 +75,7 @@
  * javax.lang.model.util.Elements.Origin#SYNTHETIC synthetic}
  * constructs in a class file, such as accessor methods used in
  * implementing nested classes and {@linkplain
- * javax.lang.model.util.Elements.Origin#isBridge(ExecutableElement)
+ * javax.lang.model.util.Elements#isBridge(ExecutableElement)
  * bridge methods} used in implementing covariant returns, are
  * translation artifacts strictly outside of this model. However, when
  * operating on class files, it is helpful be able to operate on such

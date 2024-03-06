@@ -28,16 +28,16 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 1, jvmArgsAppend = {"-XX:-UseSuperWord"})
 public class ConvertF2I {
     static final int LENGTH = 1000;
-    static final int[] INT_ARRAY = new int[LENGTH];
-    static final long[] LONG_ARRAY = new long[LENGTH];
-    static final float[] FLOAT_ARRAY = new float[LENGTH];
-    static final double[] DOUBLE_ARRAY = new double[LENGTH];
+    int[] intArray = new int[LENGTH];
+    long[] longArray = new long[LENGTH];
+    float[] floatArray = new float[LENGTH];
+    double[] doubleArray = new double[LENGTH];
     float f;
     double d;
 
@@ -64,28 +64,28 @@ public class ConvertF2I {
     @Benchmark
     public void f2iArray() {
         for (int i = 0; i < LENGTH; i++) {
-            INT_ARRAY[i] = (int)FLOAT_ARRAY[i];
+            intArray[i] = (int)floatArray[i];
         }
     }
 
     @Benchmark
     public void f2lArray() {
         for (int i = 0; i < LENGTH; i++) {
-            LONG_ARRAY[i] = (long)FLOAT_ARRAY[i];
+            longArray[i] = (long)floatArray[i];
         }
     }
 
     @Benchmark
     public void d2iArray() {
         for (int i = 0; i < LENGTH; i++) {
-            INT_ARRAY[i] = (int)DOUBLE_ARRAY[i];
+            intArray[i] = (int)doubleArray[i];
         }
     }
 
     @Benchmark
     public void d2lArray() {
         for (int i = 0; i < LENGTH; i++) {
-            LONG_ARRAY[i] = (long)DOUBLE_ARRAY[i];
+            longArray[i] = (long)doubleArray[i];
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 // Fills current line up to requested position.
 // Should the current position already be past the requested position,
 // one separator blank is enforced.
-void fill_to_pos(outputStream* st, unsigned int req_pos) {
+static void fill_to_pos(outputStream* st, unsigned int req_pos) {
   if ((unsigned int)st->position() < req_pos) {
     st->fill_to(req_pos);  // need to fill with blanks to reach req_pos
   } else {
@@ -275,7 +275,6 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //
     //  Sample output:
     //       intx MinPassesBeforeFlush                               [ 0                         ...       9223372036854775807 ]                         {diagnostic} {default}
-    //      uintx MinRAMFraction                                     [ 1                         ...      18446744073709551615 ]                            {product} {default}
     //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
     //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
     //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}

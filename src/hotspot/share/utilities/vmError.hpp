@@ -144,7 +144,7 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY(ATTRIBUTE_NORETURN static void raise_fail_fast(void* exrecord, void* context);)
+  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
 
 public:
 
@@ -168,6 +168,11 @@ public:
   ATTRIBUTE_PRINTF(6, 7)
   static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
                              void* context, const char* detail_fmt, ...);
+
+  ATTRIBUTE_NORETURN
+  ATTRIBUTE_PRINTF(6, 7)
+  static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
+                             const char* detail_fmt, ...);
 
   ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(3, 0)

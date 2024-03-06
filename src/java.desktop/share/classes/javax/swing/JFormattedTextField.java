@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,7 @@ import javax.swing.text.TextAction;
  * Alternatively, you could invoke <code>commitEdit</code>, which would also
  * commit the value.
  * <p>
- * <code>JFormattedTextField</code> does not do the formatting it self,
+ * <code>JFormattedTextField</code> does not do the formatting itself,
  * rather formatting is done through an instance of
  * <code>JFormattedTextField.AbstractFormatter</code> which is obtained from
  * an instance of <code>JFormattedTextField.AbstractFormatterFactory</code>.
@@ -152,7 +152,7 @@ import javax.swing.text.TextAction;
  * notified when they become active by way of the
  * <code>install</code> method, at which point the
  * <code>JFormattedTextField.AbstractFormatter</code> can install whatever
- * it needs to, typically a <code>DocumentFilter</code>. Similarly when
+ * it needs to, typically a <code>DocumentFilter</code>. Similarly, when
  * <code>JFormattedTextField</code> no longer
  * needs the <code>AbstractFormatter</code>, it will invoke
  * <code>uninstall</code>.
@@ -164,7 +164,7 @@ import javax.swing.text.TextAction;
  * policy is <code>JFormattedTextField.PERSIST</code>
  * and the <code>JFormattedTextField</code> has been edited, the
  * <code>AbstractFormatterFactory</code> will not be queried until the
- * value has been committed. Similarly if the focus lost policy is
+ * value has been committed. Similarly, if the focus lost policy is
  * <code>JFormattedTextField.COMMIT</code> and an exception
  * is thrown from <code>stringToValue</code>, the
  * <code>AbstractFormatterFactory</code> will not be queried when focus is

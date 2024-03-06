@@ -109,10 +109,10 @@ class FreeListAllocator {
   typedef LockFreeStack<FreeNode, &next_ptr> Stack;
 
   FreeListConfig* _config;
-  char _name[DEFAULT_CACHE_LINE_SIZE - sizeof(FreeListConfig*)];  // Use name as padding.
+  char _name[DEFAULT_PADDING_SIZE - sizeof(FreeListConfig*)];  // Use name as padding.
 
 #define DECLARE_PADDED_MEMBER(Id, Type, Name) \
-  Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_CACHE_LINE_SIZE, sizeof(Type))
+  Type Name; DEFINE_PAD_MINUS_SIZE(Id, DEFAULT_PADDING_SIZE, sizeof(Type))
   DECLARE_PADDED_MEMBER(1, volatile size_t, _free_count);
   DECLARE_PADDED_MEMBER(2, Stack, _free_list);
   DECLARE_PADDED_MEMBER(3, volatile bool, _transfer_lock);

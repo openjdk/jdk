@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,10 @@ public class CommandLineFlagCombo {
         "-XX:+UseCompressedOops",
         "-XX:ObjectAlignmentInBytes=16",
         "-XX:ObjectAlignmentInBytes=32",
-        "-XX:ObjectAlignmentInBytes=64"
+        "-XX:ObjectAlignmentInBytes=64",
+        "-Xint",
+        "-Xmixed",
+        "-Xcomp",
     };
 
     public static void main(String[] args) throws Exception {
@@ -160,7 +163,7 @@ public class CommandLineFlagCombo {
         }
         String[] args = new String[] {
             "-cp", jarFile, "-XX:ArchiveClassesAtExit=" + dynName, "-XX:DumpLoadedClassList=" + dumpedListName, "Hello"};
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(args);
         OutputAnalyzer output = TestCommon.executeAndLog(pb, "combo");
         output.shouldHaveExitValue(0)
               .shouldContain(HELLO_WORLD);

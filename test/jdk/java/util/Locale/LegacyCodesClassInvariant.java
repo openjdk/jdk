@@ -20,13 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
-    @test
-    @bug 4184873
-    @summary test that locale invariants are preserved across serialization
-    @library /java/text/testlib
-    @run main LegacyCodesClassInvariant
-*/
+ * @test
+ * @bug 4184873
+ * @summary test that locale invariants are preserved across serialization.
+ * @run junit LegacyCodesClassInvariant
+ */
+
 /*
  * This file is available under and governed by the GNU General Public
  * License version 2 only, as published by the Free Software Foundation.
@@ -63,23 +64,19 @@
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.Locale;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  *  A Locale can never contain the following language codes: he, yi or id.
  */
-public class LegacyCodesClassInvariant extends IntlTest {
-    public static void main(String[] args) throws Exception {
-        if (args.length == 1 && args[0].equals("prepTest")) {
-            prepTest();
-        } else {
-            new LegacyCodesClassInvariant().run(args);
-        }
-    }
-
+public class LegacyCodesClassInvariant {
+    @Test
     public void testIt() throws Exception {
         verify("he");
         verify("yi");
@@ -92,17 +89,12 @@ public class LegacyCodesClassInvariant extends IntlTest {
             if (in != null) {
                 final Locale loc = (Locale)in.readObject();
                 final Locale expected = Locale.of(lang, "XX");
-                if (!(expected.equals(loc))) {
-                    errln("Locale didn't maintain invariants for: "+lang);
-                    errln("         got: "+loc);
-                    errln("    excpeted: "+expected);
-                } else {
-                    logln("Locale "+lang+" worked");
-                }
+                assertEquals(expected, loc,
+                        "Locale didn't maintain invariants for: "+lang);
                 in.close();
             }
         } catch (Exception e) {
-            errln(e.toString());
+            fail(e.toString());
         }
     }
 
@@ -111,30 +103,8 @@ public class LegacyCodesClassInvariant extends IntlTest {
             final File f = new File(System.getProperty("test.src", "."), "LegacyCodesClassInvariant_"+lang);
             return new ObjectInputStream(new FileInputStream(f));
         } catch (Exception e) {
-            errln(e.toString());
+            fail(e.toString());
             return null;
         }
     }
-
-    /**
-     * Create serialized output files of the test locales.  After they are created, these test
-     * files should be corrupted (by hand) to contain invalid locale name values.
-     */
-    private static void prepTest() {
-        outputLocale("he");
-        outputLocale("yi");
-        outputLocale("id");
-    }
-
-    private static void outputLocale(String lang) {
-        try {
-            ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream("LegacyCodesClassInvariant_"+lang));
-            out.writeObject(Locale.of(lang, "XX"));
-            out.close();
-        } catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
 }

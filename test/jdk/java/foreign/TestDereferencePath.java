@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestDereferencePath
  */
 
@@ -73,7 +72,7 @@ public class TestDereferencePath {
             b.set(ValueLayout.ADDRESS, 0, c);
             c.set(ValueLayout.JAVA_INT, 0, 42);
             // dereference
-            int val = (int) abcx.get(a);
+            int val = (int) abcx.get(a, 0L);
             assertEquals(val, 42);
         }
     }
@@ -98,8 +97,8 @@ public class TestDereferencePath {
         try (Arena arena = Arena.ofConfined()) {
             // init structs
             MemorySegment a = arena.allocate(A);
-            MemorySegment b = arena.allocateArray(B, 2);
-            MemorySegment c = arena.allocateArray(C, 4);
+            MemorySegment b = arena.allocate(B, 2);
+            MemorySegment c = arena.allocate(C, 4);
             // init struct fields
             a.set(ValueLayout.ADDRESS, 0, b);
             b.set(ValueLayout.ADDRESS, 0, c);
@@ -109,13 +108,13 @@ public class TestDereferencePath {
             c.setAtIndex(ValueLayout.JAVA_INT, 2, 3);
             c.setAtIndex(ValueLayout.JAVA_INT, 3, 4);
             // dereference
-            int val00 = (int) abcx_multi.get(a, 0, 0); // a->b[0]->c[0] = 1
+            int val00 = (int) abcx_multi.get(a, 0L, 0, 0); // a->b[0]->c[0] = 1
             assertEquals(val00, 1);
-            int val10 = (int) abcx_multi.get(a, 1, 0); // a->b[1]->c[0] = 3
+            int val10 = (int) abcx_multi.get(a, 0L, 1, 0); // a->b[1]->c[0] = 3
             assertEquals(val10, 3);
-            int val01 = (int) abcx_multi.get(a, 0, 1); // a->b[0]->c[1] = 2
+            int val01 = (int) abcx_multi.get(a, 0L, 0, 1); // a->b[0]->c[1] = 2
             assertEquals(val01, 2);
-            int val11 = (int) abcx_multi.get(a, 1, 1); // a->b[1]->c[1] = 4
+            int val11 = (int) abcx_multi.get(a, 0L, 1, 1); // a->b[1]->c[1] = 4
             assertEquals(val11, 4);
         }
     }
@@ -152,7 +151,7 @@ public class TestDereferencePath {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(struct.byteSize() + 1).asSlice(1);
             VarHandle vhX = struct.varHandle(PathElement.groupElement("x"), PathElement.dereferenceElement());
-            vhX.set(segment, 42); // should throw
+            vhX.set(segment, 0L, 42); // should throw
         }
     }
 }

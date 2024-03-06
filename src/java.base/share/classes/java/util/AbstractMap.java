@@ -350,23 +350,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     public Set<K> keySet() {
         Set<K> ks = keySet;
         if (ks == null) {
-            ks = new AbstractSet<K>() {
+            ks = new AbstractSet<>() {
                 public Iterator<K> iterator() {
-                    return new Iterator<K>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
-
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
-
-                        public K next() {
-                            return i.next().getKey();
-                        }
-
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
+                    return new KeyIterator();
                 }
 
                 public int size() {
@@ -409,23 +395,9 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
     public Collection<V> values() {
         Collection<V> vals = values;
         if (vals == null) {
-            vals = new AbstractCollection<V>() {
+            vals = new AbstractCollection<>() {
                 public Iterator<V> iterator() {
-                    return new Iterator<V>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
-
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
-
-                        public V next() {
-                            return i.next().getValue();
-                        }
-
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
+                    return new ValueIterator();
                 }
 
                 public int size() {
@@ -923,5 +895,21 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         public <T> T[] toArray(IntFunction<T[]> generator) { return view().toArray(generator); }
         public <T> T[] toArray(T[] a) { return view().toArray(a); }
         public String toString() { return view().toString(); }
+    }
+
+    // Iterator implementations.
+
+    final class KeyIterator implements Iterator<K> {
+        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+        public boolean hasNext() { return i.hasNext(); }
+        public void remove() { i.remove(); }
+        public K next() { return i.next().getKey(); }
+    }
+
+    final class ValueIterator implements Iterator<V> {
+        private final Iterator<Entry<K,V>> i = entrySet().iterator();
+        public boolean hasNext() { return i.hasNext(); }
+        public void remove() { i.remove(); }
+        public V next() { return i.next().getValue(); }
     }
 }

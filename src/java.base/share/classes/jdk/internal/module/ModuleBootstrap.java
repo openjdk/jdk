@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,6 @@ public final class ModuleBootstrap {
         return getProperty("jdk.module.upgrade.path") == null &&
                getProperty("jdk.module.path") == null &&
                getProperty("jdk.module.patch.0") == null &&       // --patch-module
-               getProperty("jdk.module.main") == null &&          // --module
                getProperty("jdk.module.addmods.0") == null  &&    // --add-modules
                getProperty("jdk.module.limitmods") == null &&     // --limit-modules
                getProperty("jdk.module.addreads.0") == null &&    // --add-reads
@@ -228,7 +227,8 @@ public final class ModuleBootstrap {
                 systemModules = SystemModuleFinders.systemModules(mainModule);
                 if (systemModules != null && !isPatched) {
                     needResolution = (traceOutput != null);
-                    canArchive = true;
+                    if (CDS.isDumpingStaticArchive())
+                        canArchive = true;
                 }
             }
             if (systemModules == null) {
@@ -469,14 +469,30 @@ public final class ModuleBootstrap {
                 limitedFinder = new SafeModuleFinder(finder);
         }
 
+        // If -Xshare:dump and mainModule are specified, check if the mainModule
+        // is in the runtime image and not on the upgrade module path. If so,
+        // set canArchive to true so that the module graph can be archived.
+        if (CDS.isDumpingStaticArchive() && mainModule != null) {
+            String scheme = systemModuleFinder.find(mainModule)
+                    .stream()
+                    .map(ModuleReference::location)
+                    .flatMap(Optional::stream)
+                    .findAny()
+                    .map(URI::getScheme)
+                    .orElse(null);
+            if ("jrt".equalsIgnoreCase(scheme)) {
+                canArchive = true;
+            }
+        }
+
         // Archive module graph and boot layer can be archived at CDS dump time.
-        // Only allow the unnamed module case for now.
-        if (canArchive && (mainModule == null)) {
+        if (canArchive) {
             ArchivedModuleGraph.archive(hasSplitPackages,
                                         hasIncubatorModules,
                                         systemModuleFinder,
                                         cf,
-                                        clf);
+                                        clf,
+                                        mainModule);
             if (!hasSplitPackages && !hasIncubatorModules) {
                 ArchivedBootLayer.archive(bootLayer);
             }

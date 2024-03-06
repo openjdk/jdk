@@ -33,7 +33,12 @@
 #include "c1/c1_ValueMap.hpp"
 #include "c1/c1_ValueStack.hpp"
 #include "code/debugInfoRec.hpp"
+#include "compiler/compilationFailureInfo.hpp"
+#include "compiler/compilationMemoryStatistic.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/compileLog.hpp"
+#include "compiler/compileTask.hpp"
+#include "compiler/compiler_globals.hpp"
 #include "compiler/compilerDirectives.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -73,7 +78,6 @@ static const char * timer_name[] = {
 };
 
 static elapsedTimer timers[max_phase_timers];
-static uint totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
@@ -386,14 +390,11 @@ int Compilation::compile_java_method() {
     BAILOUT_("mdo allocation failed", no_frame_size);
   }
 
-  if (method()->is_synchronized()) {
-    set_has_monitors(true);
-  }
-
   {
     PhaseTraceTime timeit(_t_buildIR);
     build_hir();
   }
+  CHECK_BAILOUT_(no_frame_size);
   if (BailoutAfterHIR) {
     BAILOUT_("Bailing out because of -XX:+BailoutAfterHIR", no_frame_size);
   }
@@ -442,11 +443,14 @@ void Compilation::install_code(int frame_size) {
 
 
 void Compilation::compile_method() {
+
   {
     PhaseTraceTime timeit(_t_setup);
 
     // setup compilation
     initialize();
+    CHECK_BAILOUT();
+
   }
 
   if (!method()->can_be_compiled()) {
@@ -487,7 +491,6 @@ void Compilation::compile_method() {
   if (log() != nullptr) // Print code cache state into compiler log
     log()->code_cache_state();
 
-  totalInstructionNodes += Instruction::number_of_instructions();
 }
 
 
@@ -574,9 +577,10 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 , _would_profile(false)
 , _has_method_handle_invokes(false)
 , _has_reserved_stack_access(method->has_reserved_stack_access())
-, _has_monitors(false)
+, _has_monitors(method->is_synchronized() || method->has_monitor_bytecodes())
 , _install_code(install_code)
 , _bailout_msg(nullptr)
+, _first_failure_details(nullptr)
 , _exception_info_list(nullptr)
 , _allocator(nullptr)
 , _code(buffer_blob)
@@ -599,6 +603,9 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
     _cfg_printer_output = new CFGPrinterOutput(this);
   }
 #endif
+
+  CompilationMemoryStatisticMark cmsm(directive);
+
   compile_method();
   if (bailed_out()) {
     _env->record_method_not_compilable(bailout_msg());
@@ -618,7 +625,7 @@ Compilation::Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* metho
 Compilation::~Compilation() {
   // simulate crash during compilation
   assert(CICrashAt < 0 || (uintx)_env->compile_id() != (uintx)CICrashAt, "just as planned");
-
+  delete _first_failure_details;
   _env->set_compiler_data(nullptr);
 }
 
@@ -644,6 +651,9 @@ void Compilation::bailout(const char* msg) {
     // keep first bailout message
     if (PrintCompilation || PrintBailouts) tty->print_cr("compilation bailout: %s", msg);
     _bailout_msg = msg;
+    if (CaptureBailoutInformation) {
+      _first_failure_details = new CompilationFailureInfo(msg);
+    }
   }
 }
 

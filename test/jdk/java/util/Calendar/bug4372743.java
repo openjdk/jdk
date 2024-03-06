@@ -61,15 +61,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4372743 {
 
+    // Save JVM default timezone
     private static final TimeZone savedTz = TimeZone.getDefault();
 
-    // Save JVM default Locale and TimeZone
+    // Set custom JVM default timezone
     @BeforeAll
     static void initAll() {
         TimeZone.setDefault(TimeZone.getTimeZone("PST"));
     }
 
-    // Restore JVM default Locale and TimeZone
+    // Restore JVM default timezone
     @AfterAll
     static void tearDownAll() {
         TimeZone.setDefault(savedTz);

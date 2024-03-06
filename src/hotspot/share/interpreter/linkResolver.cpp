@@ -1085,13 +1085,6 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
-  if (resolved_method->is_continuation_native_intrinsic()
-      && resolved_method->from_interpreted_entry() == nullptr) { // does a load_acquire
-    methodHandle mh(THREAD, resolved_method);
-    // Generate a compiled form of the enterSpecial intrinsic.
-    AdapterHandlerLibrary::create_native_wrapper(mh);
-  }
-
   // setup result
   result.set_static(resolved_klass, methodHandle(THREAD, resolved_method), CHECK);
   JFR_ONLY(Jfr::on_resolution(result, CHECK);)
@@ -1699,12 +1692,11 @@ void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const 
 }
 
 bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, const LinkInfo& link_info, const constantPoolHandle& pool, int index, TRAPS) {
-  int cache_index = ConstantPool::decode_cpcache_index(index, true);
-  ConstantPoolCacheEntry* cpce = pool->cache()->entry_at(cache_index);
-  if (!cpce->is_f1_null()) {
+  ResolvedMethodEntry* method_entry = pool->cache()->resolved_method_entry_at(index);
+  if (method_entry->method() != nullptr) {
     Klass* resolved_klass = link_info.resolved_klass();
-    methodHandle method(THREAD, cpce->f1_as_method());
-    Handle     appendix(THREAD, cpce->appendix_if_resolved(pool));
+    methodHandle method(THREAD, method_entry->method());
+    Handle     appendix(THREAD, pool->cache()->appendix_if_resolved(method_entry));
     result.set_handle(resolved_klass, method, appendix, CHECK_false);
     JFR_ONLY(Jfr::on_resolution(result, CHECK_false);)
     return true;

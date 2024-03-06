@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4846344 4851365 4851321 4851316 4863656 5046198 6293139
+ * @key printer
  * @summary Confirm that cancelling the dialog will not prompt for file.
  * @run main/manual DestinationTest
  */

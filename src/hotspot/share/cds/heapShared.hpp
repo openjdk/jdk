@@ -49,6 +49,9 @@ class ResourceBitMap;
 struct ArchivableStaticFieldInfo;
 class ArchiveHeapInfo;
 
+#define ARCHIVED_BOOT_LAYER_CLASS "jdk/internal/module/ArchivedBootLayer"
+#define ARCHIVED_BOOT_LAYER_FIELD "archivedBootLayer"
+
 // A dump time sub-graph info for Klass _k. It includes the entry points
 // (static fields in _k's mirror) of the archived sub-graphs reachable
 // from _k's mirror. It also contains a list of Klasses of the objects
@@ -160,6 +163,7 @@ public:
   // Scratch objects for archiving Klass::java_mirror()
   static oop scratch_java_mirror(BasicType t) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static oop scratch_java_mirror(Klass* k)    NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static bool is_archived_boot_layer_available(JavaThread* current) NOT_CDS_JAVA_HEAP_RETURN_(false);
 
 private:
 #if INCLUDE_CDS_JAVA_HEAP

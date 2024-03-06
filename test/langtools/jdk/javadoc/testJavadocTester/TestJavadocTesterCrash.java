@@ -86,7 +86,7 @@ public class TestJavadocTesterCrash extends TestJavadocTester {
             String s = tags.toString();
             if (s.contains("test")) {
                 throw new Error("demo error");
-            };
+            }
             return s;
         }
     }
@@ -118,6 +118,8 @@ public class TestJavadocTesterCrash extends TestJavadocTester {
                         "1 error");
 
         // verify that JavadocTester detected the crash
-        checkMessages("FAILED: STDERR: following text found:");
+        checkMessages("""
+            FAILED: STDERR: output not as expected
+            >> the following text was found:""");
     }
 }

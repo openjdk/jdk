@@ -362,7 +362,7 @@ bool ShenandoahReferenceProcessor::discover_reference(oop reference, ReferenceTy
 
   log_trace(gc, ref)("Encountered Reference: " PTR_FORMAT " (%s)", p2i(reference), reference_type_name(type));
   uint worker_id = WorkerThread::worker_id();
-  _ref_proc_thread_locals->inc_encountered(type);
+  _ref_proc_thread_locals[worker_id].inc_encountered(type);
 
   if (UseCompressedOops) {
     return discover<narrowOop>(reference, type, worker_id);
@@ -402,7 +402,7 @@ T* ShenandoahReferenceProcessor::keep(oop reference, ReferenceType type, uint wo
 }
 
 template <typename T>
-void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {;
+void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLocal& refproc_data, uint worker_id) {
   log_trace(gc, ref)("Processing discovered list #%u : " PTR_FORMAT, worker_id, p2i(refproc_data.discovered_list_head<T>()));
   T* list = refproc_data.discovered_list_addr<T>();
   // The list head is basically a GC root, we need to resolve and update it,

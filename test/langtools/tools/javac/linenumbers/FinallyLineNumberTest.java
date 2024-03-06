@@ -25,15 +25,11 @@
  * @test
  * @bug 8134759
  * @summary Add LineNumberTable attribute for return bytecodes split around finally code
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -84,7 +80,7 @@ public class FinallyLineNumberTest {
     }
 
     static List<LineNumberInfo> findEntries() throws IOException {
-        ClassModel self = Classfile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
+        ClassModel self = ClassFile.of().parse(FinallyLineNumberTest.class.getResourceAsStream("FinallyLineNumberTest.class").readAllBytes());
         for (MethodModel m : self.methods()) {
             if (m.methodName().equalsString("method")) {
                 CodeAttribute code_attribute = m.findAttribute(Attributes.CODE).orElseThrow();

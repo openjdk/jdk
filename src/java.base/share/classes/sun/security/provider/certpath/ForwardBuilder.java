@@ -41,13 +41,13 @@ import java.security.cert.X509CertSelector;
 import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
+import jdk.internal.misc.ThreadTracker;
 import sun.security.provider.certpath.PKIX.BuilderParams;
 import sun.security.util.Debug;
 import sun.security.x509.AccessDescription;
 import sun.security.x509.AuthorityInfoAccessExtension;
 import sun.security.x509.AuthorityKeyIdentifierExtension;
 import static sun.security.x509.PKIXExtensions.*;
-import sun.security.x509.SubjectAlternativeNameExtension;
 import sun.security.x509.X500Name;
 import sun.security.x509.X509CertImpl;
 
@@ -71,6 +71,10 @@ final class ForwardBuilder extends Builder {
     private X509CertSelector caTargetSelector;
     TrustAnchor trustAnchor;
     private final boolean searchAllCertStores;
+
+    private static class ThreadTrackerHolder {
+        static final ThreadTracker AIA_TRACKER = new ThreadTracker();
+    }
 
     /**
      * Initialize the builder with the input parameters.
@@ -258,14 +262,6 @@ final class ForwardBuilder extends Builder {
             caSelector.setSubject(currentState.issuerDN);
 
             /*
-             * Match on subjectNamesTraversed (both DNs and AltNames)
-             * (checks that current cert's name constraints permit it
-             * to certify all the DNs and AltNames that have been traversed)
-             */
-            CertPathHelper.setPathToNames
-                (caSelector, currentState.subjectNamesTraversed);
-
-            /*
              * check the validity period
              */
             caSelector.setValidityPeriod(currentState.cert.getNotBefore(),
@@ -288,7 +284,7 @@ final class ForwardBuilder extends Builder {
                     debug.println("ForwardBuilder.getMatchingCACerts: " +
                         "found matching trust anchor." +
                         "\n  SN: " +
-                            Debug.toHexString(trustedCert.getSerialNumber()) +
+                            Debug.toString(trustedCert.getSerialNumber()) +
                         "\n  Subject: " +
                             trustedCert.getSubjectX500Principal() +
                         "\n  Issuer: " +
@@ -345,7 +341,7 @@ final class ForwardBuilder extends Builder {
     }
 
     /**
-     * Download Certificates from the given AIA and add them to the
+     * Download certificates from the given AIA and add them to the
      * specified Collection.
      */
     // cs.getCertificates(caSelector) returns a collection of X509Certificate's
@@ -357,32 +353,47 @@ final class ForwardBuilder extends Builder {
         if (!Builder.USE_AIA) {
             return false;
         }
+
         List<AccessDescription> adList = aiaExt.getAccessDescriptions();
         if (adList == null || adList.isEmpty()) {
             return false;
         }
 
-        boolean add = false;
-        for (AccessDescription ad : adList) {
-            CertStore cs = URICertStore.getInstance(ad);
-            if (cs != null) {
-                try {
-                    if (certs.addAll((Collection<X509Certificate>)
-                        cs.getCertificates(caSelector))) {
-                        add = true;
-                        if (!searchAllCertStores) {
-                            return true;
+        Object key = ThreadTrackerHolder.AIA_TRACKER.tryBegin();
+        if (key == null) {
+            // Avoid recursive fetching of certificates
+            if (debug != null) {
+                debug.println("Recursive fetching of certs via the AIA " +
+                    "extension detected");
+            }
+            return false;
+        }
+
+        try {
+            boolean add = false;
+            for (AccessDescription ad : adList) {
+                CertStore cs = URICertStore.getInstance(ad);
+                if (cs != null) {
+                    try {
+                        if (certs.addAll((Collection<X509Certificate>)
+                            cs.getCertificates(caSelector))) {
+                            add = true;
+                            if (!searchAllCertStores) {
+                                return true;
+                            }
                         }
-                    }
-                } catch (CertStoreException cse) {
-                    if (debug != null) {
-                        debug.println("exception getting certs from CertStore:");
-                        cse.printStackTrace();
+                    } catch (CertStoreException cse) {
+                        if (debug != null) {
+                            debug.println("exception getting certs from CertStore:");
+                            cse.printStackTrace();
+                        }
                     }
                 }
             }
+            return add;
+        } finally {
+            ThreadTrackerHolder.AIA_TRACKER.end(key);
         }
-        return add;
     }
 
     /**
@@ -687,7 +698,7 @@ final class ForwardBuilder extends Builder {
     {
         if (debug != null) {
             debug.println("ForwardBuilder.verifyCert(SN: "
-                + Debug.toHexString(cert.getSerialNumber())
+                + Debug.toString(cert.getSerialNumber())
                 + "\n  Issuer: " + cert.getIssuerX500Principal() + ")"
                 + "\n  Subject: " + cert.getSubjectX500Principal() + ")");
         }
@@ -696,19 +707,6 @@ final class ForwardBuilder extends Builder {
 
         // Don't bother to verify untrusted certificate more.
         currState.untrustedChecker.check(cert, Collections.emptySet());
-
-        /*
-         * Abort if we encounter the same certificate or a certificate with
-         * the same public key, subject DN, and subjectAltNames as a cert
-         * that is already in path.
-         */
-        for (X509Certificate cpListCert : certPathList) {
-            if (repeated(cpListCert, cert)) {
-                throw new CertPathValidatorException(
-                    "cert with repeated subject, public key, and " +
-                    "subjectAltNames detected");
-            }
-        }
 
         /* check if trusted cert */
         boolean isTrustedCert = trustedCerts.contains(cert);
@@ -784,49 +782,6 @@ final class ForwardBuilder extends Builder {
              * Check keyUsage extension
              */
             KeyChecker.verifyCAKeyUsage(cert);
-        }
-    }
-
-    /**
-     * Return true if two certificates are equal or have the same subject,
-     * public key, and subject alternative names.
-     */
-    private static boolean repeated(
-            X509Certificate currCert, X509Certificate nextCert) {
-        if (currCert.equals(nextCert)) {
-            return true;
-        }
-        return (currCert.getSubjectX500Principal().equals(
-            nextCert.getSubjectX500Principal()) &&
-            currCert.getPublicKey().equals(nextCert.getPublicKey()) &&
-            altNamesEqual(currCert, nextCert));
-    }
-
-    /**
-     * Return true if two certificates have the same subject alternative names.
-     */
-    private static boolean altNamesEqual(
-            X509Certificate currCert, X509Certificate nextCert) {
-        X509CertImpl curr, next;
-        try {
-            curr = X509CertImpl.toImpl(currCert);
-            next = X509CertImpl.toImpl(nextCert);
-        } catch (CertificateException ce) {
-            return false;
-        }
-
-        SubjectAlternativeNameExtension currAltNameExt =
-            curr.getSubjectAlternativeNameExtension();
-        SubjectAlternativeNameExtension nextAltNameExt =
-            next.getSubjectAlternativeNameExtension();
-        if (currAltNameExt != null) {
-            if (nextAltNameExt == null) {
-                return false;
-            }
-            return Arrays.equals(currAltNameExt.getExtensionValue(),
-                nextAltNameExt.getExtensionValue());
-        } else {
-            return (nextAltNameExt == null);
         }
     }
 

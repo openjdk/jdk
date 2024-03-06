@@ -353,10 +353,6 @@ bool ShenandoahAllocationRate::is_spiking(double rate, double threshold) const {
   return false;
 }
 
-double ShenandoahAllocationRate::instantaneous_rate(size_t allocated) const {
-  return instantaneous_rate(os::elapsedTime(), allocated);
-}
-
 double ShenandoahAllocationRate::instantaneous_rate(double time, size_t allocated) const {
   size_t last_value = _last_sample_value;
   double last_time = _last_sample_time;

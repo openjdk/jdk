@@ -34,22 +34,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="contributed">déc.</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">jan.</month>
-							<month type="2" draft="contributed">fév.</month>
-							<month type="3" draft="contributed">mar.</month>
-							<month type="4" draft="contributed">avr.</month>
-							<month type="5" draft="contributed">mai</month>
-							<month type="6" draft="contributed">jui.</month>
-							<month type="7" draft="contributed">juil.</month>
-							<month type="8" draft="contributed">août</month>
-							<month type="9" draft="contributed">sept.</month>
-							<month type="10" draft="contributed">oct.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">déc.</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<dayPeriods>
 					<dayPeriodContext type="format">

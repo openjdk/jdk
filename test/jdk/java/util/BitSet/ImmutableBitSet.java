@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import java.util.BitSet;
 import java.util.Random;
 import java.util.function.IntPredicate;
+import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -48,30 +49,37 @@ public class ImmutableBitSet {
 
     @Test
     void negativeIndex() {
-        BitSet bs = new BitSet();
-        IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
-        assertThrows(IndexOutOfBoundsException.class, () -> {
-            ibs.test(-1);
-        });
+        IntStream.of(0, 127, 128, 129, 143, 4711).forEach(k -> {
+                    BitSet bs = new BitSet(k);
+                    IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
+                    assertFalse(ibs.test(-1));
+                    assertFalse(ibs.test(Integer.MIN_VALUE));
+                });
     }
 
     @Test
     void basic() {
-        BitSet bs = createReference(147);
+        IntStream.of(0, 16, 127, 128, 129, 143, 4711).forEach(k -> basic(k));
+    }
+
+    void basic(int length) {
+        BitSet bs = createReference(length);
         IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
         test(bs, ibs);
     }
 
     @Test
     void clearedAtTheTail() {
-        for (int i = Long.BYTES - 1; i < Long.BYTES + 2; i++) {
-            BitSet bs = createReference(i);
-            for (int j = bs.length() - 1; j > Long.BYTES - 1; j++) {
-                bs.clear(j);
+        IntStream.of(0, 16, 127, 128, 129, 143, 4711).forEach(k -> {
+            for (int i = Long.BYTES - 1; i < Long.BYTES + 2; i++) {
+                BitSet bs = createReference(k + i);
+                for (int j = bs.length() - 1; j > Long.BYTES - 1; j--) {
+                    bs.clear(j);
+                }
+                IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
+                test(bs, ibs);
             }
-            IntPredicate ibs = ImmutableBitSetPredicate.of(bs);
-            test(bs, ibs);
-        }
+        });
     }
 
     static void test(BitSet expected, IntPredicate actual) {
@@ -81,7 +89,7 @@ public class ImmutableBitSet {
     }
 
     private static BitSet createReference(int length) {
-        BitSet result = new BitSet();
+        BitSet result = new BitSet(length);
         Random random = new Random(length);
         for (int i = 0; i < length; i++) {
             result.set(i, random.nextBoolean());

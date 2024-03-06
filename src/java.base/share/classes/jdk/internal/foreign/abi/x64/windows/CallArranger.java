@@ -33,7 +33,6 @@ import jdk.internal.foreign.abi.CallingSequenceBuilder;
 import jdk.internal.foreign.abi.DowncallLinker;
 import jdk.internal.foreign.abi.LinkerOptions;
 import jdk.internal.foreign.abi.SharedUtils;
-import jdk.internal.foreign.abi.UpcallLinker;
 import jdk.internal.foreign.abi.VMStorage;
 import jdk.internal.foreign.abi.x64.X86_64Architecture;
 
@@ -42,7 +41,6 @@ import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.util.List;
@@ -68,7 +66,9 @@ public class CallArranger {
         new VMStorage[] { xmm0 },
         0,
         new VMStorage[] { rax, r10, r11 },
-        new VMStorage[] { xmm4, xmm5 },
+        new VMStorage[] { xmm4, xmm5,
+                          xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+                          xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31 },
         16,
         32,
         r10, r11 // scratch 1 & 2
@@ -87,9 +87,9 @@ public class CallArranger {
         class CallingSequenceBuilderHelper {
             final CallingSequenceBuilder csb = new CallingSequenceBuilder(CWindows, forUpcall, options);
             final BindingCalculator argCalc =
-                    forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true);
+                    forUpcall ? new BoxBindingCalculator(true) : new UnboxBindingCalculator(true, options.allowsHeapAccess());
             final BindingCalculator retCalc =
-                    forUpcall ? new UnboxBindingCalculator(false) : new BoxBindingCalculator(false);
+                    forUpcall ? new UnboxBindingCalculator(false, false) : new BoxBindingCalculator(false);
 
             void addArgumentBindings(Class<?> carrier, MemoryLayout layout, boolean isVararg) {
                 csb.addArgumentBindings(carrier, layout, argCalc.getBindings(carrier, layout, isVararg));
@@ -184,9 +184,12 @@ public class CallArranger {
 
     static class UnboxBindingCalculator implements BindingCalculator {
         private final StorageCalculator storageCalculator;
+        private final boolean useAddressPairs;
 
-        UnboxBindingCalculator(boolean forArguments) {
+        UnboxBindingCalculator(boolean forArguments, boolean useAddressPairs) {
             this.storageCalculator = new StorageCalculator(forArguments);
+            assert !useAddressPairs || forArguments;
+            this.useAddressPairs = useAddressPairs;
         }
 
         @Override
@@ -209,9 +212,17 @@ public class CallArranger {
                     bindings.vmStore(storage, long.class);
                 }
                 case POINTER -> {
-                    bindings.unboxAddress();
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);
-                    bindings.vmStore(storage, long.class);
+                    if (useAddressPairs) {
+                        bindings.dup()
+                                .segmentBase()
+                                .vmStore(storage, Object.class)
+                                .segmentOffsetAllowHeap()
+                                .vmStore(null, long.class);
+                    } else {
+                        bindings.unboxAddress();
+                        bindings.vmStore(storage, long.class);
+                    }
                 }
                 case INTEGER -> {
                     VMStorage storage = storageCalculator.nextStorage(StorageType.INTEGER);

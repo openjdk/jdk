@@ -24,8 +24,9 @@
 /*
  * @test
  * @bug 4243802
- * @summary confirm that Calendar.setTimeInMillis() and getTimeInMillis()
- *          can be called from a user program. They used to be protected methods.
+ * @summary confirm that Calendar.setTimeInMillis() and
+ *          getTimeInMillis() can be called from a user program. (They used to
+ *          be protected methods.)
  * @run junit bug4243802
  */
 
@@ -35,17 +36,17 @@ import java.util.TimeZone;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class bug4243802 {
 
+    // Save JVM default Locale and TimeZone
     private static final TimeZone savedTz = TimeZone.getDefault();
     private static final Locale savedLocale = Locale.getDefault();
 
-    // Save JVM default Locale and TimeZone
+    // Set custom JVM default Locale and TimeZone
     @BeforeAll
     static void initAll() {
         Locale.setDefault(Locale.US);
@@ -68,10 +69,8 @@ public class bug4243802 {
     public void setCalendarWithoutDateTest() {
         Calendar cal1 = Calendar.getInstance();
         Calendar cal2 = Calendar.getInstance();
-
         cal1.clear();
         cal2.clear();
-
         cal1.set(2001, Calendar.JANUARY, 25, 1, 23, 45);
         // Build the second calendar using the getTimeInMillis of the first
         cal2.setTimeInMillis(cal1.getTimeInMillis());

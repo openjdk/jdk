@@ -601,4 +601,50 @@ public class ThisEscape {
         public static final class Sub2 extends ThisEscapeSealed {
         }
     }
+
+    // Verify no assertion error occurs (JDK-8317336)
+    public static class ThisEscapeAssertionError {
+        public ThisEscapeAssertionError() {
+            System.out.println((Supplier<Object>)() -> this);
+        }
+    }
+
+    // Verify no assertion error occurs (JDK-8317336)
+    public static class ThisEscapeAssertionError2 {
+        public ThisEscapeAssertionError2() {
+            ThisEscapeAssertionError2[] array = new ThisEscapeAssertionError2[] { this };
+            for (Object obj : array)
+                ;
+        }
+    }
+
+    // Verify no infinite recursion loop occurs (JDK-8317818)
+    public static class ThisEscapeRecursionExplosion {
+        private Object obj;
+        public ThisEscapeRecursionExplosion() {
+            getObject();
+        }
+        private Object getObject() {
+            if (this.obj == null) {
+                this.obj = new Object();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+                getObject().hashCode();
+            }
+            return this.obj;
+        }
+    }
 }

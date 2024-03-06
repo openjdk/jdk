@@ -241,9 +241,9 @@ class MacroAssembler: public Assembler {
 
   // idiv variant which deals with MINLONG as dividend and -1 as divisor
   int corrected_idivl(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
   int corrected_idivq(Register result, Register rs1, Register rs2,
-                      bool want_remainder);
+                      bool want_remainder, bool is_signed);
 
   // interface method calling
   void lookup_interface_method(Register recv_klass,
@@ -253,6 +253,15 @@ class MacroAssembler: public Assembler {
                                Register scan_tmp,
                                Label& no_such_interface,
                                bool return_method = true);
+
+  void lookup_interface_method_stub(Register recv_klass,
+                                    Register holder_klass,
+                                    Register resolved_klass,
+                                    Register method_result,
+                                    Register temp_reg,
+                                    Register temp_reg2,
+                                    int itable_index,
+                                    Label& L_no_such_interface);
 
   // virtual method calling
   // n.n. x86 allows RegisterOrConstant for vtable_index
@@ -464,7 +473,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void notr(Register Rd, Register Rs) {
-    xori(Rd, Rs, -1);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_not(Rd);
+    } else {
+      xori(Rd, Rs, -1);
+    }
   }
 
   inline void neg(Register Rd, Register Rs) {
@@ -480,7 +493,11 @@ class MacroAssembler: public Assembler {
   }
 
   inline void zext_b(Register Rd, Register Rs) {
-    andi(Rd, Rs, 0xFF);
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_b(Rd);
+    } else {
+      andi(Rd, Rs, 0xFF);
+    }
   }
 
   inline void seqz(Register Rd, Register Rs) {
@@ -502,7 +519,12 @@ class MacroAssembler: public Assembler {
   // Bit-manipulation extension pseudo instructions
   // zero extend word
   inline void zext_w(Register Rd, Register Rs) {
-    add_uw(Rd, Rs, zr);
+    assert(UseZba, "must be");
+    if (do_compress_zcb(Rd, Rs) && (Rd == Rs)) {
+      c_zext_w(Rd);
+    } else {
+      add_uw(Rd, Rs, zr);
+    }
   }
 
   // Floating-point data-processing pseudo instructions
@@ -709,7 +731,8 @@ public:
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
   void la(Register Rd, Label &label);
-  void la(Register Rd, const address dest);
+  void la(Register Rd, const address addr);
+  void la(Register Rd, const address addr, int32_t &offset);
   void la(Register Rd, const Address &adr);
 
   void li16u(Register Rd, uint16_t imm);
@@ -1053,28 +1076,31 @@ public:
   void atomic_xchgwu(Register prev, Register newv, Register addr);
   void atomic_xchgalwu(Register prev, Register newv, Register addr);
 
-  static bool far_branches() {
-    return ReservedCodeCacheSize > branch_range;
-  }
+  void atomic_cas(Register prev, Register newv, Register addr);
+  void atomic_casw(Register prev, Register newv, Register addr);
+  void atomic_casl(Register prev, Register newv, Register addr);
+  void atomic_caslw(Register prev, Register newv, Register addr);
+  void atomic_casal(Register prev, Register newv, Register addr);
+  void atomic_casalw(Register prev, Register newv, Register addr);
+  void atomic_caswu(Register prev, Register newv, Register addr);
+  void atomic_caslwu(Register prev, Register newv, Register addr);
+  void atomic_casalwu(Register prev, Register newv, Register addr);
 
-  // Emit a direct call/jump if the entry address will always be in range,
-  // otherwise a far call/jump.
+  void atomic_cas(Register prev, Register newv, Register addr, enum operand_size size,
+              Assembler::Aqrl acquire = Assembler::relaxed, Assembler::Aqrl release = Assembler::relaxed);
+
+  // Emit a far call/jump. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr.
   // The address must be inside the code cache.
   // Supported entry.rspec():
   // - relocInfo::external_word_type
   // - relocInfo::runtime_call_type
   // - relocInfo::none
-  // In the case of a far call/jump, the entry address is put in the tmp register.
-  // The tmp register is invalidated.
-  void far_call(Address entry, Register tmp = t0);
-  void far_jump(Address entry, Register tmp = t0);
+  void far_call(const Address &entry, Register tmp = t0);
+  void far_jump(const Address &entry, Register tmp = t0);
 
   static int far_branch_size() {
-    if (far_branches()) {
       return 2 * 4;  // auipc + jalr, see far_call() & far_jump()
-    } else {
-      return 4;
-    }
   }
 
   void load_byte_map_base(Register reg);
@@ -1085,8 +1111,6 @@ public:
     sub(t0, sp, offset);
     sd(zr, Address(t0));
   }
-
-  void la_patchable(Register reg1, const Address &dest, int32_t &offset);
 
   virtual void _call_Unimplemented(address call_site) {
     mv(t1, call_site);
@@ -1169,7 +1193,10 @@ public:
   //
   // Return: the call PC or null if CodeCache is full.
   address trampoline_call(Address entry);
+
   address ic_call(address entry, jint method_index = 0);
+  static int ic_check_size();
+  int ic_check(int end_alignment = NativeInstruction::instruction_size);
 
   // Support for memory inc/dec
   // n.b. increment/decrement calls with an Address destination will
@@ -1200,6 +1227,9 @@ public:
 #ifdef COMPILER2
   void mul_add(Register out, Register in, Register offset,
                Register len, Register k, Register tmp);
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m);
+  void wide_madd(Register sum_lo, Register sum_hi, Register n,
+                 Register m, Register tmp1, Register tmp2);
   void cad(Register dst, Register src1, Register src2, Register carry);
   void cadc(Register dst, Register src1, Register src2, Register carry);
   void adc(Register dst, Register src1, Register src2, Register carry);
@@ -1240,7 +1270,7 @@ public:
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
   // test single bit in Rs, result is set to Rd
-  void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
+  void test_bit(Register Rd, Register Rs, uint32_t bit_pos);
 
   // Here the float instructions with safe deal with some exceptions.
   // e.g. convert from NaN, +Inf, -Inf to int, float, double
@@ -1250,6 +1280,9 @@ public:
   void fcvt_l_s_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
+
+  void java_round_float(Register dst, FloatRegister src, FloatRegister ftmp);
+  void java_round_double(Register dst, FloatRegister src, FloatRegister ftmp);
 
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
@@ -1289,6 +1322,13 @@ public:
   }
 
   // vector pseudo instructions
+  // rotate vector register left with shift bits, 32-bit version
+  inline void vrole32_vi(VectorRegister vd, uint32_t shift, VectorRegister tmp_vr) {
+    vsrl_vi(tmp_vr, vd, 32 - shift);
+    vsll_vi(vd, vd, shift);
+    vor_vv(vd, vd, tmp_vr);
+  }
+
   inline void vl1r_v(VectorRegister vd, Register rs) {
     vl1re8_v(vd, rs);
   }
@@ -1337,6 +1377,16 @@ public:
     vmfle_vv(vd, vs1, vs2, vm);
   }
 
+  inline void vmsltu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
+    vmsleu_vi(Vd, Vs2, imm-1, vm);
+  }
+
+  inline void vmsgeu_vi(VectorRegister Vd, VectorRegister Vs2, uint32_t imm, VectorMask vm = unmasked) {
+    guarantee(imm >= 1 && imm <= 16, "imm is invalid");
+    vmsgtu_vi(Vd, Vs2, imm-1, vm);
+  }
+
   // Copy mask register
   inline void vmmv_m(VectorRegister vd, VectorRegister vs) {
     vmand_mm(vd, vs, vs);
@@ -1350,6 +1400,10 @@ public:
   // Set mask register
   inline void vmset_m(VectorRegister vd) {
     vmxnor_mm(vd, vd, vd);
+  }
+
+  inline void vnot_v(VectorRegister Vd, VectorRegister Vs, VectorMask vm = unmasked) {
+    vxor_vi(Vd, Vs, -1, vm);
   }
 
   static const int zero_words_block_size;
@@ -1387,11 +1441,17 @@ public:
   void zero_extend(Register dst, Register src, int bits);
   void sign_extend(Register dst, Register src, int bits);
 
+private:
+  void cmp_x2i(Register dst, Register src1, Register src2, Register tmp, bool is_signed = true);
+
+public:
   // compare src1 and src2 and get -1/0/1 in dst.
   // if [src1 > src2], dst = 1;
   // if [src1 == src2], dst = 0;
   // if [src1 < src2], dst = -1;
   void cmp_l2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_ul2i(Register dst, Register src1, Register src2, Register tmp = t0);
+  void cmp_uw2i(Register dst, Register src1, Register src2, Register tmp = t0);
 
   // support for argument shuffling
   void move32_64(VMRegPair src, VMRegPair dst, Register tmp = t0);
@@ -1405,6 +1465,8 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
   void rt_call(address dest, Register tmp = t0);
 
   void call(const address dest, Register temp = t0) {
@@ -1444,7 +1506,7 @@ private:
       InternalAddress target(const_addr.target());
       relocate(target.rspec(), [&] {
         int32_t offset;
-        la_patchable(dest, target, offset);
+        la(dest, target.target(), offset);
         ld(dest, Address(dest, offset));
       });
     }
@@ -1457,8 +1519,8 @@ private:
   void store_conditional(Register dst, Register new_val, Register addr, enum operand_size size, Assembler::Aqrl release);
 
 public:
-  void lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
-  void lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow);
+  void lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
+  void lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow);
 };
 
 #ifdef ASSERT

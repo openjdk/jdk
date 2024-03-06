@@ -83,11 +83,11 @@ public class ScopedMemoryAccess {
         registerNatives();
     }
 
-    public boolean closeScope(MemorySessionImpl session) {
-        return closeScope0(session);
+    public void closeScope(MemorySessionImpl session, ScopedAccessError error) {
+        closeScope0(session, error);
     }
 
-    native boolean closeScope0(MemorySessionImpl session);
+    native void closeScope0(MemorySessionImpl session, ScopedAccessError error);
 
     private ScopedMemoryAccess() {}
 
@@ -329,10 +329,6 @@ public class ScopedMemoryAccess {
                          AbstractMemorySegmentImpl msp, long offset,
                          S s,
                          VectorSupport.LoadOperation<AbstractMemorySegmentImpl, V, S> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             return loadFromMemorySegmentScopedInternal(
@@ -359,7 +355,7 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             return VectorSupport.load(vmClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
                     msp, offset, s,
                     defaultImpl);
         } finally {
@@ -374,10 +370,6 @@ public class ScopedMemoryAccess {
     V loadFromMemorySegmentMasked(Class<? extends V> vmClass, Class<M> maskClass, Class<E> e,
                                   int length, AbstractMemorySegmentImpl msp, long offset, M m, S s, int offsetInRange,
                                   VectorSupport.LoadVectorMaskedOperation<AbstractMemorySegmentImpl, V, S, M> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             return loadFromMemorySegmentMaskedScopedInternal(
@@ -405,7 +397,7 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             return VectorSupport.loadMasked(vmClass, maskClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, m, offsetInRange,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true, m, offsetInRange,
                     msp, offset, s,
                     defaultImpl);
         } finally {
@@ -420,10 +412,6 @@ public class ScopedMemoryAccess {
                                 V v,
                                 AbstractMemorySegmentImpl msp, long offset,
                                 VectorSupport.StoreVectorOperation<AbstractMemorySegmentImpl, V> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             storeIntoMemorySegmentScopedInternal(
@@ -450,7 +438,7 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             VectorSupport.store(vmClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
                     v,
                     msp, offset,
                     defaultImpl);
@@ -466,10 +454,6 @@ public class ScopedMemoryAccess {
                                       int length, V v, M m,
                                       AbstractMemorySegmentImpl msp, long offset,
                                       VectorSupport.StoreVectorMaskedOperation<AbstractMemorySegmentImpl, V, M> defaultImpl) {
-        // @@@ Smarter alignment checking if accessing heap segment backing non-byte[] array
-        if (msp.maxAlignMask() > 1) {
-            throw new IllegalArgumentException();
-        }
 
         try {
             storeIntoMemorySegmentMaskedScopedInternal(
@@ -496,7 +480,7 @@ public class ScopedMemoryAccess {
             session.checkValidStateRaw();
 
             VectorSupport.storeMasked(vmClass, maskClass, e, length,
-                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset,
+                    msp.unsafeGetBase(), msp.unsafeGetOffset() + offset, true,
                     v, m,
                     msp, offset,
                     defaultImpl);

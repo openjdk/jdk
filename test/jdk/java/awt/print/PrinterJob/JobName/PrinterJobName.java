@@ -25,7 +25,7 @@
  * @test
  * @bug 4205601
  * @summary setJobName should be used by PrinterJob
- * @author prr
+ * @key printer
  * @run main/manual PrinterJobName
  */
 

@@ -59,8 +59,6 @@ Short description of files:
         Denotation.java, TreeNodesDenotation.java
     RAS mode support:
         RASagent.java, JVMTIagent.c
-    JVMDI tests support:
-        JVMDITools.h, JVMDITools.c
 
 Short description of subdirectories:
 

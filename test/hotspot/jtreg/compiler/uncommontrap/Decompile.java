@@ -36,7 +36,7 @@
  *                   -Xbatch -XX:-UseOnStackReplacement -XX:-TieredCompilation
  *                   -XX:+UnlockExperimentalVMOptions -XX:PerMethodTrapLimit=100 -XX:PerBytecodeTrapLimit=4
  *                   -XX:TypeProfileLevel=0
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-AlwaysIncrementalInline
+ *                   -XX:+IgnoreUnrecognizedVMOptions -XX:-AlwaysIncrementalInline -XX:-StressIncrementalInlining
  *                   -XX:CompileCommand=compileonly,compiler.uncommontrap.Decompile::uncommonTrap
  *                   -XX:CompileCommand=inline,compiler.uncommontrap.Decompile*::foo
  *                   compiler.uncommontrap.Decompile

@@ -69,7 +69,7 @@ public class stop001 {
     static final int PASSED = 0;
     static final int FAILED = 2;
     static final int PASS_BASE = 95;
-    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
     //----------------------------------------------------- templete parameters
     static final String

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,10 @@ BUILD_LIBTEST_NATIVE_SRC := $(TOPDIR)/test/lib
 BUILD_LIBTEST_OUTPUT_DIR := $(OUTPUTDIR)/support/test/lib/native
 
 BUILD_LIBTEST_IMAGE_DIR := $(TEST_IMAGE_DIR)/lib
+
+ifeq ($(call isTargetOs, windows), false)
+  BUILD_LIBTEST_LIBRARIES_EXCLUDE += libFileUtils.c
+endif
 
 # This evaluation is expensive and should only be done if this target was
 # explicitly called.

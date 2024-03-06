@@ -496,7 +496,9 @@ public class ForkJoinTaskTest extends JSR166TestCase {
                 try {
                     f.get(randomTimeout(), null);
                     shouldThrow();
-                } catch (NullPointerException success) {}
+                } catch (NullPointerException success) {
+                    f.join();
+                }
             }};
         testInvokeOnPool(mainPool(), a);
     }
@@ -1245,7 +1247,9 @@ public class ForkJoinTaskTest extends JSR166TestCase {
                 try {
                     f.get(randomTimeout(), null);
                     shouldThrow();
-                } catch (NullPointerException success) {}
+                } catch (NullPointerException success) {
+                    f.join();
+                }
             }};
         testInvokeOnPool(singletonPool(), a);
     }

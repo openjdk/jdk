@@ -31,7 +31,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<territories>
 			<territory type="BA" draft="contributed">Bosnia y Herzegovina</territory>
 			<territory type="GB" alt="short" draft="contributed">RU</territory>
-			<territory type="TA" draft="contributed">Tristán de Acuña</territory>
+			<territory type="TL" draft="contributed">Timor-Leste</territory>
 			<territory type="UM" draft="contributed">Islas menores alejadas de EE. UU.</territory>
 		</territories>
 	</localeDisplayNames>
@@ -55,36 +55,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="12" draft="contributed">dic.</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ene.</month>
-							<month type="2" draft="contributed">feb.</month>
-							<month type="3" draft="contributed">mar.</month>
-							<month type="4" draft="contributed">abr.</month>
-							<month type="5" draft="contributed">may.</month>
-							<month type="6" draft="contributed">jun.</month>
-							<month type="7" draft="contributed">jul.</month>
-							<month type="8" draft="contributed">ago.</month>
-							<month type="9" draft="contributed">sept.</month>
-							<month type="10" draft="contributed">oct.</month>
-							<month type="11" draft="contributed">nov.</month>
-							<month type="12" draft="contributed">dic.</month>
-						</monthWidth>
-					</monthContext>
 				</months>
 				<days>
 					<dayContext type="format">
-						<dayWidth type="short">
-							<day type="sun" draft="contributed">Do</day>
-							<day type="mon" draft="contributed">Lu</day>
-							<day type="tue" draft="contributed">Ma</day>
-							<day type="wed" draft="contributed">Mi</day>
-							<day type="thu" draft="contributed">Ju</day>
-							<day type="fri" draft="contributed">Vi</day>
-							<day type="sat" draft="contributed">Sa</day>
-						</dayWidth>
-					</dayContext>
-					<dayContext type="stand-alone">
 						<dayWidth type="short">
 							<day type="sun" draft="contributed">Do</day>
 							<day type="mon" draft="contributed">Lu</day>
@@ -115,38 +88,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</quarterContext>
 				</quarters>
 				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
 							<dayPeriod type="noon" draft="contributed">m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
+						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="contributed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="contributed">p. m.</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
-				<timeFormats>
-					<timeFormatLength type="full">
-						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a zzzz</pattern>
-							<datetimeSkeleton draft="contributed">ahmmsszzzz</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="long">
-						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a z</pattern>
-							<datetimeSkeleton draft="contributed">ahmmssz</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="medium">
-						<timeFormat>
-							<pattern draft="contributed">h:mm:ss a</pattern>
-							<datetimeSkeleton draft="contributed">ahmmss</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-					<timeFormatLength type="short">
-						<timeFormat>
-							<pattern draft="contributed">h:mm a</pattern>
-							<datetimeSkeleton draft="contributed">ahmm</datetimeSkeleton>
-						</timeFormat>
-					</timeFormatLength>
-				</timeFormats>
 			</calendar>
 		</calendars>
 		<fields>

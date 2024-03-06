@@ -92,6 +92,30 @@ public final class HexDigits implements Digits {
     }
 
     /**
+     * For values from 0 to 255 return a short encoding a pair of hex ASCII-encoded digit characters in little-endian
+     * @param i value to convert
+     * @param ucase true uppper case, false lower case
+     * @return a short encoding a pair of hex ASCII-encoded digit characters
+     */
+    public static short digitPair(int i, boolean ucase) {
+        /*
+         * 0b0100_0000_0100_0000 is a selector that selects letters (1 << 6),
+         * uppercase or not, and shifting it right by 1 bit incidentally
+         * becomes a bit offset between cases (1 << 5).
+         *
+         *  ([0-9] & 0b100_0000) >> 1 => 0
+         *  ([a-f] & 0b100_0000) >> 1 => 32
+         *
+         *  [0-9] -  0 => [0-9]
+         *  [a-f] - 32 => [A-F]
+         */
+        short v = DIGITS[i & 0xff];
+        return ucase
+                ? (short) (v - ((v & 0b0100_0000_0100_0000) >> 1))
+                : v;
+    }
+
+    /**
      * Return a little-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
      * {@code b0} is the most significant byte and {@code b1} is the least significant byte.
      * The integer is passed byte-wise to allow reordering of execution.

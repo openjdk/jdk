@@ -23,10 +23,8 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
  * @modules java.base/jdk.internal.ref java.base/jdk.internal.foreign
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestDontRelease
  */
 

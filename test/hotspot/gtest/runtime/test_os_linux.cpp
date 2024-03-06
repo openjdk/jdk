@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 
 #include <sys/mman.h>
 
+static bool using_explicit_hugepages()  { return UseLargePages && !UseTransparentHugePages; }
 
 namespace {
   static void small_page_write(void* addr, size_t size) {
@@ -53,26 +54,13 @@ namespace {
     const size_t _size;
    public:
     static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
-      return os::Linux::reserve_memory_special_huge_tlbfs(bytes, alignment, page_size, req_addr, exec);
+      return os::reserve_memory_special(bytes, alignment, page_size, req_addr, exec);
     }
     HugeTlbfsMemory(char* const ptr, size_t size) : _ptr(ptr), _size(size) { }
     ~HugeTlbfsMemory() {
-      if (_ptr != NULL) {
-        os::Linux::release_memory_special_huge_tlbfs(_ptr, _size);
+      if (_ptr != nullptr) {
+        os::release_memory_special(_ptr, _size);
       }
-    }
-  };
-
-  class ShmMemory : private ::os::Linux {
-    char* const _ptr;
-    const size_t _size;
-   public:
-    static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec) {
-      return os::Linux::reserve_memory_special_shm(bytes, alignment, req_addr, exec);
-    }
-    ShmMemory(char* const ptr, size_t size) : _ptr(ptr), _size(size) { }
-    ~ShmMemory() {
-      os::Linux::release_memory_special_shm(_ptr, _size);
     }
   };
 
@@ -84,30 +72,18 @@ namespace {
   static bool is_ptr_aligned(char* ptr, size_t alignment) {
     return is_aligned(ptr, alignment);
   }
-
-  static void test_reserve_memory_special_shm(size_t size, size_t alignment) {
-    ASSERT_TRUE(UseSHM) << "must be used only when UseSHM is true";
-    char* addr = ShmMemory::reserve_memory_special_shm(size, alignment, NULL, false);
-    if (addr != NULL) {
-      ShmMemory mr(addr, size);
-      EXPECT_PRED2(is_ptr_aligned, addr, alignment);
-      EXPECT_PRED2(is_ptr_aligned, addr, os::large_page_size());
-
-      small_page_write(addr, size);
-    }
-  }
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_aligned) {
-  if (!UseHugeTLBFS) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
 
   for (size_t size = lp; size <= lp * 10; size += lp) {
-    char* addr = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, lp, lp, NULL, false);
+    char* addr = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, lp, lp, nullptr, false);
 
-    if (addr != NULL) {
+    if (addr != nullptr) {
       HugeTlbfsMemory mr(addr, size);
       small_page_write(addr, size);
     }
@@ -115,7 +91,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_aligned) {
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_without_addr) {
-  if (!UseHugeTLBFS) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -131,8 +107,8 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_without_add
   for (int i = 0; i < num_sizes; i++) {
     const size_t size = sizes[i];
     for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-      char* p = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, alignment, lp, NULL, false);
-      if (p != NULL) {
+      char* p = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, alignment, lp, nullptr, false);
+      if (p != nullptr) {
         HugeTlbfsMemory mr(p, size);
         EXPECT_PRED2(is_ptr_aligned, p, alignment) << " size = " << size;
         small_page_write(p, size);
@@ -142,7 +118,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_without_add
 }
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_req_addr) {
-  if (!UseHugeTLBFS) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -159,7 +135,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_r
   // Pre-allocate an area as large as the largest allocation
   // and aligned to the largest alignment we will be testing.
   const size_t mapping_size = sizes[num_sizes - 1] * 2;
-  char* const mapping = (char*) ::mmap(NULL, mapping_size,
+  char* const mapping = (char*) ::mmap(nullptr, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
   ASSERT_TRUE(mapping != MAP_FAILED) << " mmap failed, mapping_size = " << mapping_size;
@@ -172,7 +148,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_r
       // req_addr must be at least large page aligned.
       char* const req_addr = align_up(mapping, MAX2(alignment, lp));
       char* p = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, alignment, lp, req_addr, false);
-      if (p != NULL) {
+      if (p != nullptr) {
         HugeTlbfsMemory mr(p, size);
         ASSERT_EQ(req_addr, p) << " size = " << size << ", alignment = " << alignment;
         small_page_write(p, size);
@@ -183,7 +159,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_good_r
 
 
 TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_req_addr) {
-  if (!UseHugeTLBFS) {
+  if (!using_explicit_hugepages()) {
     return;
   }
   size_t lp = os::large_page_size();
@@ -200,7 +176,7 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_re
   // Pre-allocate an area as large as the largest allocation
   // and aligned to the largest alignment we will be testing.
   const size_t mapping_size = sizes[num_sizes - 1] * 2;
-  char* const mapping = (char*) ::mmap(NULL, mapping_size,
+  char* const mapping = (char*) ::mmap(nullptr, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
   ASSERT_TRUE(mapping != MAP_FAILED) << " mmap failed, mapping_size = " << mapping_size;
@@ -224,25 +200,11 @@ TEST_VM(os_linux, reserve_memory_special_huge_tlbfs_size_not_aligned_with_bad_re
       char* p = HugeTlbfsMemory::reserve_memory_special_huge_tlbfs(size, alignment, lp, req_addr, false);
       HugeTlbfsMemory mr(p, size);
       // as the area around req_addr contains already existing mappings, the API should always
-      // return NULL (as per contract, it cannot return another address)
-      EXPECT_TRUE(p == NULL) << " size = " << size
+      // return null (as per contract, it cannot return another address)
+      EXPECT_TRUE(p == nullptr) << " size = " << size
                              << ", alignment = " << alignment
                              << ", req_addr = " << req_addr
                              << ", p = " << p;
-    }
-  }
-}
-
-TEST_VM(os_linux, reserve_memory_special_shm) {
-  if (!UseSHM) {
-    return;
-  }
-  size_t lp = os::large_page_size();
-  size_t ag = os::vm_allocation_granularity();
-
-  for (size_t size = ag; size < lp * 3; size += ag) {
-    for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
-      EXPECT_NO_FATAL_FAILURE(test_reserve_memory_special_shm(size, alignment));
     }
   }
 }
@@ -259,26 +221,21 @@ class TestReserveMemorySpecial : AllStatic {
   }
 
   static void test_reserve_memory_special_huge_tlbfs_size_aligned(size_t size, size_t alignment, size_t page_size) {
-    if (!UseHugeTLBFS) {
+    if (!using_explicit_hugepages()) {
       return;
     }
-
-    char* addr = os::Linux::reserve_memory_special_huge_tlbfs(size, alignment, page_size, NULL, false);
-
-    if (addr != NULL) {
+    char* addr = os::reserve_memory_special(size, alignment, page_size, nullptr, false);
+    if (addr != nullptr) {
       small_page_write(addr, size);
-
-      os::Linux::release_memory_special_huge_tlbfs(addr, size);
+      os::release_memory_special(addr, size);
     }
   }
 
   static void test_reserve_memory_special_huge_tlbfs_size_aligned() {
-    if (!UseHugeTLBFS) {
+    if (!using_explicit_hugepages()) {
       return;
     }
-
     size_t lp = os::large_page_size();
-
     for (size_t size = lp; size <= lp * 10; size += lp) {
       test_reserve_memory_special_huge_tlbfs_size_aligned(size, lp, lp);
     }
@@ -297,7 +254,7 @@ class TestReserveMemorySpecial : AllStatic {
     const int num_sizes = sizeof(sizes) / sizeof(size_t);
 
     // For each size/alignment combination, we test three scenarios:
-    // 1) with req_addr == NULL
+    // 1) with req_addr == nullptr
     // 2) with a non-null req_addr at which we expect to successfully allocate
     // 3) with a non-null req_addr which contains a pre-existing mapping, at which we
     //    expect the allocation to either fail or to ignore req_addr
@@ -305,12 +262,12 @@ class TestReserveMemorySpecial : AllStatic {
     // Pre-allocate two areas; they shall be as large as the largest allocation
     //  and aligned to the largest alignment we will be testing.
     const size_t mapping_size = sizes[num_sizes - 1] * 2;
-    char* const mapping1 = (char*) ::mmap(NULL, mapping_size,
+    char* const mapping1 = (char*) ::mmap(nullptr, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
     EXPECT_NE(mapping1, MAP_FAILED);
 
-    char* const mapping2 = (char*) ::mmap(NULL, mapping_size,
+    char* const mapping2 = (char*) ::mmap(nullptr, mapping_size,
       PROT_NONE, MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE,
       -1, 0);
     EXPECT_NE(mapping2, MAP_FAILED);
@@ -324,11 +281,11 @@ class TestReserveMemorySpecial : AllStatic {
     for (int i = 0; i < num_sizes; i++) {
       const size_t size = sizes[i];
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs(size, alignment, lp, NULL, false);
-        if (p != NULL) {
+        char* p = os::reserve_memory_special(size, alignment, lp, nullptr, false);
+        if (p != nullptr) {
           EXPECT_TRUE(is_aligned(p, alignment));
           small_page_write(p, size);
-          os::Linux::release_memory_special_huge_tlbfs(p, size);
+          os::release_memory_special(p, size);
         }
       }
     }
@@ -339,11 +296,11 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping1, MAX2(alignment, lp));
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs(size, alignment, lp, req_addr, false);
-        if (p != NULL) {
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
+        if (p != nullptr) {
           EXPECT_EQ(p, req_addr);
           small_page_write(p, size);
-          os::Linux::release_memory_special_huge_tlbfs(p, size);
+          os::release_memory_special(p, size);
         }
       }
     }
@@ -354,10 +311,10 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
         // req_addr must be at least large page aligned.
         char* const req_addr = align_up(mapping2, MAX2(alignment, lp));
-        char* p = os::Linux::reserve_memory_special_huge_tlbfs(size, alignment, lp, req_addr, false);
+        char* p = os::reserve_memory_special(size, alignment, lp, req_addr, false);
         // as the area around req_addr contains already existing mappings, the API should always
-        // return NULL (as per contract, it cannot return another address)
-        EXPECT_TRUE(p == NULL);
+        // return nullptr (as per contract, it cannot return another address)
+        EXPECT_TRUE(p == nullptr);
       }
     }
 
@@ -365,46 +322,12 @@ class TestReserveMemorySpecial : AllStatic {
 
   }
 
-  static void test_reserve_memory_special_huge_tlbfs() {
-    if (!UseHugeTLBFS) {
+  static void test() {
+    if (!using_explicit_hugepages()) {
       return;
     }
-
     test_reserve_memory_special_huge_tlbfs_size_aligned();
     test_reserve_memory_special_huge_tlbfs_size_not_aligned();
-  }
-
-  static void test_reserve_memory_special_shm(size_t size, size_t alignment) {
-    if (!UseSHM) {
-      return;
-    }
-
-    char* addr = os::Linux::reserve_memory_special_shm(size, alignment, NULL, false);
-
-    if (addr != NULL) {
-      EXPECT_TRUE(is_aligned(addr, alignment));
-      EXPECT_TRUE(is_aligned(addr, os::large_page_size()));
-
-      small_page_write(addr, size);
-
-      os::Linux::release_memory_special_shm(addr, size);
-    }
-  }
-
-  static void test_reserve_memory_special_shm() {
-    size_t lp = os::large_page_size();
-    size_t ag = os::vm_allocation_granularity();
-
-    for (size_t size = ag; size < lp * 3; size += ag) {
-      for (size_t alignment = ag; is_aligned(size, alignment); alignment *= 2) {
-        test_reserve_memory_special_shm(size, alignment);
-      }
-    }
-  }
-
-  static void test() {
-    test_reserve_memory_special_huge_tlbfs();
-    test_reserve_memory_special_shm();
   }
 };
 
@@ -425,6 +348,40 @@ TEST_VM(os_linux, reserve_memory_special_concurrent) {
     ConcurrentTestRunner testRunner(&runnable, 5, 3000);
     testRunner.run();
   }
+}
+
+TEST_VM(os_linux, pretouch_thp_and_use_concurrent) {
+  // Explicitly enable thp to test cocurrent system calls.
+  const size_t size = 1 * G;
+  const bool useThp = UseTransparentHugePages;
+  UseTransparentHugePages = true;
+  char* const heap = os::reserve_memory(size, false, mtInternal);
+  EXPECT_NE(heap, nullptr);
+  EXPECT_TRUE(os::commit_memory(heap, size, false));
+
+  {
+    auto pretouch = [heap, size](Thread*, int) {
+      os::pretouch_memory(heap, heap + size, os::vm_page_size());
+    };
+    auto useMemory = [heap, size](Thread*, int) {
+      int* iptr = reinterpret_cast<int*>(heap);
+      for (int i = 0; i < 1000; i++) *iptr++ = i;
+    };
+    TestThreadGroup<decltype(pretouch)> pretouchThreads{pretouch, 4};
+    TestThreadGroup<decltype(useMemory)> useMemoryThreads{useMemory, 4};
+    useMemoryThreads.doit();
+    pretouchThreads.doit();
+    useMemoryThreads.join();
+    pretouchThreads.join();
+  }
+
+  int* iptr = reinterpret_cast<int*>(heap);
+  for (int i = 0; i < 1000; i++)
+    EXPECT_EQ(*iptr++, i);
+
+  EXPECT_TRUE(os::uncommit_memory(heap, size, false));
+  EXPECT_TRUE(os::release_memory(heap, size));
+  UseTransparentHugePages = useThp;
 }
 
 // Check that method JNI_CreateJavaVM is found.

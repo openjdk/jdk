@@ -46,7 +46,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getAllEventClasses", (char*)"()Ljava/util/List;", (void*)jfr_get_all_event_classes,
       (char*)"getClassId", (char*)"(Ljava/lang/Class;)J", (void*)jfr_class_id,
       (char*)"getPid", (char*)"()Ljava/lang/String;", (void*)jfr_get_pid,
-      (char*)"getStackTraceId", (char*)"(I)J", (void*)jfr_stacktrace_id,
+      (char*)"getStackTraceId", (char*)"(IJ)J", (void*)jfr_stacktrace_id,
       (char*)"getThreadId", (char*)"(Ljava/lang/Thread;)J", (void*)jfr_id_for_thread,
       (char*)"getTicksFrequency", (char*)"()J", (void*)jfr_elapsed_frequency,
       (char*)"subscribeLogLevel", (char*)"(Ljdk/jfr/internal/LogTag;I)V", (void*)jfr_subscribe_log_level,
@@ -82,7 +82,7 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"uncaughtException", (char*)"(Ljava/lang/Thread;Ljava/lang/Throwable;)V", (void*)jfr_uncaught_exception,
       (char*)"setForceInstrumentation", (char*)"(Z)V", (void*)jfr_set_force_instrumentation,
       (char*)"getUnloadedEventClassCount", (char*)"()J", (void*)jfr_get_unloaded_event_classes_count,
-      (char*)"setCutoff", (char*)"(JJ)Z", (void*)jfr_set_cutoff,
+      (char*)"setMiscellaneous", (char*)"(JJ)V", (void*)jfr_set_miscellaneous,
       (char*)"setThrottle", (char*)"(JJJ)Z", (void*)jfr_set_throttle,
       (char*)"emitOldObjectSamples", (char*)"(JZZ)V", (void*)jfr_emit_old_object_samples,
       (char*)"shouldRotateDisk", (char*)"()Z", (void*)jfr_should_rotate_disk,
@@ -97,7 +97,10 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"isInstrumented", (char*)"(Ljava/lang/Class;)Z", (void*) jfr_is_class_instrumented,
       (char*)"isContainerized", (char*)"()Z", (void*) jfr_is_containerized,
       (char*)"hostTotalMemory", (char*)"()J", (void*) jfr_host_total_memory,
-      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss
+      (char*)"hostTotalSwapMemory", (char*)"()J", (void*) jfr_host_total_swap_memory,
+      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss,
+      (char*)"registerStackFilter", (char*)"([Ljava/lang/String;[Ljava/lang/String;)J", (void*)jfr_register_stack_filter,
+      (char*)"unregisterStackFilter", (char*)"(J)V", (void*)jfr_unregister_stack_filter
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,17 @@ public class JavaValueArray extends JavaLazyReadObject
 
     private static int elementSize(byte type) {
         switch (type) {
-            case T_BYTE:
-            case T_BOOLEAN:
+            case 'B':
+            case 'Z':
                 return 1;
-            case T_CHAR:
-            case T_SHORT:
+            case 'C':
+            case 'S':
                 return 2;
-            case T_INT:
-            case T_FLOAT:
+            case 'I':
+            case 'F':
                 return 4;
-            case T_LONG:
-            case T_DOUBLE:
+            case 'J':
+            case 'D':
                 return 8;
             default:
                 throw new RuntimeException("invalid array element type: " + type);
@@ -346,5 +346,19 @@ public class JavaValueArray extends JavaLazyReadObject
             result.append('}');
         }
         return result.toString();
+    }
+
+    // Tries to represent the value as string (used by JavaObject.toString).
+    public String valueAsString() {
+        if (getElementType() == 'B')  {
+            JavaThing[] things = getValue();
+            byte[] bytes = new byte[things.length];
+            for (int i = 0; i < things.length; i++) {
+                bytes[i] = ((JavaByte)things[i]).value;
+            }
+            return new String(bytes);
+        }
+        // fallback
+        return valueString();
     }
 }

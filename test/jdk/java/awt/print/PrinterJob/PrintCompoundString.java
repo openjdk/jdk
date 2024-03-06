@@ -25,7 +25,7 @@
  * @test
  * @bug 4396835
  * @summary Compound font string not printing.
- * @author prr
+ * @key printer
  * @run main/manual PrintCompoundString
  */
 

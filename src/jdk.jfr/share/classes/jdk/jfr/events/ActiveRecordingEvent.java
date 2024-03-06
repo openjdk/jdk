@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,12 +32,13 @@ import jdk.jfr.Name;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Timespan;
 import jdk.jfr.Timestamp;
+import jdk.jfr.internal.RemoveFields;
 import jdk.jfr.internal.Type;
 
 @Name(Type.EVENT_NAME_PREFIX + "ActiveRecording")
 @Label("Flight Recording")
 @Category("Flight Recorder")
-@StackTrace(false)
+@RemoveFields({"duration", "eventThread", "stackTrace"})
 public final class ActiveRecordingEvent extends AbstractJDKEvent {
 
     // The order of these fields must be the same as the parameters in
@@ -79,7 +80,7 @@ public final class ActiveRecordingEvent extends AbstractJDKEvent {
         return false; // Generated
     }
 
-    public static void commit(long timestamp, long duration, long id, String name,
+    public static void commit(long timestamp, long id, String name,
                               String destination, boolean disk, long maxAge, long flushInterval,
                               long maxSize, long recordingStart, long recordingDuration) {
         // Generated

@@ -512,7 +512,7 @@ abstract public class TestScaffold extends TargetAdapter {
         //     argInfo.targetVMArgs : -Xss4M
         // The result with wrapper enabled:
         //     argInfo.targetAppCommandLine : DebuggeeWrapper Frames2Targ
-        //     argInfo.targetVMArgs : -Xss4M -Dmain.wrapper=Virtual
+        //     argInfo.targetVMArgs : -Xss4M -Dtest.thread.factory=Virtual
         boolean classNameParsed = false;
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
@@ -548,10 +548,10 @@ abstract public class TestScaffold extends TargetAdapter {
         }
 
         // Need to change args to run wrapper using command like 'DebuggeeWrapper <app-name>'
-        // and set property 'main.wrapper' so test could use DebuggeeWrapper.isVirtual() method
-        String mainWrapper = DebuggeeWrapper.getWrapperName();
-        if (mainWrapper != null && !argInfo.targetAppCommandLine.isEmpty()) {
-            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + mainWrapper;
+        // and set property 'test.thread.factory' so test could use DebuggeeWrapper.isVirtual() method
+        String testThreadFactoryName = DebuggeeWrapper.getTestThreadFactoryName();
+        if (testThreadFactoryName != null && !argInfo.targetAppCommandLine.isEmpty()) {
+            argInfo.targetVMArgs += "-D" + DebuggeeWrapper.PROPERTY_NAME + "=" + testThreadFactoryName;
             argInfo.targetAppCommandLine = DebuggeeWrapper.class.getName() + ' ' + argInfo.targetAppCommandLine;
         } else if ("true".equals(System.getProperty("test.enable.preview"))) {
             // the test specified @enablePreview.

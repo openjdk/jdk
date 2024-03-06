@@ -28,11 +28,11 @@
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
+#include "gc/g1/g1HeapRegionType.hpp"
 #include "gc/g1/g1NUMA.hpp"
 #include "gc/g1/g1Policy.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
-#include "gc/g1/heapRegionType.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/align.hpp"
@@ -191,11 +191,14 @@ size_t G1Allocator::unsafe_max_tlab_alloc() {
   uint node_index = current_node_index();
   HeapRegion* hr = mutator_alloc_region(node_index)->get();
   size_t max_tlab = _g1h->max_tlab_size() * wordSize;
-  if (hr == nullptr) {
+
+  if (hr == nullptr || hr->free() < MinTLABSize) {
+    // The next TLAB allocation will most probably happen in a new region,
+    // therefore we can attempt to allocate the maximum allowed TLAB size.
     return max_tlab;
-  } else {
-    return clamp(hr->free(), MinTLABSize, max_tlab);
   }
+
+  return MIN2(hr->free(), max_tlab);
 }
 
 size_t G1Allocator::used_in_alloc_regions() {

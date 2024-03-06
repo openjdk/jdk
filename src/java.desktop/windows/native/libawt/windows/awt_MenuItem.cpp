@@ -893,20 +893,6 @@ BOOL AwtMenuItem::IsSeparator() {
 }
 
 /************************************************************************
- * MenuComponent native methods
- */
-
-extern "C" {
-
-JNIEXPORT void JNICALL
-Java_java_awt_MenuComponent_initIDs(JNIEnv *env, jclass cls)
-{
-}
-
-} /* extern "C" */
-
-
-/************************************************************************
  * MenuItem native methods
  */
 

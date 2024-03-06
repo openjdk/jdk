@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -193,7 +193,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""");
 
-        checkOutput("pkg/TestClass.html", false,
+        checkOutput("pkg/TestClass.html", true,
                 """
                     <div class="deprecation-comment">class_test2 passes. This is the second sentence\
                      of deprecated description for a field.</div>
@@ -205,7 +205,7 @@ public class TestDeprecatedDocs extends JavadocTester {
                     </div>
                     </div>""",
                 """
-                    <div class="deprecation-comment">class_test4 passes. This is the second sentence\
+                    <div class="deprecation-comment">class_test5 passes. This is the second sentence\
                      of deprecated description for a method.</div>
                     </div>
                     </div>""");

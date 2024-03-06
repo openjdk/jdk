@@ -11,15 +11,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="mi"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="ab">Apakāhiana</language>
 			<language type="ace">Akanīhi</language>
-			<language type="ada">Atanga</language>
+			<language type="ada">Atāngami</language>
 			<language type="ady">Āteke</language>
 			<language type="af">Awherikāna</language>
 			<language type="agq">Ākeme</language>
@@ -32,7 +27,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ann">Ōporo</language>
 			<language type="anp">Anahika</language>
 			<language type="ar">Ārapi</language>
-			<language type="ar_001">Ārapi Moroki</language>
+			<language type="ar_001">Ārapi Moroko</language>
 			<language type="arn">Mapūte</language>
 			<language type="arp">Arapaho</language>
 			<language type="ars">Arapika Nahāri</language>
@@ -41,23 +36,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ast">Ahitūriana</language>
 			<language type="atj">Atikameke</language>
 			<language type="av">Āwhāriki</language>
-			<language type="awa">Āwati</language>
+			<language type="awa">Awāti</language>
 			<language type="ay">Aimāra</language>
-			<language type="az">Ahapahāna</language>
+			<language type="az">Atepaihānia</language>
 			<language type="az" alt="short">Ahēri</language>
-			<language type="ba">Pākira</language>
+			<language type="ba">Pākīra</language>
 			<language type="ban">Pārinīhi</language>
 			<language type="bas">Pahā</language>
 			<language type="be">Perarūhiana</language>
 			<language type="bem">Pema</language>
 			<language type="bez">Pena</language>
-			<language type="bg">Pukēriana</language>
+			<language type="bg">Purukāriana</language>
+			<language type="bgc">Herianawhi</language>
 			<language type="bho">Pōhipuri</language>
 			<language type="bi">Pihirāma</language>
 			<language type="bin">Pini</language>
 			<language type="bla">Hihika</language>
 			<language type="bm">Pāpara</language>
-			<language type="bn">Pāngara</language>
+			<language type="bn">Pākara</language>
 			<language type="bo">Tipete</language>
 			<language type="br">Peretana</language>
 			<language type="brx">Pōto</language>
@@ -65,7 +61,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="bug">Pukenīhi</language>
 			<language type="byn">Pirina</language>
 			<language type="ca">Katarana</language>
-			<language type="cay">Keiuka</language>
+			<language type="cay">Keiūka</language>
 			<language type="ccp">Tiakamā</language>
 			<language type="ce">Tietiene</language>
 			<language type="ceb">Hepuano</language>
@@ -74,25 +70,26 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="chk">Tiukīhi</language>
 			<language type="chm">Mari</language>
 			<language type="cho">Tiokatō</language>
-			<language type="chp">Tipiwaiana</language>
+			<language type="chp">Tiepewaiana</language>
 			<language type="chr">Tierokī</language>
 			<language type="chy">Haiene</language>
-			<language type="ckb">Te Puku o Kūrihi</language>
+			<language type="ckb">Kūrihi Waenga</language>
+			<language type="ckb" alt="menu">Kūrihi, Waenga</language>
 			<language type="ckb" alt="variant">Kūrihi, Hōrani</language>
 			<language type="clc">Tiekautini</language>
-			<language type="co">Kohikana</language>
+			<language type="co">Kōhikana</language>
 			<language type="crg">Mītiwhi</language>
 			<language type="crj">Kirī Tonga-mā-Rāwhiti</language>
-			<language type="crk">Parana Kirī</language>
+			<language type="crk">Pareina Kirī</language>
 			<language type="crl">Kirī Raki-mā-Rāwhiti</language>
-			<language type="crm">Mū Kiri</language>
+			<language type="crm">Mūhi Kirī</language>
 			<language type="crr">Arakōkiana Kararaina</language>
-			<language type="cs">Tiekerowākiana</language>
+			<language type="cs">Tieke</language>
 			<language type="csw">Wāpi Kirī</language>
-			<language type="cv">Tiuwhā</language>
+			<language type="cv">Tiuwhāhi</language>
 			<language type="cy">Werehi</language>
 			<language type="da">Teina</language>
-			<language type="dak">Teikōta</language>
+			<language type="dak">Takōta</language>
 			<language type="dar">Tākawa</language>
 			<language type="dav">Taita</language>
 			<language type="de">Tiamana</language>
@@ -101,17 +98,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="dgr">Tōkiripi</language>
 			<language type="dje">Tāma</language>
 			<language type="doi">Tōkiri</language>
-			<language type="dsb">Hōpiana Ōpaki</language>
+			<language type="dsb">Hōpiana Hakahaka</language>
 			<language type="dua">Tuāra</language>
-			<language type="dv">Tewhe</language>
+			<language type="dv">Tīwhehi</language>
 			<language type="dyo">Hora-Whōni</language>
 			<language type="dz">Tonoka</language>
-			<language type="dzg">Tāhaka</language>
+			<language type="dzg">Tahāka</language>
 			<language type="ebu">Emepū</language>
 			<language type="ee">Ewe</language>
 			<language type="efi">Ewhiki</language>
 			<language type="eka">Ekatika</language>
-			<language type="el">Kiriki</language>
+			<language type="el">Kariki</language>
 			<language type="en">Ingarihi</language>
 			<language type="en_AU">Ingarihi Ahitereiriana</language>
 			<language type="en_CA">Ingarihi Kānata</language>
@@ -124,12 +121,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="es_419">Pāniora Amerikana ki te Tonga</language>
 			<language type="es_ES">Pāniora Ūropi</language>
 			<language type="es_MX">Pāniora Mehikana</language>
-			<language type="et">Ehetōniana</language>
-			<language type="eu">Pāka</language>
+			<language type="et">Etōniana</language>
+			<language type="eu">Pākihi</language>
 			<language type="ewo">Ewāto</language>
 			<language type="fa">Pāhiana</language>
-			<language type="fa_AF">Tari</language>
-			<language type="ff">Wharā</language>
+			<language type="fa_AF">Tāri</language>
+			<language type="ff">Whūra</language>
 			<language type="fi">Whinirānia</language>
 			<language type="fil">Piripīno</language>
 			<language type="fj">Whītīana</language>
@@ -144,7 +141,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="fy">Whirīhiana ki te Uru</language>
 			<language type="ga">Airihi</language>
 			<language type="gaa">Kā</language>
-			<language type="gd">Kotimana Keiriki</language>
+			<language type="gd">Keiriki Kotimana</language>
 			<language type="gez">Kīhi</language>
 			<language type="gil">Kiripatīhi</language>
 			<language type="gl">Karīhia</language>
@@ -154,70 +151,70 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="gu">Kutarāti</language>
 			<language type="guz">Kūhī</language>
 			<language type="gv">Manaki</language>
-			<language type="gwi">Kuīti</language>
+			<language type="gwi">Kuitīna</language>
 			<language type="ha">Hauha</language>
-			<language type="hai">Haira</language>
-			<language type="haw">Hawaiana</language>
+			<language type="hai">Heira</language>
+			<language type="haw">Wāhu</language>
 			<language type="hax">Haira ki te Tonga</language>
 			<language type="he">Hīperu</language>
 			<language type="hi">Hīni</language>
-			<language type="hil">Hirikeino</language>
+			<language type="hil">Hirikaina</language>
 			<language type="hmn">Mōnga</language>
 			<language type="hr">Koroātiana</language>
-			<language type="hsb">Hōpiana Ōkawa</language>
-			<language type="ht">Haitiana Kereo</language>
-			<language type="hu">Hanakariana</language>
+			<language type="hsb">Hōpiana Maunga</language>
+			<language type="ht">Kereō Haiti</language>
+			<language type="hu">Hanekari</language>
 			<language type="hup">Hupa</language>
-			<language type="hur">Hekomerema</language>
-			<language type="hy">Āmeiniana</language>
+			<language type="hur">Hākomerema</language>
+			<language type="hy">Āmeniana</language>
 			<language type="hz">Herero</language>
 			<language type="ia">Inarīngua</language>
 			<language type="iba">Īpana</language>
 			<language type="ibb">Ipīpio</language>
 			<language type="id">Initonīhiana</language>
-			<language type="ig">Ingo</language>
+			<language type="ig">Ikapo</language>
 			<language type="ii">Hīhuana Eī</language>
-			<language type="ikt">Inukitetū Kānata ki te Uru</language>
+			<language type="ikt">Inukitetūta Kānata ki te Uru</language>
 			<language type="ilo">Iroko</language>
 			<language type="inh">Inguihi</language>
 			<language type="io">Īto</language>
-			<language type="is">Tiorangiana</language>
+			<language type="is">Tiorangi</language>
 			<language type="it">Itāriana</language>
-			<language type="iu">Inukitetū</language>
+			<language type="iu">Inukitetūta</language>
 			<language type="ja">Hapanihi</language>
 			<language type="jbo">Rōpāna</language>
 			<language type="jgo">Nakōma</language>
 			<language type="jmc">Mākame</language>
 			<language type="jv">Hāwhanihi</language>
 			<language type="ka">Hōriana</language>
-			<language type="kab">Kapāio</language>
-			<language type="kac">Kātiana</language>
-			<language type="kaj">Hiu</language>
+			<language type="kab">Kapāiro</language>
+			<language type="kac">Katīana</language>
+			<language type="kaj">Heiho</language>
 			<language type="kam">Kāmapa</language>
 			<language type="kbd">Kapāriana</language>
 			<language type="kcg">Tiapa</language>
 			<language type="kde">Makonote</language>
 			<language type="kea">Kapuwētianu</language>
 			<language type="kfo">Koro</language>
-			<language type="kgp">Keingāna</language>
+			<language type="kgp">Keinganga</language>
 			<language type="kha">Kahi</language>
-			<language type="khq">Kōia Tīni</language>
-			<language type="ki">Kikiu</language>
-			<language type="kj">Kuiniāma</language>
+			<language type="khq">Kōira Tīni</language>
+			<language type="ki">Kikūiu</language>
+			<language type="kj">Kuoniāma</language>
 			<language type="kk">Kahāka</language>
 			<language type="kkj">Kako</language>
-			<language type="kl">Karārihutu</language>
+			<language type="kl">Kararīhutu</language>
 			<language type="kln">Karenini</language>
-			<language type="km">Kimei</language>
+			<language type="km">Kimēra</language>
 			<language type="kmb">Kimipunu</language>
 			<language type="kn">Kanara</language>
 			<language type="ko">Kōreana</language>
 			<language type="kok">Kōkani</language>
-			<language type="kpe">Kepere</language>
+			<language type="kpe">Kepēre</language>
 			<language type="kr">Kanuri</language>
 			<language type="krc">Karatai-Pāka</language>
 			<language type="krl">Kareriana</language>
-			<language type="kru">Kurā</language>
+			<language type="kru">Kuruka</language>
 			<language type="ks">Kahimiri</language>
 			<language type="ksb">Hapāra</language>
 			<language type="ksf">Pāwhia</language>
@@ -227,31 +224,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="kv">Komi</language>
 			<language type="kw">Kōnihi</language>
 			<language type="kwk">Kuakawara</language>
-			<language type="ky">Kēkete</language>
+			<language type="ky">Kiakihi</language>
 			<language type="la">Rātini</language>
 			<language type="lad">Ratino</language>
 			<language type="lag">Rangi</language>
-			<language type="lb">Rakimipēkihi</language>
+			<language type="lb">Rakapuō</language>
 			<language type="lez">Rēhiana</language>
-			<language type="lg">Kanāta</language>
-			<language type="li">Ripēkuehe</language>
-			<language type="lil">Rirūete</language>
-			<language type="lkt">Rakota</language>
-			<language type="ln">Ringarā</language>
+			<language type="lg">Kānata</language>
+			<language type="li">Ripūkuihi</language>
+			<language type="lil">Riruete</language>
+			<language type="lkt">Rakōta</language>
+			<language type="ln">Ringāra</language>
 			<language type="lo">Rao</language>
-			<language type="lou">Ruīhana Kereo</language>
-			<language type="loz">Rauhi</language>
+			<language type="lou">Kreōro Ruihiana</language>
+			<language type="loz">Rohi</language>
 			<language type="lrc">Ruri ki te Raki</language>
 			<language type="lsm">Hāmia</language>
-			<language type="lt">Rihuainiana</language>
+			<language type="lt">Rituānia</language>
 			<language type="lu">Rupa Katanga</language>
 			<language type="lua">Rupa Rurua</language>
 			<language type="lun">Runa</language>
 			<language type="luo">Ruo</language>
 			<language type="lus">Mīho</language>
 			<language type="luy">Rūia</language>
-			<language type="lv">Rātiana</language>
-			<language type="mad">Matuirīhi</language>
+			<language type="lv">Rāwhia</language>
+			<language type="mad">Maturīhi</language>
 			<language type="mag">Makāhi</language>
 			<language type="mai">Maitiri</language>
 			<language type="mak">Makahā</language>
@@ -267,51 +264,51 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="mi">Māori</language>
 			<language type="mic">Mīkamā</language>
 			<language type="min">Minākapao</language>
-			<language type="mk">Makatōniana</language>
-			<language type="ml">Mareiarama</language>
-			<language type="mn">Mongōriana</language>
+			<language type="mk">Makerōnia</language>
+			<language type="ml">Mareiārama</language>
+			<language type="mn">Mongōria</language>
 			<language type="mni">Manipuri</language>
 			<language type="moe">Inu-aimuna</language>
 			<language type="moh">Mauhōka</language>
-			<language type="mos">Mohī</language>
+			<language type="mos">Mohi</language>
 			<language type="mr">Marati</language>
 			<language type="ms">Marei</language>
-			<language type="mt">Mōtīhi</language>
-			<language type="mua">Mūtanga</language>
+			<language type="mt">Mārata</language>
+			<language type="mua">Mūnatanga</language>
 			<language type="mul">Ngā reo maha</language>
 			<language type="mus">Mukōki</language>
 			<language type="mwl">Miranatīhi</language>
-			<language type="my">Pūmīhī</language>
+			<language type="my">Pēmīhi</language>
 			<language type="myv">Erehīa</language>
 			<language type="mzn">Mahaterani</language>
 			<language type="na">Nauru</language>
 			<language type="nap">Neaporitana</language>
 			<language type="naq">Nama</language>
-			<language type="nb">Pakamō Nōwītiana</language>
+			<language type="nb">Pakamō Nōwei</language>
 			<language type="nd">Enetepēra ki te Raki</language>
-			<language type="nds">Tiamana Ōpaki</language>
+			<language type="nds">Tiamana Hakahaka</language>
 			<language type="ne">Nepari</language>
 			<language type="new">Newari</language>
 			<language type="ng">Natōka</language>
-			<language type="nia">Niēhe</language>
+			<language type="nia">Niāhi</language>
 			<language type="niu">Niueana</language>
 			<language type="nl">Tati</language>
 			<language type="nl_BE">Tati Whēmirihi</language>
-			<language type="nmg">Kuatio</language>
-			<language type="nn">Nīnōka Nōwītiana</language>
-			<language type="nnh">Nekeipū</language>
-			<language type="no">Nōwītiana</language>
+			<language type="nmg">Kuahio</language>
+			<language type="nn">Nīnōka Nōwei</language>
+			<language type="nnh">Nekiepūna</language>
+			<language type="no">Nōwei</language>
 			<language type="nog">Nōkai</language>
 			<language type="nqo">Unukō</language>
 			<language type="nr">Enetepēra ki te Tonga</language>
 			<language type="nso">Hoto ki te Raki</language>
 			<language type="nus">Nua</language>
 			<language type="nv">Nawahō</language>
-			<language type="ny">Nānia</language>
-			<language type="nyn">Nānakore</language>
+			<language type="ny">Niānia</language>
+			<language type="nyn">Niānakore</language>
 			<language type="oc">Ōkitana</language>
 			<language type="ojb">Ōtīpia Raki-mā-Uru</language>
-			<language type="ojc">Te Puku o Ōhiwa</language>
+			<language type="ojc">Ohīpawe Waenga</language>
 			<language type="ojs">Ōti-Kirī</language>
 			<language type="ojw">Ōhīpiwa ki te Uru</language>
 			<language type="oka">Ōkanakana</language>
@@ -322,22 +319,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="pag">Pāngahina</language>
 			<language type="pam">Pamapaka</language>
 			<language type="pap">Papiamēto</language>
-			<language type="pau">Parauna</language>
+			<language type="pau">Pārau</language>
 			<language type="pcm">Ngāitiriana Kōrapurapu</language>
 			<language type="pis">Pītini</language>
-			<language type="pl">Pōrīhi</language>
+			<language type="pl">Pōrihi</language>
 			<language type="pqm">Marahiti-Pehamakoare</language>
-			<language type="ps">Pātio</language>
+			<language type="ps">Pāhitō</language>
 			<language type="pt">Pōtukīhi</language>
 			<language type="pt_BR">Pōtukīhi Parahi</language>
 			<language type="pt_PT">Pōtukīhi Uropi</language>
 			<language type="qu">Kētua</language>
+			<language type="raj">Ratiahitani</language>
 			<language type="rap">Rapanui</language>
 			<language type="rar">Rarotonga</language>
 			<language type="rhg">Rohingia</language>
 			<language type="rm">Romānihi</language>
 			<language type="rn">Rūniti</language>
-			<language type="ro">Romēniana</language>
+			<language type="ro">Romeinia</language>
 			<language type="rof">Romopo</language>
 			<language type="ru">Ruhiana</language>
 			<language type="rup">Aromeiniana</language>
@@ -345,24 +343,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="rwk">Rawa</language>
 			<language type="sa">Hanahiti</language>
 			<language type="sad">Hātawe</language>
-			<language type="sah">Hakā</language>
-			<language type="saq">Hāpuru</language>
-			<language type="sat">Hātari</language>
+			<language type="sah">Hakūta</language>
+			<language type="saq">Hāmapuru</language>
+			<language type="sat">Hatāri</language>
 			<language type="sba">Nekāpei</language>
 			<language type="sbp">Hāngu</language>
-			<language type="sc">Hātīriana</language>
+			<language type="sc">Hārinia</language>
 			<language type="scn">Hihiriana</language>
 			<language type="sco">Kotimana</language>
 			<language type="sd">Hiniti</language>
 			<language type="se">Hami ki te Raki</language>
 			<language type="seh">Hena</language>
-			<language type="ses">Kōiaporo Heni</language>
+			<language type="ses">Kōiraporo Heni</language>
 			<language type="sg">Hāngo</language>
-			<language type="shi">Tahere</language>
+			<language type="shi">Tāhehita</language>
 			<language type="shn">Hāna</language>
 			<language type="si">Hinihāra</language>
 			<language type="sk">Horowākia</language>
-			<language type="sl">Horowēniana</language>
+			<language type="sl">Horowinia</language>
 			<language type="slh">Ratūti ki te Tonga</language>
 			<language type="sm">Hāmoa</language>
 			<language type="smn">Inari Hami</language>
@@ -371,14 +369,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="snk">Honīke</language>
 			<language type="so">Hamāri</language>
 			<language type="sq">Arapeiniana</language>
-			<language type="sr">Hēpiana</language>
+			<language type="sr">Hirupia</language>
 			<language type="srn">Harāna Tongo</language>
 			<language type="ss">Wāti</language>
 			<language type="st">Hōto ki te Tonga</language>
-			<language type="str">Terete Hārihi</language>
+			<language type="str">Hārihi Kuititanga</language>
 			<language type="su">Hunanīhi</language>
 			<language type="suk">Hukuma</language>
-			<language type="sv">Huīteneana</language>
+			<language type="sv">Huitene</language>
 			<language type="sw">Wāhīri</language>
 			<language type="swb">Komōriana</language>
 			<language type="syr">Hīriaka</language>
@@ -389,13 +387,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="teo">Teho</language>
 			<language type="tet">Tetumu</language>
 			<language type="tg">Tāhiki</language>
-			<language type="tgx">Tēkihi</language>
+			<language type="tgx">Tākihi</language>
 			<language type="th">Tai</language>
 			<language type="tht">Tātana</language>
-			<language type="ti">Tekirina</language>
+			<language type="ti">Tekirinia</language>
 			<language type="tig">Tīkara</language>
 			<language type="tk">Tākamana</language>
-			<language type="tlh">Kirionga</language>
+			<language type="tlh">Kirīngona</language>
 			<language type="tli">Tirīkiti</language>
 			<language type="tn">Hawāna</language>
 			<language type="to">Tonga</language>
@@ -406,23 +404,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ts">Honga</language>
 			<language type="tt">Tatā</language>
 			<language type="ttm">Tūtone ki te Raki</language>
-			<language type="tum">Tūmuka</language>
+			<language type="tum">Tumūka</language>
 			<language type="tvl">Tuwaru</language>
 			<language type="twq">Tahawaka</language>
 			<language type="ty">Tahiti</language>
 			<language type="tyv">Tuwīniana</language>
-			<language type="tzm">Te Puku o Atarihi Tamahēte</language>
+			<language type="tzm">Tamahīta Te Puku o Atarihi</language>
 			<language type="udm">Ūmutu</language>
 			<language type="ug">Wīkura</language>
-			<language type="uk">Ukarainiana</language>
+			<language type="uk">Ukareinga</language>
 			<language type="umb">Ūpunu</language>
 			<language type="und">Reo Tē Mōhiotia</language>
-			<language type="ur">Ūru</language>
+			<language type="ur">Ūrutu</language>
 			<language type="uz">Ūpeke</language>
 			<language type="vai">Wai</language>
-			<language type="ve">Wenēra</language>
-			<language type="vi">Witināmiana</language>
-			<language type="vun">Wāhau</language>
+			<language type="ve">Wēnera</language>
+			<language type="vi">Whitināmu</language>
+			<language type="vun">Whunio</language>
 			<language type="wa">Warūna</language>
 			<language type="wae">Wāhere</language>
 			<language type="wal">Wareita</language>
@@ -450,21 +448,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="zza">Tātā</language>
 		</languages>
 		<scripts>
-			<script type="Adlm">Arāma</script>
+			<script type="Adlm">Atarama</script>
 			<script type="Arab">Arapika</script>
-			<script type="Aran">Natārika</script>
-			<script type="Armn">Āmeiniana</script>
+			<script type="Aran">Nātarika</script>
+			<script type="Armn">Āmeniana</script>
 			<script type="Beng">Pāngara</script>
 			<script type="Bopo">Papamawha</script>
 			<script type="Brai">Tuhi Matapō</script>
 			<script type="Cakm">Tiakamā</script>
-			<script type="Cans">Ngā Tohu o te reo o ngā iwi Taketake o Kānata kua paiheretia</script>
+			<script type="Cans">Ngā Kūoro o ngā Iwi Taketake o Kānata kua paiheretia</script>
 			<script type="Cher">Terokī</script>
 			<script type="Cyrl">Hīririki</script>
 			<script type="Deva">Tewhangāngari</script>
 			<script type="Ethi">Etiopika</script>
 			<script type="Geor">Hōriana</script>
-			<script type="Grek">Kiriki</script>
+			<script type="Grek">Kariki</script>
 			<script type="Gujr">Kutarāti</script>
 			<script type="Guru">Kūmuki</script>
 			<script type="Hanb">Hana me te Papamawha</script>
@@ -476,17 +474,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Hant" alt="stand-alone">Hana Tuku iho</script>
 			<script type="Hebr">Hīperu</script>
 			<script type="Hira">Hirakana</script>
-			<script type="Hrkt">Tohu Hapanihi</script>
+			<script type="Hrkt">Kūoro Hapanihi</script>
 			<script type="Jamo">Hamo</script>
 			<script type="Jpan">Hapanihi</script>
 			<script type="Kana">Katakana</script>
-			<script type="Khmr">Kimei</script>
-			<script type="Knda">Kanara</script>
+			<script type="Khmr">Kimēra</script>
+			<script type="Knda">Kanāra</script>
 			<script type="Kore">Kōreana</script>
 			<script type="Laoo">Rao</script>
-			<script type="Latn">Rātina</script>
-			<script type="Mlym">Maramara</script>
-			<script type="Mong">Mongōriana</script>
+			<script type="Latn">Rātini</script>
+			<script type="Mlym">Maraiārama</script>
+			<script type="Mong">Mongōria</script>
 			<script type="Mtei">Meitei Maeke</script>
 			<script type="Mymr">Mienemā</script>
 			<script type="Nkoo">Unukō</script>
@@ -503,7 +501,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Thai">Tai</script>
 			<script type="Tibt">Tipete</script>
 			<script type="Vaii">Wai</script>
-			<script type="Yiii">Ei</script>
+			<script type="Yiii">Eī</script>
 			<script type="Zmth">Reo Tohu Pāngarau</script>
 			<script type="Zsye">Emohi</script>
 			<script type="Zsym">Tohu</script>
@@ -516,7 +514,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="002">Āwherika</territory>
 			<territory type="003">Amerika ki te Raki</territory>
 			<territory type="005">Amerika ki te Tonga</territory>
-			<territory type="009">Ōhiānia</territory>
+			<territory type="009">Ngā Moutere-a-Kiwa</territory>
 			<territory type="011">Āwherika ki te Uru</territory>
 			<territory type="013">Te Puku o Amerika</territory>
 			<territory type="014">Āwherika ki te Rāwhiti</territory>
@@ -525,14 +523,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="018">Āwherika Whakatetonga</territory>
 			<territory type="019">Amerika</territory>
 			<territory type="021">Te Raki o Amerika</territory>
-			<territory type="029">Karapiana</territory>
+			<territory type="029">Karapīana</territory>
 			<territory type="030">Āhia ki te Rāwhiti</territory>
 			<territory type="034">Āhia ki te Tonga</territory>
-			<territory type="035">Āhia ki te Tonga-mā-uru</territory>
+			<territory type="035">Āhia ki te Tonga-mā-rāwhiti</territory>
 			<territory type="039">Ūropi ki te Tonga</territory>
-			<territory type="053">Te Moana Ahitereiria</territory>
+			<territory type="053">Atareiria</territory>
 			<territory type="054">Meranīhia</territory>
-			<territory type="057">Te Rohe o Mikoronīhia</territory>
+			<territory type="057">Te Rohe o Mekanēhia</territory>
 			<territory type="061">Te Moana-nui-a-Kiwa</territory>
 			<territory type="142">Āhia</territory>
 			<territory type="143">Te Puku o Āhia</territory>
@@ -543,48 +541,73 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="155">Ūropi ki te Uru</territory>
 			<territory type="202">Āwherika ki te Tonga o Te Hahāra</territory>
 			<territory type="419">Amerika Rātini</territory>
-			<territory type="AG">Anatikua me Pāpura</territory>
-			<territory type="AI">Ākuira</territory>
+			<territory type="AC">Te Moutere Aupikinga</territory>
+			<territory type="AD">Anatōra</territory>
+			<territory type="AE">Kotahitanga o ngā Whenua o Ārapi</territory>
+			<territory type="AF">Awhekenetāna</territory>
+			<territory type="AG">Motu Nehe me Pāputa</territory>
+			<territory type="AI">Anguira</territory>
+			<territory type="AL">Arapeinia</territory>
+			<territory type="AM">Āmenia</territory>
 			<territory type="AO">Anakora</territory>
+			<territory type="AQ">Te Kōpakatanga ki te Tonga</territory>
 			<territory type="AR">Āketina</territory>
-			<territory type="AT">Ateria</territory>
+			<territory type="AS">Hāmoa-Amerika</territory>
+			<territory type="AT">Ataria</territory>
+			<territory type="AU">Ahitereiria</territory>
 			<territory type="AW">Arūpa</territory>
 			<territory type="AX">Motu Ōrana</territory>
-			<territory type="BB">Pāpetō</territory>
-			<territory type="BE">Paratiamu</territory>
-			<territory type="BF">Pēkina Waho</territory>
+			<territory type="AZ">Atepaihānia</territory>
+			<territory type="BA">Pōngia-Herekōwini</territory>
+			<territory type="BB">Papatohe</territory>
+			<territory type="BD">Pākaratēhi</territory>
+			<territory type="BE">Peretiama</territory>
+			<territory type="BF">Pākina Wharo</territory>
+			<territory type="BG">Purukāria</territory>
+			<territory type="BH">Pāreina</territory>
 			<territory type="BI">Puruniti</territory>
 			<territory type="BJ">Penīna</territory>
 			<territory type="BL">Hato Pāteremi</territory>
-			<territory type="BM">Pemiuta</territory>
+			<territory type="BM">Pāmura</territory>
+			<territory type="BN">Poronai</territory>
 			<territory type="BO">Poriwia</territory>
-			<territory type="BQ">Karepeana Hōrana</territory>
+			<territory type="BQ">Karapīana Hōrana</territory>
 			<territory type="BR">Parīhi</territory>
-			<territory type="BS">Pahāma</territory>
+			<territory type="BS">Pahama</territory>
+			<territory type="BT">Pūtana</territory>
 			<territory type="BV">Motu Pūwei</territory>
 			<territory type="BW">Poriwana</territory>
+			<territory type="BY">Pērara</territory>
 			<territory type="BZ">Perīhi</territory>
 			<territory type="CA">Kānata</territory>
-			<territory type="CD">Kōngo - Kingihāha</territory>
+			<territory type="CC">Ngā Moutere Kokoko (Kirini)</territory>
+			<territory type="CD">Kōngo - Kinihāha</territory>
 			<territory type="CD" alt="variant">Kōngo</territory>
-			<territory type="CF">Te Puku o Āwherika</territory>
-			<territory type="CG">Kōngo - Parāwhe</territory>
-			<territory type="CG" alt="variant">Kōngo (Tominika)</territory>
+			<territory type="CF">Te Whenua Tūhake o Āwherika Waenga</territory>
+			<territory type="CG">Kōngo - Pārawhe</territory>
+			<territory type="CG" alt="variant">Kōngo (Whenua Tūhake)</territory>
 			<territory type="CH">Huiterangi</territory>
 			<territory type="CI">Te Tai Rei</territory>
+			<territory type="CK">Kuki Airani</territory>
 			<territory type="CL">Hiri</territory>
 			<territory type="CM">Kamarūna</territory>
 			<territory type="CN">Haina</territory>
 			<territory type="CO">Koromōpia</territory>
-			<territory type="CR">Kota Rīka</territory>
+			<territory type="CP">Te Moutere Kiripetone</territory>
+			<territory type="CR">Koto Rīka</territory>
 			<territory type="CU">Kiupa</territory>
 			<territory type="CV">Te Kūrae Matomato</territory>
 			<territory type="CW">Kurahao</territory>
-			<territory type="DE">Tiamani</territory>
+			<territory type="CX">Te Moutere Kirihimete</territory>
+			<territory type="CY">Haipara</territory>
+			<territory type="CZ">Tiekia</territory>
+			<territory type="CZ" alt="variant">Te Whenua Tūhake o Tieke</territory>
+			<territory type="DE">Tiamana</territory>
+			<territory type="DG">Tieko Kāhia</territory>
 			<territory type="DJ">Tipūti</territory>
 			<territory type="DK">Tenemāka</territory>
 			<territory type="DM">Tominika</territory>
-			<territory type="DO">Te Whenua Tominika</territory>
+			<territory type="DO">Te Whenua Tūhake o Tominika</territory>
 			<territory type="DZ">Aratiria</territory>
 			<territory type="EA">Hūta me Merera</territory>
 			<territory type="EC">Ekuatoa</territory>
@@ -592,129 +615,289 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="EG">Īhipa</territory>
 			<territory type="EH">Hahāra ki te Tonga</territory>
 			<territory type="ER">Eritēria</territory>
+			<territory type="ES">Peina</territory>
 			<territory type="ET">Etiopia</territory>
 			<territory type="EU">Te Uniana o Ūropi</territory>
 			<territory type="EZ">Te Rohe o Ūropi</territory>
-			<territory type="FI">Whinirana</territory>
+			<territory type="FI">Whinarana</territory>
+			<territory type="FJ">Whītī</territory>
 			<territory type="FK">Motu Whākarangi</territory>
-			<territory type="FK" alt="variant">Motu Whākarangi (Ira Māwina)</territory>
-			<territory type="FO">Motu Wharo</territory>
+			<territory type="FK" alt="variant">Motu Whākana (Ira Māwina)</territory>
+			<territory type="FM">Mekanēhia</territory>
+			<territory type="FO">Motu Wharau</territory>
 			<territory type="FR">Wīwī</territory>
 			<territory type="GA">Kāpona</territory>
 			<territory type="GB">Te Hononga o Piritene</territory>
 			<territory type="GD">Kerenāta</territory>
-			<territory type="GF">Kaiana Wīwī</territory>
-			<territory type="GG">Kēni</territory>
+			<territory type="GE">Hōria</territory>
+			<territory type="GF">Kiāna Wīwī</territory>
+			<territory type="GG">Kōnihi</territory>
 			<territory type="GH">Kāna</territory>
-			<territory type="GL">Kirīrangi</territory>
-			<territory type="GM">Te Kamopia</territory>
+			<territory type="GI">Kāmaka</territory>
+			<territory type="GL">Whenuakāriki</territory>
+			<territory type="GM">Kamopia</territory>
 			<territory type="GN">Kini</territory>
-			<territory type="GP">Kuatarū</territory>
+			<territory type="GP">Kuatarupa</territory>
 			<territory type="GQ">Kini Ekuatoria</territory>
-			<territory type="GS">Hōria ki te Tonga me Motu Hanuwiti ki te Tonga</territory>
+			<territory type="GR">Kirihi</territory>
+			<territory type="GS">Hōria ki te Tonga me ngā Motu Hanawiti ki te Tonga</territory>
 			<territory type="GT">Kuatamāra</territory>
+			<territory type="GU">Kuama</territory>
 			<territory type="GW">Kini-Pihao</territory>
 			<territory type="GY">Kaiana</territory>
-			<territory type="HN">Honūra</territory>
+			<territory type="HK">Hongipua Haina</territory>
+			<territory type="HK" alt="short">Hongipua</territory>
+			<territory type="HM">Ngā Moutere Heriti me Makitānara</territory>
+			<territory type="HN">Honotura</territory>
+			<territory type="HR">Koroātia</territory>
 			<territory type="HT">Haiti</territory>
-			<territory type="IC">Motu Kānara</territory>
-			<territory type="IE">Aerana</territory>
-			<territory type="IM">Motu Tangata</territory>
+			<territory type="HU">Hanekari</territory>
+			<territory type="IC">Motu Kanēre</territory>
+			<territory type="ID">Initonīhia</territory>
+			<territory type="IE">Airani</territory>
+			<territory type="IL">Iharaira</territory>
+			<territory type="IM">Te Moutere Mana</territory>
 			<territory type="IN">Inia</territory>
 			<territory type="IO">Te Rohe o te Moana Īniana Piritihi</territory>
+			<territory type="IO" alt="chagos">Te Rohe o te Moana Īnia Piritene</territory>
+			<territory type="IQ">Irāka</territory>
+			<territory type="IR">Irāna</territory>
 			<territory type="IS">Tiorangi</territory>
 			<territory type="IT">Itāria</territory>
-			<territory type="JE">Tiehe</territory>
+			<territory type="JE">Tōrehe</territory>
 			<territory type="JM">Hemeika</territory>
+			<territory type="JO">Hōrano</territory>
 			<territory type="JP">Hapani</territory>
-			<territory type="KE">Kēnia</territory>
+			<territory type="KE">Kenia</territory>
+			<territory type="KG">Kikitānga</territory>
+			<territory type="KH">Kamapōtia</territory>
+			<territory type="KI">Kiripati</territory>
 			<territory type="KM">Komoro</territory>
 			<territory type="KN">Hato Kiti me Newhi</territory>
+			<territory type="KP">Kōrea ki te Raki</territory>
+			<territory type="KR">Kōrea ki te Tonga</territory>
+			<territory type="KW">Kūweiti</territory>
 			<territory type="KY">Ngā Motu Keimana</territory>
+			<territory type="KZ">Katatānga</territory>
+			<territory type="LA">Rāoho</territory>
+			<territory type="LB">Repanona</territory>
 			<territory type="LC">Hato Ruhia</territory>
-			<territory type="LI">Rīkeneteina</territory>
-			<territory type="LR">Raipiri</territory>
+			<territory type="LI">Rīkenetaina</territory>
+			<territory type="LK">Hiri Rānaka</territory>
+			<territory type="LR">Raipiria</territory>
 			<territory type="LS">Teroto</territory>
 			<territory type="LT">Rituānia</territory>
-			<territory type="LU">Rakimipēki</territory>
-			<territory type="LV">Ratawia</territory>
-			<territory type="LY">Rīpia</territory>
+			<territory type="LU">Rakapuō</territory>
+			<territory type="LV">Rāwhia</territory>
+			<territory type="LY">Ripia</territory>
 			<territory type="MA">Moroko</territory>
-			<territory type="MC">Manako</territory>
+			<territory type="MC">Monāko</territory>
+			<territory type="MD">Morotawa</territory>
+			<territory type="ME">Maungakororiko</territory>
 			<territory type="MF">Hato Mātene</territory>
-			<territory type="MG">Marakāhia</territory>
+			<territory type="MG">Matakāhika</territory>
+			<territory type="MH">Ngā Motu Māhara</territory>
 			<territory type="MK">Makerōnia ki te Raki</territory>
 			<territory type="ML">Māri</territory>
-			<territory type="MQ">Māteniki</territory>
+			<territory type="MM">Pēma</territory>
+			<territory type="MN">Mongōria</territory>
+			<territory type="MO">Makau Haina</territory>
+			<territory type="MO" alt="short">Makau</territory>
+			<territory type="MP">Ngā Motu Mariana ki te Raki</territory>
+			<territory type="MQ">Mātiniki</territory>
 			<territory type="MR">Mauritānia</territory>
 			<territory type="MS">Monoterā</territory>
-			<territory type="MU">Mōrihi</territory>
+			<territory type="MT">Mārata</territory>
+			<territory type="MU">Marihi</territory>
+			<territory type="MV">Māratiri</territory>
 			<territory type="MW">Marāwi</territory>
 			<territory type="MX">Mēhiko</territory>
+			<territory type="MY">Mareia</territory>
 			<territory type="MZ">Mohapiki</territory>
-			<territory type="NA">Namīpia</territory>
+			<territory type="NA">Namipia</territory>
+			<territory type="NC">Whenua Kanaki</territory>
 			<territory type="NE">Ngāika</territory>
+			<territory type="NF">Te Moutere Nōpoke</territory>
 			<territory type="NG">Ngāitiria</territory>
-			<territory type="NI">Nikarakua</territory>
+			<territory type="NI">Nikarāhua</territory>
 			<territory type="NL">Hōrana</territory>
 			<territory type="NO">Nōwei</territory>
+			<territory type="NP">Nepōra</territory>
+			<territory type="NR">Nauru</territory>
+			<territory type="NU">Niue</territory>
 			<territory type="NZ">Aotearoa</territory>
+			<territory type="OM">Ōmana</territory>
 			<territory type="PA">Panama</territory>
 			<territory type="PE">Peru</territory>
-			<territory type="PM">Hato Piere &amp; Mikarona</territory>
-			<territory type="PR">Pōta Riko</territory>
+			<territory type="PF">Poronēhia Wīwī</territory>
+			<territory type="PG">Papua Nūkini</territory>
+			<territory type="PH">Piripīni</territory>
+			<territory type="PK">Pakitāne</territory>
+			<territory type="PL">Pōrana</territory>
+			<territory type="PM">Hato Piere &amp; Mikerona</territory>
+			<territory type="PN">Pitikeina</territory>
+			<territory type="PR">Peta Riko</territory>
+			<territory type="PS">Ngā Rohe o Parihitini</territory>
+			<territory type="PS" alt="short">Parihitini</territory>
+			<territory type="PT">Potukara</territory>
+			<territory type="PW">Pārau</territory>
 			<territory type="PY">Parakai</territory>
-			<territory type="QO">Ngā moutere mōwaho i a Ōhiānia</territory>
-			<territory type="RE">Rēnio</territory>
+			<territory type="QA">Katā</territory>
+			<territory type="QO">Ngā Moutere-a-Kiwa o Waho atu</territory>
+			<territory type="RE">Reūnio</territory>
+			<territory type="RO">Romeinia</territory>
+			<territory type="RS">Hirupia</territory>
 			<territory type="RU">Rūhia</territory>
 			<territory type="RW">Rāwana</territory>
-			<territory type="SC">Heihere</territory>
+			<territory type="SA">Hauri Arāpia</territory>
+			<territory type="SB">Ngā Motu Horomona</territory>
+			<territory type="SC">Heikere</territory>
 			<territory type="SD">Hūtāne</territory>
-			<territory type="SE">Huītene</territory>
-			<territory type="SH">Hato Harīna</territory>
-			<territory type="SJ">Heopāra me Ia Maiana</territory>
+			<territory type="SE">Huitene</territory>
+			<territory type="SG">Hingapoa</territory>
+			<territory type="SH">Hato Hērena</territory>
+			<territory type="SI">Horowinia</territory>
+			<territory type="SJ">Heopara me Iana Maiana</territory>
+			<territory type="SK">Horowākia</territory>
 			<territory type="SL">Te Araone</territory>
+			<territory type="SM">Hana Marino</territory>
 			<territory type="SN">Henekara</territory>
 			<territory type="SO">Hūmārie</territory>
-			<territory type="SR">Hurināme</territory>
+			<territory type="SR">Huriname</territory>
 			<territory type="SS">Hūtāne ki te Tonga</territory>
-			<territory type="ST">Hao Tomei me Pirinipei</territory>
-			<territory type="SV">Ere Hāwhatō</territory>
+			<territory type="ST">Hato Tomei me Pirinipei</territory>
+			<territory type="SV">Whakaora</territory>
 			<territory type="SX">Hiti Mātene</territory>
-			<territory type="SZ">Ewatini</territory>
+			<territory type="SY">Hiria</territory>
+			<territory type="SZ">Ehiwatini</territory>
 			<territory type="SZ" alt="variant">Warerangi</territory>
-			<territory type="TC">Tāke me ngā Motu o Keiko</territory>
+			<territory type="TA">Tiritana da Kunia</territory>
+			<territory type="TC">Koru-Kākoa</territory>
 			<territory type="TD">Kāta</territory>
 			<territory type="TF">Ngā Rohe o Wīwī ki te Tonga</territory>
 			<territory type="TG">Toko</territory>
+			<territory type="TH">Tairanga</territory>
+			<territory type="TJ">Takiritānga</territory>
+			<territory type="TK">Tokerau</territory>
+			<territory type="TL">Tīmoa ki te Rāwhiti</territory>
+			<territory type="TM">Tukumanatānga</territory>
 			<territory type="TN">Tūnihia</territory>
-			<territory type="TT">Tinitātā me Topēko</territory>
+			<territory type="TO">Tonga</territory>
+			<territory type="TR">Tākei</territory>
+			<territory type="TT">Tirinaki Tōpako</territory>
+			<territory type="TV">Tūwaru</territory>
+			<territory type="TW">Taiwana</territory>
 			<territory type="TZ">Tānahia</territory>
-			<territory type="UG">Ukāna</territory>
-			<territory type="UN">Te Kotahitanga o Ngā Iwi o te Ao</territory>
+			<territory type="UA">Ukareinga</territory>
+			<territory type="UG">Ukānga</territory>
+			<territory type="UM">Ngā Moutere Amerika o Waho</territory>
+			<territory type="UN">Te Rūnanga Whakakotahi i ngā Iwi o te Ao</territory>
 			<territory type="US">Hononga o Amerika</territory>
 			<territory type="UY">Urukoi</territory>
-			<territory type="VC">Hato Wetene me Keretīni</territory>
-			<territory type="VE">Wenehūera</territory>
-			<territory type="VG">Ngā Motu o Tātāhou Piritene</territory>
-			<territory type="VI">Ngā Motu o Tātāhou Amerika</territory>
-			<territory type="XA">Tūreo Kimikimi</territory>
-			<territory type="XB">Piri Kimikimi</territory>
-			<territory type="YT">Maio</territory>
+			<territory type="UZ">Uhipeketāne</territory>
+			<territory type="VA">Te Poho-o-Pita</territory>
+			<territory type="VC">Hato Wēneti me Keretīni</territory>
+			<territory type="VE">Penehūera</territory>
+			<territory type="VG">Ngā Moutere Puhi Piritene</territory>
+			<territory type="VI">Ngā Moutere Puhi Amerika</territory>
+			<territory type="VN">Whitināmu</territory>
+			<territory type="VU">Whenuatū</territory>
+			<territory type="WF">Warihi me Whutuna</territory>
+			<territory type="WS">Hāmoa</territory>
+			<territory type="XA">Mita kikoika</territory>
+			<territory type="XB">Piri Kikoika</territory>
+			<territory type="XK">Kōhoro</territory>
+			<territory type="YE">Īmene</territory>
+			<territory type="YT">Māiota</territory>
 			<territory type="ZA">Āwherika ki te Tonga</territory>
 			<territory type="ZM">Tāmipia</territory>
 			<territory type="ZW">Timuwawe</territory>
 			<territory type="ZZ">Rohe Tē Mōhiotia</territory>
 		</territories>
+		<keys>
+			<key type="calendar">Maramataka</key>
+			<key type="cf">Hōputu Moni</key>
+			<key type="collation">Raupapa Kōmaka</key>
+			<key type="currency">Momo Moni</key>
+			<key type="hc">Hurihanga Haora (12, 24 rānei)</key>
+			<key type="lb">Hātuhi Whati Rārangi</key>
+			<key type="ms">Pūnaha Inenga</key>
+			<key type="numbers">Tau</key>
+		</keys>
 		<types>
+			<type key="calendar" type="buddhist">Maramataka Puta</type>
+			<type key="calendar" type="chinese">Maramataka Haina</type>
+			<type key="calendar" type="coptic">Maramataka Kopitika</type>
+			<type key="calendar" type="dangi">Maramataka Tangi</type>
+			<type key="calendar" type="ethiopic">Maramataka Etiopia</type>
+			<type key="calendar" type="ethiopic-amete-alem">Maramataka Etiopia Amete Arema</type>
 			<type key="calendar" type="gregorian">Maramataka Pākehā</type>
+			<type key="calendar" type="hebrew">Maramataka Hīperu</type>
+			<type key="calendar" type="islamic">Maramataka Hitiuri</type>
+			<type key="calendar" type="islamic-civil">Maramataka Hitiuri (tūtohi, wā o naiānei)</type>
+			<type key="calendar" type="islamic-umalqura">Maramataka Hitiuri (Uma ara Kura)</type>
+			<type key="calendar" type="iso8601">Maramataka ISO-8601</type>
+			<type key="calendar" type="japanese">Maramataka Hapanihi</type>
+			<type key="calendar" type="persian">Maramataka Pāhia</type>
+			<type key="calendar" type="roc">Maramataka Minguo</type>
+			<type key="cf" type="account">Hōputu Moni Mahi Kaute</type>
+			<type key="cf" type="standard">Hōputu Moni Arowhānui</type>
+			<type key="collation" type="ducet">Raupapa Kōmaka Unicode Taunoa</type>
+			<type key="collation" type="search">Rapunga Arowhānui</type>
 			<type key="collation" type="standard">Raupapa Kōmaka Arowhānui</type>
+			<type key="hc" type="h11">Pūnaha Haora 12 (0–11)</type>
+			<type key="hc" type="h12">Pūnaha Haora 12 (1–12)</type>
+			<type key="hc" type="h23">Pūnaha Haora 24 (0–23)</type>
+			<type key="hc" type="h24">Pūnaha Haora 24 (1–24)</type>
+			<type key="lb" type="loose">Hātuhi Whati Rārangi Tangatanga</type>
+			<type key="lb" type="normal">Hātuhi Whati Rārangi Taunoa</type>
+			<type key="lb" type="strict">Hātuhi Whati Rārangi Pākaha</type>
+			<type key="ms" type="metric">Pūnaha Ngahuru</type>
+			<type key="ms" type="uksystem">Pūnaha Inenga Emepaea</type>
+			<type key="ms" type="ussystem">Pūnenga Inenga Amerika</type>
+			<type key="numbers" type="arab">Mati Arapī-Īnia</type>
+			<type key="numbers" type="arabext">Mati Arapī-Īnia Whakaroa</type>
+			<type key="numbers" type="armn">Tohutau Āmenia</type>
+			<type key="numbers" type="armnlow">Tohutau Āmenia Pūriki</type>
+			<type key="numbers" type="beng">Mati Pākara</type>
+			<type key="numbers" type="cakm">Mati Tiakama</type>
+			<type key="numbers" type="deva">Mati Tewanakari</type>
+			<type key="numbers" type="ethi">Tohutau Etiopia</type>
+			<type key="numbers" type="fullwide">Mati Whānui Rawa</type>
+			<type key="numbers" type="geor">Tohutau Hōriana</type>
+			<type key="numbers" type="grek">Tohutau Kariki</type>
+			<type key="numbers" type="greklow">Tohutau Kariki Pūriki</type>
+			<type key="numbers" type="gujr">Mati Kuharati</type>
+			<type key="numbers" type="guru">Mati Kuramuki</type>
+			<type key="numbers" type="hanidec">Tohutau Haina ā-ira</type>
+			<type key="numbers" type="hans">Tohutau Haina Māmā</type>
+			<type key="numbers" type="hansfin">Tohutau Ahumoni Haina Māmā</type>
+			<type key="numbers" type="hant">Tohutau Haina Tukuiho</type>
+			<type key="numbers" type="hantfin">Tohutau Ahumoni Haina Tukuiho</type>
+			<type key="numbers" type="hebr">Tohutau Hīperu</type>
+			<type key="numbers" type="java">Mati Tiawha</type>
+			<type key="numbers" type="jpan">Tohutau Hapanihi</type>
+			<type key="numbers" type="jpanfin">Tohutau Ahumoni Hapanihi</type>
+			<type key="numbers" type="khmr">Mati Kimēra</type>
+			<type key="numbers" type="knda">Mati Kanāta</type>
+			<type key="numbers" type="laoo">Mati Rao</type>
 			<type key="numbers" type="latn">Ngā Mati Pākehā</type>
+			<type key="numbers" type="mlym">Mati Maraiarama</type>
+			<type key="numbers" type="mtei">Mati Mētei Maieka</type>
+			<type key="numbers" type="mymr">Mati Pēma</type>
+			<type key="numbers" type="olck">Mati Oro Tieki</type>
+			<type key="numbers" type="orya">Mati Oria</type>
+			<type key="numbers" type="roman">Tohutau Rōmana</type>
+			<type key="numbers" type="romanlow">Tohutau Rōmana Pūriki</type>
+			<type key="numbers" type="taml">Tohutau Tamira Tukuiho</type>
+			<type key="numbers" type="tamldec">Mati Tamira</type>
+			<type key="numbers" type="telu">Mati Teruku</type>
+			<type key="numbers" type="thai">Mati Tai</type>
+			<type key="numbers" type="tibt">Mati Tīpete</type>
+			<type key="numbers" type="vaii">Mati Wai</type>
 		</types>
 		<measurementSystemNames>
 			<measurementSystemName type="metric">Ngahuru</measurementSystemName>
-			<measurementSystemName type="UK">UK</measurementSystemName>
-			<measurementSystemName type="US">US</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
 			<codePattern type="language">Reo: {0}</codePattern>
@@ -723,16 +906,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ā e ē h i ī k m n {ng} o ō p r t u ū w {wh}]</exemplarCharacters>
+		<exemplarCharacters>[aā eē h iī k m n {ng} oō p r t uū w {wh}]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f g j l q s v x y z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E H I K M N O P R T U W]</exemplarCharacters>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
 			<calendar type="generic">
@@ -740,25 +917,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd-MM-y GGGGG</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -767,15 +940,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -783,26 +950,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<intervalFormats>
 						<intervalFormatFallback>{0} ki te {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M">MM–MM</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d">MM-dd – MM-dd</greatestDifference>
 							<greatestDifference id="M">MM-dd – MM-dd</greatestDifference>
@@ -811,19 +966,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d">MM-dd, E – MM-dd, E</greatestDifference>
 							<greatestDifference id="M">MM-dd, E – MM-dd, E</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M">LLL–LLL</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
-							<greatestDifference id="d">MMM d–d</greatestDifference>
 							<greatestDifference id="M">MMM d – MMM d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d">MMM d, E – MMM d, E</greatestDifference>
 							<greatestDifference id="M">MMM d, E – MMM d, E</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y">G y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M">GGGGG y-MM – y-MM</greatestDifference>
@@ -840,11 +988,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">GGGGG y-MM-dd, E – y-MM-dd, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMM">
-							<greatestDifference id="M">G y MMM–MMM</greatestDifference>
 							<greatestDifference id="y">G y MMM – y MMM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMd">
-							<greatestDifference id="d">G y MMM d–d</greatestDifference>
 							<greatestDifference id="M">G y MMM d – MMM d</greatestDifference>
 							<greatestDifference id="y">G y MMM d – y MMM d</greatestDifference>
 						</intervalFormatItem>
@@ -854,7 +1000,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="y">G y MMM d, E – y MMM d, E</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yMMMM">
-							<greatestDifference id="M">G y MMMM–MMMM</greatestDifference>
 							<greatestDifference id="y">G y MMMM – y MMMM</greatestDifference>
 						</intervalFormatItem>
 					</intervalFormats>
@@ -869,27 +1014,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="3">Māe</month>
 							<month type="4">Āpe</month>
 							<month type="5">Mei</month>
-							<month type="6">Hune</month>
+							<month type="6">Hun</month>
 							<month type="7">Hūr</month>
 							<month type="8">Āku</month>
 							<month type="9">Hep</month>
 							<month type="10">Oke</month>
-							<month type="11">Noem</month>
-							<month type="12">Tīhe</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">H</month>
-							<month type="2">P</month>
-							<month type="3">M</month>
-							<month type="4">Ā</month>
-							<month type="5">M</month>
-							<month type="6">H</month>
-							<month type="7">H</month>
-							<month type="8">Ā</month>
-							<month type="9">H</month>
-							<month type="10">O</month>
-							<month type="11">N</month>
-							<month type="12">T</month>
+							<month type="11">Noe</month>
+							<month type="12">Tīh</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">Hānuere</month>
@@ -907,20 +1038,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">Hān</month>
-							<month type="2">Pēp</month>
-							<month type="3">Māe</month>
-							<month type="4">Āpe</month>
-							<month type="5">Mei</month>
-							<month type="6">Hune</month>
-							<month type="7">Hūr</month>
-							<month type="8">Āku</month>
-							<month type="9">Hep</month>
-							<month type="10">Oke</month>
-							<month type="11">Noem</month>
-							<month type="12">Tīhe</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">H</month>
 							<month type="2">P</month>
@@ -939,7 +1056,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="1">Hānuere</month>
 							<month type="2">Pēpuere</month>
 							<month type="3">Māehe</month>
-							<month type="4">Āpereira</month>
+							<month type="4">Āperira</month>
 							<month type="5">Mei</month>
 							<month type="6">Hune</month>
 							<month type="7">Hūrae</month>
@@ -955,21 +1072,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dayContext type="format">
 						<dayWidth type="abbreviated">
 							<day type="sun">Rāt</day>
-							<day type="mon">Mane</day>
+							<day type="mon">Man</day>
 							<day type="tue">Tūr</day>
-							<day type="wed">Wene</day>
-							<day type="thu">Tāit</day>
+							<day type="wed">Wen</day>
+							<day type="thu">Tāi</day>
 							<day type="fri">Par</day>
 							<day type="sat">Rāh</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">Rt</day>
-							<day type="mon">M</day>
-							<day type="tue">T</day>
-							<day type="wed">E</day>
-							<day type="thu">T</day>
-							<day type="fri">P</day>
-							<day type="sat">Rh</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">Rāt</day>
@@ -991,15 +1099,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">Rāt</day>
-							<day type="mon">Mane</day>
-							<day type="tue">Tūr</day>
-							<day type="wed">Wene</day>
-							<day type="thu">Tāit</day>
-							<day type="fri">Par</day>
-							<day type="sat">Rāh</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">Rt</day>
 							<day type="mon">M</day>
@@ -1008,24 +1107,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu">T</day>
 							<day type="fri">P</day>
 							<day type="sat">Rh</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">Rāt</day>
-							<day type="mon">Man</day>
-							<day type="tue">Tū</day>
-							<day type="wed">Wen</day>
-							<day type="thu">Tāi</day>
-							<day type="fri">Par</day>
-							<day type="sat">Rāh</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">Rātapu</day>
-							<day type="mon">Mane</day>
-							<day type="tue">Tūrei</day>
-							<day type="wed">Wenerei</day>
-							<day type="thu">Tāite</day>
-							<day type="fri">Paraire</day>
-							<day type="sat">Rāhoroi</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1037,32 +1118,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3">HW3</quarter>
 							<quarter type="4">HW4</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">Hauwhā tuatahi</quarter>
-							<quarter type="2">Hauwhā tuarua</quarter>
-							<quarter type="3">Hauwhā tuatoru</quarter>
-							<quarter type="4">Hauwhā tuawhā</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">HW1</quarter>
-							<quarter type="2">HW2</quarter>
-							<quarter type="3">HW3</quarter>
-							<quarter type="4">HW4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">Hauwhā tuatahi</quarter>
 							<quarter type="2">Hauwhā tuarua</quarter>
@@ -1071,71 +1126,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
-				<dayPeriods>
-					<dayPeriodContext type="format">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="am">AM</dayPeriod>
-							<dayPeriod type="pm">PM</dayPeriod>
-						</dayPeriodWidth>
-					</dayPeriodContext>
-				</dayPeriods>
-				<eras>
-					<eraNames>
-						<era type="0">BCE</era>
-						<era type="0" alt="variant">BCE</era>
-						<era type="1">CE</era>
-						<era type="1" alt="variant">CE</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">BCE</era>
-						<era type="1">CE</era>
-					</eraAbbr>
-				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd-MM-y</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1170,15 +1179,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1186,55 +1189,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
-						<dateFormatItem id="Bh">h B</dateFormatItem>
-						<dateFormatItem id="Bhm">h:mm B</dateFormatItem>
-						<dateFormatItem id="Bhms">h:mm:ss B</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="EBhm">E h:mm B</dateFormatItem>
-						<dateFormatItem id="EBhms">E h:mm:ss B</dateFormatItem>
 						<dateFormatItem id="Ed">E, d</dateFormatItem>
 						<dateFormatItem id="Ehm">E h:mm a</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM y G</dateFormatItem>
 						<dateFormatItem id="h">h a</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">h:mm a</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">h:mm:ss a</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h:mm:ss a v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h:mm a v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">dd-MM</dateFormatItem>
 						<dateFormatItem id="MEd">E, dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">'wiki' W 'o' MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">MM-y</dateFormatItem>
 						<dateFormatItem id="yMd">dd-MM-y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, dd-MM-y</dateFormatItem>
@@ -1248,6 +1227,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</availableFormats>
 					<intervalFormats>
 						<intervalFormatFallback>{0} ki te {1}</intervalFormatFallback>
+						<intervalFormatItem id="Gy">
+							<greatestDifference id="G">y G – y G</greatestDifference>
+							<greatestDifference id="y">y–y G</greatestDifference>
+						</intervalFormatItem>
 					</intervalFormats>
 				</dateTimeFormats>
 			</calendar>
@@ -1271,29 +1254,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
+					<relativeTimePattern count="other">i te {0} tau i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-short">
 				<displayName>t.</displayName>
-				<relative type="-1">i tērā tau</relative>
-				<relative type="0">i tēnei tau</relative>
-				<relative type="1">ā tērā tau</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="year-narrow">
 				<displayName>t</displayName>
-				<relative type="-1">i tērā tau</relative>
-				<relative type="0">i tēnei tau</relative>
-				<relative type="1">ā tērā tau</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">ā te {0} tau</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">i te {0} tau</relativeTimePattern>
 				</relativeTime>
@@ -1304,10 +1275,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">tēnei hauwhā</relative>
 				<relative type="1">tērā hauwhā</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} hwh</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} hauwhā</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} hwh</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} hauwhā i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="quarter-short">
@@ -1333,6 +1304,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="-1">i tērā marama</relative>
 				<relative type="0">i tēnei marama</relative>
 				<relative type="1">ā tērā marama</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} marama</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} marama i mua</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="month-short">
 				<displayName>m.</displayName>
@@ -1348,21 +1325,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>m</displayName>
-				<relative type="-1">i tērā m.</relative>
-				<relative type="0">i tēnei m.</relative>
-				<relative type="1">ā tērā m.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} m.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} m.</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName>wiki</displayName>
 				<relative type="-1">i tērā wiki</relative>
 				<relative type="0">i tēnei wiki</relative>
 				<relative type="1">ā tērā wiki</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} wiki</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} wiki i mua</relativeTimePattern>
+				</relativeTime>
 				<relativePeriod>te wiki o {0}</relativePeriod>
 			</field>
 			<field type="week-short">
@@ -1380,16 +1354,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>w</displayName>
-				<relative type="-1">i tērā w.</relative>
-				<relative type="0">i tēnei w.</relative>
-				<relative type="1">ā tērā w.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} w</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} w</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>t w o {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>wiki o te marama</displayName>
@@ -1406,29 +1370,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">i tēnei rā</relative>
 				<relative type="1">āpōpō</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} r.</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} rā</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} r.</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} rā i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-short">
 				<displayName>rā.</displayName>
-				<relative type="-1">inanahi</relative>
-				<relative type="0">i tēnei rā</relative>
-				<relative type="1">āpōpō</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} r</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} r.</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} rā</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="day-narrow">
 				<displayName>rā</displayName>
-				<relative type="-1">inanahi</relative>
-				<relative type="0">i tēnei rā</relative>
-				<relative type="1">āpōpō</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} r</relativeTimePattern>
 				</relativeTime>
@@ -1471,7 +1426,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Rātapu</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Rātapu</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Rātapu i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sun-short">
@@ -1504,7 +1459,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Mane</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Mane</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Mane i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="mon-short">
@@ -1537,7 +1492,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Tūrei</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Tūrei</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Tūrei i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="tue-short">
@@ -1570,7 +1525,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Wenerei</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Wenerei</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Wenerei i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="wed-short">
@@ -1596,36 +1551,36 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="thu">
-				<relative type="-1">i tērā Taite</relative>
-				<relative type="0">i tēnei Taite</relative>
-				<relative type="1">ā tērā Taite</relative>
+				<relative type="-1">i tērā Tāite</relative>
+				<relative type="0">i tēnei Tāite</relative>
+				<relative type="1">ā tērā Tāite</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Taite</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Tāite</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Taite</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Tāite i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">i tērā Tait.</relative>
-				<relative type="0">i tēnei Tait.</relative>
-				<relative type="1">ā tērā Tait.</relative>
+				<relative type="-1">i tērā Tāit.</relative>
+				<relative type="0">i tēnei Tāit.</relative>
+				<relative type="1">ā tērā Tāit.</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Tait.</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Tāit.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Tait.</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Tāit.</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="thu-narrow">
-				<relative type="-1">i tērā Tait</relative>
-				<relative type="0">i tēnei Tait</relative>
-				<relative type="1">ā tērā Tait</relative>
+				<relative type="-1">i tērā Tāit</relative>
+				<relative type="0">i tēnei Tāit</relative>
+				<relative type="1">ā tērā Tāit</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} Tait</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} Tāit</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Tait</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Tāit</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri">
@@ -1636,7 +1591,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Paraire</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Paraire</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Paraire i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="fri-short">
@@ -1669,7 +1624,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">+{0} Rāhoroi</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} Rāhoroi</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} Rāhoroi i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="sat-short">
@@ -1705,7 +1660,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="hour">
 				<displayName>hāora</displayName>
-				<relative type="0">i tēnei hāora</relative>
+				<relative type="0">i tēnei haora</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">+{0} haora</relativeTimePattern>
+				</relativeTime>
+				<relativeTime type="past">
+					<relativeTimePattern count="other">-{0} haora i mua</relativeTimePattern>
+				</relativeTime>
 			</field>
 			<field type="hour-short">
 				<displayName>hr.</displayName>
@@ -1719,20 +1680,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour-narrow">
 				<displayName>hr</displayName>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} h.</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} h.</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute">
 				<displayName>meneti</displayName>
 				<relative type="0">i tēnei meneti</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} men</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} meneti</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} men</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} meneti i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="minute-short">
@@ -1757,10 +1718,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>hēkona</displayName>
 				<relative type="0">ināianei</relative>
 				<relativeTime type="future">
-					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">+{0} hēkona</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
-					<relativeTimePattern count="other">-{0} h</relativeTimePattern>
+					<relativeTimePattern count="other">-{0} hēkona i mua</relativeTimePattern>
 				</relativeTime>
 			</field>
 			<field type="second-short">
@@ -1773,7 +1734,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
-				<displayName>hēk</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">+{0} h</relativeTimePattern>
 				</relativeTime>
@@ -1792,13 +1752,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} Wā</regionFormat>
 			<regionFormat type="daylight">{0} Wā Awatea</regionFormat>
-			<regionFormat type="standard">{0} Wā Aro Whānui</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
+			<regionFormat type="standard">{0} Wā Arowhānui</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard>Wā Aonui Kōtuitui</standard>
@@ -1807,116 +1763,254 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Etc/Unknown">
 				<exemplarCity>Tāone Tē Mōhiotia</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity>Rio Gallegos</exemplarCity>
+			<zone type="Europe/Andorra">
+				<exemplarCity>Anatōra</exemplarCity>
 			</zone>
-			<zone type="America/Mendoza">
-				<exemplarCity>Mendoza</exemplarCity>
+			<zone type="Asia/Dubai">
+				<exemplarCity>Tupae</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/San_Juan">
-				<exemplarCity>San Juan</exemplarCity>
+			<zone type="America/Antigua">
+				<exemplarCity>Te Motu Nehe</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity>Ushuaia</exemplarCity>
+			<zone type="Antarctica/Davis">
+				<exemplarCity>Rēweti</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity>La Rioja</exemplarCity>
+			<zone type="Pacific/Pago_Pago">
+				<exemplarCity>Pango Pango</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/San_Luis">
-				<exemplarCity>San Luis</exemplarCity>
+			<zone type="Europe/Vienna">
+				<exemplarCity>Whiena</exemplarCity>
 			</zone>
-			<zone type="America/Catamarca">
-				<exemplarCity>Catamarca</exemplarCity>
+			<zone type="Australia/Perth">
+				<exemplarCity>Pētia</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/Salta">
-				<exemplarCity>Salta</exemplarCity>
+			<zone type="Australia/Darwin">
+				<exemplarCity>Tāwini</exemplarCity>
 			</zone>
-			<zone type="America/Jujuy">
-				<exemplarCity>Jujuy</exemplarCity>
+			<zone type="Australia/Adelaide">
+				<exemplarCity>Atireira</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/Tucuman">
-				<exemplarCity>Tucuman</exemplarCity>
+			<zone type="Australia/Melbourne">
+				<exemplarCity>Poipiripi</exemplarCity>
 			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity>Cordoba</exemplarCity>
+			<zone type="Australia/Hobart">
+				<exemplarCity>Hopatāone</exemplarCity>
 			</zone>
-			<zone type="America/Buenos_Aires">
-				<exemplarCity>Buenos Aires</exemplarCity>
+			<zone type="Australia/Sydney">
+				<exemplarCity>Poihākena</exemplarCity>
 			</zone>
-			<zone type="America/La_Paz">
-				<exemplarCity>La Paz</exemplarCity>
+			<zone type="Australia/Brisbane">
+				<exemplarCity>Piripane</exemplarCity>
 			</zone>
-			<zone type="America/Eirunepe">
-				<exemplarCity>Eirunepe</exemplarCity>
+			<zone type="Antarctica/Macquarie">
+				<exemplarCity>Makoare</exemplarCity>
 			</zone>
-			<zone type="America/Rio_Branco">
-				<exemplarCity>Rio Branco</exemplarCity>
+			<zone type="America/Barbados">
+				<exemplarCity>Papatohe</exemplarCity>
 			</zone>
-			<zone type="America/Porto_Velho">
-				<exemplarCity>Porto Velho</exemplarCity>
+			<zone type="Europe/Brussels">
+				<exemplarCity>Paruhi</exemplarCity>
 			</zone>
-			<zone type="America/Boa_Vista">
-				<exemplarCity>Boa Vista</exemplarCity>
+			<zone type="Asia/Bahrain">
+				<exemplarCity>Pāreina</exemplarCity>
 			</zone>
-			<zone type="America/Manaus">
-				<exemplarCity>Manaus</exemplarCity>
+			<zone type="Atlantic/Bermuda">
+				<exemplarCity>Pāmura</exemplarCity>
 			</zone>
-			<zone type="America/Cuiaba">
-				<exemplarCity>Cuiaba</exemplarCity>
+			<zone type="Asia/Brunei">
+				<exemplarCity>Poronai</exemplarCity>
 			</zone>
-			<zone type="America/Santarem">
-				<exemplarCity>Santarem</exemplarCity>
+			<zone type="America/Belize">
+				<exemplarCity>Pērihi</exemplarCity>
 			</zone>
-			<zone type="America/Campo_Grande">
-				<exemplarCity>Campo Grande</exemplarCity>
+			<zone type="America/Vancouver">
+				<exemplarCity>Te Whanga-a-Kiwa</exemplarCity>
 			</zone>
-			<zone type="America/Belem">
-				<exemplarCity>Belem</exemplarCity>
+			<zone type="America/Cambridge_Bay">
+				<exemplarCity>Kemureti Pei</exemplarCity>
 			</zone>
-			<zone type="America/Araguaina">
-				<exemplarCity>Araguaina</exemplarCity>
+			<zone type="America/Thunder_Bay">
+				<exemplarCity>Whaitiri Pei</exemplarCity>
 			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity>Sao Paulo</exemplarCity>
+			<zone type="America/Toronto">
+				<exemplarCity>Tāroto</exemplarCity>
 			</zone>
-			<zone type="America/Bahia">
-				<exemplarCity>Bahia</exemplarCity>
+			<zone type="America/Goose_Bay">
+				<exemplarCity>Kuihi Pei</exemplarCity>
 			</zone>
-			<zone type="America/Fortaleza">
-				<exemplarCity>Fortaleza</exemplarCity>
+			<zone type="America/St_Johns">
+				<exemplarCity>Hato Hone</exemplarCity>
 			</zone>
-			<zone type="America/Maceio">
-				<exemplarCity>Maceio</exemplarCity>
+			<zone type="Indian/Cocos">
+				<exemplarCity>Kokohi</exemplarCity>
 			</zone>
-			<zone type="America/Recife">
-				<exemplarCity>Recife</exemplarCity>
+			<zone type="Europe/Zurich">
+				<exemplarCity>Hūrika</exemplarCity>
 			</zone>
-			<zone type="America/Noronha">
-				<exemplarCity>Noronha</exemplarCity>
+			<zone type="Asia/Shanghai">
+				<exemplarCity>Hangahai</exemplarCity>
 			</zone>
-			<zone type="Pacific/Easter">
-				<exemplarCity>Easter</exemplarCity>
+			<zone type="America/Costa_Rica">
+				<exemplarCity>Koto Rika</exemplarCity>
 			</zone>
-			<zone type="America/Santiago">
-				<exemplarCity>Santiago</exemplarCity>
+			<zone type="America/Havana">
+				<exemplarCity>Hawhāna</exemplarCity>
 			</zone>
-			<zone type="America/Bogota">
-				<exemplarCity>Bogota</exemplarCity>
+			<zone type="Atlantic/Cape_Verde">
+				<exemplarCity>Te Kūrae Matomato</exemplarCity>
 			</zone>
-			<zone type="Pacific/Galapagos">
-				<exemplarCity>Galapagos</exemplarCity>
+			<zone type="Indian/Christmas">
+				<exemplarCity>Kirihimete</exemplarCity>
 			</zone>
-			<zone type="America/Guayaquil">
-				<exemplarCity>Guayaquil</exemplarCity>
+			<zone type="Europe/Prague">
+				<exemplarCity>Parāka</exemplarCity>
 			</zone>
-			<zone type="Atlantic/Stanley">
-				<exemplarCity>Stanley</exemplarCity>
+			<zone type="Europe/Berlin">
+				<exemplarCity>Pearīni</exemplarCity>
 			</zone>
-			<zone type="America/Cayenne">
-				<exemplarCity>Cayenne</exemplarCity>
+			<zone type="Europe/Copenhagen">
+				<exemplarCity>Kopeheikana</exemplarCity>
 			</zone>
-			<zone type="America/Guyana">
-				<exemplarCity>Guyana</exemplarCity>
+			<zone type="America/Dominica">
+				<exemplarCity>Tominika</exemplarCity>
+			</zone>
+			<zone type="Africa/Cairo">
+				<exemplarCity>Kairo</exemplarCity>
+			</zone>
+			<zone type="Europe/Madrid">
+				<exemplarCity>Mātiri</exemplarCity>
+			</zone>
+			<zone type="Europe/Helsinki">
+				<exemplarCity>Hēriki</exemplarCity>
+			</zone>
+			<zone type="Pacific/Fiji">
+				<exemplarCity>Whītī</exemplarCity>
+			</zone>
+			<zone type="Europe/Paris">
+				<exemplarCity>Parī</exemplarCity>
+			</zone>
+			<zone type="Europe/London">
+				<long>
+					<daylight>Wā Piritana Raumati</daylight>
+				</long>
+				<exemplarCity>Rānana</exemplarCity>
+			</zone>
+			<zone type="America/Grenada">
+				<exemplarCity>Kerenata</exemplarCity>
+			</zone>
+			<zone type="Europe/Athens">
+				<exemplarCity>Ātene</exemplarCity>
+			</zone>
+			<zone type="Atlantic/South_Georgia">
+				<exemplarCity>Hōria ki Te Tonga</exemplarCity>
+			</zone>
+			<zone type="America/Guatemala">
+				<exemplarCity>Kuatamāra</exemplarCity>
+			</zone>
+			<zone type="Pacific/Guam">
+				<exemplarCity>Kuama</exemplarCity>
+			</zone>
+			<zone type="Asia/Hong_Kong">
+				<exemplarCity>Hongipua</exemplarCity>
+			</zone>
+			<zone type="Europe/Budapest">
+				<exemplarCity>Putapēhi</exemplarCity>
+			</zone>
+			<zone type="Asia/Jakarta">
+				<exemplarCity>Tiakāta</exemplarCity>
+			</zone>
+			<zone type="Europe/Dublin">
+				<long>
+					<daylight>Wā Airihi Arowhānui</daylight>
+				</long>
+				<exemplarCity>Tapurini</exemplarCity>
+			</zone>
+			<zone type="Asia/Jerusalem">
+				<exemplarCity>Hiruhārama</exemplarCity>
+			</zone>
+			<zone type="Europe/Isle_of_Man">
+				<exemplarCity>Te Moutere Mana</exemplarCity>
+			</zone>
+			<zone type="Asia/Baghdad">
+				<exemplarCity>Pākatata</exemplarCity>
+			</zone>
+			<zone type="Asia/Tehran">
+				<exemplarCity>Terāna</exemplarCity>
+			</zone>
+			<zone type="Europe/Rome">
+				<exemplarCity>Rōma</exemplarCity>
+			</zone>
+			<zone type="America/Jamaica">
+				<exemplarCity>Hemeika</exemplarCity>
+			</zone>
+			<zone type="Asia/Tokyo">
+				<exemplarCity>Tōkio</exemplarCity>
+			</zone>
+			<zone type="Africa/Nairobi">
+				<exemplarCity>Ngāiropi</exemplarCity>
+			</zone>
+			<zone type="Asia/Phnom_Penh">
+				<exemplarCity>Penoma Pena</exemplarCity>
+			</zone>
+			<zone type="Indian/Comoro">
+				<exemplarCity>Komoro</exemplarCity>
+			</zone>
+			<zone type="Asia/Seoul">
+				<exemplarCity>Houra</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuwait">
+				<exemplarCity>Kūweiti</exemplarCity>
+			</zone>
+			<zone type="America/Cayman">
+				<exemplarCity>Kāmana</exemplarCity>
+			</zone>
+			<zone type="America/St_Lucia">
+				<exemplarCity>Hato Ruihia</exemplarCity>
+			</zone>
+			<zone type="Europe/Luxembourg">
+				<exemplarCity>Rakapuō</exemplarCity>
+			</zone>
+			<zone type="Africa/Tripoli">
+				<exemplarCity>Tiriporī</exemplarCity>
+			</zone>
+			<zone type="Europe/Monaco">
+				<exemplarCity>Monāko</exemplarCity>
+			</zone>
+			<zone type="Asia/Macau">
+				<exemplarCity>Makau</exemplarCity>
+			</zone>
+			<zone type="America/Martinique">
+				<exemplarCity>Mātiniki</exemplarCity>
+			</zone>
+			<zone type="Europe/Malta">
+				<exemplarCity>Mārata</exemplarCity>
+			</zone>
+			<zone type="Indian/Mauritius">
+				<exemplarCity>Marihi</exemplarCity>
+			</zone>
+			<zone type="Indian/Maldives">
+				<exemplarCity>Māratiri</exemplarCity>
+			</zone>
+			<zone type="America/Mexico_City">
+				<exemplarCity>Mēhiko Tāonenui</exemplarCity>
+			</zone>
+			<zone type="Asia/Kuala_Lumpur">
+				<exemplarCity>Kuara Rūpa</exemplarCity>
+			</zone>
+			<zone type="Pacific/Noumea">
+				<exemplarCity>Nūmea</exemplarCity>
+			</zone>
+			<zone type="Pacific/Norfolk">
+				<exemplarCity>Nōpoke</exemplarCity>
+			</zone>
+			<zone type="Europe/Amsterdam">
+				<exemplarCity>Pāpuniāmita</exemplarCity>
+			</zone>
+			<zone type="Europe/Oslo">
+				<exemplarCity>Ōhoro</exemplarCity>
+			</zone>
+			<zone type="Asia/Katmandu">
+				<exemplarCity>Katamarū</exemplarCity>
 			</zone>
 			<zone type="Pacific/Chatham">
 				<exemplarCity>Rēkohu</exemplarCity>
@@ -1924,21 +2018,125 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Auckland">
 				<exemplarCity>Tāmaki Makaurau</exemplarCity>
 			</zone>
-			<zone type="America/Lima">
-				<exemplarCity>Lima</exemplarCity>
+			<zone type="Pacific/Port_Moresby">
+				<exemplarCity>Pota Moahipi</exemplarCity>
 			</zone>
-			<zone type="America/Asuncion">
-				<exemplarCity>Asuncion</exemplarCity>
+			<zone type="Asia/Manila">
+				<exemplarCity>Manira</exemplarCity>
 			</zone>
-			<zone type="America/Paramaribo">
-				<exemplarCity>Paramaribo</exemplarCity>
+			<zone type="America/Puerto_Rico">
+				<exemplarCity>Peta Riko</exemplarCity>
 			</zone>
-			<zone type="America/Montevideo">
-				<exemplarCity>Montevideo</exemplarCity>
+			<zone type="Asia/Gaza">
+				<exemplarCity>Kāha</exemplarCity>
 			</zone>
-			<zone type="America/Caracas">
-				<exemplarCity>Caracas</exemplarCity>
+			<zone type="Europe/Lisbon">
+				<exemplarCity>Rīpene</exemplarCity>
 			</zone>
+			<zone type="Pacific/Palau">
+				<exemplarCity>Pārau</exemplarCity>
+			</zone>
+			<zone type="Asia/Qatar">
+				<exemplarCity>Katā</exemplarCity>
+			</zone>
+			<zone type="Europe/Moscow">
+				<exemplarCity>Mohikau</exemplarCity>
+			</zone>
+			<zone type="Asia/Riyadh">
+				<exemplarCity>Riata</exemplarCity>
+			</zone>
+			<zone type="Europe/Stockholm">
+				<exemplarCity>Tokoomo</exemplarCity>
+			</zone>
+			<zone type="Asia/Singapore">
+				<exemplarCity>Hingapoa</exemplarCity>
+			</zone>
+			<zone type="Atlantic/St_Helena">
+				<exemplarCity>Hato Hērena</exemplarCity>
+			</zone>
+			<zone type="Europe/San_Marino">
+				<exemplarCity>Hana Marino</exemplarCity>
+			</zone>
+			<zone type="America/El_Salvador">
+				<exemplarCity>Whakaora</exemplarCity>
+			</zone>
+			<zone type="America/Grand_Turk">
+				<exemplarCity>Tākoru Nui</exemplarCity>
+			</zone>
+			<zone type="Asia/Bangkok">
+				<exemplarCity>Pangakoko</exemplarCity>
+			</zone>
+			<zone type="Africa/Tunis">
+				<exemplarCity>Tūnīhi</exemplarCity>
+			</zone>
+			<zone type="Europe/Istanbul">
+				<exemplarCity>Itapūru</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity>Ngā Anahera</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity>Hikāko</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity>Te Āporo Nui</exemplarCity>
+			</zone>
+			<zone type="Europe/Vatican">
+				<exemplarCity>Te Poho-o-Pita</exemplarCity>
+			</zone>
+			<zone type="America/St_Vincent">
+				<exemplarCity>Hato Wēneti</exemplarCity>
+			</zone>
+			<zone type="America/St_Thomas">
+				<exemplarCity>Hato Tamati</exemplarCity>
+			</zone>
+			<zone type="Pacific/Wallis">
+				<exemplarCity>Wārihi</exemplarCity>
+			</zone>
+			<zone type="Pacific/Apia">
+				<exemplarCity>Āpia</exemplarCity>
+			</zone>
+			<metazone type="Afghanistan">
+				<long>
+					<standard>Wā Awhekenetāna</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Central">
+				<long>
+					<standard>Wā o Te Puku o Āwherika</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Eastern">
+				<long>
+					<standard>Wā o Āwherika ki te rāwhiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Southern">
+				<long>
+					<standard>Wā Arowhānui o Āwherika ki te tonga</standard>
+				</long>
+			</metazone>
+			<metazone type="Africa_Western">
+				<long>
+					<generic>Wā o Āwherika ki te uru</generic>
+					<standard>Wā Arowhānui o Āwerika ki te uru</standard>
+					<daylight>Wā Raumati o Āwherika ki te uru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Alaska">
+				<long>
+					<generic>Wā Alaska</generic>
+					<standard>Wā Arowhānui Alaska</standard>
+					<daylight>Wā Awatea Alaska</daylight>
+				</long>
+			</metazone>
+			<metazone type="Amazon">
+				<long>
+					<generic>Wā Amahona</generic>
+					<standard>Wā Amahona Arowhānui</standard>
+					<daylight>Wā Amahona Raumati</daylight>
+				</long>
+			</metazone>
 			<metazone type="America_Central">
 				<long>
 					<generic>Wā Waenga</generic>
@@ -1967,11 +2165,215 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Awatea Kiwa</daylight>
 				</long>
 			</metazone>
+			<metazone type="Apia">
+				<long>
+					<generic>Wā Āpia</generic>
+					<standard>Wā Āpia Arowhānui</standard>
+					<daylight>Wā Āpia Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Arabian">
+				<long>
+					<generic>Wā Arāpia</generic>
+					<standard>Wā Arāpia Arowhānui</standard>
+					<daylight>Wā Arāpia Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina">
+				<long>
+					<generic>Wā Āketina</generic>
+					<standard>Wā Āketina Arowhānui</standard>
+					<daylight>Wā Āketina Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Argentina_Western">
+				<long>
+					<generic>Wā Āketina ki te uru</generic>
+					<standard>Wā Āketina ki te uru Arowhānui</standard>
+					<daylight>Wā Āketina ki te uru Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Armenia">
+				<long>
+					<generic>Wā Āmenia</generic>
+					<standard>Wā Āmenia Arowhānui</standard>
+					<daylight>Wā Āmenia Raumati</daylight>
+				</long>
+			</metazone>
 			<metazone type="Atlantic">
 				<long>
 					<generic>Wā Ranatiki</generic>
 					<standard>Wā Arowhānui Ranatiki</standard>
 					<daylight>Wā Awatea Ranatiki</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Central">
+				<long>
+					<generic>Wā Ahitereiria Waenga</generic>
+					<standard>Wā Ahitereiria Waenga Arowhānui</standard>
+					<daylight>Wā Ahitereiria Waenga Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_CentralWestern">
+				<long>
+					<generic>Wā Ahitereiria Waenga-Uru</generic>
+					<standard>Wā Ahitereiria Waenga-Uru Arowhānui</standard>
+					<daylight>Wā Ahitereiria Waenga-Uru Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Eastern">
+				<long>
+					<generic>Wā Ahitereiria ki te Rāwhiti</generic>
+					<standard>Wā Ahitereiria ki te Rāwhiti Arowhānui</standard>
+					<daylight>Wā Ahitereiria ki te Rāwhiti Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Australia_Western">
+				<long>
+					<generic>Wā Ahitereiria ki te Uru</generic>
+					<standard>Wā Ahitereiria ki te Uru Arowhānui</standard>
+					<daylight>Wā Ahitereiria ki te Uru Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azerbaijan">
+				<long>
+					<generic>Wā Atepaihānia</generic>
+					<standard>Wā Atepaihānia Arowhānui</standard>
+					<daylight>Wā Atepaihānia Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Azores">
+				<long>
+					<generic>Wā Azores</generic>
+					<standard>Wā Azores Arowhānui</standard>
+					<daylight>Wā Azores Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bangladesh">
+				<long>
+					<generic>Wā Pākaratēhi</generic>
+					<standard>Wā Pākaratēhi Arowhānui</standard>
+					<daylight>Wā Pākaratēhi Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Bhutan">
+				<long>
+					<standard>Wā Pūtana</standard>
+				</long>
+			</metazone>
+			<metazone type="Bolivia">
+				<long>
+					<standard>Wā Poriwia</standard>
+				</long>
+			</metazone>
+			<metazone type="Brasilia">
+				<long>
+					<generic>Wā Parīhia</generic>
+					<standard>Wā Parīhia Arowhānui</standard>
+					<daylight>Wā Parīhia Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Brunei">
+				<long>
+					<standard>Wā Poronai Darussalam</standard>
+				</long>
+			</metazone>
+			<metazone type="Cape_Verde">
+				<long>
+					<generic>Wā o Te Kūrae Matomato</generic>
+					<standard>Wā Arowhānui o Te Kūrae Matomato</standard>
+					<daylight>Wā Raumati o Te Kūrae Matomato</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chamorro">
+				<long>
+					<standard>Wā Chamorro Arowhānui</standard>
+				</long>
+			</metazone>
+			<metazone type="Chatham">
+				<long>
+					<generic>Wā Rēkohu</generic>
+					<standard>Wā Rēkohu Arowhānui</standard>
+					<daylight>Wā Rēkohu Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Chile">
+				<long>
+					<generic>Wā Hiri</generic>
+					<standard>Wā Hiri Arowhānui</standard>
+					<daylight>Wā Hiri Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="China">
+				<long>
+					<generic>Wā Haina</generic>
+					<standard>Wā Haina Arowhānui</standard>
+					<daylight>Wā Haina Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Choibalsan">
+				<long>
+					<generic>Wā Choibalsan</generic>
+					<standard>Wā Choibalsan Arowhānui</standard>
+					<daylight>Wā Choibalsan Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Christmas">
+				<long>
+					<standard>Wā o Te Moutere Kirihimete</standard>
+				</long>
+			</metazone>
+			<metazone type="Cocos">
+				<long>
+					<standard>Wā o Ngā Moutere Kokohi</standard>
+				</long>
+			</metazone>
+			<metazone type="Colombia">
+				<long>
+					<generic>Wā Koromōpia</generic>
+					<standard>Wā Koromōpia Arowhānui</standard>
+					<daylight>Wā Koromōpia Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cook">
+				<long>
+					<generic>Wā Kuki Airani</generic>
+					<standard>Wā Kuki Airani Arowhānui</standard>
+					<daylight>Wā Kuki Airani Raumati Haurua</daylight>
+				</long>
+			</metazone>
+			<metazone type="Cuba">
+				<long>
+					<generic>Wā Kiupa</generic>
+					<standard>Wā Arowhānui Kiupa</standard>
+					<daylight>Wā Awatea Kiupa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Davis">
+				<long>
+					<standard>Wā Rēweti</standard>
+				</long>
+			</metazone>
+			<metazone type="DumontDUrville">
+				<long>
+					<standard>Wā Dumont-d’Urville</standard>
+				</long>
+			</metazone>
+			<metazone type="East_Timor">
+				<long>
+					<standard>Wā o Timoa ki te Rāwhiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Easter">
+				<long>
+					<generic>Wā ki te Moutere o Aranga</generic>
+					<standard>Wā ki te Moutere Aranga Arowhānui</standard>
+					<daylight>Wā ki te Moutere Aranga Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Ecuador">
+				<long>
+					<standard>Wā Ekuatoa</standard>
 				</long>
 			</metazone>
 			<metazone type="Europe_Central">
@@ -1988,6 +2390,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Raumati Uropi Rāwhiti</daylight>
 				</long>
 			</metazone>
+			<metazone type="Europe_Further_Eastern">
+				<long>
+					<standard>Wā Ūropi ki te rāwhiti rawa</standard>
+				</long>
+			</metazone>
 			<metazone type="Europe_Western">
 				<long>
 					<generic>Wā Uropi Uru</generic>
@@ -1995,173 +2402,1682 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<daylight>Wā Raumati Uropi Uru</daylight>
 				</long>
 			</metazone>
+			<metazone type="Falkland">
+				<long>
+					<generic>Wā ki Ngā Motu Whākana</generic>
+					<standard>Wā ki Ngā Motu Whākana Arowhānui</standard>
+					<daylight>Wā ki Ngā Motu Whākana Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Fiji">
+				<long>
+					<generic>Wā Whītī</generic>
+					<standard>Wā Whītī Arowhānui</standard>
+					<daylight>Wā Whītī Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="French_Guiana">
+				<long>
+					<standard>Wā Kiāna Wīwī</standard>
+				</long>
+			</metazone>
+			<metazone type="French_Southern">
+				<long>
+					<standard>Wā Wīwī o Te Tonga me te Kōpakatanga ki te Tonga</standard>
+				</long>
+			</metazone>
+			<metazone type="Galapagos">
+				<long>
+					<standard>Wā Galapagos</standard>
+				</long>
+			</metazone>
+			<metazone type="Gambier">
+				<long>
+					<standard>Wā Gambier</standard>
+				</long>
+			</metazone>
+			<metazone type="Georgia">
+				<long>
+					<generic>Wā Hōria</generic>
+					<standard>Wā Hōria Arowhānui</standard>
+					<daylight>Wā Hōria Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gilbert_Islands">
+				<long>
+					<standard>Wā Kiripati</standard>
+				</long>
+			</metazone>
 			<metazone type="GMT">
 				<long>
 					<standard>Wā Toharite Kiriwīti</standard>
 				</long>
 			</metazone>
+			<metazone type="Greenland_Eastern">
+				<long>
+					<generic>Wā Whenuakāriki ki te rāwhiti</generic>
+					<standard>Wā Arowhānui o Whenuakāriki ki te rāwhiti</standard>
+					<daylight>Wā Raumati o Whenuakāriki ki te rāwhiti</daylight>
+				</long>
+			</metazone>
+			<metazone type="Greenland_Western">
+				<long>
+					<generic>Wā Whenuakāriki ki te uru</generic>
+					<standard>Wā Arowhānui o Whenuakāriki ki te uru</standard>
+					<daylight>Wā Raumati o Whenuakāriki ki te uru</daylight>
+				</long>
+			</metazone>
+			<metazone type="Gulf">
+				<long>
+					<standard>Wā Whanga Arowhānui</standard>
+				</long>
+			</metazone>
+			<metazone type="Guyana">
+				<long>
+					<standard>Wā Kaiana</standard>
+				</long>
+			</metazone>
+			<metazone type="Hawaii_Aleutian">
+				<long>
+					<generic>Wā Hawaii-Aleutian</generic>
+					<standard>Wā Arowhānui Hawaii-Aleutian</standard>
+					<daylight>Wā Awatea Hawaii-Aleutian</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hong_Kong">
+				<long>
+					<generic>Wā Hongipua</generic>
+					<standard>Wā Hongipua Arowhānui</standard>
+					<daylight>Wā Hongipua Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Hovd">
+				<long>
+					<generic>Wā Hovd</generic>
+					<standard>Wā Hovd Arowhānui</standard>
+					<daylight>Wā Hovd Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="India">
+				<long>
+					<standard>Wā Īnia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indian_Ocean">
+				<long>
+					<standard>Wā o Te Moana Īnia</standard>
+				</long>
+			</metazone>
+			<metazone type="Indochina">
+				<long>
+					<standard>Wā Īniahaina</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Central">
+				<long>
+					<standard>Wā Initonīhia Waenga</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Eastern">
+				<long>
+					<standard>Wā Initonīhia ki te rāwhiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Indonesia_Western">
+				<long>
+					<standard>Wā Initonīhia ki te uru</standard>
+				</long>
+			</metazone>
+			<metazone type="Iran">
+				<long>
+					<generic>Wā Irāna</generic>
+					<standard>Wā Irāna Arowhānui</standard>
+					<daylight>Wā Irāna Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Irkutsk">
+				<long>
+					<generic>Wā Irkutsk</generic>
+					<standard>Wā Irkutsk Arowhānui</standard>
+					<daylight>Wā Irkutsk Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Israel">
+				<long>
+					<generic>Wā Iharaira</generic>
+					<standard>Wā Iharaira Arowhānui</standard>
+					<daylight>Wā Iharaira Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Japan">
+				<long>
+					<generic>Wā Hapani</generic>
+					<standard>Wā Hapani Arowhānui</standard>
+					<daylight>Wā Hapani Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Eastern">
+				<long>
+					<standard>Wā Katatānga ki te Rāwhiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Kazakhstan_Western">
+				<long>
+					<standard>Wā Katatānga ki te Uru</standard>
+				</long>
+			</metazone>
+			<metazone type="Korea">
+				<long>
+					<generic>Wā Kōrea</generic>
+					<standard>Wā Kōrea Arowhānui</standard>
+					<daylight>Wā Kōrea Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kosrae">
+				<long>
+					<standard>Wā Kosrae</standard>
+				</long>
+			</metazone>
+			<metazone type="Krasnoyarsk">
+				<long>
+					<generic>Wā Krasnoyarsk</generic>
+					<standard>Wā Krasnoyarsk Arowhānui</standard>
+					<daylight>Wā Krasnoyarsk Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Kyrgystan">
+				<long>
+					<standard>Wā Kikitānga</standard>
+				</long>
+			</metazone>
+			<metazone type="Line_Islands">
+				<long>
+					<standard>Wā o Ngā Mouter o Te Raina</standard>
+				</long>
+			</metazone>
+			<metazone type="Lord_Howe">
+				<long>
+					<generic>Wā Lord Howe</generic>
+					<standard>Wā Lord Howe Arowhānui</standard>
+					<daylight>Wā Lord Howe Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Macquarie">
+				<long>
+					<standard>Wā o Te Moutere Makoare</standard>
+				</long>
+			</metazone>
+			<metazone type="Magadan">
+				<long>
+					<generic>Wā Magadan</generic>
+					<standard>Wā Magadan Arowhānui</standard>
+					<daylight>Wā Magadan Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Malaysia">
+				<long>
+					<standard>Wā Mareia</standard>
+				</long>
+			</metazone>
+			<metazone type="Maldives">
+				<long>
+					<standard>Wā Māratiri</standard>
+				</long>
+			</metazone>
+			<metazone type="Marquesas">
+				<long>
+					<standard>Wā Marquesas</standard>
+				</long>
+			</metazone>
+			<metazone type="Marshall_Islands">
+				<long>
+					<standard>Wā o Ngā Motu Māhara</standard>
+				</long>
+			</metazone>
+			<metazone type="Mauritius">
+				<long>
+					<generic>Wā Marihi</generic>
+					<standard>Wā Marihi Arowhānui</standard>
+					<daylight>Wā Marihi Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mawson">
+				<long>
+					<standard>Wā Mawson</standard>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Northwest">
+				<long>
+					<generic>Wā Mēhiko ki te uru-mā-raki</generic>
+					<standard>Wā Arowhānui o Mēhiko ki te uru-mā-raki</standard>
+					<daylight>Wā Awatea o Mēhiko ki te uru-mā-raki</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mexico_Pacific">
+				<long>
+					<generic>Wā Mēhiko Kiwa</generic>
+					<standard>Wā Arowhānui Mēhiko Kiwa</standard>
+					<daylight>Wā Awatea Mēhiko Kiwa</daylight>
+				</long>
+			</metazone>
+			<metazone type="Mongolia">
+				<long>
+					<generic>Wā Ulaanbaatar</generic>
+					<standard>Wā Ulaanbaatar Arowhānui</standard>
+					<daylight>Wā Ulaanbaatar Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Moscow">
+				<long>
+					<generic>Wā Mohikau</generic>
+					<standard>Wā Mohikau Arowhānui</standard>
+					<daylight>Wā Mohikau Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Myanmar">
+				<long>
+					<standard>Wā Pēma</standard>
+				</long>
+			</metazone>
+			<metazone type="Nauru">
+				<long>
+					<standard>Wā Nauru</standard>
+				</long>
+			</metazone>
+			<metazone type="Nepal">
+				<long>
+					<standard>Wā Nepōra</standard>
+				</long>
+			</metazone>
+			<metazone type="New_Caledonia">
+				<long>
+					<generic>Wā Whenua Kanaki</generic>
+					<standard>Wā Whenua Kanaki Arowhānui</standard>
+					<daylight>Wā Whenua Kanaki Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="New_Zealand">
+				<long>
+					<generic>Wā Aotearoa</generic>
+					<standard>Wā Aotearoa Arowhānui</standard>
+					<daylight>Wā Aotearoa Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Newfoundland">
+				<long>
+					<generic>Wā Newfoundland</generic>
+					<standard>Wā Arowhānui Newfoundland</standard>
+					<daylight>Wā Awatea Newfoundland</daylight>
+				</long>
+			</metazone>
+			<metazone type="Niue">
+				<long>
+					<standard>Wā Niue</standard>
+				</long>
+			</metazone>
+			<metazone type="Norfolk">
+				<long>
+					<generic>Wā o Te Moutere Nōpoke</generic>
+					<standard>Wā o Te Moutere Nōpoke Arowhānui</standard>
+					<daylight>Wā o Te Moutere Nōpoke Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Noronha">
+				<long>
+					<generic>Wā Fernando de Noronha</generic>
+					<standard>Wā Fernando de Noronha Arowhānui</standard>
+					<daylight>Wā Fernando de Noronha Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Novosibirsk">
+				<long>
+					<generic>Wā Novosibirsk</generic>
+					<standard>Wā Novosibirsk Arowhānui</standard>
+					<daylight>Wā Novosibirsk Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Omsk">
+				<long>
+					<generic>Wā Omsk</generic>
+					<standard>Wā Omsk Arowhānui</standard>
+					<daylight>Wā Omsk Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pakistan">
+				<long>
+					<generic>Wā Pakitāne</generic>
+					<standard>Wā Pakitāne Arowhānui</standard>
+					<daylight>Wā Pakitāne Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Palau">
+				<long>
+					<standard>Wā Pārau</standard>
+				</long>
+			</metazone>
+			<metazone type="Papua_New_Guinea">
+				<long>
+					<standard>Wā Papua Nūkini</standard>
+				</long>
+			</metazone>
+			<metazone type="Paraguay">
+				<long>
+					<generic>Wā Parakai</generic>
+					<standard>Wā Parakai Arowhānui</standard>
+					<daylight>Wā Parakai Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Peru">
+				<long>
+					<generic>Wā Peru</generic>
+					<standard>Wā Peru Arowhānui</standard>
+					<daylight>Wā Peru Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Philippines">
+				<long>
+					<generic>Wā Piripīni</generic>
+					<standard>Wā Piripīni Arowhānui</standard>
+					<daylight>Wā Piripīni Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Phoenix_Islands">
+				<long>
+					<standard>Wā o Ngā Moutere Phoenix</standard>
+				</long>
+			</metazone>
+			<metazone type="Pierre_Miquelon">
+				<long>
+					<generic>Wā St. Pierre me Miquelon</generic>
+					<standard>Wā Arowhānui o St. Pierre me Miquelon</standard>
+					<daylight>Wā Awatea o St. Pierre me Miquelon</daylight>
+				</long>
+			</metazone>
+			<metazone type="Pitcairn">
+				<long>
+					<standard>Wā Pitcairn</standard>
+				</long>
+			</metazone>
+			<metazone type="Ponape">
+				<long>
+					<standard>Wā Ponape</standard>
+				</long>
+			</metazone>
+			<metazone type="Pyongyang">
+				<long>
+					<standard>Wā Pyongyang</standard>
+				</long>
+			</metazone>
+			<metazone type="Reunion">
+				<long>
+					<standard>Wā Reunion</standard>
+				</long>
+			</metazone>
+			<metazone type="Rothera">
+				<long>
+					<standard>Wā Rothera</standard>
+				</long>
+			</metazone>
+			<metazone type="Sakhalin">
+				<long>
+					<generic>Wā Sakhalin</generic>
+					<standard>Wā Sakhalin Arowhānui</standard>
+					<daylight>Wā Sakhalin Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Samoa">
+				<long>
+					<generic>Wā Hāmoa</generic>
+					<standard>Wā Hāmoa Arowhānui</standard>
+					<daylight>Wā Hāmoa Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Seychelles">
+				<long>
+					<standard>Wā Heikere</standard>
+				</long>
+			</metazone>
+			<metazone type="Singapore">
+				<long>
+					<standard>Wā Hingapoa Arowhānui</standard>
+				</long>
+			</metazone>
+			<metazone type="Solomon">
+				<long>
+					<standard>Wā o Ngā Motu Horomona</standard>
+				</long>
+			</metazone>
+			<metazone type="South_Georgia">
+				<long>
+					<standard>Wā Hōria ki te Tonga</standard>
+				</long>
+			</metazone>
+			<metazone type="Suriname">
+				<long>
+					<standard>Wā Huriname</standard>
+				</long>
+			</metazone>
+			<metazone type="Syowa">
+				<long>
+					<standard>Wā Syowa</standard>
+				</long>
+			</metazone>
+			<metazone type="Tahiti">
+				<long>
+					<standard>Wā Tahiti</standard>
+				</long>
+			</metazone>
+			<metazone type="Taipei">
+				<long>
+					<generic>Wā Taipei</generic>
+					<standard>Wā Taipei Arowhānui</standard>
+					<daylight>Wā Taipei Awatea</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tajikistan">
+				<long>
+					<standard>Wā Takiritānga</standard>
+				</long>
+			</metazone>
+			<metazone type="Tokelau">
+				<long>
+					<standard>Wā Tokerau</standard>
+				</long>
+			</metazone>
+			<metazone type="Tonga">
+				<long>
+					<generic>Wā Tonga</generic>
+					<standard>Wā Tonga Arowhānui</standard>
+					<daylight>Wā Tonga Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Truk">
+				<long>
+					<standard>Wā Chuuk</standard>
+				</long>
+			</metazone>
+			<metazone type="Turkmenistan">
+				<long>
+					<generic>Wā Tukumanatānga</generic>
+					<standard>Wā Tukumanatānga Arowhānui</standard>
+					<daylight>Wā Tukumanatānga Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Tuvalu">
+				<long>
+					<standard>Wā Tūwaru</standard>
+				</long>
+			</metazone>
+			<metazone type="Uruguay">
+				<long>
+					<generic>Wā Urukoi</generic>
+					<standard>Wā Urukoi Arowhānui</standard>
+					<daylight>Wā Urukoi Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Uzbekistan">
+				<long>
+					<generic>Wā Uhipeketāne</generic>
+					<standard>Wā Uhipeketāne Arowhānui</standard>
+					<daylight>Wā Uhipeketāne Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vanuatu">
+				<long>
+					<generic>Wā Whenuatū</generic>
+					<standard>Wā Whenuatū Arowhānui</standard>
+					<daylight>Wā Whenuatū Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Venezuela">
+				<long>
+					<standard>Wā Penehūera</standard>
+				</long>
+			</metazone>
+			<metazone type="Vladivostok">
+				<long>
+					<generic>Wā Vladivostok</generic>
+					<standard>Wā Vladivostok Arowhānui</standard>
+					<daylight>Wā Vladivostok Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Volgograd">
+				<long>
+					<generic>Wā Volgograd</generic>
+					<standard>Wā Volgograd Arowhānui</standard>
+					<daylight>Wā Volgograd Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Vostok">
+				<long>
+					<standard>Wā Vostok</standard>
+				</long>
+			</metazone>
+			<metazone type="Wake">
+				<long>
+					<standard>Wā o Te Motu Wake</standard>
+				</long>
+			</metazone>
+			<metazone type="Wallis">
+				<long>
+					<standard>Wā Wārihi me Whutuna</standard>
+				</long>
+			</metazone>
+			<metazone type="Yakutsk">
+				<long>
+					<generic>Wā Yakutsk</generic>
+					<standard>Wā Yakutsk Arowhānui</standard>
+					<daylight>Wā Yakutsk Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yekaterinburg">
+				<long>
+					<generic>Wā Yekaterinburg</generic>
+					<standard>Wā Yekaterinburg Arowhānui</standard>
+					<daylight>Wā Yekaterinburg Raumati</daylight>
+				</long>
+			</metazone>
+			<metazone type="Yukon">
+				<long>
+					<standard>Wā Yukon</standard>
+				</long>
+			</metazone>
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-			<decimalFormatLength type="long">
-				<decimalFormat>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="other">0G</pattern>
-					<pattern type="10000000000" count="other">00G</pattern>
-					<pattern type="100000000000" count="other">000G</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-			<decimalFormatLength type="short">
-				<decimalFormat>
-					<pattern type="1000" count="other">0K</pattern>
-					<pattern type="10000" count="other">00K</pattern>
-					<pattern type="100000" count="other">000K</pattern>
-					<pattern type="1000000" count="other">0M</pattern>
-					<pattern type="10000000" count="other">00M</pattern>
-					<pattern type="100000000" count="other">000M</pattern>
-					<pattern type="1000000000" count="other">0G</pattern>
-					<pattern type="10000000000" count="other">00G</pattern>
-					<pattern type="100000000000" count="other">000G</pattern>
-					<pattern type="1000000000000" count="other">0T</pattern>
-					<pattern type="10000000000000" count="other">00T</pattern>
-					<pattern type="100000000000000" count="other">000T</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
 		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern alt="noCurrency" draft="provisional">#,##0.00</pattern>
-				</currencyFormat>
-				<currencyFormat type="accounting">
-					<pattern>¤ #,##0.00</pattern>
-					<pattern alt="noCurrency">#,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="other">¤ 0K</pattern>
-					<pattern type="10000" count="other">¤ 00K</pattern>
-					<pattern type="100000" count="other">¤ 000K</pattern>
-					<pattern type="1000000" count="other">¤ 0M</pattern>
-					<pattern type="10000000" count="other">¤ 00M</pattern>
-					<pattern type="100000000" count="other">¤ 000M</pattern>
-					<pattern type="1000000000" count="other">¤ 0G</pattern>
-					<pattern type="10000000000" count="other">¤ 00G</pattern>
-					<pattern type="100000000000" count="other">¤ 000G</pattern>
-					<pattern type="1000000000000" count="other">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
 			<unitPattern count="other">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
+			<currency type="AED">
+				<displayName>Dirham UAE</displayName>
+				<displayName count="other">dirham UAE</displayName>
+			</currency>
+			<currency type="AFN">
+				<displayName>Afghani Awhekenetāna</displayName>
+				<displayName count="other">afghani Awhekenetāna</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Lek Arapeinia</displayName>
+				<displayName count="other">leke Arapeinia</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Dram Āmenia</displayName>
+				<displayName count="other">dram Āmenia</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Guilder Anatiri Hōrana</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Kwanza Anakora</displayName>
+				<displayName count="other">kwanza Anakora</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Peso Āketina</displayName>
+				<displayName count="other">peso Āketina</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Tāra Ahitereiria</displayName>
+				<displayName count="other">tāra Ahitereiria</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Florin Arūpa</displayName>
+				<displayName count="other">florin Arūpa</displayName>
+			</currency>
+			<currency type="AZN">
+				<displayName>Manat Atepaihānia</displayName>
+				<displayName count="other">manat Atepaihānia</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Mark Pōngia-Herekōwini takahuri</displayName>
+				<displayName count="other">mark Pōngia-Herekōwini takahuri</displayName>
+			</currency>
+			<currency type="BBD">
+				<displayName>Tāra Papatohe</displayName>
+				<displayName count="other">tāra Papatohe</displayName>
+			</currency>
+			<currency type="BDT">
+				<displayName>Taka Pākaratēhi</displayName>
+				<displayName count="other">taka Pākaratēhi</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Leva Purukāria</displayName>
+				<displayName count="other">leva Purukāria</displayName>
+			</currency>
+			<currency type="BHD">
+				<displayName>Dinar Pāreina</displayName>
+				<displayName count="other">dinar Pāreina</displayName>
+			</currency>
+			<currency type="BIF">
+				<displayName>Franc Puruniti</displayName>
+				<displayName count="other">franc Puruniti</displayName>
+			</currency>
+			<currency type="BMD">
+				<displayName>Tāra Pāmura</displayName>
+				<displayName count="other">tāra Pāmura</displayName>
+			</currency>
+			<currency type="BND">
+				<displayName>Tāra Poronai</displayName>
+				<displayName count="other">tāra Poronai</displayName>
+			</currency>
+			<currency type="BOB">
+				<displayName>Boliviano Poriwia</displayName>
+				<displayName count="other">boliviano Poriwia</displayName>
+			</currency>
 			<currency type="BRL">
 				<displayName>Real Parahi</displayName>
 				<displayName count="other">real Parahi</displayName>
+			</currency>
+			<currency type="BSD">
+				<displayName>Tāra Pahama</displayName>
+				<displayName count="other">tāra Pahama</displayName>
+			</currency>
+			<currency type="BTN">
+				<displayName>Ngultrum Pūtana</displayName>
+				<displayName count="other">ngultrum Pūtana</displayName>
+			</currency>
+			<currency type="BWP">
+				<displayName>Pula Poriwana</displayName>
+				<displayName count="other">pula Poriwana</displayName>
+			</currency>
+			<currency type="BYN">
+				<displayName>Ruble Pērara</displayName>
+				<displayName count="other">ruble Pērara</displayName>
+			</currency>
+			<currency type="BZD">
+				<displayName>Tāra Pērihi</displayName>
+				<displayName count="other">tāra Pērihi</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Tāra Kānata</displayName>
+				<displayName count="other">tāra Kānata</displayName>
+			</currency>
+			<currency type="CDF">
+				<displayName>Franc Kōngo</displayName>
+				<displayName count="other">franc Kōngo</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Franc Huiterangi</displayName>
+				<displayName count="other">franc Huiterangi</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Peso Hiri</displayName>
+				<displayName count="other">peso Hiri</displayName>
+			</currency>
+			<currency type="CNH">
+				<displayName>Yuan Haina (ki waho)</displayName>
+				<displayName count="other">yuan Haina (ki waho)</displayName>
 			</currency>
 			<currency type="CNY">
 				<displayName>Yuan Haina</displayName>
 				<displayName count="other">yuan Haina</displayName>
 			</currency>
+			<currency type="COP">
+				<displayName>Peso Koromōpia</displayName>
+				<displayName count="other">peso Koromōpia</displayName>
+			</currency>
+			<currency type="CRC">
+				<displayName>Colon Koto Rika</displayName>
+				<displayName count="other">colon Koto Rika</displayName>
+			</currency>
+			<currency type="CUC">
+				<displayName>Peso Kiupa takahuri</displayName>
+				<displayName count="other">peso Kiupa takahuri</displayName>
+			</currency>
+			<currency type="CUP">
+				<displayName>Peso Kiupa</displayName>
+				<displayName count="other">peso Kiupa</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Escudo Kūrae Matomato</displayName>
+				<displayName count="other">escudo Kūrae Matomato</displayName>
+			</currency>
+			<currency type="CZK">
+				<displayName>Koruna Tieke</displayName>
+				<displayName count="other">koruna Tieke</displayName>
+			</currency>
+			<currency type="DJF">
+				<displayName>Franc Tepūti</displayName>
+				<displayName count="other">franc Tepūti</displayName>
+			</currency>
+			<currency type="DKK">
+				<displayName>Kroner Tenemāka</displayName>
+				<displayName count="other">kroner Tenemāka</displayName>
+			</currency>
+			<currency type="DOP">
+				<displayName>Peso Tominika</displayName>
+				<displayName count="other">peso Tominika</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Dinar Aratiria</displayName>
+				<displayName count="other">dinar Aratiria</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Pāuna Īhipa</displayName>
+				<displayName count="other">pāuna Īhipa</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Nakfa Eriterea</displayName>
+				<displayName count="other">nakfa Eriterea</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>birr Etiopia</displayName>
+			</currency>
 			<currency type="EUR">
 				<displayName>Euro</displayName>
 				<displayName count="other">euro</displayName>
+			</currency>
+			<currency type="FJD">
+				<displayName>Tāra Whītī</displayName>
+				<displayName count="other">tāra Whītī</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Pāuna Whākana</displayName>
+				<displayName count="other">pāuna Whākana</displayName>
 			</currency>
 			<currency type="GBP">
 				<displayName>Pāuna Piritene</displayName>
 				<displayName count="other">pāuna Piritene</displayName>
 			</currency>
+			<currency type="GEL">
+				<displayName>Lari Hōria</displayName>
+				<displayName count="other">lari Hōria</displayName>
+			</currency>
+			<currency type="GHS">
+				<displayName>Cedi Kāna</displayName>
+				<displayName count="other">cedi Kāna</displayName>
+			</currency>
+			<currency type="GIP">
+				<displayName>Pāuna Kāmaka</displayName>
+				<displayName count="other">pāuna Kāmaka</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Dalasi Kamopia</displayName>
+				<displayName count="other">dalasi Kamopia</displayName>
+			</currency>
+			<currency type="GNF">
+				<displayName>Franc Kini</displayName>
+				<displayName count="other">franc Kini</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Quetzal Kuatamāra</displayName>
+				<displayName count="other">quetzal Kuatamāra</displayName>
+			</currency>
+			<currency type="GYD">
+				<displayName>Tāra Kaiana</displayName>
+				<displayName count="other">tāra Kaiana</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Tāra Hongipua</displayName>
+				<displayName count="other">tāra Hongipua</displayName>
+			</currency>
+			<currency type="HNL">
+				<displayName>Lempira Honotura</displayName>
+				<displayName count="other">lempira Honotura</displayName>
+			</currency>
+			<currency type="HRK">
+				<displayName>Kuna Koroātia</displayName>
+				<displayName count="other">kuna Koroātia</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Gourde Haiti</displayName>
+				<displayName count="other">gourde Haiti</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Forint Hanekari</displayName>
+				<displayName count="other">forint Hanekari</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Rupiah Initonīhia</displayName>
+				<displayName count="other">rupiah Initonīhia</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Shekel Hou Iharaira</displayName>
+				<displayName count="other">shekel hou Iharaira</displayName>
+			</currency>
 			<currency type="INR">
 				<displayName>Rupī Iniana</displayName>
 				<displayName count="other">rupī Iniana</displayName>
 			</currency>
+			<currency type="IQD">
+				<displayName>Dinar Irāka</displayName>
+				<displayName count="other">dinar Irāka</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Rial Irāna</displayName>
+				<displayName count="other">rial Irāna</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Kronur Tiorangi</displayName>
+				<displayName count="other">kronur Tiorangi</displayName>
+			</currency>
+			<currency type="JMD">
+				<displayName>Tāra Hemeika</displayName>
+				<displayName count="other">tāra Hemeika</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Dinar Hōrano</displayName>
+				<displayName count="other">dinar Hōrano</displayName>
+			</currency>
 			<currency type="JPY">
 				<displayName>Yen Hapanihi</displayName>
 				<displayName count="other">yen Hapanihi</displayName>
-				<symbol draft="contributed">¥</symbol>
+				<symbol>¥</symbol>
+			</currency>
+			<currency type="KES">
+				<displayName>Hereni Kenia</displayName>
+				<displayName count="other">hereni Kenia</displayName>
+			</currency>
+			<currency type="KGS">
+				<displayName>Som Kikitānga</displayName>
+				<displayName count="other">som Kikitānga</displayName>
+			</currency>
+			<currency type="KHR">
+				<displayName>Riel Kamapōtia</displayName>
+				<displayName count="other">riel Kamapōtia</displayName>
+			</currency>
+			<currency type="KMF">
+				<displayName>Franc Komoro</displayName>
+				<displayName count="other">franc Komoro</displayName>
+			</currency>
+			<currency type="KPW">
+				<displayName>Won Kōrea ki te Raki</displayName>
+				<displayName count="other">won Kōrea ki te Raki</displayName>
+			</currency>
+			<currency type="KRW">
+				<displayName>Won Kōrea ki te Tonga</displayName>
+				<displayName count="other">won Kōrea ki te Tonga</displayName>
+			</currency>
+			<currency type="KWD">
+				<displayName>Dinar Kūweiti</displayName>
+				<displayName count="other">dinar Kūweiti</displayName>
+			</currency>
+			<currency type="KYD">
+				<displayName>Tāra Kāmana</displayName>
+				<displayName count="other">tāra Kāmana</displayName>
+			</currency>
+			<currency type="KZT">
+				<displayName>Tenge Katatānga</displayName>
+				<displayName count="other">tenge Katatānga</displayName>
+			</currency>
+			<currency type="LAK">
+				<displayName>kip Rāoho</displayName>
+			</currency>
+			<currency type="LBP">
+				<displayName>Pāuna Repanona</displayName>
+				<displayName count="other">pāuna Repanona</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Rupee Hiri Ranaka</displayName>
+				<displayName count="other">rupee Hiri Ranaka</displayName>
+			</currency>
+			<currency type="LRD">
+				<displayName>Tāra Raipiria</displayName>
+				<displayName count="other">tāra Raipiria</displayName>
+			</currency>
+			<currency type="LSL">
+				<displayName>Loti Teroto</displayName>
+				<displayName count="other">loti Teroto</displayName>
+			</currency>
+			<currency type="LYD">
+				<displayName>Dinar Ripia</displayName>
+				<displayName count="other">dinar Ripia</displayName>
+			</currency>
+			<currency type="MAD">
+				<displayName>Dirham Moroko</displayName>
+				<displayName count="other">dirham Moroko</displayName>
+			</currency>
+			<currency type="MDL">
+				<displayName>Leu Morotawa</displayName>
+				<displayName count="other">lei Morotawa</displayName>
+			</currency>
+			<currency type="MGA">
+				<displayName>Ariary Matakāhika</displayName>
+				<displayName count="other">ariary Matakāhika</displayName>
+			</currency>
+			<currency type="MKD">
+				<displayName>Denar Makerōnia</displayName>
+				<displayName count="other">denari Makerōnia</displayName>
+			</currency>
+			<currency type="MMK">
+				<displayName>Kyat Pēma</displayName>
+				<displayName count="other">kyat Pēma</displayName>
+			</currency>
+			<currency type="MNT">
+				<displayName>tugrik Mongōria</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Pataca Makau</displayName>
+				<displayName count="other">pataca Makau</displayName>
+			</currency>
+			<currency type="MRU">
+				<displayName>Ouguiya Mauritania</displayName>
+				<displayName count="other">ouguiya Mauritania</displayName>
+			</currency>
+			<currency type="MUR">
+				<displayName>Rupee Marihi</displayName>
+				<displayName count="other">rupee Marihi</displayName>
+			</currency>
+			<currency type="MVR">
+				<displayName>Rufiyaa Māratiri</displayName>
+				<displayName count="other">rufiyaa Māratiri</displayName>
+			</currency>
+			<currency type="MWK">
+				<displayName>Kwacha Marāwi</displayName>
+				<displayName count="other">kwacha Marāwi</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Peso Mēhiko</displayName>
+				<displayName count="other">peso Mēhiko</displayName>
+			</currency>
+			<currency type="MYR">
+				<displayName>Ringgit Mareia</displayName>
+				<displayName count="other">ringgit Mareia</displayName>
+			</currency>
+			<currency type="MZN">
+				<displayName>Metical Mohapiki</displayName>
+				<displayName count="other">metical Mohapiki</displayName>
+			</currency>
+			<currency type="NAD">
+				<displayName>Tāra Namipia</displayName>
+				<displayName count="other">tāra Namipia</displayName>
+			</currency>
+			<currency type="NGN">
+				<displayName>Naira Ngāitīria</displayName>
+				<displayName count="other">naira Ngāitīria</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Cordoba Nikarāhua</displayName>
+				<displayName count="other">cordoba Nikarāhua</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName>Kroner Nōwei</displayName>
+				<displayName count="other">kroner Nōwei</displayName>
+			</currency>
+			<currency type="NPR">
+				<displayName>Rupee Nepōra</displayName>
+				<displayName count="other">rupee Nepōra</displayName>
 			</currency>
 			<currency type="NZD">
 				<displayName>Tāra o Aotearoa</displayName>
 				<displayName count="other">tāra o Aotearoa</displayName>
 				<symbol>$</symbol>
 			</currency>
+			<currency type="OMR">
+				<displayName>Rial Ōmana</displayName>
+				<displayName count="other">rial Ōmana</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Balboa Panama</displayName>
+				<displayName count="other">balboa Panama</displayName>
+			</currency>
+			<currency type="PEN">
+				<displayName>Sole Peru</displayName>
+				<displayName count="other">sole Peru</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina Papua Nūkini</displayName>
+				<displayName count="other">kina Papua Nūkini</displayName>
+			</currency>
+			<currency type="PHP">
+				<displayName>Peso Piripīni</displayName>
+				<displayName count="other">peso Piripīni</displayName>
+			</currency>
+			<currency type="PKR">
+				<displayName>Rupee Pakitāne</displayName>
+				<displayName count="other">rupee Pakitāne</displayName>
+			</currency>
+			<currency type="PLN">
+				<displayName>Zloty Pōrana</displayName>
+				<displayName count="other">zloty Pōrana</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Guarani Parakai</displayName>
+				<displayName count="other">guarani Parakai</displayName>
+			</currency>
+			<currency type="QAR">
+				<displayName>Riyal Katā</displayName>
+				<displayName count="other">riyal Katā</displayName>
+			</currency>
+			<currency type="RON">
+				<displayName>Leu Romeinia</displayName>
+				<displayName count="other">lei Romeinia</displayName>
+			</currency>
+			<currency type="RSD">
+				<displayName>Dinar Hirupia</displayName>
+				<displayName count="other">dinar Hirupia</displayName>
+			</currency>
 			<currency type="RUB">
 				<displayName>Rūpera Ruhiana</displayName>
 				<displayName count="other">rūpera Ruhiana</displayName>
+			</currency>
+			<currency type="RWF">
+				<displayName>Franc Rāwana</displayName>
+				<displayName count="other">franc Rāwana</displayName>
+			</currency>
+			<currency type="SAR">
+				<displayName>Riyal Hauri</displayName>
+				<displayName count="other">riyal Hauri</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Tāra Moutere Horomona</displayName>
+				<displayName count="other">tāra Moutere Horomona</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Rupee Heikere</displayName>
+				<displayName count="other">rupee Heikere</displayName>
+			</currency>
+			<currency type="SDG">
+				<displayName>Pāuna Hūtāne</displayName>
+				<displayName count="other">pāuna Hūtāne</displayName>
+			</currency>
+			<currency type="SEK">
+				<displayName>Kronor Huitene</displayName>
+				<displayName count="other">kronor Huitene</displayName>
+			</currency>
+			<currency type="SGD">
+				<displayName>Tāra Hingapoa</displayName>
+				<displayName count="other">tāra Hingapoa</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Pāuna Hato Herena</displayName>
+				<displayName count="other">pāuna Hato Herena</displayName>
+			</currency>
+			<currency type="SLE">
+				<displayName>Leone Araone</displayName>
+				<displayName count="other">leone Araone</displayName>
+			</currency>
+			<currency type="SLL">
+				<displayName>Leone Araon (1964—2022)e</displayName>
+				<displayName count="other">leone Araone (1964—2022)</displayName>
+			</currency>
+			<currency type="SOS">
+				<displayName>Hereni Hūmārie</displayName>
+				<displayName count="other">hereni Hūmārie</displayName>
+			</currency>
+			<currency type="SRD">
+				<displayName>Tāra Huriname</displayName>
+				<displayName count="other">tāra Huriname</displayName>
+			</currency>
+			<currency type="SSP">
+				<displayName>Pāuna Hūtāne Tonga</displayName>
+				<displayName count="other">pāuna Hūtāne Tonga</displayName>
+			</currency>
+			<currency type="STN">
+				<displayName>Dobra Hao Tome me Pirinihipi</displayName>
+				<displayName count="other">dobra Hao Tome me Pirinihipi</displayName>
+			</currency>
+			<currency type="SYP">
+				<displayName>Pāuna Hiria</displayName>
+				<displayName count="other">pāuna Hiria</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Lilangeni Warerangi</displayName>
+				<displayName count="other">emalangeni Warerangi</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Baht Tairanga</displayName>
+				<displayName count="other">baht Tairanga</displayName>
+			</currency>
+			<currency type="TJS">
+				<displayName>Somoni Takiritānga</displayName>
+				<displayName count="other">somoni Takiritānga</displayName>
+			</currency>
+			<currency type="TMT">
+				<displayName>Manat Tukumanatānga</displayName>
+				<displayName count="other">manat Tukumanatānga</displayName>
+			</currency>
+			<currency type="TND">
+				<displayName>Dinar Tūnihia</displayName>
+				<displayName count="other">dinar Tūnihia</displayName>
+			</currency>
+			<currency type="TOP">
+				<displayName>Pa’anga Tonga</displayName>
+				<displayName count="other">pa’anga Tonga</displayName>
+			</currency>
+			<currency type="TRY">
+				<displayName>Lira Tākei</displayName>
+				<displayName count="other">lira Tākei</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Tāra Tirinaki Tōpako</displayName>
+				<displayName count="other">tāra Tirinaki Tōpako</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName>Tāra Taiwana Hou</displayName>
+				<displayName count="other">tāra Taiwana hou</displayName>
+			</currency>
+			<currency type="TZS">
+				<displayName>Hereni Tānahia</displayName>
+				<displayName count="other">hereni Tānahia</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Hryvnia Ukareinga</displayName>
+				<displayName count="other">hryvnia Ukareinga</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>hereni Ukānga</displayName>
 			</currency>
 			<currency type="USD">
 				<displayName>Tāra US</displayName>
 				<displayName count="other">tāra US</displayName>
 			</currency>
+			<currency type="UYU">
+				<displayName>Peso Urukoi</displayName>
+				<displayName count="other">peso Urukoi</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Som Uhipeketāne</displayName>
+				<displayName count="other">som Uhipeketāne</displayName>
+			</currency>
+			<currency type="VES">
+				<displayName>Bolivar Penehūera</displayName>
+				<displayName count="other">bolivar Penehūera</displayName>
+			</currency>
+			<currency type="VND">
+				<displayName>Dong Whitināmu</displayName>
+				<displayName count="other">dong Whitināmu</displayName>
+			</currency>
+			<currency type="VUV">
+				<displayName>Vatu Whenuatū</displayName>
+				<displayName count="other">vatu Whenuatū</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Tala Hāmoa</displayName>
+				<displayName count="other">tala Hāmoa</displayName>
+			</currency>
+			<currency type="XAF">
+				<displayName>Franc CFA Āwherika Waenga</displayName>
+				<displayName count="other">franc CFA Āwherika Waenga</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Tāra Karapīana Rāwhiti</displayName>
+				<displayName count="other">tāra Karapīana Rāwhiti</displayName>
+			</currency>
+			<currency type="XOF">
+				<displayName>Franc CFA Āwherika ki te Uru</displayName>
+				<displayName count="other">franc CFA Āwherika ki te Uru</displayName>
+			</currency>
+			<currency type="XPF">
+				<displayName>Franc CFP</displayName>
+				<displayName count="other">franc CFP</displayName>
+			</currency>
 			<currency type="XXX">
 				<displayName>Moni Tē Mōhiotia</displayName>
 				<displayName count="other">(moni tē mōhiotia)</displayName>
 			</currency>
+			<currency type="YER">
+				<displayName>Rial Īmene</displayName>
+				<displayName count="other">rial Īmene</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Rand Āwherika ki te Tonga</displayName>
+				<displayName count="other">rand Āwherika ki te Tonga</displayName>
+			</currency>
+			<currency type="ZMW">
+				<displayName>Kwacha Tāmipia</displayName>
+				<displayName count="other">kwacha Tāmipia</displayName>
+			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
 			<pattern type="atLeast">⩾{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
+		<minimalPairs>
+			<pluralMinimalPairs count="other" draft="contributed">{0} rā</pluralMinimalPairs>
+			<ordinalMinimalPairs ordinal="other">Kōwhiria te tua{0} ki te matau.</ordinalMinimalPairs>
+		</minimalPairs>
 	</numbers>
 	<units>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
+		<unitLength type="long">
+			<unit type="area-square-kilometer">
+				<displayName>manomita pūrua</displayName>
+				<unitPattern count="other">{0} ki te manomita pūrua</unitPattern>
+				<perUnitPattern>{0} ki te manomita pūrua</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="other">{0} heketea</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<unitPattern count="other">{0} mita pūrua</unitPattern>
+				<perUnitPattern>{0} ki te mita pūrua</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>mitarau pūrua</displayName>
+				<unitPattern count="other">{0} mitarau pūrua</unitPattern>
+				<perUnitPattern>{0} ki te mitarau pūrua</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<unitPattern count="other">{0} māero pūrua</unitPattern>
+				<perUnitPattern>{0} ki te māero pūrua</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="other">{0} eka</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<unitPattern count="other">{0} iari pūrua</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<unitPattern count="other">{0} pūtu pūrua</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>īnihi pūrua</displayName>
+				<unitPattern count="other">{0} īnihi pūrua</unitPattern>
+				<perUnitPattern>{0} ki te īnihi pūrua</perUnitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>rautau</displayName>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>ngahurutau</displayName>
+				<unitPattern count="other">{0} ngahurutau</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<perUnitPattern>{0} i te tau</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>hauwhā</displayName>
+				<unitPattern count="other">{0} hauwhā</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="other">{0} marama</unitPattern>
+				<perUnitPattern>{0} i te marama</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="other">{0} wiki</unitPattern>
+				<perUnitPattern>{0} i te wiki</perUnitPattern>
+			</unit>
+			<unit type="duration-day">
+				<perUnitPattern>{0} i te rā</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other">{0} haora</unitPattern>
+				<perUnitPattern>{0} i te haora</perUnitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>meneti</displayName>
+				<unitPattern count="other">{0} meneti</unitPattern>
+				<perUnitPattern>{0} i te meneti</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>hēkona</displayName>
+				<unitPattern count="other">{0} hēkona</unitPattern>
+				<perUnitPattern>{0} i te hēkona</perUnitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<unitPattern count="other">{0} hēkonamano</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>hēkonamiriona</displayName>
+				<unitPattern count="other">{0} hēkonamiriona</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<unitPattern count="other">{0} nanohēkona</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em tātai tuhituhi</displayName>
+			</unit>
+			<unit type="graphics-pixel">
+				<unitPattern count="other">{0} tongiiti</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>tongiiti ki te mitarau</displayName>
+				<unitPattern count="other">{0} tongiiti ki te mitarau</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>tongiiti ki te īnihi</displayName>
+				<unitPattern count="other">{0} tongiiti ki te īnihi</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>pūtoro o te ao</displayName>
+				<unitPattern count="other">{0} pūtoro o te ao</unitPattern>
+			</unit>
+			<unit type="length-kilometer">
+				<displayName>manomita</displayName>
+				<unitPattern count="other">{0} manomita</unitPattern>
+				<perUnitPattern>{0} ki te manomita</perUnitPattern>
+			</unit>
+			<unit type="length-meter">
+				<displayName>mita</displayName>
+				<unitPattern count="other">{0} mita</unitPattern>
+				<perUnitPattern>{0} ki te mita</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>mitatekau</displayName>
+				<unitPattern count="other">{0} mitatekau</unitPattern>
+			</unit>
+			<unit type="length-centimeter">
+				<displayName>mitarau</displayName>
+				<unitPattern count="other">{0} mitarau</unitPattern>
+				<perUnitPattern>{0} ki te mitarau</perUnitPattern>
+			</unit>
+			<unit type="length-millimeter">
+				<displayName>mitamano</displayName>
+				<unitPattern count="other">{0} mitamano</unitPattern>
+			</unit>
+			<unit type="length-micrometer">
+				<unitPattern count="other">{0} mitamiriona</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>mitanano</displayName>
+				<unitPattern count="other">{0} mitanano</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>mitapiko</displayName>
+				<unitPattern count="other">{0} mitapiko</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<perUnitPattern>{0}ki te pūtu</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<unitPattern count="other">{0} īnihi</unitPattern>
+				<perUnitPattern>{0} ki te īnihi</perUnitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>waeine mātai arorangi</displayName>
+				<unitPattern count="other">{0} waeine mātai arorangi</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>māero moana</displayName>
+				<unitPattern count="other">{0} māero moana</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>manomita pūtoru</displayName>
+				<unitPattern count="other">{0} manomita pūtoru</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>mita pūtoru</displayName>
+				<unitPattern count="other">{0} mita pūtoru</unitPattern>
+				<perUnitPattern>{0} ki te mita pūtoru</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>mitarau pūtoru</displayName>
+				<unitPattern count="other">{0} mitarau pūtoru</unitPattern>
+				<perUnitPattern>{0} ki te mitarau pūtoru</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>māero pūtoru</displayName>
+				<unitPattern count="other">{0} māero pūtoru</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>iari pūtoru</displayName>
+				<unitPattern count="other">{0} iari pūtoru</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>pūtu pūtoru</displayName>
+				<unitPattern count="other">{0} pūtu pūtoru</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>īnihi pūtoru</displayName>
+				<unitPattern count="other">{0} īnihi pūtoru</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>rita miriona</displayName>
+				<unitPattern count="other">{0} rita miriona</unitPattern>
+			</unit>
+			<unit type="volume-liter">
+				<perUnitPattern>{0} ki te rita</perUnitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>ritarau</displayName>
+				<unitPattern count="other">{0} ritarau</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>ritamano</displayName>
+				<unitPattern count="other">{0} ritamano</unitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>kārani emepaea</displayName>
+				<perUnitPattern>{0} ki te kārani emepaea</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>kuata</displayName>
+				<unitPattern count="other">{0} kuata</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<unitPattern count="other">{0} paina</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="other">{0} kapu</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>aunihi kūtere</displayName>
+				<unitPattern count="other">{0} aunihi kūtere</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>aunihi kūtere emepaea</displayName>
+				<unitPattern count="other">{0} aunihi kūtere emepaea</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>kuata emepaea</displayName>
+			</unit>
+			<coordinateUnit>
+				<displayName>kāpehu maha</displayName>
+				<coordinateUnitPattern type="east">{0} rāwhiti</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} raki</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} tonga</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} uru</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="short">
+			<unit type="area-hectare">
+				<displayName>heketea</displayName>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>mita pūrua</displayName>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>māero pūrua</displayName>
+			</unit>
+			<unit type="area-acre">
+				<displayName>eka</displayName>
+				<unitPattern count="other">{0} ek</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>iari pūrua</displayName>
+				<unitPattern count="other">{0} iari²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>pūtu pūrua</displayName>
+				<unitPattern count="other">{0} pūtu²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>īnihi²</displayName>
+			</unit>
+			<unit type="duration-century">
+				<displayName>r</displayName>
+				<unitPattern count="other">{0} r</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>nga</displayName>
+				<unitPattern count="other">{0} nga</unitPattern>
+			</unit>
+			<unit type="duration-year">
+				<displayName>tau</displayName>
+				<unitPattern count="other">{0} tau</unitPattern>
+				<perUnitPattern>{0}/t</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>hwh</displayName>
+				<unitPattern count="other">{0} hwh</unitPattern>
+				<perUnitPattern>{0}/hwh</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<displayName>marama</displayName>
+			</unit>
+			<unit type="duration-week">
+				<displayName>wiki</displayName>
+			</unit>
+			<unit type="duration-day">
+				<displayName>rā</displayName>
+				<unitPattern count="other">{0} rā</unitPattern>
+				<perUnitPattern>{0}/rā</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<displayName>haora</displayName>
+			</unit>
+			<unit type="duration-minute">
+				<displayName>men</displayName>
+				<unitPattern count="other">{0} men</unitPattern>
+				<perUnitPattern>{0}/men</perUnitPattern>
+			</unit>
+			<unit type="duration-second">
+				<displayName>hēk</displayName>
+				<unitPattern count="other">{0} hēk</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>hēkonamano</displayName>
+				<unitPattern count="other">{0} hm</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>μhēk</displayName>
+				<unitPattern count="other">{0} μhēk</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nanohēkona</displayName>
+				<unitPattern count="other">{0} nhēk</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>tongiiti</displayName>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>miriona tongiiti</displayName>
+			</unit>
+			<unit type="length-meter">
+				<displayName>m</displayName>
+			</unit>
+			<unit type="length-micrometer">
+				<displayName>mitamiriona</displayName>
+			</unit>
+			<unit type="length-mile">
+				<displayName>māero</displayName>
+				<unitPattern count="other">{0} māero</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>iari</displayName>
+				<unitPattern count="other">{0} iari</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>pūtu</displayName>
+				<unitPattern count="other">{0} pūtu</unitPattern>
+				<perUnitPattern>{0}/pūtu</perUnitPattern>
+			</unit>
+			<unit type="length-inch">
+				<displayName>īnihi</displayName>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>tau aho</displayName>
+				<unitPattern count="other">{0} tau aho</unitPattern>
+			</unit>
+			<unit type="length-fathom">
+				<displayName>mārō</displayName>
+				<unitPattern count="other">{0} mārō</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>pūtoro kōmaru</displayName>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>iari³</displayName>
+				<unitPattern count="other">{0} iari³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>pūtu³</displayName>
+				<unitPattern count="other">{0} pūtu³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>īnihi³</displayName>
+			</unit>
+			<unit type="volume-liter">
+				<displayName>rita</displayName>
+				<unitPattern count="other">{0} rita</unitPattern>
+				<perUnitPattern>{0}/rita</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>kārani</displayName>
+				<unitPattern count="other">{0} kārani</unitPattern>
+				<perUnitPattern>{0} ki te kārani</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<unitPattern count="other">{0} kārani emepaea</unitPattern>
+				<perUnitPattern>{0}/kārani emepaea</perUnitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>paina</displayName>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>kapu</displayName>
+				<unitPattern count="other">{0} k</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>kokonui</displayName>
+				<unitPattern count="other">{0} kokonui</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>kokoiti</displayName>
+				<unitPattern count="other">{0} kokoiti</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>kāho</displayName>
+				<unitPattern count="other">{0} kāho</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>koko pūrini</displayName>
+				<unitPattern count="other">{0} koko pūrini</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>pata</displayName>
+				<unitPattern count="other">{0} pata</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>kini</displayName>
+				<unitPattern count="other">{0} kini</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<unitPattern count="other">{0} kuata emepaea</unitPattern>
+			</unit>
+			<coordinateUnit>
+				<displayName>kāpehu</displayName>
+				<coordinateUnitPattern type="east">{0} Rā</coordinateUnitPattern>
+				<coordinateUnitPattern type="north">{0} Ra</coordinateUnitPattern>
+				<coordinateUnitPattern type="south">{0} T</coordinateUnitPattern>
+				<coordinateUnitPattern type="west">{0} U</coordinateUnitPattern>
+			</coordinateUnit>
+		</unitLength>
+		<unitLength type="narrow">
+			<unit type="duration-year">
+				<unitPattern count="other">{0} t</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="other">{0} h</unitPattern>
+			</unit>
+			<unit type="duration-millisecond">
+				<displayName>hēkm</displayName>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>nhēk</displayName>
+			</unit>
+			<unit type="volume-gallon">
+				<perUnitPattern>{0}/kārani</perUnitPattern>
+			</unit>
+		</unitLength>
 	</units>
 	<listPatterns>
-		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+		<listPattern type="or">
+			<listPatternPart type="end">{0}, {1} rānei</listPatternPart>
+			<listPatternPart type="2">{0} {1} rānei</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end">{0}, &amp; {1}</listPatternPart>
+			<listPatternPart type="2">{0} &amp; {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="unit-narrow">
+			<listPatternPart type="start">{0} {1}</listPatternPart>
+			<listPatternPart type="middle">{0} {1}</listPatternPart>
+			<listPatternPart type="end">{0} {1}</listPatternPart>
+			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>
@@ -2271,6 +4187,5 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</characterLabels>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und mi</nameOrderLocales>
-		<nameOrderLocales order="surnameFirst">ja ko vi yue zh</nameOrderLocales>
 	</personNames>
 </ldml>

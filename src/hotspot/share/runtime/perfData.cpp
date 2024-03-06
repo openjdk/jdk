@@ -73,6 +73,9 @@ const char* PerfDataManager::_name_spaces[] = {
   "java.threads",           // Threads System name spaces
   "com.sun.threads",
   "sun.threads",
+  "java.threads.cpu_time", //Thread CPU time name spaces
+  "com.sun.threads.cpu_time",
+  "sun.threads.cpu_time",
   "java.property",          // Java Property name spaces
   "com.sun.property",
   "sun.property",
@@ -183,6 +186,10 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
 
   // mark the PerfData memory region as having been updated.
   PerfMemory::mark_updated();
+}
+
+bool PerfData::name_equals(const char* name) const {
+  return strcmp(name, this->name()) == 0;
 }
 
 PerfLong::PerfLong(CounterNS ns, const char* namep, Units u, Variability v)
@@ -501,17 +508,9 @@ PerfDataList::~PerfDataList() {
 
 }
 
-bool PerfDataList::by_name(void* name, PerfData* pd) {
-
-  if (pd == nullptr)
-    return false;
-
-  return strcmp((const char*)name, pd->name()) == 0;
-}
-
 PerfData* PerfDataList::find_by_name(const char* name) {
 
-  int i = _set->find((void*)name, PerfDataList::by_name);
+  int i = _set->find_if([&](PerfData* pd) { return pd->name_equals(name); });
 
   if (i >= 0 && i <= _set->length())
     return _set->at(i);

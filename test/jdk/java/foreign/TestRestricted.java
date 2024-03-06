@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.javac
  * @modules java.base/jdk.internal.reflect
  * @run testng TestRestricted

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
@@ -87,7 +88,7 @@ void ArchiveHeapLoader::fixup_region() {
     fill_failed_loaded_heap();
   }
   if (is_in_use()) {
-    if (!MetaspaceShared::use_full_module_graph()) {
+    if (!CDSConfig::is_loading_full_module_graph()) {
       // Need to remove all the archived java.lang.Module objects from HeapShared::roots().
       ClassLoaderDataShared::clear_archived_oops();
     }

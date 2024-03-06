@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,8 @@ import java.util.Objects;
 
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MappedMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
+import jdk.internal.foreign.SegmentFactories;
 import jdk.internal.misc.Blocker;
 import jdk.internal.misc.ExtendedMapMode;
 import jdk.internal.misc.Unsafe;
@@ -858,20 +857,18 @@ public class FileChannelImpl
             if (position > sz)
                 return 0;
 
-            // Now position <= sz so remaining >= 0 and
-            // remaining == 0 if and only if sz == 0
-            long remaining = sz - position;
-
-            // Adjust count only if remaining > 0, i.e.,
-            // sz > position which means sz > 0
-            if (remaining > 0 && remaining < count)
-                count = remaining;
-
             // System calls supporting fast transfers might not work on files
             // which advertise zero size such as those in Linux /proc
             if (sz > 0) {
-                // Attempt a direct transfer, if the kernel supports it, limiting
-                // the number of bytes according to which platform
+                // Now sz > 0 and position <= sz so remaining >= 0 and
+                // remaining == 0 if and only if sz == position
+                long remaining = sz - position;
+
+                if (remaining >= 0 && remaining < count)
+                    count = remaining;
+
+                // Attempt a direct transfer, if the kernel supports it,
+                // limiting the number of bytes according to which platform
                 int icount = (int) Math.min(count, nd.maxDirectTransferSize());
                 long n;
                 if ((n = transferToDirect(position, icount, target)) >= 0)
@@ -1154,7 +1151,7 @@ public class FileChannelImpl
 
     // -- Memory-mapped buffers --
 
-    private sealed abstract static class Unmapper
+    private abstract static sealed class Unmapper
         implements Runnable, UnmapperProxy
     {
         private final long address;
@@ -1335,22 +1332,7 @@ public class FileChannelImpl
         if (mode == MapMode.READ_ONLY) {
             readOnly = true;
         }
-        if (unmapper != null) {
-            AbstractMemorySegmentImpl segment =
-                new MappedMemorySegmentImpl(unmapper.address(), unmapper, size,
-                                            readOnly, sessionImpl);
-            MemorySessionImpl.ResourceList.ResourceCleanup resource =
-                new MemorySessionImpl.ResourceList.ResourceCleanup() {
-                    @Override
-                    public void cleanup() {
-                        unmapper.unmap();
-                    }
-                };
-            sessionImpl.addOrCleanupIfFail(resource);
-            return segment;
-        } else {
-            return new MappedMemorySegmentImpl(0, null, 0, readOnly, sessionImpl);
-        }
+        return SegmentFactories.mapSegment(size, unmapper, readOnly, sessionImpl);
     }
 
     private Unmapper mapInternal(MapMode mode, long position, long size, int prot, boolean isSync)

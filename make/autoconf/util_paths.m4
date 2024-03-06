@@ -118,6 +118,24 @@ AC_DEFUN([UTIL_FIXUP_PATH],
   fi
 ])
 
+##############################################################################
+# Fixup path to be a Windows full long path
+# Note: Only supported with cygwin/msys2 (cygpath tool)
+AC_DEFUN([UTIL_FIXUP_WIN_LONG_PATH],
+[
+  # Only process if variable expands to non-empty
+  path="[$]$1"
+  if test "x$path" != x; then
+    if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+      win_path=$($PATHTOOL -wl "$path")
+      if test "x$win_path" != "x$path"; then
+        $1="$win_path"
+      fi
+    fi
+  fi
+])
+
+
 ###############################################################################
 # Check if the given file is a unix-style or windows-style executable, that is,
 # if it expects paths in unix-style or windows-style.

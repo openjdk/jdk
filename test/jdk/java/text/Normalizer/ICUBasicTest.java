@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,8 @@
  * @summary Confirm Normalizer's fundamental behavior. Imported from ICU4J 3.2's
  * src/com/ibm/icu/dev/test and modified.
  * @modules java.base/sun.text java.base/jdk.internal.icu.text
- * @library /java/text/testlib
  * @compile -XDignore.symbol.file ICUBasicTest.java
- * @run main/timeout=30 ICUBasicTest
+ * @run junit/timeout=30 ICUBasicTest
  */
 
 /*
@@ -45,11 +44,11 @@ import java.util.HexFormat;
 
 import static java.text.Normalizer.Form.*;
 
-public class ICUBasicTest extends IntlTest {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        new ICUBasicTest().run(args);
-    }
+import static org.junit.jupiter.api.Assertions.fail;
+
+public class ICUBasicTest {
 
     /*
      * Normalization modes
@@ -77,6 +76,7 @@ public class ICUBasicTest extends IntlTest {
      *   PRI #29 is supported in Unicode 4.1.0. Therefore, expected results are
      *   different for earlier Unicode versions.
      */
+    @Test
     public void TestComposition() {
 
         final TestCompositionCase cases[] = new TestCompositionCase[] {
@@ -116,10 +116,7 @@ public class ICUBasicTest extends IntlTest {
             output = Normalizer.normalize(cases[i].input,
                                           cases[i].form, cases[i].options);
             if (!output.equals(cases[i].expect)) {
-                errln("unexpected result for case " + i + ". Expected="
-                      + cases[i].expect + ", Actual=" + output);
-            } else if (verbose) {
-                logln("expected result for case " + i + ". Expected="
+                fail("unexpected result for case " + i + ". Expected="
                       + cases[i].expect + ", Actual=" + output);
             }
         }
@@ -144,13 +141,14 @@ public class ICUBasicTest extends IntlTest {
     /*
      * Added in order to detect a regression.
      */
+    @Test
     public void TestCombiningMarks() {
         String src      = "\u0f71\u0f72\u0f73\u0f74\u0f75";
         String expected = "\u0F71\u0F71\u0F71\u0F72\u0F72\u0F74\u0F74";
         String result   = NormalizerBase.normalize(src, NFD);
 
         if (!expected.equals(result)) {
-            errln("Reordering of combining marks failed. Expected: " +
+            fail("Reordering of combining marks failed. Expected: " +
                   HexFormat.of().withDelimiter(" ").formatHex(expected.getBytes())
                     + " Got: "+ HexFormat.of().withDelimiter(" ").formatHex(result.getBytes()));
         }
@@ -159,12 +157,13 @@ public class ICUBasicTest extends IntlTest {
     /*
      * Added in order to detect a regression.
      */
+    @Test
     public void TestBengali() throws Exception {
         String input = "\u09bc\u09be\u09cd\u09be";
         String output=NormalizerBase.normalize(input, NFC);
 
         if (!input.equals(output)) {
-             errln("ERROR in NFC of string");
+             fail("ERROR in NFC of string");
         }
         return;
     }
@@ -178,6 +177,7 @@ public class ICUBasicTest extends IntlTest {
      * characters at the start of a string are not put in canonical
      * order correctly by compose() if there is no starter.
      */
+    @Test
     public void TestVerisign() throws Exception {
         String[] inputs = {
             "\u05b8\u05b9\u05b1\u0591\u05c3\u05b0\u05ac\u059f",
@@ -194,7 +194,7 @@ public class ICUBasicTest extends IntlTest {
 
             String result = NormalizerBase.normalize(input, NFD);
             if (!result.equals(output)) {
-                errln("FAIL input: " + HexFormat.of().withDelimiter(" ")
+                fail("FAIL input: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(input.getBytes()) + "\n" +
                       " decompose: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(result.getBytes()) + "\n" +
@@ -204,7 +204,7 @@ public class ICUBasicTest extends IntlTest {
 
             result = NormalizerBase.normalize(input, NFC);
             if (!result.equals(output)) {
-                errln("FAIL input: " + HexFormat.of().withDelimiter(" ")
+                fail("FAIL input: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(input.getBytes()) + "\n" +
                       "   compose: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(output.getBytes()) + "\n" +
@@ -223,6 +223,7 @@ public class ICUBasicTest extends IntlTest {
      * map to the same canonical class, which is not the case, in
      * reality.
      */
+    @Test
     public void TestZeroIndex() throws Exception {
         String[] DATA = {
             // Expect col1 x COMPOSE_COMPAT => col2
@@ -240,12 +241,12 @@ public class ICUBasicTest extends IntlTest {
             String exp = DATA[i+1];
 
             if (b.equals(exp)) {
-                logln("Ok: " + HexFormat.of().withDelimiter(" ")
+                System.out.println("Ok: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(a.getBytes()) + " x COMPOSE_COMPAT => " +
                       HexFormat.of().withDelimiter(" ")
                               .formatHex(b.getBytes()));
             } else {
-                errln("FAIL: " + HexFormat.of().withDelimiter(" ")
+                fail("FAIL: " + HexFormat.of().withDelimiter(" ")
                         .formatHex(b.getBytes()) + " x COMPOSE_COMPAT => " +
                       HexFormat.of().withDelimiter(" ")
                               .formatHex(a.getBytes()) + ", expect " +
@@ -256,10 +257,10 @@ public class ICUBasicTest extends IntlTest {
             a = NormalizerBase.normalize(b, NFD);
             exp = DATA[i+2];
             if (a.equals(exp)) {
-                logln("Ok: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
+                System.out.println("Ok: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
                       HexFormat.of().withDelimiter(" ").formatHex(a.getBytes()));
             } else {
-                errln("FAIL: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
+                fail("FAIL: " + HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x DECOMP => " +
                       HexFormat.of().withDelimiter(" ").formatHex(a.getBytes()) + ", expect " + HexFormat.of().withDelimiter(" ").formatHex(exp.getBytes()));
             }
         }
@@ -269,6 +270,7 @@ public class ICUBasicTest extends IntlTest {
      * Make sure characters in the CompositionExclusion.txt list do not get
      * composed to.
      */
+    @Test
     public void TestCompositionExclusion() throws Exception {
         // This list is generated from CompositionExclusion.txt.
         // Update whenever the normalizer tables are updated.  Note
@@ -397,14 +399,7 @@ public class ICUBasicTest extends IntlTest {
         String c = NormalizerBase.normalize(b, NFC);
 
         if (c.equals(a)) {
-            errln("FAIL: " + HexFormat.of().withDelimiter(" ")
-                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
-                  HexFormat.of().withDelimiter(" ")
-                          .formatHex(b.getBytes()) + " x COMPOSE => " +
-                  HexFormat.of().withDelimiter(" ")
-                          .formatHex(c.getBytes()) + " for the latest Unicode");
-        } else if (verbose) {
-            logln("Ok: " + HexFormat.of().withDelimiter(" ")
+            fail("FAIL: " + HexFormat.of().withDelimiter(" ")
                     .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
                   HexFormat.of().withDelimiter(" ")
                           .formatHex(b.getBytes()) + " x COMPOSE => " +
@@ -415,18 +410,14 @@ public class ICUBasicTest extends IntlTest {
         b = NormalizerBase.normalize(a, NFKD, Normalizer.UNICODE_3_2);
         c = NormalizerBase.normalize(b, NFC, Normalizer.UNICODE_3_2);
         if (c.equals(a)) {
-            errln("FAIL: " + HexFormat.of().withDelimiter(" ")
-                    .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
-                  HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
-                  HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");
-        } else if (verbose) {
-            logln("Ok: " + HexFormat.of().withDelimiter(" ")
+            fail("FAIL: " + HexFormat.of().withDelimiter(" ")
                     .formatHex(a.getBytes()) + " x DECOMP_COMPAT => " +
                   HexFormat.of().withDelimiter(" ").formatHex(b.getBytes()) + " x COMPOSE => " +
                   HexFormat.of().withDelimiter(" ").formatHex(c.getBytes()) + " for Unicode 3.2.0");
         }
     }
 
+    @Test
     public void TestTibetan() throws Exception {
         String[][] decomp = {
             { "\u0f77", "\u0f77", "\u0fb2\u0f71\u0f80" }
@@ -441,6 +432,7 @@ public class ICUBasicTest extends IntlTest {
         staticTest(NFKC,compose, 2);
     }
 
+    @Test
     public void TestExplodingBase() throws Exception{
         // \u017f - Latin small letter long s
         // \u0307 - combining dot above
@@ -574,18 +566,22 @@ public class ICUBasicTest extends IntlTest {
         { "\u30AB\uFF9E",       "\u30AB\u3099",         "\u30AC"            },
     };
 
+    @Test
     public void TestNFD() throws Exception{
         staticTest(NFD, canonTests, 1);
     }
 
+    @Test
     public void TestNFC() throws Exception{
         staticTest(NFC, canonTests, 2);
     }
 
+    @Test
     public void TestNFKD() throws Exception{
         staticTest(NFKD, compatTests, 1);
     }
 
+    @Test
     public void TestNFKC() throws Exception{
         staticTest(NFKC, compatTests, 2);
     }
@@ -595,14 +591,14 @@ public class ICUBasicTest extends IntlTest {
                             int outCol) throws Exception {
         for (int i = 0; i < tests.length; i++) {
             String input = tests[i][0];
-            logln("Normalizing '" + input + "' (" + HexFormat.of()
+            System.out.println("Normalizing '" + input + "' (" + HexFormat.of()
                     .withDelimiter(" ").formatHex(input.getBytes()) + ")" );
 
             String expect =tests[i][outCol];
             String output = java.text.Normalizer.normalize(input, form);
 
             if (!output.equals(expect)) {
-                errln("FAIL: case " + i
+                fail("FAIL: case " + i
                     + " expected '" + expect + "' (" + HexFormat.of()
                         .withDelimiter(" ").formatHex(expect.getBytes()) + ")"
                     + " but got '" + output + "' (" + HexFormat.of()
@@ -621,13 +617,15 @@ public class ICUBasicTest extends IntlTest {
         { "\u1111\u1171\u11b6", "\u1111\u1171\u11b6",   "\ud4db"        },
     };
 
+    @Test
     public void TestHangulCompose() throws Exception{
-        logln("Canonical composition...");
+        System.out.println("Canonical composition...");
         staticTest(NFC, hangulCanon,  2);
      }
 
+    @Test
     public void TestHangulDecomp() throws Exception{
-        logln("Canonical decomposition...");
+        System.out.println("Canonical decomposition...");
         staticTest(NFD, hangulCanon, 1);
     }
 

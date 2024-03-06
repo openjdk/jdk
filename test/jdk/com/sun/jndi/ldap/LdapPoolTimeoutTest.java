@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ public class LdapPoolTimeoutTest {
             // assertCompletion may wrap a CommunicationException in an RTE
             assertNotNull(msg);
             assertTrue(msg.contains("Network is unreachable")
-                        || msg.contains("No route to host"));
+                        || msg.contains("No route to host") || msg.contains("Connection timed out"));
         } catch (NamingException ex) {
             String msg = ex.getCause() == null ? ex.getMessage() : ex.getCause().getMessage();
             System.err.println("MSG: " + msg);

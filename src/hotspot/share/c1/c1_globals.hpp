@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,9 +275,11 @@
   develop(bool, InstallMethods, true,                                       \
           "Install methods at the end of successful compilations")          \
                                                                             \
+  /* The compiler assumes, in many places, that methods are at most 1MB. */ \
+  /* Therefore, we restrict this flag to at most 1MB.                    */ \
   develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
-          range(0, max_jint)                                                \
+          range(0, 1*M)                                                     \
                                                                             \
   develop(bool, TraceFPUStack, false,                                       \
           "Trace emulation of the FPU stack (intel only)")                  \

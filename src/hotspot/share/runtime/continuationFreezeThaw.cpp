@@ -390,7 +390,7 @@ public:
   inline int size_if_fast_freeze_available();
 
 #ifdef ASSERT
-  bool interpreted_native_or_deoptimized_on_stack();
+  bool check_valid_fast_path();
 #endif
 
 protected:
@@ -1514,7 +1514,10 @@ static bool monitors_on_stack(JavaThread* thread) {
   return false;
 }
 
-bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
+// There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
+// adapter or called Deoptimization::unpack_frames. As for native frames, upcalls from JNI also go through the
+// interpreter (see JavaCalls::call_helper), while the UpcallLinker explicitly sets cont_fastpath.
+bool FreezeBase::check_valid_fast_path() {
   ContinuationEntry* ce = _thread->last_continuation();
   RegisterMap map(_thread,
                   RegisterMap::UpdateMap::skip,
@@ -1522,11 +1525,11 @@ bool FreezeBase::interpreted_native_or_deoptimized_on_stack() {
                   RegisterMap::WalkContinuation::skip);
   map.set_include_argument_oops(false);
   for (frame f = freeze_start_frame(); Continuation::is_frame_in_continuation(ce, f); f = f.sender(&map)) {
-    if (f.is_interpreted_frame() || f.is_native_frame() || f.is_deoptimized_frame()) {
-      return true;
+    if (!f.is_compiled_frame() || f.is_deoptimized_frame()) {
+      return false;
     }
   }
-  return false;
+  return true;
 }
 #endif // ASSERT
 
@@ -1588,11 +1591,7 @@ static inline int freeze_internal(JavaThread* current, intptr_t* const sp) {
 
   Freeze<ConfigT> freeze(current, cont, sp);
 
-  // There are no interpreted frames if we're not called from the interpreter and we haven't ancountered an i2c
-  // adapter or called Deoptimization::unpack_frames. Calls from native frames also go through the interpreter
-  // (see JavaCalls::call_helper).
-  assert(!current->cont_fastpath()
-         || (current->cont_fastpath_thread_state() && !freeze.interpreted_native_or_deoptimized_on_stack()), "");
+  assert(!current->cont_fastpath() || freeze.check_valid_fast_path(), "");
   bool fast = UseContinuationFastPath && current->cont_fastpath();
   if (fast && freeze.size_if_fast_freeze_available() > 0) {
     freeze.freeze_fast_existing_chunk();
@@ -1775,7 +1774,7 @@ private:
   inline void before_thaw_java_frame(const frame& hf, const frame& caller, bool bottom, int num_frame);
   inline void after_thaw_java_frame(const frame& f, bool bottom);
   inline void patch(frame& f, const frame& caller, bool bottom);
-  void clear_bitmap_bits(intptr_t* start, int range);
+  void clear_bitmap_bits(address start, address end);
 
   NOINLINE void recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames);
   void recurse_thaw_compiled_frame(const frame& hf, frame& caller, int num_frames, bool stub_caller);
@@ -2166,13 +2165,22 @@ inline void ThawBase::patch(frame& f, const frame& caller, bool bottom) {
   assert(!bottom || (_cont.is_empty() != Continuation::is_cont_barrier_frame(f)), "");
 }
 
-void ThawBase::clear_bitmap_bits(intptr_t* start, int range) {
+void ThawBase::clear_bitmap_bits(address start, address end) {
+  assert(is_aligned(start, wordSize), "should be aligned: " PTR_FORMAT, p2i(start));
+  assert(is_aligned(end, VMRegImpl::stack_slot_size), "should be aligned: " PTR_FORMAT, p2i(end));
+
   // we need to clear the bits that correspond to arguments as they reside in the caller frame
-  // or they will keep objects that are otherwise unreachable alive
-  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(start+range));
+  // or they will keep objects that are otherwise unreachable alive.
+
+  // Align `end` if UseCompressedOops is not set to avoid UB when calculating the bit index, since
+  // `end` could be at an odd number of stack slots from `start`, i.e might not be oop aligned.
+  // If that's the case the bit range corresponding to the last stack slot should not have bits set
+  // anyways and we assert that before returning.
+  address effective_end = UseCompressedOops ? end : align_down(end, wordSize);
+  log_develop_trace(continuations)("clearing bitmap for " INTPTR_FORMAT " - " INTPTR_FORMAT, p2i(start), p2i(effective_end));
   stackChunkOop chunk = _cont.tail();
-  chunk->bitmap().clear_range(chunk->bit_index_for(start),
-                              chunk->bit_index_for(start+range));
+  chunk->bitmap().clear_range(chunk->bit_index_for(start), chunk->bit_index_for(effective_end));
+  assert(effective_end == end || !chunk->bitmap().at(chunk->bit_index_for(effective_end)), "bit should not be set");
 }
 
 NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& caller, int num_frames) {
@@ -2225,7 +2233,9 @@ NOINLINE void ThawBase::recurse_thaw_interpreted_frame(const frame& hf, frame& c
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && locals > 0) {
     assert(hf.is_heap_frame(), "should be");
-    clear_bitmap_bits(heap_frame_bottom - locals, locals);
+    address start = (address)(heap_frame_bottom - locals);
+    address end = (address)heap_frame_bottom;
+    clear_bitmap_bits(start, end);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)
@@ -2298,7 +2308,10 @@ void ThawBase::recurse_thaw_compiled_frame(const frame& hf, frame& caller, int n
     // can only fix caller once this frame is thawed (due to callee saved regs); this happens on the stack
     _cont.tail()->fix_thawed_frame(caller, SmallRegisterMap::instance);
   } else if (_cont.tail()->has_bitmap() && added_argsize > 0) {
-    clear_bitmap_bits(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top, added_argsize);
+    address start = (address)(heap_frame_top + ContinuationHelper::CompiledFrame::size(hf) + frame::metadata_words_at_top);
+    int stack_args_slots = f.cb()->as_compiled_method()->method()->num_stack_arg_slots(false /* rounded */);
+    int argsize_in_bytes = stack_args_slots * VMRegImpl::stack_slot_size;
+    clear_bitmap_bits(start, start + argsize_in_bytes);
   }
 
   DEBUG_ONLY(after_thaw_java_frame(f, is_bottom_frame);)

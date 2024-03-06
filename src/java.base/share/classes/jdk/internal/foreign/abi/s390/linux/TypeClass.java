@@ -96,10 +96,7 @@ public enum TypeClass {
             return false;
 
         TypeClass baseArgClass = classifyValueType((ValueLayout) baseType);
-        if (baseArgClass != FLOAT)
-            return false;
-
-        return true;
+        return baseArgClass == FLOAT;
     }
 
     private static TypeClass classifyStructType(MemoryLayout layout) {

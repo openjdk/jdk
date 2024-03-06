@@ -276,7 +276,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u0F84 ཿ ཀ {ཀ\u0FB5} ཁ ག {ག\u0FB7} ང ཅ ཆ ཇ ཉ ཏ ཊ ཐ ཋ ད {ད\u0FB7} ཌ {ཌ\u0FB7} ན ཎ པ ཕ བ {བ\u0FB7} མ \u0F7E ཙ ཚ ཛ {ཛ\u0FB7} ཝ ཞ ཟ འ ཡ ར ཪ ལ ཤ ཥ ས ཧ ཨ \u0F72 {\u0F71\u0F72} \u0F80 {\u0F71\u0F80} \u0F74 {\u0F71\u0F74} \u0F7A \u0F7B \u0F7C \u0F7D \u0F90 {\u0F90\u0FB5} \u0F91 \u0F92 {\u0F92\u0FB7} \u0F94 \u0F95 \u0F96 \u0F97 \u0F99 \u0F9F \u0F9A \u0FA0 \u0F9B \u0FA1 {\u0FA1\u0FB7} \u0F9C {\u0F9C\u0FB7} \u0FA3 \u0F9E \u0FA4 \u0FA5 \u0FA6 {\u0FA6\u0FB7} \u0FA8 \u0FA9 \u0FAA \u0FAB {\u0FAB\u0FB7} \u0FAD \u0FBA \u0FAE \u0FAF \u0FB0 \u0FB1 \u0FBB \u0FB2 \u0FBC \u0FB3 \u0FB4 \u0FB5 \u0FB6 \u0FB7 \u0FB8 {\u0FB2\u0F80} \u0F77 {\u0FB3\u0F80} \u0F79]</exemplarCharacters>
+		<exemplarCharacters>[྄ཿ ཀ {ཀྵ} ཁ ག {གྷ} ང ཅ ཆ ཇ ཉ ཏ ཊ ཐ ཋ ད {དྷ} ཌ {ཌྷ} ན ཎ པ ཕ བ {བྷ} མ ཾ ཙ ཚ ཛ {ཛྷ} ཝ ཞ ཟ འ ཡ རཪ ལ ཤ ཥ ས ཧ ཨ ི {ཱི} ྀ {ཱྀ} ུ {ཱུ} ེ ཻ ོ ཽ ྐ {ྐྵ} ྑ ྒ {ྒྷ} ྔ ྕ ྖ ྗ ྙ ྟ ྚ ྠ ྛ ྡ {ྡྷ} ྜ {ྜྷ} ྣ ྞ ྤ ྥ ྦ {ྦྷ} ྨ ྩ ྪ ྫ {ྫྷ} ྭ ྺ ྮ ྯ ྰ ྱ ྻ ྲ ྼ ླ ྴ ྵ ྶ ྷ ྸ {ྲྀ} ཷ {ླྀ} ཹ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ༀ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ཀ ཁ ག ང ཅ ཆ ཇ ཉ ཏ ཐ ད ན པ ཕ བ མ ཙ ཚ ཛ ཝ ཞ ཟ འ ཡ ར ལ ཤ ས ཧ ཨ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0༠ 1༡ 2༢ 3༣ 4༤ 5༥ 6༦ 7༧ 8༨ 9༩]</exemplarCharacters>
@@ -289,13 +289,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>G སྤྱི་ལོ་y MMMMའི་ཚེས་d</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>G y ལོའི་MMMཚེས་d</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -367,15 +365,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">པ་སངས་</day>
 							<day type="sat">སྤེན་པ་</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">ཉི</day>
-							<day type="mon">ཟླ</day>
-							<day type="tue">མིག</day>
-							<day type="wed">ལྷག</day>
-							<day type="thu">ཕུར</day>
-							<day type="fri">སངས</day>
-							<day type="sat">སྤེན</day>
-						</dayWidth>
 						<dayWidth type="wide">
 							<day type="sun">གཟའ་ཉི་མ་</day>
 							<day type="mon">གཟའ་ཟླ་བ་</day>
@@ -387,15 +376,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">ཉི་མ་</day>
-							<day type="mon">ཟླ་བ་</day>
-							<day type="tue">མིག་དམར་</day>
-							<day type="wed">ལྷག་པ་</day>
-							<day type="thu">ཕུར་བུ་</day>
-							<day type="fri">པ་སངས་</day>
-							<day type="sat">སྤེན་པ་</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ཉི</day>
 							<day type="mon">ཟླ</day>
@@ -405,39 +385,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri">སངས</day>
 							<day type="sat">སྤེན</day>
 						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">གཟའ་ཉི་མ་</day>
-							<day type="mon">གཟའ་ཟླ་བ་</day>
-							<day type="tue">གཟའ་མིག་དམར་</day>
-							<day type="wed">གཟའ་ལྷག་པ་</day>
-							<day type="thu">གཟའ་ཕུར་བུ་</day>
-							<day type="fri">གཟའ་པ་སངས་</day>
-							<day type="sat">གཟའ་སྤེན་པ་</day>
-						</dayWidth>
 					</dayContext>
 				</days>
 				<quarters>
 					<quarterContext type="format">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
-							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
-							<quarter type="3">དུས་ཚིགས་གསུམ་པ།</quarter>
-							<quarter type="4">དུས་ཚིགས་བཞི་པ།</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">དུས་ཚིགས་དང་པོ།</quarter>
 							<quarter type="2">དུས་ཚིགས་གཉིས་པ།</quarter>
@@ -449,10 +400,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">སྔ་དྲོ་</dayPeriod>
-							<dayPeriod type="pm">ཕྱི་དྲོ་</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">སྔ་དྲོ་</dayPeriod>
 							<dayPeriod type="pm">ཕྱི་དྲོ་</dayPeriod>
 						</dayPeriodWidth>
@@ -468,25 +415,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>y MMMMའི་ཚེས་d, EEEE</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>སྤྱི་ལོ་y MMMMའི་ཚེས་d</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>y ལོའི་MMMཚེས་d</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>y-MM-dd</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -576,55 +519,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>tibt</native>
 		</otherNumberingSystems>
-		<symbols numberSystem="latn">
-			<decimal draft="provisional">.</decimal>
-			<group draft="contributed">,</group>
-			<nan>NaN</nan>
-		</symbols>
 		<symbols numberSystem="tibt">
 			<nan>ཨང་མེན་</nan>
 		</symbols>
-		<decimalFormats numberSystem="latn">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern draft="unconfirmed">#,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern draft="contributed">#,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength>
-				<currencyFormat type="standard">
-					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="CNY">
 				<displayName>ཡུ་ཨན་</displayName>

@@ -75,8 +75,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Statistical data gathered for GC
   GCStats _gc_stats;
 
-  const double _collection_cost_margin_fraction;
-
   // Variable for estimating the major and minor pause times.
   // These variables represent linear least-squares fits of
   // the data.
@@ -92,8 +90,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   double _latest_major_mutator_interval_seconds;
 
   const size_t _space_alignment; // alignment for eden, survivors
-
-  const double _gc_minor_pause_goal_sec;    // goal for maximum minor gc pause
 
   // The amount of live data in the heap at the last full GC, used
   // as a baseline to help us determine when we need to perform the
@@ -115,20 +111,11 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
  private:
 
-  // Accessors
-  AdaptivePaddedAverage* avg_major_pause() const { return _avg_major_pause; }
-  double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
-
-  void adjust_eden_for_minor_pause_time(bool is_full_gc,
-                                   size_t* desired_eden_size_ptr);
+  void adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal
   // Returned sizes are not necessarily aligned.
-  void adjust_promo_for_pause_time(bool is_full_gc,
-                         size_t* desired_promo_size_ptr,
-                         size_t* desired_eden_size_ptr);
-  void adjust_eden_for_pause_time(bool is_full_gc,
-                         size_t* desired_promo_size_ptr,
-                         size_t* desired_eden_size_ptr);
+  void adjust_promo_for_pause_time(size_t* desired_promo_size_ptr);
+  void adjust_eden_for_pause_time(size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve an application throughput goal
   // Returned sizes are not necessarily aligned.
   void adjust_promo_for_throughput(bool is_full_gc,
@@ -143,14 +130,10 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                                    size_t desired_total);
 
   // Size in bytes for an increment or decrement of eden.
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
   size_t eden_decrement_aligned_down(size_t cur_eden);
   size_t eden_increment_with_supplement_aligned_up(size_t cur_eden);
 
   // Size in bytes for an increment or decrement of the promotion area
-  virtual size_t promo_increment(size_t cur_promo, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_promo);
   size_t promo_decrement_aligned_down(size_t cur_promo);
   size_t promo_increment_with_supplement_aligned_up(size_t cur_promo);
 
@@ -160,7 +143,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   size_t scale_down(size_t change, double part, double total);
 
  protected:
-  // Time accessors
 
   // Footprint accessors
   size_t live_space() const {
@@ -175,9 +157,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   void set_promo_size(size_t new_size) {
     _promo_size = new_size;
   }
-  void set_survivor_size(size_t new_size) {
-    _survivor_size = new_size;
-  }
 
   // Update estimators
   void update_minor_pause_old_estimator(double minor_pause_in_ms);
@@ -185,9 +164,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   virtual GCPolicyKind kind() const { return _gc_ps_adaptive_size_policy; }
 
  public:
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_promo);
-
   // Accessors for use by performance counters
   AdaptivePaddedNoZeroDevAverage*  avg_promoted() const {
     return _gc_stats.avg_promoted();
@@ -206,7 +182,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                        size_t init_survivor_size,
                        size_t space_alignment,
                        double gc_pause_goal_sec,
-                       double gc_minor_pause_goal_sec,
                        uint gc_time_ratio);
 
   // Methods indicating events of interest to the adaptive size policy,
@@ -225,10 +200,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   static size_t calculate_free_based_on_live(size_t live, uintx ratio_as_percentage);
 
   size_t calculated_old_free_size_in_bytes() const;
-
-  size_t average_old_live_in_bytes() const {
-    return (size_t) avg_old_live()->average();
-  }
 
   size_t average_promoted_in_bytes() const {
     return (size_t)avg_promoted()->average();
@@ -252,40 +223,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     _change_old_gen_for_min_pauses = v;
   }
 
-  // Return true if the old generation size was changed
-  // to try to reach a pause time goal.
-  bool old_gen_changed_for_pauses() {
-    bool result = _change_old_gen_for_maj_pauses != 0 ||
-                  _change_old_gen_for_min_pauses != 0;
-    return result;
-  }
-
-  // Return true if the young generation size was changed
-  // to try to reach a pause time goal.
-  bool young_gen_changed_for_pauses() {
-    bool result = _change_young_gen_for_min_pauses != 0 ||
-                  _change_young_gen_for_maj_pauses != 0;
-    return result;
-  }
-  // end flags for pause goal
-
-  // Return true if the old generation size was changed
-  // to try to reach a throughput goal.
-  bool old_gen_changed_for_throughput() {
-    bool result = _change_old_gen_for_throughput != 0;
-    return result;
-  }
-
-  // Return true if the young generation size was changed
-  // to try to reach a throughput goal.
-  bool young_gen_changed_for_throughput() {
-    bool result = _change_young_gen_for_throughput != 0;
-    return result;
-  }
-
-  int decrease_for_footprint() { return _decrease_for_footprint; }
-
-
   // Accessors for estimators.  The slope of the linear fit is
   // currently all that is used for making decisions.
 
@@ -293,22 +230,12 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
     return _major_pause_old_estimator;
   }
 
-  LinearLeastSquareFit* major_pause_young_estimator() {
-    return _major_pause_young_estimator;
-  }
-
-
   virtual void clear_generation_free_space_flags();
 
   double major_pause_old_slope() { return _major_pause_old_estimator->slope(); }
   double major_pause_young_slope() {
     return _major_pause_young_estimator->slope();
   }
-  double major_collection_slope() { return _major_collection_estimator->slope();}
-
-  // Given the amount of live data in the heap, should we
-  // perform a Full GC?
-  bool should_full_GC(size_t live_in_old_gen);
 
   // Calculates optimal (free) space sizes for both the young and old
   // generations.  Stores results in _eden_size and _promo_size.

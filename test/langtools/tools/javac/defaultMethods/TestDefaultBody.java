@@ -25,18 +25,14 @@
  * @test
  * @bug 7192246
  * @summary  check that code attributed for default methods is correctly generated
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.instruction.InvokeInstruction;
 import java.io.*;
 
 public class TestDefaultBody {
@@ -67,7 +63,7 @@ public class TestDefaultBody {
     void verifyDefaultBody(File f) {
         System.err.println("verify: " + f);
         try {
-            ClassModel cf = Classfile.of().parse(f.toPath());
+            ClassModel cf = ClassFile.of().parse(f.toPath());
             MethodModel testMethod = null;
             CodeAttribute codeAttr = null;
             for (MethodModel m : cf.methods()) {
@@ -83,7 +79,7 @@ public class TestDefaultBody {
             if (testMethod == null) {
                 throw new Error("Test method not found");
             }
-            if ((testMethod.flags().flagsMask() & Classfile.ACC_ABSTRACT) != 0) {
+            if ((testMethod.flags().flagsMask() & ClassFile.ACC_ABSTRACT) != 0) {
                 throw new Error("Test method is abstract");
             }
             if (codeAttr == null) {

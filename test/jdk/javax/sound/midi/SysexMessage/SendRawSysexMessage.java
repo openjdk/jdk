@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,9 @@ import static javax.sound.midi.SysexMessage.SYSTEM_EXCLUSIVE;
 
 /**
  * @test
- * @bug 8237495
- * @summary fail with a dereferenced memory error when asked to send a raw 0xF7
+ * @bug 8074211 8237495 8301310
+ * @summary fail with memory errors when asked to send a sysex message starting
+ *          with 0xF7
  */
 public final class SendRawSysexMessage {
 
@@ -113,6 +114,21 @@ public final class SendRawSysexMessage {
                         (byte) SPECIAL_SYSTEM_EXCLUSIVE}), -1);
                 System.err.println("note off");
                 r.send(new ShortMessage(ShortMessage.NOTE_OFF, 5, 5), -1);
+                // The three parts of the sysex below are added for
+                // JDK-8301310, but it can also used to test JDK-8074211.
+                // However, The testcase does not fail when JDK-8074211 occurs.
+                // It's recommended to setup a loopback MIDI device then check
+                // whether the sysex received is the same as the testcase.
+                System.err.println("sysex part 1 of 3");
+                r.send(new SysexMessage(new byte[]{
+                        (byte) SYSTEM_EXCLUSIVE, 0x7D, 0x01, 0x02}, 4), -1);
+                System.err.println("sysex part 2 of 3");
+                r.send(new SysexMessage(new byte[]{
+                        (byte) SPECIAL_SYSTEM_EXCLUSIVE, 0x03, 0x04}, 3), -1);
+                System.err.println("sysex part 3 of 3");
+                r.send(new SysexMessage(new byte[]{
+                        (byte) SPECIAL_SYSTEM_EXCLUSIVE, 0x05, 0x06, 0x07,
+                        (byte) SPECIAL_SYSTEM_EXCLUSIVE}, 4), -1);
                 System.err.println("done, should quit");
                 System.err.println();
             }

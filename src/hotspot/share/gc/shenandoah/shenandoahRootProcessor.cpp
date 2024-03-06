@@ -89,7 +89,6 @@ void ShenandoahCodeCacheRoots::code_blobs_do(CodeBlobClosure* blob_cl, uint work
 
 ShenandoahRootProcessor::ShenandoahRootProcessor(ShenandoahPhaseTimings::Phase phase) :
   _heap(ShenandoahHeap::heap()),
-  _phase(phase),
   _worker_phase(phase) {
 }
 

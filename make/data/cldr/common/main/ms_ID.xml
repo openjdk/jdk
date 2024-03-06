@@ -172,27 +172,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<symbols numberSystem="adlm">
-			<timeSeparator>.</timeSeparator>
-		</symbols>
-		<symbols numberSystem="bali">
-			<timeSeparator>.</timeSeparator>
-		</symbols>
-		<symbols numberSystem="beng">
-			<timeSeparator>.</timeSeparator>
-		</symbols>
-		<symbols numberSystem="brah">
-			<timeSeparator>.</timeSeparator>
-		</symbols>
 		<symbols numberSystem="latn">
 			<decimal>,</decimal>
 			<group>.</group>
-			<timeSeparator>.</timeSeparator>
-		</symbols>
-		<symbols numberSystem="olck">
-			<decimal>,</decimal>
-		</symbols>
-		<symbols numberSystem="sora">
 			<timeSeparator>.</timeSeparator>
 		</symbols>
 		<currencyFormats numberSystem="latn">

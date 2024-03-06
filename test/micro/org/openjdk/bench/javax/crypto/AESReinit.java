@@ -35,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 @Fork(value = 3, jvmArgsAppend = {"-Xms1g", "-Xmx1g"})
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 public class AESReinit {
 
     private Cipher cipher;

@@ -60,7 +60,7 @@ public class CheckOrigin {
             }
 
             ProcessBuilder pb = ProcessTools.
-                createJavaProcessBuilder(
+                createLimitedTestJavaProcessBuilder(
                     "--add-exports", "jdk.attach/sun.tools.attach=ALL-UNNAMED",
                     "-XX:+UseG1GC",  // this will cause MaxNewSize to be FLAG_SET_ERGO
                     "-XX:+UseCodeCacheFlushing",

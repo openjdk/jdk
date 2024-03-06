@@ -1,5 +1,6 @@
 /*
  * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +49,14 @@ const LogDecorations& AsyncLogWriter::None = LogDecorations(LogLevel::Warning, L
                                       LogDecorators::None);
 
 bool AsyncLogWriter::Buffer::push_back(LogFileStreamOutput* output, const LogDecorations& decorations, const char* msg) {
-  const size_t sz = Message::calc_size(strlen(msg));
+  const size_t len = strlen(msg);
+  const size_t sz = Message::calc_size(len);
   const bool is_token = output == nullptr;
   // Always leave headroom for the flush token. Pushing a token must succeed.
   const size_t headroom = (!is_token) ? Message::calc_size(0) : 0;
 
   if (_pos + sz <= (_capacity - headroom)) {
-    new(_buf + _pos) Message(output, decorations, msg);
+    new(_buf + _pos) Message(output, decorations, msg, len);
     _pos += sz;
     return true;
   }
@@ -114,29 +116,7 @@ AsyncLogWriter::AsyncLogWriter()
   }
 }
 
-void AsyncLogWriter::write() {
-  ResourceMark rm;
-  AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
-
-  // lock protection. This guarantees I/O jobs don't block logsites.
-  {
-    AsyncLogLocker locker;
-
-    _buffer_staging->reset();
-    swap(_buffer, _buffer_staging);
-
-    // move counters to snapshot and reset them.
-    _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
-      if (counter > 0) {
-        bool created = snapshot.put(output, counter);
-        assert(created == true, "sanity check");
-        counter = 0;
-      }
-      return true;
-    });
-    _data_available = false;
-  }
-
+void AsyncLogWriter::write(AsyncLogMap<AnyObj::RESOURCE_AREA>& snapshot) {
   int req = 0;
   auto it = _buffer_staging->iterator();
   while (it.hasNext()) {
@@ -157,7 +137,7 @@ void AsyncLogWriter::write() {
     if (counter > 0) {
       stringStream ss;
       ss.print(UINT32_FORMAT_W(6) " messages dropped due to async logging", counter);
-      output->write_blocking(decorations, ss.as_string(false));
+      output->write_blocking(decorations, ss.freeze());
     }
     return true;
   });
@@ -170,15 +150,31 @@ void AsyncLogWriter::write() {
 
 void AsyncLogWriter::run() {
   while (true) {
+    ResourceMark rm;
+    AsyncLogMap<AnyObj::RESOURCE_AREA> snapshot;
     {
       AsyncLogLocker locker;
 
       while (!_data_available) {
         _lock.wait(0/* no timeout */);
       }
-    }
+      // Only doing a swap and statistics under the lock to
+      // guarantee that I/O jobs don't block logsites.
+      _buffer_staging->reset();
+      swap(_buffer, _buffer_staging);
 
-    write();
+      // move counters to snapshot and reset them.
+      _stats.iterate([&] (LogFileStreamOutput* output, uint32_t& counter) {
+        if (counter > 0) {
+          bool created = snapshot.put(output, counter);
+          assert(created == true, "sanity check");
+          counter = 0;
+        }
+        return true;
+      });
+      _data_available = false;
+    }
+    write(snapshot);
   }
 }
 

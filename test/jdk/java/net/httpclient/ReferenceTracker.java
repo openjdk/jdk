@@ -115,6 +115,14 @@ public class ReferenceTracker {
                 "outstanding operations or unreleased resources", true);
     }
 
+    public AssertionError checkFinished(Tracker tracker, long graceDelayMs) {
+        Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
+        Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;
+        return check(tracker, graceDelayMs,
+                hasOperations.or(hasSubscribers),
+                "outstanding operations or unreleased resources", false);
+    }
+
     public AssertionError check(long graceDelayMs) {
         Predicate<Tracker> hasOperations = (t) -> t.getOutstandingOperations() > 0;
         Predicate<Tracker> hasSubscribers = (t) -> t.getOutstandingSubscribers() > 0;

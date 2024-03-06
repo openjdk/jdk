@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Stream;
 
 import jdk.test.lib.JDKToolLauncher;
 import jdk.test.lib.Utils;
@@ -73,42 +74,34 @@ public class UnNamedTest {
 
     private static void runCmd() throws Throwable {
         // access resource bundles that are exported private unconditionally.
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(Utils.TEST_CLASSES)
-                .addToolArg("--module-path")
-                .addToolArg(MODS_DIR.toString())
-                .addToolArg("--add-modules")
-                .addToolArg("bundles")
-                .addToolArg("Main");
-        LOCALE_LIST.forEach(launcher::addToolArg);
-
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                                   .getExitValue();
+        List<String> args = List.of(
+                "-ea", "-esa",
+                "-cp", Utils.TEST_CLASSES,
+                "--module-path", MODS_DIR.toString(),
+                "--add-modules", "bundles",
+                "Main");
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(args.stream(), LOCALE_LIST.stream()).toList());
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test1 failed. "
                     + "Unexpected exit code: " + exitCode);
         }
 
         // --add-exports can't open resources
-        launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(Utils.TEST_CLASSES)
-                .addToolArg("--module-path")
-                .addToolArg(MODS_DIR.toString())
-                .addToolArg("--add-modules")
-                .addToolArg("bundles")
-                .addToolArg("--add-opens")
-                .addToolArg("bundles/jdk.test.internal.resources=ALL-UNNAMED")
-                .addToolArg("Main");
-        LOCALE_LIST.forEach(launcher::addToolArg);
+        List<String> argsWithOpens = List.of(
+                "-ea", "-esa",
+                "-cp", Utils.TEST_CLASSES,
+                "--module-path", MODS_DIR.toString(),
+                "--add-modules", "bundles",
+                "--add-opens", "bundles/jdk.test.internal.resources=ALL-UNNAMED",
+                "Main");
+        pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(argsWithOpens.stream(), LOCALE_LIST.stream()).toList());
 
-        exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                               .getExitValue();
+        // Evaluate process status
+        exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test2 failed. "
                     + "Unexpected exit code: " + exitCode);

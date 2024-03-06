@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 8169909
+ * @requires vm.flagless
  * @library src /test/lib
  * @build test/*
  * @run shell AppendToClassPathModuleTest.sh
@@ -46,7 +47,7 @@ public class AppendToClassPathModuleTest {
     public static void main(String... args) throws Throwable {
         String modulepath = System.getProperty("test.module.path");
 
-        // can't use ProcessTools.createJavaProcessBuilder as it always adds -cp
+        // can't use ProcessTools.createLimitedTestJavaProcessBuilder as it always adds -cp
         ProcessBuilder pb = new ProcessBuilder(
                 JDKToolFinder.getTestJDKTool("java"),
                 "-javaagent:Agent.jar",

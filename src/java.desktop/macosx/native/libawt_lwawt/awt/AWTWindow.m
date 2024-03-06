@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -841,7 +841,7 @@ AWT_ASSERT_APPKIT_THREAD;
         isDisabled = !awtWindow.isEnabled;
     }
 
-    if (menuBar == nil) {
+    if (menuBar == nil && [ApplicationDelegate sharedDelegate] != nil) {
         menuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
         isDisabled = NO;
     }
@@ -1230,7 +1230,7 @@ JNI_COCOA_ENTER(env);
         window.javaMenuBar = menuBar;
 
         CMenuBar* actualMenuBar = menuBar;
-        if (actualMenuBar == nil) {
+        if (actualMenuBar == nil && [ApplicationDelegate sharedDelegate] != nil) {
             actualMenuBar = [[ApplicationDelegate sharedDelegate] defaultMenuBar];
         }
 
@@ -1697,6 +1697,7 @@ JNI_COCOA_ENTER(env);
             int shieldLevel = CGShieldingWindowLevel();
             window.preFullScreenLevel = [nsWindow level];
             [nsWindow setLevel: shieldLevel];
+            [nsWindow makeKeyAndOrderFront: nil];
 
             NSRect screenRect = [[nsWindow screen] frame];
             [nsWindow setFrame:screenRect display:YES];

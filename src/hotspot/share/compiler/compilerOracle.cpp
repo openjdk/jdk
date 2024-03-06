@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,12 @@
 #include "oops/method.inline.hpp"
 #include "oops/symbol.hpp"
 #include "opto/phasetype.hpp"
+#include "opto/traceAutoVectorizationTag.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/os.hpp"
+#include "utilities/parseInteger.hpp"
 
 static const char* optiontype_names[] = {
 #define enum_of_types(type, name) name,
@@ -46,7 +48,7 @@ static const char* optiontype_names[] = {
 #undef enum_of_types
 };
 
-const char* optiontype2name(enum OptionType type) {
+static const char* optiontype2name(enum OptionType type) {
   return optiontype_names[static_cast<int>(type)];
 }
 
@@ -56,7 +58,7 @@ static enum OptionType option_types[] = {
 #undef enum_of_options
 };
 
-enum OptionType option2type(enum CompileCommand option) {
+static enum OptionType option2type(enum CompileCommand option) {
   return option_types[static_cast<int>(option)];
 }
 
@@ -66,7 +68,7 @@ static const char* option_names[] = {
 #undef enum_of_options
 };
 
-const char* option2name(enum CompileCommand option) {
+static const char* option2name(enum CompileCommand option) {
   return option_names[static_cast<int>(option)];
 }
 
@@ -101,11 +103,12 @@ class TypedMethodOptionMatcher;
 
 static TypedMethodOptionMatcher* option_list = nullptr;
 static bool any_set = false;
+static bool print_final_memstat_report = false;
 
 // A filter for quick lookup if an option is set
 static bool option_filter[static_cast<int>(CompileCommand::Unknown) + 1] = { 0 };
 
-void command_set_in_filter(enum CompileCommand option) {
+static void command_set_in_filter(enum CompileCommand option) {
   assert(option != CompileCommand::Unknown, "sanity");
   assert(option2type(option) != OptionType::Unknown, "sanity");
 
@@ -117,7 +120,7 @@ void command_set_in_filter(enum CompileCommand option) {
   option_filter[static_cast<int>(option)] = true;
 }
 
-bool has_command(enum CompileCommand option) {
+static bool has_command(enum CompileCommand option) {
   return option_filter[static_cast<int>(option)];
 }
 
@@ -325,6 +328,7 @@ static void register_command(TypedMethodOptionMatcher* matcher,
     tty->print("CompileCommand: %s ", option2name(option));
     matcher->print();
   }
+
   return;
 }
 
@@ -455,6 +459,15 @@ bool CompilerOracle::should_print_methods() {
   return has_command(CompileCommand::Print);
 }
 
+// Tells whether there are any methods to collect memory statistics for
+bool CompilerOracle::should_collect_memstat() {
+  return has_command(CompileCommand::MemStat) || has_command(CompileCommand::MemLimit);
+}
+
+bool CompilerOracle::should_print_final_memstat_report() {
+  return print_final_memstat_report;
+}
+
 bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation) return false;
   if (!has_command(CompileCommand::Log)) {
@@ -534,7 +547,7 @@ enum OptionType CompilerOracle::parse_option_type(const char* type_str) {
   return OptionType::Unknown;
 }
 
-void print_tip() { // CMH Update info
+static void print_tip() { // CMH Update info
   tty->cr();
   tty->print_cr("Usage: '-XX:CompileCommand=<option>,<method pattern>' - to set boolean option to true");
   tty->print_cr("Usage: '-XX:CompileCommand=<option>,<method pattern>,<value>'");
@@ -542,13 +555,13 @@ void print_tip() { // CMH Update info
   tty->cr();
 }
 
-void print_option(enum CompileCommand option, const char* name, enum OptionType type) {
+static void print_option(enum CompileCommand option, const char* name, enum OptionType type) {
   if (type != OptionType::Unknown) {
     tty->print_cr("    %s (%s)", name, optiontype2name(type));
   }
 }
 
-void print_commands() {
+static void print_commands() {
   tty->cr();
   tty->print_cr("All available options:");
 #define enum_of_options(option, name, ctype) print_option(CompileCommand::option, name, OptionType::ctype);
@@ -608,7 +621,7 @@ static void usage() {
   tty->cr();
 };
 
-int skip_whitespace(char* &line) {
+static int skip_whitespace(char* &line) {
   // Skip any leading spaces
   int whitespace_read = 0;
   sscanf(line, "%*[ \t]%n", &whitespace_read);
@@ -616,11 +629,73 @@ int skip_whitespace(char* &line) {
   return whitespace_read;
 }
 
-void skip_comma(char* &line) {
+static void skip_comma(char* &line) {
   // Skip any leading spaces
   if (*line == ',') {
     line++;
   }
+}
+
+static bool parseMemLimit(const char* line, intx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+  // Format:
+  // "<memory size>['~' <suboption>]"
+  // <memory size> can have units, e.g. M
+  // <suboption> one of "crash" "stop", if omitted, "stop" is implied.
+  //
+  // Examples:
+  // -XX:CompileCommand='memlimit,*.*,20m'
+  // -XX:CompileCommand='memlimit,*.*,20m~stop'
+  // -XX:CompileCommand='memlimit,Option::toString,1m~crash'
+  //
+  // The resulting intx carries the size and whether we are to stop or crash:
+  // - neg. value means crash
+  // - pos. value (default) means stop
+  size_t s = 0;
+  char* end;
+  if (!parse_integer<size_t>(line, &end, &s)) {
+    jio_snprintf(errorbuf, buf_size, "MemLimit: invalid value");
+    return false;
+  }
+  bytes_read = (int)(end - line);
+
+  intx v = (intx)s;
+  if ((*end) != '\0') {
+    if (strncasecmp(end, "~crash", 6) == 0) {
+      v = -v;
+      bytes_read += 6;
+    } else if (strncasecmp(end, "~stop", 5) == 0) {
+      // ok, this is the default
+      bytes_read += 5;
+    } else {
+      jio_snprintf(errorbuf, buf_size, "MemLimit: invalid option");
+      return false;
+    }
+  }
+  value = v;
+  return true;
+}
+
+static bool parseMemStat(const char* line, uintx& value, int& bytes_read, char* errorbuf, const int buf_size) {
+
+#define IF_ENUM_STRING(S, CMD)                \
+  if (strncasecmp(line, S, strlen(S)) == 0) { \
+    bytes_read += (int)strlen(S);             \
+    CMD                                       \
+    return true;                              \
+  }
+
+  IF_ENUM_STRING("collect", {
+    value = (uintx)MemStatAction::collect;
+  });
+  IF_ENUM_STRING("print", {
+    value = (uintx)MemStatAction::print;
+    print_final_memstat_report = true;
+  });
+#undef IF_ENUM_STRING
+
+  jio_snprintf(errorbuf, buf_size, "MemStat: invalid option");
+
+  return false;
 }
 
 static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
@@ -632,7 +707,15 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
   total_bytes_read += skipped;
   if (type == OptionType::Intx) {
     intx value;
-    if (sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    bool success = false;
+    if (option == CompileCommand::MemLimit) {
+      // Special parsing for MemLimit
+      success = parseMemLimit(line, value, bytes_read, errorbuf, buf_size);
+    } else {
+      // Is it a raw number?
+      success = sscanf(line, "" INTX_FORMAT "%n", &value, &bytes_read) == 1;
+    }
+    if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
@@ -642,11 +725,18 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
     }
   } else if (type == OptionType::Uintx) {
     uintx value;
-    if (sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1) {
+    bool success = false;
+    if (option == CompileCommand::MemStat) {
+      // Special parsing for MemStat
+      success = parseMemStat(line, value, bytes_read, errorbuf, buf_size);
+    } else {
+      // parse as raw number
+      success = sscanf(line, "" UINTX_FORMAT "%n", &value, &bytes_read) == 1;
+    }
+    if (success) {
       total_bytes_read += bytes_read;
       line += bytes_read;
       register_command(matcher, option, value);
-      return;
     } else {
       jio_snprintf(errorbuf, buf_size, "Value cannot be read for option '%s' of type '%s'", ccname, type_str);
     }
@@ -686,10 +776,15 @@ static void scan_value(enum OptionType type, char* line, int& total_bytes_read,
           jio_snprintf(errorbuf, buf_size, "Unrecognized intrinsic detected in %s: %s", option2name(option), validator.what());
         }
       }
-#ifndef PRODUCT
-      else if (option == CompileCommand::PrintIdealPhase) {
-        uint64_t mask = 0;
-        PhaseNameValidator validator(value, mask);
+#if !defined(PRODUCT) && defined(COMPILER2)
+      else if (option == CompileCommand::TraceAutoVectorization) {
+        TraceAutoVectorizationTagValidator validator(value, true);
+
+        if (!validator.is_valid()) {
+          jio_snprintf(errorbuf, buf_size, "Unrecognized tag name in %s: %s", option2name(option), validator.what());
+        }
+      } else if (option == CompileCommand::PrintIdealPhase) {
+        PhaseNameValidator validator(value);
 
         if (!validator.is_valid()) {
           jio_snprintf(errorbuf, buf_size, "Unrecognized phase name in %s: %s", option2name(option), validator.what());
@@ -914,9 +1009,13 @@ bool CompilerOracle::parse_from_line(char* line) {
     }
     skip_whitespace(line);
     if (*line == '\0') {
-      // if this is a bool option this implies true
       if (option2type(option) == OptionType::Bool) {
+        // if this is a bool option this implies true
         register_command(matcher, option, true);
+        return true;
+      } else if (option == CompileCommand::MemStat) {
+        // MemStat default action is to collect data but to not print
+        register_command(matcher, option, (uintx)MemStatAction::collect);
         return true;
       } else {
         jio_snprintf(error_buf, sizeof(error_buf), "  Option '%s' is not followed by a value", option2name(option));

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @summary Testing Classfile class writing and reading.
+ * @summary Testing ClassFile class writing and reading.
  * @run junit OneToOneTest
  */
 import java.lang.constant.ClassDesc;
@@ -31,37 +31,37 @@ import static java.lang.constant.ConstantDescs.*;
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
 
-import jdk.internal.classfile.AccessFlags;
+import java.lang.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.Instruction;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.TypeKind;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.Instruction;
+import java.lang.classfile.Label;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-import jdk.internal.classfile.instruction.ConstantInstruction;
-import jdk.internal.classfile.instruction.StoreInstruction;
-import jdk.internal.classfile.instruction.BranchInstruction;
-import jdk.internal.classfile.instruction.LoadInstruction;
-import jdk.internal.classfile.instruction.OperatorInstruction;
-import jdk.internal.classfile.instruction.FieldInstruction;
-import jdk.internal.classfile.instruction.InvokeInstruction;
+import java.lang.classfile.instruction.ConstantInstruction;
+import java.lang.classfile.instruction.StoreInstruction;
+import java.lang.classfile.instruction.BranchInstruction;
+import java.lang.classfile.instruction.LoadInstruction;
+import java.lang.classfile.instruction.OperatorInstruction;
+import java.lang.classfile.instruction.FieldInstruction;
+import java.lang.classfile.instruction.InvokeInstruction;
 
 import static helpers.TestConstants.CD_PrintStream;
 import static helpers.TestConstants.CD_System;
 import static helpers.TestConstants.MTD_INT_VOID;
 import static helpers.TestConstants.MTD_VOID;
-import static jdk.internal.classfile.Opcode.*;
+import static java.lang.classfile.Opcode.*;
 
 class OneToOneTest {
 
     @Test
     void testClassWriteRead() {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);

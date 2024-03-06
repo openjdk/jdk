@@ -81,7 +81,7 @@ public class StartOptionTest {
     protected int runShell(String... args) {
         try {
             return builder()
-                    .start(args);
+                    .start(Presets.addExecutionIfMissing(args));
         } catch (Exception ex) {
             fail("Repl tool died with exception", ex);
         }

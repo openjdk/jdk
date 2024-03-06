@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@ import jdk.internal.util.StaticProperty;
 import sun.net.SocksProxy;
 import sun.net.spi.DefaultProxySelector;
 import sun.net.www.ParseUtil;
+
+import static sun.net.util.IPAddressUtil.isIPv6LiteralAddress;
 
 /**
  * SOCKS (V4 & V5) TCP socket implementation (RFC 1928).
@@ -297,17 +299,15 @@ class SocksSocketImpl extends DelegatingSocketImpl implements SocksConsts {
             URI uri;
             // Use getHostString() to avoid reverse lookups
             String host = epoint.getHostString();
-            // IPv6 literal?
-            if (epoint.getAddress() instanceof Inet6Address &&
-                (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
+            if (isIPv6LiteralAddress(host)) {
                 host = "[" + host + "]";
+            } else {
+                host = ParseUtil.encodePath(host);
             }
             try {
-                uri = new URI("socket://" + ParseUtil.encodePath(host) + ":"+ epoint.getPort());
+                uri = new URI("socket://" + host + ":"+ epoint.getPort());
             } catch (URISyntaxException e) {
-                // This shouldn't happen
-                assert false : e;
-                uri = null;
+                throw new IOException("Failed to select a proxy", e);
             }
             Proxy p = null;
             IOException savedExc = null;

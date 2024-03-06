@@ -34,14 +34,13 @@ import java.nio.charset.CharsetEncoder;
 import java.nio.charset.CoderResult;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.IllegalCharsetNameException;
-import java.nio.charset.UnsupportedCharsetException ;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.BitSet;
 import java.util.Objects;
 import java.util.HexFormat;
 import java.util.function.IntPredicate;
 
 import jdk.internal.util.ImmutableBitSetPredicate;
-import jdk.internal.util.StaticProperty;
 
 /**
  * Utility class for HTML form encoding. This class contains static methods
@@ -87,7 +86,6 @@ import jdk.internal.util.StaticProperty;
  */
 public class URLEncoder {
     private static final IntPredicate DONT_NEED_ENCODING;
-    private static final String DEFAULT_ENCODING_NAME;
 
     static {
 
@@ -139,8 +137,6 @@ public class URLEncoder {
         bitSet.set('*');
 
         DONT_NEED_ENCODING = ImmutableBitSetPredicate.of(bitSet);
-
-        DEFAULT_ENCODING_NAME = StaticProperty.fileEncoding();
     }
 
     /**
@@ -161,16 +157,7 @@ public class URLEncoder {
      */
     @Deprecated
     public static String encode(String s) {
-
-        String str = null;
-
-        try {
-            str = encode(s, DEFAULT_ENCODING_NAME);
-        } catch (UnsupportedEncodingException e) {
-            // The system should always have the default charset
-        }
-
-        return str;
+        return encode(s, Charset.defaultCharset());
     }
 
     /**
@@ -213,11 +200,15 @@ public class URLEncoder {
      * This method uses the supplied charset to obtain the bytes for unsafe
      * characters.
      * <p>
-     * <em><strong>Note:</strong> The <a href=
+     * If the input string is malformed, or if the input cannot be mapped
+     * to a valid byte sequence in the given {@code Charset}, then the
+     * erroneous input will be replaced with the {@code Charset}'s
+     * {@linkplain CharsetEncoder##cae replacement values}.
+     *
+     * @apiNote The <a href=
      * "http://www.w3.org/TR/html40/appendix/notes.html#non-ascii-chars">
      * World Wide Web Consortium Recommendation</a> states that
-     * UTF-8 should be used. Not doing so may introduce incompatibilities.</em>
-     *
+     * UTF-8 should be used. Not doing so may introduce incompatibilities.
      * @param   s   {@code String} to be translated.
      * @param charset the given charset
      * @return  the translated {@code String}.

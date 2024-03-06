@@ -99,6 +99,9 @@ define SetupInterimModule
       EXCLUDE_FILES := $(TOPDIR)/src/$1/share/classes/module-info.java \
           $(TOPDIR)/src/$1/share/classes/javax/tools/ToolProvider.java \
           $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/Main.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/MemoryContext.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/MemoryModuleFinder.java \
+          $(TOPDIR)/src/$1/share/classes/com/sun/tools/javac/launcher/SourceLauncher.java \
           Standard.java, \
       EXTRA_FILES := $(BUILDTOOLS_OUTPUTDIR)/gensrc/$1.interim/module-info.java \
           $($1.interim_EXTRA_FILES), \

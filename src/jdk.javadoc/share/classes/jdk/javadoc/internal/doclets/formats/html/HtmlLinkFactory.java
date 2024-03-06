@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.Set;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.ArrayType;
@@ -42,6 +43,7 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor14;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
@@ -235,12 +237,17 @@ public class HtmlLinkFactory {
         }
         Set<ElementFlag> flags;
         Element previewTarget;
+        ExecutableElement restrictedTarget;
         boolean showPreview = !linkInfo.isSkipPreview();
         if (!hasFragment && showPreview) {
             flags = utils.elementFlags(typeElement);
             previewTarget = typeElement;
+            restrictedTarget = null;
         } else if (linkInfo.getContext() == HtmlLinkInfo.Kind.SHOW_PREVIEW
                 && linkInfo.getTargetMember() != null && showPreview) {
+            // We piggy back on whether to show preview info, for both preview AND
+            // restricted methods superscripts. That's because when e.g. we are generating a
+            // method summary we do not want either superscript.
             flags = utils.elementFlags(linkInfo.getTargetMember());
             TypeElement enclosing = utils.getEnclosingTypeElement(linkInfo.getTargetMember());
             Set<ElementFlag> enclosingFlags = utils.elementFlags(enclosing);
@@ -254,8 +261,14 @@ public class HtmlLinkFactory {
             } else {
                 previewTarget = linkInfo.getTargetMember();
             }
+            if (flags.contains(ElementFlag.RESTRICTED)) {
+                restrictedTarget = (ExecutableElement) linkInfo.getTargetMember();
+            } else {
+                restrictedTarget = null;
+            }
         } else {
             flags = EnumSet.noneOf(ElementFlag.class);
+            restrictedTarget = null;
             previewTarget = null;
         }
 
@@ -269,10 +282,18 @@ public class HtmlLinkFactory {
                                 label,
                                 linkInfo.getStyle(),
                                 title));
+                        Content spacer = Text.EMPTY;
                         if (flags.contains(ElementFlag.PREVIEW)) {
                             link.add(HtmlTree.SUP(m_writer.links.createLink(
                                     filename.fragment(m_writer.htmlIds.forPreviewSection(previewTarget).name()),
                                     m_writer.contents.previewMark)));
+                            spacer = Entity.NO_BREAK_SPACE;
+                        }
+                        if (flags.contains(ElementFlag.RESTRICTED)) {
+                            link.add(spacer);
+                            link.add(HtmlTree.SUP(m_writer.links.createLink(
+                                    filename.fragment(m_writer.htmlIds.forRestrictedSection(restrictedTarget).name()),
+                                    m_writer.contents.restrictedMark)));
                         }
                         return link;
                 }
@@ -283,20 +304,36 @@ public class HtmlLinkFactory {
                 label, linkInfo.getStyle(), true);
             if (crossLink != null) {
                 link.add(crossLink);
+                Content spacer = Text.EMPTY;
                 if (flags.contains(ElementFlag.PREVIEW)) {
                     link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
                         typeElement,
                         m_writer.htmlIds.forPreviewSection(previewTarget).name(),
                         m_writer.contents.previewMark,
                         null, false)));
+                    spacer = Entity.NO_BREAK_SPACE;
+                }
+                if (flags.contains(ElementFlag.RESTRICTED)) {
+                    link.add(spacer);
+                    link.add(HtmlTree.SUP(m_writer.getCrossClassLink(
+                            typeElement,
+                            m_writer.htmlIds.forRestrictedSection(restrictedTarget).name(),
+                            m_writer.contents.restrictedMark,
+                            null, false)));
                 }
                 return link;
             }
         }
         // Can't link so just write label.
         link.add(label);
+        Content spacer = Text.EMPTY;
         if (flags.contains(ElementFlag.PREVIEW)) {
             link.add(HtmlTree.SUP(m_writer.contents.previewMark));
+            spacer = Entity.NO_BREAK_SPACE;
+        }
+        if (flags.contains(ElementFlag.RESTRICTED)) {
+            link.add(spacer);
+            link.add(HtmlTree.SUP(m_writer.contents.restrictedMark));
         }
         return link;
     }

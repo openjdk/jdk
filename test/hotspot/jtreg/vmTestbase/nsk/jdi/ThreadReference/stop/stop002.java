@@ -75,7 +75,7 @@ public class stop002 {
     static final String COMMAND_GO = "go";
     static final String COMMAND_QUIT = "quit";
 
-    static final boolean vthreadMode = "Virtual".equals(System.getProperty("main.wrapper"));
+    static final boolean vthreadMode = "Virtual".equals(System.getProperty("test.thread.factory"));
 
     private ArgumentHandler argHandler;
     private Log log;
