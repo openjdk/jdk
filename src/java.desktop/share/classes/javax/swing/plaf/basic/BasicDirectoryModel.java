@@ -535,8 +535,9 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                 return;
             }
 
-            int remSize = (remFiles == null) ? 0 : remFiles.size();
-            int addSize = (addFiles == null) ? 0 : addFiles.size();
+            final int remSize = (remFiles == null) ? 0 : remFiles.size();
+            final int addSize = (addFiles == null) ? 0 : addFiles.size();
+            final int cacheSize;
             synchronized (fileCache) {
                 if (remSize > 0) {
                     fileCache.removeAll(remFiles);
@@ -546,10 +547,11 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
                 }
                 files = null;
                 directories = null;
+                cacheSize = fileCache.size();
             }
             if (remSize > 0 && addSize == 0) {
                 fireIntervalRemoved(BasicDirectoryModel.this, remStart, remStart + remSize - 1);
-            } else if (addSize > 0 && remSize == 0 && addStart + addSize <= fileCache.size()) {
+            } else if (addSize > 0 && remSize == 0 && addStart + addSize <= cacheSize) {
                 fireIntervalAdded(BasicDirectoryModel.this, addStart, addStart + addSize - 1);
             } else {
                 fireContentsChanged();
