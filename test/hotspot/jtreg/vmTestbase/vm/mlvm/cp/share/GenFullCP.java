@@ -23,22 +23,18 @@
 
 package vm.mlvm.cp.share;
 
-import java.lang.classfile.ClassBuilder;
 import java.lang.classfile.ClassFile;
-import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.CodeBuilder;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 
-import jdk.internal.classfile.ClassTransform;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.org.objectweb.asm.ByteVector;
+
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.ClassWriterExt;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
 
 import vm.mlvm.share.ClassfileGenerator;
 import vm.mlvm.share.Env;
@@ -167,7 +163,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
                         cob.ldc("Method " + methodName + methodSignature + " should not be called!");
                         cob.invokestatic(ClassDesc.of("vm/mlvm/share/GenFullCP"), "createThrowRuntimeExceptionCode",
                                 MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"));
-                        createThrowRuntimeExceptionCodeHelper(cb, "Method " + methodName + methodSignature + " should not be called!", false);
+                        createThrowRuntimeExceptionCodeHelper(cob, "Method " + methodName + methodSignature + " should not be called!", false);
                         cob.return_();
                 }))));
 
