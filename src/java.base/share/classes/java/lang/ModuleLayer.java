@@ -882,18 +882,21 @@ public final class ModuleLayer {
     }
 
     /**
-     * Returns the module with the given name in this later only.
+     * Update module named {@code name} to allow access to restricted methods.
      *
-     * @param  name
-     *         The name of the module to find
-     *
-     * @return The module with the given name or {@code null}
-     *         if there isn't a module with this name in this layer
+     * @param name the name of the module for which the native access should be enabled
+     * @return {@code true} iff the module was present in this layer,
+     *         {@code false} otherwise
      */
-    Module findModuleInThisLayer(String name) {
-        return nameToModule.get(name);
+    boolean addEnableNativeAccess(String name) {
+        Module m = nameToModule.get(name);
+        if (m != null) {
+            m.implAddEnableNativeAccess();
+            return true;
+        } else {
+            return false;
+        }
     }
-
 
     /**
      * Returns the {@code ClassLoader} for the module with the given name. If
