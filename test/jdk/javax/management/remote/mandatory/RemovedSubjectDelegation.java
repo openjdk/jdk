@@ -98,7 +98,7 @@ public class RemovedSubjectDelegation {
             try {
                 mbsc = jmxc.getMBeanServerConnection(delegationSubject);
                 throw new RuntimeException("FAIL: delegationSubject was accepted. mbsc=" + mbsc);
-            } catch (Exception e) {
+            } catch (UnsupportedOperationException e) {
                 System.out.println("PASS: " + e);
             }
         } catch (Exception e) {
