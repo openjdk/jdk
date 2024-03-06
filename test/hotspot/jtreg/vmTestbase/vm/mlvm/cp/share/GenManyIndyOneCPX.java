@@ -40,10 +40,11 @@ public class GenManyIndyOneCPX extends GenFullCP {
         ClassfileGenerator.main(args);
     }
 
-    protected byte[] generateCPEntryData(byte[] bytes) {
+    @Override
+    protected byte[] generateCPEntryData(byte[] bytes, String methodName, String methodSignature, int accessFlags) {
         ClassModel cm = ClassFile.of().parse(bytes);
 
-        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData", MethodTypeDesc.ofDescriptor("([B)[B"), ClassFile.ACC_PROTECTED,
+        bytes = ClassFile.of().transform(cm, ClassTransform.endHandler(cb -> cb.withMethod(methodName, MethodTypeDesc.ofDescriptor(methodSignature), accessFlags,
                 mb -> mb.withCode(cob -> {
                     // Create the bootstrap method handle
                     DirectMethodHandleDesc bsm = MethodHandleDesc.ofMethod(DirectMethodHandleDesc.Kind.STATIC, ClassDesc.of(fullClassName),

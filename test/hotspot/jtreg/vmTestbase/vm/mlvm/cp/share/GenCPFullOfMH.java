@@ -61,15 +61,15 @@ public class GenCPFullOfMH extends GenFullCP {
     }
 
     @Override
-    protected byte[] generateCPEntryData(byte[] bytes) {
+    protected byte[] generateCPEntryData(byte[] bytes, String methodName, String methodSignature, int accessFlags) {
         ClassModel cm = ClassFile.of().parse(bytes);
         bytes = ClassFile.of().transform(cm,
-                ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData",
-                        MethodTypeDesc.ofDescriptor("()[B"), ClassFile.ACC_PUBLIC,
+                ClassTransform.endHandler(cb -> cb.withMethod(methodName,
+                        MethodTypeDesc.ofDescriptor(methodSignature), accessFlags,
                         mb -> mb.withCode(
                                 cob -> {
                                     DirectMethodHandleDesc.Kind[] kinds = DirectMethodHandleDesc.Kind.values();
-                                    DirectMethodHandleDesc.Kind kind = kinds[new Random().nextInt(kinds.length)];
+                                    DirectMethodHandleDesc.Kind kind = kinds[Env.getRNG().nextInt(kinds.length)];
 
                                     switch (kind) {
                                         case SETTER:

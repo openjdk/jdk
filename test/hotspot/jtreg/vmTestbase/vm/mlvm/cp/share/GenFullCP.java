@@ -291,7 +291,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
 
             // TODO: check real CP size and also limit number of iterations in this cycle
             while (constCount < CP_CONST_COUNT && cw.getBytecodeLength(ClassFile.of().parse(bytes)) < MAX_METHOD_SIZE) {
-                bytes = generateCPEntryData(bytes);
+                bytes = generateCPEntryData(bytes, methodName, TEST_METHOD_SIGNATURE, ClassFile.ACC_PUBLIC);
                 ++constCount;
             }
 
@@ -324,7 +324,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
         return bytes;
     }
 
-    protected abstract byte[] generateCPEntryData(byte[] bytes);
+    protected abstract byte[] generateCPEntryData(byte[] bytes, String methodName, String methodSignature, int accessFlags);
 
     protected byte[] generateTestMethodEpilog(byte[] bytes) {
         return ClassFile.of().transform(ClassFile.of().parse(bytes), ClassTransform.endHandler(

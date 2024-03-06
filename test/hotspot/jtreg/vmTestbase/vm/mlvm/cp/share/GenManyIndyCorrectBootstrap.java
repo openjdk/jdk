@@ -109,7 +109,7 @@ public class GenManyIndyCorrectBootstrap extends GenFullCP {
          */
         @Override
         protected byte[] generateCommonData(byte[] bytes) {
-                super.generateCommonData(bytes);
+                return super.generateCommonData(bytes);
         }
 
         /**
@@ -119,37 +119,30 @@ public class GenManyIndyCorrectBootstrap extends GenFullCP {
          * @param bytes Class file bytes
          */
         @Override
-        protected byte[] generateCPEntryData(byte[] bytes) {
+        protected byte[] generateCPEntryData(byte[] bytes, String methodName, String methodSignature, int accessFlags) {
                 ClassModel cm = ClassFile.of().parse(bytes);
 
                 bytes = ClassFile.of().transform(cm,
-                                ClassTransform.endHandler(cb -> cb.withMethod("GeneratedCPEntryData",
-                                                MethodTypeDesc.ofDescriptor(("()[B")), ClassFile.ACC_PUBLIC,
+                                ClassTransform.endHandler(cb -> cb.withMethod(methodName,
+                                                MethodTypeDesc.ofDescriptor(methodSignature), accessFlags,
                                                 mb -> mb.withCode(
                                                                 cob -> {
-                                                                        DirectMethodHandleDesc.Kind kind;
-                                                                        String className;
-                                                                        String methodName;
-                                                                        String methodSignature;
-
+                                                                        MethodHandleDesc bsm;
                                                                         if (Env.getRNG().nextBoolean()) {
-                                                                                kind = DirectMethodHandleDesc.Kind.SPECIAL;
-                                                                                className = NEW_INVOKE_SPECIAL_CLASS_NAME;
-                                                                                methodName = INIT_METHOD_NAME;
-                                                                                methodSignature = NEW_INVOKE_SPECIAL_BOOTSTRAP_METHOD_SIGNATURE;
+                                                                                 bsm = MethodHandleDesc.ofMethod(
+                                                                                        DirectMethodHandleDesc.Kind.SPECIAL,
+                                                                                        ClassDesc.of(this.fullClassName),
+                                                                                        INIT_METHOD_NAME,
+                                                                                        MethodTypeDesc.ofDescriptor(NEW_INVOKE_SPECIAL_BOOTSTRAP_METHOD_SIGNATURE)
+                                                                                );
                                                                         } else {
-                                                                                kind = DirectMethodHandleDesc.Kind.STATIC;
-                                                                                className = this.fullClassName;
-                                                                                methodName = BOOTSTRAP_METHOD_NAME;
-                                                                                methodSignature = BOOTSTRAP_METHOD_SIGNATURE;
+                                                                                 bsm = MethodHandleDesc.ofMethod(
+                                                                                        DirectMethodHandleDesc.Kind.STATIC,
+                                                                                        ClassDesc.of(this.fullClassName),
+                                                                                        BOOTSTRAP_METHOD_NAME,
+                                                                                        MethodTypeDesc.ofDescriptor(BOOTSTRAP_METHOD_SIGNATURE)
+                                                                                );
                                                                         }
-
-                                                                        MethodHandleDesc bsm = MethodHandleDesc
-                                                                                        .ofMethod(kind, ClassDesc
-                                                                                                        .of(className),
-                                                                                                        methodName,
-                                                                                                        MethodTypeDesc.ofDescriptor(
-                                                                                                                        methodSignature));
                                                                         cob.ldc(bsm);
 
                                                                 }))));

@@ -43,12 +43,12 @@ public class GenCPFullOfMT extends GenFullCP {
     }
 
     @Override
-    protected byte[] generateCPEntryData(byte[] bytes) {
+    protected byte[] generateCPEntryData(byte[] bytes, String methodName, String methodSignature, int accessFlags) {
         ClassModel cm = ClassFile.of().parse(bytes);
 
         bytes = ClassFile.of().transform(cm,
-                ClassTransform.endHandler(cb -> cb.withMethod("generateCPEntryData",
-                        MethodTypeDesc.of(ClassDesc.ofDescriptor("V")), ClassFile.ACC_PUBLIC,
+                ClassTransform.endHandler(cb -> cb.withMethod(methodName,
+                        MethodTypeDesc.of(ClassDesc.ofDescriptor(methodSignature)), accessFlags,
                         mb -> mb.withCode(
                                 cob -> {
                                     cob.ldc(MethodTypeDesc.ofDescriptor("(FIZ)V"));
