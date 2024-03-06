@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -402,7 +402,7 @@ final class FieldBuilder {
         field.label = switch (aggregator) {
             case COUNT -> "Count";
             case AVERAGE -> "Avg. " + field.label;
-            case FIRST, LAST, LAST_BATCH -> field.label;
+            case FIRST, LAST, LAST_BATCH, LAST_BATCH_BY_SECONDS  -> field.label;
             case MAXIMUM -> "Max. " + field.label;
             case MINIMUM -> "Min. " + field.label;
             case SUM -> "Total " + field.label;

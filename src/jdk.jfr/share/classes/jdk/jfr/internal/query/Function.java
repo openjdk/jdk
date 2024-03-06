@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,6 +114,9 @@ abstract class Function {
         }
         if (aggregator == Aggregator.LAST_BATCH) {
             return new LastBatch(field);
+        }
+        if (aggregator == Aggregator.LAST_BATCH_BY_SECONDS) {
+            return new LastBatchBySeconds(field);
         }
         if (aggregator == Aggregator.LAST) {
             return new Last();
@@ -631,10 +634,10 @@ abstract class Function {
         }
     }
 
-    public static final class LastBatch extends Function {
-        private final Field field;
+    public static class LastBatch extends Function {
+        protected final Field field;
         private final Last last = new Last();
-        private Instant timestamp;
+        protected Instant timestamp;
 
         public LastBatch(Field field) {
             this.field = field;
@@ -660,6 +663,18 @@ abstract class Function {
                 return timestamp.equals(field.last);
             }
             return true;
+        }
+    }
+
+    public static final class LastBatchBySeconds extends LastBatch {
+        public LastBatchBySeconds(Field field) {
+            super(field);
+        }
+
+        @Override
+        public void setTime(Instant timestamp) {
+           this.timestamp = timestamp.truncatedTo(ChronoUnit.SECONDS);
+           field.last = this.timestamp;
         }
     }
 }

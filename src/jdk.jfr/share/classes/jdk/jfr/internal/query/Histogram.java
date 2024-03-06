@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.consumer.RecordedThreadGroup;
 import jdk.jfr.internal.query.Function.LastBatch;
+import jdk.jfr.internal.query.Function.LastBatchBySeconds;
 
 /**
  * Class responsible for aggregating values
@@ -140,6 +141,9 @@ final class Histogram {
         for (int i = 0; i < values.length; i++) {
             Function function = fs[sourceFields.get(i).index];
             function.add(values[i]);
+            if (function instanceof LastBatchBySeconds l) {
+                l.setTime(e.getEndTime());
+            }
             if (function instanceof LastBatch l) {
                 l.setTime(e.getEndTime());
             }
@@ -153,6 +157,9 @@ final class Histogram {
             boolean valid = true;
             int index = 0;
             for (Function f : functions) {
+                if (f instanceof LastBatchBySeconds last && !last.valid()) {
+                    valid = false;
+                }
                 if (f instanceof LastBatch last && !last.valid()) {
                     valid = false;
                 }

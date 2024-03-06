@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -275,6 +275,7 @@ public final class QueryPrinter {
                     FIRST: The first value
                     LAST: The last value
                     LAST_BATCH: The last set of values with the same end timestamp
+                    LAST_BATCH_BY_SECONDS: The last set of values with the same end timestamp, accurate to the second
                     LIST: All values in a comma-separated list
                     MAX: The numeric maximum
                     MEDIAN: The numeric median

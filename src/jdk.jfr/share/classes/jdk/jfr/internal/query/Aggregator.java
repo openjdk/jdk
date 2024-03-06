@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,6 +100,10 @@ enum Aggregator {
      * Calculates the number of distinct values determined by invoking Object.equals.
      */
     UNIQUE("UNIQUE"),
+    /**
+     * The last elements, for an event type, that all share the same end timestamp, accurate to the second.
+     */
+    LAST_BATCH_BY_SECONDS("LAST_BATCH_BY_SECONDS"),
     /**
      * The last elements, for an event type, that all share the same end timestamp.
      */
