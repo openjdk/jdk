@@ -28,47 +28,56 @@
 extern "C" {
 
 static jvmtiEnv *jvmti = nullptr;
-
+static jrawMonitorID monitor = nullptr;
+static bool is_waiting = false;
+ 
 static void check_thread_not_interrupted(JNIEnv *jni, int check_idx) {
   jint state = get_thread_state(jvmti, jni, nullptr);
 
-  LOG("check #%d: Thread State: (0x%x) %s\n", check_idx, state, TranslateState(state));
+  LOG("\ntest: check #%d: Thread State: (0x%x) %s\n",
+      check_idx, state, TranslateState(state));
+
   if ((state & JVMTI_THREAD_STATE_INTERRUPTED) != 0) {
     fatal(jni, "Failed: JVMTI_THREAD_STATE_INTERRUPTED bit expected to be cleared");
   }
 }
 
 JNIEXPORT void JNICALL
+Java_InterruptRawMonitor_waitForCondition(JNIEnv *jni, jclass clazz, jthread thread) {
+  jint state = 0;
+  RawMonitorLocker rml(jvmti, jni, monitor);
+
+  while (!is_waiting) {
+    state = get_thread_state(jvmti, jni, thread);
+    LOG("main: waitForCondition: target Thread State: (0x%x) %s\n",
+        state, TranslateState(state));
+    rml.wait(10); 
+  }
+  state = get_thread_state(jvmti, jni, thread);
+  LOG("main: waitForCondition: target Thread State: (0x%x) %s\n\n",
+      state, TranslateState(state));
+}
+
+JNIEXPORT void JNICALL
 Java_InterruptRawMonitor_test(JNIEnv *jni, jclass clazz) {
-  jvmtiError err;
-  jrawMonitorID monitor = create_raw_monitor(jvmti, "Test Monitor");
-
-  LOG("JVMTI_THREAD_STATE_INTERRUPTED bit: 0x%x\n", JVMTI_THREAD_STATE_INTERRUPTED);
-
-  err = jvmti->RawMonitorEnter(monitor);
-  check_jvmti_status(jni, err, "Failed in RawMonitorEnter");
+  RawMonitorLocker rml(jvmti, jni, monitor);
 
   check_thread_not_interrupted(jni, 0);
+  is_waiting = true;
 
   // expected to be interrupted
-  err = jvmti->RawMonitorWait(monitor, 0);
-  LOG("JVMTI RawMonitorWait error code: (%d) %s\n", err, TranslateError(err));
+  jvmtiError err = jvmti->RawMonitorWait(monitor, 0);
+  LOG("test: JVMTI RawMonitorWait returned expected error code: (%d) %s\n",
+      err, TranslateError(err));
   if (err != JVMTI_ERROR_INTERRUPT) {
     fatal(jni, "Failed: expected JVMTI_ERROR_INTERRUPT from RawMonitorWait");
   }
 
   check_thread_not_interrupted(jni, 1);
 
-  // expected to be non-interrupted
-  err = jvmti->RawMonitorWait(monitor, 1000);
-  check_jvmti_status(jni, err, "Failed in RawMonitorWait");
+  rml.wait(10); // expected to be non-interrupted
 
   check_thread_not_interrupted(jni, 2);
-
-  err = jvmti->RawMonitorExit(monitor);
-  check_jvmti_status(jni, err, "Failed in RawMonitorExit");
-
-  destroy_raw_monitor(jvmti, jni, monitor);
 }
 
 extern JNIEXPORT jint JNICALL
@@ -77,6 +86,9 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
   if (jvm->GetEnv((void **)(&jvmti), JVMTI_VERSION) != JNI_OK) {
     return JNI_ERR;
   }
+  monitor = create_raw_monitor(jvmti, "Test Monitor");
+  LOG("test: JVMTI_THREAD_STATE_INTERRUPTED bit: 0x%x\n", JVMTI_THREAD_STATE_INTERRUPTED);
+
   LOG("Agent_OnLoad finished\n");
   return JNI_OK;
 }

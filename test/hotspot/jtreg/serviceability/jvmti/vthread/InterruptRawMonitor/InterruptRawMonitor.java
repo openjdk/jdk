@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class InterruptRawMonitor {
     private static final String AGENT_LIB = "InterruptRawMonitor";
     static native void test();
+    static native void waitForCondition(Thread t);
 
     public static void main(String[] args) throws Exception {
         Thread thread;
@@ -48,7 +49,7 @@ public class InterruptRawMonitor {
         }
         System.out.println(thread);
         thread.start();
-        Thread.sleep(2000);
+        waitForCondition(thread);
         thread.interrupt();
         thread.join();
     }
