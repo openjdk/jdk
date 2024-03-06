@@ -46,6 +46,8 @@ import jdk.test.lib.Platform;
 
 public class DisposeInActionEventTest {
     private static JTextArea textArea;
+    private static SystemTray systemTray;
+    private static TrayIcon trayIcon;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
@@ -63,29 +65,31 @@ public class DisposeInActionEventTest {
                        "  in the frame. After each action event the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
                        "The test performs some automatic checks when removing the icon. If\n" +
-                       "  something is wrong the corresponding message is displayed.\n" +
+                       "  something is wrong the corresponding message the test will automatically fail.\n" +
                        "  Repeat clicks several times. If no 'Test FAILED' messages\n" +
                        "  are printed, press PASS button else FAIL button.";
 
-        PassFailJFrame.builder()
-                .title("Event Message Display")
-                .instructions(instructions)
-                .testTimeOut(10)
-                .rows(15)
-                .columns(45)
-                .testUI(DisposeInActionEventTest::showFrameAndIcon)
-                .build()
-                .awaitAndCheck();
+        try {
+            PassFailJFrame.builder()
+                    .title("DisposeInActionEventTest")
+                    .instructions(instructions)
+                    .testTimeOut(10)
+                    .rows(15)
+                    .columns(45)
+                    .testUI(DisposeInActionEventTest::showFrameAndIcon)
+                    .build()
+                    .awaitAndCheck();
+        } finally {
+            systemTray.remove(trayIcon);
+        }
     }
 
     private static JFrame showFrameAndIcon() {
-        JFrame frame = new JFrame("DisposeInActionEventTest");
+        JFrame frame = new JFrame("Event Message Display");
         frame.setLayout(new BorderLayout());
 
-        JScrollPane spane = new JScrollPane();
         textArea = new JTextArea();
-        spane.add(textArea);
-        frame.getContentPane().add(spane);
+        frame.getContentPane().add(new JScrollPane(textArea));
         frame.setSize(400, 200);
 
         BufferedImage img = new BufferedImage(32, 32, BufferedImage.TYPE_INT_ARGB);
@@ -96,8 +100,8 @@ public class DisposeInActionEventTest {
         g.fillRect(6, 6, 20, 20);
         g.dispose();
 
-        SystemTray systemTray = SystemTray.getSystemTray();
-        TrayIcon trayIcon = new TrayIcon(img);
+        systemTray = SystemTray.getSystemTray();
+        trayIcon = new TrayIcon(img);
         trayIcon.setImageAutoSize(true);
         trayIcon.addActionListener(ev -> {
             textArea.append(ev + "\n");
@@ -107,9 +111,8 @@ public class DisposeInActionEventTest {
                     Thread.sleep(1000);
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
-                    textArea.append(e + "\n");
                     e.printStackTrace();
-                    throw new RuntimeException();
+                    PassFailJFrame.forceFail("Exception caught: " + e.getMessage());
                 }
             }).start();
         });
@@ -117,9 +120,8 @@ public class DisposeInActionEventTest {
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
-            textArea.append(e + "\n");
             e.printStackTrace();
-            throw new RuntimeException("Test failed.");
+            PassFailJFrame.forceFail("Exception caught: " + e.getMessage());
         }
 
         return frame;

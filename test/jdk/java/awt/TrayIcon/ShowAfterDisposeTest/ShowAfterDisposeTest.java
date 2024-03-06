@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6384984 8004032
+ * @bug 6384984 8004032 8316931
  * @library ../../regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @summary TrayIcon try to dispay a tooltip when is not visible
