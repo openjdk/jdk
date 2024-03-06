@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,10 @@ class StubGenerator: public StubCodeGenerator {
 
   address generate_fp_mask(const char *stub_name, int64_t mask);
 
+  address generate_compress_perm_table(const char *stub_name, int32_t esize);
+
+  address generate_expand_perm_table(const char *stub_name, int32_t esize);
+
   address generate_vector_mask(const char *stub_name, int64_t mask);
 
   address generate_vector_byte_perm_mask(const char *stub_name);
@@ -187,10 +191,19 @@ class StubGenerator: public StubCodeGenerator {
                                     Register index, Register temp,
                                     bool use64byteVector, Label& L_entry, Label& L_exit);
 
+  void arraycopy_avx3_special_cases_256(XMMRegister xmm, KRegister mask, Register from,
+                                    Register to, Register count, int shift,
+                                    Register index, Register temp, Label& L_exit);
+
   void arraycopy_avx3_special_cases_conjoint(XMMRegister xmm, KRegister mask, Register from,
                                              Register to, Register start_index, Register end_index,
                                              Register count, int shift, Register temp,
                                              bool use64byteVector, Label& L_entry, Label& L_exit);
+
+  void arraycopy_avx3_large(Register to, Register from, Register temp1, Register temp2,
+                            Register temp3, Register temp4, Register count,
+                            XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                            XMMRegister xmm4, int shift);
 
   void copy32_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   int shift = Address::times_1, int offset = 0);
@@ -198,6 +211,9 @@ class StubGenerator: public StubCodeGenerator {
   void copy64_avx(Register dst, Register src, Register index, XMMRegister xmm,
                   bool conjoint, int shift = Address::times_1, int offset = 0,
                   bool use64byteVector = false);
+
+  void copy256_avx3(Register dst, Register src, Register index, XMMRegister xmm1, XMMRegister xmm2,
+                                XMMRegister xmm3, XMMRegister xmm4, int shift, int offset = 0);
 
   void copy64_masked_avx(Register dst, Register src, XMMRegister xmm,
                          KRegister mask, Register length, Register index,

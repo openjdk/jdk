@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3223,7 +3223,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this,
             a, offset,
             (arr, off, v)
@@ -3437,7 +3437,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         return VectorSupport.load(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             a, offset, vsp,
             (arr, off, s) -> s.ldOp(arr, (int) off,
                                     (arr_, off_, i) -> arr_[off_ + i]));
@@ -3454,7 +3454,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         return VectorSupport.loadMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset), m, offsetInRange,
+            a, arrayAddress(a, offset), false, m, offsetInRange,
             a, offset, vsp,
             (arr, off, s, vm) -> s.ldOp(arr, (int) off, vm,
                                         (arr_, off_, i) -> arr_[off_ + i]));
@@ -3538,7 +3538,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         VectorSupport.store(
             vsp.vectorType(), vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, a, offset,
             (arr, off, v)
             -> v.stOp(arr, (int) off,
@@ -3555,7 +3555,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
         IntSpecies vsp = vspecies();
         VectorSupport.storeMasked(
             vsp.vectorType(), maskClass, vsp.elementType(), vsp.laneCount(),
-            a, arrayAddress(a, offset),
+            a, arrayAddress(a, offset), false,
             this, m, a, offset,
             (arr, off, v, vm)
             -> v.stOp(arr, (int) off, vm,
@@ -3903,9 +3903,19 @@ public abstract class IntVector extends AbstractVector<Integer> {
         @ForceInline
         @Override final
         public IntVector fromArray(Object a, int offset) {
-            // User entry point:  Be careful with inputs.
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
             return IntVector
                 .fromArray(this, (int[]) a, offset);
+        }
+
+        @ForceInline
+        @Override final
+        public IntVector fromMemorySegment(MemorySegment ms, long offset, ByteOrder bo) {
+            // User entry point
+            // Defer only to the equivalent method on the vector class, using the same inputs
+            return IntVector
+                .fromMemorySegment(this, ms, offset, bo);
         }
 
         @ForceInline

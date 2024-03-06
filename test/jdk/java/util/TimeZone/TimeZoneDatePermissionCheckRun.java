@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,17 +66,15 @@ public class TimeZoneDatePermissionCheckRun {
             //run it with the security manager on, plus accesscontroller debugging
             //will go into infinite recursion trying to get enough permissions for
             //printing Date of failing certificate unless fix is applied.
-            JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-            launcher.addToolArg("-Djava.security.manager")
-                    .addToolArg("-Djava.security.debug=access,failure,policy")
-                    .addToolArg("-ea")
-                    .addToolArg("-esa")
-                    .addToolArg("-cp")
-                    .addToolArg(jarPath)
-                    .addToolArg("TimeZoneDatePermissionCheck");
-
-            int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                    .getExitValue();
+            // Build process (with VM flags)
+            ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                    "-Djava.security.manager",
+                    "-Djava.security.debug=access,failure,policy",
+                    "-ea", "-esa",
+                    "-cp", jarPath,
+                    "TimeZoneDatePermissionCheck");
+            // Evaluate process status
+            int exitCode = ProcessTools.executeCommand(pb).getExitValue();
             if (exitCode != 0) {
                 throw new RuntimeException("Unexpected exit code: " + exitCode);
             }

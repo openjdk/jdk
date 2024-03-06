@@ -1,0 +1,15 @@
+<!--
+   Copyright 2006 Sun Microsystems, Inc.  All rights reserved.
+  -->
+
+<!-- DTD for properties -->
+
+<!ELEMENT properties ( comment?, entry* ) >
+
+<!ATTLIST properties version CDATA #FIXED "1.0">
+
+<!ELEMENT comment (#PCDATA) >
+
+<!ELEMENT entry (#PCDATA) >
+
+<!ATTLIST entry key CDATA #REQUIRED>

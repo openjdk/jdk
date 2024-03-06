@@ -178,12 +178,10 @@ JVM_ENTRY(jlong, UL_MakeUpcallStub(JNIEnv *env, jclass unused, jobject mh, jobje
     assert(i == total_out_args, "");
     ret_type = ss.type();
   }
-  // skip receiver
-  BasicType* in_sig_bt = out_sig_bt + 1;
-  int total_in_args = total_out_args - 1;
 
   return (jlong) UpcallLinker::make_upcall_stub(
-    mh_j, entry, in_sig_bt, total_in_args, out_sig_bt, total_out_args, ret_type, abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
+    mh_j, entry, out_sig_bt, total_out_args, ret_type,
+    abi, conv, needs_return_buffer, checked_cast<int>(ret_buf_size));
 JVM_END
 
 #define CC (char*)  /*cast a literal from (const char*)*/

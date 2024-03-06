@@ -165,7 +165,7 @@ class Util {
                     case SCHEME_FILE:
                         String path = uri.getPath();
                         File f1 = new File(path);
-                        if (f1.isFile()) {
+                        if (SecuritySupport.isFile(f1)) {
                             return true;
                         }
                         break;

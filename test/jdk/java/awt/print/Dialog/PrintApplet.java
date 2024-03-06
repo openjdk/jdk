@@ -24,6 +24,7 @@
 /*
   @test
   @bug 5024549
+  @key printer
   @summary   Pass if dialogs are modal.
   @run applet/manual PrintApplet.html
 */

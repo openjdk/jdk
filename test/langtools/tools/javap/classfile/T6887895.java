@@ -25,19 +25,15 @@
  * @test
  * @bug 6887895
  * @summary test getting constantpool elements' basename through asInternalName() API
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 import java.io.*;
 import java.net.*;
 import java.nio.file.Paths;
 import java.util.*;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class T6887895 {
     public static void main(String[] args) throws Exception {
@@ -75,7 +71,7 @@ public class T6887895 {
 
     ClassModel getClassFile(String name) throws IOException, URISyntaxException {
         URL rsc = getClass().getResource(name);
-        return Classfile.of().parse(Paths.get(rsc.toURI()));
+        return ClassFile.of().parse(Paths.get(rsc.toURI()));
     }
 
     class Test {

@@ -59,9 +59,10 @@ public class UseCountedLoopSafepointsTest {
     private static void check(boolean enabled) {
         OutputAnalyzer oa;
         try {
-            oa = ProcessTools.executeTestJvm("-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
-                                             "-XX:" + (enabled ? "+" : "-") + "UseCountedLoopSafepoints",
-                                             "-XX:+WhiteBoxAPI",
+            oa = ProcessTools.executeTestJava(
+                    "-XX:+UnlockDiagnosticVMOptions", "-Xbootclasspath/a:.",
+                    "-XX:" + (enabled ? "+" : "-") + "UseCountedLoopSafepoints",
+                    "-XX:+WhiteBoxAPI",
                     "-XX:-Inline", "-Xbatch", "-XX:+PrintIdeal", "-XX:LoopUnrollLimit=0",
                     "-XX:CompileOnly=" + UseCountedLoopSafepoints.class.getName() + "::testMethod",
                     UseCountedLoopSafepoints.class.getName());

@@ -38,6 +38,7 @@ import jdk.jfr.internal.RemoveFields;
 @Description("Details of Provider.getInstance(String type, String algorithm) calls")
 @MirrorEvent(className = "jdk.internal.event.SecurityProviderServiceEvent")
 @RemoveFields("duration")
+@StackFilter({"java.security.Provider::getService"})
 public final class SecurityProviderServiceEvent extends AbstractJDKEvent {
     @Label("Type of Service")
     public String type;

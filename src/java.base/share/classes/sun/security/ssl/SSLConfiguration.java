@@ -138,7 +138,10 @@ final class SSLConfiguration implements Cloneable {
     static {
         boolean globalPropSet = false;
 
-        // jdk.tls.maxCertificateChainLength property has no default
+        /*
+         * jdk.tls.maxCertificateChainLength system property works for both
+         * server and client modes.
+         */
         Integer maxCertificateChainLength = GetIntegerAction.privilegedGetProperty(
                 "jdk.tls.maxCertificateChainLength");
         if (maxCertificateChainLength != null && maxCertificateChainLength >= 0) {
@@ -146,20 +149,15 @@ final class SSLConfiguration implements Cloneable {
         }
 
         /*
-         * If either jdk.tls.server.maxInboundCertificateChainLength or
-         * jdk.tls.client.maxInboundCertificateChainLength is set, it will
-         * override jdk.tls.maxCertificateChainLength, regardless of whether
-         * jdk.tls.maxCertificateChainLength is set or not.
-         * If neither jdk.tls.server.maxInboundCertificateChainLength nor
-         * jdk.tls.client.maxInboundCertificateChainLength is set, the behavior
-         * depends on the setting of jdk.tls.maxCertificateChainLength. If
-         * jdk.tls.maxCertificateChainLength is set, it falls back to that
-         * value; otherwise, it defaults to 8 for
-         * jdk.tls.server.maxInboundCertificateChainLength
-         * and 10 for jdk.tls.client.maxInboundCertificateChainLength.
-         * Users can independently set either
-         * jdk.tls.server.maxInboundCertificateChainLength or
-         * jdk.tls.client.maxInboundCertificateChainLength.
+         * jdk.tls.server.maxInboundCertificateChainLength system property
+         * works in server mode.
+         * maxInboundClientCertChainLen is the maximum length of a client
+         * certificate chain accepted by a server. It is determined as follows:
+         *  - If the jdk.tls.server.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 8.
          */
         Integer inboundClientLen = GetIntegerAction.privilegedGetProperty(
                 "jdk.tls.server.maxInboundCertificateChainLength");
@@ -172,6 +170,17 @@ final class SSLConfiguration implements Cloneable {
             maxInboundClientCertChainLen = inboundClientLen;
         }
 
+        /*
+         * jdk.tls.client.maxInboundCertificateChainLength system property
+         * works in client mode.
+         * maxInboundServerCertChainLen is the maximum length of a server
+         * certificate chain accepted by a client. It is determined as follows:
+         *  - If the jdk.tls.client.maxInboundCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise, if the jdk.tls.maxCertificateChainLength system
+         *    property is set and its value >= 0, it uses that value.
+         *  - Otherwise it is set to a default value of 10.
+         */
         Integer inboundServerLen = GetIntegerAction.privilegedGetProperty(
                 "jdk.tls.client.maxInboundCertificateChainLength");
 

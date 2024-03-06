@@ -21,8 +21,8 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.SourceFileAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.SourceFileAttribute;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 import java.io.InputStream;
@@ -50,7 +50,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(Class<?> classToTest, String fileName) throws Exception {
-        assertAttributePresent(Classfile.of().parse(getClassFile(classToTest).toPath()), fileName);
+        assertAttributePresent(ClassFile.of().parse(getClassFile(classToTest).toPath()), fileName);
     }
 
     /**
@@ -60,7 +60,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(String classToTest, String fileName) throws Exception {
-        assertAttributePresent(Classfile.of().parse(getClassFile(classToTest + ".class").toPath()), fileName);
+        assertAttributePresent(ClassFile.of().parse(getClassFile(classToTest + ".class").toPath()), fileName);
     }
 
     /**
@@ -70,7 +70,7 @@ public class SourceFileTestBase extends TestBase {
      * @param fileName    expected name of the file from which the test file is compiled.
      */
     protected void test(Path classToTest, String fileName) throws Exception {
-        assertAttributePresent(Classfile.of().parse(classToTest), fileName);
+        assertAttributePresent(ClassFile.of().parse(classToTest), fileName);
     }
 
     /**
@@ -87,7 +87,7 @@ public class SourceFileTestBase extends TestBase {
         for (String className : classesToTest) {
             ClassModel classFile;
             try (InputStream input = classes.get(className).openInputStream()) {
-                classFile = Classfile.of().parse(input.readAllBytes());
+                classFile = ClassFile.of().parse(input.readAllBytes());
             }
             assertAttributePresent(classFile, fileName);
         }

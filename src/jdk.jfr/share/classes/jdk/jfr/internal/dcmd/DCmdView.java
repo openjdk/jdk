@@ -84,6 +84,11 @@ public class DCmdView extends AbstractDCmd {
     }
 
     @Override
+    protected final boolean isInteractive() {
+        return true;
+    }
+
+    @Override
     public String[] printHelp() {
         List<String> lines = new ArrayList<>();
         lines.addAll(getOptions().lines().toList());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ public final class SharedUtils {
     public static final MethodHandle MH_CHECK_SYMBOL;
     private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
+    @SuppressWarnings("restricted")
     public static final AddressLayout C_POINTER = ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_BYTE));
 
@@ -314,10 +315,14 @@ public final class SharedUtils {
         }
     }
 
-    public static long unboxSegment(MemorySegment segment) {
+    public static void checkNative(MemorySegment segment) {
         if (!segment.isNative()) {
             throw new IllegalArgumentException("Heap segment not allowed: " + segment);
         }
+    }
+
+    public static long unboxSegment(MemorySegment segment) {
+        checkNative(segment);
         return segment.address();
     }
 

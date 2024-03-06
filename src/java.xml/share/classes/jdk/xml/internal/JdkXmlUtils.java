@@ -31,6 +31,7 @@ import com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl;
 import com.sun.org.apache.xerces.internal.util.ParserConfigurationSettings;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
+import java.util.Map;
 import javax.xml.XMLConstants;
 import javax.xml.catalog.CatalogFeatures;
 import javax.xml.catalog.CatalogFeatures.Feature;
@@ -154,6 +155,31 @@ public class JdkXmlUtils {
             }
         }
         return null;
+    }
+
+    /**
+     * Initialize catalog features, including setting the default values and reading
+     * from the JAXP configuration file and System Properties.
+     *
+     * @param properties the Map object that holds the properties
+     */
+    public static void initCatalogFeatures(Map<String, Object> properties) {
+        CatalogFeatures cf = getCatalogFeatures();
+        for( CatalogFeatures.Feature f : CatalogFeatures.Feature.values()) {
+            properties.put(f.getPropertyName(), cf.get(f));
+        }
+    }
+
+    /**
+     * Creates an instance of a CatalogFeatures with default settings.
+     * Note: the CatalogFeatures is initialized with settings in the following
+     * order:
+     *     Default values -> values in the config -> values set with System Properties
+     *
+     * @return an instance of a CatalogFeatures
+     */
+    public static CatalogFeatures getCatalogFeatures() {
+        return CatalogFeatures.builder().build();
     }
 
     /**

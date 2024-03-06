@@ -289,7 +289,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u135F ᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሐ ሑ ሒ ሓ ሔ ሕ ሖ መ ሙ ሚ ማ ሜ ም ሞ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ረ ሩ ሪ ራ ሬ ር ሮ ሰ ሱ ሲ ሳ ሴ ስ ሶ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ በ ቡ ቢ ባ ቤ ብ ቦ ተ ቱ ቲ ታ ቴ ት ቶ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ አ ኡ ኢ ኣ ኤ እ ኦ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጰ ጱ ጲ ጳ ጴ ጵ ጶ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፐ ፑ ፒ ፓ ፔ ፕ ፖ]</exemplarCharacters>
+		<exemplarCharacters>[፟ ᎐ ᎑ ᎒ ᎓ ᎔ ᎕ ᎖ ᎗ ᎘ ᎙ ሀ ሁ ሂ ሃ ሄ ህ ሆ ለ ሉ ሊ ላ ሌ ል ሎ ሐ ሑ ሒ ሓ ሔ ሕ ሖ መ ሙ ሚ ማ ሜ ም ሞ ሠ ሡ ሢ ሣ ሤ ሥ ሦ ረ ሩ ሪ ራ ሬ ር ሮ ሰ ሱ ሲ ሳ ሴ ስ ሶ ቀ ቁ ቂ ቃ ቄ ቅ ቆ ቈ ቊ ቋ ቌ ቍ በ ቡ ቢ ባ ቤ ብ ቦ ተ ቱ ቲ ታ ቴ ት ቶ ኀ ኁ ኂ ኃ ኄ ኅ ኆ ኈ ኊ ኋ ኌ ኍ ነ ኑ ኒ ና ኔ ን ኖ አ ኡ ኢ ኣ ኤ እ ኦ ከ ኩ ኪ ካ ኬ ክ ኮ ኰ ኲ ኳ ኴ ኵ ወ ዉ ዊ ዋ ዌ ው ዎ ዐ ዑ ዒ ዓ ዔ ዕ ዖ ዘ ዙ ዚ ዛ ዜ ዝ ዞ የ ዩ ዪ ያ ዬ ይ ዮ ደ ዱ ዲ ዳ ዴ ድ ዶ ገ ጉ ጊ ጋ ጌ ግ ጎ ጐ ጒ ጓ ጔ ጕ ጠ ጡ ጢ ጣ ጤ ጥ ጦ ጰ ጱ ጲ ጳ ጴ ጵ ጶ ጸ ጹ ጺ ጻ ጼ ጽ ጾ ፀ ፁ ፂ ፃ ፄ ፅ ፆ ፈ ፉ ፊ ፋ ፌ ፍ ፎ ፐ ፑ ፒ ፓ ፔ ፕ ፖ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="unconfirmed">[ሇ ሏ ⶀ ሗ ሟ ᎀ ᎁ ᎂ ᎃ ⶁ ሧ ሯ ⶂ ሷ ⶃ ሸ ሹ ሺ ሻ ሼ ሽ ሾ ሿ ⶄ ቇ ቐ ቑ ቒ ቓ ቔ ቕ ቖ ቘ ቚ ቛ ቜ ቝ ቧ ᎄ ᎅ ᎆ ᎇ ⶅ ቮ ቯ ቷ ⶆ ቿ ⶇ ኇ ኗ ⶈ ኛ ኟ ⶉ ኧ ⶊ ኯ ኸ ኹ ኺ ኻ ኼ ኽ ኾ ዀ ዂ ዃ ዄ ዅ ዏ ዟ ⶋ ዠ ዡ ዢ ዣ ዤ ዥ ዦ ዧ ዷ ⶌ ዸ ዹ ዺ ዻ ዼ ዽ ዾ ዿ ⶍ ጀ ጁ ጂ ጃ ጄ ጅ ጆ ጇ ⶎ ጏ ጘ ጙ ጚ ጛ ጜ ጝ ጞ ጟ ⶓ ⶔ ⶕ ⶖ ጧ ⶏ ጨ ጩ ጪ ጫ ጬ ጭ ጮ ጯ ⶐ ጷ ⶑ ጿ ፇ ፏ ᎈ ᎉ ᎊ ᎋ ፗ ᎌ ᎍ ᎎ ᎏ ⶒ ፘ ፙ ፚ ⶠ ⶡ ⶢ ⶣ ⶤ ⶥ ⶦ ⶨ ⶩ ⶪ ⶫ ⶬ ⶭ ⶮ ⶰ ⶱ ⶲ ⶳ ⶴ ⶵ ⶶ ⶸ ⶹ ⶺ ⶻ ⶼ ⶽ ⶾ ⷀ ⷁ ⷂ ⷃ ⷄ ⷅ ⷆ ⷈ ⷉ ⷊ ⷋ ⷌ ⷍ ⷎ ⷐ ⷑ ⷒ ⷓ ⷔ ⷕ ⷖ ⷘ ⷙ ⷚ ⷛ ⷜ ⷝ ⷞ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ሀ ለ ሐ መ ሠ ረ ሰ ቀ ቈ በ ተ ኀ ኈ ነ አ ከ ኰ ወ ዐ ዘ የ ደ ገ ጐ ጠ ጰ ጸ ፀ ፈ ፐ]</exemplarCharacters>
 	</characters>
@@ -326,25 +326,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a zzzz</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a z</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm:ss a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
 						<timeFormat>
 							<pattern draft="unconfirmed">h:mm a</pattern>
-							<datetimeSkeleton draft="unconfirmed">ahmm</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 				</timeFormats>
@@ -411,10 +407,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dayPeriods>
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am" draft="unconfirmed">ጽባሕ</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">ምሴት</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
 							<dayPeriod type="am" draft="unconfirmed">ጽባሕ</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">ምሴት</dayPeriod>
 						</dayPeriodWidth>

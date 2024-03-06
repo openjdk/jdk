@@ -57,7 +57,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="ebu" draft="unconfirmed">ymbu</language>
 			<language type="ee" draft="unconfirmed">ewe</language>
 			<language type="el" draft="unconfirmed">grecki</language>
-			<language type="en" draft="unconfirmed">angelski</language>
+			<language type="en" draft="contributed">angelski</language>
 			<language type="en_AU" draft="unconfirmed">australijski angelski</language>
 			<language type="en_CA" draft="unconfirmed">kanadyjski angelski</language>
 			<language type="en_GB" draft="unconfirmed">brytyjski angelski</language>
@@ -323,7 +323,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<script type="Kthi" draft="unconfirmed">kaithi</script>
 			<script type="Lana" draft="unconfirmed">lanna</script>
 			<script type="Laoo" draft="unconfirmed">laotańske</script>
-			<script type="Latn" draft="unconfirmed">łacińske</script>
+			<script type="Latn" draft="contributed">łacińske</script>
 			<script type="Lepc" draft="unconfirmed">lepcha</script>
 			<script type="Limb" draft="unconfirmed">limbu</script>
 			<script type="Lina" draft="unconfirmed">linearne A</script>
@@ -620,7 +620,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="PG" draft="unconfirmed">Papua-Nowo Gwinea</territory>
 			<territory type="PH" draft="unconfirmed">Filipiny</territory>
 			<territory type="PK" draft="unconfirmed">Pakistan</territory>
-			<territory type="PL" draft="unconfirmed">Polska</territory>
+			<territory type="PL" draft="contributed">Polska</territory>
 			<territory type="PM" draft="unconfirmed">Saint-Pierre i Miquelon</territory>
 			<territory type="PN" draft="unconfirmed">Pitcairn</territory>
 			<territory type="PR" draft="unconfirmed">Portoryko</territory>
@@ -710,27 +710,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="numbers" type="latn" draft="unconfirmed">Cyfry zachodnie</type>
 		</types>
 		<measurementSystemNames>
-			<measurementSystemName type="UK" draft="unconfirmed">brytyjski</measurementSystemName>
-			<measurementSystemName type="US" draft="unconfirmed">amerykański</measurementSystemName>
+			<measurementSystemName type="metric" draft="contributed">metryczny</measurementSystemName>
+			<measurementSystemName type="UK" draft="contributed">brytyjski</measurementSystemName>
+			<measurementSystemName type="US" draft="contributed">amerykański</measurementSystemName>
 		</measurementSystemNames>
 		<codePatterns>
-			<codePattern type="language" draft="unconfirmed">Jynzyk: {0}</codePattern>
-			<codePattern type="script" draft="unconfirmed">Pismo: {0}</codePattern>
-			<codePattern type="territory" draft="unconfirmed">Regiōn: {0}</codePattern>
+			<codePattern type="language" draft="contributed">Jynzyk: {0}</codePattern>
+			<codePattern type="script" draft="contributed">Pismo: {0}</codePattern>
+			<codePattern type="territory" draft="contributed">Regiōn: {0}</codePattern>
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ã b c ć d e f g h i j k l ł m n ń o ŏ ô õ ō p r s ś t u w y z ź ż]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ă â å ä ą ā æ č ç ď é è ĕ ê ě ë ę ē í ì ĭ î ï ī ľ ň ñ ó ò ö ø œ q ŕ ř š ß ť ú ù ŭ û ů ü ū v x ý ÿ ž]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C Ć D E F G H I J K L Ł M N Ń O Ô Ō P Q R S Ś T U V W X Y Z Ź Ż]</exemplarCharacters>
+		<exemplarCharacters>[aã b cć d e f g h i j k lł m nń oŏôõō p r sś t u w y zźż]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àăâåäąā æ čç ď éèĕêěëęē íìĭîïī ľ ňñ óòöø œ q ŕř š ß ť úùŭûůüū v x ýÿ ž]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B CĆ D E F G H I J K LŁ M NŃ OÔŌ P Q R SŚ T U V W X Y ZŹŻ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' &quot; ” „ « » ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ′ ″ ° ~]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ' &quot;”„ « » ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ′ ″ ° ~]</exemplarCharacters>
 	</characters>
 	<delimiters>
-		<quotationStart draft="unconfirmed">„</quotationStart>
-		<quotationEnd draft="unconfirmed">”</quotationEnd>
-		<alternateQuotationStart draft="unconfirmed">»</alternateQuotationStart>
-		<alternateQuotationEnd draft="unconfirmed">«</alternateQuotationEnd>
+		<quotationStart draft="contributed">„</quotationStart>
+		<alternateQuotationStart draft="contributed">»</alternateQuotationStart>
+		<alternateQuotationEnd draft="contributed">«</alternateQuotationEnd>
 	</delimiters>
 	<dates>
 		<calendars>
@@ -739,19 +739,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, d MMMM y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM y G</pattern>
-							<datetimeSkeleton draft="unconfirmed">GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -766,15 +763,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -782,15 +773,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -825,15 +810,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatFallback draft="unconfirmed">{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
@@ -877,36 +856,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a" draft="unconfirmed">h a–h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a–h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a–h:mm a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d" draft="unconfirmed">dd.MM–dd.MM</greatestDifference>
@@ -915,9 +877,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d" draft="unconfirmed">E, dd.MM–E, dd.MM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, dd.MM–E, dd.MM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="unconfirmed">LLL–LLL</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
@@ -982,50 +941,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<month type="11" draft="unconfirmed">lis</month>
 							<month type="12" draft="unconfirmed">gru</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1" draft="unconfirmed">S</month>
-							<month type="2" draft="unconfirmed">L</month>
-							<month type="3" draft="unconfirmed">M</month>
-							<month type="4" draft="unconfirmed">K</month>
-							<month type="5" draft="unconfirmed">M</month>
-							<month type="6" draft="unconfirmed">C</month>
-							<month type="7" draft="unconfirmed">L</month>
-							<month type="8" draft="unconfirmed">S</month>
-							<month type="9" draft="unconfirmed">W</month>
-							<month type="10" draft="unconfirmed">P</month>
-							<month type="11" draft="unconfirmed">L</month>
-							<month type="12" draft="unconfirmed">G</month>
-						</monthWidth>
 						<monthWidth type="wide">
-							<month type="1" draft="unconfirmed">stycznia</month>
-							<month type="2" draft="unconfirmed">lutego</month>
-							<month type="3" draft="unconfirmed">marca</month>
-							<month type="4" draft="unconfirmed">kwietnia</month>
-							<month type="5" draft="unconfirmed">moja</month>
-							<month type="6" draft="unconfirmed">czyrwca</month>
-							<month type="7" draft="unconfirmed">lipca</month>
-							<month type="8" draft="unconfirmed">siyrpnia</month>
-							<month type="9" draft="unconfirmed">września</month>
-							<month type="10" draft="unconfirmed">października</month>
-							<month type="11" draft="unconfirmed">listopada</month>
-							<month type="12" draft="unconfirmed">grudnia</month>
+							<month type="1" draft="contributed">stycznia</month>
+							<month type="2" draft="contributed">lutego</month>
+							<month type="3" draft="contributed">marca</month>
+							<month type="4" draft="contributed">kwietnia</month>
+							<month type="5" draft="contributed">moja</month>
+							<month type="6" draft="contributed">czyrwca</month>
+							<month type="7" draft="contributed">lipca</month>
+							<month type="8" draft="contributed">siyrpnia</month>
+							<month type="9" draft="contributed">września</month>
+							<month type="10" draft="contributed">października</month>
+							<month type="11" draft="contributed">listopada</month>
+							<month type="12" draft="contributed">grudnia</month>
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="unconfirmed">sty</month>
-							<month type="2" draft="unconfirmed">lut</month>
-							<month type="3" draft="unconfirmed">mar</month>
-							<month type="4" draft="unconfirmed">kwi</month>
-							<month type="5" draft="unconfirmed">moj</month>
-							<month type="6" draft="unconfirmed">czy</month>
-							<month type="7" draft="unconfirmed">lip</month>
-							<month type="8" draft="unconfirmed">siy</month>
-							<month type="9" draft="unconfirmed">wrz</month>
-							<month type="10" draft="unconfirmed">paź</month>
-							<month type="11" draft="unconfirmed">lis</month>
-							<month type="12" draft="unconfirmed">gru</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1" draft="unconfirmed">S</month>
 							<month type="2" draft="unconfirmed">L</month>
@@ -1067,15 +998,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="fri" draft="unconfirmed">piō</day>
 							<day type="sat" draft="unconfirmed">sob</day>
 						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun" draft="unconfirmed">n</day>
-							<day type="mon" draft="unconfirmed">p</day>
-							<day type="tue" draft="unconfirmed">w</day>
-							<day type="wed" draft="unconfirmed">s</day>
-							<day type="thu" draft="unconfirmed">s</day>
-							<day type="fri" draft="unconfirmed">p</day>
-							<day type="sat" draft="unconfirmed">s</day>
-						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun" draft="unconfirmed">nd</day>
 							<day type="mon" draft="unconfirmed">pń</day>
@@ -1086,25 +1008,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="sat" draft="unconfirmed">sb</day>
 						</dayWidth>
 						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">niydziela</day>
-							<day type="mon" draft="unconfirmed">pyńdziałek</day>
-							<day type="tue" draft="unconfirmed">wtorek</day>
-							<day type="wed" draft="unconfirmed">strzoda</day>
-							<day type="thu" draft="unconfirmed">sztwortek</day>
-							<day type="fri" draft="unconfirmed">piōntek</day>
-							<day type="sat" draft="unconfirmed">sobota</day>
+							<day type="sun" draft="contributed">niydziela</day>
+							<day type="mon" draft="contributed">pyńdziałek</day>
+							<day type="tue" draft="contributed">wtorek</day>
+							<day type="wed" draft="contributed">strzoda</day>
+							<day type="thu" draft="contributed">sztwortek</day>
+							<day type="fri" draft="contributed">piōntek</day>
+							<day type="sat" draft="contributed">sobota</day>
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun" draft="unconfirmed">niy</day>
-							<day type="mon" draft="unconfirmed">pyń</day>
-							<day type="tue" draft="unconfirmed">wto</day>
-							<day type="wed" draft="unconfirmed">str</day>
-							<day type="thu" draft="unconfirmed">szt</day>
-							<day type="fri" draft="unconfirmed">piō</day>
-							<day type="sat" draft="unconfirmed">sob</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun" draft="unconfirmed">n</day>
 							<day type="mon" draft="unconfirmed">p</day>
@@ -1113,24 +1026,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<day type="thu" draft="unconfirmed">s</day>
 							<day type="fri" draft="unconfirmed">p</day>
 							<day type="sat" draft="unconfirmed">s</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun" draft="unconfirmed">nd</day>
-							<day type="mon" draft="unconfirmed">pń</day>
-							<day type="tue" draft="unconfirmed">wt</day>
-							<day type="wed" draft="unconfirmed">st</day>
-							<day type="thu" draft="unconfirmed">sz</day>
-							<day type="fri" draft="unconfirmed">pt</day>
-							<day type="sat" draft="unconfirmed">sb</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun" draft="unconfirmed">niydziela</day>
-							<day type="mon" draft="unconfirmed">pyńdziałek</day>
-							<day type="tue" draft="unconfirmed">wtorek</day>
-							<day type="wed" draft="unconfirmed">strzoda</day>
-							<day type="thu" draft="unconfirmed">sztwortek</day>
-							<day type="fri" draft="unconfirmed">piōntek</day>
-							<day type="sat" draft="unconfirmed">sobota</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1142,12 +1037,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="3" draft="unconfirmed">III szr.</quarter>
 							<quarter type="4" draft="unconfirmed">IV szr.</quarter>
 						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1" draft="unconfirmed">I</quarter>
-							<quarter type="2" draft="unconfirmed">II</quarter>
-							<quarter type="3" draft="unconfirmed">III</quarter>
-							<quarter type="4" draft="unconfirmed">IV</quarter>
-						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1" draft="unconfirmed">I sztwierć roku</quarter>
 							<quarter type="2" draft="unconfirmed">II sztwierć roku</quarter>
@@ -1156,23 +1045,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1" draft="unconfirmed">I szr.</quarter>
-							<quarter type="2" draft="unconfirmed">II szr.</quarter>
-							<quarter type="3" draft="unconfirmed">III szr.</quarter>
-							<quarter type="4" draft="unconfirmed">IV szr.</quarter>
-						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1" draft="unconfirmed">I</quarter>
 							<quarter type="2" draft="unconfirmed">II</quarter>
 							<quarter type="3" draft="unconfirmed">III</quarter>
 							<quarter type="4" draft="unconfirmed">IV</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1" draft="unconfirmed">I sztwierć roku</quarter>
-							<quarter type="2" draft="unconfirmed">II sztwierć roku</quarter>
-							<quarter type="3" draft="unconfirmed">III sztwierć roku</quarter>
-							<quarter type="4" draft="unconfirmed">IV sztwierć roku</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -1182,24 +1059,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">do połedniŏ</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">po połedniu</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
-						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="am">do połedniŏ</dayPeriod>
-							<dayPeriod type="pm">po połedniu</dayPeriod>
-						</dayPeriodWidth>
-						<dayPeriodWidth type="narrow">
-							<dayPeriod type="am" draft="unconfirmed">do połedniŏ</dayPeriod>
-							<dayPeriod type="pm" draft="unconfirmed">po połedniu</dayPeriod>
-						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
 							<dayPeriod type="am">do połedniŏ</dayPeriod>
 							<dayPeriod type="pm">po połedniu</dayPeriod>
@@ -1209,9 +1074,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<eras>
 					<eraNames>
 						<era type="0" draft="unconfirmed">przed naszōm erōm</era>
-						<era type="0" alt="variant" draft="unconfirmed">p.n.e.</era>
 						<era type="1" draft="unconfirmed">naszyj ery</era>
-						<era type="1" alt="variant" draft="unconfirmed">n.e.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="unconfirmed">p.n.e.</era>
@@ -1222,25 +1085,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern draft="unconfirmed">EEEE, d MMMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern draft="unconfirmed">d MMM y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern draft="unconfirmed">dd.MM.y</pattern>
-							<datetimeSkeleton draft="unconfirmed">yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -1271,15 +1130,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1} 'ô' {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1287,15 +1140,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern draft="unconfirmed">{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1314,32 +1161,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateFormatItem id="MMMMd" draft="unconfirmed">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other" draft="unconfirmed">MMMM, 'tydz'. W</dateFormatItem>
 						<dateFormatItem id="yM" draft="unconfirmed">MM.y</dateFormatItem>
-						<dateFormatItem id="yMd" draft="unconfirmed">dd.MM.y</dateFormatItem>
+						<dateFormatItem id="yMd" draft="contributed">dd.MM.y</dateFormatItem>
 						<dateFormatItem id="yMEd" draft="unconfirmed">E, dd.MM.y</dateFormatItem>
 						<dateFormatItem id="yMMM" draft="unconfirmed">MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMd" draft="unconfirmed">d MMM y</dateFormatItem>
+						<dateFormatItem id="yMMMd" draft="contributed">d MMM y</dateFormatItem>
 						<dateFormatItem id="yMMMEd" draft="unconfirmed">E, d MMM y</dateFormatItem>
-						<dateFormatItem id="yMMMM" draft="unconfirmed">MMMM y</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="unconfirmed">LLLL y</dateFormatItem>
 						<dateFormatItem id="yQQQ" draft="unconfirmed">QQQ y</dateFormatItem>
 						<dateFormatItem id="yQQQQ" draft="unconfirmed">QQQQ y</dateFormatItem>
 						<dateFormatItem id="yw" count="other" draft="unconfirmed">Y, 'tydz'. w</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone" draft="unconfirmed">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
-						<intervalFormatFallback draft="unconfirmed">{0}–{1}</intervalFormatFallback>
+						<intervalFormatFallback draft="contributed">{0}–{1}</intervalFormatFallback>
 						<intervalFormatItem id="Bh">
 							<greatestDifference id="B" draft="unconfirmed">h B – h B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h–h B</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Bhm">
 							<greatestDifference id="B" draft="unconfirmed">h:mm B – h:mm B</greatestDifference>
-							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm B</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d" draft="unconfirmed">d–d</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Gy">
 							<greatestDifference id="G" draft="unconfirmed">y G – y G</greatestDifference>
@@ -1383,36 +1221,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="a" draft="unconfirmed">h a–h a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a–h:mm a</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a" draft="unconfirmed">h:mm a–h:mm a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 							<greatestDifference id="m" draft="unconfirmed">h:mm–h:mm a v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m" draft="unconfirmed">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a" draft="unconfirmed">h a – h a v</greatestDifference>
 							<greatestDifference id="h" draft="unconfirmed">h–h a v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H" draft="unconfirmed">HH–HH v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="M">
-							<greatestDifference id="M" draft="unconfirmed">MM–MM</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="Md">
 							<greatestDifference id="d" draft="unconfirmed">dd.MM–dd.MM</greatestDifference>
@@ -1422,9 +1243,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<greatestDifference id="d" draft="unconfirmed">E, dd.MM–E, dd.MM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, dd.MM–E, dd.MM</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="MMM">
-							<greatestDifference id="M" draft="unconfirmed">LLL–LLL</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="MMMd">
 							<greatestDifference id="d" draft="unconfirmed">d–d MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">d MMM–d MMM</greatestDifference>
@@ -1432,9 +1250,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<intervalFormatItem id="MMMEd">
 							<greatestDifference id="d" draft="unconfirmed">E, d MMM–E, d MMM</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E, d MMM–E, d MMM</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="y">
-							<greatestDifference id="y" draft="unconfirmed">y–y</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="yM">
 							<greatestDifference id="M" draft="unconfirmed">MM.y–MM.y</greatestDifference>
@@ -1476,12 +1291,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName draft="unconfirmed">era</displayName>
 			</field>
-			<field type="era-short">
-				<displayName draft="unconfirmed">era</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName draft="unconfirmed">era</displayName>
-			</field>
 			<field type="year">
 				<displayName draft="unconfirmed">rok</displayName>
 				<relative type="-1" draft="unconfirmed">łōńskigo roku</relative>
@@ -1496,27 +1305,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName draft="unconfirmed">r.</displayName>
-				<relative type="-1" draft="unconfirmed">łōńskigo roku</relative>
-				<relative type="0" draft="unconfirmed">latoś</relative>
-				<relative type="1" draft="unconfirmed">na bezrok</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} roku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} roku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
-				<displayName draft="unconfirmed">r.</displayName>
-				<relative type="-1" draft="unconfirmed">łōńskigo roku</relative>
-				<relative type="0" draft="unconfirmed">latoś</relative>
-				<relative type="1" draft="unconfirmed">na bezrok</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} roku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} roku tymu</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="quarter">
 				<displayName draft="unconfirmed">sztwierć roku</displayName>
@@ -1532,21 +1320,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="quarter-short">
 				<displayName draft="unconfirmed">szr.</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłyj sztwierci roku</relative>
-				<relative type="0" draft="unconfirmed">w tyj sztwierci roku</relative>
-				<relative type="1" draft="unconfirmed">w prziszłyj sztwierci roku</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} szr.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} szr. tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName draft="unconfirmed">szr.</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłyj sztwierci roku</relative>
-				<relative type="0" draft="unconfirmed">w tyj sztwierci roku</relative>
-				<relative type="1" draft="unconfirmed">w prziszłyj sztwierci roku</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">za {0} szr.</relativeTimePattern>
 				</relativeTime>
@@ -1568,9 +1341,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName draft="unconfirmed">mies.</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłym miesiōncu</relative>
-				<relative type="0" draft="unconfirmed">w tym miesiōncu</relative>
-				<relative type="1" draft="unconfirmed">na drugi miesiōnc</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">za {0} mies.</relativeTimePattern>
 				</relativeTime>
@@ -1580,15 +1350,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName draft="unconfirmed">mc</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłym miesiōncu</relative>
-				<relative type="0" draft="unconfirmed">w tym miesiōncu</relative>
-				<relative type="1" draft="unconfirmed">na drugi miesiōnc</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} mies.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} mies. tymu</relativeTimePattern>
-				</relativeTime>
 			</field>
 			<field type="week">
 				<displayName draft="unconfirmed">tydziyń</displayName>
@@ -1605,29 +1366,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName draft="unconfirmed">tydz.</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłym tydniu</relative>
-				<relative type="0" draft="unconfirmed">w tym tydniu</relative>
-				<relative type="1" draft="unconfirmed">na drugi tydziyń</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other" draft="unconfirmed">za {0} tyd.</relativeTimePattern>
 				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} tyd. tymu</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod draft="unconfirmed">tydziyń {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName draft="unconfirmed">tydz.</displayName>
-				<relative type="-1" draft="unconfirmed">w zeszłym tydniu</relative>
-				<relative type="0" draft="unconfirmed">w tym tydniu</relative>
-				<relative type="1" draft="unconfirmed">na drugi tydziyń</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} tyd.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} tyd. tymu</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod draft="unconfirmed">tydziyń {0}</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName draft="unconfirmed">tydziyń miesiōnca</displayName>
@@ -1635,34 +1379,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekOfMonth-short">
 				<displayName draft="unconfirmed">tydz. mies.</displayName>
 			</field>
-			<field type="weekOfMonth-narrow">
-				<displayName draft="unconfirmed">tydz. mies.</displayName>
-			</field>
 			<field type="day">
-				<displayName draft="unconfirmed">dziyń</displayName>
-				<relative type="-1" draft="unconfirmed">wczorej</relative>
-				<relative type="0" draft="unconfirmed">dzisiej</relative>
-				<relative type="1" draft="unconfirmed">jutro</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} dnia</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} dnia tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-short">
-				<displayName draft="unconfirmed">dziyń</displayName>
-				<relative type="-1" draft="unconfirmed">wczorej</relative>
-				<relative type="0" draft="unconfirmed">dzisiej</relative>
-				<relative type="1" draft="unconfirmed">jutro</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} dnia</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} dnia tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
 				<displayName draft="unconfirmed">dziyń</displayName>
 				<relative type="-1" draft="unconfirmed">wczorej</relative>
 				<relative type="0" draft="unconfirmed">dzisiej</relative>
@@ -1689,41 +1406,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday-short">
 				<displayName draft="unconfirmed">dziyń tyd.</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName draft="unconfirmed">dziyń tyd.</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName draft="unconfirmed">dziyń miesiōnca</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
 				<displayName draft="unconfirmed">dziyń mies.</displayName>
 			</field>
-			<field type="weekdayOfMonth-narrow">
-				<displayName draft="unconfirmed">dziyń mies.</displayName>
-			</field>
 			<field type="sun">
-				<relative type="-1" draft="unconfirmed">w zeszło niydziela</relative>
-				<relative type="0" draft="unconfirmed">w ta niydziela</relative>
-				<relative type="1" draft="unconfirmed">w prziszło niydziela</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} niydziele</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} niydziele tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-short">
-				<relative type="-1" draft="unconfirmed">w zeszło niydziela</relative>
-				<relative type="0" draft="unconfirmed">w ta niydziela</relative>
-				<relative type="1" draft="unconfirmed">w prziszło niydziela</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} niydziele</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} niydziele tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1" draft="unconfirmed">w zeszło niydziela</relative>
 				<relative type="0" draft="unconfirmed">w ta niydziela</relative>
 				<relative type="1" draft="unconfirmed">w prziszło niydziela</relative>
@@ -1745,51 +1434,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">{0} pyńdziałku tymu</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-short">
-				<relative type="-1" draft="unconfirmed">w zeszły pyńdziałek</relative>
-				<relative type="0" draft="unconfirmed">w tyn pyńdziałek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły pyńdziałek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} pyńdziałku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} pyńdziałku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1" draft="unconfirmed">w zeszły pyńdziałek</relative>
-				<relative type="0" draft="unconfirmed">w tyn pyńdziałek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły pyńdziałek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} pyńdziałku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} pyńdziałku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
-				<relative type="-1" draft="unconfirmed">w zeszły wtorek</relative>
-				<relative type="0" draft="unconfirmed">w tyn wtorek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły wtorek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} wtorku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} wtorku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-short">
-				<relative type="-1" draft="unconfirmed">w zeszły wtorek</relative>
-				<relative type="0" draft="unconfirmed">w tyn wtorek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły wtorek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} wtorku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} wtorku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1" draft="unconfirmed">w zeszły wtorek</relative>
 				<relative type="0" draft="unconfirmed">w tyn wtorek</relative>
 				<relative type="1" draft="unconfirmed">w prziszły wtorek</relative>
@@ -1811,51 +1456,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">{0} strzody tymu</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-short">
-				<relative type="-1" draft="unconfirmed">w zeszło strzoda</relative>
-				<relative type="0" draft="unconfirmed">w ta strzoda</relative>
-				<relative type="1" draft="unconfirmed">w prziszło strzoda</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} strzody</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} strzody tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1" draft="unconfirmed">w zeszło strzoda</relative>
-				<relative type="0" draft="unconfirmed">w ta strzoda</relative>
-				<relative type="1" draft="unconfirmed">w prziszło strzoda</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} strzody</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} strzody tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu">
-				<relative type="-1" draft="unconfirmed">w zeszły sztwortek</relative>
-				<relative type="0" draft="unconfirmed">w tyn sztwortek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły sztwortek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} sztwortku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} sztwortku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-short">
-				<relative type="-1" draft="unconfirmed">w zeszły sztwortek</relative>
-				<relative type="0" draft="unconfirmed">w tyn sztwortek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły sztwortek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} sztwortku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} sztwortku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1" draft="unconfirmed">w zeszły sztwortek</relative>
 				<relative type="0" draft="unconfirmed">w tyn sztwortek</relative>
 				<relative type="1" draft="unconfirmed">w prziszły sztwortek</relative>
@@ -1877,28 +1478,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">{0} piōntku tymu</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relative type="-1" draft="unconfirmed">w zeszły piōntek</relative>
-				<relative type="0" draft="unconfirmed">w tyn piōntek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły piōntek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} piōntku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} piōntku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1" draft="unconfirmed">w zeszły piōntek</relative>
-				<relative type="0" draft="unconfirmed">w tyn piōntek</relative>
-				<relative type="1" draft="unconfirmed">w prziszły piōntek</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} piōntku</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} piōntku tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1" draft="unconfirmed">w zeszło sobota</relative>
 				<relative type="0" draft="unconfirmed">w ta sobota</relative>
@@ -1909,31 +1488,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relativeTime type="past">
 					<relativeTimePattern count="other" draft="unconfirmed">{0} soboty tymu</relativeTimePattern>
 				</relativeTime>
-			</field>
-			<field type="sat-short">
-				<relative type="-1" draft="unconfirmed">w zeszło sobota</relative>
-				<relative type="0" draft="unconfirmed">w ta sobota</relative>
-				<relative type="1" draft="unconfirmed">w prziszło sobota</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} soboty</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} soboty tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1" draft="unconfirmed">w zeszło sobota</relative>
-				<relative type="0" draft="unconfirmed">w ta sobota</relative>
-				<relative type="1" draft="unconfirmed">w prziszło sobota</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} soboty</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} soboty tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName draft="unconfirmed">rano / po połedniu / na wieczōr</displayName>
 			</field>
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">rano / po połedniu / na wieczōr</displayName>
@@ -1988,15 +1542,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other" draft="unconfirmed">{0} min tymu</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-narrow">
-				<displayName draft="unconfirmed">min</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other" draft="unconfirmed">za {0} min</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other" draft="unconfirmed">{0} min tymu</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
 				<displayName draft="unconfirmed">sekunda</displayName>
 				<relative type="0" draft="unconfirmed">teraz</relative>
@@ -2036,13 +1581,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat draft="unconfirmed">+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat draft="unconfirmed">GMT{0}</gmtFormat>
-			<gmtZeroFormat draft="unconfirmed">GMT</gmtZeroFormat>
-			<regionFormat draft="unconfirmed">czas: {0}</regionFormat>
-			<regionFormat type="daylight" draft="unconfirmed">{0} (latowy czas)</regionFormat>
-			<regionFormat type="standard" draft="unconfirmed">{0} (sztandardowy czas)</regionFormat>
-			<fallbackFormat draft="unconfirmed">{1} ({0})</fallbackFormat>
+			<regionFormat draft="contributed">czas: {0}</regionFormat>
+			<regionFormat type="daylight" draft="contributed">{0} (latowy czas)</regionFormat>
+			<regionFormat type="standard" draft="contributed">{0} (sztandardowy czas)</regionFormat>
 			<zone type="Etc/UTC">
 				<long>
 					<standard draft="unconfirmed">uniwersalny koordynowany czas</standard>
@@ -2057,161 +1598,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Dubai">
 				<exemplarCity draft="unconfirmed">Dubaj</exemplarCity>
 			</zone>
-			<zone type="Asia/Kabul">
-				<exemplarCity draft="unconfirmed">Kabul</exemplarCity>
-			</zone>
-			<zone type="America/Antigua">
-				<exemplarCity draft="unconfirmed">Antigua</exemplarCity>
-			</zone>
-			<zone type="America/Anguilla">
-				<exemplarCity draft="unconfirmed">Anguilla</exemplarCity>
-			</zone>
 			<zone type="Europe/Tirane">
 				<exemplarCity draft="unconfirmed">Tirana</exemplarCity>
 			</zone>
 			<zone type="Asia/Yerevan">
 				<exemplarCity draft="unconfirmed">Erywań</exemplarCity>
 			</zone>
-			<zone type="Africa/Luanda">
-				<exemplarCity draft="unconfirmed">Luanda</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Rothera">
-				<exemplarCity draft="unconfirmed">Rothera</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Palmer">
-				<exemplarCity draft="unconfirmed">Palmer</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Troll">
-				<exemplarCity draft="unconfirmed">Troll</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Syowa">
-				<exemplarCity draft="unconfirmed">Syowa</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Mawson">
-				<exemplarCity draft="unconfirmed">Mawson</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Davis">
-				<exemplarCity draft="unconfirmed">Davis</exemplarCity>
-			</zone>
 			<zone type="Antarctica/Vostok">
 				<exemplarCity draft="unconfirmed">Wostok</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Casey">
-				<exemplarCity draft="unconfirmed">Casey</exemplarCity>
-			</zone>
-			<zone type="Antarctica/DumontDUrville">
-				<exemplarCity draft="unconfirmed">Dumont d’Urville</exemplarCity>
-			</zone>
-			<zone type="Antarctica/McMurdo">
-				<exemplarCity draft="unconfirmed">McMurdo</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Rio_Gallegos">
-				<exemplarCity draft="unconfirmed">Rio Gallegos</exemplarCity>
 			</zone>
 			<zone type="America/Mendoza">
 				<exemplarCity draft="unconfirmed">Myndoza</exemplarCity>
 			</zone>
-			<zone type="America/Argentina/San_Juan">
-				<exemplarCity draft="unconfirmed">San Juan</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Ushuaia">
-				<exemplarCity draft="unconfirmed">Ushuaia</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/La_Rioja">
-				<exemplarCity draft="unconfirmed">La Rioja</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/San_Luis">
-				<exemplarCity draft="unconfirmed">San Luis</exemplarCity>
-			</zone>
-			<zone type="America/Catamarca">
-				<exemplarCity draft="unconfirmed">Catamarca</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Salta">
-				<exemplarCity draft="unconfirmed">Salta</exemplarCity>
-			</zone>
-			<zone type="America/Jujuy">
-				<exemplarCity draft="unconfirmed">Jujuy</exemplarCity>
-			</zone>
-			<zone type="America/Argentina/Tucuman">
-				<exemplarCity draft="unconfirmed">Tucuman</exemplarCity>
-			</zone>
-			<zone type="America/Cordoba">
-				<exemplarCity draft="unconfirmed">Cordoba</exemplarCity>
-			</zone>
-			<zone type="America/Buenos_Aires">
-				<exemplarCity draft="unconfirmed">Buenos Aires</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pago_Pago">
-				<exemplarCity draft="unconfirmed">Pago Pago</exemplarCity>
-			</zone>
 			<zone type="Europe/Vienna">
 				<exemplarCity draft="unconfirmed">Wiedyń</exemplarCity>
-			</zone>
-			<zone type="Australia/Perth">
-				<exemplarCity draft="unconfirmed">Perth</exemplarCity>
-			</zone>
-			<zone type="Australia/Eucla">
-				<exemplarCity draft="unconfirmed">Eucla</exemplarCity>
-			</zone>
-			<zone type="Australia/Darwin">
-				<exemplarCity draft="unconfirmed">Darwin</exemplarCity>
-			</zone>
-			<zone type="Australia/Adelaide">
-				<exemplarCity draft="unconfirmed">Adelaide</exemplarCity>
-			</zone>
-			<zone type="Australia/Broken_Hill">
-				<exemplarCity draft="unconfirmed">Broken Hill</exemplarCity>
-			</zone>
-			<zone type="Australia/Melbourne">
-				<exemplarCity draft="unconfirmed">Melbourne</exemplarCity>
 			</zone>
 			<zone type="Australia/Currie">
 				<exemplarCity draft="unconfirmed">Currie</exemplarCity>
 			</zone>
-			<zone type="Australia/Hobart">
-				<exemplarCity draft="unconfirmed">Hobart</exemplarCity>
-			</zone>
-			<zone type="Australia/Lindeman">
-				<exemplarCity draft="unconfirmed">Lindeman</exemplarCity>
-			</zone>
-			<zone type="Australia/Sydney">
-				<exemplarCity draft="unconfirmed">Sydney</exemplarCity>
-			</zone>
-			<zone type="Australia/Brisbane">
-				<exemplarCity draft="unconfirmed">Brisbane</exemplarCity>
-			</zone>
-			<zone type="Antarctica/Macquarie">
-				<exemplarCity draft="unconfirmed">Macquarie</exemplarCity>
-			</zone>
-			<zone type="Australia/Lord_Howe">
-				<exemplarCity draft="unconfirmed">Lord Howe</exemplarCity>
-			</zone>
-			<zone type="America/Aruba">
-				<exemplarCity draft="unconfirmed">Aruba</exemplarCity>
-			</zone>
 			<zone type="Europe/Mariehamn">
 				<exemplarCity draft="unconfirmed">Maarianhamina</exemplarCity>
 			</zone>
-			<zone type="Asia/Baku">
-				<exemplarCity draft="unconfirmed">Baku</exemplarCity>
-			</zone>
 			<zone type="Europe/Sarajevo">
 				<exemplarCity draft="unconfirmed">Sarajewo</exemplarCity>
-			</zone>
-			<zone type="America/Barbados">
-				<exemplarCity draft="unconfirmed">Barbados</exemplarCity>
-			</zone>
-			<zone type="Asia/Dhaka">
-				<exemplarCity draft="unconfirmed">Dhaka</exemplarCity>
 			</zone>
 			<zone type="Europe/Brussels">
 				<exemplarCity draft="unconfirmed">Bruksela</exemplarCity>
 			</zone>
 			<zone type="Africa/Ouagadougou">
 				<exemplarCity draft="unconfirmed">Wagadugu</exemplarCity>
-			</zone>
-			<zone type="Europe/Sofia">
-				<exemplarCity draft="unconfirmed">Sofia</exemplarCity>
 			</zone>
 			<zone type="Asia/Bahrain">
 				<exemplarCity draft="unconfirmed">Bahrajn</exemplarCity>
@@ -2228,161 +1643,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Atlantic/Bermuda">
 				<exemplarCity draft="unconfirmed">Bermudy</exemplarCity>
 			</zone>
-			<zone type="Asia/Brunei">
-				<exemplarCity draft="unconfirmed">Brunei</exemplarCity>
-			</zone>
-			<zone type="America/La_Paz">
-				<exemplarCity draft="unconfirmed">La Paz</exemplarCity>
-			</zone>
-			<zone type="America/Kralendijk">
-				<exemplarCity draft="unconfirmed">Kralendijk</exemplarCity>
-			</zone>
-			<zone type="America/Eirunepe">
-				<exemplarCity draft="unconfirmed">Eirunepe</exemplarCity>
-			</zone>
-			<zone type="America/Rio_Branco">
-				<exemplarCity draft="unconfirmed">Rio Branco</exemplarCity>
-			</zone>
-			<zone type="America/Porto_Velho">
-				<exemplarCity draft="unconfirmed">Porto Velho</exemplarCity>
-			</zone>
-			<zone type="America/Boa_Vista">
-				<exemplarCity draft="unconfirmed">Boa Vista</exemplarCity>
-			</zone>
-			<zone type="America/Manaus">
-				<exemplarCity draft="unconfirmed">Manaus</exemplarCity>
-			</zone>
 			<zone type="America/Cuiaba">
 				<exemplarCity draft="unconfirmed">Cuiabá</exemplarCity>
-			</zone>
-			<zone type="America/Santarem">
-				<exemplarCity draft="unconfirmed">Santarem</exemplarCity>
-			</zone>
-			<zone type="America/Campo_Grande">
-				<exemplarCity draft="unconfirmed">Campo Grande</exemplarCity>
 			</zone>
 			<zone type="America/Belem">
 				<exemplarCity draft="unconfirmed">Belém</exemplarCity>
 			</zone>
-			<zone type="America/Araguaina">
-				<exemplarCity draft="unconfirmed">Araguaina</exemplarCity>
-			</zone>
-			<zone type="America/Sao_Paulo">
-				<exemplarCity draft="unconfirmed">Sao Paulo</exemplarCity>
-			</zone>
 			<zone type="America/Bahia">
 				<exemplarCity draft="unconfirmed">Salvador</exemplarCity>
-			</zone>
-			<zone type="America/Fortaleza">
-				<exemplarCity draft="unconfirmed">Fortaleza</exemplarCity>
 			</zone>
 			<zone type="America/Maceio">
 				<exemplarCity draft="unconfirmed">Maceiō</exemplarCity>
 			</zone>
-			<zone type="America/Recife">
-				<exemplarCity draft="unconfirmed">Recife</exemplarCity>
-			</zone>
-			<zone type="America/Noronha">
-				<exemplarCity draft="unconfirmed">Noronha</exemplarCity>
-			</zone>
-			<zone type="America/Nassau">
-				<exemplarCity draft="unconfirmed">Nassau</exemplarCity>
-			</zone>
-			<zone type="Asia/Thimphu">
-				<exemplarCity draft="unconfirmed">Thimphu</exemplarCity>
-			</zone>
-			<zone type="Africa/Gaborone">
-				<exemplarCity draft="unconfirmed">Gaborone</exemplarCity>
-			</zone>
 			<zone type="Europe/Minsk">
 				<exemplarCity draft="unconfirmed">Mińsk</exemplarCity>
-			</zone>
-			<zone type="America/Belize">
-				<exemplarCity draft="unconfirmed">Belize</exemplarCity>
-			</zone>
-			<zone type="America/Dawson">
-				<exemplarCity draft="unconfirmed">Dawson</exemplarCity>
-			</zone>
-			<zone type="America/Whitehorse">
-				<exemplarCity draft="unconfirmed">Whitehorse</exemplarCity>
-			</zone>
-			<zone type="America/Inuvik">
-				<exemplarCity draft="unconfirmed">Inuvik</exemplarCity>
-			</zone>
-			<zone type="America/Vancouver">
-				<exemplarCity draft="unconfirmed">Vancouver</exemplarCity>
-			</zone>
-			<zone type="America/Fort_Nelson">
-				<exemplarCity draft="unconfirmed">Fort Nelson</exemplarCity>
-			</zone>
-			<zone type="America/Dawson_Creek">
-				<exemplarCity draft="unconfirmed">Dawson Creek</exemplarCity>
-			</zone>
-			<zone type="America/Creston">
-				<exemplarCity draft="unconfirmed">Creston</exemplarCity>
-			</zone>
-			<zone type="America/Yellowknife">
-				<exemplarCity draft="unconfirmed">Yellowknife</exemplarCity>
-			</zone>
-			<zone type="America/Edmonton">
-				<exemplarCity draft="unconfirmed">Edmonton</exemplarCity>
-			</zone>
-			<zone type="America/Swift_Current">
-				<exemplarCity draft="unconfirmed">Swift Current</exemplarCity>
-			</zone>
-			<zone type="America/Cambridge_Bay">
-				<exemplarCity draft="unconfirmed">Cambridge Bay</exemplarCity>
-			</zone>
-			<zone type="America/Regina">
-				<exemplarCity draft="unconfirmed">Regina</exemplarCity>
-			</zone>
-			<zone type="America/Winnipeg">
-				<exemplarCity draft="unconfirmed">Winnipeg</exemplarCity>
-			</zone>
-			<zone type="America/Resolute">
-				<exemplarCity draft="unconfirmed">Resolute</exemplarCity>
-			</zone>
-			<zone type="America/Rainy_River">
-				<exemplarCity draft="unconfirmed">Rainy River</exemplarCity>
-			</zone>
-			<zone type="America/Rankin_Inlet">
-				<exemplarCity draft="unconfirmed">Rankin Inlet</exemplarCity>
-			</zone>
-			<zone type="America/Coral_Harbour">
-				<exemplarCity draft="unconfirmed">Atikokan</exemplarCity>
-			</zone>
-			<zone type="America/Thunder_Bay">
-				<exemplarCity draft="unconfirmed">Thunder Bay</exemplarCity>
-			</zone>
-			<zone type="America/Nipigon">
-				<exemplarCity draft="unconfirmed">Nipigon</exemplarCity>
-			</zone>
-			<zone type="America/Toronto">
-				<exemplarCity draft="unconfirmed">Toronto</exemplarCity>
-			</zone>
-			<zone type="America/Iqaluit">
-				<exemplarCity draft="unconfirmed">Iqaluit</exemplarCity>
-			</zone>
-			<zone type="America/Pangnirtung">
-				<exemplarCity draft="unconfirmed">Pangnirtung</exemplarCity>
-			</zone>
-			<zone type="America/Moncton">
-				<exemplarCity draft="unconfirmed">Moncton</exemplarCity>
-			</zone>
-			<zone type="America/Halifax">
-				<exemplarCity draft="unconfirmed">Halifax</exemplarCity>
-			</zone>
-			<zone type="America/Goose_Bay">
-				<exemplarCity draft="unconfirmed">Goose Bay</exemplarCity>
-			</zone>
-			<zone type="America/Glace_Bay">
-				<exemplarCity draft="unconfirmed">Glace Bay</exemplarCity>
-			</zone>
-			<zone type="America/Blanc-Sablon">
-				<exemplarCity draft="unconfirmed">Blanc-Sablon</exemplarCity>
-			</zone>
-			<zone type="America/St_Johns">
-				<exemplarCity draft="unconfirmed">St. John’s</exemplarCity>
 			</zone>
 			<zone type="Indian/Cocos">
 				<exemplarCity draft="unconfirmed">Wyspy Kokosowe</exemplarCity>
@@ -2390,14 +1664,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Kinshasa">
 				<exemplarCity draft="unconfirmed">Kinszasa</exemplarCity>
 			</zone>
-			<zone type="Africa/Lubumbashi">
-				<exemplarCity draft="unconfirmed">Lubumbashi</exemplarCity>
-			</zone>
 			<zone type="Africa/Bangui">
 				<exemplarCity draft="unconfirmed">Bangi</exemplarCity>
-			</zone>
-			<zone type="Africa/Brazzaville">
-				<exemplarCity draft="unconfirmed">Brazzaville</exemplarCity>
 			</zone>
 			<zone type="Europe/Zurich">
 				<exemplarCity draft="unconfirmed">Zurych</exemplarCity>
@@ -2405,17 +1673,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Abidjan">
 				<exemplarCity draft="unconfirmed">Abidżan</exemplarCity>
 			</zone>
-			<zone type="Pacific/Rarotonga">
-				<exemplarCity draft="unconfirmed">Rarotonga</exemplarCity>
-			</zone>
 			<zone type="Pacific/Easter">
 				<exemplarCity draft="unconfirmed">Wyspa Wielkanocno</exemplarCity>
-			</zone>
-			<zone type="America/Punta_Arenas">
-				<exemplarCity draft="unconfirmed">Punta Arenas</exemplarCity>
-			</zone>
-			<zone type="America/Santiago">
-				<exemplarCity draft="unconfirmed">Santiago</exemplarCity>
 			</zone>
 			<zone type="Africa/Douala">
 				<exemplarCity draft="unconfirmed">Duala</exemplarCity>
@@ -2425,9 +1684,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Asia/Shanghai">
 				<exemplarCity draft="unconfirmed">Szanghaj</exemplarCity>
-			</zone>
-			<zone type="America/Bogota">
-				<exemplarCity draft="unconfirmed">Bogota</exemplarCity>
 			</zone>
 			<zone type="America/Costa_Rica">
 				<exemplarCity draft="unconfirmed">Kostaryka</exemplarCity>
@@ -2447,17 +1703,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Nicosia">
 				<exemplarCity draft="unconfirmed">Nikozja</exemplarCity>
 			</zone>
-			<zone type="Asia/Famagusta">
-				<exemplarCity draft="unconfirmed">Famagusta</exemplarCity>
-			</zone>
 			<zone type="Europe/Prague">
 				<exemplarCity draft="unconfirmed">Praga</exemplarCity>
 			</zone>
 			<zone type="Europe/Busingen">
 				<exemplarCity draft="unconfirmed">Büsingen am Hochrhein</exemplarCity>
-			</zone>
-			<zone type="Europe/Berlin">
-				<exemplarCity draft="unconfirmed">Berlin</exemplarCity>
 			</zone>
 			<zone type="Africa/Djibouti">
 				<exemplarCity draft="unconfirmed">Dżibuti</exemplarCity>
@@ -2468,17 +1718,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Dominica">
 				<exemplarCity draft="unconfirmed">Dōminika</exemplarCity>
 			</zone>
-			<zone type="America/Santo_Domingo">
-				<exemplarCity draft="unconfirmed">Santo Domingo</exemplarCity>
-			</zone>
 			<zone type="Africa/Algiers">
 				<exemplarCity draft="unconfirmed">Alger</exemplarCity>
-			</zone>
-			<zone type="Pacific/Galapagos">
-				<exemplarCity draft="unconfirmed">Galapagos</exemplarCity>
-			</zone>
-			<zone type="America/Guayaquil">
-				<exemplarCity draft="unconfirmed">Guayaquil</exemplarCity>
 			</zone>
 			<zone type="Europe/Tallinn">
 				<exemplarCity draft="unconfirmed">Tallin</exemplarCity>
@@ -2489,14 +1730,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/El_Aaiun">
 				<exemplarCity draft="unconfirmed">Al-Ujun</exemplarCity>
 			</zone>
-			<zone type="Africa/Asmera">
-				<exemplarCity draft="unconfirmed">Asmara</exemplarCity>
-			</zone>
 			<zone type="Atlantic/Canary">
 				<exemplarCity draft="unconfirmed">Wyspy Kanaryjske</exemplarCity>
-			</zone>
-			<zone type="Africa/Ceuta">
-				<exemplarCity draft="unconfirmed">Ceuta</exemplarCity>
 			</zone>
 			<zone type="Europe/Madrid">
 				<exemplarCity draft="unconfirmed">Madryt</exemplarCity>
@@ -2504,32 +1739,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Addis_Ababa">
 				<exemplarCity draft="unconfirmed">Addis Abeba</exemplarCity>
 			</zone>
-			<zone type="Europe/Helsinki">
-				<exemplarCity draft="unconfirmed">Helsinki</exemplarCity>
-			</zone>
 			<zone type="Pacific/Fiji">
 				<exemplarCity draft="unconfirmed">Fidżi</exemplarCity>
-			</zone>
-			<zone type="Atlantic/Stanley">
-				<exemplarCity draft="unconfirmed">Stanley</exemplarCity>
-			</zone>
-			<zone type="Pacific/Truk">
-				<exemplarCity draft="unconfirmed">Chuuk</exemplarCity>
-			</zone>
-			<zone type="Pacific/Ponape">
-				<exemplarCity draft="unconfirmed">Pohnpei</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kosrae">
-				<exemplarCity draft="unconfirmed">Kosrae</exemplarCity>
 			</zone>
 			<zone type="Atlantic/Faeroe">
 				<exemplarCity draft="unconfirmed">Wyspy Ôwcze</exemplarCity>
 			</zone>
 			<zone type="Europe/Paris">
 				<exemplarCity draft="unconfirmed">Paryż</exemplarCity>
-			</zone>
-			<zone type="Africa/Libreville">
-				<exemplarCity draft="unconfirmed">Libreville</exemplarCity>
 			</zone>
 			<zone type="Europe/London">
 				<long>
@@ -2540,32 +1757,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Grenada">
 				<exemplarCity draft="unconfirmed">Grynada</exemplarCity>
 			</zone>
-			<zone type="Asia/Tbilisi">
-				<exemplarCity draft="unconfirmed">Tbilisi</exemplarCity>
-			</zone>
 			<zone type="America/Cayenne">
 				<exemplarCity draft="unconfirmed">Kajynna</exemplarCity>
-			</zone>
-			<zone type="Europe/Guernsey">
-				<exemplarCity draft="unconfirmed">Guernsey</exemplarCity>
 			</zone>
 			<zone type="Africa/Accra">
 				<exemplarCity draft="unconfirmed">Akra</exemplarCity>
 			</zone>
-			<zone type="Europe/Gibraltar">
-				<exemplarCity draft="unconfirmed">Gibraltar</exemplarCity>
-			</zone>
 			<zone type="America/Thule">
 				<exemplarCity draft="unconfirmed">Qaanaaq</exemplarCity>
-			</zone>
-			<zone type="America/Godthab">
-				<exemplarCity draft="unconfirmed">Nuuk</exemplarCity>
-			</zone>
-			<zone type="America/Scoresbysund">
-				<exemplarCity draft="unconfirmed">Ittoqqortoormiit</exemplarCity>
-			</zone>
-			<zone type="America/Danmarkshavn">
-				<exemplarCity draft="unconfirmed">Danmarkshavn</exemplarCity>
 			</zone>
 			<zone type="Africa/Banjul">
 				<exemplarCity draft="unconfirmed">Bandżul</exemplarCity>
@@ -2576,9 +1775,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guadeloupe">
 				<exemplarCity draft="unconfirmed">Gwadelupa</exemplarCity>
 			</zone>
-			<zone type="Africa/Malabo">
-				<exemplarCity draft="unconfirmed">Malabo</exemplarCity>
-			</zone>
 			<zone type="Europe/Athens">
 				<exemplarCity draft="unconfirmed">Atyny</exemplarCity>
 			</zone>
@@ -2588,26 +1784,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Guatemala">
 				<exemplarCity draft="unconfirmed">Gwatymala</exemplarCity>
 			</zone>
-			<zone type="Pacific/Guam">
-				<exemplarCity draft="unconfirmed">Guam</exemplarCity>
-			</zone>
-			<zone type="Africa/Bissau">
-				<exemplarCity draft="unconfirmed">Bissau</exemplarCity>
-			</zone>
 			<zone type="America/Guyana">
 				<exemplarCity draft="unconfirmed">Gujana</exemplarCity>
 			</zone>
 			<zone type="Asia/Hong_Kong">
 				<exemplarCity draft="unconfirmed">Hōngkōng</exemplarCity>
 			</zone>
-			<zone type="America/Tegucigalpa">
-				<exemplarCity draft="unconfirmed">Tegucigalpa</exemplarCity>
-			</zone>
 			<zone type="Europe/Zagreb">
 				<exemplarCity draft="unconfirmed">Zagrzeb</exemplarCity>
-			</zone>
-			<zone type="America/Port-au-Prince">
-				<exemplarCity draft="unconfirmed">Port-au-Prince</exemplarCity>
 			</zone>
 			<zone type="Europe/Budapest">
 				<exemplarCity draft="unconfirmed">Budapeszt</exemplarCity>
@@ -2615,20 +1799,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Jakarta">
 				<exemplarCity draft="unconfirmed">Dżakarta</exemplarCity>
 			</zone>
-			<zone type="Asia/Pontianak">
-				<exemplarCity draft="unconfirmed">Pontianak</exemplarCity>
-			</zone>
-			<zone type="Asia/Makassar">
-				<exemplarCity draft="unconfirmed">Makassar</exemplarCity>
-			</zone>
-			<zone type="Asia/Jayapura">
-				<exemplarCity draft="unconfirmed">Jayapura</exemplarCity>
-			</zone>
 			<zone type="Europe/Dublin">
 				<long>
 					<daylight draft="unconfirmed">Irlandyjo (latowy czas)</daylight>
 				</long>
-				<exemplarCity draft="unconfirmed">Dublin</exemplarCity>
 			</zone>
 			<zone type="Asia/Jerusalem">
 				<exemplarCity draft="unconfirmed">Jerozolima</exemplarCity>
@@ -2648,41 +1822,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Tehran">
 				<exemplarCity draft="unconfirmed">Teheran</exemplarCity>
 			</zone>
-			<zone type="Atlantic/Reykjavik">
-				<exemplarCity draft="unconfirmed">Reykjavik</exemplarCity>
-			</zone>
 			<zone type="Europe/Rome">
 				<exemplarCity draft="unconfirmed">Rzym</exemplarCity>
-			</zone>
-			<zone type="Europe/Jersey">
-				<exemplarCity draft="unconfirmed">Jersey</exemplarCity>
 			</zone>
 			<zone type="America/Jamaica">
 				<exemplarCity draft="unconfirmed">Jamajka</exemplarCity>
 			</zone>
-			<zone type="Asia/Amman">
-				<exemplarCity draft="unconfirmed">Amman</exemplarCity>
-			</zone>
 			<zone type="Asia/Tokyo">
 				<exemplarCity draft="unconfirmed">Tokio</exemplarCity>
-			</zone>
-			<zone type="Africa/Nairobi">
-				<exemplarCity draft="unconfirmed">Nairobi</exemplarCity>
 			</zone>
 			<zone type="Asia/Bishkek">
 				<exemplarCity draft="unconfirmed">Biszkek</exemplarCity>
 			</zone>
-			<zone type="Asia/Phnom_Penh">
-				<exemplarCity draft="unconfirmed">Phnom Penh</exemplarCity>
-			</zone>
 			<zone type="Pacific/Enderbury">
 				<exemplarCity draft="unconfirmed">Enderbury</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kiritimati">
-				<exemplarCity draft="unconfirmed">Kiritimati</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tarawa">
-				<exemplarCity draft="unconfirmed">Tarawa</exemplarCity>
 			</zone>
 			<zone type="Indian/Comoro">
 				<exemplarCity draft="unconfirmed">Kōmory</exemplarCity>
@@ -2708,9 +1861,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Oral">
 				<exemplarCity draft="unconfirmed">Ôral</exemplarCity>
 			</zone>
-			<zone type="Asia/Atyrau">
-				<exemplarCity draft="unconfirmed">Atyrau</exemplarCity>
-			</zone>
 			<zone type="Asia/Aqtobe">
 				<exemplarCity draft="unconfirmed">Aktiubińsk</exemplarCity>
 			</zone>
@@ -2732,17 +1882,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Lucia">
 				<exemplarCity draft="unconfirmed">Saint Lucia</exemplarCity>
 			</zone>
-			<zone type="Europe/Vaduz">
-				<exemplarCity draft="unconfirmed">Vaduz</exemplarCity>
-			</zone>
 			<zone type="Asia/Colombo">
 				<exemplarCity draft="unconfirmed">Kolōmbo</exemplarCity>
-			</zone>
-			<zone type="Africa/Monrovia">
-				<exemplarCity draft="unconfirmed">Monrovia</exemplarCity>
-			</zone>
-			<zone type="Africa/Maseru">
-				<exemplarCity draft="unconfirmed">Maseru</exemplarCity>
 			</zone>
 			<zone type="Europe/Vilnius">
 				<exemplarCity draft="unconfirmed">Wilno</exemplarCity>
@@ -2756,35 +1897,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Tripoli">
 				<exemplarCity draft="unconfirmed">Trypolis</exemplarCity>
 			</zone>
-			<zone type="Africa/Casablanca">
-				<exemplarCity draft="unconfirmed">Casablanca</exemplarCity>
-			</zone>
 			<zone type="Europe/Monaco">
 				<exemplarCity draft="unconfirmed">Mōnako</exemplarCity>
 			</zone>
 			<zone type="Europe/Chisinau">
 				<exemplarCity draft="unconfirmed">Kiszyniōw</exemplarCity>
 			</zone>
-			<zone type="Europe/Podgorica">
-				<exemplarCity draft="unconfirmed">Podgorica</exemplarCity>
-			</zone>
-			<zone type="America/Marigot">
-				<exemplarCity draft="unconfirmed">Marigot</exemplarCity>
-			</zone>
 			<zone type="Indian/Antananarivo">
 				<exemplarCity draft="unconfirmed">Antananarywa</exemplarCity>
-			</zone>
-			<zone type="Pacific/Kwajalein">
-				<exemplarCity draft="unconfirmed">Kwajalein</exemplarCity>
-			</zone>
-			<zone type="Pacific/Majuro">
-				<exemplarCity draft="unconfirmed">Majuro</exemplarCity>
-			</zone>
-			<zone type="Europe/Skopje">
-				<exemplarCity draft="unconfirmed">Skopje</exemplarCity>
-			</zone>
-			<zone type="Africa/Bamako">
-				<exemplarCity draft="unconfirmed">Bamako</exemplarCity>
 			</zone>
 			<zone type="Asia/Rangoon">
 				<exemplarCity draft="unconfirmed">Rangun</exemplarCity>
@@ -2801,9 +1921,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Macau">
 				<exemplarCity draft="unconfirmed">Makau</exemplarCity>
 			</zone>
-			<zone type="Pacific/Saipan">
-				<exemplarCity draft="unconfirmed">Saipan</exemplarCity>
-			</zone>
 			<zone type="America/Martinique">
 				<exemplarCity draft="unconfirmed">Martynika</exemplarCity>
 			</zone>
@@ -2813,56 +1930,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Montserrat">
 				<exemplarCity draft="unconfirmed">Mōntserrat</exemplarCity>
 			</zone>
-			<zone type="Europe/Malta">
-				<exemplarCity draft="unconfirmed">Malta</exemplarCity>
-			</zone>
 			<zone type="Indian/Maldives">
 				<exemplarCity draft="unconfirmed">Malediwy</exemplarCity>
-			</zone>
-			<zone type="Africa/Blantyre">
-				<exemplarCity draft="unconfirmed">Blantyre</exemplarCity>
-			</zone>
-			<zone type="America/Tijuana">
-				<exemplarCity draft="unconfirmed">Tijuana</exemplarCity>
-			</zone>
-			<zone type="America/Hermosillo">
-				<exemplarCity draft="unconfirmed">Hermosillo</exemplarCity>
-			</zone>
-			<zone type="America/Mazatlan">
-				<exemplarCity draft="unconfirmed">Mazatlan</exemplarCity>
-			</zone>
-			<zone type="America/Chihuahua">
-				<exemplarCity draft="unconfirmed">Chihuahua</exemplarCity>
 			</zone>
 			<zone type="America/Bahia_Banderas">
 				<exemplarCity draft="unconfirmed">Bahia Banderas</exemplarCity>
 			</zone>
-			<zone type="America/Ojinaga">
-				<exemplarCity draft="unconfirmed">Ojinaga</exemplarCity>
-			</zone>
-			<zone type="America/Monterrey">
-				<exemplarCity draft="unconfirmed">Monterrey</exemplarCity>
-			</zone>
 			<zone type="America/Mexico_City">
 				<exemplarCity draft="unconfirmed">Meksyk (miasto)</exemplarCity>
 			</zone>
-			<zone type="America/Matamoros">
-				<exemplarCity draft="unconfirmed">Matamoros</exemplarCity>
-			</zone>
 			<zone type="America/Merida">
 				<exemplarCity draft="unconfirmed">Merida</exemplarCity>
-			</zone>
-			<zone type="America/Cancun">
-				<exemplarCity draft="unconfirmed">Cancún</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuala_Lumpur">
-				<exemplarCity draft="unconfirmed">Kuala Lumpur</exemplarCity>
-			</zone>
-			<zone type="Asia/Kuching">
-				<exemplarCity draft="unconfirmed">Kuching</exemplarCity>
-			</zone>
-			<zone type="Africa/Maputo">
-				<exemplarCity draft="unconfirmed">Maputo</exemplarCity>
 			</zone>
 			<zone type="Africa/Windhoek">
 				<exemplarCity draft="unconfirmed">Windhuk</exemplarCity>
@@ -2870,50 +1948,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Noumea">
 				<exemplarCity draft="unconfirmed">Numea</exemplarCity>
 			</zone>
-			<zone type="Africa/Niamey">
-				<exemplarCity draft="unconfirmed">Niamey</exemplarCity>
-			</zone>
-			<zone type="Pacific/Norfolk">
-				<exemplarCity draft="unconfirmed">Norfolk</exemplarCity>
-			</zone>
-			<zone type="Africa/Lagos">
-				<exemplarCity draft="unconfirmed">Lagos</exemplarCity>
-			</zone>
-			<zone type="America/Managua">
-				<exemplarCity draft="unconfirmed">Managua</exemplarCity>
-			</zone>
-			<zone type="Europe/Amsterdam">
-				<exemplarCity draft="unconfirmed">Amsterdam</exemplarCity>
-			</zone>
 			<zone type="Europe/Oslo">
 				<exemplarCity draft="unconfirmed">Ôslo</exemplarCity>
 			</zone>
 			<zone type="Asia/Katmandu">
 				<exemplarCity draft="unconfirmed">Katmandu</exemplarCity>
 			</zone>
-			<zone type="Pacific/Nauru">
-				<exemplarCity draft="unconfirmed">Nauru</exemplarCity>
-			</zone>
-			<zone type="Pacific/Niue">
-				<exemplarCity draft="unconfirmed">Niue</exemplarCity>
-			</zone>
-			<zone type="Pacific/Chatham">
-				<exemplarCity draft="unconfirmed">Chatham</exemplarCity>
-			</zone>
-			<zone type="Pacific/Auckland">
-				<exemplarCity draft="unconfirmed">Auckland</exemplarCity>
-			</zone>
 			<zone type="Asia/Muscat">
 				<exemplarCity draft="unconfirmed">Maskat</exemplarCity>
-			</zone>
-			<zone type="America/Panama">
-				<exemplarCity draft="unconfirmed">Panama</exemplarCity>
-			</zone>
-			<zone type="America/Lima">
-				<exemplarCity draft="unconfirmed">Lima</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tahiti">
-				<exemplarCity draft="unconfirmed">Tahiti</exemplarCity>
 			</zone>
 			<zone type="Pacific/Marquesas">
 				<exemplarCity draft="unconfirmed">Markizy</exemplarCity>
@@ -2921,14 +1963,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Pacific/Gambier">
 				<exemplarCity draft="unconfirmed">Wyspy Gambiera</exemplarCity>
 			</zone>
-			<zone type="Pacific/Port_Moresby">
-				<exemplarCity draft="unconfirmed">Port Moresby</exemplarCity>
-			</zone>
 			<zone type="Pacific/Bougainville">
 				<exemplarCity draft="unconfirmed">Bougainville’owa Wyspa</exemplarCity>
-			</zone>
-			<zone type="Asia/Manila">
-				<exemplarCity draft="unconfirmed">Manila</exemplarCity>
 			</zone>
 			<zone type="Asia/Karachi">
 				<exemplarCity draft="unconfirmed">Karaczi</exemplarCity>
@@ -2936,17 +1972,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Warsaw">
 				<exemplarCity draft="unconfirmed">Warszawa</exemplarCity>
 			</zone>
-			<zone type="America/Miquelon">
-				<exemplarCity draft="unconfirmed">Miquelon</exemplarCity>
-			</zone>
-			<zone type="Pacific/Pitcairn">
-				<exemplarCity draft="unconfirmed">Pitcairn</exemplarCity>
-			</zone>
 			<zone type="America/Puerto_Rico">
 				<exemplarCity draft="unconfirmed">Portoryko</exemplarCity>
-			</zone>
-			<zone type="Asia/Gaza">
-				<exemplarCity draft="unconfirmed">Gaza</exemplarCity>
 			</zone>
 			<zone type="Asia/Hebron">
 				<exemplarCity draft="unconfirmed">Hebrōn</exemplarCity>
@@ -2959,9 +1986,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Lisbon">
 				<exemplarCity draft="unconfirmed">Lizbōna</exemplarCity>
-			</zone>
-			<zone type="Pacific/Palau">
-				<exemplarCity draft="unconfirmed">Palau</exemplarCity>
 			</zone>
 			<zone type="America/Asuncion">
 				<exemplarCity draft="unconfirmed">Asuńcion</exemplarCity>
@@ -2977,9 +2001,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Belgrade">
 				<exemplarCity draft="unconfirmed">Belgrad</exemplarCity>
-			</zone>
-			<zone type="Europe/Kaliningrad">
-				<exemplarCity draft="unconfirmed">Kaliningrad</exemplarCity>
 			</zone>
 			<zone type="Europe/Moscow">
 				<exemplarCity draft="unconfirmed">Moskwa</exemplarCity>
@@ -2998,9 +2019,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="Europe/Kirov">
 				<exemplarCity draft="unconfirmed">Kirow</exemplarCity>
-			</zone>
-			<zone type="Europe/Samara">
-				<exemplarCity draft="unconfirmed">Samara</exemplarCity>
 			</zone>
 			<zone type="Asia/Yekaterinburg">
 				<exemplarCity draft="unconfirmed">Jekaterynburg</exemplarCity>
@@ -3044,26 +2062,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Asia/Ust-Nera">
 				<exemplarCity draft="unconfirmed">Ust-Niera</exemplarCity>
 			</zone>
-			<zone type="Asia/Magadan">
-				<exemplarCity draft="unconfirmed">Magadan</exemplarCity>
-			</zone>
 			<zone type="Asia/Srednekolymsk">
 				<exemplarCity draft="unconfirmed">Sriedniekołymsk</exemplarCity>
 			</zone>
 			<zone type="Asia/Kamchatka">
 				<exemplarCity draft="unconfirmed">Kamczatka</exemplarCity>
 			</zone>
-			<zone type="Asia/Anadyr">
-				<exemplarCity draft="unconfirmed">Anadyr</exemplarCity>
-			</zone>
-			<zone type="Africa/Kigali">
-				<exemplarCity draft="unconfirmed">Kigali</exemplarCity>
-			</zone>
 			<zone type="Asia/Riyadh">
 				<exemplarCity draft="unconfirmed">Rijad</exemplarCity>
-			</zone>
-			<zone type="Pacific/Guadalcanal">
-				<exemplarCity draft="unconfirmed">Guadalcanal</exemplarCity>
 			</zone>
 			<zone type="Indian/Mahe">
 				<exemplarCity draft="unconfirmed">Mahé</exemplarCity>
@@ -3089,20 +2095,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Bratislava">
 				<exemplarCity draft="unconfirmed">Bratysława</exemplarCity>
 			</zone>
-			<zone type="Africa/Freetown">
-				<exemplarCity draft="unconfirmed">Freetown</exemplarCity>
-			</zone>
-			<zone type="Europe/San_Marino">
-				<exemplarCity draft="unconfirmed">San Marino</exemplarCity>
-			</zone>
-			<zone type="Africa/Dakar">
-				<exemplarCity draft="unconfirmed">Dakar</exemplarCity>
-			</zone>
 			<zone type="Africa/Mogadishu">
 				<exemplarCity draft="unconfirmed">Mogadiszu</exemplarCity>
-			</zone>
-			<zone type="America/Paramaribo">
-				<exemplarCity draft="unconfirmed">Paramaribo</exemplarCity>
 			</zone>
 			<zone type="Africa/Juba">
 				<exemplarCity draft="unconfirmed">Dżuba</exemplarCity>
@@ -3113,17 +2107,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/El_Salvador">
 				<exemplarCity draft="unconfirmed">Salwador</exemplarCity>
 			</zone>
-			<zone type="America/Lower_Princes">
-				<exemplarCity draft="unconfirmed">Lower Prince’s Quarter</exemplarCity>
-			</zone>
 			<zone type="Asia/Damascus">
 				<exemplarCity draft="unconfirmed">Damaszek</exemplarCity>
-			</zone>
-			<zone type="Africa/Mbabane">
-				<exemplarCity draft="unconfirmed">Mbabane</exemplarCity>
-			</zone>
-			<zone type="America/Grand_Turk">
-				<exemplarCity draft="unconfirmed">Grand Turk</exemplarCity>
 			</zone>
 			<zone type="Africa/Ndjamena">
 				<exemplarCity draft="unconfirmed">Ndżamena</exemplarCity>
@@ -3134,26 +2119,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Africa/Lome">
 				<exemplarCity draft="unconfirmed">Lomé</exemplarCity>
 			</zone>
-			<zone type="Asia/Bangkok">
-				<exemplarCity draft="unconfirmed">Bangkok</exemplarCity>
-			</zone>
 			<zone type="Asia/Dushanbe">
 				<exemplarCity draft="unconfirmed">Duszanbe</exemplarCity>
 			</zone>
-			<zone type="Pacific/Fakaofo">
-				<exemplarCity draft="unconfirmed">Fakaofo</exemplarCity>
-			</zone>
-			<zone type="Asia/Dili">
-				<exemplarCity draft="unconfirmed">Dili</exemplarCity>
-			</zone>
 			<zone type="Asia/Ashgabat">
 				<exemplarCity draft="unconfirmed">Aszchabad</exemplarCity>
-			</zone>
-			<zone type="Africa/Tunis">
-				<exemplarCity draft="unconfirmed">Tunis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Tongatapu">
-				<exemplarCity draft="unconfirmed">Tongatapu</exemplarCity>
 			</zone>
 			<zone type="Europe/Istanbul">
 				<exemplarCity draft="unconfirmed">Stambuł</exemplarCity>
@@ -3161,14 +2131,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/Port_of_Spain">
 				<exemplarCity draft="unconfirmed">Port-of-Spain</exemplarCity>
 			</zone>
-			<zone type="Pacific/Funafuti">
-				<exemplarCity draft="unconfirmed">Funafuti</exemplarCity>
-			</zone>
 			<zone type="Asia/Taipei">
 				<exemplarCity draft="unconfirmed">Tajpej</exemplarCity>
-			</zone>
-			<zone type="Africa/Dar_es_Salaam">
-				<exemplarCity draft="unconfirmed">Dar es Salaam</exemplarCity>
 			</zone>
 			<zone type="Europe/Uzhgorod">
 				<exemplarCity draft="unconfirmed">Użgorod</exemplarCity>
@@ -3182,51 +2146,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="Europe/Zaporozhye">
 				<exemplarCity draft="unconfirmed">Zaporoże</exemplarCity>
 			</zone>
-			<zone type="Africa/Kampala">
-				<exemplarCity draft="unconfirmed">Kampala</exemplarCity>
-			</zone>
-			<zone type="Pacific/Midway">
-				<exemplarCity draft="unconfirmed">Midway</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wake">
-				<exemplarCity draft="unconfirmed">Wake</exemplarCity>
-			</zone>
-			<zone type="America/Adak">
-				<exemplarCity draft="unconfirmed">Adak</exemplarCity>
-			</zone>
-			<zone type="America/Nome">
-				<exemplarCity draft="unconfirmed">Nome</exemplarCity>
-			</zone>
-			<zone type="Pacific/Johnston">
-				<exemplarCity draft="unconfirmed">Johnston</exemplarCity>
-			</zone>
-			<zone type="America/Anchorage">
-				<exemplarCity draft="unconfirmed">Anchorage</exemplarCity>
-			</zone>
-			<zone type="America/Yakutat">
-				<exemplarCity draft="unconfirmed">Yakutat</exemplarCity>
-			</zone>
-			<zone type="America/Sitka">
-				<exemplarCity draft="unconfirmed">Sitka</exemplarCity>
-			</zone>
-			<zone type="America/Juneau">
-				<exemplarCity draft="unconfirmed">Juneau</exemplarCity>
-			</zone>
-			<zone type="America/Metlakatla">
-				<exemplarCity draft="unconfirmed">Metlakatla</exemplarCity>
-			</zone>
-			<zone type="America/Los_Angeles">
-				<exemplarCity draft="unconfirmed">Los Angeles</exemplarCity>
-			</zone>
-			<zone type="America/Boise">
-				<exemplarCity draft="unconfirmed">Boise</exemplarCity>
-			</zone>
-			<zone type="America/Phoenix">
-				<exemplarCity draft="unconfirmed">Phoenix</exemplarCity>
-			</zone>
-			<zone type="America/Denver">
-				<exemplarCity draft="unconfirmed">Denver</exemplarCity>
-			</zone>
 			<zone type="America/North_Dakota/Beulah">
 				<exemplarCity draft="unconfirmed">Beulah, Pōłnocno Dakota</exemplarCity>
 			</zone>
@@ -3236,50 +2155,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/North_Dakota/Center">
 				<exemplarCity draft="unconfirmed">Center, Pōłnocno Dakota</exemplarCity>
 			</zone>
-			<zone type="America/Chicago">
-				<exemplarCity draft="unconfirmed">Chicago</exemplarCity>
-			</zone>
 			<zone type="America/Menominee">
 				<exemplarCity draft="unconfirmed">Mynominee</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vincennes">
-				<exemplarCity draft="unconfirmed">Vincennes, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Petersburg">
-				<exemplarCity draft="unconfirmed">Petersburg, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Tell_City">
-				<exemplarCity draft="unconfirmed">Tell City, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Knox">
-				<exemplarCity draft="unconfirmed">Knox, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Winamac">
-				<exemplarCity draft="unconfirmed">Winamac, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Marengo">
-				<exemplarCity draft="unconfirmed">Marengo, Indiana</exemplarCity>
-			</zone>
-			<zone type="America/Indianapolis">
-				<exemplarCity draft="unconfirmed">Indianapolis</exemplarCity>
-			</zone>
-			<zone type="America/Louisville">
-				<exemplarCity draft="unconfirmed">Louisville</exemplarCity>
-			</zone>
-			<zone type="America/Indiana/Vevay">
-				<exemplarCity draft="unconfirmed">Vevay, Indiana</exemplarCity>
 			</zone>
 			<zone type="America/Kentucky/Monticello">
 				<exemplarCity draft="unconfirmed">Monticello</exemplarCity>
 			</zone>
-			<zone type="America/Detroit">
-				<exemplarCity draft="unconfirmed">Detroit</exemplarCity>
-			</zone>
 			<zone type="America/New_York">
 				<exemplarCity draft="unconfirmed">Nowy Jork</exemplarCity>
-			</zone>
-			<zone type="America/Montevideo">
-				<exemplarCity draft="unconfirmed">Montevideo</exemplarCity>
 			</zone>
 			<zone type="Asia/Samarkand">
 				<exemplarCity draft="unconfirmed">Samarkanda</exemplarCity>
@@ -3293,41 +2176,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<zone type="America/St_Vincent">
 				<exemplarCity draft="unconfirmed">Saint Vincent</exemplarCity>
 			</zone>
-			<zone type="America/Caracas">
-				<exemplarCity draft="unconfirmed">Caracas</exemplarCity>
-			</zone>
-			<zone type="America/Tortola">
-				<exemplarCity draft="unconfirmed">Tortola</exemplarCity>
-			</zone>
 			<zone type="America/St_Thomas">
 				<exemplarCity draft="unconfirmed">Saint Thomas</exemplarCity>
-			</zone>
-			<zone type="Asia/Saigon">
-				<exemplarCity draft="unconfirmed">Ho Chi Minh</exemplarCity>
-			</zone>
-			<zone type="Pacific/Efate">
-				<exemplarCity draft="unconfirmed">Efate</exemplarCity>
-			</zone>
-			<zone type="Pacific/Wallis">
-				<exemplarCity draft="unconfirmed">Wallis</exemplarCity>
-			</zone>
-			<zone type="Pacific/Apia">
-				<exemplarCity draft="unconfirmed">Apia</exemplarCity>
 			</zone>
 			<zone type="Asia/Aden">
 				<exemplarCity draft="unconfirmed">Adyn</exemplarCity>
 			</zone>
 			<zone type="Indian/Mayotte">
 				<exemplarCity draft="unconfirmed">Majotta</exemplarCity>
-			</zone>
-			<zone type="Africa/Johannesburg">
-				<exemplarCity draft="unconfirmed">Johannesburg</exemplarCity>
-			</zone>
-			<zone type="Africa/Lusaka">
-				<exemplarCity draft="unconfirmed">Lusaka</exemplarCity>
-			</zone>
-			<zone type="Africa/Harare">
-				<exemplarCity draft="unconfirmed">Harare</exemplarCity>
 			</zone>
 			<metazone type="Afghanistan">
 				<long>
@@ -3697,7 +2553,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</metazone>
 			<metazone type="GMT">
 				<long>
-					<standard draft="unconfirmed">uniwersalny czas</standard>
+					<standard draft="contributed">uniwersalnego czasu</standard>
 				</long>
 			</metazone>
 			<metazone type="Greenland_Eastern">
@@ -4116,16 +2972,35 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<symbols numberSystem="latn">
-			<decimal draft="unconfirmed">,</decimal>
-			<group draft="unconfirmed"> </group>
+			<decimal draft="contributed">,</decimal>
+			<group draft="contributed"> </group>
 		</symbols>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
+				<currencyFormat type="standard">
+					<pattern draft="contributed">#,##0.00 ¤</pattern>
+				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">¤ #,##0.00</pattern>
-					<pattern alt="noCurrency" draft="unconfirmed">#,##0.00</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
+			<currencyFormatLength type="short">
+				<currencyFormat type="standard">
+					<pattern type="1000" count="other" draft="unconfirmed">0 tys'.' ¤</pattern>
+					<pattern type="10000" count="other" draft="unconfirmed">00 tys'.' ¤</pattern>
+					<pattern type="100000" count="other" draft="unconfirmed">000 tys'.' ¤</pattern>
+					<pattern type="1000000" count="other" draft="unconfirmed">0 mln ¤</pattern>
+					<pattern type="10000000" count="other" draft="unconfirmed">00 mln ¤</pattern>
+					<pattern type="100000000" count="other" draft="unconfirmed">000 mln ¤</pattern>
+					<pattern type="1000000000" count="other" draft="unconfirmed">0 mld ¤</pattern>
+					<pattern type="10000000000" count="other" draft="unconfirmed">00 mld ¤</pattern>
+					<pattern type="100000000000" count="other" draft="unconfirmed">000 mld ¤</pattern>
+					<pattern type="1000000000000" count="other" draft="unconfirmed">0 bln ¤</pattern>
+					<pattern type="10000000000000" count="other" draft="unconfirmed">00 bln ¤</pattern>
+					<pattern type="100000000000000" count="other" draft="unconfirmed">000 bln ¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+			<unitPattern count="other" draft="unconfirmed">{0} {1}</unitPattern>
 		</currencyFormats>
 		<currencies>
 			<currency type="PLN">
@@ -4141,9 +3016,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="long">
 			<compoundUnit type="per">
 				<compoundUnitPattern draft="unconfirmed">{0} na {1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">stało grawitacyje</displayName>
@@ -4162,7 +3034,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} radiana</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName draft="unconfirmed">stopnie</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} stopnia</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
@@ -4198,7 +3069,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern draft="unconfirmed">{0} na mila kwadratowōm</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName draft="unconfirmed">akry</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} akra</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
@@ -4214,12 +3084,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} cala kwadratowego</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na cal kwadratowy</perUnitPattern>
 			</unit>
-			<unit type="area-dunam">
-				<displayName draft="unconfirmed">dunamy</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dunama</unitPattern>
-			</unit>
 			<unit type="concentr-karat">
-				<displayName draft="unconfirmed">karaty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} karata</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
@@ -4235,20 +3100,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} czyńści na milijōn</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">procynt</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} procynt</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="unconfirmed">prōmil</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} prōmila</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName draft="unconfirmed">punkt bazowy</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} punktu bazowego</unitPattern>
-			</unit>
-			<unit type="concentr-mole">
-				<displayName draft="unconfirmed">mol</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} mola</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
 				<displayName draft="unconfirmed">litry na kilōmeter</displayName>
@@ -4303,11 +3162,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} kilobitu</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="unconfirmed">bajty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} bajta</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName draft="unconfirmed">bity</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} bitu</unitPattern>
 			</unit>
 			<unit type="duration-century">
@@ -4319,42 +3176,37 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} dekady</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName draft="unconfirmed">lata</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} roku</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na rok</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">sztwierci roku</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sztwierci roku</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0} na sztwierć roku</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
-				<displayName draft="unconfirmed">miesiōnce</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} miesiōnca</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na miesiōnc</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
-				<displayName draft="unconfirmed">tydnie</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} tydnia</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na tydziyń</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName draft="unconfirmed">dni</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} dnia</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na dziyń</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
-				<displayName draft="unconfirmed">godziny</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} godziny</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na godzina</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
-				<displayName draft="unconfirmed">minuty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} minuty</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na minuta</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName draft="unconfirmed">sekundy</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} sekundy</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na sekunda</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">milisekundy</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} milisekundy</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
@@ -4366,7 +3218,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} nanosekundy</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName draft="unconfirmed">ampry</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ampra</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
@@ -4374,11 +3225,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} miliampra</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName draft="unconfirmed">ōmy</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ōma</unitPattern>
 			</unit>
 			<unit type="electric-volt">
-				<displayName draft="unconfirmed">wolty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} wolta</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
@@ -4418,7 +3267,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} terma amerykańskigo</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="unconfirmed">fōnt-siła</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} fōnta-siły</unitPattern>
 			</unit>
 			<unit type="force-newton">
@@ -4443,14 +3291,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="graphics-em">
 				<displayName draft="unconfirmed">typograficzne ym</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} yma</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName draft="unconfirmed">piksele</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} piksela</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName draft="unconfirmed">megapiksele</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} megapiksela</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
@@ -4484,7 +3329,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} decymetra</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">cyntymetry</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} cyntymetra</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na cyntymeter</perUnitPattern>
 			</unit>
@@ -4505,7 +3349,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} pikōmetra</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="unconfirmed">mile</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mile</unitPattern>
 			</unit>
 			<unit type="length-yard">
@@ -4513,7 +3356,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} jarda</unitPattern>
 			</unit>
 			<unit type="length-foot">
-				<displayName draft="unconfirmed">stopy</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} stopy</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na stopa</perUnitPattern>
 			</unit>
@@ -4527,8 +3369,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} parseka</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="unconfirmed">lata świytlne</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} roku świytlnego</unitPattern>
+				<unitPattern count="other" draft="unconfirmed">{0} roku świetlnego</unitPattern>
 			</unit>
 			<unit type="length-astronomical-unit">
 				<displayName draft="unconfirmed">jednostki astrōnōmiczne</displayName>
@@ -4542,12 +3383,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">mila skandynawsko</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mile skandynawskij</unitPattern>
 			</unit>
-			<unit type="length-point">
-				<displayName draft="unconfirmed">punkty</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} pkt.</unitPattern>
-			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="unconfirmed">prōmiynie Słōńca</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} prōmiynia Słōńca</unitPattern>
 			</unit>
 			<unit type="light-lux">
@@ -4555,7 +3391,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} luksu</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName draft="unconfirmed">jasność Słōńca</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} jasności Słōńca</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
@@ -4585,7 +3420,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} krōtkij tōny</unitPattern>
 			</unit>
 			<unit type="mass-pound">
-				<displayName draft="unconfirmed">fōnty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} fōnta</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na fōnt</perUnitPattern>
 			</unit>
@@ -4599,19 +3433,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} uncyje trojańskij</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName draft="unconfirmed">karaty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} karata</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="unconfirmed">daltōny</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} daltōna</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="unconfirmed">masa Ziymie</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} masy Ziymie</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="unconfirmed">masa Słōńca</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} masy Słōńca</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
@@ -4627,7 +3457,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} kilowata</unitPattern>
 			</unit>
 			<unit type="power-watt">
-				<displayName draft="unconfirmed">waty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} wata</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
@@ -4757,7 +3586,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} hektolitra</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName draft="unconfirmed">litry</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} litra</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0} na liter</perUnitPattern>
 			</unit>
@@ -4800,11 +3628,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} kworty</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName draft="unconfirmed">pōłkworty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} pōłkworty</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName draft="unconfirmed">ćwierćkworty</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} ćwierćkworty</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
@@ -4819,12 +3645,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">łyżki stołowe</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} łyżki stołowyj</unitPattern>
 			</unit>
-			<unit type="volume-teaspoon">
-				<displayName draft="unconfirmed">łyżeczki</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} łyżeczki</unitPattern>
-			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="unconfirmed">baryłki</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} baryłki</unitPattern>
 			</unit>
 			<coordinateUnit>
@@ -4838,7 +3659,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="short">
 			<unit type="acceleration-g-force">
 				<displayName draft="unconfirmed">G</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} G</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
 				<displayName draft="unconfirmed">ôbr.</displayName>
@@ -4899,10 +3719,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName draft="unconfirmed">pōnkt bazowy</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
-				<displayName draft="unconfirmed">mol</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} mola</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
@@ -4941,6 +3759,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">lata</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} roku</unitPattern>
 				<perUnitPattern draft="unconfirmed">{0}/rok</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName draft="unconfirmed">sztr</displayName>
+				<unitPattern count="other" draft="unconfirmed">{0} sztr</unitPattern>
+				<perUnitPattern draft="unconfirmed">{0}/szt</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">miesiōnce</displayName>
@@ -4989,11 +3812,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName draft="unconfirmed">elektrōnowolt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName draft="unconfirmed">BTU</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} Btu</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
 				<displayName draft="unconfirmed">term USA</displayName>
@@ -5001,11 +3822,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="force-pound-force">
 				<displayName draft="unconfirmed">fōnt-siła</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} lbf</unitPattern>
 			</unit>
 			<unit type="force-newton">
 				<displayName draft="unconfirmed">niutōn</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} N</unitPattern>
 			</unit>
 			<unit type="graphics-em">
 				<displayName draft="unconfirmed">ym</displayName>
@@ -5036,7 +3855,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" draft="unconfirmed">{0} pk/c</unitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName draft="unconfirmed">metry</displayName>
+				<displayName draft="unconfirmed">m</displayName>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName draft="unconfirmed">cyntymetry</displayName>
@@ -5071,7 +3890,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName draft="unconfirmed">prōmiynie Słōńca</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName draft="unconfirmed">lks</displayName>
@@ -5079,7 +3897,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName draft="unconfirmed">jasność Słōńca</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName draft="unconfirmed">g</displayName>
@@ -5093,15 +3910,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="mass-dalton">
 				<displayName draft="unconfirmed">daltōny</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} Da</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName draft="unconfirmed">masa Ziymie</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName draft="unconfirmed">masa Słōńca</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} M☉</unitPattern>
 			</unit>
 			<unit type="power-watt">
 				<displayName draft="unconfirmed">waty</displayName>
@@ -5110,25 +3924,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">KM</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} KM</unitPattern>
 			</unit>
-			<unit type="pressure-kilopascal">
-				<displayName draft="unconfirmed">kPa</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} kPa</unitPattern>
-			</unit>
-			<unit type="pressure-megapascal">
-				<displayName draft="unconfirmed">MPa</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} MPa</unitPattern>
-			</unit>
 			<unit type="speed-knot">
 				<displayName draft="unconfirmed">w.</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} w.</unitPattern>
-			</unit>
-			<unit type="torque-pound-force-foot">
-				<displayName draft="unconfirmed">lbf⋅ft</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} lbf⋅ft</unitPattern>
-			</unit>
-			<unit type="torque-newton-meter">
-				<displayName draft="unconfirmed">N⋅m</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} N⋅m</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName draft="unconfirmed">jd³</displayName>
@@ -5217,47 +4015,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-barrel">
 				<displayName draft="unconfirmed">baryłki</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} bbl</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName draft="unconfirmed">rychtōnek</displayName>
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="per">
-				<compoundUnitPattern draft="unconfirmed">{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern draft="unconfirmed">{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<unitPattern count="other" draft="unconfirmed">{0} G</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<unitPattern count="other" draft="unconfirmed">{0}′</unitPattern>
-			</unit>
-			<unit type="angle-arc-second">
-				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
-			</unit>
-			<unit type="concentr-percent">
-				<displayName draft="unconfirmed">procynt</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}%</unitPattern>
-			</unit>
-			<unit type="consumption-liter-per-100-kilometer">
-				<displayName draft="unconfirmed">l/100 km</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} l/100 km</unitPattern>
-			</unit>
 			<unit type="duration-year">
 				<displayName draft="unconfirmed">rok</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} r.</unitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName draft="unconfirmed">miesiōnc</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} mies.</unitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName draft="unconfirmed">tydziyń</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} tyd.</unitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName draft="unconfirmed">dziyń</displayName>
@@ -5268,88 +4040,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">godzina</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0} g.</unitPattern>
 			</unit>
-			<unit type="duration-minute">
-				<displayName draft="unconfirmed">minuty</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} min</unitPattern>
-			</unit>
-			<unit type="duration-second">
-				<displayName draft="unconfirmed">sekundy</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} sek.</unitPattern>
-			</unit>
-			<unit type="duration-millisecond">
-				<displayName draft="unconfirmed">milisekundy</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} ms</unitPattern>
-			</unit>
-			<unit type="length-kilometer">
-				<displayName draft="unconfirmed">km</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} km</unitPattern>
-			</unit>
-			<unit type="length-meter">
-				<displayName draft="unconfirmed">metry</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} m</unitPattern>
-			</unit>
-			<unit type="length-centimeter">
-				<displayName draft="unconfirmed">cyntymetry</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} cm</unitPattern>
-			</unit>
-			<unit type="length-millimeter">
-				<displayName draft="unconfirmed">mm</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} mm</unitPattern>
-			</unit>
-			<unit type="length-mile">
-				<displayName draft="unconfirmed">mile</displayName>
-			</unit>
-			<unit type="length-foot">
-				<displayName draft="unconfirmed">stopy</displayName>
-			</unit>
 			<unit type="length-inch">
-				<displayName draft="unconfirmed">cale</displayName>
 				<unitPattern count="other" draft="unconfirmed">{0}″</unitPattern>
-				<perUnitPattern draft="unconfirmed">{0}/cal</perUnitPattern>
-			</unit>
-			<unit type="mass-kilogram">
-				<displayName draft="unconfirmed">kg</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} kg</unitPattern>
-			</unit>
-			<unit type="mass-gram">
-				<displayName draft="unconfirmed">g</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} g</unitPattern>
 			</unit>
 			<unit type="mass-pound">
 				<displayName draft="unconfirmed">funty</displayName>
 			</unit>
-			<unit type="power-horsepower">
-				<unitPattern count="other" draft="unconfirmed">{0} KM</unitPattern>
-			</unit>
-			<unit type="speed-kilometer-per-hour">
-				<displayName draft="unconfirmed">km/h</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} km/h</unitPattern>
-			</unit>
-			<unit type="temperature-celsius">
-				<displayName draft="unconfirmed">°C</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0}°C</unitPattern>
-			</unit>
 			<unit type="volume-liter">
 				<displayName draft="unconfirmed">liter</displayName>
-				<unitPattern count="other" draft="unconfirmed">{0} l</unitPattern>
 			</unit>
-			<coordinateUnit>
-				<displayName draft="unconfirmed">rychtōnek</displayName>
-				<coordinateUnitPattern type="east" draft="unconfirmed">{0}E</coordinateUnitPattern>
-				<coordinateUnitPattern type="north" draft="unconfirmed">{0}N</coordinateUnitPattern>
-				<coordinateUnitPattern type="south" draft="unconfirmed">{0}S</coordinateUnitPattern>
-				<coordinateUnitPattern type="west" draft="unconfirmed">{0}W</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern draft="unconfirmed">h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern draft="unconfirmed">h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern draft="unconfirmed">m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
@@ -5360,47 +4060,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="end" draft="unconfirmed">{0} abo {1}</listPatternPart>
 			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
 		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0}, abo {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
-		</listPattern>
 		<listPattern type="or-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
 			<listPatternPart type="end" draft="unconfirmed">{0}, abo {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} abo {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-narrow">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit-short">
-			<listPatternPart type="start" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle" draft="unconfirmed">{0}, {1}</listPatternPart>
-			<listPatternPart type="end" draft="unconfirmed">{0} i {1}</listPatternPart>
-			<listPatternPart type="2" draft="unconfirmed">{0} i {1}</listPatternPart>
 		</listPattern>
 	</listPatterns>
 	<posix>

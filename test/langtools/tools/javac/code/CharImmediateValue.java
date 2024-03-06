@@ -27,6 +27,7 @@
  * @summary Verify constant/immediate char values are correctly enhanced to ints when used in unary
  *          operators
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.code
  *          jdk.compiler/com.sun.tools.javac.comp
@@ -34,11 +35,6 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.tree
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  *          jdk.jdeps/com.sun.tools.javap
  * @build toolbox.JarTask toolbox.JavacTask toolbox.JavapTask toolbox.ToolBox
@@ -58,8 +54,8 @@ import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
 
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.tree.JCTree.JCIdent;
@@ -136,7 +132,7 @@ public class CharImmediateValue implements Plugin {
         }
 
         Path testClass = classes.resolve("Test.class");
-        ClassModel cf = Classfile.of().parse(testClass);
+        ClassModel cf = ClassFile.of().parse(testClass);
         CodeAttribute codeAttr = cf.methods().get(1).findAttribute(Attributes.CODE).orElseThrow();
         boolean seenCast = false;
         for (CodeElement i : codeAttr.elementList()) {

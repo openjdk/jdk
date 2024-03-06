@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2437,7 +2437,7 @@ void JvmtiExport::post_native_method_bind(Method* method, address* function_ptr)
 }
 
 // Returns a record containing inlining information for the given nmethod
-jvmtiCompiledMethodLoadInlineRecord* create_inline_record(nmethod* nm) {
+static jvmtiCompiledMethodLoadInlineRecord* create_inline_record(nmethod* nm) {
   jint numstackframes = 0;
   jvmtiCompiledMethodLoadInlineRecord* record = (jvmtiCompiledMethodLoadInlineRecord*)NEW_RESOURCE_OBJ(jvmtiCompiledMethodLoadInlineRecord);
   record->header.kind = JVMTI_CMLR_INLINE_INFO;
@@ -3136,6 +3136,13 @@ bool JvmtiSampledObjectAllocEventCollector::object_alloc_is_safe_to_sample() {
   // Really only sample allocations if this is a JavaThread and not the compiler
   // thread.
   if (!thread->is_Java_thread() || thread->is_Compiler_thread()) {
+    return false;
+  }
+
+  // If the current thread is attaching from native and its Java thread object
+  // is being allocated, things are not ready for allocation sampling.
+  JavaThread* jt = JavaThread::cast(thread);
+  if (jt->is_attaching_via_jni() && jt->threadObj() == nullptr) {
     return false;
   }
 

@@ -6,7 +6,7 @@ slot = 2
 
 library = ${nss.lib}
 
-nssArgs = "configdir='.' certPrefix='' keyPrefix='' secmod='secmod.db'"
+nssArgs = "configdir='sql:./tmpdb' certPrefix='' keyPrefix='' secmod='secmod.db'"
 
 #forceLogin = true
 

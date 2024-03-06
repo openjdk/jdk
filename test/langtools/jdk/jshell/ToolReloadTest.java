@@ -201,7 +201,7 @@ public class ToolReloadTest extends ReplToolTesting {
     }
 
     public void testEnvBadModule() {
-        test(
+        test(new String[] {"--execution", Presets.TEST_STANDARD_EXECUTION},
                 (a) -> assertVariable(a, "int", "x", "5", "5"),
                 (a) -> assertMethod(a, "int m(int z) { return z * z; }",
                         "(int)int", "m"),

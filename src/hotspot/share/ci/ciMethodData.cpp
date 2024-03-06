@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/klass.inline.hpp"
+#include "oops/methodData.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "utilities/copy.hpp"
 
@@ -42,6 +43,8 @@
 ciMethodData::ciMethodData(MethodData* md)
 : ciMetadata(md),
   _data_size(0), _extra_data_size(0), _data(nullptr),
+  _parameters_data_offset(0),
+  _exception_handlers_data_offset(0),
   // Set an initial hint. Don't use set_hint_di() because
   // first_di() may be out of bounds if data_size is 0.
   _hint_di(first_di()),
@@ -50,8 +53,7 @@ ciMethodData::ciMethodData(MethodData* md)
   // Initialize the escape information (to "don't know.");
   _eflags(0), _arg_local(0), _arg_stack(0), _arg_returned(0),
   _invocation_counter(0),
-  _orig(),
-  _parameters(nullptr) {}
+  _orig() {}
 
 // Check for entries that reference an unloaded method
 class PrepareExtraDataClosure : public CleanExtraDataClosure {
@@ -86,8 +88,18 @@ public:
       // Preparation finished iff all Methods* were already cached.
       return true;
     }
-    // Holding locks through safepoints is bad practice.
-    MutexUnlocker mu(_mdo->extra_data_lock());
+    // We are currently holding the extra_data_lock and ensuring
+    // no safepoint breaks the lock.
+    _mdo->check_extra_data_locked();
+
+    // We now want to cache some method data. This could cause a safepoint.
+    // We temporarily release the lock and allow safepoints, and revert that
+    // at the end of the scope. This is safe, since we currently do not hold
+    // any extra_method_data: finish is called only after clean_extra_data,
+    // and the outer scope that first aquired the lock should not hold any
+    // extra_method_data while cleaning is performed, as the offsets can change.
+    MutexUnlocker mu(_mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     for (int i = 0; i < _uncached_methods.length(); ++i) {
       if (has_safepointed()) {
         // The metadata in the growable array might contain stale
@@ -122,7 +134,10 @@ void ciMethodData::prepare_metadata() {
 
 void ciMethodData::load_remaining_extra_data() {
   MethodData* mdo = get_MethodData();
-  MutexLocker ml(mdo->extra_data_lock());
+
+  // Lock to read ProfileData, and ensure lock is not unintentionally broken by a safepoint
+  MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
   // Deferred metadata cleaning due to concurrent class unloading.
   prepare_metadata();
   // After metadata preparation, there is no stale metadata,
@@ -134,8 +149,16 @@ void ciMethodData::load_remaining_extra_data() {
 
   // Copy the extra data once it is prepared (i.e. cache populated, no release of extra data lock anymore)
   Copy::disjoint_words_atomic((HeapWord*) mdo->extra_data_base(),
-                              (HeapWord*)((address) _data + _data_size),
-                              (_extra_data_size - mdo->parameters_size_in_bytes()) / HeapWordSize);
+                              (HeapWord*) extra_data_base(),
+                              // copy everything from extra_data_base() up to parameters_data_base()
+                              pointer_delta(parameters_data_base(), extra_data_base(), HeapWordSize));
+
+  // skip parameter data copying. Already done in 'load_data'
+
+  // copy exception handler data
+  Copy::disjoint_words_atomic((HeapWord*) mdo->exception_handler_data_base(),
+                              (HeapWord*) exception_handler_data_base(),
+                              exception_handler_data_size() / HeapWordSize);
 
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
@@ -195,12 +218,17 @@ bool ciMethodData::load_data() {
   //  args_data_limit:  ---------------------------
   //                    |  parameter data entries |
   //                    |           ...           |
+  //  param_data_limit: ---------------------------
+  //                    | ex handler data entries |
+  //                    |           ...           |
   //  extra_data_limit: ---------------------------
   //
   // _data_size = extra_data_base - data_base
   // _extra_data_size = extra_data_limit - extra_data_base
   // total_size = _data_size + _extra_data_size
-  // args_data_limit = data_base + total_size - parameter_data_size
+  // args_data_limit = param_data_base
+  // param_data_limit = exception_handler_data_base
+  // extra_data_limit = extra_data_limit
 
 #ifndef ZERO
   // Some Zero platforms do not have expected alignment, and do not use
@@ -218,12 +246,15 @@ bool ciMethodData::load_data() {
   Copy::disjoint_words_atomic((HeapWord*) mdo->data_base(),
                               (HeapWord*) _data,
                               _data_size / HeapWordSize);
+  // Copy offsets. This is used below
+  _parameters_data_offset = mdo->parameters_type_data_di();
+  _exception_handlers_data_offset = mdo->exception_handlers_data_di();
 
   int parameters_data_size = mdo->parameters_size_in_bytes();
   if (parameters_data_size > 0) {
     // Snapshot the parameter data
-    Copy::disjoint_words_atomic((HeapWord*) mdo->args_data_limit(),
-                                (HeapWord*) ((address)_data + total_size - parameters_data_size),
+    Copy::disjoint_words_atomic((HeapWord*) mdo->parameters_data_base(),
+                                (HeapWord*) parameters_data_base(),
                                 parameters_data_size / HeapWordSize);
   }
   // Traverse the profile data, translating any oops into their
@@ -237,12 +268,12 @@ bool ciMethodData::load_data() {
     data = mdo->next_data(data);
   }
   if (mdo->parameters_type_data() != nullptr) {
-    _parameters = data_layout_at(mdo->parameters_type_data_di());
-    ciParametersTypeData* parameters = new ciParametersTypeData(_parameters);
+    DataLayout* parameters_data = data_layout_at(_parameters_data_offset);
+    ciParametersTypeData* parameters = new ciParametersTypeData(parameters_data);
     parameters->translate_from(mdo->parameters_type_data());
   }
 
-  assert((DataLayout*) ((address)_data + total_size - parameters_data_size) == args_data_limit(),
+  assert((DataLayout*) ((address)_data + total_size - parameters_data_size - exception_handler_data_size()) == args_data_limit(),
       "sanity - parameter data starts after the argument data of the single ArgInfoData entry");
   load_remaining_extra_data();
 
@@ -367,14 +398,22 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
   return next;
 }
 
-DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+DataLayout* ciMethodData::next_data_layout_helper(DataLayout* current, bool extra) {
   int current_index = dp_to_di((address)current);
   int next_index = current_index + current->size_in_bytes();
-  if (out_of_bounds(next_index)) {
+  if (extra ? out_of_bounds_extra(next_index) : out_of_bounds(next_index)) {
     return nullptr;
   }
   DataLayout* next = data_layout_at(next_index);
   return next;
+}
+
+DataLayout* ciMethodData::next_data_layout(DataLayout* current) {
+  return next_data_layout_helper(current, false);
+}
+
+DataLayout* ciMethodData::next_extra_data_layout(DataLayout* current) {
+  return next_data_layout_helper(current, true);
 }
 
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
@@ -436,6 +475,20 @@ ciProfileData* ciMethodData::bci_to_data(int bci, ciMethod* m) {
     return bci_to_data(bci, nullptr);
   }
   return nullptr;
+}
+
+ciBitData ciMethodData::exception_handler_bci_to_data(int bci) {
+  assert(ProfileExceptionHandlers, "not profiling");
+  assert(_data != nullptr, "must be initialized");
+  for (DataLayout* data = exception_handler_data_base(); data < exception_handler_data_limit(); data = next_extra_data_layout(data)) {
+    assert(data != nullptr, "out of bounds?");
+    if (data->bci() == bci) {
+      return ciBitData(data);
+    }
+  }
+  // called with invalid bci or wrong Method/MethodData
+  ShouldNotReachHere();
+  return ciBitData(nullptr);
 }
 
 // Conservatively decode the trap_state of a ciProfileData.
@@ -523,6 +576,9 @@ void ciMethodData::set_argument_type(int bci, int i, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -547,6 +603,9 @@ void ciMethodData::set_return_type(int bci, ciKlass* k) {
   VM_ENTRY_MARK;
   MethodData* mdo = get_MethodData();
   if (mdo != nullptr) {
+    // Lock to read ProfileData, and ensure lock is not broken by a safepoint
+    MutexLocker ml(mdo->extra_data_lock(), Mutex::_no_safepoint_check_flag);
+
     ProfileData* data = mdo->bci_to_data(bci);
     if (data != nullptr) {
       if (data->is_CallTypeData()) {
@@ -612,7 +671,7 @@ uint ciMethodData::arg_modified(int arg) const {
 }
 
 ciParametersTypeData* ciMethodData::parameters_type_data() const {
-  return _parameters != nullptr ? new ciParametersTypeData(_parameters) : nullptr;
+  return parameter_data_size() != 0 ? new ciParametersTypeData(data_layout_at(_parameters_data_offset)) : nullptr;
 }
 
 ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_in_data) {

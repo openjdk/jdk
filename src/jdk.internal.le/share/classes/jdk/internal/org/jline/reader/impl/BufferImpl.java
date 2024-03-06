@@ -8,6 +8,7 @@
  */
 package jdk.internal.org.jline.reader.impl;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 import jdk.internal.org.jline.reader.Buffer;
@@ -368,5 +369,11 @@ public class BufferImpl implements Buffer
             g0 += l;
             g1 += l;
         }
+    }
+
+    // JDK specific modification
+    @Override
+    public void zeroOut() {
+        Arrays.fill(buffer, 0);
     }
 }

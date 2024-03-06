@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
 
 // key: compiler.err.option.removed.source
 // key: compiler.warn.source.no.bootclasspath
+// key: compiler.misc.source.no.bootclasspath
 // options: -source 1.5
 
 class RemovedSourceAndTarget {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "runtime/frame.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/stubCodeGenerator.hpp"
+#include "runtime/threadWXSetters.inline.hpp"
 #include "utilities/macros.hpp"
 
 // StubRoutines provides entry points to assembly routines used by
@@ -256,6 +257,8 @@ class StubRoutines: AllStatic {
   static address _f2hf;
   static address _hf2f;
 
+  static address _method_entry_barrier;
+
   static address _cont_thaw;
   static address _cont_returnBarrier;
   static address _cont_returnBarrierExc;
@@ -451,14 +454,18 @@ class StubRoutines: AllStatic {
 
   static jshort f2hf(jfloat x) {
     assert(_f2hf != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jshort (*f2hf_stub_t)(jfloat x);
     return ((f2hf_stub_t)_f2hf)(x);
   }
   static jfloat hf2f(jshort x) {
     assert(_hf2f != nullptr, "stub is not implemented on this platform");
+    MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXExec, Thread::current());) // About to call into code cache
     typedef jfloat (*hf2f_stub_t)(jshort x);
     return ((hf2f_stub_t)_hf2f)(x);
   }
+
+  static address method_entry_barrier() { return _method_entry_barrier; }
 
   static address cont_thaw()           { return _cont_thaw; }
   static address cont_returnBarrier()  { return _cont_returnBarrier; }

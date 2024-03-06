@@ -46,7 +46,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Stream;
 
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.misc.CarrierThreadLocal;
 import jdk.internal.module.ServicesCatalog;
 import jdk.internal.reflect.ConstantPool;
@@ -65,6 +64,11 @@ public interface JavaLangAccess {
      * and parameter types.
      */
     List<Method> getDeclaredPublicMethods(Class<?> klass, String name, Class<?>... parameterTypes);
+
+    /**
+     * Return most specific method that matches name and parameterTypes.
+     */
+    Method findMethod(Class<?> klass, boolean publicOnly, String name, Class<?>... parameterTypes);
 
     /**
      * Return the constant pool for a class.
@@ -420,19 +424,16 @@ public interface JavaLangAccess {
    /**
     * Get the coder for the supplied character.
     */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringConcatCoder(char value);
 
    /**
     * Update lengthCoder for StringBuilder.
     */
-   @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
    long stringBuilderConcatMix(long lengthCoder, StringBuilder sb);
 
     /**
      * Prepend StringBuilder content.
-     */
-    @PreviewFeature(feature=PreviewFeature.Feature.STRING_TEMPLATES)
+    */
    long stringBuilderConcatPrepend(long lengthCoder, byte[] buf, StringBuilder sb);
 
     /**

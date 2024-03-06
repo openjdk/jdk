@@ -44,7 +44,7 @@
 // a JAR file.
 InstanceKlass* UnregisteredClasses::load_class(Symbol* name, const char* path, TRAPS) {
   assert(name != nullptr, "invariant");
-  assert(DumpSharedSpaces, "this function is only used with -Xshare:dump");
+  assert(CDSConfig::is_dumping_static_archive(), "this function is only used with -Xshare:dump");
 
   PerfClassTraceTime vmtimer(ClassLoader::perf_app_classload_time(),
                              THREAD->get_thread_stat()->perf_timers_addr(),

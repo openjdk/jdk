@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2021, DataDog. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, DataDog. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,4 +80,9 @@ public final class ContainerConfigurationEvent extends AbstractPeriodicEvent {
     @Description("Total memory of the host running the container")
     @DataAmount
     public long hostTotalMemory;
+
+    @Label("Container Host Total Swap Memory")
+    @Description("Total swap memory of the host running the container")
+    @DataAmount
+    public long hostTotalSwapMemory;
 }

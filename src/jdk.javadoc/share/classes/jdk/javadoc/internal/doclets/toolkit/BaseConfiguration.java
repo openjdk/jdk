@@ -73,7 +73,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.Pair;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberCache;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.DocLint;
-import jdk.javadoc.internal.doclint.Env;
+import jdk.javadoc.internal.tool.AccessLevel;
 
 /**
  * Configure the output based on the options. Doclets should subclass
@@ -654,10 +654,10 @@ public abstract class BaseConfiguration {
 
     private boolean isDocLintGroupEnabled(jdk.javadoc.internal.doclint.Messages.Group group) {
         // Use AccessKind.PUBLIC as a stand-in, since it is not common to
-        // set DocLint options per access kind (as is common with javac.)
-        // A more sophisticated solution might be to derive the access kind from the
+        // set DocLint options per access level (as is common with javac.)
+        // A more sophisticated solution might be to derive the access level from the
         // element owning the comment, and its enclosing elements.
-        return doclint != null && doclint.isGroupEnabled(group, Env.AccessKind.PUBLIC);
+        return doclint != null && doclint.isGroupEnabled(group, AccessLevel.PUBLIC);
     }
     //</editor-fold>
 }

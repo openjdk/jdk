@@ -21,9 +21,9 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.impl.*;
 
 import java.util.Arrays;
@@ -70,7 +70,7 @@ public class AnnotationDefaultVerifier {
 
     private abstract class TestElementValue {
         public void testLength(TestResult testCase, AnnotationDefaultAttribute attr) {
-            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassfileImpl) Classfile.of());
+            BufWriter buf = new BufWriterImpl(ConstantPoolBuilder.of(), (ClassFileImpl) ClassFile.of());
             attr.defaultValue().writeTo(buf);
             testCase.checkEquals(((BoundAttribute<?>)attr).payloadLen(), buf.size(),
                     "attribute_length");

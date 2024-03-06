@@ -68,11 +68,9 @@ VM_G1TryInitiateConcMark::VM_G1TryInitiateConcMark(uint gc_count_before,
 bool VM_G1TryInitiateConcMark::doit_prologue() {
   bool result = VM_GC_Operation::doit_prologue();
   // The prologue can fail for a couple of reasons. The first is that another GC
-  // got scheduled and prevented the scheduling of the concurrent start GC. The
-  // second is that the GC locker may be active and the heap can't be expanded.
-  // In both cases we want to retry the GC so that the concurrent start pause is
-  // actually scheduled. In the second case, however, we should stall until
-  // until the GC locker is no longer active and then retry the concurrent start GC.
+  // got scheduled and prevented the scheduling of the concurrent start GC.
+  // In this case we want to retry the GC so that the concurrent start pause is
+  // actually scheduled.
   if (!result) _transient_failure = true;
   return result;
 }
@@ -103,16 +101,9 @@ void VM_G1TryInitiateConcMark::doit() {
     // request will be remembered for a later partial collection, even though
     // we've rejected this request.
     _whitebox_attached = true;
-  } else if (!g1h->do_collection_pause_at_safepoint()) {
-    // Failure to perform the collection at all occurs because GCLocker is
-    // active, and we have the bad luck to be the collection request that
-    // makes a later _gc_locker collection needed.  (Else we would have hit
-    // the GCLocker check in the prologue.)
-    _transient_failure = true;
-  } else if (g1h->should_upgrade_to_full_gc()) {
-    _gc_succeeded = g1h->upgrade_to_full_collection();
   } else {
-    _gc_succeeded = true;
+    _gc_succeeded = g1h->do_collection_pause_at_safepoint();
+    assert(_gc_succeeded, "No reason to fail");
   }
 }
 
@@ -125,37 +116,20 @@ VM_G1CollectForAllocation::VM_G1CollectForAllocation(size_t         word_size,
 void VM_G1CollectForAllocation::doit() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  if (_word_size > 0) {
-    // An allocation has been requested. So, try to do that first.
-    // During the execution of this VM operation, there may have been a concurrent active
-    // GCLocker, potentially leading to expansion of the Eden space by other mutators.
-    // If the Eden space were expanded, this allocation request might succeed without
-    // the need for triggering a garbage collection.
-    _result = g1h->attempt_allocation_at_safepoint(_word_size,
-                                                   false /* expect_null_cur_alloc_region */);
-    if (_result != nullptr) {
-      // If we can successfully allocate before we actually do the
-      // pause then we will consider this pause successful.
-      _gc_succeeded = true;
-      return;
-    }
-  }
-
   GCCauseSetter x(g1h, _gc_cause);
   // Try a partial collection of some kind.
   _gc_succeeded = g1h->do_collection_pause_at_safepoint();
+  assert(_gc_succeeded, "no reason to fail");
 
-  if (_gc_succeeded) {
-    if (_word_size > 0) {
-      // An allocation had been requested. Do it, eventually trying a stronger
-      // kind of GC.
-      _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
-    } else if (g1h->should_upgrade_to_full_gc()) {
-      // There has been a request to perform a GC to free some space. We have no
-      // information on how much memory has been asked for. In case there are
-      // absolutely no regions left to allocate into, do a full compaction.
-      _gc_succeeded = g1h->upgrade_to_full_collection();
-    }
+  if (_word_size > 0) {
+    // An allocation had been requested. Do it, eventually trying a stronger
+    // kind of GC.
+    _result = g1h->satisfy_failed_allocation(_word_size, &_gc_succeeded);
+  } else if (g1h->should_upgrade_to_full_gc()) {
+    // There has been a request to perform a GC to free some space. We have no
+    // information on how much memory has been asked for. In case there are
+    // absolutely no regions left to allocate into, do a full compaction.
+    _gc_succeeded = g1h->upgrade_to_full_collection();
   }
 }
 

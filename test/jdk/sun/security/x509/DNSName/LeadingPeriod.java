@@ -38,8 +38,8 @@ import java.security.cert.*;
 
 public class LeadingPeriod {
 
-    private static CertPath makeCertPath(String caStr, String targetCertStr)
-        throws CertificateException {
+    private static CertPath makeCertPath(String targetCertStr,
+        PKIXParameters params) throws CertificateException {
         // generate certificate from cert strings
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
 
@@ -47,12 +47,11 @@ public class LeadingPeriod {
 
         is = new ByteArrayInputStream(targetCertStr.getBytes());
         Certificate targetCert = cf.generateCertificate(is);
-
-        is = new ByteArrayInputStream(caStr.getBytes());
-        Certificate ca = cf.generateCertificate(is);
+        // set validity date so that validation won't fail when cert expires
+        params.setDate(((X509Certificate)targetCert).getNotBefore());
 
         // generate certification path
-        List<Certificate> list = List.of(targetCert, ca);
+        List<Certificate> list = List.of(targetCert);
 
         return cf.generateCertPath(list);
     }
@@ -91,8 +90,8 @@ public class LeadingPeriod {
         String caWithoutLeadingPeriod = Files.readString(caWithoutLeadingPeriodPath);
 
         PKIXParameters paramsForCAWithoutLeadingPeriod = genParams(caWithoutLeadingPeriod);
-        CertPath pathWithoutLeadingPeriod = makeCertPath(caWithoutLeadingPeriod,
-            targetFromCAWithoutPeriod);
+        CertPath pathWithoutLeadingPeriod = makeCertPath(
+            targetFromCAWithoutPeriod, paramsForCAWithoutLeadingPeriod);
 
         validator.validate(pathWithoutLeadingPeriod, paramsForCAWithoutLeadingPeriod);
 
@@ -106,7 +105,7 @@ public class LeadingPeriod {
         String caWithLeadingPeriod = Files.readString(caWithLeadingPeriodPath);
 
         PKIXParameters paramsForCAWithLeadingPeriod = genParams(caWithLeadingPeriod);
-        CertPath pathWithLeadingPeriod = makeCertPath(caWithLeadingPeriod, targetFromCAWithPeriod);
+        CertPath pathWithLeadingPeriod = makeCertPath(targetFromCAWithPeriod, paramsForCAWithLeadingPeriod);
 
         validator.validate(pathWithLeadingPeriod, paramsForCAWithLeadingPeriod);
     }

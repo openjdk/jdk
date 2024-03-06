@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 4885375
+ * @key printer
  * @summary  Verifies if PageRanges To Field is populated based on Pageable
  *           for COMMON print dialog
  * @run main/manual PrintDlgPageable

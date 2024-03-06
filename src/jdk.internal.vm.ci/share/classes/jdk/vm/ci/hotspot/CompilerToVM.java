@@ -447,13 +447,26 @@ final class CompilerToVM {
      * to an index directly into {@code constantPool}.
      *
      * @throws IllegalArgumentException if {@code rawIndex} is out of range.
-     * @return {@code JVM_CONSTANT_FieldRef} constant pool entry index for the invokedynamic
+     * @return {@code JVM_CONSTANT_FieldRef} constant pool entry index for the instruction
      */
     int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
         return decodeFieldIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
     }
 
     private native int decodeFieldIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
+
+    /**
+     * Converts the {@code rawIndex} operand of a rewritten invokestatic/invokespecial/invokeinterface/invokevirtual instruction
+     * to an index directly into {@code constantPool}.
+     *
+     * @throws IllegalArgumentException if {@code rawIndex} is out of range.
+     * @return {@code JVM_CONSTANT_MethodRef} or {@code JVM_CONSTANT_InterfaceMethodRef} constant pool entry index for the instruction
+     */
+    int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, int rawIndex) {
+      return decodeMethodIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), rawIndex);
+  }
+
+  private native int decodeMethodIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int rawIndex);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -577,23 +590,10 @@ final class CompilerToVM {
                     int rawIndex, HotSpotResolvedJavaMethodImpl method, long methodPointer, byte opcode, int[] info);
 
     /**
-     * Converts {@code cpci} from an index into the cache for {@code constantPool} to an index
-     * directly into {@code constantPool}.
-     *
-     * The behavior of this method is undefined if {@code cpci} is an invalid constant pool cache
-     * index.
-     */
-    int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, int cpci) {
-        return constantPoolRemapInstructionOperandFromCache(constantPool, constantPool.getConstantPoolPointer(), cpci);
-    }
-
-    private native int constantPoolRemapInstructionOperandFromCache(HotSpotConstantPool constantPool, long constantPoolPointer, int cpci);
-
-    /**
      * Gets the appendix object (if any) associated with the entry identified by {@code which}.
      *
      * @param which if negative, is treated as an encoded indy index for INVOKEDYNAMIC;
-     *              Otherwise, it's treated as a constant pool cache index (returned by HotSpotConstantPool::rawIndexToConstantPoolCacheIndex)
+     *              Otherwise, it's treated as a constant pool cache index
      *              for INVOKE{VIRTUAL,SPECIAL,STATIC,INTERFACE}.
      */
     HotSpotObjectConstantImpl lookupAppendixInPool(HotSpotConstantPool constantPool, int which) {

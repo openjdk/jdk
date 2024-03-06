@@ -21,7 +21,7 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
+import java.lang.classfile.*;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -163,7 +163,7 @@ public class Driver {
     private ClassModel compileAndReturn(String fullFile, String testClass, String... extraParams) throws Exception {
         File source = writeTestFile(fullFile, testClass);
         File clazzFile = compileTestFile(source, testClass, extraParams);
-        return Classfile.of().parse(clazzFile.toPath());
+        return ClassFile.of().parse(clazzFile.toPath());
     }
 
     protected File writeTestFile(String fullFile, String testClass) throws IOException {

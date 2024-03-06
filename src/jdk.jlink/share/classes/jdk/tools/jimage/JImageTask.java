@@ -39,10 +39,10 @@ import java.util.MissingResourceException;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.MethodModel;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
 
 import jdk.internal.jimage.BasicImageReader;
 import jdk.internal.jimage.ImageHeader;
@@ -368,7 +368,7 @@ class JImageTask {
         if (name.endsWith(".class") && !name.endsWith("module-info.class")) {
             try {
                 byte[] bytes = reader.getResource(location);
-                Classfile.of().parse(bytes).forEachElement(cle -> {
+                ClassFile.of().parse(bytes).forEachElement(cle -> {
                     if (cle instanceof MethodModel mm) mm.forEachElement(me -> {
                         if (me instanceof CodeModel com) com.forEachElement(coe -> {
                             //do nothing here, just visit each model element

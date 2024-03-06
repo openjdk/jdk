@@ -82,7 +82,7 @@ public final class StringSupport {
 
     private static void writeShort(MemorySegment segment, long offset, Charset charset, String string) {
         int bytes = copyBytes(string, segment, charset, offset);
-        segment.set(JAVA_SHORT, offset + bytes, (short)0);
+        segment.set(JAVA_SHORT_UNALIGNED, offset + bytes, (short)0);
     }
 
     private static String readInt(MemorySegment segment, long offset, Charset charset) {
@@ -94,7 +94,7 @@ public final class StringSupport {
 
     private static void writeInt(MemorySegment segment, long offset, Charset charset, String string) {
         int bytes = copyBytes(string, segment, charset, offset);
-        segment.set(JAVA_INT, offset + bytes, 0);
+        segment.set(JAVA_INT_UNALIGNED, offset + bytes, 0);
     }
 
     /**
@@ -222,7 +222,7 @@ public final class StringSupport {
 
         int offset = 0;
         for (; offset < headCount; offset += Short.BYTES) {
-            short curr = segment.get(JAVA_SHORT, start + offset);
+            short curr = segment.get(JAVA_SHORT_UNALIGNED, start + offset);
             if (curr == 0) {
                 return offset;
             }

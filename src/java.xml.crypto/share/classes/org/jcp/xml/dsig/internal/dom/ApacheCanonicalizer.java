@@ -28,11 +28,16 @@ package org.jcp.xml.dsig.internal.dom;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.spec.AlgorithmParameterSpec;
 import java.util.Set;
 
-import javax.xml.crypto.*;
+import javax.xml.crypto.Data;
+import javax.xml.crypto.MarshalException;
+import javax.xml.crypto.NodeSetData;
+import javax.xml.crypto.OctetStreamData;
+import javax.xml.crypto.XMLCryptoContext;
+import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMCryptoContext;
 import javax.xml.crypto.dsig.TransformException;
 import javax.xml.crypto.dsig.TransformService;
@@ -61,11 +66,13 @@ public abstract class ApacheCanonicalizer extends TransformService {
     protected Document ownerDoc;
     protected Element transformElem;
 
+    @Override
     public final AlgorithmParameterSpec getParameterSpec()
     {
         return params;
     }
 
+    @Override
     public void init(XMLStructure parent, XMLCryptoContext context)
         throws InvalidAlgorithmParameterException
     {
@@ -84,6 +91,7 @@ public abstract class ApacheCanonicalizer extends TransformService {
         ownerDoc = DOMUtils.getOwnerDocument(transformElem);
     }
 
+    @Override
     public void marshalParams(XMLStructure parent, XMLCryptoContext context)
         throws MarshalException
     {
@@ -182,6 +190,7 @@ public abstract class ApacheCanonicalizer extends TransformService {
         return null;
     }
 
+    @Override
     public Data transform(Data data, XMLCryptoContext xc, OutputStream os)
         throws TransformException
     {
@@ -249,6 +258,7 @@ public abstract class ApacheCanonicalizer extends TransformService {
         }
     }
 
+    @Override
     public final boolean isFeatureSupported(String feature) {
         if (feature == null) {
             throw new NullPointerException();

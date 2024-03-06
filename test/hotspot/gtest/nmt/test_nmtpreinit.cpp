@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,11 +84,11 @@ public:
     os::free(os_malloc(0));              // 0-sized allocation, should be free-able
     p2 = os_realloc(os_malloc(10), 20);  // realloc, growing
     p3 = os_realloc(os_malloc(20), 10);  // realloc, shrinking
-    p4 = os_realloc(NULL, 10);           // realloc with NULL pointer
+    p4 = os_realloc(nullptr, 10);        // realloc with null pointer
     os_realloc(os_realloc(os_malloc(20), 0), 30);  // realloc to size 0 and back up again
     os::free(os_malloc(20));             // malloc, free
     os::free(os_realloc(os_malloc(20), 30));  // malloc, realloc, free
-    os::free(NULL);                      // free(null)
+    os::free(nullptr);                      // free(null)
     DEBUG_ONLY(NMTPreInit::verify();)
 
     // This should result in a fatal native oom error from NMT preinit with a clear error message.

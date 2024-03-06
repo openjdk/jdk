@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,6 +60,7 @@ import jdk.jfr.Timestamp;
 import jdk.jfr.ValueDescriptor;
 import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.util.ImplicitFields;
+import jdk.internal.module.Modules;
 
 public final class TypeLibrary {
     private static boolean implicitFieldTypes;
@@ -165,7 +166,6 @@ public final class TypeLibrary {
             for (ValueDescriptor v : type.getFields()) {
                 values.add(invokeAnnotation(annotation, v.getName()));
             }
-
             return PrivateAccess.getInstance().newAnnotation(type, values, annotation.annotationType().getClassLoader() == null);
         }
         return null;
@@ -177,6 +177,15 @@ public final class TypeLibrary {
             m = annotation.getClass().getMethod(methodName, new Class<?>[0]);
         } catch (NoSuchMethodException e1) {
             throw (Error) new InternalError("Could not locate method " + methodName + " in annotation " + annotation.getClass().getName());
+        }
+        // Add export from JDK proxy module
+        if (annotation.getClass().getClassLoader() == null) {
+            if (annotation.getClass().getName().contains("Proxy")) {
+                Module proxyModule = annotation.getClass().getModule();
+                String proxyPackage = annotation.getClass().getPackageName();
+                Module jfrModule = TypeLibrary.class.getModule();
+                Modules.addExports(proxyModule, proxyPackage, jfrModule);
+            }
         }
         SecuritySupport.setAccessible(m);
         try {
@@ -313,7 +322,7 @@ public final class TypeLibrary {
             ValueDescriptor vd = dynamicFieldSet.get(field.getName());
             if (vd != null) {
                 if (!vd.getTypeName().equals(field.getType().getName())) {
-                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getName() + " but got " + vd.getName());
+                    throw new InternalError("Type expected to match for field " + vd.getName() + " expected "  + field.getType().getName() + " but got " + vd.getTypeName());
                 }
                 for (AnnotationElement ae : vd.getAnnotationElements()) {
                     newTypes.add(PrivateAccess.getInstance().getType(ae));
@@ -330,7 +339,7 @@ public final class TypeLibrary {
     }
 
     // By convention all events have these fields.
-    public synchronized static void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
+    public static synchronized void addImplicitFields(Type type, boolean requestable, boolean hasDuration, boolean hasThread, boolean hasStackTrace, boolean hasCutoff) {
         if (!implicitFieldTypes) {
             createAnnotationType(Timespan.class);
             createAnnotationType(Timestamp.class);

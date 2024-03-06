@@ -55,20 +55,6 @@ import jdk.internal.misc.Unsafe;
 public class AtomicLong extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 1927816293512124184L;
 
-    /**
-     * Records whether the underlying JVM supports lockless
-     * compareAndSet for longs. While the intrinsic compareAndSetLong
-     * method works in either case, some constructions should be
-     * handled at Java level to avoid locking user-visible locks.
-     */
-    static final boolean VM_SUPPORTS_LONG_CAS = VMSupportsCS8();
-
-    /**
-     * Returns whether underlying JVM supports lockless CompareAndSet
-     * for longs. Called only once and cached in VM_SUPPORTS_LONG_CAS.
-     */
-    private static native boolean VMSupportsCS8();
-
     /*
      * This class intended to be implemented using VarHandles, but there
      * are unresolved cyclic startup dependencies.

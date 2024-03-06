@@ -27,7 +27,6 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "code/scopeDesc.hpp"
@@ -513,7 +512,6 @@ void SafepointSynchronize::end() {
 
 bool SafepointSynchronize::is_cleanup_needed() {
   // Need a safepoint if some inline cache buffers is non-empty
-  if (!InlineCacheBuffer::is_empty()) return true;
   if (StringTable::needs_rehashing()) return true;
   if (SymbolTable::needs_rehashing()) return true;
   return false;
@@ -558,10 +556,6 @@ public:
       workers++;
     }
 
-    if (InlineCacheBuffer::needs_update_inline_caches()) {
-      workers++;
-    }
-
     if (_do_lazy_roots) {
       workers++;
     }
@@ -599,11 +593,6 @@ public:
       }
     }
 
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_UPDATE_INLINE_CACHES)) {
-      Tracer t("updating inline caches");
-      InlineCacheBuffer::update_inline_caches();
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
@@ -632,8 +621,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
     // Serial cleanup using VMThread.
     cleanup.work(0);
   }
-
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
 
   if (log_is_enabled(Debug, monitorinflation)) {
     // The VMThread calls do_final_audit_and_print_stats() which calls

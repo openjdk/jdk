@@ -25,8 +25,8 @@
 #ifndef SHARE_GC_G1_G1CARDTABLEENTRYCLOSURE_HPP
 #define SHARE_GC_G1_G1CARDTABLEENTRYCLOSURE_HPP
 
+#include "gc/shared/bufferNode.hpp"
 #include "gc/shared/cardTable.hpp"
-#include "gc/shared/ptrQueue.hpp"
 #include "memory/allocation.hpp"
 
 // A closure class for processing card table entries.  Note that we don't

@@ -588,6 +588,7 @@ public class GregorianCalendar extends Calendar {
      * in the default time zone with the default
      * {@link Locale.Category#FORMAT FORMAT} locale.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar() {
         this(TimeZone.getDefaultRef(), Locale.getDefault(Locale.Category.FORMAT));
         setZoneShared(true);
@@ -612,6 +613,7 @@ public class GregorianCalendar extends Calendar {
      * @param aLocale the given locale.
      * @throws NullPointerException if {@code aLocale} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(Locale aLocale) {
         this(TimeZone.getDefaultRef(), aLocale);
         setZoneShared(true);
@@ -625,6 +627,7 @@ public class GregorianCalendar extends Calendar {
      * @param aLocale the given locale.
      * @throws NullPointerException if {@code zone} or {@code aLocale} is {@code null}
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(TimeZone zone, Locale aLocale) {
         super(zone, aLocale);
         gdate = gcal.newCalendarDate(zone);
@@ -640,6 +643,7 @@ public class GregorianCalendar extends Calendar {
      * Month value is 0-based. e.g., 0 for January.
      * @param dayOfMonth the value used to set the {@code DAY_OF_MONTH} calendar field in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth) {
         this(year, month, dayOfMonth, 0, 0, 0, 0);
     }
@@ -657,6 +661,7 @@ public class GregorianCalendar extends Calendar {
      * @param minute the value used to set the {@code MINUTE} calendar field
      * in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth, int hourOfDay,
                              int minute) {
         this(year, month, dayOfMonth, hourOfDay, minute, 0, 0);
@@ -677,6 +682,7 @@ public class GregorianCalendar extends Calendar {
      * @param second the value used to set the {@code SECOND} calendar field
      * in the calendar.
      */
+    @SuppressWarnings("this-escape")
     public GregorianCalendar(int year, int month, int dayOfMonth, int hourOfDay,
                              int minute, int second) {
         this(year, month, dayOfMonth, hourOfDay, minute, second, 0);
@@ -826,7 +832,10 @@ public class GregorianCalendar extends Calendar {
         }
 
         if (year > gregorianCutoverYear) {
-            return (year%100 != 0) || (year%400 == 0); // Gregorian
+            // A multiple of 100, 200 and 300 is not divisible by 16, but 400 is.
+            // So for a year that's divisible by 4, checking that it's also divisible by 16
+            // is sufficient to determine it must be a leap year.
+            return (year & 15) == 0 || (year % 100 != 0); // Gregorian
         }
         if (year < gregorianCutoverYearJulian) {
             return true; // Julian
@@ -840,7 +849,7 @@ public class GregorianCalendar extends Calendar {
         } else {
             gregorian = year == gregorianCutoverYear;
         }
-        return gregorian ? (year%100 != 0) || (year%400 == 0) : true;
+        return !gregorian || (year & 15) == 0 || (year % 100 != 0);
     }
 
     /**

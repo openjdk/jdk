@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1YOUNGCOLLECTOR_HPP
 
 #include "gc/g1/g1EvacFailureRegions.hpp"
-#include "gc/g1/g1YoungGCEvacFailureInjector.hpp"
+#include "gc/g1/g1YoungGCAllocationFailureInjector.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/taskqueue.hpp"
 
@@ -49,7 +49,7 @@ class G1Policy;
 class G1RedirtyCardsQueueSet;
 class G1RemSet;
 class G1SurvivorRegions;
-class G1YoungGCEvacFailureInjector;
+class G1YoungGCAllocationFailureInjector;
 class STWGCTimer;
 class WorkerThreads;
 
@@ -78,7 +78,7 @@ class G1YoungCollector {
   G1SurvivorRegions* survivor_regions() const;
   ReferenceProcessor* ref_processor_stw() const;
   WorkerThreads* workers() const;
-  G1YoungGCEvacFailureInjector* evac_failure_injector() const;
+  G1YoungGCAllocationFailureInjector* allocation_failure_injector() const;
 
   GCCause::Cause _gc_cause;
 
@@ -131,8 +131,12 @@ class G1YoungCollector {
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
-  // True iff an evacuation has failed in the most-recent collection.
+  // True iff an evacuation failure of any kind occurred in the most-recent collection.
   bool evacuation_failed() const;
+  // True iff an evacuation had pinned regions in the most-recent collection.
+  bool evacuation_pinned() const;
+  // True iff an evacuation had allocation failures in the most-recent collection.
+  bool evacuation_alloc_failed() const;
 
 public:
   G1YoungCollector(GCCause::Cause gc_cause);

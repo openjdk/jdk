@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -302,6 +302,26 @@
  */
 
 /*
+ * @test id=digicerttlseccrootg5
+ * @bug 8318759
+ * @summary Interoperability tests with DigiCert TLS ECC P384 Root G5
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop digicerttlseccrootg5 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop digicerttlseccrootg5 CRL
+ */
+
+/*
+ * @test id=digicerttlsrsarootg5
+ * @bug 8318759
+ * @summary Interoperability tests with DigiCert TLS RSA4096 Root G5
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop digicerttlsrsarootg5 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop digicerttlsrsarootg5 CRL
+ */
+
+/*
  * @test id=sslrootrsaca
  * @bug 8243320
  * @summary Interoperability tests with SSL.com's RSA CA
@@ -411,6 +431,44 @@
  * @run main/othervm -Djava.security.debug=certpath CAInterop teliarootcav2 CRL
  */
 
+/*
+ * @test id=emsignrootcag1
+ * @bug 8319187
+ * @summary Interoperability tests with eMudhra Root CA G1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop emsignrootcag1 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop emsignrootcag1 CRL
+ */
+
+/*
+ * @test id=emsigneccrootcag3
+ * @bug 8319187
+ * @summary Interoperability tests with eMudhra ECC Root CA G3
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop emsigneccrootcag3 OCSP
+ * @run main/othervm -Djava.security.debug=certpath CAInterop emsigneccrootcag3 CRL
+ */
+
+/*
+ * @test id=certainlyrootr1
+ * @bug 8321408
+ * @summary Interoperability tests with Certainly Root R1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certainlyrootr1 DEFAULT
+ */
+
+/*
+ * @test id=certainlyroote1
+ * @bug 8321408
+ * @summary Interoperability tests with Certainly Root E1
+ * @library /test/lib
+ * @build jtreg.SkippedException ValidatePathWithURL CAInterop
+ * @run main/othervm -Djava.security.debug=certpath,ocsp CAInterop certainlyroote1 DEFAULT
+ */
+
 /**
  * Collection of certificate validation tests for interoperability with external CAs
  */
@@ -509,6 +567,7 @@ public class CAInterop {
                     new CATestURLs("https://actrsaroot2017.pki.microsoft.com",
                     "https://rvkrsaroot2017.pki.microsoft.com");
 
+            // Test URLs are listed at https://www.digicert.com/kb/digicert-root-certificates.htm
             case "quovadisrootca1g3" ->
                     new CATestURLs("https://quovadis-root-ca-1-g3.chain-demos.digicert.com",
                     "https://quovadis-root-ca-1-g3-revoked.chain-demos.digicert.com");
@@ -518,6 +577,12 @@ public class CAInterop {
             case "quovadisrootca3g3" ->
                     new CATestURLs("https://quovadis-root-ca-3-g3.chain-demos.digicert.com",
                     "https://quovadis-root-ca-3-g3-revoked.chain-demos.digicert.com");
+            case "digicerttlseccrootg5" ->
+                    new CATestURLs("https://digicert-tls-ecc-p384-root-g5.chain-demos.digicert.com",
+                            "https://digicert-tls-ecc-p384-root-g5-revoked.chain-demos.digicert.com");
+            case "digicerttlsrsarootg5" ->
+                    new CATestURLs("https://digicert-tls-rsa4096-root-g5.chain-demos.digicert.com",
+                            "https://digicert-tls-rsa4096-root-g5-revoked.chain-demos.digicert.com");
 
             case "sslrootrsaca" ->
                     new CATestURLs("https://test-dv-rsa.ssl.com",
@@ -558,6 +623,20 @@ public class CAInterop {
             case "teliarootcav2" ->
                     new CATestURLs("https://juolukka.cover.telia.fi:10600",
                             "https://juolukka.cover.telia.fi:10601");
+
+            case "emsignrootcag1" ->
+                    new CATestURLs("https://testovg1.emsign.com/RootOVG1.html",
+                            "https://testovg1r.emsign.com/RootOVG1MR.html");
+            case "emsigneccrootcag3" ->
+                    new CATestURLs("https://testovg3.emsign.com/RootOVG3.html",
+                            "https://testovg3r.emsign.com/RootOVG3MR.html");
+
+            case "certainlyrootr1" ->
+                    new CATestURLs("https://valid.root-r1.certainly.com",
+                            "https://revoked.root-r1.certainly.com");
+            case "certainlyroote1" ->
+                    new CATestURLs("https://valid.root-e1.certainly.com",
+                            "https://revoked.root-e1.certainly.com");
 
             default -> throw new RuntimeException("No test setup found for: " + alias);
         };

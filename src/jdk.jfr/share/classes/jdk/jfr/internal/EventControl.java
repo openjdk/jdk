@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import jdk.internal.module.Checks;
 import jdk.internal.module.Modules;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Enabled;
@@ -44,8 +45,11 @@ import jdk.jfr.SettingDefinition;
 import jdk.jfr.StackTrace;
 import jdk.jfr.Threshold;
 import jdk.jfr.events.ActiveSettingEvent;
+import jdk.jfr.events.StackFilter;
+import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.settings.EnabledSetting;
+import jdk.jfr.internal.settings.LevelSetting;
 import jdk.jfr.internal.settings.PeriodSetting;
 import jdk.jfr.internal.settings.StackTraceSetting;
 import jdk.jfr.internal.settings.ThresholdSetting;
@@ -65,6 +69,8 @@ public final class EventControl {
     private static final Type TYPE_PERIOD = TypeLibrary.createType(PeriodSetting.class);
     private static final Type TYPE_CUTOFF = TypeLibrary.createType(CutoffSetting.class);
     private static final Type TYPE_THROTTLE = TypeLibrary.createType(ThrottleSetting.class);
+    private static final long STACK_FILTER_ID = Type.getTypeId(StackFilter.class);
+    private static final Type TYPE_LEVEL = TypeLibrary.createType(LevelSetting.class);
 
     private final ArrayList<SettingControl> settingControls = new ArrayList<>();
     private final ArrayList<NamedControl> namedControls = new ArrayList<>(5);
@@ -87,8 +93,12 @@ public final class EventControl {
         if (eventType.hasThrottle()) {
             addControl(Throttle.NAME, defineThrottle(eventType));
         }
+        if (eventType.hasLevel()) {
+            addControl(Level.NAME, defineLevel(eventType));
+        }
         addControl(Enabled.NAME, defineEnabled(eventType));
 
+        addStackFilters(eventType);
         List<AnnotationElement> aes = new ArrayList<>(eventType.getAnnotationElements());
         remove(eventType, aes, Threshold.class);
         remove(eventType, aes, Period.class);
@@ -96,9 +106,82 @@ public final class EventControl {
         remove(eventType, aes, StackTrace.class);
         remove(eventType, aes, Cutoff.class);
         remove(eventType, aes, Throttle.class);
+        remove(eventType, aes, StackFilter.class);
         eventType.setAnnotations(aes);
         this.type = eventType;
         this.idName = String.valueOf(eventType.getId());
+    }
+
+    private void addStackFilters(PlatformEventType eventType) {
+        String[] filter = getStackFilter(eventType);
+        if (filter != null) {
+            int size = filter.length;
+            List<String> types = new ArrayList<>(size);
+            List<String> methods = new ArrayList<>(size);
+            for (String frame : filter) {
+                int index = frame.indexOf("::");
+                String clazz = null;
+                String method = null;
+                boolean valid = false;
+                if (index != -1) {
+                    clazz = frame.substring(0, index);
+                    method = frame.substring(index + 2);
+                    if (clazz.isEmpty()) {
+                        clazz = null;
+                        valid = isValidMethod(method);
+                    } else {
+                        valid = isValidType(clazz) && isValidMethod(method);
+                    }
+                } else {
+                    clazz = frame;
+                    valid = isValidType(frame);
+                }
+                if (valid) {
+                    if (clazz == null) {
+                        types.add(null);
+                    } else {
+                        types.add(clazz.replace(".", "/"));
+                    }
+                    // If unqualified class name equals method name, it's a constructor
+                    String className = clazz.substring(clazz.lastIndexOf(".") + 1);
+                    if (className.equals(method)) {
+                        method = "<init>";
+                    }
+                    methods.add(method);
+                } else {
+                    Logger.log(LogTag.JFR, LogLevel.WARN, "@StackFrameFilter element ignored, not a valid Java identifier.");
+                }
+            }
+            if (!types.isEmpty()) {
+                String[] typeArray = types.toArray(new String[0]);
+                String[] methodArray = methods.toArray(new String[0]);
+                long id = MetadataRepository.getInstance().registerStackFilter(typeArray, methodArray);
+                eventType.setStackFilterId(id);
+            }
+        }
+    }
+
+    private String[] getStackFilter(PlatformEventType eventType) {
+        for (var a : eventType.getAnnotationElements()) {
+            if (a.getTypeId() == STACK_FILTER_ID) {
+                return (String[])a.getValue("value");
+            }
+        }
+        return null;
+    }
+
+    private boolean isValidType(String className) {
+        if (className.length() < 1 || className.length() > 65535) {
+            return false;
+        }
+        return Checks.isClassName(className);
+    }
+
+    private boolean isValidMethod(String method) {
+        if (method.length() < 1 || method.length() > 65535) {
+            return false;
+        }
+        return Checks.isJavaIdentifier(method);
     }
 
     private boolean hasControl(String name) {
@@ -257,6 +340,14 @@ public final class EventControl {
         }
         type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_THROTTLE, Throttle.NAME, def, Collections.emptyList()));
         return new Control(new ThrottleSetting(type), def);
+    }
+
+    private static Control defineLevel(PlatformEventType type) {
+        Level level = type.getAnnotation(Level.class);
+        String[] values = level.value();
+        String def = values[0];
+        type.add(PrivateAccess.getInstance().newSettingDescriptor(TYPE_LEVEL, Level.NAME, def, Collections.emptyList()));
+        return new Control(new LevelSetting(type, values), def);
     }
 
     private static Control definePeriod(PlatformEventType type) {

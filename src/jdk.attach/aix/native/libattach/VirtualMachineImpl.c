@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2018 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -133,11 +133,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
     jboolean isCopy;
     const char* p = GetStringPlatformChars(env, path, &isCopy);
     if (p != NULL) {
-        struct stat64 sb;
+        struct stat sb;
         uid_t uid, gid;
         int res;
 
-        memset(&sb, 0, sizeof(struct stat64));
+        memset(&sb, 0, sizeof(struct stat));
 
         /*
          * Check that the path is owned by the effective uid/gid of this
@@ -146,7 +146,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
         uid = geteuid();
         gid = getegid();
 
-        res = stat64(p, &sb);
+        res = stat(p, &sb);
         if (res != 0) {
             /* save errno */
             res = errno;

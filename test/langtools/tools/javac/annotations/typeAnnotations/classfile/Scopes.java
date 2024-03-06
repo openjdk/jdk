@@ -25,19 +25,15 @@ import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test
  * @bug 6843077 8006775
  * @summary Qualified inner type annotation accessible to the class.
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
 @Scopes.UniqueInner

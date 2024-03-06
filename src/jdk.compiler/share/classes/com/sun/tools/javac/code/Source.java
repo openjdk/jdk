@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,6 +138,11 @@ public enum Source {
       * 22, tbd
       */
     JDK22("22"),
+
+    /**
+      * 23, tbd
+      */
+    JDK23("23"),
     ; // Reduce code churn when appending new constants
 
     private static final Context.Key<Source> sourceKey = new Context.Key<>();
@@ -190,6 +195,7 @@ public enum Source {
 
     public Target requiredTarget() {
         return switch(this) {
+        case JDK23  -> Target.JDK1_23;
         case JDK22  -> Target.JDK1_22;
         case JDK21  -> Target.JDK1_21;
         case JDK20  -> Target.JDK1_20;
@@ -245,9 +251,11 @@ public enum Source {
         UNCONDITIONAL_PATTERN_IN_INSTANCEOF(JDK21, Fragments.FeatureUnconditionalPatternsInInstanceof, DiagKind.PLURAL),
         RECORD_PATTERNS(JDK21, Fragments.FeatureDeconstructionPatterns, DiagKind.PLURAL),
         STRING_TEMPLATES(JDK21, Fragments.FeatureStringTemplates, DiagKind.PLURAL),
-        UNNAMED_CLASSES(JDK21, Fragments.FeatureUnnamedClasses, DiagKind.PLURAL),
+        IMPLICIT_CLASSES(JDK21, Fragments.FeatureImplicitClasses, DiagKind.PLURAL),
         WARN_ON_ILLEGAL_UTF8(MIN, JDK21),
         UNNAMED_VARIABLES(JDK22, Fragments.FeatureUnnamedVariables, DiagKind.PLURAL),
+        PRIMITIVE_PATTERNS(JDK23, Fragments.FeaturePrimitivePatterns, DiagKind.PLURAL),
+        SUPER_INIT(JDK22, Fragments.FeatureSuperInit, DiagKind.NORMAL),
         ;
 
         enum DiagKind {
@@ -332,6 +340,7 @@ public enum Source {
         case JDK20  -> RELEASE_20;
         case JDK21  -> RELEASE_21;
         case JDK22  -> RELEASE_22;
+        case JDK23  -> RELEASE_23;
         default     -> null;
         };
     }

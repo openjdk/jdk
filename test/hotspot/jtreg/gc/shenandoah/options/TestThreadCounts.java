@@ -45,7 +45,7 @@ public class TestThreadCounts {
     }
 
     private static void testWith(int conc, int par) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
                 "-Xmx128m",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+UnlockExperimentalVMOptions",
@@ -53,7 +53,6 @@ public class TestThreadCounts {
                 "-XX:ConcGCThreads=" + conc,
                 "-XX:ParallelGCThreads=" + par,
                 "-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
         if (conc == 0) {
             output.shouldContain("Shenandoah expects ConcGCThreads > 0");

@@ -47,7 +47,7 @@ public class TestHumongousAllocNearlyFullRegion {
     private static final int heapRegionSize                 = 1;   // MB
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeLimitedTestJava(
             "-XX:+UseG1GC",
             "-Xms" + heapSize + "m",
             "-Xmx" + heapSize + "m",
@@ -55,7 +55,6 @@ public class TestHumongousAllocNearlyFullRegion {
             "-Xlog:gc",
             HumongousObjectAllocator.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Pause Young (Concurrent Start) (G1 Humongous Allocation)");
         output.shouldHaveExitValue(0);
     }

@@ -278,6 +278,9 @@ public:
   virtual bool optimize_loops(PhaseIdealLoop* phase, LoopOptsMode mode, VectorSet& visited, Node_Stack& nstack, Node_List& worklist) const { return false; }
   virtual bool strip_mined_loops_expanded(LoopOptsMode mode) const { return false; }
   virtual bool is_gc_specific_loop_opts_pass(LoopOptsMode mode) const { return false; }
+  // Estimated size of the node barrier in number of C2 Ideal nodes.
+  // This is used to guide heuristics in C2, e.g. whether to unroll a loop.
+  virtual uint estimated_barrier_size(const Node* node) const { return 0; }
 
   enum CompilePhase {
     BeforeOptimize,

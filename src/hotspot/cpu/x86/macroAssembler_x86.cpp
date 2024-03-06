@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "compiler/disassembler.hpp"
 #include "crc32c.h"
@@ -1339,8 +1340,45 @@ void MacroAssembler::call(AddressLiteral entry, Register rscratch) {
 
 void MacroAssembler::ic_call(address entry, jint method_index) {
   RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
+#ifdef _LP64
+  // Needs full 64-bit immediate for later patching.
+  mov64(rax, (int64_t)Universe::non_oop_word());
+#else
   movptr(rax, (intptr_t)Universe::non_oop_word());
+#endif
   call(AddressLiteral(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  return LP64_ONLY(14) NOT_LP64(12);
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register receiver = LP64_ONLY(j_rarg0) NOT_LP64(rcx);
+  Register data = rax;
+  Register temp = LP64_ONLY(rscratch1) NOT_LP64(rbx);
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    movl(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    cmpl(temp, Address(data, CompiledICData::speculated_klass_offset()));
+  } else {
+    movptr(temp, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    cmpptr(temp, Address(data, CompiledICData::speculated_klass_offset()));
+  }
+
+  // if inline cache check fails, then jump to runtime routine
+  jump_cc(Assembler::notEqual, RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point");
+
+  return uep_offset;
 }
 
 void MacroAssembler::emit_static_call_stub() {
@@ -2562,7 +2600,17 @@ void MacroAssembler::movptr(Register dst, Address src) {
 
 // src should NEVER be a real pointer. Use AddressLiteral for true pointers
 void MacroAssembler::movptr(Register dst, intptr_t src) {
-  LP64_ONLY(mov64(dst, src)) NOT_LP64(movl(dst, src));
+#ifdef _LP64
+  if (is_uimm32(src)) {
+    movl(dst, checked_cast<uint32_t>(src));
+  } else if (is_simm32(src)) {
+    movq(dst, checked_cast<int32_t>(src));
+  } else {
+    mov64(dst, src);
+  }
+#else
+  movl(dst, src);
+#endif
 }
 
 void MacroAssembler::movptr(Address dst, Register src) {
@@ -3467,6 +3515,56 @@ void MacroAssembler::vbroadcastss(XMMRegister dst, AddressLiteral src, int vecto
   }
 }
 
+// Vector float blend
+// vblendvps(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
+void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
+  // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
+  if (blend_emulation && scratch_available && dst_available) {
+    if (compute_mask) {
+      vpsrad(scratch, mask, 32, vector_len);
+      mask = scratch;
+    }
+    if (dst == src1) {
+      vpandn(dst,     mask, src1, vector_len); // if mask == 0, src1
+      vpand (scratch, mask, src2, vector_len); // if mask == 1, src2
+    } else {
+      vpand (dst,     mask, src2, vector_len); // if mask == 1, src2
+      vpandn(scratch, mask, src1, vector_len); // if mask == 0, src1
+    }
+    vpor(dst, dst, scratch, vector_len);
+  } else {
+    Assembler::vblendvps(dst, src1, src2, mask, vector_len);
+  }
+}
+
+// vblendvpd(XMMRegister dst, XMMRegister nds, XMMRegister src, XMMRegister mask, int vector_len, bool compute_mask = true, XMMRegister scratch = xnoreg)
+void MacroAssembler::vblendvpd(XMMRegister dst, XMMRegister src1, XMMRegister src2, XMMRegister mask, int vector_len, bool compute_mask, XMMRegister scratch) {
+  // WARN: Allow dst == (src1|src2), mask == scratch
+  bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
+  bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst && (!compute_mask || scratch != mask);
+  bool dst_available = dst != mask && (dst != src1 || dst != src2);
+  if (blend_emulation && scratch_available && dst_available) {
+    if (compute_mask) {
+      vpxor(scratch, scratch, scratch, vector_len);
+      vpcmpgtq(scratch, scratch, mask, vector_len);
+      mask = scratch;
+    }
+    if (dst == src1) {
+      vpandn(dst,     mask, src1, vector_len); // if mask == 0, src
+      vpand (scratch, mask, src2, vector_len); // if mask == 1, src2
+    } else {
+      vpand (dst,     mask, src2, vector_len); // if mask == 1, src2
+      vpandn(scratch, mask, src1, vector_len); // if mask == 0, src
+    }
+    vpor(dst, dst, scratch, vector_len);
+  } else {
+    Assembler::vblendvpd(dst, src1, src2, mask, vector_len);
+  }
+}
+
 void MacroAssembler::vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
   assert(((dst->encoding() < 16 && src->encoding() < 16 && nds->encoding() < 16) || VM_Version::supports_avx512vlbw()),"XMM register should be 0-15");
   Assembler::vpcmpeqb(dst, nds, src, vector_len);
@@ -4022,8 +4120,9 @@ static void restore_xmm_register(MacroAssembler* masm, int offset, XMMRegister r
   }
 }
 
-int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers, bool save_fpu,
-                           int& gp_area_size, int& fp_area_size, int& xmm_area_size) {
+static int register_section_sizes(RegSet gp_registers, XMMRegSet xmm_registers,
+                                  bool save_fpu, int& gp_area_size,
+                                  int& fp_area_size, int& xmm_area_size) {
 
   gp_area_size = align_up(gp_registers.size() * Register::max_slots_per_register * VMRegImpl::stack_slot_size,
                          StackAlignmentInBytes);
@@ -4289,7 +4388,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -8479,15 +8578,19 @@ void MacroAssembler::crc32c_ipl_alg2_alt2(Register in_out, Register in1, Registe
 #undef BLOCK_COMMENT
 
 // Compress char[] array to byte[].
-//   ..\jdk\src\java.base\share\classes\java\lang\StringUTF16.java
+// Intrinsic for java.lang.StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+// Return the array length if every element in array can be encoded,
+// otherwise, the index of first non-latin1 (> 0xff) character.
 //   @IntrinsicCandidate
-//   private static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
+//   public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
 //     for (int i = 0; i < len; i++) {
-//       int c = src[srcOff++];
-//       if (c >>> 8 != 0) {
-//         return 0;
+//       char c = src[srcOff];
+//       if (c > 0xff) {
+//           return i;  // return index of non-latin1 char
 //       }
-//       dst[dstOff++] = (byte)c;
+//       dst[dstOff] = (byte)c;
+//       srcOff++;
+//       dstOff++;
 //     }
 //     return len;
 //   }
@@ -8495,7 +8598,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   XMMRegister tmp1Reg, XMMRegister tmp2Reg,
   XMMRegister tmp3Reg, XMMRegister tmp4Reg,
   Register tmp5, Register result, KRegister mask1, KRegister mask2) {
-  Label copy_chars_loop, return_length, return_zero, done;
+  Label copy_chars_loop, done, reset_sp, copy_tail;
 
   // rsi: src
   // rdi: dst
@@ -8510,28 +8613,28 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
   assert(len != result, "");
 
   // save length for return
-  push(len);
+  movl(result, len);
 
   if ((AVX3Threshold == 0) && (UseAVX > 2) && // AVX512
     VM_Version::supports_avx512vlbw() &&
     VM_Version::supports_bmi2()) {
 
-    Label copy_32_loop, copy_loop_tail, below_threshold;
+    Label copy_32_loop, copy_loop_tail, below_threshold, reset_for_copy_tail;
 
     // alignment
     Label post_alignment;
 
-    // if length of the string is less than 16, handle it in an old fashioned way
+    // if length of the string is less than 32, handle it the old fashioned way
     testl(len, -32);
     jcc(Assembler::zero, below_threshold);
 
     // First check whether a character is compressible ( <= 0xFF).
     // Create mask to test for Unicode chars inside zmm vector
-    movl(result, 0x00FF);
-    evpbroadcastw(tmp2Reg, result, Assembler::AVX_512bit);
+    movl(tmp5, 0x00FF);
+    evpbroadcastw(tmp2Reg, tmp5, Assembler::AVX_512bit);
 
     testl(len, -64);
-    jcc(Assembler::zero, post_alignment);
+    jccb(Assembler::zero, post_alignment);
 
     movl(tmp5, dst);
     andl(tmp5, (32 - 1));
@@ -8540,18 +8643,19 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
 
     // bail out when there is nothing to be done
     testl(tmp5, 0xFFFFFFFF);
-    jcc(Assembler::zero, post_alignment);
+    jccb(Assembler::zero, post_alignment);
 
     // ~(~0 << len), where len is the # of remaining elements to process
-    movl(result, 0xFFFFFFFF);
-    shlxl(result, result, tmp5);
-    notl(result);
-    kmovdl(mask2, result);
+    movl(len, 0xFFFFFFFF);
+    shlxl(len, len, tmp5);
+    notl(len);
+    kmovdl(mask2, len);
+    movl(len, result);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
     evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
-    jcc(Assembler::carryClear, return_zero);
+    jcc(Assembler::carryClear, copy_tail);
 
     evpmovwb(Address(dst, 0), mask2, tmp1Reg, Assembler::AVX_512bit);
 
@@ -8566,7 +8670,7 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     movl(tmp5, len);
     andl(tmp5, (32 - 1));    // tail count (in chars)
     andl(len, ~(32 - 1));    // vector count (in chars)
-    jcc(Assembler::zero, copy_loop_tail);
+    jccb(Assembler::zero, copy_loop_tail);
 
     lea(src, Address(src, len, Address::times_2));
     lea(dst, Address(dst, len, Address::times_1));
@@ -8576,55 +8680,60 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     evmovdquw(tmp1Reg, Address(src, len, Address::times_2), Assembler::AVX_512bit);
     evpcmpuw(mask1, tmp1Reg, tmp2Reg, Assembler::le, Assembler::AVX_512bit);
     kortestdl(mask1, mask1);
-    jcc(Assembler::carryClear, return_zero);
+    jccb(Assembler::carryClear, reset_for_copy_tail);
 
     // All elements in current processed chunk are valid candidates for
     // compression. Write a truncated byte elements to the memory.
     evpmovwb(Address(dst, len, Address::times_1), tmp1Reg, Assembler::AVX_512bit);
     addptr(len, 32);
-    jcc(Assembler::notZero, copy_32_loop);
+    jccb(Assembler::notZero, copy_32_loop);
 
     bind(copy_loop_tail);
     // bail out when there is nothing to be done
     testl(tmp5, 0xFFFFFFFF);
-    jcc(Assembler::zero, return_length);
+    jcc(Assembler::zero, done);
 
     movl(len, tmp5);
 
     // ~(~0 << len), where len is the # of remaining elements to process
-    movl(result, 0xFFFFFFFF);
-    shlxl(result, result, len);
-    notl(result);
+    movl(tmp5, 0xFFFFFFFF);
+    shlxl(tmp5, tmp5, len);
+    notl(tmp5);
 
-    kmovdl(mask2, result);
+    kmovdl(mask2, tmp5);
 
     evmovdquw(tmp1Reg, mask2, Address(src, 0), /*merge*/ false, Assembler::AVX_512bit);
     evpcmpw(mask1, mask2, tmp1Reg, tmp2Reg, Assembler::le, /*signed*/ false, Assembler::AVX_512bit);
     ktestd(mask1, mask2);
-    jcc(Assembler::carryClear, return_zero);
+    jcc(Assembler::carryClear, copy_tail);
 
     evpmovwb(Address(dst, 0), mask2, tmp1Reg, Assembler::AVX_512bit);
-    jmp(return_length);
+    jmp(done);
+
+    bind(reset_for_copy_tail);
+    lea(src, Address(src, tmp5, Address::times_2));
+    lea(dst, Address(dst, tmp5, Address::times_1));
+    subptr(len, tmp5);
+    jmp(copy_chars_loop);
 
     bind(below_threshold);
   }
 
   if (UseSSE42Intrinsics) {
-    Label copy_32_loop, copy_16, copy_tail;
-
-    movl(result, len);
-
-    movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vectors
+    Label copy_32_loop, copy_16, copy_tail_sse, reset_for_copy_tail;
 
     // vectored compression
-    andl(len, 0xfffffff0);    // vector count (in chars)
-    andl(result, 0x0000000f);    // tail count (in chars)
-    testl(len, len);
-    jcc(Assembler::zero, copy_16);
+    testl(len, 0xfffffff8);
+    jcc(Assembler::zero, copy_tail);
 
-    // compress 16 chars per iter
+    movl(tmp5, 0xff00ff00);   // create mask to test for Unicode chars in vectors
     movdl(tmp1Reg, tmp5);
     pshufd(tmp1Reg, tmp1Reg, 0);   // store Unicode mask in tmp1Reg
+
+    andl(len, 0xfffffff0);
+    jccb(Assembler::zero, copy_16);
+
+    // compress 16 chars per iter
     pxor(tmp4Reg, tmp4Reg);
 
     lea(src, Address(src, len, Address::times_2));
@@ -8637,59 +8746,60 @@ void MacroAssembler::char_array_compress(Register src, Register dst, Register le
     movdqu(tmp3Reg, Address(src, len, Address::times_2, 16)); // load next 8 characters
     por(tmp4Reg, tmp3Reg);
     ptest(tmp4Reg, tmp1Reg);       // check for Unicode chars in next vector
-    jcc(Assembler::notZero, return_zero);
+    jccb(Assembler::notZero, reset_for_copy_tail);
     packuswb(tmp2Reg, tmp3Reg);    // only ASCII chars; compress each to 1 byte
     movdqu(Address(dst, len, Address::times_1), tmp2Reg);
     addptr(len, 16);
-    jcc(Assembler::notZero, copy_32_loop);
+    jccb(Assembler::notZero, copy_32_loop);
 
     // compress next vector of 8 chars (if any)
     bind(copy_16);
-    movl(len, result);
-    andl(len, 0xfffffff8);    // vector count (in chars)
-    andl(result, 0x00000007);    // tail count (in chars)
-    testl(len, len);
-    jccb(Assembler::zero, copy_tail);
+    // len = 0
+    testl(result, 0x00000008);     // check if there's a block of 8 chars to compress
+    jccb(Assembler::zero, copy_tail_sse);
 
-    movdl(tmp1Reg, tmp5);
-    pshufd(tmp1Reg, tmp1Reg, 0);   // store Unicode mask in tmp1Reg
     pxor(tmp3Reg, tmp3Reg);
 
     movdqu(tmp2Reg, Address(src, 0));
     ptest(tmp2Reg, tmp1Reg);       // check for Unicode chars in vector
-    jccb(Assembler::notZero, return_zero);
+    jccb(Assembler::notZero, reset_for_copy_tail);
     packuswb(tmp2Reg, tmp3Reg);    // only LATIN1 chars; compress each to 1 byte
     movq(Address(dst, 0), tmp2Reg);
     addptr(src, 16);
     addptr(dst, 8);
+    jmpb(copy_tail_sse);
 
-    bind(copy_tail);
+    bind(reset_for_copy_tail);
+    movl(tmp5, result);
+    andl(tmp5, 0x0000000f);
+    lea(src, Address(src, tmp5, Address::times_2));
+    lea(dst, Address(dst, tmp5, Address::times_1));
+    subptr(len, tmp5);
+    jmpb(copy_chars_loop);
+
+    bind(copy_tail_sse);
     movl(len, result);
+    andl(len, 0x00000007);    // tail count (in chars)
   }
   // compress 1 char per iter
+  bind(copy_tail);
   testl(len, len);
-  jccb(Assembler::zero, return_length);
+  jccb(Assembler::zero, done);
   lea(src, Address(src, len, Address::times_2));
   lea(dst, Address(dst, len, Address::times_1));
   negptr(len);
 
   bind(copy_chars_loop);
-  load_unsigned_short(result, Address(src, len, Address::times_2));
-  testl(result, 0xff00);      // check if Unicode char
-  jccb(Assembler::notZero, return_zero);
-  movb(Address(dst, len, Address::times_1), result);  // ASCII char; compress to 1 byte
+  load_unsigned_short(tmp5, Address(src, len, Address::times_2));
+  testl(tmp5, 0xff00);      // check if Unicode char
+  jccb(Assembler::notZero, reset_sp);
+  movb(Address(dst, len, Address::times_1), tmp5);  // ASCII char; compress to 1 byte
   increment(len);
-  jcc(Assembler::notZero, copy_chars_loop);
+  jccb(Assembler::notZero, copy_chars_loop);
 
-  // if compression succeeded, return length
-  bind(return_length);
-  pop(result);
-  jmpb(done);
-
-  // if compression failed, return 0
-  bind(return_zero);
-  xorl(result, result);
-  addptr(rsp, wordSize);
+  // add len then return (len will be zero if compress succeeded, otherwise negative)
+  bind(reset_sp);
+  addl(result, len);
 
   bind(done);
 }
@@ -9801,68 +9911,116 @@ void MacroAssembler::check_stack_alignment(Register sp, const char* msg, unsigne
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object, with ZF cleared.
-// Falls through upon success with unspecified ZF.
 //
 // obj: the object to be locked
-// hdr: the (pre-loaded) header of the object, must be rax
+// reg_rax: rax
 // thread: the thread which attempts to lock obj
 // tmp: a temporary register
-void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register thread, Register tmp, Label& slow) {
-  assert(hdr == rax, "header must be in rax for cmpxchg");
-  assert_different_registers(obj, hdr, thread, tmp);
+void MacroAssembler::lightweight_lock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+  assert(reg_rax == rax, "");
+  assert_different_registers(obj, reg_rax, thread, tmp);
 
-  // First we need to check if the lock-stack has room for pushing the object reference.
-  // Note: we subtract 1 from the end-offset so that we can do a 'greater' comparison, instead
-  // of 'greaterEqual' below, which readily clears the ZF. This makes C2 code a little simpler and
-  // avoids one branch.
-  cmpl(Address(thread, JavaThread::lock_stack_top_offset()), LockStack::end_offset() - 1);
-  jcc(Assembler::greater, slow);
+  Label push;
+  const Register top = tmp;
 
-  // Now we attempt to take the fast-lock.
-  // Clear lock_mask bits (locked state).
-  andptr(hdr, ~(int32_t)markWord::lock_mask_in_place);
-  movptr(tmp, hdr);
-  // Set unlocked_value bit.
-  orptr(hdr, markWord::unlocked_value);
-  lock();
-  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+
+  // Load top.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
+  // Check if the lock-stack is full.
+  cmpl(top, LockStack::end_offset());
+  jcc(Assembler::greaterEqual, slow);
+
+  // Check for recursion.
+  cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
+  jcc(Assembler::equal, push);
+
+  // Check header for monitor (0b10).
+  testptr(reg_rax, markWord::monitor_value);
+  jcc(Assembler::notZero, slow);
+
+  // Try to lock. Transition lock bits 0b01 => 0b00
+  movptr(tmp, reg_rax);
+  andptr(tmp, ~(int32_t)markWord::unlocked_value);
+  orptr(reg_rax, markWord::unlocked_value);
+  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
   jcc(Assembler::notEqual, slow);
 
-  // If successful, push object to lock-stack.
-  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-  movptr(Address(thread, tmp), obj);
-  incrementl(tmp, oopSize);
-  movl(Address(thread, JavaThread::lock_stack_top_offset()), tmp);
+  // Restore top, CAS clobbers register.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+
+  bind(push);
+  // After successful lock, push object on lock-stack.
+  movptr(Address(thread, top), obj);
+  incrementl(top, oopSize);
+  movl(Address(thread, JavaThread::lock_stack_top_offset()), top);
 }
 
 // Implements lightweight-unlocking.
-// Branches to slow upon failure, with ZF cleared.
-// Falls through upon success, with unspecified ZF.
 //
 // obj: the object to be unlocked
-// hdr: the (pre-loaded) header of the object, must be rax
+// reg_rax: rax
+// thread: the thread
 // tmp: a temporary register
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp, Label& slow) {
-  assert(hdr == rax, "header must be in rax for cmpxchg");
-  assert_different_registers(obj, hdr, tmp);
+//
+// x86_32 Note: reg_rax and thread may alias each other due to limited register
+//              availiability.
+void MacroAssembler::lightweight_unlock(Register obj, Register reg_rax, Register thread, Register tmp, Label& slow) {
+  assert(reg_rax == rax, "");
+  assert_different_registers(obj, reg_rax, tmp);
+  LP64_ONLY(assert_different_registers(obj, reg_rax, thread, tmp);)
 
-  // Mark-word must be lock_mask now, try to swing it back to unlocked_value.
-  movptr(tmp, hdr); // The expected old value
-  orptr(tmp, markWord::unlocked_value);
-  lock();
-  cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  Label unlocked, push_and_slow;
+  const Register top = tmp;
+
+  // Check if obj is top of lock-stack.
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+  cmpptr(obj, Address(thread, top, Address::times_1, -oopSize));
   jcc(Assembler::notEqual, slow);
-  // Pop the lock object from the lock-stack.
-#ifdef _LP64
-  const Register thread = r15_thread;
-#else
-  const Register thread = rax;
-  get_thread(thread);
-#endif
+
+  // Pop lock-stack.
+  DEBUG_ONLY(movptr(Address(thread, top, Address::times_1, -oopSize), 0);)
   subl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+
+  // Check if recursive.
+  cmpptr(obj, Address(thread, top, Address::times_1, -2 * oopSize));
+  jcc(Assembler::equal, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  movptr(reg_rax, Address(obj, oopDesc::mark_offset_in_bytes()));
+  testptr(reg_rax, markWord::monitor_value);
+  jcc(Assembler::notZero, push_and_slow);
+
 #ifdef ASSERT
-  movl(tmp, Address(thread, JavaThread::lock_stack_top_offset()));
-  movptr(Address(thread, tmp), 0);
+  // Check header not unlocked (0b01).
+  Label not_unlocked;
+  testptr(reg_rax, markWord::unlocked_value);
+  jcc(Assembler::zero, not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
 #endif
+
+  // Try to unlock. Transition lock bits 0b00 => 0b01
+  movptr(tmp, reg_rax);
+  orptr(tmp, markWord::unlocked_value);
+  lock(); cmpxchgptr(tmp, Address(obj, oopDesc::mark_offset_in_bytes()));
+  jcc(Assembler::equal, unlocked);
+
+  bind(push_and_slow);
+  // Restore lock-stack and handle the unlock in runtime.
+  if (thread == reg_rax) {
+    // On x86_32 we may lose the thread.
+    get_thread(thread);
+  }
+#ifdef ASSERT
+  movl(top, Address(thread, JavaThread::lock_stack_top_offset()));
+  movptr(Address(thread, top), obj);
+#endif
+  addl(Address(thread, JavaThread::lock_stack_top_offset()), oopSize);
+  jmp(slow);
+
+  bind(unlocked);
 }

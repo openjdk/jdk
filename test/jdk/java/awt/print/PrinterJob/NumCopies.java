@@ -25,7 +25,7 @@
  * @test
  * @bug 4258003
  * @summary Checks the right number of copies are printed
- * @author prr
+ * @key printer
  * @run main/manual NumCopies
  */
 

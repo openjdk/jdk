@@ -93,8 +93,7 @@ class TestUseCompressedOopsErgoTools {
     finalargs.add(classname);
     finalargs.addAll(Arrays.asList(arguments));
 
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(finalargs);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(finalargs);
     output.shouldHaveExitValue(0);
     return output;
   }
@@ -157,8 +156,7 @@ class TestUseCompressedOopsErgoTools {
   }
 
   private static String expect(String[] flags, boolean hasWarning, boolean hasError, int errorcode) throws Exception {
-    ProcessBuilder pb = GCArguments.createLimitedTestJavaProcessBuilder(flags);
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
+    OutputAnalyzer output = GCArguments.executeLimitedTestJava(flags);
     output.shouldHaveExitValue(errorcode);
     return output.getStdout();
   }

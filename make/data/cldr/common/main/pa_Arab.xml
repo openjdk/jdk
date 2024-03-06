@@ -30,7 +30,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u064F ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
+		<exemplarCharacters>[ُ ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200E\u200F أ ٻ ة ٺ ټ ٽ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ء آ ؤ ئ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ه ھ ہ و ی ے]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
@@ -48,19 +48,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y GGGGG</pattern>
-							<datetimeSkeleton>GGGGGyMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -68,7 +65,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<availableFormats>
 						<dateFormatItem id="HHmmss">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="yMMM">MMM y</dateFormatItem>
 						<dateFormatItem id="yQQQ">QQQ y</dateFormatItem>
 					</availableFormats>
@@ -117,10 +113,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</quarterContext>
 				</quarters>
 				<eras>
-					<eraNames>
-						<era type="0">ايساپورو</era>
-						<era type="1">سں</era>
-					</eraNames>
 					<eraAbbr>
 						<era type="0">ايساپورو</era>
 						<era type="1">سں</era>
@@ -136,19 +128,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
 							<pattern>dd/MM/y</pattern>
-							<datetimeSkeleton>yMMdd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 				</dateFormats>
@@ -228,36 +217,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<plusSign>‎+</plusSign>
 			<minusSign>‎-</minusSign>
 		</symbols>
-		<currencyFormats numberSystem="latn">
-			<currencyFormatLength type="short">
-				<currencyFormat type="standard">
-					<pattern type="1000" count="one" draft="provisional">¤ 0K</pattern>
-					<pattern type="1000" count="other" draft="provisional">¤ 0K</pattern>
-					<pattern type="10000" count="one" draft="provisional">¤ 00K</pattern>
-					<pattern type="10000" count="other" draft="provisional">¤ 00K</pattern>
-					<pattern type="100000" count="one" draft="provisional">¤ 000K</pattern>
-					<pattern type="100000" count="other" draft="provisional">¤ 000K</pattern>
-					<pattern type="1000000" count="one" draft="provisional">¤ 0M</pattern>
-					<pattern type="1000000" count="other" draft="provisional">¤ 0M</pattern>
-					<pattern type="10000000" count="one" draft="provisional">¤ 00M</pattern>
-					<pattern type="10000000" count="other" draft="provisional">¤ 00M</pattern>
-					<pattern type="100000000" count="one" draft="provisional">¤ 000M</pattern>
-					<pattern type="100000000" count="other" draft="provisional">¤ 000M</pattern>
-					<pattern type="1000000000" count="one" draft="provisional">¤ 0G</pattern>
-					<pattern type="1000000000" count="other" draft="provisional">¤ 0G</pattern>
-					<pattern type="10000000000" count="one" draft="provisional">¤ 00G</pattern>
-					<pattern type="10000000000" count="other" draft="provisional">¤ 00G</pattern>
-					<pattern type="100000000000" count="one" draft="provisional">¤ 000G</pattern>
-					<pattern type="100000000000" count="other" draft="provisional">¤ 000G</pattern>
-					<pattern type="1000000000000" count="one" draft="provisional">¤ 0T</pattern>
-					<pattern type="1000000000000" count="other" draft="provisional">¤ 0T</pattern>
-					<pattern type="10000000000000" count="one" draft="provisional">¤ 00T</pattern>
-					<pattern type="10000000000000" count="other" draft="provisional">¤ 00T</pattern>
-					<pattern type="100000000000000" count="one" draft="provisional">¤ 000T</pattern>
-					<pattern type="100000000000000" count="other" draft="provisional">¤ 000T</pattern>
-				</currencyFormat>
-			</currencyFormatLength>
-		</currencyFormats>
 		<currencies>
 			<currency type="EUR">
 				<displayName>يورو</displayName>

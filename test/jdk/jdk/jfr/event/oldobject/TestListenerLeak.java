@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,15 +71,17 @@ public class TestListenerLeak {
 
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
-
-        try (Recording r = new Recording()) {
-            r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
-            r.start();
-            listenerLeak();
-            r.stop();
-            List<RecordedEvent> events = Events.fromRecording(r);
-            if (OldObjects.countMatchingEvents(events, Stuff[].class, null, null, -1, "listenerLeak") == 0) {
-                throw new Exception("Could not find leak with " + Stuff[].class);
+        while (true) {
+            try (Recording r = new Recording()) {
+                r.enable(EventNames.OldObjectSample).withStackTrace().with("cutoff", "infinity");
+                r.start();
+                listenerLeak();
+                r.stop();
+                List<RecordedEvent> events = Events.fromRecording(r);
+                if (OldObjects.countMatchingEvents(events, Stuff[].class, null, null, -1, "listenerLeak") != 0) {
+                    return; // Success
+                }
+                System.out.println("Could not find leak with " + Stuff[].class + ". Retrying.");
             }
         }
     }

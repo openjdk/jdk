@@ -27,8 +27,8 @@
  * @run junit SwapTest
  */
 
-import jdk.internal.classfile.AccessFlags;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.AccessFlags;
+import java.lang.classfile.ClassFile;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +47,7 @@ class SwapTest {
         MethodType mt = MethodType.methodType(String.class, String.class, String.class);
         MethodTypeDesc mtd = mt.describeConstable().get();
 
-        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethodBody("m", mtd, AccessFlags.ofMethod(PUBLIC, STATIC).flagsMask(), xb -> {
                         xb.aload(0); // 0
                         xb.aload(1); // 1, 0

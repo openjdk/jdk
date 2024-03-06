@@ -263,7 +263,11 @@ tcp_ping4(JNIEnv *env, SOCKETADDRESS *sa, SOCKETADDRESS *netif, jint timeout,
 
     // set TTL
     if (ttl > 0) {
-        setsockopt(fd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+        if (setsockopt(fd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0) {
+            NET_ThrowNew(env, errno, "setsockopt IP_TTL failed");
+            close(fd);
+            return JNI_FALSE;
+        }
     }
 
     // A network interface was specified, so let's bind to it.
@@ -349,11 +353,19 @@ ping4(JNIEnv *env, jint fd, SOCKETADDRESS *sa, SOCKETADDRESS *netif,
     struct timeval tv = { 0, 0 };
     const size_t plen = ICMP_MINLEN + sizeof(tv);
 
-    setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size));
+    if (setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &size, sizeof(size)) < 0) {
+        NET_ThrowNew(env, errno, "setsockopt SO_RCVBUF failed");
+        close(fd);
+        return JNI_FALSE;
+    }
 
     // sets the ttl (max number of hops)
     if (ttl > 0) {
-        setsockopt(fd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl));
+        if (setsockopt(fd, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) < 0) {
+            NET_ThrowNew(env, errno, "setsockopt IP_TTL failed");
+            close(fd);
+            return JNI_FALSE;
+        }
     }
 
     // a specific interface was specified, so let's bind the socket

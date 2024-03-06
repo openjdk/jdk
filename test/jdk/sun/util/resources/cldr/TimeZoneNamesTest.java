@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,10 @@
 
  /*
  * @test
- * @bug 8181157 8202537 8234347 8236548 8261279
+ * @bug 8181157 8202537 8234347 8236548 8261279 8322647
  * @modules jdk.localedata
- * @summary Checks CLDR time zone names are generated correctly at runtime
+ * @summary Checks CLDR time zone names are generated correctly at
+ * either build or runtime
  * @run testng/othervm -Djava.locale.providers=CLDR TimeZoneNamesTest
  */
 
@@ -45,8 +46,8 @@ import org.testng.annotations.Test;
 @Test
 public class TimeZoneNamesTest {
 
-    @DataProvider(name="noResourceTZs")
-    Object[][] data() {
+    @DataProvider
+    Object[][] sampleTZs() {
         return new Object[][] {
             // tzid, locale, style, expected
 
@@ -174,11 +175,49 @@ public class TimeZoneNamesTest {
                                                     "UTC+03:00",
                                                     "heure : Istanbul",
                                                     "UTC+03:00"},
+
+            // Short names derived from TZDB at build time
+            {"Europe/Lisbon",    Locale.US, "Western European Standard Time",
+                        "WET",
+                        "Western European Summer Time",
+                        "WEST",
+                        "Western European Time",
+                        "WET"},
+            {"Atlantic/Azores",    Locale.US, "Azores Standard Time",
+                        "GMT-01:00",
+                        "Azores Summer Time",
+                        "GMT",
+                        "Azores Time",
+                        "GMT-01:00"},
+            {"Australia/Perth",    Locale.US, "Australian Western Standard Time",
+                        "AWST",
+                        "Australian Western Daylight Time",
+                        "AWDT",
+                        "Western Australia Time",
+                        "AWT"},
+            {"Africa/Harare",    Locale.US, "Central Africa Time",
+                        "CAT",
+                        "Harare Daylight Time",
+                        "CAT",
+                        "Harare Time",
+                        "CAT"},
+            {"Europe/Dublin",    Locale.US, "Greenwich Mean Time",
+                        "GMT",
+                        "Irish Standard Time",
+                        "IST",
+                        "Dublin Time",
+                        "GMT"},
+            {"Pacific/Gambier",    Locale.US, "Gambier Time",
+                        "GMT-09:00",
+                        "Gambier Daylight Time",
+                        "GMT-09:00",
+                        "Gambier Time",
+                        "GMT-09:00"},
         };
     }
 
 
-    @Test(dataProvider="noResourceTZs")
+    @Test(dataProvider="sampleTZs")
     public void test_tzNames(String tzid, Locale locale, String lstd, String sstd, String ldst, String sdst, String lgen, String sgen) {
         // Standard time
         assertEquals(TimeZone.getTimeZone(tzid).getDisplayName(false, TimeZone.LONG, locale), lstd);
@@ -197,16 +236,14 @@ public class TimeZoneNamesTest {
     @Test
     public void test_getZoneStrings() {
         assertFalse(
-            Arrays.stream(Locale.getAvailableLocales())
+            Locale.availableLocales()
                 .limit(30)
                 .peek(l -> System.out.println("Locale: " + l))
                 .map(l -> DateFormatSymbols.getInstance(l).getZoneStrings())
-                .flatMap(zs -> Arrays.stream(zs))
+                .flatMap(Arrays::stream)
                 .peek(names -> System.out.println("    tz: " + names[0]))
-                .flatMap(names -> Arrays.stream(names))
-                .filter(name -> Objects.isNull(name) || name.isEmpty())
-                .findAny()
-                .isPresent(),
+                .flatMap(Arrays::stream)
+                .anyMatch(name -> Objects.isNull(name) || name.isEmpty()),
             "getZoneStrings() returned array containing non-empty string element(s)");
     }
 }

@@ -25,19 +25,17 @@
  * @test
  * @bug 8186046
  * @summary Test for condy BSMs returning primitive values or null
- * @library /lib/testlibrary/bytecode
- * @build jdk.experimental.bytecode.BasicClassBuilder
+ * @enablePreview
  * @run testng CondyReturnPrimitiveTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyReturnPrimitiveTest
  */
 
-import jdk.experimental.bytecode.BasicClassBuilder;
-import jdk.experimental.bytecode.Flag;
-import jdk.experimental.bytecode.TypedCodeBuilder;
+import java.lang.classfile.ClassFile;
 import org.testng.Assert;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+import java.lang.constant.*;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -96,124 +94,194 @@ public class CondyReturnPrimitiveTest {
     @BeforeClass
     public void generateClass() throws Exception {
         String genClassName = CondyReturnPrimitiveTest.class.getSimpleName() + "$Code";
-        String bsmClassName = CondyReturnPrimitiveTest.class.getCanonicalName().replace('.', '/');
+        String bsmClassDesc = CondyReturnPrimitiveTest.class.descriptorString();
         String bsmMethodName = "intConversion";
         String bsmDescriptor = MethodType.methodType(Object.class, MethodHandles.Lookup.class,
-                                                     String.class, Class.class, int.class).toMethodDescriptorString();
-
-        byte[] byteArray = new BasicClassBuilder(genClassName, 55, 0)
-                .withSuperclass("java/lang/Object")
-                .withMethod("<init>", "()V", M ->
-                        M.withFlags(Flag.ACC_PUBLIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.aload_0().invokespecial("java/lang/Object", "<init>", "()V", false).return_()
-                                ))
-                .withMethod("B", "()B", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("B", "B", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Byte.MAX_VALUE))
-                                                .ireturn()
-                                ))
-                .withMethod("C", "()C", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("C", "C", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Character.MAX_VALUE))
-                                                .ireturn()
-                                ))
-                .withMethod("D", "()D", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("D", "D", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .dreturn()
-                                ))
-                .withMethod("D_AsType", "()D", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("I", "D", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .dreturn()
-                                ))
-                .withMethod("F", "()F", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("F", "F", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .freturn()
-                                ))
-                .withMethod("F_AsType", "()F", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("I", "F", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .freturn()
-                                ))
-                .withMethod("I", "()I", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("I", "I", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .ireturn()
-                                ))
-                .withMethod("J", "()J", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("J", "J", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .lreturn()
-                                ))
-                .withMethod("J_AsType", "()J", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("I", "J", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .lreturn()
-                                ))
-                .withMethod("S", "()S", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("S", "S", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Short.MAX_VALUE))
-                                                .ireturn()
-                                ))
-                .withMethod("Z_F", "()Z", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("Z", "Z", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(0))
-                                                .ireturn()
-                                ))
-                .withMethod("Z_T", "()Z", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("Z", "Z", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(1))
-                                                .ireturn()
-                                ))
-                .withMethod("null", "()Ljava/lang/Object;", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("nullRef", "Ljava/lang/Object;", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .areturn()
-                                ))
-                .withMethod("string", "()Ljava/lang/String;", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("string", "Ljava/lang/String;", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .areturn()
-                                ))
-                .withMethod("stringArray", "()[Ljava/lang/String;", M ->
-                        M.withFlags(Flag.ACC_PUBLIC, Flag.ACC_STATIC)
-                                .withCode(TypedCodeBuilder::new, C ->
-                                        C.ldc("stringArray", "[Ljava/lang/String;", bsmClassName, bsmMethodName, bsmDescriptor,
-                                              S -> S.add(Integer.MAX_VALUE))
-                                                .areturn()
-                                ))
-                .build();
+                String.class, Class.class, int.class).toMethodDescriptorString();
+        DirectMethodHandleDesc bsmMhDesc = MethodHandleDesc.of(
+                DirectMethodHandleDesc.Kind.STATIC,
+                ClassDesc.ofDescriptor(bsmClassDesc),
+                bsmMethodName,
+                bsmDescriptor
+        );
+        byte[] byteArray = ClassFile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
+                .withVersion(55, 0)
+                .withSuperclass(ConstantDescs.CD_Object)
+                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC,
+                        methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .aload(0)
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                ConstantDescs.MTD_void, false)
+                                        .return_()
+                                )
+                )
+                .withMethod("B", MethodTypeDesc.of(ConstantDescs.CD_byte),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "B",
+                                                ConstantDescs.CD_byte,
+                                                (int) Byte.MAX_VALUE))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("C", MethodTypeDesc.of(ConstantDescs.CD_char),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "C",
+                                                ConstantDescs.CD_char,
+                                                (int) Character.MAX_VALUE))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("D", MethodTypeDesc.of(ConstantDescs.CD_double),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "D",
+                                                ConstantDescs.CD_double,
+                                                Integer.MAX_VALUE))
+                                        .dreturn()
+                                )
+                )
+                .withMethod("D_AsType", MethodTypeDesc.of(ConstantDescs.CD_double),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "I",
+                                                ConstantDescs.CD_double,
+                                                Integer.MAX_VALUE))
+                                        .dreturn()
+                                )
+                )
+                .withMethod("F", MethodTypeDesc.of(ConstantDescs.CD_float),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "F",
+                                                ConstantDescs.CD_float,
+                                                Integer.MAX_VALUE))
+                                        .freturn()
+                                )
+                )
+                .withMethod("F_AsType", MethodTypeDesc.of(ConstantDescs.CD_float),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "I",
+                                                ConstantDescs.CD_float,
+                                                Integer.MAX_VALUE))
+                                        .freturn()
+                                )
+                )
+                .withMethod("I", MethodTypeDesc.of(ConstantDescs.CD_int),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "I",
+                                                ConstantDescs.CD_int,
+                                                Integer.MAX_VALUE))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("J", MethodTypeDesc.of(ConstantDescs.CD_long),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "J",
+                                                ConstantDescs.CD_long,
+                                                Integer.MAX_VALUE))
+                                        .lreturn()
+                                )
+                )
+                .withMethod("J_AsType", MethodTypeDesc.of(ConstantDescs.CD_long),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "I",
+                                                ConstantDescs.CD_long,
+                                                Integer.MAX_VALUE))
+                                        .lreturn()
+                                )
+                )
+                .withMethod("S", MethodTypeDesc.of(ConstantDescs.CD_short),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "S",
+                                                ConstantDescs.CD_short,
+                                                ((int) Short.MAX_VALUE)))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("Z_F", MethodTypeDesc.of(ConstantDescs.CD_boolean),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "Z",
+                                                ConstantDescs.CD_boolean,
+                                                0))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("Z_T", MethodTypeDesc.of(ConstantDescs.CD_boolean),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "Z",
+                                                ConstantDescs.CD_boolean,
+                                                1))
+                                        .ireturn()
+                                )
+                )
+                .withMethod("null", MethodTypeDesc.of(ConstantDescs.CD_Object),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "nullRef",
+                                                ConstantDescs.CD_Object,
+                                                Integer.MAX_VALUE))
+                                        .areturn()
+                                )
+                )
+                .withMethod("string", MethodTypeDesc.of(ConstantDescs.CD_String),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "string",
+                                                ConstantDescs.CD_String,
+                                                Integer.MAX_VALUE))
+                                        .areturn()
+                                )
+                )
+                .withMethod("stringArray", MethodTypeDesc.of(ConstantDescs.CD_String.arrayType()),
+                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
+                                .withCode(codeBuilder -> codeBuilder
+                                        .ldc(DynamicConstantDesc.ofNamed(
+                                                bsmMhDesc,
+                                                "stringArray",
+                                                ConstantDescs.CD_String.arrayType(),
+                                                Integer.MAX_VALUE))
+                                        .areturn()
+                                )
+                )
+        );
 
         gc = MethodHandles.lookup().defineClass(byteArray);
     }

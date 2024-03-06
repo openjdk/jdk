@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@ package javax.swing.text.rtf;
 
 import java.io.*;
 import java.lang.*;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
 
 /**
  * <b>RTFParser</b> is a subclass of <b>AbstractFilter</b> which understands basic RTF syntax
@@ -69,6 +73,11 @@ abstract class RTFParser extends AbstractFilter
 
   private final int S_inblob = 6;        // in a \bin blob
 
+    // For fcharset control word
+    protected CharsetDecoder decoder = null;
+    private byte[] ba = new byte[2];
+    protected ByteBuffer decoderBB = ByteBuffer.wrap(ba);
+
   /** Implemented by subclasses to interpret a parameter-less RTF keyword.
    *  The keyword is passed without the leading '/' or any delimiting
    *  whitespace. */
@@ -100,6 +109,9 @@ abstract class RTFParser extends AbstractFilter
     rtfSpecialsTable['\\'] = true;
   }
 
+    // Defined for replacement character
+    static final char REPLACEMENT_CHAR = '\uFFFD';
+
   public RTFParser()
   {
     currentCharacters = new StringBuffer();
@@ -109,6 +121,9 @@ abstract class RTFParser extends AbstractFilter
     //warnings = System.out;
 
     specialsTable = rtfSpecialsTable;
+    // Initialize byte buffer for CharsetDecoder
+    decoderBB.clear();
+    decoderBB.limit(1);
   }
 
   // TODO: Handle wrapup at end of file correctly.
@@ -182,6 +197,9 @@ abstract class RTFParser extends AbstractFilter
           }
           state = S_backslashed;
         } else {
+          // SBCS: ASCII character
+          // DBCS: Non lead byte
+          ch = decode(ch);
           currentCharacters.append(ch);
         }
         break;
@@ -301,7 +319,9 @@ abstract class RTFParser extends AbstractFilter
         if (Character.digit(ch, 16) != -1)
         {
           pendingCharacter = pendingCharacter * 16 + Character.digit(ch, 16);
-          ch = translationTable[pendingCharacter];
+          // Use translationTable if decoder is not defined
+          ch = decoder == null ? translationTable[pendingCharacter]
+                               : decode((char)pendingCharacter);
           if (ch != 0)
               handleText(ch);
         }
@@ -359,5 +379,38 @@ abstract class RTFParser extends AbstractFilter
 
     super.close();
   }
+
+    // For fcharset control word
+    private char[] ca = new char[1];
+    private CharBuffer decoderCB = CharBuffer.wrap(ca);
+
+    private char decode(char ch) {
+        if (decoder == null) return ch;
+        decoderBB.put((byte) ch);
+        decoderBB.rewind();
+        decoderCB.clear();
+        CoderResult cr = decoder.decode(decoderBB, decoderCB, false);
+        if (cr.isUnderflow()) {
+            if (decoderCB.position() == 1) {
+                // Converted to Unicode (including replacement character)
+                decoder.reset();
+                decoderBB.clear();
+                decoderBB.limit(1);
+                return ca[0];
+            } else {
+                // Detected lead byte
+                decoder.reset();
+                decoderBB.limit(2);
+                decoderBB.position(1);
+                return 0; // Skip write operation if return value is 0
+            }
+        } else {
+            // Fallback, should not be called
+            decoder.reset();
+            decoderBB.clear();
+            decoderBB.limit(1);
+            return REPLACEMENT_CHAR;
+        }
+    }
 
 }

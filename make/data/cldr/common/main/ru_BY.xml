@@ -19,7 +19,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="RUR">
 				<symbol>RUR</symbol>
-				<symbol alt="narrow">р.</symbol>
 			</currency>
 		</currencies>
 	</numbers>

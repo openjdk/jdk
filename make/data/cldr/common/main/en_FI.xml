@@ -20,16 +20,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="Ehm" alt="ascii">E h.mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H.mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="Ehms" alt="ascii">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E H.mm.ss</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hm" alt="ascii">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="hms" alt="ascii">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">H.mm.ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv" alt="ascii">h.mm.ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">H.mm.ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
+						<dateFormatItem id="hmv" alt="ascii">h.mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">H.mm v</dateFormatItem>
 						<dateFormatItem id="ms">mm.ss</dateFormatItem>
 					</availableFormats>
@@ -65,16 +71,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<dateTimeFormats>
 					<availableFormats>
 						<dateFormatItem id="Ehm">E h.mm a</dateFormatItem>
+						<dateFormatItem id="Ehm" alt="ascii">E h.mm a</dateFormatItem>
 						<dateFormatItem id="EHm">E H.mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="Ehms" alt="ascii">E h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="EHms">E H.mm.ss</dateFormatItem>
 						<dateFormatItem id="hm">h.mm a</dateFormatItem>
+						<dateFormatItem id="hm" alt="ascii">h.mm a</dateFormatItem>
 						<dateFormatItem id="Hm">H.mm</dateFormatItem>
 						<dateFormatItem id="hms">h.mm.ss a</dateFormatItem>
+						<dateFormatItem id="hms" alt="ascii">h.mm.ss a</dateFormatItem>
 						<dateFormatItem id="Hms">H.mm.ss</dateFormatItem>
 						<dateFormatItem id="hmsv">h.mm.ss a v</dateFormatItem>
+						<dateFormatItem id="hmsv" alt="ascii">h.mm.ss a v</dateFormatItem>
 						<dateFormatItem id="Hmsv">H.mm.ss v</dateFormatItem>
 						<dateFormatItem id="hmv">h.mm a v</dateFormatItem>
+						<dateFormatItem id="hmv" alt="ascii">h.mm a v</dateFormatItem>
 						<dateFormatItem id="Hmv">H.mm v</dateFormatItem>
 						<dateFormatItem id="ms">mm.ss</dateFormatItem>
 					</availableFormats>

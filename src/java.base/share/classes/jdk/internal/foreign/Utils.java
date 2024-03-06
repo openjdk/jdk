@@ -200,11 +200,8 @@ public final class Utils {
     }
 
     public static void checkAllocationSizeAndAlign(long byteSize, long byteAlignment) {
-        // size should be >= 0
-        if (byteSize < 0) {
-            throw new IllegalArgumentException("Invalid allocation size : " + byteSize);
-        }
-
+        // byteSize should be >= 0
+        Utils.checkNonNegativeArgument(byteSize, "allocation size");
         checkAlign(byteAlignment);
     }
 
@@ -213,6 +210,20 @@ public final class Utils {
         if (byteAlignment <= 0 ||
                 ((byteAlignment & (byteAlignment - 1)) != 0L)) {
             throw new IllegalArgumentException("Invalid alignment constraint : " + byteAlignment);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeArgument(long value, String name) {
+        if (value < 0) {
+            throw new IllegalArgumentException("The provided " + name + " is negative: " + value);
+        }
+    }
+
+    @ForceInline
+    public static void checkNonNegativeIndex(long value, String name) {
+        if (value < 0) {
+            throw new IndexOutOfBoundsException("The provided " + name + " is negative: " + value);
         }
     }
 
@@ -296,13 +307,13 @@ public final class Utils {
 
         public static BaseAndScale of(Object array) {
             return switch (array) {
-                case byte[]   __ -> BaseAndScale.BYTE;
-                case char[]   __ -> BaseAndScale.CHAR;
-                case short[]  __ -> BaseAndScale.SHORT;
-                case int[]    __ -> BaseAndScale.INT;
-                case float[]  __ -> BaseAndScale.FLOAT;
-                case long[]   __ -> BaseAndScale.LONG;
-                case double[] __ -> BaseAndScale.DOUBLE;
+                case byte[]   _ -> BaseAndScale.BYTE;
+                case char[]   _ -> BaseAndScale.CHAR;
+                case short[]  _ -> BaseAndScale.SHORT;
+                case int[]    _ -> BaseAndScale.INT;
+                case float[]  _ -> BaseAndScale.FLOAT;
+                case long[]   _ -> BaseAndScale.LONG;
+                case double[] _ -> BaseAndScale.DOUBLE;
                 default -> throw new IllegalArgumentException("Not a supported array class: " + array.getClass().getSimpleName());
             };
         }

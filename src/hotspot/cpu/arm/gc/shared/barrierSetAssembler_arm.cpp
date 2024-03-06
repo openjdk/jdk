@@ -227,7 +227,7 @@ void BarrierSetAssembler::nmethod_entry_barrier(MacroAssembler* masm) {
   __ cmp(tmp0, tmp1);
   __ b(skip, eq);
 
-  __ mov_address(tmp0, StubRoutines::Arm::method_entry_barrier());
+  __ mov_address(tmp0, StubRoutines::method_entry_barrier());
   __ call(tmp0);
   __ b(skip);
 

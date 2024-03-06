@@ -89,10 +89,11 @@ void G1FullGCResetMetadataTask::G1ResetMetadataClosure::reset_skip_compacting(He
 
   if (hr->is_humongous()) {
     oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
-    assert(_collector->mark_bitmap()->is_marked(obj), "must be live");
+    assert(hr->humongous_start_region()->has_pinned_objects() ||
+           _collector->mark_bitmap()->is_marked(obj), "must be live");
   } else {
-    assert(_collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
-           "should be quite full");
+    assert(hr->has_pinned_objects() || _collector->live_words(region_index) > _collector->scope()->region_compaction_threshold(),
+           "should be quite full or pinned %u", region_index);
   }
 
   assert(_collector->compaction_top(hr) == nullptr,

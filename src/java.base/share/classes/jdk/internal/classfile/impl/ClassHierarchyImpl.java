@@ -36,10 +36,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import jdk.internal.classfile.ClassHierarchyResolver;
+import java.lang.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
-import static jdk.internal.classfile.Classfile.*;
+import static java.lang.classfile.ClassFile.*;
 import static java.util.Objects.requireNonNull;
 
 /**

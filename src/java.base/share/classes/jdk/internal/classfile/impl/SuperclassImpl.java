@@ -24,8 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.Superclass;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.Superclass;
 
 import static java.util.Objects.requireNonNull;
 

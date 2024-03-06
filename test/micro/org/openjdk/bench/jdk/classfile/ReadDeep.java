@@ -22,13 +22,13 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.ClassModel;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.ClassfileElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CompoundElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.instruction.LoadInstruction;
+import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassFileElement;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.CompoundElement;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.instruction.LoadInstruction;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -97,7 +97,7 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsCountLoads(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             int[] count = new int[1];
             ClassModel cm = cc.parse(bytes);
@@ -121,15 +121,15 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsDeepIterate(Blackhole bh) {
-        var cc = Classfile.of();
+        var cc = ClassFile.of();
         for (byte[] bytes : classes) {
             ClassModel cm = cc.parse(bytes);
             bh.consume(iterateAll(cm));
         }
     }
 
-    private static ClassfileElement iterateAll(CompoundElement<?> model) {
-        ClassfileElement last = null;
+    private static ClassFileElement iterateAll(CompoundElement<?> model) {
+        ClassFileElement last = null;
         for (var e : model) {
             if (e instanceof CompoundElement<?> cm) {
                 last = iterateAll(cm);

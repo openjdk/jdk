@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,6 +162,7 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
      *               thread in the specified thread group.
      * @see     java.lang.ThreadGroup#checkAccess()
      */
+    @SuppressWarnings("this-escape")
     public ThreadGroup(ThreadGroup parent, String name) {
         this(checkParentAccess(parent), parent, name);
     }
@@ -555,17 +556,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
     }
 
     /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to stop all threads in
-     *             the thread group. It was inherently unsafe.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void stop() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Interrupts all {@linkplain Thread#isAlive() live} platform threads in
      * this thread group and its subgroups.
      *
@@ -585,28 +575,6 @@ public class ThreadGroup implements Thread.UncaughtExceptionHandler {
                 thread.interrupt();
             }
         }
-    }
-
-    /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to suspend all threads
-     *             in the thread group.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void suspend() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Throws {@code UnsupportedOperationException}.
-     *
-     * @deprecated This method was originally specified to resume all threads
-     *             in the thread group.
-     */
-    @Deprecated(since="1.2", forRemoval=true)
-    public final void resume() {
-        throw new UnsupportedOperationException();
     }
 
     /**

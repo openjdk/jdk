@@ -340,11 +340,12 @@ void ZBarrierSetAssembler::store_barrier_medium(MacroAssembler* masm,
     }
     __ ld(R0, in_bytes(ZThreadLocalData::store_good_mask_offset()), R16_thread);
     __ cmpxchgd(CCR0, tmp, (intptr_t)0, R0, ref_base,
-                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update());
+                MacroAssembler::MemBarNone, MacroAssembler::cmpxchgx_hint_atomic_update(),
+                noreg, need_restore ? nullptr : &slow_path);
     if (need_restore) {
       __ subf(ref_base, ind_or_offs, ref_base);
+      __ bne(CCR0, slow_path);
     }
-    __ bne(CCR0, slow_path);
   } else {
     // A non-atomic relocatable object won't get to the medium fast path due to a
     // raw null in the young generation. We only get here because the field is bad.

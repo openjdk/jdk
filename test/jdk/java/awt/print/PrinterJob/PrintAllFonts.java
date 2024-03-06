@@ -23,9 +23,11 @@
 
 /**
  *
+ * test
  * @bug 4884389 7183516
+ * @key printer
  * @summary Font specified with face name loses style on printing
- * @run main/manual PrintRotatedText
+ * @run main/manual PrintAllFonts
  */
 
 import java.awt.*;

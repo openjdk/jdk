@@ -25,7 +25,7 @@
  * @test
  * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545
  * 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
- * 8245147 8245586 8257453 8286035 8306586
+ * 8245147 8245586 8257453 8286035 8306586 8320806 8306586
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -42,9 +42,7 @@ import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Set;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /*
@@ -73,9 +71,10 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19", "20", "21", "22");
+               "15", "16", "17", "18", "19", "20", "21", "22",
+               "23");
 
-    public static final String LATEST_MAJOR_VERSION = "66.0";
+    public static final String LATEST_MAJOR_VERSION = "67.0";
 
     static enum SourceTarget {
         EIGHT(true,      "52.0",  "8"),
@@ -93,6 +92,7 @@ public class Versions {
         TWENTY(false,    "64.0", "20"),
         TWENTY_ONE(false,"65.0", "21"),
         TWENTY_TWO(false,"66.0", "22"),
+        TWENTY_THREE(false,"67.0", "23"),
         ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
@@ -240,16 +240,8 @@ public class Versions {
 
     protected void check(String major, List<String> args) {
         printargs("check", args);
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
 
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         boolean creturn = compile("Base.java", jcargs);
         if (!creturn) {
@@ -265,6 +257,25 @@ public class Versions {
     }
 
     /**
+     * Create a list of options suitable for use with {@link JavaCompiler}
+     * @param args a list of space-delimited options, such as "-source 11"
+     * @return a list of arguments suitable for use with {@link JavaCompiler}
+     */
+    private static List<String> javaCompilerOptions(List<String> args) {
+        List<String> jcargs = new ArrayList<>();
+        jcargs.add("-Xlint:-options");
+
+        // add in args conforming to List requirements of JavaCompiler
+        for (String onearg : args) {
+            String[] fields = onearg.split(" ");
+            for (String onefield : fields) {
+                jcargs.add(onefield);
+            }
+        }
+        return jcargs;
+    }
+
+    /**
      * The BASE source example is expected to compile on all source
      * levels. Otherwise, an example is expected to compile on its
      * declared source level and later, but to _not_ compile on
@@ -272,8 +283,8 @@ public class Versions {
      * the uncommon program that is accepted in one version of the
      * language and rejected in a later version.)
      *
-     * When version of the language get a new, non-preview feature, a
-     * new source example enum constant should be added.
+     * When a version of the language gets a new, non-preview feature,
+     * a new source example enum constant should be added.
      */
     enum SourceExample {
         BASE(7, "Base.java", "public class Base { }\n"),
@@ -311,7 +322,7 @@ public class Versions {
             """),
 
          SOURCE_14(14, "New14.java",
-             // New feature in 14: text blocks
+             // New feature in 14: switch expressions
              """
              public class New14 {
                  static {
@@ -375,6 +386,20 @@ public class Versions {
              }
              """),
 
+         SOURCE_22(22, "New22.java",
+             // New feature in 22: Unnamed Variables & Patterns
+             """
+             public class New22 {
+                 public static void main(String... args) {
+                     Object o = new Object(){};
+
+                     System.out.println(switch (o) {
+                                        case Integer _ -> "Hello world.";
+                                        default        -> o.toString();
+                                        });
+                 }
+             }
+             """),
             ; // Reduce code churn when appending new constants
 
         private int sourceLevel;
@@ -413,16 +438,7 @@ public class Versions {
     protected void pass(List<String> args) {
         printargs("pass", args);
 
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
-
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         // empty list is error
         if (jcargs.isEmpty()) {
@@ -450,16 +466,7 @@ public class Versions {
     protected void fail(List<String> args) {
         printargs("fail", args);
 
-        List<String> jcargs = new ArrayList<>();
-        jcargs.add("-Xlint:-options");
-
-        // add in args conforming to List requrements of JavaCompiler
-        for (String onearg : args) {
-            String[] fields = onearg.split(" ");
-            for (String onefield : fields) {
-                jcargs.add(onefield);
-            }
-        }
+        List<String> jcargs = javaCompilerOptions(args);
 
         // empty list is error
         if (jcargs.isEmpty()) {

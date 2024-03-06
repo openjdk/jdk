@@ -1045,48 +1045,48 @@ public abstract class FileChannel
      *          The file mapping mode, see
      *          {@link FileChannel#map(FileChannel.MapMode, long, long)};
      *          the mapping mode might affect the behavior of the returned
-     *          memory mapped segment (see {@link MemorySegment#force()}).
+     *          memory mapped segment (see {@link MemorySegment#force()})
      *
      * @param   offset
      *          The offset (expressed in bytes) within the file at which the
-     *          mapped segment is to start.
+     *          mapped segment is to start
      *
      * @param   size
      *          The size (in bytes) of the mapped memory backing the memory
-     *          segment.
+     *          segment
      *
      * @param   arena
-     *          The segment arena.
+     *          The segment arena
      *
-     * @return  A new mapped memory segment.
+     * @return  A new mapped memory segment
      *
      * @throws  IllegalArgumentException
      *          If {@code offset < 0}, {@code size < 0} or
-     *          {@code offset + size} overflows the range of {@code long}.
+     *          {@code offset + size} overflows the range of {@code long}
      *
      * @throws  IllegalStateException
-     *          If {@code arena.isAlive() == false}.
+     *          If {@code arena.isAlive() == false}
      *
      * @throws  WrongThreadException
-     *          If {@code arena} is a confined scoped arena, and this method is called from a
-     *          thread {@code T}, other than the scoped arena's owner thread.
+     *          If {@code arena} is a confined scoped arena, and this method is called
+     *          from a thread {@code T}, other than the scoped arena's owner thread
      *
      * @throws  NonReadableChannelException
      *          If the {@code mode} is {@link MapMode#READ_ONLY READ_ONLY} or
      *          an implementation specific map mode requiring read access,
-     *          but this channel was not opened for reading.
+     *          but this channel was not opened for reading
      *
      * @throws  NonWritableChannelException
      *          If the {@code mode} is {@link MapMode#READ_WRITE READ_WRITE},
      *          {@link MapMode#PRIVATE PRIVATE} or an implementation specific
      *          map mode requiring write access, but this channel was not
-     *          opened for both reading and writing.
+     *          opened for both reading and writing
      *
      * @throws  IOException
-     *          If some other I/O error occurs.
+     *          If some other I/O error occurs
      *
      * @throws  UnsupportedOperationException
-     *          If an unsupported map mode is specified.
+     *          If an unsupported map mode is specified
      *
      * @since   22
      */

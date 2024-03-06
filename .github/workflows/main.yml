@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ on:
     branches-ignore:
       - master
       - pr/*
+      - jdk*
   workflow_dispatch:
     inputs:
       platforms:
@@ -227,6 +228,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
+      runs-on: 'macos-13'
       xcode-toolset-version: '14.3.1'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
@@ -238,8 +240,8 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
+      runs-on: 'macos-14'
       xcode-toolset-version: '14.3.1'
-      extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
       configure-arguments: ${{ github.event.inputs.configure-arguments }}
       make-arguments: ${{ github.event.inputs.make-arguments }}
     if: needs.select.outputs.macos-aarch64 == 'true'
@@ -320,6 +322,16 @@ jobs:
       bootjdk-platform: macos-x64
       runs-on: macos-13
 
+  test-macos-aarch64:
+    name: macos-aarch64
+    needs:
+      - build-macos-aarch64
+    uses: ./.github/workflows/test.yml
+    with:
+      platform: macos-aarch64
+      bootjdk-platform: macos-aarch64
+      runs-on: macos-14
+
   test-windows-x64:
     name: windows-x64
     needs:
@@ -356,7 +368,7 @@ jobs:
         # Hack to get hold of the api environment variables that are only defined for actions
       - name: 'Get API configuration'
         id: api
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: 'return { url: process.env["ACTIONS_RUNTIME_URL"], token: process.env["ACTIONS_RUNTIME_TOKEN"] }'
 

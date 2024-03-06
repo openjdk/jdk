@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation FloatMaxVectorTests
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation FloatMaxVectorTests
  */
 
 // -- This file was mechanically generated: Do not edit! -- //

@@ -98,9 +98,7 @@ public class DowncallLinker {
         if (USE_SPEC) {
             handle = BindingSpecializer.specializeDowncall(handle, callingSequence, abi);
          } else {
-            Map<VMStorage, Integer> argIndexMap = SharedUtils.indexMap(argMoves);
-
-            InvocationData invData = new InvocationData(handle, callingSequence, argIndexMap);
+            InvocationData invData = new InvocationData(handle, callingSequence);
             handle = insertArguments(MH_INVOKE_INTERP_BINDINGS.bindTo(this), 2, invData);
             MethodType interpType = callingSequence.callerMethodType();
             if (callingSequence.needsReturnBuffer()) {
@@ -151,7 +149,7 @@ public class DowncallLinker {
         return Arrays.stream(moves).map(Binding.Move::storage).toArray(VMStorage[]::new);
     }
 
-    private record InvocationData(MethodHandle leaf, CallingSequence callingSequence, Map<VMStorage, Integer> argIndexMap) {}
+    private record InvocationData(MethodHandle leaf, CallingSequence callingSequence) {}
 
     Object invokeInterpBindings(SegmentAllocator allocator, Object[] args, InvocationData invData) throws Throwable {
         Arena unboxArena = callingSequence.allocationSize() != 0
@@ -172,6 +170,13 @@ public class DowncallLinker {
             }
 
             Object[] leafArgs = new Object[invData.leaf.type().parameterCount()];
+            BindingInterpreter.StoreFunc storeFunc = new BindingInterpreter.StoreFunc() {
+                    int argOffset = 0;
+                    @Override
+                    public void store(VMStorage storage, Object o) {
+                        leafArgs[argOffset++] = o;
+                    }
+                };
             for (int i = 0; i < args.length; i++) {
                 Object arg = args[i];
                 if (callingSequence.functionDesc().argumentLayouts().get(i) instanceof AddressLayout) {
@@ -183,8 +188,7 @@ public class DowncallLinker {
                         acquiredScopes.add(sessionImpl);
                     }
                 }
-                BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i),
-                    (storage, value) -> leafArgs[invData.argIndexMap.get(storage)] = value, unboxArena);
+                BindingInterpreter.unbox(arg, callingSequence.argumentBindings(i), storeFunc, unboxArena);
             }
 
             // call leaf

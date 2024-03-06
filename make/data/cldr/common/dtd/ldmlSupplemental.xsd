@@ -1,0 +1,2920 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+Note: The .xsd files are a Technology Preview. They are subject to change or removal in future CLDR versions.
+Note: DTD @-annotations are not currently converted to .xsd. For full CLDR file validation, use the DTD and CLDR tools.
+-->
+
+<!--
+  Copyright © 1991-2023 Unicode, Inc.
+  For terms of use, see http://www.unicode.org/copyright.html
+  SPDX-License-Identifier: Unicode-DFS-2016
+  CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+--><xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="supplementalData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="version"/>
+        <xs:element minOccurs="0" ref="generation"/>
+        <xs:element minOccurs="0" ref="cldrVersion"/>
+        <xs:element minOccurs="0" ref="currencyData"/>
+        <xs:element minOccurs="0" ref="territoryContainment"/>
+        <xs:element minOccurs="0" ref="subdivisionContainment"/>
+        <xs:element minOccurs="0" ref="languageData"/>
+        <xs:element minOccurs="0" ref="territoryInfo"/>
+        <xs:element minOccurs="0" ref="postalCodeData"/>
+        <xs:element minOccurs="0" ref="calendarData"/>
+        <xs:element minOccurs="0" ref="calendarPreferenceData"/>
+        <xs:element minOccurs="0" ref="weekData"/>
+        <xs:element minOccurs="0" ref="timeData"/>
+        <xs:element minOccurs="0" ref="measurementData"/>
+        <xs:element minOccurs="0" ref="unitIdComponents"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitConstants"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitQuantities"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="convertUnits"/>
+        <xs:element minOccurs="0" ref="unitPreferenceData"/>
+        <xs:element minOccurs="0" ref="timezoneData"/>
+        <xs:element minOccurs="0" ref="characters"/>
+        <xs:element minOccurs="0" ref="transforms"/>
+        <xs:element minOccurs="0" ref="metadata"/>
+        <xs:element minOccurs="0" ref="codeMappings"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="parentLocales"/>
+        <xs:element minOccurs="0" ref="personNamesDefaults"/>
+        <xs:element minOccurs="0" ref="likelySubtags"/>
+        <xs:element minOccurs="0" ref="metazoneInfo"/>
+        <xs:element minOccurs="0" ref="plurals"/>
+        <xs:element minOccurs="0" ref="telephoneCodeData"/>
+        <xs:element minOccurs="0" ref="numberingSystems"/>
+        <xs:element minOccurs="0" ref="bcp47KeywordMappings"/>
+        <xs:element minOccurs="0" ref="gender"/>
+        <xs:element minOccurs="0" ref="references"/>
+        <xs:element minOccurs="0" ref="languageMatching"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayPeriodRuleSet"/>
+        <xs:element minOccurs="0" ref="metaZones"/>
+        <xs:element minOccurs="0" ref="primaryZones"/>
+        <xs:element minOccurs="0" ref="windowsZones"/>
+        <xs:element minOccurs="0" ref="coverageLevels"/>
+        <xs:element minOccurs="0" ref="idValidity"/>
+        <xs:element minOccurs="0" ref="rgScope"/>
+        <xs:element minOccurs="0" ref="languageGroups"/>
+        <xs:element minOccurs="0" ref="grammaticalData"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="version">
+    <xs:complexType>
+      <xs:attribute name="number" use="required"/>
+      <xs:attribute default="44" name="cldrVersion">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="44"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute default="15.0.0" name="unicodeVersion">
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="15.0.0"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="generation">
+    <xs:complexType>
+      <xs:attribute name="date" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="cldrVersion">
+    <xs:complexType>
+      <xs:attribute name="version" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="currencyData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="fractions"/>
+        <xs:element maxOccurs="unbounded" ref="region"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="fractions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="info"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="info">
+    <xs:complexType>
+      <xs:attribute name="iso4217" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="digits" type="xs:NMTOKEN"/>
+      <xs:attribute name="rounding" type="xs:NMTOKEN"/>
+      <xs:attribute name="cashDigits" type="xs:NMTOKEN"/>
+      <xs:attribute name="cashRounding" type="xs:NMTOKEN"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="region">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="currency"/>
+      </xs:sequence>
+      <xs:attribute name="iso3166" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="currency">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="alternate"/>
+      </xs:sequence>
+      <xs:attribute name="before" type="xs:NMTOKEN"/>
+      <xs:attribute name="from" type="xs:NMTOKEN"/>
+      <xs:attribute name="to" type="xs:NMTOKEN"/>
+      <xs:attribute name="iso4217" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="digits" type="xs:NMTOKEN"/>
+      <xs:attribute name="rounding" type="xs:NMTOKEN"/>
+      <xs:attribute name="cashRounding" type="xs:NMTOKEN"/>
+      <xs:attribute name="tender">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- use from and to instead. -->
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="alternate">
+    <xs:complexType>
+      <xs:attribute name="iso4217" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- use from and to instead. -->
+  
+  
+  <xs:element name="territoryContainment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="group"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="group">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="contains" type="xs:NMTOKENS"/>
+      <xs:attribute name="grouping">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="status">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="grouping"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="subdivisionContainment">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="subgroup"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="subgroup">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="subtype" type="xs:NMTOKEN"/>
+      <xs:attribute name="contains" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="languageData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="language"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="language">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="scripts" type="xs:NMTOKENS"/>
+      <xs:attribute name="territories" type="xs:NMTOKENS"/>
+      <xs:attribute name="variants" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="territoryInfo">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="territory"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="territory">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languagePopulation"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="gdp" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="literacyPercent" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="population" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="languagePopulation">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="literacyPercent" type="xs:NMTOKEN"/>
+      <xs:attribute name="writingPercent" type="xs:NMTOKEN"/>
+      <xs:attribute name="populationPercent" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="officialStatus">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="de_facto_official"/>
+            <xs:enumeration value="official"/>
+            <xs:enumeration value="official_regional"/>
+            <xs:enumeration value="official_minority"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="postalCodeData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="postCodeRegex"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="postCodeRegex">
+    <xs:complexType mixed="true">
+      <xs:attribute name="territoryId" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="calendarData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="calendar"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="calendar">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="calendarSystem"/>
+        <xs:element minOccurs="0" ref="inheritEras"/>
+        <xs:element minOccurs="0" ref="eras"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="territories" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- use ordering attribute in calendarPreference element instead. -->
+  
+  
+  
+  
+  
+  
+  <xs:element name="calendarSystem">
+    <xs:complexType>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="solar"/>
+            <xs:enumeration value="lunar"/>
+            <xs:enumeration value="lunisolar"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="inheritEras">
+    <xs:complexType>
+      <xs:attribute name="calendar" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="eras">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="era"/>
+      </xs:sequence>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="era">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="start"/>
+      <xs:attribute name="end"/>
+      <xs:attribute name="code" type="xs:NMTOKEN"/>
+      <xs:attribute name="aliases" type="xs:NMTOKENS"/>
+      <xs:attribute name="named">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="calendarPreferenceData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="calendarPreference"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="calendarPreference">
+    <xs:complexType>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="ordering" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="weekData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="minDays"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="firstDay"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="weekendStart"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="weekendEnd"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="weekOfPreference"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="minDays">
+    <xs:complexType>
+      <xs:attribute name="count" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="1"/>
+            <xs:enumeration value="2"/>
+            <xs:enumeration value="3"/>
+            <xs:enumeration value="4"/>
+            <xs:enumeration value="5"/>
+            <xs:enumeration value="6"/>
+            <xs:enumeration value="7"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="firstDay">
+    <xs:complexType>
+      <xs:attribute name="day" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="sun"/>
+            <xs:enumeration value="mon"/>
+            <xs:enumeration value="tue"/>
+            <xs:enumeration value="wed"/>
+            <xs:enumeration value="thu"/>
+            <xs:enumeration value="fri"/>
+            <xs:enumeration value="sat"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="weekendStart">
+    <xs:complexType>
+      <xs:attribute name="day" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="sun"/>
+            <xs:enumeration value="mon"/>
+            <xs:enumeration value="tue"/>
+            <xs:enumeration value="wed"/>
+            <xs:enumeration value="thu"/>
+            <xs:enumeration value="fri"/>
+            <xs:enumeration value="sat"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="weekendEnd">
+    <xs:complexType>
+      <xs:attribute name="day" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="sun"/>
+            <xs:enumeration value="mon"/>
+            <xs:enumeration value="tue"/>
+            <xs:enumeration value="wed"/>
+            <xs:enumeration value="thu"/>
+            <xs:enumeration value="fri"/>
+            <xs:enumeration value="sat"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="weekOfPreference">
+    <xs:complexType>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="ordering" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="timeData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="hours"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="hours">
+    <xs:complexType>
+      <xs:attribute name="allowed" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="preferred" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="regions" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="measurementData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="measurementSystem"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="paperSize"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="measurementSystem">
+    <xs:complexType>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="metric"/>
+            <xs:enumeration value="US"/>
+            <xs:enumeration value="UK"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="category">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="temperature"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="paperSize">
+    <xs:complexType>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="A4"/>
+            <xs:enumeration value="US-Letter"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="territories" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="unitIdComponents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitIdComponent"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="unitIdComponent">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="values" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="unitConstants">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitConstant"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="unitConstant">
+    <xs:complexType>
+      <xs:attribute name="constant" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="value" use="required"/>
+      <xs:attribute name="status" type="xs:NMTOKEN"/>
+      <xs:attribute name="description"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="unitQuantities">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitQuantity"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="unitQuantity">
+    <xs:complexType>
+      <xs:attribute name="baseUnit" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="quantity" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="status" type="xs:NMTOKEN"/>
+      <xs:attribute name="description"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="convertUnits">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="convertUnit"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="convertUnit">
+    <xs:complexType>
+      <xs:attribute name="source" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="baseUnit" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="factor"/>
+      <xs:attribute name="offset"/>
+      <xs:attribute name="systems" type="xs:NMTOKENS"/>
+      <xs:attribute name="description"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="unitPreferenceData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitPreferences"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="unitPreferences">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitPreference"/>
+      </xs:sequence>
+      <xs:attribute name="category" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="usage" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="scope">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="small"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="unitPreference">
+    <xs:complexType mixed="true">
+      <xs:attribute name="regions" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="geq" type="xs:NMTOKEN"/>
+      <xs:attribute name="skeleton"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="timezoneData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="mapTimezones"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="zoneFormatting"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="mapTimezones">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="mapZone"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="otherVersion"/>
+      <xs:attribute name="typeVersion"/>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="mapZone">
+    <xs:complexType>
+      <xs:attribute name="type" use="required"/>
+      <xs:attribute name="other" use="required"/>
+      <xs:attribute name="territory"/>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="zoneFormatting">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="zoneItem"/>
+      </xs:sequence>
+      <xs:attribute name="multizone" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="tzidVersion"/>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="zoneItem">
+    <xs:complexType>
+      <xs:attribute name="type" use="required"/>
+      <xs:attribute name="territory" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="aliases"/>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="characters">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="character-fallback"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="character-fallback">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="character"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="character">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="substitute"/>
+      </xs:sequence>
+      <xs:attribute name="value" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="standard"/>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="substitute">
+    <xs:complexType mixed="true">
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="standard"/>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="transforms">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="transform"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="transform">
+    <xs:complexType>
+      <xs:choice maxOccurs="unbounded" minOccurs="0">
+        <xs:element ref="comment"/>
+        <xs:element ref="tRule"/>
+      </xs:choice>
+      <xs:attribute name="source"/>
+      <xs:attribute name="target"/>
+      <xs:attribute name="variant"/>
+      <xs:attribute default="both" name="direction">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="forward"/>
+            <xs:enumeration value="backward"/>
+            <xs:enumeration value="both"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="alias"/>
+      <xs:attribute name="backwardAlias"/>
+      <xs:attribute default="external" name="visibility">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="internal"/>
+            <xs:enumeration value="external"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="comment" type="xs:string"/>
+  
+  
+  <xs:element name="tRule" type="xs:string"/>
+  
+  <xs:element name="metadata">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="attributeOrder"/>
+        <xs:element minOccurs="0" ref="elementOrder"/>
+        <xs:element minOccurs="0" ref="serialElements"/>
+        <xs:element minOccurs="0" ref="suppress"/>
+        <xs:element minOccurs="0" ref="validity"/>
+        <xs:element minOccurs="0" ref="alias"/>
+        <xs:element minOccurs="0" ref="deprecated"/>
+        <xs:element minOccurs="0" ref="distinguishing"/>
+        <xs:element minOccurs="0" ref="blocking"/>
+        <xs:element minOccurs="0" ref="coverageAdditions"/>
+        <xs:element minOccurs="0" ref="skipDefaultLocale"/>
+        <xs:element minOccurs="0" ref="defaultContent"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="attributeOrder">
+    <xs:complexType mixed="true">
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="elementOrder">
+    <xs:complexType mixed="true">
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="serialElements">
+    <xs:complexType mixed="true">
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="suppress">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="attributes"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="attributes">
+    <xs:complexType>
+      <xs:attribute name="element" type="xs:NMTOKENS"/>
+      <xs:attribute name="attribute" type="xs:NMTOKENS"/>
+      <xs:attribute name="attributeValue"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="validity">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="variable"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="attributeValues"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="variable">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="id" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="attributeValues">
+    <xs:complexType mixed="true">
+      <xs:attribute name="dtds" type="xs:NMTOKEN"/>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="elements" type="xs:NMTOKENS"/>
+      <xs:attribute name="attributes" type="xs:NMTOKENS"/>
+      <xs:attribute name="order" type="xs:NMTOKEN"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="alias">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="scriptAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="territoryAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="subdivisionAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="variantAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="zoneAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="unitAlias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="usageAlias"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="languageAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+            <xs:enumeration value="macrolanguage"/>
+            <xs:enumeration value="legacy"/>
+            <xs:enumeration value="bibliographic"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="scriptAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="territoryAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="subdivisionAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="variantAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="zoneAlias">
+    <xs:complexType>
+      <xs:attribute name="type" use="required"/>
+      <xs:attribute name="replacement" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+            <xs:enumeration value="overlong"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="unitAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="usageAlias">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="replacement" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="reason">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="deprecated"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="deprecated">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="deprecatedItems"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="deprecatedItems">
+    <xs:complexType>
+      <xs:attribute name="type">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="standard"/>
+            <xs:enumeration value="supplemental"/>
+            <xs:enumeration value="ldml"/>
+            <xs:enumeration value="supplementalData"/>
+            <xs:enumeration value="ldmlBCP47"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="elements" type="xs:NMTOKENS"/>
+      <xs:attribute name="attributes" type="xs:NMTOKENS"/>
+      <xs:attribute name="values"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="distinguishing">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="distinguishingItems"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="distinguishingItems">
+    <xs:complexType>
+      <xs:attribute name="exclude">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="elements" type="xs:NMTOKENS"/>
+      <xs:attribute name="attributes" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="blocking">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="blockingItems"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="blockingItems">
+    <xs:complexType>
+      <xs:attribute name="elements" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  <xs:element name="coverageAdditions">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageCoverage"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="scriptCoverage"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="territoryCoverage"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="currencyCoverage"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="timezoneCoverage"/>
+      </xs:sequence>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="languageCoverage">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="scriptCoverage">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="territoryCoverage">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="currencyCoverage">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="timezoneCoverage">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="values"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <!-- would be NMTOKENS, but needs to allow / -->
+  
+  
+  
+  
+  <xs:element name="skipDefaultLocale">
+    <xs:complexType>
+      <xs:attribute name="services" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="defaultContent">
+    <xs:complexType>
+      <xs:attribute name="locales" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="codeMappings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageCodes"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="territoryCodes"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="currencyCodes"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="languageCodes">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="alpha3" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="territoryCodes">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="numeric" type="xs:NMTOKEN"/>
+      <xs:attribute name="alpha3" type="xs:NMTOKEN"/>
+      <xs:attribute name="fips10" type="xs:NMTOKEN"/>
+      <xs:attribute name="internet" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="currencyCodes">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="numeric" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <!-- # Parent locales -->
+  <xs:element name="parentLocales">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="parentLocale"/>
+      </xs:sequence>
+      <xs:attribute name="component" type="xs:NMTOKEN"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="parentLocale">
+    <xs:complexType>
+      <xs:attribute name="parent" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="personNamesDefaults">
+    <xs:complexType>
+      <xs:choice>
+        <xs:element ref="alias"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="nameOrderLocalesDefault"/>
+      </xs:choice>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="nameOrderLocalesDefault">
+    <xs:complexType mixed="true">
+      <xs:attribute name="order" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="givenFirst"/>
+            <xs:enumeration value="surnameFirst"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="likelySubtags">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="likelySubtag"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="likelySubtag">
+    <xs:complexType>
+      <xs:attribute name="from" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="to" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="origin" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  <xs:element name="metazoneInfo">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="timezone"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="timezone">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="usesMetazone"/>
+      </xs:sequence>
+      <xs:attribute name="type" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="usesMetazone">
+    <xs:complexType>
+      <xs:attribute name="from"/>
+      <xs:attribute name="to"/>
+      <xs:attribute name="mzone" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="plurals">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="pluralRules"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="pluralRanges"/>
+      </xs:sequence>
+      <xs:attribute name="type">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="ordinal"/>
+            <xs:enumeration value="cardinal"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- default is cardinal -->
+  
+  
+  
+  <xs:element name="pluralRules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="pluralRule"/>
+      </xs:sequence>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="pluralRule">
+    <xs:complexType mixed="true">
+      <xs:attribute name="count" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="zero"/>
+            <xs:enumeration value="one"/>
+            <xs:enumeration value="two"/>
+            <xs:enumeration value="few"/>
+            <xs:enumeration value="many"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- 'other' is implicitly everything else -->
+  
+  
+  <xs:element name="pluralRanges">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="pluralRange"/>
+      </xs:sequence>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="pluralRange">
+    <xs:complexType>
+      <xs:attribute name="start">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="zero"/>
+            <xs:enumeration value="one"/>
+            <xs:enumeration value="two"/>
+            <xs:enumeration value="few"/>
+            <xs:enumeration value="many"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="end">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="zero"/>
+            <xs:enumeration value="one"/>
+            <xs:enumeration value="two"/>
+            <xs:enumeration value="few"/>
+            <xs:enumeration value="many"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="result" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="zero"/>
+            <xs:enumeration value="one"/>
+            <xs:enumeration value="two"/>
+            <xs:enumeration value="few"/>
+            <xs:enumeration value="many"/>
+            <xs:enumeration value="other"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  <!-- if missing, means *all* -->
+  <!-- if missing, means *all* -->
+  <!-- if a whole rule is missing, means *other* -->
+  
+  
+  
+  <xs:element name="telephoneCodeData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="codesByTerritory"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="codesByTerritory">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="telephoneCountryCode"/>
+      </xs:sequence>
+      <xs:attribute name="territory" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  <xs:element name="telephoneCountryCode">
+    <xs:complexType>
+      <xs:attribute name="code" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="from" type="xs:NMTOKEN"/>
+      <xs:attribute name="to" type="xs:NMTOKEN"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="numberingSystems">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="numberingSystem"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="numberingSystem">
+    <xs:complexType>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="numeric"/>
+            <xs:enumeration value="algorithmic"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="id" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="radix" type="xs:NMTOKEN"/>
+      <xs:attribute name="digits"/>
+      <xs:attribute name="rules"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="bcp47KeywordMappings">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="mapKeys"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="mapTypes"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="mapKeys">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="keyMap"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="keyMap">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="bcp47" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="mapTypes">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="typeMap"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="typeMap">
+    <xs:complexType>
+      <xs:attribute name="type" use="required"/>
+      <xs:attribute name="bcp47" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <!-- # Gender List support -->
+  <xs:element name="gender">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" ref="personList"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="personList">
+    <xs:complexType>
+      <xs:attribute name="type" use="required">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="neutral"/>
+            <xs:enumeration value="mixedNeutral"/>
+            <xs:enumeration value="maleTaints"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="references">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="reference"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="reference">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="uri"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="standard">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="alt" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="languageMatching">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageMatches"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="languageMatches">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="paradigmLocales"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="matchVariable"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageMatch"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="paradigmLocales">
+    <xs:complexType>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="matchVariable">
+    <xs:complexType>
+      <xs:attribute name="id" use="required"/>
+      <xs:attribute name="value" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="languageMatch">
+    <xs:complexType>
+      <xs:attribute name="desired" use="required"/>
+      <xs:attribute name="supported" use="required"/>
+      <xs:attribute name="percent" type="xs:NMTOKEN"/>
+      <xs:attribute name="distance" type="xs:NMTOKEN"/>
+      <xs:attribute name="oneway">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <!-- # Day Periods -->
+  <xs:element name="dayPeriodRuleSet">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayPeriodRules"/>
+      </xs:sequence>
+      <xs:attribute name="type" type="xs:NMTOKEN"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="dayPeriodRules">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="dayPeriodRule"/>
+      </xs:sequence>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="dayPeriodRule">
+    <xs:complexType>
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="at" type="xs:NMTOKEN"/>
+      <xs:attribute name="after" type="xs:NMTOKEN"/>
+      <xs:attribute name="before" type="xs:NMTOKEN"/>
+      <xs:attribute name="from" type="xs:NMTOKEN"/>
+      <xs:attribute name="to" type="xs:NMTOKEN"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="references"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="metaZones">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="metazoneInfo"/>
+        <xs:element minOccurs="0" ref="mapTimezones"/>
+        <xs:element minOccurs="0" ref="metazoneIds"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="metazoneIds">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="metazoneId"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="metazoneId">
+    <xs:complexType>
+      <xs:attribute name="shortId" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="longId"/>
+      <xs:attribute default="false" name="deprecated">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="true"/>
+            <xs:enumeration value="false"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+      <xs:attribute name="preferred" type="xs:NMTOKEN"/>
+      <xs:attribute default="40" name="since"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="primaryZones">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="primaryZone"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="primaryZone">
+    <xs:complexType mixed="true">
+      <xs:attribute name="iso3166" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- # Time Zones -->
+  <xs:element name="windowsZones">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element minOccurs="0" ref="mapTimezones"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <!-- # Coverage levels -->
+  <xs:element name="coverageLevels">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="approvalRequirements"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="coverageVariable"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="coverageLevel"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="pathMatch"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="approvalRequirements">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="approvalRequirement"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="approvalRequirement">
+    <xs:complexType>
+      <xs:attribute name="votes" use="required"/>
+      <xs:attribute name="locales" use="required"/>
+      <xs:attribute name="paths" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="coverageVariable">
+    <xs:complexType>
+      <xs:attribute name="key" use="required"/>
+      <xs:attribute name="value" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  <xs:element name="coverageLevel">
+    <xs:complexType>
+      <xs:attribute name="inLanguage"/>
+      <xs:attribute name="inScript"/>
+      <xs:attribute name="inTerritory"/>
+      <xs:attribute name="value" use="required"/>
+      <xs:attribute name="match" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  
+  
+  
+  
+  <xs:element name="pathMatch">
+    <xs:complexType>
+      <xs:attribute name="id" type="xs:NMTOKENS"/>
+      <xs:attribute name="match" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="idValidity">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="id"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="id">
+    <xs:complexType mixed="true">
+      <xs:attribute name="type" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="idStatus" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="rgScope">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="rgPath"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="rgPath">
+    <xs:complexType>
+      <xs:attribute name="path" use="required"/>
+      <xs:attribute name="draft">
+        <xs:simpleType>
+          <xs:restriction base="xs:token">
+            <xs:enumeration value="approved"/>
+            <xs:enumeration value="contributed"/>
+            <xs:enumeration value="provisional"/>
+            <xs:enumeration value="unconfirmed"/>
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:attribute>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="languageGroups">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="languageGroup"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="languageGroup">
+    <xs:complexType mixed="true">
+      <xs:attribute name="parent" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <!-- # Grammatical Features -->
+  <xs:element name="grammaticalData">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="grammaticalFeatures"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="grammaticalDerivations"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="grammaticalFeatures">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="grammaticalCase"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="grammaticalGender"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="grammaticalDefiniteness"/>
+      </xs:sequence>
+      <xs:attribute name="targets" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <xs:element name="grammaticalCase">
+    <xs:complexType>
+      <xs:attribute name="scope" type="xs:NMTOKENS"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="grammaticalGender">
+    <xs:complexType>
+      <xs:attribute name="scope" type="xs:NMTOKENS"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="grammaticalDefiniteness">
+    <xs:complexType>
+      <xs:attribute name="scope" type="xs:NMTOKENS"/>
+      <xs:attribute name="values" type="xs:NMTOKENS"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  
+  <xs:element name="grammaticalDerivations">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="deriveCompound"/>
+        <xs:element maxOccurs="unbounded" minOccurs="0" ref="deriveComponent"/>
+      </xs:sequence>
+      <xs:attribute name="locales" type="xs:NMTOKENS" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  <xs:element name="deriveCompound">
+    <xs:complexType>
+      <xs:attribute name="feature" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="structure" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="value" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+  
+  
+  <!-- TODO: add @MATCH function for locale's gender categories and use here -->
+  
+  
+  <xs:element name="deriveComponent">
+    <xs:complexType>
+      <xs:attribute name="feature" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="structure" type="xs:NMTOKENS" use="required"/>
+      <xs:attribute name="value0" type="xs:NMTOKEN" use="required"/>
+      <xs:attribute name="value1" type="xs:NMTOKEN" use="required"/>
+    </xs:complexType>
+  </xs:element>
+</xs:schema><!-- TODO: add @MATCH function for locale's plural/case categories and use here --><!-- TODO: add @MATCH function for locale's plural/case categories and use here -->

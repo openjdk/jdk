@@ -36,3 +36,8 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
   Unimplemented();
   return nullptr;
 }
+
+void DowncallLinker::StubGenerator::pd_add_offset_to_oop(VMStorage reg_oop, VMStorage reg_offset,
+                                                         VMStorage tmp1, VMStorage tmp2) const {
+  Unimplemented();
+}

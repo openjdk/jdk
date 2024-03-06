@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,10 @@ import java.util.logging.LogRecord;
 import java.util.logging.StreamHandler;
 import java.util.spi.*;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
+import jdk.test.lib.Utils;
+import jdk.test.lib.process.ProcessTools;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
 import static java.util.logging.LogManager.*;
@@ -447,7 +451,8 @@ public class LocaleProviders {
         }
     }
 
-    // Run only if the platform locale is en-GB
+    // Run only if the underlying platform locale is en-GB
+    // (Setting the java locale via command line properties does not substitute this)
     static void bug8257964Test() {
         var defLoc = Locale.getDefault(Locale.Category.FORMAT);
         var type = LocaleProviderAdapter.getAdapter(CalendarNameProvider.class, Locale.UK)
@@ -474,6 +479,32 @@ public class LocaleProviders {
                     "Default format locale is not Locale.UK: " + defLoc + ", or\n" +
                     "OS is neither macOS/Windows, or\n" +
                     "provider is not HOST: " + type);
+        }
+    }
+
+    /* Method is used by the LocaleProviders* related tests to launch a
+     * LocaleProviders test method with the appropriate LocaleProvider (e.g. CLDR,
+     * COMPAT, ETC.)
+     */
+    static void test(String prefList, String methodName, String... params) throws Throwable {
+
+        List<String> command = List.of(
+                "-ea", "-esa",
+                "-cp", Utils.TEST_CLASS_PATH,
+                // Required for LocaleProvidersLogger
+                "-Djava.util.logging.config.class=LocaleProviders$LogConfig",
+                "-Djava.locale.providers=" + prefList,
+                "--add-exports=java.base/sun.util.locale.provider=ALL-UNNAMED",
+                "LocaleProviders", methodName);
+
+        // Build process with arguments, if required by the method
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                Stream.concat(command.stream(), Stream.of(params)).toList());
+
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
+        if (exitCode != 0) {
+            throw new RuntimeException("Unexpected exit code: " + exitCode);
         }
     }
 }

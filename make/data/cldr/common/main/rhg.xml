@@ -21,31 +21,31 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters draft="contributed">[\U00010D24\U00010D25\U00010D26\U00010D27 𐴀 𐴝 𐴞 𐴟 𐴠 𐴡 𐴁 𐴂 𐴃 𐴄 𐴅 𐴆 𐴇 𐴈 𐴉 𐴊 𐴋 𐴌 𐴍 𐴎 𐴏 𐴐 𐴑 𐴒 𐴓 𐴔 𐴕 𐴖 𐴗 𐴘 𐴙 𐴚 𐴛 𐴢 𐴣]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[𐴤 𐴥 𐴦 𐴧 𐴀 𐴝 𐴞 𐴟 𐴠 𐴡 𐴁 𐴂 𐴃 𐴄 𐴅 𐴆 𐴇 𐴈 𐴉 𐴊 𐴋 𐴌 𐴍 𐴎 𐴏 𐴐 𐴑 𐴒 𐴓 𐴔 𐴕 𐴖 𐴗 𐴘 𐴙 𐴚 𐴛 𐴢 𐴣]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[ـ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % + 0𐴰 1𐴱 2𐴲 3𐴳 4𐴴 5𐴵 6𐴶 7𐴷 8𐴸 9𐴹]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — ، ؛ \: ! ؟ . … ' &quot; ( ) \[ \]]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; ( ) \[ \]]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
 			<calendar type="gregorian">
+				<months>
+					<monthContext type="format"/>
+				</months>
 				<timeFormats>
 					<timeFormatLength type="full">
 						<timeFormat>
 							<pattern>HH:mm:ss zzzz</pattern>
-							<datetimeSkeleton>HHmmsszzzz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="long">
 						<timeFormat>
 							<pattern>HH:mm:ss z</pattern>
-							<datetimeSkeleton>HHmmssz</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="medium">
 						<timeFormat>
 							<pattern>HH:mm:ss</pattern>
-							<datetimeSkeleton>HHmmss</datetimeSkeleton>
 						</timeFormat>
 					</timeFormatLength>
 					<timeFormatLength type="short">
@@ -61,37 +61,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="era">
 				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
 			</field>
-			<field type="era-short">
-				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
-			</field>
-			<field type="era-narrow">
-				<displayName>𐴎𐴡𐴁𐴝𐴕𐴝</displayName>
-			</field>
 			<field type="year">
-				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴡𐴏𐴥𐴡𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴡𐴏𐴥𐴡𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-short">
-				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴡𐴏𐴥𐴡𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴡𐴏𐴥𐴡𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="year-narrow">
 				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌</displayName>
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
 				<relative type="0">𐴀𐴠 𐴁𐴡𐴏𐴥𐴡𐴌</relative>
@@ -115,49 +85,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="quarter-short">
-				<displayName>𐴉𐴝𐴁𐴝</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴉𐴝𐴁𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="quarter-narrow">
-				<displayName>𐴉𐴝𐴁𐴝</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴉𐴝𐴁𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴉𐴝𐴁𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="month">
-				<displayName>𐴔𐴝𐴐𐴢</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴥𐴝𐴐𐴢</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴝𐴐𐴢 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-short">
-				<displayName>𐴔𐴝𐴐𐴢</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴥𐴝𐴐𐴢</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴝𐴐𐴢 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="month-narrow">
 				<displayName>𐴔𐴝𐴐𐴢</displayName>
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
 				<relative type="0">𐴀𐴠 𐴔𐴥𐴝𐴐𐴢</relative>
@@ -182,39 +110,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
 			</field>
-			<field type="week-short">
-				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relative type="0">𐴀𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴇𐴥𐴝𐴉𐴃𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴇𐴥𐴝𐴉𐴃𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
-			</field>
-			<field type="week-narrow">
-				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relative type="0">𐴀𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴇𐴥𐴝𐴉𐴃𐴝</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴇𐴥𐴝𐴉𐴃𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴇𐴥𐴝𐴉𐴃𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-				<relativePeriod>𐴇𐴥𐴉𐴃𐴤𐴝𐴌 {0}</relativePeriod>
-			</field>
 			<field type="weekOfMonth">
-				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
-			</field>
-			<field type="weekOfMonth-short">
-				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝</displayName>
 			</field>
 			<field type="day">
@@ -229,80 +125,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<displayName>𐴊𐴞𐴕</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
-				<relative type="0">𐴀𐴝𐴙𐴅𐴧𐴙𐴝</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴊𐴞𐴕</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="day-narrow">
-				<displayName>𐴊𐴞𐴕</displayName>
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
-				<relative type="0">𐴀𐴝𐴙𐴅𐴧𐴙𐴝</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴈𐴝𐴙𐴓𐴧𐴝</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴊𐴞𐴕</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴊𐴞𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="dayOfYear">
-				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
-			</field>
-			<field type="dayOfYear-short">
-				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
-			</field>
-			<field type="dayOfYear-narrow">
 				<displayName>𐴁𐴡𐴏𐴥𐴡𐴌𐴡𐴌 𐴊𐴞𐴕</displayName>
 			</field>
 			<field type="weekday">
 				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
 			</field>
-			<field type="weekday-short">
-				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
-			</field>
-			<field type="weekday-narrow">
-				<displayName>𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
 			</field>
-			<field type="weekdayOfMonth-short">
-				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
-				<displayName>𐴔𐴝𐴐𐴤𐴡𐴌 𐴇𐴥𐴝𐴉𐴃𐴝𐴌 𐴊𐴞𐴕</displayName>
-			</field>
 			<field type="sun">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sun-narrow">
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
 				<relative type="0">𐴀𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
 				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴌𐴦𐴡𐴘 𐴁𐴝𐴌</relative>
@@ -324,51 +156,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="mon-narrow">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴔 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="tue-narrow">
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
 				<relative type="0">𐴀𐴠 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
 				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴝 𐴔𐴡𐴚𐴒𐴡𐴓 𐴁𐴝𐴌</relative>
@@ -390,51 +178,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="wed-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="wed-narrow">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴟𐴙𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="thu">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
 				<relative type="0">𐴀𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
 				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴁𐴞𐴐𐴤𐴞𐴃 𐴁𐴝𐴌</relative>
@@ -456,28 +200,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="fri-narrow">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴠 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴟𐴑𐴧𐴟𐴌 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
 				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
@@ -489,58 +211,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="sat-short">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1">𐴒𐴠𐴓𐴊𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relative type="0">𐴀𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relative type="1">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴐𐴤𐴡𐴕𐴞 𐴁𐴝𐴌 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="dayperiod-short">
-				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
-			</field>
 			<field type="dayperiod">
-				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
-			</field>
-			<field type="dayperiod-narrow">
 				<displayName>𐴊𐴞𐴕 / 𐴌𐴝𐴙𐴃𐴢</displayName>
 			</field>
 			<field type="hour">
 				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
 				<relative type="0">𐴀𐴠 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-short">
-				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="hour-narrow">
-				<displayName>𐴒𐴤𐴡𐴕𐴄𐴤𐴝</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴒𐴤𐴡𐴕𐴄𐴤𐴝</relativeTimePattern>
 				</relativeTime>
@@ -558,24 +234,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="minute-short">
-				<displayName>𐴔𐴞𐴕𐴥𐴡𐴄𐴢</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴞𐴕𐴥𐴡𐴄</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="minute-narrow">
-				<displayName>𐴔𐴞𐴕𐴥𐴡𐴄𐴢</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴔𐴞𐴕𐴥𐴡𐴄</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴔𐴞𐴕𐴥𐴡𐴄 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="second">
 				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
 				<relative type="0">𐴀𐴠𐴈𐴥𐴡𐴕</relative>
@@ -586,35 +244,111 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="second-short">
-				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴏𐴠𐴑𐴤𐴠𐴕</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="second-narrow">
-				<displayName>𐴏𐴠𐴑𐴤𐴠𐴕</displayName>
-				<relativeTime type="future">
-					<relativeTimePattern count="other">𐴀𐴝𐴘𐴧𐴥𐴠𐴌𐴊𐴧𐴠 {0} 𐴏𐴠𐴑𐴤𐴠𐴕</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="other">{0} 𐴏𐴠𐴑𐴤𐴠𐴕 𐴀𐴝𐴒𐴠</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="zone">
-				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
-			</field>
-			<field type="zone-short">
-				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
-			</field>
-			<field type="zone-narrow">
 				<displayName>𐴀𐴠𐴓𐴝𐴑𐴝𐴀𐴞 𐴄𐴝𐴙𐴔</displayName>
 			</field>
 		</fields>
 	</dates>
+	<characterLabels>
+		<characterLabelPattern type="all">{0} — 𐴁𐴠𐴒𐴧𐴟𐴓𐴟𐴕</characterLabelPattern>
+		<characterLabelPattern type="compatibility">{0} — 𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝</characterLabelPattern>
+		<characterLabelPattern type="enclosed">{0} — 𐴁𐴡𐴕 𐴒𐴡𐴙𐴅𐴧𐴤𐴙𐴝</characterLabelPattern>
+		<characterLabelPattern type="extended">{0} — 𐴁𐴝𐴌𐴥𐴝𐴘𐴧𐴝</characterLabelPattern>
+		<characterLabelPattern type="facing-left">{0} — 𐴁𐴝𐴕 𐴔𐴟𐴑𐴤𐴝</characterLabelPattern>
+		<characterLabelPattern type="facing-right">{0} — 𐴋𐴠𐴕 𐴔𐴟𐴑𐴤𐴝</characterLabelPattern>
+		<characterLabelPattern type="historic">{0} — 𐴃𐴝𐴌𐴞𐴑𐴞</characterLabelPattern>
+		<characterLabelPattern type="miscellaneous">{0} — 𐴁𐴞𐴁𐴤𐴞𐴕𐴧𐴡</characterLabelPattern>
+		<characterLabelPattern type="other">{0} — 𐴀𐴡𐴙𐴕𐴧𐴡</characterLabelPattern>
+		<characterLabelPattern type="scripts">{0} — 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabelPattern>
+		<characterLabelPattern type="subscript">{0} — 𐴏𐴥𐴝𐴁𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabelPattern>
+		<characterLabelPattern type="superscript">{0} — 𐴏𐴟𐴂𐴥𐴡𐴌 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabelPattern>
+		<characterLabel type="activities">𐴇𐴥𐴡𐴌𐴑𐴡𐴃𐴢</characterLabel>
+		<characterLabel type="african_scripts">𐴀𐴝𐴉𐴌𐴞𐴑𐴞 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="american_scripts">𐴀𐴝𐴔𐴌𐴞𐴑𐴞 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="animal">𐴎𐴝𐴕𐴖𐴝𐴌</characterLabel>
+		<characterLabel type="animals_nature">𐴎𐴝𐴕𐴖𐴝𐴌 𐴘𐴝𐴃𐴡 𐴑𐴟𐴊𐴌𐴟𐴃𐴞</characterLabel>
+		<characterLabel type="arrows">𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="body">𐴒𐴝𐴀𐴝</characterLabel>
+		<characterLabel type="box_drawing">𐴁𐴝𐴑𐴐𐴤𐴟 𐴀𐴝𐴣𐴑𐴝</characterLabel>
+		<characterLabel type="braille">𐴁𐴠𐴌𐴠𐴓</characterLabel>
+		<characterLabel type="building">𐴁𐴞𐴓𐴋𐴤𐴞𐴚</characterLabel>
+		<characterLabel type="bullets_stars">𐴒𐴟𐴓𐴞 / 𐴃𐴝𐴌𐴝</characterLabel>
+		<characterLabel type="consonantal_jamo">𐴏𐴦𐴝𐴑𐴞𐴕 𐴇𐴥𐴡𐴌𐴡𐴉𐴢</characterLabel>
+		<characterLabel type="currency_symbols">𐴄𐴞𐴛𐴝𐴌 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="dash_connector">𐴎𐴟𐴌𐴝 / 𐴏𐴥𐴞𐴌𐴝</characterLabel>
+		<characterLabel type="digits">𐴓𐴡𐴔𐴁𐴤𐴡𐴌</characterLabel>
+		<characterLabel type="dingbats">𐴇𐴥𐴝𐴣𐴎𐴡𐴀𐴡𐴕</characterLabel>
+		<characterLabel type="divination_symbols">𐴒𐴝𐴙𐴁𐴢 𐴎𐴝𐴕𐴝 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="downwards_arrows">𐴕𐴞𐴏𐴡𐴌 𐴔𐴞𐴑𐴧𐴤𐴙𐴝 𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="downwards_upwards_arrows">𐴕𐴞𐴏𐴡𐴌 / 𐴀𐴟𐴖𐴡𐴌 𐴔𐴞𐴑𐴧𐴤𐴙𐴝 𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="east_asian_scripts">𐴉𐴟𐴑 𐴀𐴞𐴐𐴤𐴞𐴘𐴝 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="emoji">𐴀𐴞𐴔𐴟𐴅𐴞</characterLabel>
+		<characterLabel type="european_scripts">𐴘𐴟𐴌𐴟𐴂𐴞 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="female">𐴔𐴝𐴘𐴧𐴝</characterLabel>
+		<characterLabel type="flag">𐴁𐴡𐴖𐴄𐴝</characterLabel>
+		<characterLabel type="flags">𐴁𐴡𐴖𐴄𐴝 𐴀𐴥𐴡𐴑𐴧𐴡𐴓</characterLabel>
+		<characterLabel type="food_drink">𐴈𐴥𐴝𐴕𐴝 𐴀𐴝𐴌 𐴉𐴞𐴕𐴝</characterLabel>
+		<characterLabel type="format">𐴃𐴡𐴌𐴃𐴞𐴁𐴢 / 𐴐𐴡𐴑𐴤𐴡𐴓</characterLabel>
+		<characterLabel type="format_whitespace">𐴃𐴡𐴌𐴃𐴞𐴁𐴢 𐴀𐴝𐴌 𐴈𐴥𐴝𐴓𐴞 𐴎𐴝𐴒𐴝</characterLabel>
+		<characterLabel type="full_width_form_variant">𐴐𐴠𐴄𐴧𐴤𐴝𐴌 𐴁𐴞𐴁𐴤𐴞𐴕𐴧𐴡 𐴐𐴡𐴑𐴤𐴡𐴓</characterLabel>
+		<characterLabel type="geometric_shapes">𐴅𐴞𐴀𐴡𐴔𐴠𐴄𐴞𐴌𐴥𐴞𐴑 𐴐𐴡𐴑𐴤𐴡𐴓</characterLabel>
+		<characterLabel type="half_width_form_variant">𐴀𐴝𐴊𐴤𐴝 𐴐𐴠𐴄𐴧𐴤𐴝𐴌 𐴁𐴞𐴁𐴤𐴞𐴕𐴧𐴡 𐴐𐴡𐴑𐴤𐴡𐴓</characterLabel>
+		<characterLabel type="han_characters">𐴇𐴝𐴕 𐴓𐴠𐴑𐴤𐴝</characterLabel>
+		<characterLabel type="han_radicals">𐴇𐴝𐴕 𐴁𐴟𐴕𐴞𐴘𐴝𐴊</characterLabel>
+		<characterLabel type="hanja">𐴇𐴝𐴕𐴅𐴝</characterLabel>
+		<characterLabel type="hanzi_simplified">𐴇𐴝𐴕𐴅𐴞 ( 𐴐𐴤𐴝𐴊𐴡𐴌𐴡𐴕 )</characterLabel>
+		<characterLabel type="hanzi_traditional">𐴇𐴝𐴕𐴅𐴞 ( 𐴌𐴡𐴖𐴝𐴘𐴡𐴃𐴞)</characterLabel>
+		<characterLabel type="heart">𐴑𐴡𐴓𐴥𐴡𐴁𐴢</characterLabel>
+		<characterLabel type="historic_scripts">𐴃𐴝𐴌𐴞𐴑𐴞 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="ideographic_desc_characters">𐴓𐴠𐴑𐴤𐴝𐴌 𐴕𐴞𐴐𐴤𐴝𐴕𐴡𐴌 𐴉𐴡𐴌𐴞𐴏𐴡</characterLabel>
+		<characterLabel type="japanese_kana">𐴅𐴝𐴂𐴝𐴕𐴞 𐴑𐴝𐴕𐴝</characterLabel>
+		<characterLabel type="kanbun">𐴑𐴝𐴕𐴁𐴟𐴕</characterLabel>
+		<characterLabel type="kanji">𐴑𐴝𐴕𐴅𐴞</characterLabel>
+		<characterLabel type="keycap">𐴑𐴞𐴑𐴤𐴠𐴂𐴢</characterLabel>
+		<characterLabel type="leftwards_arrows">𐴁𐴝𐴕𐴋𐴤𐴝𐴙𐴑𐴧𐴙𐴝 𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="leftwards_rightwards_arrows">𐴁𐴝𐴕𐴋𐴤𐴝𐴙𐴑𐴧𐴙𐴝 𐴋𐴠𐴕𐴋𐴤𐴝𐴙𐴑𐴧𐴙𐴝 𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="letterlike_symbols">𐴇𐴥𐴡𐴌𐴡𐴉𐴡𐴌 𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="limited_use">𐴐𐴤𐴞𐴔𐴝 𐴊𐴞𐴘𐴝 𐴀𐴠𐴏𐴃𐴠𐴔𐴝𐴓</characterLabel>
+		<characterLabel type="male">𐴔𐴡𐴌𐴡𐴃𐴢</characterLabel>
+		<characterLabel type="math_symbols">𐴇𐴥𐴞𐴏𐴝𐴁𐴡𐴌 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="middle_eastern_scripts">𐴔𐴝𐴎 𐴉𐴟𐴑𐴝 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="miscellaneous">𐴈𐴡𐴀𐴠𐴑 𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝</characterLabel>
+		<characterLabel type="modern_scripts">𐴕𐴟𐴖𐴝 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="modifier">𐴁𐴡𐴊𐴡𐴓𐴡𐴙𐴕𐴧𐴝</characterLabel>
+		<characterLabel type="musical_symbols">𐴔𐴙𐴟𐴎𐴞𐴑𐴤𐴡𐴓 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="nature">𐴑𐴟𐴊𐴌𐴟𐴃𐴞</characterLabel>
+		<characterLabel type="nonspacing">𐴈𐴥𐴝𐴓𐴞 𐴏𐴥𐴝𐴌𐴝</characterLabel>
+		<characterLabel type="numbers">𐴓𐴡𐴔𐴁𐴤𐴡𐴌 𐴀𐴥𐴡𐴑𐴧𐴡𐴓</characterLabel>
+		<characterLabel type="objects">𐴏𐴞𐴏𐴢</characterLabel>
+		<characterLabel type="other">𐴀𐴡𐴙𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="paired">𐴎𐴟𐴌𐴝 𐴊𐴞𐴘𐴝</characterLabel>
+		<characterLabel type="person">𐴎𐴡𐴕</characterLabel>
+		<characterLabel type="phonetic_alphabet">𐴀𐴝𐴁𐴝𐴏𐴢 𐴀𐴡𐴓𐴝 𐴇𐴥𐴡𐴌𐴡𐴉𐴢</characterLabel>
+		<characterLabel type="pictographs">𐴏𐴥𐴝𐴁𐴝 𐴓𐴠𐴑𐴤𐴝</characterLabel>
+		<characterLabel type="place">𐴎𐴝𐴒𐴝</characterLabel>
+		<characterLabel type="plant">𐴏𐴝𐴌𐴝</characterLabel>
+		<characterLabel type="punctuation">𐴏𐴥𐴞𐴌𐴝 𐴒𐴡𐴌𐴥𐴝𐴌 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="rightwards_arrows">𐴋𐴠𐴕𐴋𐴤𐴝𐴙𐴑𐴧𐴙𐴝 𐴃𐴞𐴌</characterLabel>
+		<characterLabel type="sign_standard_symbols">𐴕𐴞𐴐𐴤𐴝𐴕 𐴘𐴝 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="small_form_variant">𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝 𐴁𐴡𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝 𐴐𐴤𐴡𐴣𐴍𐴡</characterLabel>
+		<characterLabel type="smiley">𐴐𐴡𐴑𐴤𐴡𐴓𐴞</characterLabel>
+		<characterLabel type="smileys_people">𐴐𐴡𐴑𐴤𐴡𐴓 𐴘𐴝 𐴎𐴡𐴕</characterLabel>
+		<characterLabel type="south_asian_scripts">𐴊𐴡𐴀𐴡𐴙𐴕 𐴀𐴠𐴐𐴤𐴞𐴘𐴝𐴌 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="southeast_asian_scripts">𐴊𐴡𐴀𐴡𐴙𐴕 𐴉𐴟𐴑 𐴀𐴠𐴐𐴤𐴞𐴘𐴝𐴌 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="spacing">𐴉𐴥𐴝𐴌𐴡𐴑 𐴒𐴡𐴌𐴥𐴡𐴕</characterLabel>
+		<characterLabel type="sport">𐴑𐴤𐴠𐴓𐴝</characterLabel>
+		<characterLabel type="symbols">𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="technical_symbols">𐴄𐴠𐴑𐴕𐴞𐴑𐴤𐴡𐴓 𐴏𐴞𐴕𐴧𐴡</characterLabel>
+		<characterLabel type="tone_marks">𐴀𐴝𐴁𐴝𐴏𐴞 𐴕𐴞𐴐𐴤𐴝𐴕𐴝</characterLabel>
+		<characterLabel type="travel">𐴏𐴡𐴉𐴥𐴡𐴌</characterLabel>
+		<characterLabel type="travel_places">𐴏𐴡𐴉𐴥𐴡𐴌 𐴘𐴝 𐴎𐴝𐴒𐴝</characterLabel>
+		<characterLabel type="upwards_arrows">𐴀𐴟𐴖𐴡𐴌 𐴔𐴞𐴑𐴧𐴝 𐴄𐴞𐴌</characterLabel>
+		<characterLabel type="variant_forms">𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝 𐴁𐴡𐴋𐴡𐴀𐴡𐴙𐴓𐴧𐴝</characterLabel>
+		<characterLabel type="vocalic_jamo">𐴀𐴝𐴁𐴝𐴏𐴞 𐴅𐴝𐴔𐴟</characterLabel>
+		<characterLabel type="weather">𐴔𐴟𐴀𐴟𐴏𐴡𐴔</characterLabel>
+		<characterLabel type="western_asian_scripts">𐴉𐴡𐴏𐴥𐴞𐴔𐴞 𐴀𐴠𐴐𐴤𐴞𐴘𐴝𐴌 𐴀𐴠𐴏𐴑𐴞𐴌𐴞𐴂𐴢</characterLabel>
+		<characterLabel type="whitespace">𐴐𐴤𐴝𐴊𐴝 𐴎𐴝𐴒𐴝</characterLabel>
+	</characterLabels>
 	<personNames>
 		<nameOrderLocales order="givenFirst">und rhg</nameOrderLocales>
 	</personNames>

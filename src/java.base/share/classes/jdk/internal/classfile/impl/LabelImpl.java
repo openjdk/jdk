@@ -26,8 +26,8 @@ package jdk.internal.classfile.impl;
 
 import java.util.Objects;
 
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.instruction.LabelTarget;
+import java.lang.classfile.Label;
+import java.lang.classfile.instruction.LabelTarget;
 
 /**
  * Labels are created with a parent context, which is either a code attribute

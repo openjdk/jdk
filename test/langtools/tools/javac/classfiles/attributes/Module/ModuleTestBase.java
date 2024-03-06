@@ -21,9 +21,9 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
+import java.lang.classfile.constantpool.*;
 
 import java.io.IOException;
 import java.lang.annotation.Retention;
@@ -69,7 +69,7 @@ public class ModuleTestBase {
     }
 
     protected void testModuleAttribute(Path modulePath, ModuleDescriptor moduleDescriptor) throws Exception {
-        ClassModel classFile = Classfile.of().parse(modulePath.resolve("module-info.class"));
+        ClassModel classFile = ClassFile.of().parse(modulePath.resolve("module-info.class"));
         ModuleAttribute moduleAttribute = classFile.findAttribute(Attributes.MODULE).orElse(null);
         assert moduleAttribute != null;
         testModuleName(moduleDescriptor, moduleAttribute);
@@ -193,7 +193,7 @@ public class ModuleTestBase {
     }
 
     public enum ModuleFlag implements Mask {
-        OPEN("open", Classfile.ACC_OPEN);
+        OPEN("open", ClassFile.ACC_OPEN);
 
         private final String token;
         private final int mask;
@@ -210,9 +210,9 @@ public class ModuleTestBase {
     }
 
     public enum RequiresFlag implements Mask {
-        TRANSITIVE("transitive", Classfile.ACC_TRANSITIVE),
-        STATIC("static", Classfile.ACC_STATIC_PHASE),
-        MANDATED("", Classfile.ACC_MANDATED);
+        TRANSITIVE("transitive", ClassFile.ACC_TRANSITIVE),
+        STATIC("static", ClassFile.ACC_STATIC_PHASE),
+        MANDATED("", ClassFile.ACC_MANDATED);
 
         private final String token;
         private final int mask;
@@ -229,7 +229,7 @@ public class ModuleTestBase {
     }
 
     public enum ExportsFlag implements Mask {
-        SYNTHETIC("", Classfile.ACC_SYNTHETIC);
+        SYNTHETIC("", ClassFile.ACC_SYNTHETIC);
 
         private final String token;
         private final int mask;
@@ -246,7 +246,7 @@ public class ModuleTestBase {
     }
 
     public enum OpensFlag implements Mask {
-        SYNTHETIC("", Classfile.ACC_SYNTHETIC);
+        SYNTHETIC("", ClassFile.ACC_SYNTHETIC);
 
         private final String token;
         private final int mask;

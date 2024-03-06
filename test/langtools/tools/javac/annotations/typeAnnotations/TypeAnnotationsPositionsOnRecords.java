@@ -26,12 +26,8 @@
  * @bug 8246774
  * @summary Verify location of type annotations on records
  * @library /tools/lib
+ * @enablePreview
  * @modules
- *      java.base/jdk.internal.classfile
- *      java.base/jdk.internal.classfile.attribute
- *      java.base/jdk.internal.classfile.constantpool
- *      java.base/jdk.internal.classfile.instruction
- *      java.base/jdk.internal.classfile.components
  *      java.base/jdk.internal.classfile.impl
  *      jdk.compiler/com.sun.tools.javac.api
  *      jdk.compiler/com.sun.tools.javac.main
@@ -50,8 +46,8 @@ import java.nio.file.Paths;
 import java.lang.annotation.*;
 import java.util.Arrays;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 import com.sun.tools.javac.util.Assert;
 
 import toolbox.JavacTask;
@@ -115,7 +111,7 @@ public class TypeAnnotationsPositionsOnRecords {
     }
 
     void checkClassFile(final File cfile, int... taPositions) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         int accessorPos = 0;
         int checkedAccessors = 0;
         for (MethodModel method : classFile.methods()) {

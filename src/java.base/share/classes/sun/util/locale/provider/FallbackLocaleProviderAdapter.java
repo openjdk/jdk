@@ -45,6 +45,7 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     /**
      * Fallback provider only provides the ROOT locale data.
      */
+    @SuppressWarnings("this-escape")
     private final LocaleResources rootLocaleResources =
         new LocaleResources(this, Locale.ROOT);
 

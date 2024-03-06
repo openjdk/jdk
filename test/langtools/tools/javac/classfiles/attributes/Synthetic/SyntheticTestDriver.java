@@ -34,8 +34,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.lang.reflect.AccessFlag;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.SyntheticAttribute;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.SyntheticAttribute;
 
 /**
  * The tests work as follows. Firstly, it looks through the test cases

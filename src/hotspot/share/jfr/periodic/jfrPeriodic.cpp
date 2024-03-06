@@ -36,6 +36,7 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/objectCountEventSender.hpp"
 #include "jfr/jfrEvents.hpp"
+#include "jfr/periodic/jfrCompilerQueueUtilization.hpp"
 #include "jfr/periodic/jfrFinalizerStatisticsEvent.hpp"
 #include "jfr/periodic/jfrModuleEvent.hpp"
 #include "jfr/periodic/jfrOSInterface.hpp"
@@ -114,10 +115,10 @@ TRACE_REQUEST_FUNC(JVMInformation) {
 
 TRACE_REQUEST_FUNC(OSInformation) {
   ResourceMark rm;
-  char* os_name = NEW_RESOURCE_ARRAY(char, 2048);
-  JfrOSInterface::os_version(&os_name);
+  char* os_version = nullptr;
+  JfrOSInterface::os_version(&os_version);
   EventOSInformation event;
-  event.set_osVersion(os_name);
+  event.set_osVersion(os_version);
   event.commit();
 }
 
@@ -138,7 +139,7 @@ TRACE_REQUEST_FUNC(ModuleExport) {
 /*
  * This is left empty on purpose, having ExecutionSample as a requestable
  * is a way of getting the period. The period is passed to ThreadSampling::update_period.
- * Implementation in jfrSamples.cpp
+ * Implementation in periodic/sampling/jfrThreadSampler.cpp.
  */
 TRACE_REQUEST_FUNC(ExecutionSample) {
 }
@@ -219,6 +220,10 @@ TRACE_REQUEST_FUNC(CPULoad) {
 
 TRACE_REQUEST_FUNC(ThreadCPULoad) {
   JfrThreadCPULoadEvent::send_events();
+}
+
+TRACE_REQUEST_FUNC(CompilerQueueUtilization) {
+  JfrCompilerQueueUtilization::send_events();
 }
 
 TRACE_REQUEST_FUNC(NetworkUtilization) {
@@ -519,6 +524,13 @@ TRACE_REQUEST_FUNC(PhysicalMemory) {
   EventPhysicalMemory event;
   event.set_totalSize(totalPhysicalMemory);
   event.set_usedSize(totalPhysicalMemory - os::available_memory());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(SwapSpace) {
+  EventSwapSpace event;
+  event.set_totalSize(os::total_swap_space());
+  event.set_freeSize(os::free_swap_space());
   event.commit();
 }
 

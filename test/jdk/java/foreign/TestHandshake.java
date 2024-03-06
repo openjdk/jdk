@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @requires vm.flavor != "zero"
  * @modules java.base/jdk.internal.vm.annotation java.base/jdk.internal.misc
  * @key randomness
  * @run testng/othervm TestHandshake
@@ -33,6 +34,7 @@
 
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
@@ -48,6 +50,7 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 import static org.testng.Assert.*;
 
 public class TestHandshake {
@@ -98,16 +101,19 @@ public class TestHandshake {
         @Override
         public final void run() {
             start("\"Accessor #\" + id");
-            outer: while (segment.scope().isAlive()) {
+            while (segment.scope().isAlive()) {
                 try {
                     doAccess();
                 } catch (IllegalStateException ex) {
-                    long delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " suspending - elapsed (ms): " + delay);
-                    backoff();
-                    delay = System.currentTimeMillis() - start.get();
-                    System.out.println("Accessor #" + id + " resuming - elapsed (ms): " + delay);
-                    continue outer;
+                    if (!failed.get()) {
+                        // ignore - this means segment was alive, but was closed while we were accessing it
+                        // next isAlive test should fail
+                        assertFalse(segment.scope().isAlive());
+                        failed.set(true);
+                    } else {
+                        // rethrow!
+                        throw ex;
+                    }
                 }
             }
             long delay = System.currentTimeMillis() - start.get();
@@ -171,6 +177,30 @@ public class TestHandshake {
         @Override
         public void doAccess() {
             first.copyFrom(second);
+        }
+    }
+
+    static class SegmentSwappyCopyAccessor extends AbstractSegmentAccessor {
+
+        MemorySegment first, second;
+        ValueLayout sourceLayout, destLayout;
+        long count;
+
+
+        SegmentSwappyCopyAccessor(int id, MemorySegment segment, Arena _unused) {
+            super(id, segment);
+            long split = segment.byteSize() / 2;
+            first = segment.asSlice(0, split);
+            sourceLayout = JAVA_INT.withOrder(ByteOrder.LITTLE_ENDIAN);
+            second = segment.asSlice(split);
+            destLayout = JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN);
+            count = Math.min(first.byteSize() / sourceLayout.byteSize(),
+                second.byteSize() / destLayout.byteSize());
+        }
+
+        @Override
+        public void doAccess() {
+            MemorySegment.copy(first, sourceLayout, 0L, second, destLayout, 0L, count);
         }
     }
 
@@ -246,14 +276,7 @@ public class TestHandshake {
         @Override
         public void run() {
             start("Handshaker");
-            while (true) {
-                try {
-                    arena.close();
-                    break;
-                } catch (IllegalStateException ex) {
-                    Thread.onSpinWait();
-                }
-            }
+            arena.close(); // This should NOT throw
             long delay = System.currentTimeMillis() - start.get();
             System.out.println("Segment closed - elapsed (ms): " + delay);
         }
@@ -268,6 +291,7 @@ public class TestHandshake {
         return new Object[][] {
                 { "SegmentAccessor", (AccessorFactory)SegmentAccessor::new },
                 { "SegmentCopyAccessor", (AccessorFactory)SegmentCopyAccessor::new },
+                { "SegmentSwappyCopyAccessor", (AccessorFactory)SegmentSwappyCopyAccessor::new },
                 { "SegmentMismatchAccessor", (AccessorFactory)SegmentMismatchAccessor::new },
                 { "SegmentFillAccessor", (AccessorFactory)SegmentFillAccessor::new },
                 { "BufferAccessor", (AccessorFactory)BufferAccessor::new },

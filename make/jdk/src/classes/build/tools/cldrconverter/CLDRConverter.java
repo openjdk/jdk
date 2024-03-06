@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1289,25 +1289,58 @@ public class CLDRConverter {
      */
     private static void generateTZDBShortNamesMap() throws IOException {
         Files.walk(Path.of(tzDataDir), 1, FileVisitOption.FOLLOW_LINKS)
-            .filter(p -> p.toFile().isFile())
+            .filter(p -> p.toFile().isFile() && !p.endsWith("jdk11_backward"))
             .forEach(p -> {
                 try {
                     String zone = null;
                     String rule = null;
                     String format = null;
+                    boolean inVanguard = false;
+                    boolean inRearguard = false;
                     for (var line : Files.readAllLines(p)) {
-                        if (line.contains("#STDOFF")) continue;
+                        // Interpret the line in rearguard mode so that STD/DST
+                        // correctly handles negative DST cases, such as "GMT/IST"
+                        // vs. "IST/GMT" case for Europe/Dublin
+                        if (inVanguard) {
+                            if (line.startsWith("# Rearguard")) {
+                                inVanguard = false;
+                                inRearguard = true;
+                            }
+                            continue;
+                        } else if (line.startsWith("# Vanguard")) {
+                            inVanguard = true;
+                            continue;
+                        }
+                        if (inRearguard) {
+                            if (line.startsWith("# End of rearguard")) {
+                                inRearguard = false;
+                                continue;
+                            } else {
+                                if (line.startsWith("#\t")) {
+                                    line = line.substring(1); // omit #
+                                }
+                            }
+                        }
+                        if (line.isBlank() || line.matches("^[ \t]*#.*")) {
+                            // ignore blank/comment lines
+                            continue;
+                        }
+                        // remove comments in-line
                         line = line.replaceAll("[ \t]*#.*", "");
 
                         // Zone line
                         if (line.startsWith("Zone")) {
+                            if (zone != null) {
+                                tzdbShortNamesMap.put(zone, format + NBSP + rule);
+                            }
                             var zl = line.split("[ \t]+", -1);
                             zone = zl[1];
                             rule = zl[3];
                             format = zl[4];
                         } else {
                             if (zone != null) {
-                                if (line.isBlank()) {
+                                if (line.startsWith("Rule") ||
+                                    line.startsWith("Link")) {
                                     tzdbShortNamesMap.put(zone, format + NBSP + rule);
                                     zone = null;
                                     rule = null;

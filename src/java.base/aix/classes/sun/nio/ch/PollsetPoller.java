@@ -66,7 +66,7 @@ class PollsetPoller extends Poller {
     }
 
     @Override
-    void implDeregister(int fd) {
+    void implDeregister(int fd, boolean polled) {
         int ret = Pollset.pollsetCtl(setid, Pollset.PS_DELETE, fd, 0);
         assert ret == 0;
     }

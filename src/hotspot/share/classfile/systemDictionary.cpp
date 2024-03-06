@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_loading_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop system_loader = get_system_class_loader_impl(CHECK);
       assert(_java_system_loader.resolve() == system_loader, "must be");
@@ -153,7 +153,7 @@ void SystemDictionary::compute_java_loaders(TRAPS) {
   } else {
     // It must have been restored from the archived module graph
     assert(UseSharedSpaces, "must be");
-    assert(MetaspaceShared::use_full_module_graph(), "must be");
+    assert(CDSConfig::is_loading_full_module_graph(), "must be");
     DEBUG_ONLY(
       oop platform_loader = get_platform_class_loader_impl(CHECK);
       assert(_java_platform_loader.resolve() == platform_loader, "must be");
@@ -212,13 +212,13 @@ void SystemDictionary::set_platform_loader(ClassLoaderData *cld) {
 // ----------------------------------------------------------------------------
 // Parallel class loading check
 
-bool is_parallelCapable(Handle class_loader) {
+static bool is_parallelCapable(Handle class_loader) {
   if (class_loader.is_null()) return true;
   return java_lang_ClassLoader::parallelCapable(class_loader());
 }
 // ----------------------------------------------------------------------------
 // ParallelDefineClass flag does not apply to bootclass loader
-bool is_parallelDefine(Handle class_loader) {
+static bool is_parallelDefine(Handle class_loader) {
    if (class_loader.is_null()) return false;
    if (AllowParallelDefineClass && java_lang_ClassLoader::parallelCapable(class_loader())) {
      return true;
@@ -280,7 +280,7 @@ Symbol* SystemDictionary::class_name_symbol(const char* name, Symbol* exception,
 
 #ifdef ASSERT
 // Used to verify that class loading succeeded in adding k to the dictionary.
-void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
+static void verify_dictionary_entry(Symbol* class_name, InstanceKlass* k) {
   MutexLocker mu(SystemDictionary_lock);
   ClassLoaderData* loader_data = k->class_loader_data();
   Dictionary* dictionary = loader_data->dictionary();
@@ -414,7 +414,7 @@ InstanceKlass* SystemDictionary::resolve_super_or_fail(Symbol* class_name,
   assert(super_name != nullptr, "null superclass for resolving");
   assert(!Signature::is_array(super_name), "invalid superclass name");
 #if INCLUDE_CDS
-  if (DumpSharedSpaces) {
+  if (CDSConfig::is_dumping_static_archive()) {
     // Special processing for handling UNREGISTERED shared classes.
     InstanceKlass* k = SystemDictionaryShared::lookup_super_for_unregistered_class(class_name,
                            super_name, is_superclass);
@@ -878,7 +878,7 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
  InstanceKlass* k = nullptr;
 
 #if INCLUDE_CDS
-  if (!DumpSharedSpaces) {
+  if (!CDSConfig::is_dumping_static_archive()) {
     k = SystemDictionaryShared::lookup_from_stream(class_name,
                                                    class_loader,
                                                    cl_info.protection_domain(),
@@ -1111,13 +1111,12 @@ InstanceKlass* SystemDictionary::load_shared_lambda_proxy_class(InstanceKlass* i
   if (loaded_ik != nullptr) {
     assert(shared_nest_host->is_same_class_package(ik),
            "lambda proxy class and its nest host must be in the same package");
+    // The lambda proxy class and its nest host have the same class loader and class loader data,
+    // as verified in SystemDictionaryShared::add_lambda_proxy_class()
+    assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
+    assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
+    ik->set_nest_host(shared_nest_host);
   }
-
-  // The lambda proxy class and its nest host have the same class loader and class loader data,
-  // as verified in SystemDictionaryShared::add_lambda_proxy_class()
-  assert(shared_nest_host->class_loader() == class_loader(), "mismatched class loader");
-  assert(shared_nest_host->class_loader_data() == class_loader_data(class_loader), "mismatched class loader data");
-  ik->set_nest_host(shared_nest_host);
 
   return loaded_ik;
 }
@@ -1277,7 +1276,7 @@ InstanceKlass* SystemDictionary::load_instance_class_impl(Symbol* class_name, Ha
     if (k == nullptr) {
       // Use VM class loader
       PerfTraceTime vmtimer(ClassLoader::perf_sys_classload_time());
-      k = ClassLoader::load_class(class_name, search_only_bootloader_append, CHECK_NULL);
+      k = ClassLoader::load_class(class_name, pkg_entry, search_only_bootloader_append, CHECK_NULL);
     }
 
     // find_or_define_instance_class may return a different InstanceKlass

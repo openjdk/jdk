@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,10 +27,10 @@
  * @library ../../regtesthelpers
  * @build PassFailJFrame
  * @summary JDK7 Printing: CJK and Latin Text in string overlap
+ * @key printer
  * @run main/manual PrintLatinCJKTest
  */
 
-import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.print.PageFormat;
@@ -38,51 +38,57 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.lang.reflect.InvocationTargetException;
-import javax.swing.JButton;
-import javax.swing.JFrame;
 
-import static javax.swing.SwingUtilities.invokeAndWait;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JOptionPane;
 
 public class PrintLatinCJKTest implements Printable {
 
-    private static PrintLatinCJKTest testInstance = new PrintLatinCJKTest();
-    private static JFrame frame;
-    private static final String info = """
-            You need a printer for this test. If you have none, let
-            the test pass. If there is a printer, press Print, send
-            the output to the printer, and examine it. It should have
-            text looking like this : \u4e00\u4e01\u4e02\u4e03\u4e04English
+    private static final String TEXT = "\u4e00\u4e01\u4e02\u4e03\u4e04English";
+
+    private static final String INFO = """
+            Press Print, send the output to the printer and examine it.
+            The printout should have text looking like this:
+
+            """
+            + TEXT + """
+
+
+            Press Pass if the text is printed correctly.
+            If Japanese and English text overlap, press Fail.
+
 
             To test 8022536, if a remote printer is the system default,
             it should show in the dialog as the selected printer.
             """;
 
-    public static void showFrame() throws InterruptedException, InvocationTargetException {
-        invokeAndWait( () -> {
-            frame = new JFrame("Test Frame");
-            JButton b = new JButton("Print");
-            b.addActionListener((ae) -> {
-                try {
-                    PrinterJob job = PrinterJob.getPrinterJob();
-                    job.setPrintable(testInstance);
-                    if (job.printDialog()) {
-                        job.print();
-                    }
-                } catch (PrinterException ex) {
-                    ex.printStackTrace();
+    private static JComponent createTestUI() {
+        JButton b = new JButton("Print");
+        b.addActionListener((ae) -> {
+            try {
+                PrinterJob job = PrinterJob.getPrinterJob();
+                job.setPrintable(new PrintLatinCJKTest());
+                if (job.printDialog()) {
+                    job.print();
                 }
-            });
-            frame.getContentPane().add(b, BorderLayout.SOUTH);
-            frame.pack();
-
-            // add the test frame to dispose
-            PassFailJFrame.addTestWindow(frame);
-
-            // Arrange the test instruction frame and test frame side by side
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-            frame.setVisible(true);
+            } catch (PrinterException ex) {
+                ex.printStackTrace();
+                String msg = "PrinterException: " + ex.getMessage();
+                JOptionPane.showMessageDialog(b, msg, "Error occurred",
+                                              JOptionPane.ERROR_MESSAGE);
+                PassFailJFrame.forceFail(msg);
+            }
         });
+
+        Box main = Box.createHorizontalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createHorizontalGlue());
+        main.add(b);
+        main.add(Box.createHorizontalGlue());
+        return main;
     }
 
     @Override
@@ -92,22 +98,24 @@ public class PrintLatinCJKTest implements Printable {
             return Printable.NO_SUCH_PAGE;
         }
         g.translate((int) pf.getImageableX(), (int) pf.getImageableY());
-        g.setFont(new Font("Dialog", Font.PLAIN, 36));
-        g.drawString("\u4e00\u4e01\u4e02\u4e03\u4e04English", 20, 100);
+        g.setFont(new Font(Font.DIALOG, Font.PLAIN, 36));
+        g.drawString(TEXT, 20, 100);
         return Printable.PAGE_EXISTS;
     }
 
     public static void main(String[] args) throws InterruptedException, InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("Test Instructions Frame")
-                .instructions(info)
-                .testTimeOut(10)
-                .rows(10)
-                .columns(45)
-                .build();
-        showFrame();
-        passFailJFrame.awaitAndCheck();
+        if (PrinterJob.lookupPrintServices().length == 0) {
+            throw new RuntimeException("Printer not configured or available.");
+        }
+
+        PassFailJFrame.builder()
+                      .title("Print Latin CJK Test")
+                      .instructions(INFO)
+                      .testTimeOut(10)
+                      .rows(12)
+                      .columns(30)
+                      .splitUI(PrintLatinCJKTest::createTestUI)
+                      .build()
+                      .awaitAndCheck();
     }
 }
-
-

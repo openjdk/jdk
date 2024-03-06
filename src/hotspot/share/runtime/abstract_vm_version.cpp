@@ -34,8 +34,11 @@ const char* Abstract_VM_Version::_s_internal_vm_info_string = Abstract_VM_Versio
 
 uint64_t Abstract_VM_Version::_features = 0;
 const char* Abstract_VM_Version::_features_string = "";
+uint64_t Abstract_VM_Version::_cpu_features = 0;
 
+#ifndef SUPPORTS_NATIVE_CX8
 bool Abstract_VM_Version::_supports_cx8 = false;
+#endif
 bool Abstract_VM_Version::_supports_atomic_getset4 = false;
 bool Abstract_VM_Version::_supports_atomic_getset8 = false;
 bool Abstract_VM_Version::_supports_atomic_getadd4 = false;
@@ -240,6 +243,16 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.2 (VS2022)"
       #elif _MSC_VER == 1933
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.3 (VS2022)"
+      #elif _MSC_VER == 1934
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.4 (VS2022)"
+      #elif _MSC_VER == 1935
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.5 (VS2022)"
+      #elif _MSC_VER == 1936
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.6 (VS2022)"
+      #elif _MSC_VER == 1937
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.7 (VS2022)"
+      #elif _MSC_VER == 1938
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 17.8 (VS2022)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

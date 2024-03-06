@@ -27,7 +27,7 @@
   @summary  Confirm that the you get three pages of output, one
             each in portrait, landscape, and reverse landscape
             orientations.
-  @author rbi: area=PageFormat
+  @key printer
   @run main/manual Orient
 */
 

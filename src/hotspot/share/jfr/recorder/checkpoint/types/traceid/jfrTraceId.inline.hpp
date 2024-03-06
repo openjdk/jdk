@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,8 +44,16 @@ inline traceid JfrTraceId::load(const Method* method) {
   return JfrTraceIdLoadBarrier::load(method);
 }
 
+inline traceid JfrTraceId::load_no_enqueue(const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(method);
+}
+
 inline traceid JfrTraceId::load(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load(klass, method);
+}
+
+inline traceid JfrTraceId::load_no_enqueue(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_no_enqueue(klass, method);
 }
 
 inline traceid JfrTraceId::load(const ModuleEntry* module) {
@@ -60,8 +68,16 @@ inline traceid JfrTraceId::load(const ClassLoaderData* cld) {
   return JfrTraceIdLoadBarrier::load(cld);
 }
 
+inline traceid JfrTraceId::load_leakp(const Klass* klass) {
+  return JfrTraceIdLoadBarrier::load_leakp(klass);
+}
+
 inline traceid JfrTraceId::load_leakp(const Klass* klass, const Method* method) {
   return JfrTraceIdLoadBarrier::load_leakp(klass, method);
+}
+
+inline traceid JfrTraceId::load_leakp_previous_epoch(const Klass* klass, const Method* method) {
+  return JfrTraceIdLoadBarrier::load_leakp_previuos_epoch(klass, method);
 }
 
 template <typename T>

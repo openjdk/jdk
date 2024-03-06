@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,15 +84,13 @@ public class MissingResourceCauseTestRun {
         // UnreadableRB.properties is in current directory
         String cp = Utils.TEST_CLASSES + File.pathSeparator + Utils.TEST_SRC
                 + File.pathSeparator + ".";
-        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("java");
-        launcher.addToolArg("-ea")
-                .addToolArg("-esa")
-                .addToolArg("-cp")
-                .addToolArg(cp)
-                .addToolArg("MissingResourceCauseTest");
-
-        int exitCode = ProcessTools.executeCommand(launcher.getCommand())
-                .getExitValue();
+        // Build process (with VM flags)
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-ea", "-esa",
+                "-cp", cp,
+                "MissingResourceCauseTest");
+        // Evaluate process status
+        int exitCode = ProcessTools.executeCommand(pb).getExitValue();
         if (exitCode != 0) {
             throw new RuntimeException("Execution of the test failed. "
                     + "Unexpected exit code: " + exitCode);

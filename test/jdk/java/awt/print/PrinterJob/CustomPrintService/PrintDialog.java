@@ -30,7 +30,6 @@ import javax.print.PrintServiceLookup;
  * @bug 6870661
  * @summary Verify that no native dialog is opened for a custom PrintService
  * @run main/manual PrintDialog
- * @author reinhapa
  */
 public class PrintDialog {
 

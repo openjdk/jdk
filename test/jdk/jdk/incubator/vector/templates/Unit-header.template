@@ -24,7 +24,7 @@
 /*
  * @test
  * @modules jdk.incubator.vector
- * @run testng/othervm -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
+ * @run testng/othervm/timeout=300 -ea -esa -Xbatch -XX:-TieredCompilation $vectorteststype$
  */
 
 #warn This file is preprocessed before being compiled

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1446,12 +1446,12 @@ int LinearScan::interval_cmp(Interval** a, Interval** b) {
   }
 }
 
-#ifndef PRODUCT
-int interval_cmp(Interval* const& l, Interval* const& r) {
+#ifdef ASSERT
+static int interval_cmp(Interval* const& l, Interval* const& r) {
   return l->from() - r->from();
 }
 
-bool find_interval(Interval* interval, IntervalArray* intervals) {
+static bool find_interval(Interval* interval, IntervalArray* intervals) {
   bool found;
   int idx = intervals->find_sorted<Interval*, interval_cmp>(interval, found);
 
@@ -2303,11 +2303,11 @@ void assert_no_register_values(GrowableArray<MonitorValue*>* values) {
   }
 }
 
-void assert_equal(Location l1, Location l2) {
+static void assert_equal(Location l1, Location l2) {
   assert(l1.where() == l2.where() && l1.type() == l2.type() && l1.offset() == l2.offset(), "");
 }
 
-void assert_equal(ScopeValue* v1, ScopeValue* v2) {
+static void assert_equal(ScopeValue* v1, ScopeValue* v2) {
   if (v1->is_location()) {
     assert(v2->is_location(), "");
     assert_equal(((LocationValue*)v1)->location(), ((LocationValue*)v2)->location());
@@ -2328,12 +2328,12 @@ void assert_equal(ScopeValue* v1, ScopeValue* v2) {
   }
 }
 
-void assert_equal(MonitorValue* m1, MonitorValue* m2) {
+static void assert_equal(MonitorValue* m1, MonitorValue* m2) {
   assert_equal(m1->owner(), m2->owner());
   assert_equal(m1->basic_lock(), m2->basic_lock());
 }
 
-void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
+static void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
   assert(d1->scope() == d2->scope(), "not equal");
   assert(d1->bci() == d2->bci(), "not equal");
 
@@ -2375,7 +2375,7 @@ void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
   }
 }
 
-void check_stack_depth(CodeEmitInfo* info, int stack_end) {
+static void check_stack_depth(CodeEmitInfo* info, int stack_end) {
   if (info->stack()->bci() != SynchronizationEntryBCI && !info->scope()->method()->is_native()) {
     Bytecodes::Code code = info->scope()->method()->java_code_at_bci(info->stack()->bci());
     switch (code) {
@@ -2921,16 +2921,10 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
 
       assert(locals->length() == pos, "must match");
     }
-    assert(locals->length() == cur_scope->method()->max_locals(), "wrong number of locals");
-    assert(locals->length() == cur_state->locals_size(), "wrong number of locals");
-  } else if (cur_scope->method()->max_locals() > 0) {
-    assert(cur_state->kind() == ValueStack::EmptyExceptionState, "should be");
-    nof_locals = cur_scope->method()->max_locals();
-    locals = new GrowableArray<ScopeValue*>(nof_locals);
-    for(int i = 0; i < nof_locals; i++) {
-      locals->append(_illegal_value);
-    }
+    assert(locals->length() == nof_locals, "wrong number of locals");
   }
+  assert(nof_locals == cur_scope->method()->max_locals(), "wrong number of locals");
+  assert(nof_locals == cur_state->locals_size(), "wrong number of locals");
 
   // describe expression stack
   int nof_stack = cur_state->stack_size();
@@ -2939,8 +2933,8 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
 
     int pos = 0;
     while (pos < nof_stack) {
-      Value expression = cur_state->stack_at_inc(pos);
-      append_scope_value(op_id, expression, expressions);
+      Value expression = cur_state->stack_at(pos);
+      pos += append_scope_value(op_id, expression, expressions);
 
       assert(expressions->length() == pos, "must match");
     }
@@ -4863,8 +4857,8 @@ void IntervalWalker::next_interval() {
     // intervals may start at same position -> prefer fixed interval
     kind = fixed != Interval::end() && fixed->from() <= any->from() ? fixedKind : anyKind;
 
-    assert (kind == fixedKind && fixed->from() <= any->from() ||
-            kind == anyKind   && any->from() <= fixed->from(), "wrong interval!!!");
+    assert((kind == fixedKind && fixed->from() <= any->from()) ||
+           (kind == anyKind   && any->from() <= fixed->from()), "wrong interval!!!");
     assert(any == Interval::end() || fixed == Interval::end() || any->from() != fixed->from() || kind == fixedKind, "if fixed and any-Interval start at same position, fixed must be processed first");
 
   } else if (fixed != Interval::end()) {

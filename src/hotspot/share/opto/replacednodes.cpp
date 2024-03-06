@@ -152,12 +152,12 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
       } else if (n->outcnt() != 0 && n != improved) {
         if (n->is_Phi()) {
           Node* region = n->in(0);
-          Node* prev = stack.node_at(stack.size() - 2);
-          for (uint j = 1; j < region->req(); ++j) {
-            if (n->in(j) == prev) {
-              Node* in = region->in(j);
-              if (in != nullptr && !in->is_top()) {
-                if (is_dominator(ctl, in)) {
+          if (n->req() == region->req()) { // ignore dead phis
+            Node* prev = stack.node_at(stack.size() - 2);
+            for (uint j = 1; j < region->req(); ++j) {
+              if (n->in(j) == prev) {
+                Node* in = region->in(j);
+                if (in != nullptr && !in->is_top() && is_dominator(ctl, in)) {
                   valid_control.set(in->_idx);
                   collect_nodes_to_clone(stack, to_fix);
                 }
@@ -222,6 +222,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
     }
 
     // Clone nodes and record mapping from current to cloned nodes
+    uint index_before_clone = C->unique();
     for (uint i = 0; i < to_fix.size(); ++i) {
       Node* n = to_fix.at(i);
       if (n->is_CFG() || n->in(0) != nullptr) { // End of a chain
@@ -251,6 +252,9 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
         if (clone_ptr != nullptr) {
           Node* clone = *clone_ptr;
           n->set_req(j, clone);
+          if (n->_idx < index_before_clone) {
+            PhaseIterGVN::add_users_of_use_to_worklist(clone, n, *C->igvn_worklist());
+          }
           updates++;
         }
       }

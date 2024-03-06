@@ -583,7 +583,7 @@ void HeapShared::copy_objects() {
   archive_object_subgraphs(archive_subgraph_entry_fields,
                            false /* is_full_module_graph */);
 
-  if (MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     archive_object_subgraphs(fmg_archive_subgraph_entry_fields,
                              true /* is_full_module_graph */);
     Modules::verify_archived_modules();
@@ -972,7 +972,7 @@ HeapShared::resolve_or_init_classes_for_subgraph_of(Klass* k, bool do_init, TRAP
     }
     return nullptr;
   } else {
-    if (record->is_full_module_graph() && !MetaspaceShared::use_full_module_graph()) {
+    if (record->is_full_module_graph() && !CDSConfig::is_loading_full_module_graph()) {
       if (log_is_enabled(Info, cds, heap)) {
         ResourceMark rm(THREAD);
         log_info(cds, heap)("subgraph %s cannot be used because full module graph is disabled",
@@ -1513,7 +1513,7 @@ void HeapShared::init_subgraph_entry_fields(TRAPS) {
   assert(HeapShared::can_write(), "must be");
   _dump_time_subgraph_info_table = new (mtClass)DumpTimeKlassSubGraphInfoTable();
   init_subgraph_entry_fields(archive_subgraph_entry_fields, CHECK);
-  if (MetaspaceShared::use_full_module_graph()) {
+  if (CDSConfig::is_dumping_full_module_graph()) {
     init_subgraph_entry_fields(fmg_archive_subgraph_entry_fields, CHECK);
   }
 }

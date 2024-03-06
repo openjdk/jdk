@@ -13,11 +13,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<language type="ta"/>
 	</identity>
 	<localeDisplayNames>
-		<localeDisplayPattern>
-			<localePattern>{0} ({1})</localePattern>
-			<localeSeparator>{0}, {1}</localeSeparator>
-			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
-		</localeDisplayPattern>
 		<languages>
 			<language type="aa">அஃபார்</language>
 			<language type="ab">அப்காஜியான்</language>
@@ -66,6 +61,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="bez">பெனா</language>
 			<language type="bfq">படகா</language>
 			<language type="bg">பல்கேரியன்</language>
+			<language type="bgc" draft="contributed">ஹரியான்வி</language>
 			<language type="bgn">மேற்கு பலோச்சி</language>
 			<language type="bho">போஜ்பூரி</language>
 			<language type="bi">பிஸ்லாமா</language>
@@ -307,6 +303,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<language type="lez">லெஜ்ஜியன்</language>
 			<language type="lg">கான்டா</language>
 			<language type="li">லிம்பர்கிஷ்</language>
+			<language type="lij" draft="contributed">லிகூரியன்</language>
 			<language type="lil">லில்லூயிட்</language>
 			<language type="lkt">லகோடா</language>
 			<language type="lmo" draft="contributed">லொம்பார்டு</language>
@@ -882,7 +879,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">இஸ்ரேல்</territory>
 			<territory type="IM">ஐல் ஆஃப் மேன்</territory>
 			<territory type="IN">இந்தியா</territory>
-			<territory type="IO">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
+			<territory type="IO" draft="contributed">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
+			<territory type="IO" alt="chagos" draft="contributed">சாகோஸ் தீவுக்கூட்டம்</territory>
 			<territory type="IQ">ஈராக்</territory>
 			<territory type="IR">ஈரான்</territory>
 			<territory type="IS">ஐஸ்லாந்து</territory>
@@ -1195,59 +1193,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ ஃ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஷ ஸ ஹ ா ி \u0BC0 ு ூ ெ ே ை ொ ோ ௌ \u0BCD]</exemplarCharacters>
+		<exemplarCharacters>[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ ஃ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஷ ஸ ஹ ா ி ீ ு ூ ெ ே ை ொ ோ ௌ ்]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index">[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0௦ 1௧ 2௨ 3௩ 4௪ 5௫ 6௬ 7௭ 8௮ 9௯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
-		<ellipsis type="final">{0}…</ellipsis>
-		<ellipsis type="initial">…{0}</ellipsis>
-		<ellipsis type="medial">{0}…{1}</ellipsis>
-		<ellipsis type="word-final">{0} …</ellipsis>
-		<ellipsis type="word-initial">… {0}</ellipsis>
-		<ellipsis type="word-medial">{0} … {1}</ellipsis>
-		<moreInformation>?</moreInformation>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
 		</parseLenients>
 	</characters>
-	<delimiters>
-		<quotationStart>“</quotationStart>
-		<quotationEnd>”</quotationEnd>
-		<alternateQuotationStart>‘</alternateQuotationStart>
-		<alternateQuotationEnd>’</alternateQuotationEnd>
-	</delimiters>
 	<dates>
 		<calendars>
-			<calendar type="buddhist">
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">BE</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">BE</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">BE</era>
-					</eraNarrow>
-				</eras>
-			</calendar>
 			<calendar type="chinese">
 				<months>
 					<monthContext type="format">
@@ -1264,64 +1230,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="10">மா10</month>
 							<month type="11">மா11</month>
 							<month type="12">மா12</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">மாதம்1</month>
-							<month type="2">மாதம்2</month>
-							<month type="3">மாதம்3</month>
-							<month type="4">மாதம்4</month>
-							<month type="5">மாதம்5</month>
-							<month type="6">மாதம்6</month>
-							<month type="7">மாதம்7</month>
-							<month type="8">மாதம்8</month>
-							<month type="9">மாதம்9</month>
-							<month type="10">மாதம்10</month>
-							<month type="11">மாதம்11</month>
-							<month type="12">மாதம்12</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">மா1</month>
-							<month type="2">மா2</month>
-							<month type="3">மா3</month>
-							<month type="4">மா4</month>
-							<month type="5">மா5</month>
-							<month type="6">மா6</month>
-							<month type="7">மா7</month>
-							<month type="8">மா8</month>
-							<month type="9">மா9</month>
-							<month type="10">மா10</month>
-							<month type="11">மா11</month>
-							<month type="12">மா12</month>
-						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
 						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">மாதம்1</month>
@@ -1416,37 +1324,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">மஸ்ரா</month>
 							<month type="13" draft="contributed">நசி</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">டட்</month>
-							<month type="2" draft="contributed">பாபா</month>
-							<month type="3" draft="contributed">ஹடுர்</month>
-							<month type="4" draft="contributed">கியாக்</month>
-							<month type="5" draft="contributed">டுபா</month>
-							<month type="6" draft="contributed">அம்ஷீர்</month>
-							<month type="7" draft="contributed">பரம்ஹாட்</month>
-							<month type="8" draft="contributed">பரமுதா</month>
-							<month type="9" draft="contributed">பாஷன்ஸ்</month>
-							<month type="10" draft="contributed">பவுனா</month>
-							<month type="11" draft="contributed">அபீப்</month>
-							<month type="12" draft="contributed">மஸ்ரா</month>
-							<month type="13" draft="contributed">நசி</month>
-						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="ethiopic">
 				<months>
@@ -1482,72 +1361,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="13" draft="contributed">பாகுமே</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">மஸ்.</month>
-							<month type="2" draft="contributed">தெகெ.</month>
-							<month type="3" draft="contributed">ஹெத.</month>
-							<month type="4" draft="contributed">தஹ்.</month>
-							<month type="5" draft="contributed">தெர்</month>
-							<month type="6" draft="contributed">யாகா.</month>
-							<month type="7" draft="contributed">மகா.</month>
-							<month type="8" draft="contributed">மியா.</month>
-							<month type="9" draft="contributed">கென்.</month>
-							<month type="10" draft="contributed">சனே</month>
-							<month type="11" draft="contributed">ஹமே.</month>
-							<month type="12" draft="contributed">நஹா.</month>
-							<month type="13" draft="contributed">பாகு.</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">மஸ்கரம்</month>
-							<month type="2" draft="contributed">தெகெம்ப்த்</month>
-							<month type="3" draft="contributed">ஹெதர்</month>
-							<month type="4" draft="contributed">தஹ்சாஸ்</month>
-							<month type="5" draft="contributed">தெர்</month>
-							<month type="6" draft="contributed">யாகாடிட்</month>
-							<month type="7" draft="contributed">மகாபிட்</month>
-							<month type="8" draft="contributed">மியாஸ்யா</month>
-							<month type="9" draft="contributed">கென்போ</month>
-							<month type="10" draft="contributed">சனே</month>
-							<month type="11" draft="contributed">ஹமேல்</month>
-							<month type="12" draft="contributed">நஹாசே</month>
-							<month type="13" draft="contributed">பாகுமே</month>
-						</monthWidth>
-					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ERA0</era>
-						<era type="1" draft="contributed">ERA1</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="generic">
 				<dateFormats>
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y G</pattern>
-							<datetimeSkeleton>GyMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y G</pattern>
-							<datetimeSkeleton>GyMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y G</pattern>
-							<datetimeSkeleton>GyMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -1578,15 +1408,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -1594,35 +1418,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="Gy">y G</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
 						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
 						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
 						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
 						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
 						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
 						<dateFormatItem id="y">y G</dateFormatItem>
 						<dateFormatItem id="yyyy">y G</dateFormatItem>
 						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
@@ -1645,33 +1459,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="H">
-							<greatestDifference id="H">HH–HH</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hm">
 							<greatestDifference id="a">a h:mm – a h:mm</greatestDifference>
 							<greatestDifference id="h">a h:mm–h:mm</greatestDifference>
 							<greatestDifference id="m">a h:mm–h:mm</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hm">
-							<greatestDifference id="H">HH:mm–HH:mm</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="hmv">
 							<greatestDifference id="a">a h:mm – a h:mm v</greatestDifference>
 							<greatestDifference id="h">a h:mm–h:mm v</greatestDifference>
 							<greatestDifference id="m">a h:mm–h:mm v</greatestDifference>
 						</intervalFormatItem>
-						<intervalFormatItem id="Hmv">
-							<greatestDifference id="H">HH:mm–HH:mm v</greatestDifference>
-							<greatestDifference id="m">HH:mm–HH:mm v</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="hv">
 							<greatestDifference id="a">a h – a h v</greatestDifference>
 							<greatestDifference id="h">a h–h v</greatestDifference>
-						</intervalFormatItem>
-						<intervalFormatItem id="Hv">
-							<greatestDifference id="H">HH–HH v</greatestDifference>
 						</intervalFormatItem>
 						<intervalFormatItem id="M">
 							<greatestDifference id="M">M – M</greatestDifference>
@@ -1750,20 +1550,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">நவ.</month>
 							<month type="12">டிச.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">ஜ</month>
-							<month type="2">பி</month>
-							<month type="3">மா</month>
-							<month type="4">ஏ</month>
-							<month type="5">மே</month>
-							<month type="6">ஜூ</month>
-							<month type="7">ஜூ</month>
-							<month type="8">ஆ</month>
-							<month type="9">செ</month>
-							<month type="10">அ</month>
-							<month type="11">ந</month>
-							<month type="12">டி</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">ஜனவரி</month>
 							<month type="2">பிப்ரவரி</month>
@@ -1780,20 +1566,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">ஜன.</month>
-							<month type="2">பிப்.</month>
-							<month type="3">மார்.</month>
-							<month type="4">ஏப்.</month>
-							<month type="5">மே</month>
-							<month type="6">ஜூன்</month>
-							<month type="7">ஜூலை</month>
-							<month type="8">ஆக.</month>
-							<month type="9">செப்.</month>
-							<month type="10">அக்.</month>
-							<month type="11">நவ.</month>
-							<month type="12">டிச.</month>
-						</monthWidth>
 						<monthWidth type="narrow">
 							<month type="1">ஜ</month>
 							<month type="2">பி</month>
@@ -1808,20 +1580,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">ந</month>
 							<month type="12">டி</month>
 						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">ஜனவரி</month>
-							<month type="2">பிப்ரவரி</month>
-							<month type="3">மார்ச்</month>
-							<month type="4">ஏப்ரல்</month>
-							<month type="5">மே</month>
-							<month type="6">ஜூன்</month>
-							<month type="7">ஜூலை</month>
-							<month type="8">ஆகஸ்ட்</month>
-							<month type="9">செப்டம்பர்</month>
-							<month type="10">அக்டோபர்</month>
-							<month type="11">நவம்பர்</month>
-							<month type="12">டிசம்பர்</month>
-						</monthWidth>
 					</monthContext>
 				</months>
 				<days>
@@ -1834,15 +1592,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">வியா.</day>
 							<day type="fri">வெள்.</day>
 							<day type="sat">சனி</day>
-						</dayWidth>
-						<dayWidth type="narrow">
-							<day type="sun">ஞா</day>
-							<day type="mon">தி</day>
-							<day type="tue">செ</day>
-							<day type="wed">பு</day>
-							<day type="thu">வி</day>
-							<day type="fri">வெ</day>
-							<day type="sat">ச</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">ஞா</day>
@@ -1864,15 +1613,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</dayWidth>
 					</dayContext>
 					<dayContext type="stand-alone">
-						<dayWidth type="abbreviated">
-							<day type="sun">ஞாயி.</day>
-							<day type="mon">திங்.</day>
-							<day type="tue">செவ்.</day>
-							<day type="wed">புத.</day>
-							<day type="thu">வியா.</day>
-							<day type="fri">வெள்.</day>
-							<day type="sat">சனி</day>
-						</dayWidth>
 						<dayWidth type="narrow">
 							<day type="sun">ஞா</day>
 							<day type="mon">தி</day>
@@ -1881,24 +1621,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">வி</day>
 							<day type="fri">வெ</day>
 							<day type="sat">ச</day>
-						</dayWidth>
-						<dayWidth type="short">
-							<day type="sun">ஞா</day>
-							<day type="mon">தி</day>
-							<day type="tue">செ</day>
-							<day type="wed">பு</day>
-							<day type="thu">வி</day>
-							<day type="fri">வெ</day>
-							<day type="sat">ச</day>
-						</dayWidth>
-						<dayWidth type="wide">
-							<day type="sun">ஞாயிறு</day>
-							<day type="mon">திங்கள்</day>
-							<day type="tue">செவ்வாய்</day>
-							<day type="wed">புதன்</day>
-							<day type="thu">வியாழன்</day>
-							<day type="fri">வெள்ளி</day>
-							<day type="sat">சனி</day>
 						</dayWidth>
 					</dayContext>
 				</days>
@@ -1909,32 +1631,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<quarter type="2">காலா.2</quarter>
 							<quarter type="3">காலா.3</quarter>
 							<quarter type="4">காலா.4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
-						</quarterWidth>
-						<quarterWidth type="wide">
-							<quarter type="1">ஒன்றாம் காலாண்டு</quarter>
-							<quarter type="2">இரண்டாம் காலாண்டு</quarter>
-							<quarter type="3">மூன்றாம் காலாண்டு</quarter>
-							<quarter type="4">நான்காம் காலாண்டு</quarter>
-						</quarterWidth>
-					</quarterContext>
-					<quarterContext type="stand-alone">
-						<quarterWidth type="abbreviated">
-							<quarter type="1">காலா.1</quarter>
-							<quarter type="2">காலா.2</quarter>
-							<quarter type="3">காலா.3</quarter>
-							<quarter type="4">காலா.4</quarter>
-						</quarterWidth>
-						<quarterWidth type="narrow">
-							<quarter type="1">1</quarter>
-							<quarter type="2">2</quarter>
-							<quarter type="3">3</quarter>
-							<quarter type="4">4</quarter>
 						</quarterWidth>
 						<quarterWidth type="wide">
 							<quarter type="1">ஒன்றாம் காலாண்டு</quarter>
@@ -1948,7 +1644,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dayPeriodContext type="format">
 						<dayPeriodWidth type="abbreviated">
 							<dayPeriod type="midnight">நள்ளிரவு</dayPeriod>
-							<dayPeriod type="am">முற்பகல்</dayPeriod>
+							<dayPeriod type="am">AM</dayPeriod>
 							<dayPeriod type="noon">நண்பகல்</dayPeriod>
 							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
 							<dayPeriod type="morning1">அதிகாலை</dayPeriod>
@@ -1972,33 +1668,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="evening2">அந்தி மா.</dayPeriod>
 							<dayPeriod type="night1">இர.</dayPeriod>
 						</dayPeriodWidth>
-						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">நள்ளிரவு</dayPeriod>
-							<dayPeriod type="am">முற்பகல்</dayPeriod>
-							<dayPeriod type="noon">நண்பகல்</dayPeriod>
-							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
-							<dayPeriod type="morning1">அதிகாலை</dayPeriod>
-							<dayPeriod type="morning2">காலை</dayPeriod>
-							<dayPeriod type="afternoon1">மதியம்</dayPeriod>
-							<dayPeriod type="afternoon2">பிற்பகல்</dayPeriod>
-							<dayPeriod type="evening1">மாலை</dayPeriod>
-							<dayPeriod type="evening2">அந்தி மாலை</dayPeriod>
-							<dayPeriod type="night1">இரவு</dayPeriod>
-						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
-							<dayPeriod type="midnight">நள்ளிரவு</dayPeriod>
 							<dayPeriod type="am">முற்பகல்</dayPeriod>
-							<dayPeriod type="noon">நண்பகல்</dayPeriod>
 							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
-							<dayPeriod type="morning1">அதிகாலை</dayPeriod>
-							<dayPeriod type="morning2">காலை</dayPeriod>
-							<dayPeriod type="afternoon1">மதியம்</dayPeriod>
-							<dayPeriod type="afternoon2">பிற்பகல்</dayPeriod>
-							<dayPeriod type="evening1">மாலை</dayPeriod>
-							<dayPeriod type="evening2">அந்தி மாலை</dayPeriod>
-							<dayPeriod type="night1">இரவு</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="narrow">
 							<dayPeriod type="midnight">நள்.</dayPeriod>
@@ -2014,26 +1688,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<dayPeriod type="night1">இ.</dayPeriod>
 						</dayPeriodWidth>
 						<dayPeriodWidth type="wide">
-							<dayPeriod type="midnight">நள்ளிரவு</dayPeriod>
 							<dayPeriod type="am">முற்பகல்</dayPeriod>
-							<dayPeriod type="noon">நண்பகல்</dayPeriod>
 							<dayPeriod type="pm">பிற்பகல்</dayPeriod>
-							<dayPeriod type="morning1">அதிகாலை</dayPeriod>
-							<dayPeriod type="morning2">காலை</dayPeriod>
-							<dayPeriod type="afternoon1">மதியம்</dayPeriod>
-							<dayPeriod type="afternoon2">பிற்பகல்</dayPeriod>
-							<dayPeriod type="evening1">மாலை</dayPeriod>
-							<dayPeriod type="evening2">அந்தி மாலை</dayPeriod>
-							<dayPeriod type="night1">இரவு</dayPeriod>
 						</dayPeriodWidth>
 					</dayPeriodContext>
 				</dayPeriods>
 				<eras>
 					<eraNames>
 						<era type="0">கிறிஸ்துவுக்கு முன்</era>
-						<era type="0" alt="variant">பொ.ச.மு</era>
 						<era type="1">அன்னோ டோமினி</era>
-						<era type="1" alt="variant">பொ.ச</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0">கி.மு.</era>
@@ -2046,19 +1709,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<dateFormatLength type="full">
 						<dateFormat>
 							<pattern>EEEE, d MMMM, y</pattern>
-							<datetimeSkeleton>yMMMMEEEEd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="long">
 						<dateFormat>
 							<pattern>d MMMM, y</pattern>
-							<datetimeSkeleton>yMMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="medium">
 						<dateFormat>
 							<pattern>d MMM, y</pattern>
-							<datetimeSkeleton>yMMMd</datetimeSkeleton>
 						</dateFormat>
 					</dateFormatLength>
 					<dateFormatLength type="short">
@@ -2115,15 +1775,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateTimeFormat>
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
 							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2131,42 +1785,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="Bh">B h</dateFormatItem>
 						<dateFormatItem id="Bhm">B h:mm</dateFormatItem>
 						<dateFormatItem id="Bhms">B h:mm:ss</dateFormatItem>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
 						<dateFormatItem id="EBhm">E B h:mm</dateFormatItem>
 						<dateFormatItem id="EBhms">E B h:mm:ss</dateFormatItem>
 						<dateFormatItem id="Ed">d E</dateFormatItem>
 						<dateFormatItem id="Ehm">E a h:mm</dateFormatItem>
-						<dateFormatItem id="EHm">E HH:mm</dateFormatItem>
 						<dateFormatItem id="Ehms">E a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="EHms">E HH:mm:ss</dateFormatItem>
-						<dateFormatItem id="Gy">G y</dateFormatItem>
 						<dateFormatItem id="GyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="GyMMM">G y MMM</dateFormatItem>
-						<dateFormatItem id="GyMMMd">G y MMM d</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">G y MMM d, E</dateFormatItem>
 						<dateFormatItem id="h">a h</dateFormatItem>
-						<dateFormatItem id="H">HH</dateFormatItem>
 						<dateFormatItem id="hm">a h:mm</dateFormatItem>
-						<dateFormatItem id="Hm">HH:mm</dateFormatItem>
 						<dateFormatItem id="hms">a h:mm:ss</dateFormatItem>
-						<dateFormatItem id="Hms">HH:mm:ss</dateFormatItem>
 						<dateFormatItem id="hmsv">a h:mm:ss v</dateFormatItem>
-						<dateFormatItem id="Hmsv">HH:mm:ss v</dateFormatItem>
 						<dateFormatItem id="hmv">a h:mm v</dateFormatItem>
-						<dateFormatItem id="Hmv">HH:mm v</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
 						<dateFormatItem id="Md">d/M</dateFormatItem>
 						<dateFormatItem id="MEd">dd-MM, E</dateFormatItem>
 						<dateFormatItem id="MMdd">dd-MM</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">MMM d</dateFormatItem>
-						<dateFormatItem id="MMMEd">MMM d, E</dateFormatItem>
 						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="one">MMMM W -ஆம் வாரம்</dateFormatItem>
 						<dateFormatItem id="MMMMW" count="other">MMMM W -ஆம் வாரம்</dateFormatItem>
-						<dateFormatItem id="ms">mm:ss</dateFormatItem>
-						<dateFormatItem id="y">y</dateFormatItem>
 						<dateFormatItem id="yM">M/y</dateFormatItem>
 						<dateFormatItem id="yMd">d/M/y</dateFormatItem>
 						<dateFormatItem id="yMEd">E, d/M/y</dateFormatItem>
@@ -2180,14 +1815,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						<dateFormatItem id="yw" count="one">Y ஆம் ஆண்டின் w -ஆம் வாரம்</dateFormatItem>
 						<dateFormatItem id="yw" count="other">Y ஆம் ஆண்டின் w -ஆம் வாரம்</dateFormatItem>
 					</availableFormats>
-					<appendItems>
-						<appendItem request="Timezone">{0} {1}</appendItem>
-					</appendItems>
 					<intervalFormats>
 						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
-						<intervalFormatItem id="d">
-							<greatestDifference id="d">d–d</greatestDifference>
-						</intervalFormatItem>
 						<intervalFormatItem id="h">
 							<greatestDifference id="a">a h – a h</greatestDifference>
 							<greatestDifference id="h">a h–h</greatestDifference>
@@ -2316,52 +1945,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="13" draft="contributed">எலுல்</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">டிஷ்.</month>
-							<month type="2" draft="contributed">ஹெஷ்.</month>
-							<month type="3" draft="contributed">கிஸ்.</month>
-							<month type="4" draft="contributed">டெவெ.</month>
-							<month type="5" draft="contributed">ஷெவா.</month>
-							<month type="6" draft="contributed">அடா. 1</month>
-							<month type="7" draft="contributed">அடா.</month>
-							<month type="7" yeartype="leap" draft="contributed">அடா. 2</month>
-							<month type="8" draft="contributed">நிசா.</month>
-							<month type="9" draft="contributed">ஐயா.</month>
-							<month type="10" draft="contributed">சிவா.</month>
-							<month type="11" draft="contributed">தமு.</month>
-							<month type="12" draft="contributed">அவ்</month>
-							<month type="13" draft="contributed">எலு.</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">டிஷ்ரி</month>
-							<month type="2" draft="contributed">ஹெஷ்வான்</month>
-							<month type="3" draft="contributed">கிஸ்லெவ்</month>
-							<month type="4" draft="contributed">டெவெட்</month>
-							<month type="5" draft="contributed">ஷெவாட்</month>
-							<month type="6" draft="contributed">அடார் 1</month>
-							<month type="7" draft="contributed">அடார்</month>
-							<month type="7" yeartype="leap" draft="contributed">அடார் 2</month>
-							<month type="8" draft="contributed">நிசான்</month>
-							<month type="9" draft="contributed">ஐயார்</month>
-							<month type="10" draft="contributed">சிவான்</month>
-							<month type="11" draft="contributed">தமுஸ்</month>
-							<month type="12" draft="contributed">அவ்</month>
-							<month type="13" draft="contributed">எலுல்</month>
-						</monthWidth>
-					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AM</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">AM</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AM</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="indian">
 				<months>
@@ -2380,50 +1964,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">மாசி</month>
 							<month type="12">பங்.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">சித்திரை</month>
-							<month type="2">வைகாசி</month>
-							<month type="3">ஆனி</month>
-							<month type="4">ஆடி</month>
-							<month type="5">ஆவணி</month>
-							<month type="6">புரட்டாசி</month>
-							<month type="7">ஐப்பசி</month>
-							<month type="8">கார்த்திகை</month>
-							<month type="9">மார்கழி</month>
-							<month type="10">தை</month>
-							<month type="11">மாசி</month>
-							<month type="12">பங்குனி</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">சித்.</month>
-							<month type="2">வைகா.</month>
-							<month type="3">ஆனி</month>
-							<month type="4">ஆடி</month>
-							<month type="5">ஆவ.</month>
-							<month type="6">புர.</month>
-							<month type="7">ஐப்.</month>
-							<month type="8">கார்.</month>
-							<month type="9">மார்.</month>
-							<month type="10">தை</month>
-							<month type="11">மாசி</month>
-							<month type="12">பங்.</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">சித்திரை</month>
 							<month type="2">வைகாசி</month>
@@ -2441,15 +1981,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					</monthContext>
 				</months>
 				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">சாகா</era>
-					</eraNames>
 					<eraAbbr>
 						<era type="0">சாகா</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">சாகா</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 			<calendar type="islamic">
@@ -2469,50 +2003,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="11">துல் கஃ.</month>
 							<month type="12">துல் ஹிஜ்.</month>
 						</monthWidth>
-						<monthWidth type="narrow">
-							<month type="1">1</month>
-							<month type="2">2</month>
-							<month type="3">3</month>
-							<month type="4">4</month>
-							<month type="5">5</month>
-							<month type="6">6</month>
-							<month type="7">7</month>
-							<month type="8">8</month>
-							<month type="9">9</month>
-							<month type="10">10</month>
-							<month type="11">11</month>
-							<month type="12">12</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1">முஹர்ரம்</month>
-							<month type="2">சஃபர்</month>
-							<month type="3">ரபி 1</month>
-							<month type="4">ரபி 2</month>
-							<month type="5">ஜுமதா 1</month>
-							<month type="6">ஜுமதா 2</month>
-							<month type="7">ரஜப்</month>
-							<month type="8">ஷஃபான்</month>
-							<month type="9">ரமலான்</month>
-							<month type="10">ஷவ்வால்</month>
-							<month type="11">துல் கஃதா</month>
-							<month type="12">துல் ஹிஜ்ஜா</month>
-						</monthWidth>
-					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1">முஹ.</month>
-							<month type="2">சஃப.</month>
-							<month type="3">ரபி 1</month>
-							<month type="4">ரபி 2</month>
-							<month type="5">ஜும. 1</month>
-							<month type="6">ஜும. 2</month>
-							<month type="7">ரஜ.</month>
-							<month type="8">ஷஃ.</month>
-							<month type="9">ரம.</month>
-							<month type="10">ஷவ்.</month>
-							<month type="11">துல் கஃ.</month>
-							<month type="12">துல் ஹிஜ்.</month>
-						</monthWidth>
 						<monthWidth type="wide">
 							<month type="1">முஹர்ரம்</month>
 							<month type="2">சஃபர்</month>
@@ -2529,69 +2019,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 						</monthWidth>
 					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AH</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0">AH</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AH</era>
-					</eraNarrow>
-				</eras>
-				<dateFormats>
-					<dateFormatLength type="full">
-						<dateFormat>
-							<pattern>EEEE, d MMMM, y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="long">
-						<dateFormat>
-							<pattern>d MMMM, y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="medium">
-						<dateFormat>
-							<pattern>d MMM, y G</pattern>
-						</dateFormat>
-					</dateFormatLength>
-					<dateFormatLength type="short">
-						<dateFormat>
-							<pattern>d/M/y GGGGG</pattern>
-						</dateFormat>
-					</dateFormatLength>
-				</dateFormats>
-				<dateTimeFormats>
-					<availableFormats>
-						<dateFormatItem id="d">d</dateFormatItem>
-						<dateFormatItem id="E">ccc</dateFormatItem>
-						<dateFormatItem id="Ed">d E</dateFormatItem>
-						<dateFormatItem id="Gy">y G</dateFormatItem>
-						<dateFormatItem id="GyMd">d/M/y GGGGG</dateFormatItem>
-						<dateFormatItem id="GyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="GyMMMd">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="GyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="M">L</dateFormatItem>
-						<dateFormatItem id="Md">d/M</dateFormatItem>
-						<dateFormatItem id="MEd">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMM">LLL</dateFormatItem>
-						<dateFormatItem id="MMMd">d MMM</dateFormatItem>
-						<dateFormatItem id="MMMEd">E, d MMM</dateFormatItem>
-						<dateFormatItem id="MMMMd">d MMMM</dateFormatItem>
-						<dateFormatItem id="y">y G</dateFormatItem>
-						<dateFormatItem id="yyyy">y G</dateFormatItem>
-						<dateFormatItem id="yyyyM">M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMd">d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMEd">E, d/M/y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMM">MMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMd">d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMEd">E, d MMM, y G</dateFormatItem>
-						<dateFormatItem id="yyyyMMMM">MMMM y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQ">QQQ y G</dateFormatItem>
-						<dateFormatItem id="yyyyQQQQ">QQQQ y G</dateFormatItem>
-					</availableFormats>
-				</dateTimeFormats>
 			</calendar>
 			<calendar type="persian">
 				<months>
@@ -2625,74 +2052,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<month type="12" draft="contributed">எஃபான்</month>
 						</monthWidth>
 					</monthContext>
-					<monthContext type="stand-alone">
-						<monthWidth type="abbreviated">
-							<month type="1" draft="contributed">ஃபர்.</month>
-							<month type="2" draft="contributed">ஆர்டி.</month>
-							<month type="3" draft="contributed">கொர்.</month>
-							<month type="4" draft="contributed">திர்</month>
-							<month type="5" draft="contributed">மொர்.</month>
-							<month type="6" draft="contributed">ஷாரி.</month>
-							<month type="7" draft="contributed">மெஹ்.</month>
-							<month type="8" draft="contributed">அபா.</month>
-							<month type="9" draft="contributed">அசா.</month>
-							<month type="10" draft="contributed">தே</month>
-							<month type="11" draft="contributed">பஹ்.</month>
-							<month type="12" draft="contributed">எஃ.</month>
-						</monthWidth>
-						<monthWidth type="wide">
-							<month type="1" draft="contributed">ஃபர்வாதின்</month>
-							<month type="2" draft="contributed">ஆர்டிபெஹெஷ்த்</month>
-							<month type="3" draft="contributed">கொர்தாத்</month>
-							<month type="4" draft="contributed">திர்</month>
-							<month type="5" draft="contributed">மொர்தாத்</month>
-							<month type="6" draft="contributed">ஷாரிவார்</month>
-							<month type="7" draft="contributed">மெஹ்ர்</month>
-							<month type="8" draft="contributed">அபான்</month>
-							<month type="9" draft="contributed">அசார்</month>
-							<month type="10" draft="contributed">தே</month>
-							<month type="11" draft="contributed">பஹ்மான்</month>
-							<month type="12" draft="contributed">எஃபான்</month>
-						</monthWidth>
-					</monthContext>
 				</months>
-				<eras>
-					<eraNames>
-						<era type="0" draft="contributed">AP</era>
-					</eraNames>
-					<eraAbbr>
-						<era type="0" draft="contributed">AP</era>
-					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">AP</era>
-					</eraNarrow>
-				</eras>
 			</calendar>
 			<calendar type="roc">
 				<eras>
 					<eraNames>
 						<era type="0" draft="contributed">R.O.C. -க்கு முன்பு</era>
-						<era type="1" draft="contributed">R.O.C.</era>
 					</eraNames>
 					<eraAbbr>
 						<era type="0" draft="contributed">ROCக்கு முன்</era>
-						<era type="1" draft="contributed">R.O.C.</era>
 					</eraAbbr>
-					<eraNarrow>
-						<era type="0" draft="contributed">ROCக்கு முன்</era>
-						<era type="1" draft="contributed">R.O.C.</era>
-					</eraNarrow>
 				</eras>
 			</calendar>
 		</calendars>
 		<fields>
 			<field type="era">
-				<displayName>காலம்</displayName>
-			</field>
-			<field type="era-short">
-				<displayName>காலம்</displayName>
-			</field>
-			<field type="era-narrow">
 				<displayName>காலம்</displayName>
 			</field>
 			<field type="year">
@@ -2709,25 +2083,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} ஆண்டுகளுக்கு முன்</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="year-short">
-				<displayName>ஆண்டு</displayName>
-				<relative type="-1">கடந்த ஆண்டு</relative>
-				<relative type="0">இந்த ஆண்டு</relative>
-				<relative type="1">அடுத்த ஆண்டு</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} ஆண்டில்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ஆண்டுகளில்</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} ஆண்டிற்கு முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} ஆண்டுகளுக்கு முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="year-narrow">
 				<displayName>ஆ.</displayName>
-				<relative type="-1">கடந்த ஆண்டு</relative>
-				<relative type="0">இந்த ஆண்டு</relative>
-				<relative type="1">அடுத்த ஆண்டு</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} ஆ.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} ஆ.</relativeTimePattern>
@@ -2767,9 +2124,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="quarter-narrow">
 				<displayName>கா.</displayName>
-				<relative type="-1">இறுதி காலாண்டு</relative>
-				<relative type="0">இந்த காலாண்டு</relative>
-				<relative type="1">அடுத்த காலாண்டு</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} கா.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} கா.</relativeTimePattern>
@@ -2795,9 +2149,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-short">
 				<displayName>மாத.</displayName>
-				<relative type="-1">கடந்த மாதம்</relative>
-				<relative type="0">இந்த மாதம்</relative>
-				<relative type="1">அடுத்த மாதம்</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} மாத.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} மாத.</relativeTimePattern>
@@ -2809,9 +2160,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="month-narrow">
 				<displayName>மா.</displayName>
-				<relative type="-1">கடந்த மாதம்</relative>
-				<relative type="0">இந்த மாதம்</relative>
-				<relative type="1">அடுத்த மாதம்</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} மா.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} மா.</relativeTimePattern>
@@ -2837,10 +2185,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<relativePeriod>{0} -இன் வாரம்</relativePeriod>
 			</field>
 			<field type="week-short">
-				<displayName>வாரம்</displayName>
-				<relative type="-1">கடந்த வாரம்</relative>
-				<relative type="0">இந்த வாரம்</relative>
-				<relative type="1">அடுத்த வாரம்</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} வார.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} வார.</relativeTimePattern>
@@ -2849,13 +2193,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">{0} வார. முன்</relativeTimePattern>
 					<relativeTimePattern count="other">{0} வார. முன்</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0} -இன் வாரம்</relativePeriod>
 			</field>
 			<field type="week-narrow">
 				<displayName>வா.</displayName>
-				<relative type="-1">கடந்த வாரம்</relative>
-				<relative type="0">இந்த வாரம்</relative>
-				<relative type="1">அடுத்த வாரம்</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} வா.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} வா.</relativeTimePattern>
@@ -2864,15 +2204,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="one">{0} வா. முன்</relativeTimePattern>
 					<relativeTimePattern count="other">{0} வா. முன்</relativeTimePattern>
 				</relativeTime>
-				<relativePeriod>{0} -இன் வாரம்</relativePeriod>
 			</field>
 			<field type="weekOfMonth">
 				<displayName>மாதத்தின் வாரம்</displayName>
 			</field>
 			<field type="weekOfMonth-short">
-				<displayName>மாத. வாரம்</displayName>
-			</field>
-			<field type="weekOfMonth-narrow">
 				<displayName>மாத. வாரம்</displayName>
 			</field>
 			<field type="day">
@@ -2891,29 +2227,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} நாட்களுக்கு முன்</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="day-short">
-				<displayName>நாள்</displayName>
-				<relative type="-2">நேற்று முன் தினம்</relative>
-				<relative type="-1">நேற்று</relative>
-				<relative type="0">இன்று</relative>
-				<relative type="1">நாளை</relative>
-				<relative type="2">நாளை மறுநாள்</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} நாளில்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} நாட்களில்</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} நாளுக்கு முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} நாட்களுக்கு முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="day-narrow">
 				<displayName>நா.</displayName>
-				<relative type="-2">நேற்று முன் தினம்</relative>
-				<relative type="-1">நேற்று</relative>
-				<relative type="0">இன்று</relative>
-				<relative type="1">நாளை</relative>
-				<relative type="2">நாளை மறுநாள்</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} நா.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} நா.</relativeTimePattern>
@@ -2929,25 +2244,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="dayOfYear-short">
 				<displayName>வருட. நாள்</displayName>
 			</field>
-			<field type="dayOfYear-narrow">
-				<displayName>வருட. நாள்</displayName>
-			</field>
 			<field type="weekday">
 				<displayName>வாரத்தின் நாள்</displayName>
 			</field>
 			<field type="weekday-short">
 				<displayName>வார. நாள்</displayName>
 			</field>
-			<field type="weekday-narrow">
-				<displayName>வார. நாள்</displayName>
-			</field>
 			<field type="weekdayOfMonth">
 				<displayName>மாதத்தின் வாரநாள்</displayName>
 			</field>
 			<field type="weekdayOfMonth-short">
-				<displayName>மாத. வாரநாள்</displayName>
-			</field>
-			<field type="weekdayOfMonth-narrow">
 				<displayName>மாத. வாரநாள்</displayName>
 			</field>
 			<field type="sun">
@@ -3015,19 +2321,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} திங். முன்</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="mon-narrow">
-				<relative type="-1">கடந்த திங்.</relative>
-				<relative type="0">இந்த திங்.</relative>
-				<relative type="1">அடுத்த திங்.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} திங்.</relativeTimePattern>
-					<relativeTimePattern count="other">{0} திங்.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} திங். முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} திங். முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="tue">
 				<relative type="-1">கடந்த செவ்வாய்</relative>
 				<relative type="0">இந்த செவ்வாய்</relative>
@@ -3055,9 +2348,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="tue-narrow">
-				<relative type="-1">கடந்த செவ்.</relative>
-				<relative type="0">இந்த செவ்.</relative>
-				<relative type="1">அடுத்த செவ்.</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} செவ்.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} செவ்வாய்களில்</relativeTimePattern>
@@ -3094,13 +2384,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="wed-narrow">
-				<relative type="-1">கடந்த புத.</relative>
-				<relative type="0">இந்த புத.</relative>
-				<relative type="1">அடுத்த புத.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} புத.</relativeTimePattern>
-					<relativeTimePattern count="other">{0} புத.</relativeTimePattern>
-				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="one">{0} புத. முன்</relativeTimePattern>
 					<relativeTimePattern count="other">{0} புத. முன்</relativeTimePattern>
@@ -3120,19 +2403,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="thu-short">
-				<relative type="-1">கடந்த வியா.</relative>
-				<relative type="0">இந்த வியா.</relative>
-				<relative type="1">அடுத்த வியா.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} வியா.</relativeTimePattern>
-					<relativeTimePattern count="other">{0} வியா.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} வியா. முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} வியா. முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="thu-narrow">
 				<relative type="-1">கடந்த வியா.</relative>
 				<relative type="0">இந்த வியா.</relative>
 				<relative type="1">அடுத்த வியா.</relative>
@@ -3171,19 +2441,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 					<relativeTimePattern count="other">{0} வெள். முன்</relativeTimePattern>
 				</relativeTime>
 			</field>
-			<field type="fri-narrow">
-				<relative type="-1">கடந்த வெள்.</relative>
-				<relative type="0">இந்த வெள்.</relative>
-				<relative type="1">அடுத்த வெள்.</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} வெள்.</relativeTimePattern>
-					<relativeTimePattern count="other">{0} வெள்.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} வெள். முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} வெள். முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
 			<field type="sat">
 				<relative type="-1">கடந்த சனி</relative>
 				<relative type="0">இந்த சனி</relative>
@@ -3198,22 +2455,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="sat-short">
-				<relative type="-1">கடந்த சனி</relative>
-				<relative type="0">இந்த சனி</relative>
-				<relative type="1">அடுத்த சனி</relative>
-				<relativeTime type="future">
-					<relativeTimePattern count="one">{0} சனி.</relativeTimePattern>
-					<relativeTimePattern count="other">{0} சனி.</relativeTimePattern>
-				</relativeTime>
-				<relativeTime type="past">
-					<relativeTimePattern count="one">{0} சனி. முன்</relativeTimePattern>
-					<relativeTimePattern count="other">{0} சனி. முன்</relativeTimePattern>
-				</relativeTime>
-			</field>
-			<field type="sat-narrow">
-				<relative type="-1">கடந்த சனி</relative>
-				<relative type="0">இந்த சனி</relative>
-				<relative type="1">அடுத்த சனி</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} சனி.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} சனி.</relativeTimePattern>
@@ -3228,9 +2469,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</field>
 			<field type="dayperiod">
 				<displayName>முற்பகல்/பிற்பகல்</displayName>
-			</field>
-			<field type="dayperiod-narrow">
-				<displayName>முற்./பிற்.</displayName>
 			</field>
 			<field type="hour">
 				<displayName>மணி</displayName>
@@ -3290,7 +2528,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</relativeTime>
 			</field>
 			<field type="minute-narrow">
-				<displayName>நிமி.</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="one">{0} நி.</relativeTimePattern>
 					<relativeTimePattern count="other">{0} நி.</relativeTimePattern>
@@ -3340,18 +2577,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<field type="zone-short">
 				<displayName>மண்டலம்</displayName>
 			</field>
-			<field type="zone-narrow">
-				<displayName>மண்டலம்</displayName>
-			</field>
 		</fields>
 		<timeZoneNames>
-			<hourFormat>+HH:mm;-HH:mm</hourFormat>
-			<gmtFormat>GMT{0}</gmtFormat>
-			<gmtZeroFormat>GMT</gmtZeroFormat>
 			<regionFormat>{0} நேரம்</regionFormat>
 			<regionFormat type="daylight">{0} பகலொளி நேரம்</regionFormat>
 			<regionFormat type="standard">{0} நிலையான நேரம்</regionFormat>
-			<fallbackFormat>{1} ({0})</fallbackFormat>
 			<zone type="America/Santa_Isabel">
 				<exemplarCity>சான்டா இசபெல்</exemplarCity>
 			</zone>
@@ -5623,39 +4853,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</timeZoneNames>
 	</dates>
 	<numbers>
-		<defaultNumberingSystem>latn</defaultNumberingSystem>
 		<otherNumberingSystems>
 			<native>tamldec</native>
 			<traditional>taml</traditional>
 		</otherNumberingSystems>
-		<minimumGroupingDigits>1</minimumGroupingDigits>
-		<symbols numberSystem="latn">
-			<decimal>.</decimal>
-			<group>,</group>
-			<list>;</list>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-			<timeSeparator draft="contributed">:</timeSeparator>
-		</symbols>
-		<symbols numberSystem="tamldec">
-			<decimal>.</decimal>
-			<group>,</group>
-			<percentSign>%</percentSign>
-			<plusSign>+</plusSign>
-			<minusSign>-</minusSign>
-			<approximatelySign>~</approximatelySign>
-			<exponential>E</exponential>
-			<superscriptingExponent>×</superscriptingExponent>
-			<perMille>‰</perMille>
-			<infinity>∞</infinity>
-			<nan>NaN</nan>
-		</symbols>
 		<decimalFormats numberSystem="latn">
 			<decimalFormatLength>
 				<decimalFormat>
@@ -5719,35 +4920,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				</decimalFormat>
 			</decimalFormatLength>
 		</decimalFormats>
-		<decimalFormats numberSystem="tamldec">
-			<decimalFormatLength>
-				<decimalFormat>
-					<pattern>#,##,##0.###</pattern>
-				</decimalFormat>
-			</decimalFormatLength>
-		</decimalFormats>
-		<scientificFormats numberSystem="latn">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
-		<scientificFormats numberSystem="tamldec">
-			<scientificFormatLength>
-				<scientificFormat>
-					<pattern>#E0</pattern>
-				</scientificFormat>
-			</scientificFormatLength>
-		</scientificFormats>
 		<percentFormats numberSystem="latn">
-			<percentFormatLength>
-				<percentFormat>
-					<pattern>#,##,##0%</pattern>
-				</percentFormat>
-			</percentFormatLength>
-		</percentFormats>
-		<percentFormats numberSystem="tamldec">
 			<percentFormatLength>
 				<percentFormat>
 					<pattern>#,##,##0%</pattern>
@@ -5758,7 +4931,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<currencyFormatLength>
 				<currencyFormat type="standard">
 					<pattern>¤#,##,##0.00</pattern>
-					<pattern alt="noCurrency" draft="provisional">#,##,##0.00</pattern>
 				</currencyFormat>
 				<currencyFormat type="accounting">
 					<pattern>¤#,##0.00;(¤#,##0.00)</pattern>
@@ -5814,553 +4986,406 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ஐக்கிய அரபு எமிரேட்ஸ் திர்ஹாம்</displayName>
 				<displayName count="one">ஐக்கிய அரபு எமிரேட்ஸ் திர்ஹாம்</displayName>
 				<displayName count="other">ஐக்கிய அரபு எமிரேட்ஸ் திர்ஹாம்கள்</displayName>
-				<symbol>AED</symbol>
 			</currency>
 			<currency type="AFN">
 				<displayName>ஆஃப்கான் ஆஃப்கானி</displayName>
 				<displayName count="one">ஆஃப்கான் ஆஃப்கானி</displayName>
 				<displayName count="other">ஆஃப்கான் ஆஃப்கானிகள்</displayName>
-				<symbol>AFN</symbol>
 			</currency>
 			<currency type="ALL">
 				<displayName>அல்பேனியன் லெக்</displayName>
 				<displayName count="one">அல்பேனியன் லெக்</displayName>
 				<displayName count="other">அல்பேனியன் லெகே</displayName>
-				<symbol>ALL</symbol>
 			</currency>
 			<currency type="AMD">
 				<displayName>ஆர்மேனியன் ட்ராம்</displayName>
 				<displayName count="one">ஆர்மேனியன் ட்ராம்</displayName>
 				<displayName count="other">ஆர்மேனியன் ட்ராம்கள்</displayName>
-				<symbol>AMD</symbol>
 			</currency>
 			<currency type="ANG">
 				<displayName>நெதர்லேண்ட்ஸ் அன்டிலியன் கில்டர்</displayName>
 				<displayName count="one">நெதர்லேண்ட்ஸ் அன்டிலியன் கில்டர்</displayName>
 				<displayName count="other">நெதர்லேண்ட்ஸ் அன்டிலியன் கில்டர்கள்</displayName>
-				<symbol>ANG</symbol>
 			</currency>
 			<currency type="AOA">
 				<displayName>அங்கோலன் க்வான்ஸா</displayName>
 				<displayName count="one">அங்கோலன் க்வான்ஸா</displayName>
 				<displayName count="other">அங்கோலன் க்வான்ஸாக்கள்</displayName>
-				<symbol>AOA</symbol>
-				<symbol alt="narrow">Kz</symbol>
 			</currency>
 			<currency type="ARS">
 				<displayName>அர்ஜென்டைன் பெசோ</displayName>
 				<displayName count="one">அர்ஜென்டைன் பெசோ</displayName>
 				<displayName count="other">அர்ஜென்டைன் பெசோக்கள்</displayName>
-				<symbol>ARS</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AUD">
 				<displayName>ஆஸ்திரேலிய டாலர்</displayName>
 				<displayName count="one">ஆஸ்திரேலிய டாலர்</displayName>
 				<displayName count="other">ஆஸ்திரேலிய டாலர்கள்</displayName>
-				<symbol>A$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="AWG">
 				<displayName>அருபன் ஃப்ளோரின்</displayName>
-				<displayName count="one">அருபன் ஃப்ளோரின்</displayName>
-				<displayName count="other">அருபன் ஃப்ளோரின்</displayName>
-				<symbol>AWG</symbol>
 			</currency>
 			<currency type="AZN">
 				<displayName>அசர்பைஜானி மனத்</displayName>
 				<displayName count="one">அஜர்பைசானி மனத்</displayName>
 				<displayName count="other">அசர்பைஜானி மனத்கள்</displayName>
-				<symbol>AZN</symbol>
 			</currency>
 			<currency type="BAM">
 				<displayName>போஸ்னியா-ஹெர்ஸேகோவினா கன்வெர்டிபில் மார்க்</displayName>
 				<displayName count="one">போஸ்னியா-ஹெர்ஸேகோவினா கன்வெர்டிபில் மார்க்</displayName>
 				<displayName count="other">போஸ்னியா-ஹெர்ஸேகோவினா கன்வெர்டிபில் மார்க்குகள்</displayName>
-				<symbol>BAM</symbol>
-				<symbol alt="narrow">KM</symbol>
 			</currency>
 			<currency type="BBD">
 				<displayName>பார்பேடியன் டாலர்</displayName>
 				<displayName count="one">பார்பேடியன் டாலர்</displayName>
 				<displayName count="other">பார்பேடியன் டாலர்கள்</displayName>
-				<symbol>BBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BDT">
 				<displayName>பங்களாதேஷி டாகா</displayName>
 				<displayName count="one">பங்களாதேஷி டாகா</displayName>
 				<displayName count="other">பங்களாதேஷி டாகாக்கள்</displayName>
-				<symbol>BDT</symbol>
-				<symbol alt="narrow">৳</symbol>
 			</currency>
 			<currency type="BGN">
 				<displayName>பல்கேரியன் லேவ்</displayName>
 				<displayName count="one">பல்கேரியன் லேவ்</displayName>
 				<displayName count="other">பல்கேரியன் லேவா</displayName>
-				<symbol>BGN</symbol>
 			</currency>
 			<currency type="BHD">
 				<displayName>பஹ்ரைனி தினார்</displayName>
 				<displayName count="one">பஹ்ரைனி தினார்</displayName>
 				<displayName count="other">பஹ்ரைனி தினார்கள்</displayName>
-				<symbol>BHD</symbol>
 			</currency>
 			<currency type="BIF">
 				<displayName>புருண்டியன் ஃப்ராங்க்</displayName>
 				<displayName count="one">புருண்டியன் ஃப்ராங்க்</displayName>
 				<displayName count="other">புருண்டியன் ஃப்ராங்க்குகள்</displayName>
-				<symbol>BIF</symbol>
 			</currency>
 			<currency type="BMD">
 				<displayName>பெர்முடன் டாலர்</displayName>
 				<displayName count="one">பெர்முடன் டாலர்</displayName>
 				<displayName count="other">பெர்முடன் டாலர்கள்</displayName>
-				<symbol>BMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BND">
 				<displayName>புரூனே டாலர்</displayName>
 				<displayName count="one">புரூனே டாலர்</displayName>
 				<displayName count="other">புரூனே டாலர்கள்</displayName>
-				<symbol>BND</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BOB">
 				<displayName>பொலிவியன் பொலிவியானோ</displayName>
 				<displayName count="one">பொலிவியன் பொலிவியானோ</displayName>
 				<displayName count="other">பொலிவியன் பொலிவியானோக்கள்</displayName>
-				<symbol>BOB</symbol>
-				<symbol alt="narrow">Bs</symbol>
 			</currency>
 			<currency type="BRL">
 				<displayName>பிரேசிலியன் ரியால்</displayName>
 				<displayName count="one">பிரேசிலியன் ரியால்</displayName>
 				<displayName count="other">பிரேசிலியன் ரியால்கள்</displayName>
-				<symbol>R$</symbol>
-				<symbol alt="narrow">R$</symbol>
 			</currency>
 			<currency type="BSD">
 				<displayName>பஹாமியன் டாலர்</displayName>
 				<displayName count="one">பஹாமியன் டாலர்</displayName>
 				<displayName count="other">பஹாமியன் டாலர்கள்</displayName>
-				<symbol>BSD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="BTN">
 				<displayName>பூட்டானீஸ் குல்ட்ரம்</displayName>
 				<displayName count="one">பூட்டானீஸ் குல்ட்ரம்</displayName>
 				<displayName count="other">பூட்டானீஸ் குல்ட்ரம்கள்</displayName>
-				<symbol>BTN</symbol>
 			</currency>
 			<currency type="BWP">
 				<displayName>போட்ஸ்வானன் புலா</displayName>
 				<displayName count="one">போட்ஸ்வானன் புலா</displayName>
 				<displayName count="other">போட்ஸ்வானன் புலாக்கள்</displayName>
-				<symbol>BWP</symbol>
-				<symbol alt="narrow">P</symbol>
 			</currency>
 			<currency type="BYN">
 				<displayName>பெலருசியன் ரூபிள்</displayName>
 				<displayName count="one">பெலருசியன் ரூபிள்</displayName>
 				<displayName count="other">பெலருசியன் ரூபிள்கள்</displayName>
-				<symbol>BYN</symbol>
 				<symbol alt="narrow">р.</symbol>
 			</currency>
 			<currency type="BYR">
 				<displayName>பெலருசியன் ரூபிள் (2000–2016)</displayName>
 				<displayName count="one">பெலருசியன் ரூபிள் (2000–2016)</displayName>
 				<displayName count="other">பெலருசியன் ரூபிள்கள் (2000–2016)</displayName>
-				<symbol draft="contributed">BYR</symbol>
 			</currency>
 			<currency type="BZD">
 				<displayName>பெலீஸ் டாலர்</displayName>
 				<displayName count="one">பெலீஸ் டாலர்</displayName>
 				<displayName count="other">பெலீஸ் டாலர்கள்</displayName>
-				<symbol>BZD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CAD">
 				<displayName>கனடியன் டாலர்</displayName>
 				<displayName count="one">கனடியன் டாலர்</displayName>
 				<displayName count="other">கனடியன் டாலர்கள்</displayName>
-				<symbol>CA$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CDF">
 				<displayName>காங்கோலீஸ் ஃப்ராங்க்</displayName>
 				<displayName count="one">காங்கோலீஸ் ஃப்ராங்க்</displayName>
 				<displayName count="other">காங்கோலீஸ் ஃப்ராங்க்குகள்</displayName>
-				<symbol>CDF</symbol>
 			</currency>
 			<currency type="CHF">
 				<displayName>சுவிஸ் ஃப்ராங்க்</displayName>
 				<displayName count="one">சுவிஸ் ஃப்ராங்க்</displayName>
 				<displayName count="other">சுவிஸ் ஃப்ராங்குகள்</displayName>
-				<symbol>CHF</symbol>
 			</currency>
 			<currency type="CLP">
 				<displayName>சிலியன் பெசோ</displayName>
 				<displayName count="one">சிலியன் பெசோ</displayName>
 				<displayName count="other">சிலியன் பெசோக்கள்</displayName>
-				<symbol>CLP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CNH">
 				<displayName>சீன யுவான் (ஆஃப்ஷோர்)</displayName>
-				<displayName count="one">சீன யுவான் (ஆஃப்ஷோர்)</displayName>
-				<displayName count="other">சீன யுவான் (ஆஃப்ஷோர்)</displayName>
-				<symbol>CNH</symbol>
 			</currency>
 			<currency type="CNY">
 				<displayName>சீன யுவான்</displayName>
-				<displayName count="one">சீன யுவான்</displayName>
-				<displayName count="other">சீன யுவான்</displayName>
-				<symbol>CN¥</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="COP">
 				<displayName>கொலம்பியன் பெசோ</displayName>
 				<displayName count="one">கொலம்பியன் பெசோ</displayName>
 				<displayName count="other">கொலம்பியன் பெசோக்கள்</displayName>
-				<symbol>COP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CRC">
 				<displayName>கோஸ்டா ரிகன் கொலோன்</displayName>
 				<displayName count="one">கோஸ்டா ரிகன் கொலோன்</displayName>
 				<displayName count="other">கோஸ்டா ரிகன் கொலோன்கள்</displayName>
-				<symbol>CRC</symbol>
-				<symbol alt="narrow">₡</symbol>
 			</currency>
 			<currency type="CUC">
 				<displayName>கியூபன் கன்வெர்டிபில் பெசோ</displayName>
 				<displayName count="one">கியூபன் கன்வெர்டிபில் பெசோ</displayName>
 				<displayName count="other">கியூபன் கன்வெர்டிபில் பெசோக்கள்</displayName>
-				<symbol>CUC</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CUP">
 				<displayName>கியூபன் பெசோ</displayName>
 				<displayName count="one">கியூபன் பெசோ</displayName>
 				<displayName count="other">கியூபன் பெசோக்கள்</displayName>
-				<symbol>CUP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="CVE">
 				<displayName>கேப் வெர்டியன் எஸ்குடோ</displayName>
 				<displayName count="one">கேப் வெர்டியன் எஸ்குடோ</displayName>
 				<displayName count="other">கேப் வெர்டியன் எஸ்குடோக்கள்</displayName>
-				<symbol>CVE</symbol>
 			</currency>
 			<currency type="CZK">
 				<displayName>செக் குடியரசு கொருனா</displayName>
 				<displayName count="one">செக் குடியரசு கொருனா</displayName>
 				<displayName count="other">செக் குடியரசு கொருனாக்கள்</displayName>
-				<symbol>CZK</symbol>
-				<symbol alt="narrow">Kč</symbol>
 			</currency>
 			<currency type="DJF">
 				<displayName>ஜிபவ்டியென் ஃப்ராங்க்</displayName>
 				<displayName count="one">ஜிபவ்டியென் ஃப்ராங்க்</displayName>
 				<displayName count="other">ஜிபவ்டியென் ஃப்ராங்க்குகள்</displayName>
-				<symbol>DJF</symbol>
 			</currency>
 			<currency type="DKK">
 				<displayName>டேனிஷ் க்ரோன்</displayName>
 				<displayName count="one">டேனிஷ் க்ரோன்</displayName>
 				<displayName count="other">டேனிஷ் க்ரோனர்</displayName>
-				<symbol>DKK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="DOP">
 				<displayName>டொமினிக்கன் பெசோ</displayName>
 				<displayName count="one">டொமினிக்கன் பெசோ</displayName>
 				<displayName count="other">டொமினிக்கன் பெசோக்கள்</displayName>
-				<symbol>DOP</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="DZD">
 				<displayName>அல்ஜீரியன் தினார்</displayName>
 				<displayName count="one">அல்ஜீரியன் தினார்</displayName>
 				<displayName count="other">அல்ஜீரியன் தினார்கள்</displayName>
-				<symbol>DZD</symbol>
 			</currency>
 			<currency type="EGP">
 				<displayName>எகிப்திய பவுண்டு</displayName>
 				<displayName count="one">எகிப்திய பவுண்டு</displayName>
 				<displayName count="other">எகிப்திய பவுண்டுகள்</displayName>
-				<symbol>EGP</symbol>
-				<symbol alt="narrow">E£</symbol>
 			</currency>
 			<currency type="ERN">
 				<displayName>எரித்ரியன் நக்ஃபா</displayName>
 				<displayName count="one">எரித்ரியன் நக்ஃபா</displayName>
 				<displayName count="other">எரித்ரியன் நக்ஃபாக்கள்</displayName>
-				<symbol>ERN</symbol>
 			</currency>
 			<currency type="ETB">
 				<displayName>எத்தியோப்பியன் பிர்</displayName>
 				<displayName count="one">எத்தியோப்பியன் பிர்</displayName>
 				<displayName count="other">எத்தியோப்பியன் பிர்கள்</displayName>
-				<symbol>ETB</symbol>
 			</currency>
 			<currency type="EUR">
 				<displayName>யூரோ</displayName>
 				<displayName count="one">யூரோ</displayName>
 				<displayName count="other">யூரோக்கள்</displayName>
-				<symbol>€</symbol>
-				<symbol alt="narrow">€</symbol>
 			</currency>
 			<currency type="FJD">
 				<displayName>ஃபிஜியன் டாலர்</displayName>
 				<displayName count="one">ஃபிஜியன் டாலர்</displayName>
 				<displayName count="other">ஃபிஜியன் டாலர்கள்</displayName>
-				<symbol>FJD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="FKP">
 				<displayName>ஃபாக்லாந்து தீவுகள் பவுண்டு</displayName>
 				<displayName count="one">ஃபாக்லாந்து தீவுகள் பவுண்டு</displayName>
 				<displayName count="other">ஃபாக்லாந்து தீவுகள் பவுண்டுகள்</displayName>
-				<symbol>FKP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GBP">
 				<displayName>பிரிட்டிஷ் பவுண்டு</displayName>
 				<displayName count="one">பிரிட்டிஷ் பவுண்டு</displayName>
 				<displayName count="other">பிரிட்டிஷ் பவுண்டுகள்</displayName>
-				<symbol>£</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GEL">
 				<displayName>ஜார்ஜியன் லாரி</displayName>
 				<displayName count="one">ஜார்ஜியன் லாரி</displayName>
 				<displayName count="other">ஜார்ஜியன் லாரிகள்</displayName>
-				<symbol>GEL</symbol>
-				<symbol alt="narrow">₾</symbol>
 			</currency>
 			<currency type="GHS">
 				<displayName>கானயன் சேடி</displayName>
 				<displayName count="one">கானயன் சேடி</displayName>
 				<displayName count="other">கானயன் சேடிகள்</displayName>
-				<symbol>GHS</symbol>
 			</currency>
 			<currency type="GIP">
 				<displayName>ஜிப்ரால்டர் பவுண்டு</displayName>
 				<displayName count="one">ஜிப்ரால்டர் பவுண்டு</displayName>
 				<displayName count="other">ஜிப்ரால்டர் பவுண்டுகள்</displayName>
-				<symbol>GIP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="GMD">
 				<displayName>கேம்பியன் தலாசி</displayName>
 				<displayName count="one">கேம்பியன் தலாசி</displayName>
 				<displayName count="other">கேம்பியன் தலாசிகள்</displayName>
-				<symbol>GMD</symbol>
 			</currency>
 			<currency type="GNF">
 				<displayName>கினியன் ஃப்ராங்க்</displayName>
 				<displayName count="one">கினியன் ஃப்ராங்க்</displayName>
 				<displayName count="other">கினியன் ஃப்ராங்குகள்</displayName>
-				<symbol>GNF</symbol>
-				<symbol alt="narrow">FG</symbol>
 			</currency>
 			<currency type="GTQ">
 				<displayName>குவாதெமாலன் க்யுட்ஸல்</displayName>
 				<displayName count="one">குவாதெமாலன் க்யுட்ஸல்</displayName>
 				<displayName count="other">குவாதெமாலன் க்யுட்ஸல்கள்</displayName>
-				<symbol>GTQ</symbol>
-				<symbol alt="narrow">Q</symbol>
 			</currency>
 			<currency type="GYD">
 				<displayName>கயானீஸ் டாலர்</displayName>
 				<displayName count="one">கயானீஸ் டாலர்</displayName>
 				<displayName count="other">கயானீஸ் டாலர்கள்</displayName>
-				<symbol>GYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HKD">
 				<displayName>ஹாங்காங் டாலர்</displayName>
 				<displayName count="one">ஹாங்காங் டாலர்</displayName>
 				<displayName count="other">ஹாங்காங் டாலர்கள்</displayName>
-				<symbol>HK$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="HNL">
 				<displayName>ஹோன்டூரன் லெம்பீரா</displayName>
 				<displayName count="one">ஹோன்டூரன் லெம்பீரா</displayName>
 				<displayName count="other">ஹோன்டூரன் லெம்பீராக்கள்</displayName>
-				<symbol>HNL</symbol>
-				<symbol alt="narrow">L</symbol>
 			</currency>
 			<currency type="HRK">
 				<displayName>குரோஷியன் குனா</displayName>
 				<displayName count="one">குரோஷியன் குனா</displayName>
 				<displayName count="other">குரோஷியன் குனாக்கள்</displayName>
-				<symbol>HRK</symbol>
-				<symbol alt="narrow">kn</symbol>
 			</currency>
 			<currency type="HTG">
 				<displayName>ஹைட்டியன் கோர்டே</displayName>
 				<displayName count="one">ஹைட்டியன் கோர்டே</displayName>
 				<displayName count="other">ஹைட்டியன் கோர்டேக்கள்</displayName>
-				<symbol>HTG</symbol>
 			</currency>
 			<currency type="HUF">
 				<displayName>ஹங்கேரியன் ஃபோரின்ட்</displayName>
 				<displayName count="one">ஹங்கேரியன் ஃபோரின்ட்</displayName>
 				<displayName count="other">ஹங்கேரியன் ஃபோரின்ட்கள்</displayName>
-				<symbol>HUF</symbol>
-				<symbol alt="narrow">Ft</symbol>
 			</currency>
 			<currency type="IDR">
 				<displayName>இந்தோனேஷியன் ருபியா</displayName>
 				<displayName count="one">இந்தோனேஷியன் ருபியா</displayName>
 				<displayName count="other">இந்தோனேஷியன் ருபியாக்கள்</displayName>
-				<symbol>IDR</symbol>
-				<symbol alt="narrow">Rp</symbol>
 			</currency>
 			<currency type="ILS">
 				<displayName>இஸ்ரேலி நியூ ஷிகேல்</displayName>
 				<displayName count="one">இஸ்ரேலி நியூ ஷிகேல்</displayName>
 				<displayName count="other">இஸ்ரேலி நியூ ஷிகேல்கள்</displayName>
-				<symbol>₪</symbol>
-				<symbol alt="narrow">₪</symbol>
 			</currency>
 			<currency type="INR">
 				<displayName>இந்திய ரூபாய்</displayName>
 				<displayName count="one">இந்திய ரூபாய்</displayName>
 				<displayName count="other">இந்திய ரூபாய்கள்</displayName>
-				<symbol>₹</symbol>
-				<symbol alt="narrow">₹</symbol>
 			</currency>
 			<currency type="IQD">
 				<displayName>ஈராக்கி தினார்</displayName>
 				<displayName count="one">ஈராக்கி தினார்</displayName>
 				<displayName count="other">ஈராக்கி தினார்கள்</displayName>
-				<symbol>IQD</symbol>
 			</currency>
 			<currency type="IRR">
 				<displayName>ஈரானியன் ரியால்</displayName>
 				<displayName count="one">ஈரானியன் ரியால்</displayName>
 				<displayName count="other">ஈரானியன் ரியால்கள்</displayName>
-				<symbol>IRR</symbol>
 			</currency>
 			<currency type="ISK">
 				<displayName>ஐஸ்லாண்டிக் க்ரோனா</displayName>
 				<displayName count="one">ஐஸ்லாண்டிக் க்ரோனா</displayName>
 				<displayName count="other">ஐஸ்லாண்டிக் க்ரோனர்</displayName>
-				<symbol>ISK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="JMD">
 				<displayName>ஜமைக்கன் டாலர்</displayName>
 				<displayName count="one">ஜமைக்கன் டாலர்</displayName>
 				<displayName count="other">ஜமைக்கன் டாலர்கள்</displayName>
-				<symbol>JMD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="JOD">
 				<displayName>ஜோர்டானிய தினார்</displayName>
 				<displayName count="one">ஜோர்டானிய தினார்</displayName>
 				<displayName count="other">ஜோர்டானிய தினார்கள்</displayName>
-				<symbol>JOD</symbol>
 			</currency>
 			<currency type="JPY">
 				<displayName>ஜப்பானிய யென்</displayName>
-				<displayName count="one">ஜப்பானிய யென்</displayName>
-				<displayName count="other">ஜப்பானிய யென்</displayName>
 				<symbol>¥</symbol>
-				<symbol alt="narrow">¥</symbol>
 			</currency>
 			<currency type="KES">
 				<displayName>கென்யன் ஷில்லிங்</displayName>
 				<displayName count="one">கென்யன் ஷில்லிங்</displayName>
 				<displayName count="other">கென்யன் ஷில்லிங்குகள்</displayName>
-				<symbol>KES</symbol>
 			</currency>
 			<currency type="KGS">
 				<displayName>கிர்கிஸ்தானி சோம்</displayName>
 				<displayName count="one">கிரிகிஸ்தானி சோம்</displayName>
 				<displayName count="other">கிர்கிஸ்தானி சோம்கள்</displayName>
-				<symbol>KGS</symbol>
 			</currency>
 			<currency type="KHR">
 				<displayName>கம்போடியன் ரியெல்</displayName>
 				<displayName count="one">கம்போடியன் ரியெல்</displayName>
 				<displayName count="other">கம்போடியன் ரியெல்கள்</displayName>
-				<symbol>KHR</symbol>
-				<symbol alt="narrow">៛</symbol>
 			</currency>
 			<currency type="KMF">
 				<displayName>கமோரியன் ஃப்ராங்க்</displayName>
 				<displayName count="one">கமோரியன் ஃப்ராங்க்</displayName>
 				<displayName count="other">கமோரியன் ஃப்ராங்க்குகள்</displayName>
-				<symbol>KMF</symbol>
-				<symbol alt="narrow">CF</symbol>
 			</currency>
 			<currency type="KPW">
 				<displayName>வட கொரிய வான்</displayName>
-				<displayName count="one">வட கொரிய வான்</displayName>
-				<displayName count="other">வட கொரிய வான்</displayName>
-				<symbol>KPW</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KRW">
 				<displayName>தென் கொரிய வான்</displayName>
-				<displayName count="one">தென் கொரிய வான்</displayName>
-				<displayName count="other">தென் கொரிய வான்</displayName>
-				<symbol>₩</symbol>
-				<symbol alt="narrow">₩</symbol>
 			</currency>
 			<currency type="KWD">
 				<displayName>குவைத்தி தினார்</displayName>
 				<displayName count="one">குவைத்தி தினார்</displayName>
 				<displayName count="other">குவைத்தி தினார்கள்</displayName>
-				<symbol>KWD</symbol>
 			</currency>
 			<currency type="KYD">
 				<displayName>கேமன் தீவுகள் டாலர்</displayName>
 				<displayName count="one">கேமன் தீவுகள் டாலர்</displayName>
 				<displayName count="other">கேமன் தீவுகள் டாலர்கள்</displayName>
-				<symbol>KYD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="KZT">
 				<displayName>கஸகஸ்தானி டென்கே</displayName>
 				<displayName count="one">கஸகஸ்தானி டென்கே</displayName>
 				<displayName count="other">கஸகஸ்தானி டென்கேக்கள்</displayName>
-				<symbol>KZT</symbol>
-				<symbol alt="narrow">₸</symbol>
 			</currency>
 			<currency type="LAK">
 				<displayName>லவோஷியன் கிப்</displayName>
 				<displayName count="one">லவோஷியன் கிப்</displayName>
 				<displayName count="other">லவோஷியன் கிப்கள்</displayName>
-				<symbol>LAK</symbol>
-				<symbol alt="narrow">₭</symbol>
 			</currency>
 			<currency type="LBP">
 				<displayName>லெபனீஸ் பவுண்டு</displayName>
 				<displayName count="one">லெபனீஸ் பவுண்டு</displayName>
 				<displayName count="other">லெபனீஸ் பவுண்டுகள்</displayName>
-				<symbol>LBP</symbol>
-				<symbol alt="narrow">L£</symbol>
 			</currency>
 			<currency type="LKR">
 				<displayName>இலங்கை ரூபாய்</displayName>
 				<displayName count="one">இலங்கை ரூபாய்</displayName>
 				<displayName count="other">இலங்கை ரூபாய்கள்</displayName>
-				<symbol>LKR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="LRD">
 				<displayName>லைபீரியன் டாலர்</displayName>
 				<displayName count="one">லைபீரியன் டாலர்</displayName>
 				<displayName count="other">லைபீரியன் டாலர்கள்</displayName>
-				<symbol>LRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="LSL">
 				<displayName>லெசோதோ லோட்டி</displayName>
@@ -6371,490 +5396,369 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>லிதுவேனியன் லிடஸ்</displayName>
 				<displayName count="one">லிதுவேனியன் லிடாஸ்</displayName>
 				<displayName count="other">லிதுவேனியன் லிடை</displayName>
-				<symbol draft="contributed">LTL</symbol>
 			</currency>
 			<currency type="LVL">
 				<displayName>லத்வியன் லாட்ஸ்</displayName>
 				<displayName count="one">லாத்வியன் லாட்ஸ்</displayName>
 				<displayName count="other">லத்வியன் லாட்டி</displayName>
-				<symbol draft="contributed">LVL</symbol>
 			</currency>
 			<currency type="LYD">
 				<displayName>லிபியன் தினார்</displayName>
 				<displayName count="one">லிபியன் தினார்</displayName>
 				<displayName count="other">லிபியன் தினார்கள்</displayName>
-				<symbol>LYD</symbol>
 			</currency>
 			<currency type="MAD">
 				<displayName>மொராக்கன் திர்ஹாம்</displayName>
 				<displayName count="one">மொராக்கன் திர்ஹாம்</displayName>
 				<displayName count="other">மொராக்கன் திர்ஹாம்கள்</displayName>
-				<symbol>MAD</symbol>
 			</currency>
 			<currency type="MDL">
 				<displayName>மால்டோவன் லியூ</displayName>
 				<displayName count="one">மால்டோவன் லியூ</displayName>
 				<displayName count="other">மால்டோவன் லேய்</displayName>
-				<symbol>MDL</symbol>
 			</currency>
 			<currency type="MGA">
 				<displayName>மலகாசி ஏரியரி</displayName>
 				<displayName count="one">மலகாசி ஏரியரி</displayName>
 				<displayName count="other">மலகாசி ஏரியரிகள்</displayName>
-				<symbol>MGA</symbol>
-				<symbol alt="narrow">Ar</symbol>
 			</currency>
 			<currency type="MKD">
 				<displayName>மாசிடோனியன் டேனார்</displayName>
 				<displayName count="one">மாசிடோனியன் டேனார்</displayName>
 				<displayName count="other">மாசிடோனியன் டேனாரி</displayName>
-				<symbol>MKD</symbol>
 			</currency>
 			<currency type="MMK">
 				<displayName>மியான்மர் கியாத்</displayName>
 				<displayName count="one">மியான்மர் கியாத்</displayName>
 				<displayName count="other">மியான்மர் கியாத்கள்</displayName>
-				<symbol>MMK</symbol>
-				<symbol alt="narrow">K</symbol>
 			</currency>
 			<currency type="MNT">
 				<displayName>மங்கோலியன் டுக்ரிக்</displayName>
 				<displayName count="one">மங்கோலியன் டுக்ரிக்</displayName>
 				<displayName count="other">மங்கோலியன் டுக்ரிக்குகள்</displayName>
-				<symbol>MNT</symbol>
-				<symbol alt="narrow">₮</symbol>
 			</currency>
 			<currency type="MOP">
 				<displayName>மெகனீஸ் படாகா</displayName>
 				<displayName count="one">மெகனீஸ் படாகா</displayName>
 				<displayName count="other">மெகனீஸ் படாகாக்கள்</displayName>
-				<symbol>MOP</symbol>
 			</currency>
 			<currency type="MRO">
 				<displayName>மொரிஷானியன் ஒகுயா (1973–2017)</displayName>
 				<displayName count="one">மொரிஷானியன் ஒகுயா (1973–2017)</displayName>
 				<displayName count="other">மொரிஷானியன் ஒகுயாக்கள் (1973–2017)</displayName>
-				<symbol draft="contributed">MRO</symbol>
 			</currency>
 			<currency type="MRU">
 				<displayName>மொரிஷானியன் ஒகுயா</displayName>
 				<displayName count="one">மொரிஷானியன் ஒகுயா</displayName>
 				<displayName count="other">மொரிஷானியன் ஒகுயாக்கள்</displayName>
-				<symbol>MRU</symbol>
 			</currency>
 			<currency type="MUR">
 				<displayName>மொரீஷியன் ருபீ</displayName>
 				<displayName count="one">மொரீஷியன் ருபீ</displayName>
 				<displayName count="other">மொரீஷியன் ருபீக்கள்</displayName>
-				<symbol>MUR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="MVR">
 				<displayName>மாலத்தீவு ருஃபியா</displayName>
 				<displayName count="one">மாலத்தீவு ருஃபியா</displayName>
 				<displayName count="other">மாலத்தீவு ருஃபியாக்கள்</displayName>
-				<symbol>MVR</symbol>
 			</currency>
 			<currency type="MWK">
 				<displayName>மலாவியன் குவாச்சா</displayName>
 				<displayName count="one">மலாவியன் குவாச்சா</displayName>
 				<displayName count="other">மலாவியன் குவாச்சாக்கள்</displayName>
-				<symbol>MWK</symbol>
 			</currency>
 			<currency type="MXN">
 				<displayName>மெக்ஸிகன் பெசோ</displayName>
 				<displayName count="one">மெக்ஸிகன் பெசோ</displayName>
 				<displayName count="other">மெக்ஸிகன் பெசோக்கள்</displayName>
-				<symbol>MX$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="MYR">
 				<displayName>மலேஷியன் ரிங்கிட்</displayName>
 				<displayName count="one">மலேஷியன் ரிங்கிட்</displayName>
 				<displayName count="other">மலேஷியன் ரிங்கிட்கள்</displayName>
-				<symbol>MYR</symbol>
-				<symbol alt="narrow">RM</symbol>
 			</currency>
 			<currency type="MZN">
 				<displayName>மொசாம்பிகன் மெடிகல்</displayName>
 				<displayName count="one">மொசாம்பிகன் மெடிகல்</displayName>
 				<displayName count="other">மொசாம்பிகன் மெடிகல்கள்</displayName>
-				<symbol>MZN</symbol>
 			</currency>
 			<currency type="NAD">
 				<displayName>நமீபியன் டாலர்</displayName>
 				<displayName count="one">நமீபியன் டாலர்</displayName>
 				<displayName count="other">நமீபியன் டாலர்கள்</displayName>
-				<symbol>NAD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="NGN">
 				<displayName>நைஜீரியன் நைரா</displayName>
 				<displayName count="one">நைஜீரியன் நைரா</displayName>
 				<displayName count="other">நைஜீரியன் நைராக்கள்</displayName>
-				<symbol>NGN</symbol>
-				<symbol alt="narrow">₦</symbol>
 			</currency>
 			<currency type="NIO">
 				<displayName>நிகரகுவன் கோர்டோபா</displayName>
 				<displayName count="one">நிகரகுவன் கோர்டோபா</displayName>
 				<displayName count="other">நிகரகுவன் கோர்டோபாக்கள்</displayName>
-				<symbol>NIO</symbol>
-				<symbol alt="narrow">C$</symbol>
 			</currency>
 			<currency type="NOK">
 				<displayName>நார்வேஜியன் க்ரோன்</displayName>
 				<displayName count="one">நார்வேஜியன் க்ரோன்</displayName>
 				<displayName count="other">நார்வேஜியன் க்ரோனர்</displayName>
-				<symbol>NOK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="NPR">
 				<displayName>நேபாளீஸ் ரூபாய்</displayName>
 				<displayName count="one">நேபாளீஸ் ரூபாய்</displayName>
 				<displayName count="other">நேபாளீஸ் ரூபாய்கள்</displayName>
-				<symbol>NPR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="NZD">
 				<displayName>நியூசிலாந்து டாலர்</displayName>
 				<displayName count="one">நியூசிலாந்து டாலர்</displayName>
 				<displayName count="other">நியூசிலாந்து டாலர்கள்</displayName>
-				<symbol>NZ$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="OMR">
 				<displayName>ஓமானி ரியால்</displayName>
 				<displayName count="one">ஓமானி ரியால்</displayName>
 				<displayName count="other">ஓமானி ரியால்கள்</displayName>
-				<symbol>OMR</symbol>
 			</currency>
 			<currency type="PAB">
 				<displayName>பனாமானியன் பால்போவா</displayName>
 				<displayName count="one">பனாமானியன் பால்போவா</displayName>
 				<displayName count="other">பனாமானியன் பால்போவாக்கள்</displayName>
-				<symbol>PAB</symbol>
 			</currency>
 			<currency type="PEN">
 				<displayName>பெரூவியன் சோல்</displayName>
 				<displayName count="one">பெரூவியன் சோல்</displayName>
 				<displayName count="other">பெரூவியன் சோல்கள்</displayName>
-				<symbol>PEN</symbol>
 			</currency>
 			<currency type="PGK">
 				<displayName>பபுவா நியூ கினியன் கினா</displayName>
-				<displayName count="one">பபுவா நியூ கினியன் கினா</displayName>
-				<displayName count="other">பபுவா நியூ கினியன் கினா</displayName>
-				<symbol>PGK</symbol>
 			</currency>
 			<currency type="PHP">
 				<displayName>பிலிப்பைன் பெசோ</displayName>
 				<displayName count="one">பிலிப்பைன் பெசோ</displayName>
 				<displayName count="other">பிலிப்பைன் பெசோக்கள்</displayName>
 				<symbol>PHP</symbol>
-				<symbol alt="narrow">₱</symbol>
 			</currency>
 			<currency type="PKR">
 				<displayName>பாகிஸ்தானி ரூபாய்</displayName>
 				<displayName count="one">பாகிஸ்தானி ரூபாய்</displayName>
 				<displayName count="other">பாகிஸ்தானி ரூபாய்கள்</displayName>
-				<symbol>PKR</symbol>
-				<symbol alt="narrow">Rs</symbol>
 			</currency>
 			<currency type="PLN">
 				<displayName>போலிஷ் ஸ்லாட்டி</displayName>
 				<displayName count="one">போலிஷ் ஸ்லாட்டி</displayName>
 				<displayName count="other">போலிஷ் ஸ்லாட்டிகள்</displayName>
-				<symbol>PLN</symbol>
-				<symbol alt="narrow">zł</symbol>
 			</currency>
 			<currency type="PYG">
 				<displayName>பராகுவன் குவாரானி</displayName>
 				<displayName count="one">பராகுவன் குவாரானி</displayName>
 				<displayName count="other">பராகுவன் குவாரானிகள்</displayName>
-				<symbol>PYG</symbol>
-				<symbol alt="narrow">₲</symbol>
 			</currency>
 			<currency type="QAR">
 				<displayName>கத்தாரி ரியால்</displayName>
 				<displayName count="one">கத்தாரி ரியால்</displayName>
 				<displayName count="other">கத்தாரி ரியால்கள்</displayName>
-				<symbol>QAR</symbol>
 			</currency>
 			<currency type="RON">
 				<displayName>ரோமானியன் லியூ</displayName>
 				<displayName count="one">ரோமானியன் லியூ</displayName>
 				<displayName count="other">ரோமானியன் லேய்</displayName>
-				<symbol>RON</symbol>
-				<symbol alt="narrow">lei</symbol>
 			</currency>
 			<currency type="RSD">
 				<displayName>செர்பியன் தினார்</displayName>
 				<displayName count="one">செர்பியன் தினார்</displayName>
 				<displayName count="other">செர்பியன் தினார்கள்</displayName>
-				<symbol>RSD</symbol>
 			</currency>
 			<currency type="RUB">
 				<displayName>ரஷியன் ரூபிள்</displayName>
 				<displayName count="one">ரஷியன் ரூபிள்</displayName>
 				<displayName count="other">ரஷியன் ரூபிள்கள்</displayName>
-				<symbol>RUB</symbol>
-				<symbol alt="narrow">₽</symbol>
 			</currency>
 			<currency type="RWF">
 				<displayName>ருவாண்டன் ஃப்ராங்க்</displayName>
 				<displayName count="one">ருவாண்டன் ஃப்ராங்க்</displayName>
 				<displayName count="other">ருவாண்டன் ஃப்ராங்க்குகள்</displayName>
-				<symbol>RWF</symbol>
-				<symbol alt="narrow">RF</symbol>
 			</currency>
 			<currency type="SAR">
 				<displayName>சவுதி ரியால்</displayName>
 				<displayName count="one">சவுதி ரியால்</displayName>
 				<displayName count="other">சவுதி ரியால்கள்</displayName>
-				<symbol>SAR</symbol>
 			</currency>
 			<currency type="SBD">
 				<displayName>சாலமன் தீவுகள் டாலர்</displayName>
 				<displayName count="one">சாலமன் தீவுகள் டாலர்</displayName>
 				<displayName count="other">சாலமன் தீவுகள் டாலர்கள்</displayName>
-				<symbol>SBD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SCR">
 				<displayName>சிசீலோயிஸ் ருபீ</displayName>
 				<displayName count="one">சிசீலோயிஸ் ருபீ</displayName>
 				<displayName count="other">சிசீலோயிஸ் ருபீக்கள்</displayName>
-				<symbol>SCR</symbol>
 			</currency>
 			<currency type="SDG">
 				<displayName>சூடானீஸ் பவுண்டு</displayName>
 				<displayName count="one">சூடானீஸ் பவுண்டு</displayName>
 				<displayName count="other">சூடானீஸ் பவுண்டுகள்</displayName>
-				<symbol>SDG</symbol>
 			</currency>
 			<currency type="SEK">
 				<displayName>ஸ்வீடிஷ் க்ரோனா</displayName>
 				<displayName count="one">ஸ்வீடிஷ் க்ரோனா</displayName>
 				<displayName count="other">ஸ்வீடிஷ் க்ரோனர்</displayName>
-				<symbol>SEK</symbol>
-				<symbol alt="narrow">kr</symbol>
 			</currency>
 			<currency type="SGD">
 				<displayName>சிங்கப்பூர் டாலர்</displayName>
 				<displayName count="one">சிங்கப்பூர் டாலர்</displayName>
 				<displayName count="other">சிங்கப்பூர் டாலர்கள்</displayName>
-				<symbol>SGD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SHP">
 				<displayName>செயின்ட் ஹெலேனா பவுண்டு</displayName>
 				<displayName count="one">செயின்ட் ஹெலேனா பவுண்டு</displayName>
 				<displayName count="other">செயின்ட் ஹெலேனா பவுண்டுகள்</displayName>
-				<symbol>SHP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
-			<currency type="SLL">
+			<currency type="SLE">
 				<displayName>சியாரா லியோனியன் லியோன்</displayName>
 				<displayName count="one">சியாரா லியோனியன் லியோன்</displayName>
 				<displayName count="other">சியாரா லியோனியன் லியோன்கள்</displayName>
-				<symbol>SLL</symbol>
+			</currency>
+			<currency type="SLL">
+				<displayName>சியாரா லியோனியன் லியோன் (1964—2022)</displayName>
+				<displayName count="one">சியாரா லியோனியன் லியோன் (1964—2022)</displayName>
+				<displayName count="other">சியாரா லியோனியன் லியோன்கள் (1964—2022)</displayName>
 			</currency>
 			<currency type="SOS">
 				<displayName>சோமாலி ஷில்லிங்</displayName>
 				<displayName count="one">சோமாலி ஷில்லிங்</displayName>
 				<displayName count="other">சோமாலி ஷில்லிங்குகள்</displayName>
-				<symbol>SOS</symbol>
 			</currency>
 			<currency type="SRD">
 				<displayName>சுரினாமீஸ் டாலர்</displayName>
 				<displayName count="one">சுரினாமீஸ் டாலர்</displayName>
 				<displayName count="other">சுரினாமீஸ் டாலர்கள்</displayName>
-				<symbol>SRD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="SSP">
 				<displayName>தெற்கு சூடானீஸ் பவுண்டு</displayName>
 				<displayName count="one">தெற்கு சூடானீஸ் பவுண்டு</displayName>
 				<displayName count="other">தெற்கு சூடானீஸ் பவுண்டுகள்</displayName>
-				<symbol>SSP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="STD">
 				<displayName>சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ரா (1977–2017)</displayName>
 				<displayName count="one">சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ரா (1977–2017)</displayName>
 				<displayName count="other">சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ராக்கள் (1977–2017)</displayName>
-				<symbol draft="contributed">STD</symbol>
 			</currency>
 			<currency type="STN">
 				<displayName>சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ரா</displayName>
 				<displayName count="one">சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ரா</displayName>
 				<displayName count="other">சாவ் டோமி மற்றும் பிரின்ஸ்பி டோப்ராக்கள்</displayName>
-				<symbol>STN</symbol>
-				<symbol alt="narrow">Db</symbol>
 			</currency>
 			<currency type="SYP">
 				<displayName>சிரியன் பவுண்டு</displayName>
 				<displayName count="one">சிரியன் பவுண்டு</displayName>
 				<displayName count="other">சிரியன் பவுண்டுகள்</displayName>
-				<symbol>SYP</symbol>
-				<symbol alt="narrow">£</symbol>
 			</currency>
 			<currency type="SZL">
 				<displayName>சுவாஸி லிலாங்கனி</displayName>
 				<displayName count="one">சுவாஸி லிலாங்கனி</displayName>
 				<displayName count="other">சுவாஸி எமாலாங்கனி</displayName>
-				<symbol>SZL</symbol>
 			</currency>
 			<currency type="THB">
 				<displayName>தாய் பாட்</displayName>
-				<displayName count="one">தாய் பாட்</displayName>
-				<displayName count="other">தாய் பாட்</displayName>
 				<symbol>฿</symbol>
-				<symbol alt="narrow">฿</symbol>
 			</currency>
 			<currency type="TJS">
 				<displayName>தஜிகிஸ்தானி சோமோனி</displayName>
 				<displayName count="one">தஜிகிஸ்தானி சோமோனி</displayName>
 				<displayName count="other">தஜிகிஸ்தானி சோமோனிகள்</displayName>
-				<symbol>TJS</symbol>
 			</currency>
 			<currency type="TMT">
 				<displayName>துர்க்மெனிஸ்தானி மனத்</displayName>
-				<displayName count="one">துர்க்மெனிஸ்தானி மனத்</displayName>
-				<displayName count="other">துர்க்மெனிஸ்தானி மனத்</displayName>
-				<symbol>TMT</symbol>
 			</currency>
 			<currency type="TND">
 				<displayName>துனிஷியன் தினார்</displayName>
 				<displayName count="one">துனிஷியன் தினார்</displayName>
 				<displayName count="other">துனிஷியன் தினார்கள்</displayName>
-				<symbol>TND</symbol>
 			</currency>
 			<currency type="TOP">
 				<displayName>தொங்கான் பங்கா</displayName>
-				<displayName count="one">தொங்கான் பங்கா</displayName>
-				<displayName count="other">தொங்கான் பங்கா</displayName>
-				<symbol>TOP</symbol>
-				<symbol alt="narrow">T$</symbol>
 			</currency>
 			<currency type="TRY">
 				<displayName>துருக்கிஷ் லீரா</displayName>
-				<displayName count="one">துருக்கிஷ் லீரா</displayName>
-				<displayName count="other">துருக்கிஷ் லீரா</displayName>
-				<symbol>TRY</symbol>
-				<symbol alt="narrow">₺</symbol>
-				<symbol alt="variant">TL</symbol>
 			</currency>
 			<currency type="TTD">
 				<displayName>டிரினிடாட் மற்றும் டோபாகோ டாலர்</displayName>
 				<displayName count="one">டிரினிடாட் மற்றும் டோபாகோ டாலர்</displayName>
 				<displayName count="other">டிரினிடாட் மற்றும் டோபாகோ டாலர்கள்</displayName>
-				<symbol>TTD</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="TWD">
 				<displayName>புதிய தைவான் டாலர்</displayName>
 				<displayName count="one">புதிய தைவான் டாலர்</displayName>
 				<displayName count="other">புதிய தைவான் டாலர்கள்</displayName>
-				<symbol>NT$</symbol>
 				<symbol alt="narrow">NT$</symbol>
 			</currency>
 			<currency type="TZS">
 				<displayName>தான்சானியன் ஷில்லிங்</displayName>
 				<displayName count="one">தான்சானியன் ஷில்லிங்</displayName>
 				<displayName count="other">தான்சானியன் ஷில்லிங்குகள்</displayName>
-				<symbol>TZS</symbol>
 			</currency>
 			<currency type="UAH">
 				<displayName>உக்ரைனியன் ஹிரைவ்னியா</displayName>
 				<displayName count="one">உக்ரைனியன் ஹிரைவ்னியா</displayName>
 				<displayName count="other">உக்ரைனியன் ஹிரைவ்னியாக்கள்</displayName>
-				<symbol>UAH</symbol>
-				<symbol alt="narrow">₴</symbol>
 			</currency>
 			<currency type="UGX">
 				<displayName>உகாண்டன் ஷில்லிங்</displayName>
 				<displayName count="one">உகாண்டன் ஷில்லிங்</displayName>
 				<displayName count="other">உகாண்டன் ஷில்லிங்குகள்</displayName>
-				<symbol>UGX</symbol>
 			</currency>
 			<currency type="USD">
 				<displayName>அமெரிக்க டாலர்</displayName>
 				<displayName count="one">அமெரிக்க டாலர்</displayName>
 				<displayName count="other">அமெரிக்க டாலர்கள்</displayName>
 				<symbol>$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UYU">
 				<displayName>உருகுவேயன் பெசோ</displayName>
 				<displayName count="one">உருகுவேயன் பெசோ</displayName>
 				<displayName count="other">உருகுவேயன் பெசோக்கள்</displayName>
-				<symbol>UYU</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="UZS">
 				<displayName>உஸ்பெக்கிஸ்தானி சோம்</displayName>
-				<displayName count="one">உஸ்பெக்கிஸ்தானி சோம்</displayName>
-				<displayName count="other">உஸ்பெக்கிஸ்தானி சோம்</displayName>
-				<symbol>UZS</symbol>
 			</currency>
 			<currency type="VEF">
 				<displayName>வெனிசுலன் போலிவர் (2008–2018)</displayName>
 				<displayName count="one">வெனிசுலன் போலிவர் (2008–2018)</displayName>
 				<displayName count="other">வெனிசுலன் போலிவர்கள் (2008–2018)</displayName>
-				<symbol draft="contributed">VEF</symbol>
-				<symbol alt="narrow" draft="contributed">Bs</symbol>
 			</currency>
 			<currency type="VES">
 				<displayName>வெனிசுலன் போலிவர்</displayName>
 				<displayName count="one">வெனிசுலன் போலிவர்</displayName>
 				<displayName count="other">வெனிசுலன் போலிவர்கள்</displayName>
-				<symbol>VES</symbol>
 			</currency>
 			<currency type="VND">
 				<displayName>வியட்நாமீஸ் டாங்</displayName>
-				<displayName count="one">வியட்நாமீஸ் டாங்</displayName>
-				<displayName count="other">வியட்நாமீஸ் டாங்</displayName>
-				<symbol>₫</symbol>
-				<symbol alt="narrow">₫</symbol>
 			</currency>
 			<currency type="VUV">
 				<displayName>வனுவாட்டு வாட்டு</displayName>
 				<displayName count="one">வனுவாட்டு வாட்டு</displayName>
 				<displayName count="other">வனுவாட்டு வாட்டுகள்</displayName>
-				<symbol>VUV</symbol>
 			</currency>
 			<currency type="WST">
 				<displayName>சமோவான் தாலா</displayName>
-				<displayName count="one">சமோவான் தாலா</displayName>
-				<displayName count="other">சமோவான் தாலா</displayName>
-				<symbol>WST</symbol>
 			</currency>
 			<currency type="XAF">
 				<displayName>மத்திய ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="one">மத்திய ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="other">மத்திய ஆப்பிரிக்க CFA ஃப்ராங்க்குகள்</displayName>
-				<symbol>FCFA</symbol>
 			</currency>
 			<currency type="XCD">
 				<displayName>கிழக்கு கரீபியன் டாலர்</displayName>
 				<displayName count="one">கிழக்கு கரீபியன் டாலர்</displayName>
 				<displayName count="other">கிழக்கு கரீபியன் டாலர்கள்</displayName>
-				<symbol>EC$</symbol>
-				<symbol alt="narrow">$</symbol>
 			</currency>
 			<currency type="XOF">
 				<displayName>மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="one">மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்</displayName>
 				<displayName count="other">மேற்கு ஆப்பிரிக்க CFA ஃப்ராங்க்குகள்</displayName>
-				<symbol>F CFA</symbol>
 			</currency>
 			<currency type="XPF">
 				<displayName>ஃப்ராங்க் (CFP)</displayName>
 				<displayName count="one">ஃப்ராங்க் (CFP)</displayName>
 				<displayName count="other">ஃப்ராங்குகள் (CFP)</displayName>
-				<symbol>CFPF</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>தெரியாத நாணயம்</displayName>
@@ -6865,14 +5769,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ஏமனி ரியால்</displayName>
 				<displayName count="one">ஏமனி ரியால்</displayName>
 				<displayName count="other">ஏமனி ரியால்கள்</displayName>
-				<symbol>YER</symbol>
 			</currency>
 			<currency type="ZAR">
 				<displayName>தென் ஆப்ரிக்க ராண்ட்</displayName>
-				<displayName count="one">தென் ஆப்ரிக்க ராண்ட்</displayName>
-				<displayName count="other">தென் ஆப்ரிக்க ராண்ட்</displayName>
-				<symbol>ZAR</symbol>
-				<symbol alt="narrow">R</symbol>
 			</currency>
 			<currency type="ZMK">
 				<displayName>ஸாம்பியன் குவாசா (1968–2012)</displayName>
@@ -6881,15 +5780,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>ஸாம்பியன் குவாச்சா</displayName>
 				<displayName count="one">ஸாம்பியன் குவாச்சா</displayName>
 				<displayName count="other">ஸாம்பியன் குவாச்சாக்கள்</displayName>
-				<symbol>ZMW</symbol>
-				<symbol alt="narrow">ZK</symbol>
 			</currency>
 		</currencies>
 		<miscPatterns numberSystem="latn">
-			<pattern type="approximately">~{0}</pattern>
 			<pattern type="atLeast">{0}+</pattern>
-			<pattern type="atMost">≤{0}</pattern>
-			<pattern type="range">{0}–{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="one">{0} நாள்</pluralMinimalPairs>
@@ -6933,6 +5827,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>யொக்டோ{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>ரோன்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>குவெக்டோ{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>டெக்கா{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -6948,9 +5848,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p9">
 				<unitPrefixPattern>ஜிகா{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
-			</compoundUnit>
 			<compoundUnit type="10p15">
 				<unitPrefixPattern>பெட்டா{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -6963,20 +5860,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>யாட்டா{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="1024p1">
-				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>ரோனா{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern>மெபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern>ஜிபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern>டெபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern>பெபி{0}</unitPrefixPattern>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>குவெட்டா{0}</unitPrefixPattern>
 			</compoundUnit>
 			<compoundUnit type="1024p6">
 				<unitPrefixPattern>எக்ஸ்பி{0}</unitPrefixPattern>
@@ -6986,9 +5874,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>யோபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
 				<compoundUnitPattern1>சதுர {0}</compoundUnitPattern1>
@@ -7004,7 +5889,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern>{0}-{1}</compoundUnitPattern>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
-				<displayName>ஜி-ஃபோர்ஸ்</displayName>
 				<unitPattern count="one">{0} ஜி-ஃபோர்ஸ்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ஜி-ஃபோர்ஸில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ஜி-ஃபோர்ஸை</unitPattern>
@@ -7048,7 +5932,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} ரேடியன்ஸுக்கு</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName>டிகிரி</displayName>
 				<unitPattern count="one">{0} டிகிரி</unitPattern>
 				<unitPattern count="one" case="ablative">{0} டிகிரியில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} டிகிரியை</unitPattern>
@@ -7093,7 +5976,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/சதுர கிலோமீட்டர்</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
-				<displayName>ஹெக்டேர்</displayName>
 				<unitPattern count="one">{0} ஹெக்டேர்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ஹெக்டேரில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ஹெக்டேரை</unitPattern>
@@ -7128,13 +6010,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/சதுர சென்டிமீட்டர்</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
-				<displayName>சதுர மைல்கள்</displayName>
 				<unitPattern count="one">{0} சதுர மைல்</unitPattern>
 				<unitPattern count="other">{0} சதுர மைல்கள்</unitPattern>
 				<perUnitPattern>{0}/சதுர மைல்</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
-				<displayName>ஏக்கர்</displayName>
 				<unitPattern count="one">{0} ஏக்கர்</unitPattern>
 				<unitPattern count="other">{0} ஏக்கர்</unitPattern>
 			</unit>
@@ -7144,7 +6024,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} சதுர யார்டுகள்</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName>சதுர அடி</displayName>
 				<unitPattern count="one">{0} சதுர அடி</unitPattern>
 				<unitPattern count="other">{0} சதுர அடி</unitPattern>
 			</unit>
@@ -7155,7 +6034,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/சதுர அங்குலம்</perUnitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName>ட்யூனம்ஸ்</displayName>
 				<unitPattern count="one">{0} ட்யூனம்</unitPattern>
 				<unitPattern count="other">{0} ட்யூனம்ஸ்</unitPattern>
 			</unit>
@@ -7209,7 +6087,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} பகுதிகள்/மில்லியனுக்கு</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
-				<displayName>சதவீதம்</displayName>
 				<unitPattern count="one">{0} சதவீதம்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} சதவீதத்தில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} சதவீதத்தை</unitPattern>
@@ -7220,7 +6097,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} சதவீதத்திற்கு</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName>மில்லி ஒன்றுக்கு</displayName>
 				<unitPattern count="one">மில்லி ஒன்றுக்கு {0}</unitPattern>
 				<unitPattern count="one" case="ablative">மில்லி ஒன்றுக்கு {0} என்பதில்</unitPattern>
 				<unitPattern count="one" case="accusative">மில்லி ஒன்றுக்கு {0} என்பதை</unitPattern>
@@ -7231,7 +6107,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">மில்லி ஒன்றுக்கு {0} என்பதற்கு</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName>பெர்மிரியட்</displayName>
 				<unitPattern count="one">{0} பெர்மிரியட்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} பெர்மிரியட்டில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} பெர்மிரியட்டை</unitPattern>
@@ -7428,7 +6303,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} தசாப்தங்களுக்கு</unitPattern>
 			</unit>
 			<unit type="duration-year">
-				<displayName>ஆண்டுகள்</displayName>
 				<unitPattern count="one">{0} ஆண்டு</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ஆண்டில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ஆண்டை</unitPattern>
@@ -7440,16 +6314,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>ஒரு வருடத்தில் {0}</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">காலாண்டுகள்</displayName>
+				<displayName>காலாண்டுகள்</displayName>
 				<unitPattern count="one">{0} காலாண்டு</unitPattern>
 				<unitPattern count="one" case="ablative">{0} காலாண்டில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} காலாண்டை</unitPattern>
 				<unitPattern count="one" case="dative">{0} காலாண்டுக்கு</unitPattern>
 				<unitPattern count="other">{0} காலாண்டுகள்</unitPattern>
-				<unitPattern count="other" case="ablative" draft="contributed">{0} காலாண்டுகளில்</unitPattern>
-				<unitPattern count="other" case="accusative" draft="contributed">{0} காலாண்டுகளை</unitPattern>
-				<unitPattern count="other" case="dative" draft="contributed">{0} காலாண்டுகளுக்கு</unitPattern>
-				<perUnitPattern draft="contributed">{0}/காலாண்டு</perUnitPattern>
+				<unitPattern count="other" case="ablative">{0} காலாண்டுகளில்</unitPattern>
+				<unitPattern count="other" case="accusative">{0} காலாண்டுகளை</unitPattern>
+				<unitPattern count="other" case="dative">{0} காலாண்டுகளுக்கு</unitPattern>
+				<perUnitPattern>{0}/காலாண்டு</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>மாதங்கள்</displayName>
@@ -7476,7 +6350,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} / வாரம்</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
-				<displayName>நாட்கள்</displayName>
 				<unitPattern count="one">{0} நாள்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} நாளில்</unitPattern>
 				<unitPattern count="one" case="accusative">நாளை</unitPattern>
@@ -7490,7 +6363,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-day-person">
 				<unitPattern count="one">{0} நாள்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} நாளில்</unitPattern>
-				<unitPattern count="one" case="accusative">நாளை</unitPattern>
+				<unitPattern count="one" case="accusative">{0} நாளை</unitPattern>
 				<unitPattern count="one" case="dative">{0} நாளுக்கு</unitPattern>
 				<unitPattern count="other">{0} நாட்கள்</unitPattern>
 				<unitPattern count="other" case="ablative">{0} நாட்களில்</unitPattern>
@@ -7522,7 +6395,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0} / நிமிடம்</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
-				<displayName>விநாடிகள்</displayName>
 				<unitPattern count="one">{0} விநாடி</unitPattern>
 				<unitPattern count="one" case="ablative">{0} விநாடியில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} விநாடியை</unitPattern>
@@ -7556,7 +6428,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} மைக்ரோவிநாடிகளுக்கு</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName>நானோசெகண்டுகள்</displayName>
 				<unitPattern count="one">{0} நானோசெகண்டு</unitPattern>
 				<unitPattern count="one" case="ablative">{0} நானோசெகண்டில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} நானோசெகண்டை</unitPattern>
@@ -7589,7 +6460,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} மில்லி ஆம்பியர்களுக்கு</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName>ஓம்ஸ்</displayName>
 				<unitPattern count="one">{0} ஓம்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} ஓம்-இல்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} ஓம்-ஐ</unitPattern>
@@ -7680,7 +6550,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} அமெரிக்க வெப்ப அலகுகள்</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName>பவுண்ட் விசை</displayName>
 				<unitPattern count="one">{0} பவுண்ட் விசை</unitPattern>
 				<unitPattern count="other">{0} பவுண்ட் விசை</unitPattern>
 			</unit>
@@ -7773,7 +6642,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} பிக்சல்களுக்கு</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
-				<displayName>மெகாபிக்சல்கள்</displayName>
 				<unitPattern count="one">{0} மெகாபிக்சல்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} மெகாபிக்சலில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} மெகாபிக்சலை</unitPattern>
@@ -7911,7 +6779,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} பைக்கோமீட்டர்களுக்கு</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName>மைல்கள்</displayName>
 				<unitPattern count="one">{0} மைல்</unitPattern>
 				<unitPattern count="other">{0} மைல்கள்</unitPattern>
 			</unit>
@@ -7920,14 +6787,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} கெஜம்</unitPattern>
 				<unitPattern count="other">{0} கெஜம்</unitPattern>
 			</unit>
-			<unit type="length-foot">
-				<displayName>அடி</displayName>
-				<unitPattern count="one">{0} அடி</unitPattern>
-				<unitPattern count="other">{0} அடி</unitPattern>
-				<perUnitPattern>{0}/அடி</perUnitPattern>
-			</unit>
 			<unit type="length-inch">
-				<displayName>அங்குலங்கள்</displayName>
 				<unitPattern count="one">{0} அங்குலம்</unitPattern>
 				<unitPattern count="other">{0} அங்குலங்கள்</unitPattern>
 				<perUnitPattern>{0}/அங்குலம்</perUnitPattern>
@@ -7938,7 +6798,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} புடைநொடிகள்</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName>ஒளி ஆண்டுகள்</displayName>
 				<unitPattern count="one">{0} ஒளி ஆண்டு</unitPattern>
 				<unitPattern count="other">{0} ஒளி ஆண்டுகள்</unitPattern>
 			</unit>
@@ -7979,12 +6838,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} அச்சுப் புள்ளிகள்</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName>சூரிய ஆரம்</displayName>
 				<unitPattern count="one">{0} சூரிய ஆரம்</unitPattern>
 				<unitPattern count="other">{0} சூரிய ஆரம்</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName>லக்ஸ்</displayName>
 				<unitPattern count="one">{0} லக்ஸ்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} லக்ஸில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} லக்ஸை</unitPattern>
@@ -8017,7 +6874,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} லூமனுக்கு</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName>சூரிய ஒளிர்வுத்தன்மை</displayName>
 				<unitPattern count="one">{0} சூரிய ஒளிர்வுத்தன்மை</unitPattern>
 				<unitPattern count="other">{0} சூரிய ஒளிர்வுத்தன்மை</unitPattern>
 			</unit>
@@ -8045,7 +6901,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/கிலோகிராம்</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
-				<displayName>கிராம்கள்</displayName>
 				<unitPattern count="one">{0} கிராம்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} கிராமில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} கிராமை</unitPattern>
@@ -8117,17 +6972,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} கேரட்களுக்கு</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName>டால்ட்டன்ஸ்</displayName>
 				<unitPattern count="one">{0} டால்ட்டன்</unitPattern>
 				<unitPattern count="other">{0} டால்ட்டன்ஸ்</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName>புவித் திணிவுகள்</displayName>
 				<unitPattern count="one">{0} புவித் திணிவு</unitPattern>
 				<unitPattern count="other">{0} புவித் திணிவுகள்</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName>சூரியத் திணிவுகள்</displayName>
 				<unitPattern count="one">{0} சூரியத் திணிவு</unitPattern>
 				<unitPattern count="other">{0} சூரியத் திணிவுகள்</unitPattern>
 			</unit>
@@ -8320,8 +7172,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} நாட்</unitPattern>
 				<unitPattern count="other">{0} நாட்</unitPattern>
 			</unit>
+			<unit type="speed-beaufort">
+				<displayName>பியூஃபோர்ட்</displayName>
+				<unitPattern count="one">பியூஃபோர்ட் {0}</unitPattern>
+				<unitPattern count="other">பியூஃபோர்ட் {0}</unitPattern>
+			</unit>
 			<unit type="temperature-generic">
-				<displayName>°</displayName>
 				<unitPattern count="one">{0} டிகிரி</unitPattern>
 				<unitPattern count="one" case="ablative">{0} டிகிரியில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} டிகிரியை</unitPattern>
@@ -8452,7 +7308,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} ஹெக்டோலிட்டர்களுக்கு</unitPattern>
 			</unit>
 			<unit type="volume-liter">
-				<displayName>லிட்டர்கள்</displayName>
 				<unitPattern count="one">{0} லிட்டர்</unitPattern>
 				<unitPattern count="one" case="ablative">{0} லிட்டரில்</unitPattern>
 				<unitPattern count="one" case="accusative">{0} லிட்டரை</unitPattern>
@@ -8524,7 +7379,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ஏக்கர் அடி</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
-				<displayName>புசல்கள்</displayName>
 				<unitPattern count="one">{0} புசல்</unitPattern>
 				<unitPattern count="other">{0} புசல்கள்</unitPattern>
 			</unit>
@@ -8546,7 +7400,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} குவார்ட்ஸ்</unitPattern>
 			</unit>
 			<unit type="volume-pint">
-				<displayName>பின்ட்கள்</displayName>
 				<unitPattern count="one">{0} பின்ட்</unitPattern>
 				<unitPattern count="other">{0} பின்ட்கள்</unitPattern>
 			</unit>
@@ -8651,6 +7504,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p-24">
 				<unitPrefixPattern>யொ.{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p-27">
+				<unitPrefixPattern>ரோன்.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p-30">
+				<unitPrefixPattern>குவெக்.{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="10p1">
 				<unitPrefixPattern>டெக்.{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -8681,6 +7540,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="10p24">
 				<unitPrefixPattern>யா.{0}</unitPrefixPattern>
 			</compoundUnit>
+			<compoundUnit type="10p27">
+				<unitPrefixPattern>ரோ.{0}</unitPrefixPattern>
+			</compoundUnit>
+			<compoundUnit type="10p30">
+				<unitPrefixPattern>கு.{0}</unitPrefixPattern>
+			</compoundUnit>
 			<compoundUnit type="1024p1">
 				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
 			</compoundUnit>
@@ -8704,17 +7569,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="1024p8">
 				<unitPrefixPattern>யி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>ஜி-ஃபோர்ஸ்</displayName>
@@ -8822,7 +7676,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} மி.மோ./லி.</unitPattern>
 			</unit>
 			<unit type="concentr-item">
-				<displayName draft="contributed">உருப்படி</displayName>
+				<displayName>உருப்படி</displayName>
 				<unitPattern count="one">{0} உருப்படி</unitPattern>
 				<unitPattern count="other">{0} உருப்படி</unitPattern>
 			</unit>
@@ -8833,18 +7687,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>சதவீதம்</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<displayName>மில்லி ஒன்றுக்கு</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
 			</unit>
 			<unit type="concentr-permyriad">
 				<displayName>பெர்மிரியட்</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-				<unitPattern count="other">{0}‱</unitPattern>
 			</unit>
 			<unit type="concentr-mole">
 				<displayName>மோல்</displayName>
@@ -8871,50 +7719,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} மை./இம். கே.</unitPattern>
 				<unitPattern count="other">{0} மை./இம். கே.</unitPattern>
 			</unit>
-			<unit type="digital-petabyte">
-				<displayName>PB</displayName>
-				<unitPattern count="one">{0} PB</unitPattern>
-				<unitPattern count="other">{0} PB</unitPattern>
-			</unit>
-			<unit type="digital-terabyte">
-				<displayName>TB</displayName>
-				<unitPattern count="one">{0} TB</unitPattern>
-				<unitPattern count="other">{0} TB</unitPattern>
-			</unit>
 			<unit type="digital-terabit">
 				<displayName>டெ.பி.</displayName>
-				<unitPattern count="one">{0} Tb</unitPattern>
-				<unitPattern count="other">{0} Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
 				<displayName>கி.பைட்</displayName>
-				<unitPattern count="one">{0} GB</unitPattern>
-				<unitPattern count="other">{0} GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
 				<displayName>கி.பிட்</displayName>
-				<unitPattern count="one">{0} Gb</unitPattern>
-				<unitPattern count="other">{0} Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
 				<displayName>மெ.பை.</displayName>
-				<unitPattern count="one">{0} MB</unitPattern>
-				<unitPattern count="other">{0} MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
 				<displayName>மெ.பிட்.</displayName>
-				<unitPattern count="one">{0} Mb</unitPattern>
-				<unitPattern count="other">{0} Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
 				<displayName>கி.பை.</displayName>
-				<unitPattern count="one">{0} kB</unitPattern>
-				<unitPattern count="other">{0} kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
 				<displayName>கிலோ பிட்</displayName>
-				<unitPattern count="one">{0} kb</unitPattern>
-				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>பைட்</displayName>
@@ -8943,10 +7767,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/ஆ.</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">காலா.</displayName>
-				<unitPattern count="one" draft="contributed">{0} காலா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} காலா.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/காலா.</perUnitPattern>
+				<displayName>காலா.</displayName>
+				<unitPattern count="one">{0} காலா.</unitPattern>
+				<unitPattern count="other">{0} காலா.</unitPattern>
+				<perUnitPattern>{0}/காலா.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>மாத.</displayName>
@@ -8991,8 +7815,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>μsecs</displayName>
-				<unitPattern count="one">{0} μs</unitPattern>
-				<unitPattern count="other">{0} μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
 				<displayName>நானோசெகண்டுகள்</displayName>
@@ -9011,8 +7833,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="electric-ohm">
 				<displayName>ஓம்ஸ்</displayName>
-				<unitPattern count="one">{0} Ω</unitPattern>
-				<unitPattern count="other">{0} Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>வோ.</displayName>
@@ -9051,8 +7871,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="energy-electronvolt">
 				<displayName>எலக்ட்ரான்வோல்ட்</displayName>
-				<unitPattern count="one">{0} eV</unitPattern>
-				<unitPattern count="other">{0} eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>பி.டி.யூ</displayName>
@@ -9075,9 +7893,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} நியூ</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName draft="contributed">கி.வா-ம.நே./100கி.மி.</displayName>
-				<unitPattern count="one" draft="contributed">{0} கி.வா-ம.நே./100கி.மி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} கி.வா-ம.நே./100கி.மி.</unitPattern>
+				<displayName>கி.வா-ம.நே./100கி.மி.</displayName>
+				<unitPattern count="one">{0} கி.வா-ம.நே./100கி.மி.</unitPattern>
+				<unitPattern count="other">{0} கி.வா-ம.நே./100கி.மி.</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
 				<displayName>ஜி.ஹெஸ்.</displayName>
@@ -9138,10 +7956,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>புள்ளி</displayName>
 				<unitPattern count="one">{0} புள்ளி</unitPattern>
 				<unitPattern count="other">{0} புள்ளி</unitPattern>
-			</unit>
-			<unit type="length-earth-radius">
-				<unitPattern count="one">{0} R⊕</unitPattern>
-				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>கி.மீ.</displayName>
@@ -9250,8 +8064,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-solar-radius">
 				<displayName>சூரிய ஆரம்</displayName>
-				<unitPattern count="one">{0} R☉</unitPattern>
-				<unitPattern count="other">{0} R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<displayName>லக்ஸ்</displayName>
@@ -9270,8 +8082,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="light-solar-luminosity">
 				<displayName>சூரிய ஒளிர்வுத்தன்மை</displayName>
-				<unitPattern count="one">{0} L☉</unitPattern>
-				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>ட.</displayName>
@@ -9339,13 +8149,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-earth-mass">
 				<displayName>புவித் திணிவுகள்</displayName>
-				<unitPattern count="one">{0} M⊕</unitPattern>
-				<unitPattern count="other">{0} M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<displayName>சூரியத் திணிவுகள்</displayName>
-				<unitPattern count="one">{0} M☉</unitPattern>
-				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>கிரைன்</displayName>
@@ -9387,11 +8193,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} பாத. மி.மீ.</unitPattern>
 				<unitPattern count="other">{0} பாத. மி.மீ.</unitPattern>
 			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<displayName>psi</displayName>
-				<unitPattern count="one">{0} psi</unitPattern>
-				<unitPattern count="other">{0} psi</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>பாத. அங்.</displayName>
 				<unitPattern count="one">{0} பாத. அங்.</unitPattern>
@@ -9406,11 +8207,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>மி.பா.</displayName>
 				<unitPattern count="one">{0} மி.பா.</unitPattern>
 				<unitPattern count="other">{0} மி.பா.</unitPattern>
-			</unit>
-			<unit type="pressure-atmosphere">
-				<displayName>atm</displayName>
-				<unitPattern count="one">{0} atm</unitPattern>
-				<unitPattern count="other">{0} atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
 				<displayName>பா.</displayName>
@@ -9452,10 +8248,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} நா.</unitPattern>
 				<unitPattern count="other">{0} நா.</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName>°</displayName>
-				<unitPattern count="one">{0}°</unitPattern>
-				<unitPattern count="other">{0}°</unitPattern>
+			<unit type="speed-beaufort">
+				<displayName>பியூ.</displayName>
+				<unitPattern count="one">பியூ. {0}</unitPattern>
+				<unitPattern count="other">பியூ. {0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>டிகிரி செ.</displayName>
@@ -9666,1108 +8462,708 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
-			<compoundUnit type="10p-1">
-				<unitPrefixPattern>டெ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-2">
-				<unitPrefixPattern>செ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-3">
-				<unitPrefixPattern>மி.{0}</unitPrefixPattern>
-			</compoundUnit>
 			<compoundUnit type="10p-6">
 				<unitPrefixPattern>மை.{0}</unitPrefixPattern>
 			</compoundUnit>
-			<compoundUnit type="10p-9">
-				<unitPrefixPattern>நா.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-12">
-				<unitPrefixPattern>பி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-15">
-				<unitPrefixPattern>பெ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-18">
-				<unitPrefixPattern>அட்.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-21">
-				<unitPrefixPattern>ஜெப்.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p-24">
-				<unitPrefixPattern>யொ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p1">
-				<unitPrefixPattern>டெக்.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p2">
-				<unitPrefixPattern>ஹெ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p3">
-				<unitPrefixPattern>கி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p6">
-				<unitPrefixPattern>மெ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p9">
-				<unitPrefixPattern>ஜி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p12">
-				<unitPrefixPattern>டெரா{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p15">
-				<unitPrefixPattern>பெட்.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p18">
-				<unitPrefixPattern>எ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p21">
-				<unitPrefixPattern>ஜெ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="10p24">
-				<unitPrefixPattern>யா.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p1">
-				<unitPrefixPattern>கிபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p2">
-				<unitPrefixPattern>மெபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p3">
-				<unitPrefixPattern>ஜிபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p4">
-				<unitPrefixPattern>டெபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p5">
-				<unitPrefixPattern>பெபி{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p6">
-				<unitPrefixPattern>ஈ.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p7">
-				<unitPrefixPattern>சி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="1024p8">
-				<unitPrefixPattern>யி.{0}</unitPrefixPattern>
-			</compoundUnit>
-			<compoundUnit type="per">
-				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
-			</compoundUnit>
-			<compoundUnit type="power2">
-				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="power3">
-				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
-				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
-			</compoundUnit>
-			<compoundUnit type="times">
-				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
-			</compoundUnit>
-			<unit type="acceleration-g-force">
-				<displayName>ஜி-ஃபோர்ஸ்</displayName>
-				<unitPattern count="one">{0} ஜி.ஃபோ.</unitPattern>
-				<unitPattern count="other">{0} ஜி.ஃபோ.</unitPattern>
-			</unit>
 			<unit type="acceleration-meter-per-square-second">
-				<displayName>மீ/வி²</displayName>
-				<unitPattern count="one" draft="contributed">{0}மீ/வி²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மீ/வி²</unitPattern>
+				<unitPattern count="one">{0}மீ/வி²</unitPattern>
+				<unitPattern count="other">{0}மீ/வி²</unitPattern>
 			</unit>
 			<unit type="angle-revolution">
-				<displayName>சுழற்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}சுழற்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}சுழற்.</unitPattern>
+				<unitPattern count="one">{0}சுழற்.</unitPattern>
+				<unitPattern count="other">{0}சுழற்.</unitPattern>
 			</unit>
 			<unit type="angle-radian">
-				<displayName>ரேடி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ரேடி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ரேடி.</unitPattern>
+				<unitPattern count="one">{0}ரேடி.</unitPattern>
+				<unitPattern count="other">{0}ரேடி.</unitPattern>
 			</unit>
 			<unit type="angle-degree">
-				<displayName draft="contributed">டிகி.</displayName>
+				<displayName>டிகி.</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
-				<displayName>ஆர்க்நிமி.</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
-				<displayName>ஆர்க்விநா.</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
-				<displayName>கி.மீ.²</displayName>
 				<unitPattern count="one">{0} ச.கிமீ.</unitPattern>
 				<unitPattern count="other">{0} ச.கிமீ.</unitPattern>
-				<perUnitPattern>{0}/கி.மீ.²</perUnitPattern>
-			</unit>
-			<unit type="area-hectare">
-				<displayName>ஹெக்டேர்</displayName>
-				<unitPattern count="one">{0} ஹெக்.</unitPattern>
-				<unitPattern count="other">{0} ஹெக்.</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
-				<displayName>மீட்டர்கள்²</displayName>
 				<unitPattern count="one">{0} ச.மீ.</unitPattern>
 				<unitPattern count="other">{0} ச.மீ.</unitPattern>
-				<perUnitPattern>{0}/மீ²</perUnitPattern>
 			</unit>
 			<unit type="area-square-centimeter">
-				<displayName>செ.மீ.²</displayName>
-				<unitPattern count="one" draft="contributed">{0}செ.மீ.²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}செ.மீ.²</unitPattern>
-				<perUnitPattern>{0}/செ.மீ.²</perUnitPattern>
-			</unit>
-			<unit type="area-square-mile">
-				<displayName>சதுர மைல்கள்</displayName>
-				<unitPattern count="one">{0} ச. மை.</unitPattern>
-				<unitPattern count="other">{0} ச. மை.</unitPattern>
-				<perUnitPattern>{0}/மை.²</perUnitPattern>
-			</unit>
-			<unit type="area-acre">
-				<displayName>ஏக்கர்</displayName>
-				<unitPattern count="one">{0} ஏக்.</unitPattern>
-				<unitPattern count="other">{0} ஏக்.</unitPattern>
+				<unitPattern count="one">{0}செ.மீ.²</unitPattern>
+				<unitPattern count="other">{0}செ.மீ.²</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
-				<displayName draft="contributed">யா²</displayName>
-				<unitPattern count="one" draft="contributed">{0}யா²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}யா²</unitPattern>
+				<displayName>யா²</displayName>
+				<unitPattern count="one">{0}யா²</unitPattern>
+				<unitPattern count="other">{0}யா²</unitPattern>
 			</unit>
 			<unit type="area-square-foot">
-				<displayName draft="contributed">ச.அ.</displayName>
-				<unitPattern count="one">{0} ச.அ.</unitPattern>
-				<unitPattern count="other">{0} ச.அ.</unitPattern>
+				<displayName>ச.அ.</displayName>
 			</unit>
 			<unit type="area-square-inch">
-				<displayName draft="contributed">அங்.²</displayName>
-				<unitPattern count="one" draft="contributed">{0}அங்.²</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}அங்.²</unitPattern>
-				<perUnitPattern>{0}/அங்.²</perUnitPattern>
+				<displayName>அங்.²</displayName>
+				<unitPattern count="one">{0}அங்.²</unitPattern>
+				<unitPattern count="other">{0}அங்.²</unitPattern>
 			</unit>
 			<unit type="area-dunam">
-				<displayName draft="contributed">ட்யூனம்</displayName>
-				<unitPattern count="one" draft="contributed">{0}ட்யூனம்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ட்யூனம்</unitPattern>
+				<displayName>ட்யூனம்</displayName>
+				<unitPattern count="one">{0}ட்யூனம்</unitPattern>
+				<unitPattern count="other">{0}ட்யூனம்</unitPattern>
 			</unit>
 			<unit type="concentr-karat">
 				<displayName>காரட்</displayName>
-				<unitPattern count="one" draft="contributed">{0}கார.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கார.</unitPattern>
+				<unitPattern count="one">{0}கார.</unitPattern>
+				<unitPattern count="other">{0}கார.</unitPattern>
 			</unit>
 			<unit type="concentr-milligram-ofglucose-per-deciliter">
-				<displayName>மி.கி./டெ.லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மிகி/டெ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மிகி/டெ</unitPattern>
+				<unitPattern count="one">{0}மிகி/டெ</unitPattern>
+				<unitPattern count="other">{0}மிகி/டெ</unitPattern>
 			</unit>
 			<unit type="concentr-millimole-per-liter">
-				<displayName>மி.மோ./லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மிமோ/லி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மிமோ/லி</unitPattern>
+				<unitPattern count="one">{0}மிமோ/லி</unitPattern>
+				<unitPattern count="other">{0}மிமோ/லி</unitPattern>
 			</unit>
 			<unit type="concentr-item">
-				<displayName draft="contributed">உருப்படி</displayName>
 				<unitPattern count="one">{0}உருப்படி</unitPattern>
 				<unitPattern count="other">{0}உருப்படி</unitPattern>
 			</unit>
 			<unit type="concentr-permillion">
-				<displayName>ப./மி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ப./மி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ப./மி.</unitPattern>
+				<unitPattern count="one">{0}ப./மி.</unitPattern>
+				<unitPattern count="other">{0}ப./மி.</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
-				<unitPattern count="one">{0}%</unitPattern>
-				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
-				<displayName draft="contributed">‰</displayName>
-				<unitPattern count="one">{0}‰</unitPattern>
-				<unitPattern count="other">{0}‰</unitPattern>
+				<displayName>‰</displayName>
 			</unit>
 			<unit type="concentr-permyriad">
-				<displayName draft="contributed">‱</displayName>
-				<unitPattern count="one">{0}‱</unitPattern>
-				<unitPattern count="other">{0}‱</unitPattern>
+				<displayName>‱</displayName>
 			</unit>
 			<unit type="concentr-mole">
-				<displayName>மோல்</displayName>
-				<unitPattern count="one" draft="contributed">{0}மோல்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மோல்</unitPattern>
+				<unitPattern count="one">{0}மோல்</unitPattern>
+				<unitPattern count="other">{0}மோல்</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-kilometer">
-				<displayName>லி./கி.மீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}லி./கி.மீ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}லி./கி.மீ.</unitPattern>
+				<unitPattern count="one">{0}லி./கி.மீ.</unitPattern>
+				<unitPattern count="other">{0}லி./கி.மீ.</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
-				<displayName>லி./100கி.மீ</displayName>
 				<unitPattern count="one">{0}லி./100கி.மீ</unitPattern>
 				<unitPattern count="other">{0}லி./100கி.மீ</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
-				<displayName>மை./கே.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மை./கே.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மை./கே.</unitPattern>
+				<unitPattern count="one">{0}மை./கே.</unitPattern>
+				<unitPattern count="other">{0}மை./கே.</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon-imperial">
-				<displayName draft="contributed">mpg UK</displayName>
-				<unitPattern count="one" draft="contributed">{0}m/gUK</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}m/gUK</unitPattern>
+				<displayName>mpg UK</displayName>
+				<unitPattern count="one">{0}m/gUK</unitPattern>
+				<unitPattern count="other">{0}m/gUK</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
-				<displayName>PB</displayName>
-				<unitPattern count="one" draft="contributed">{0}PB</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}PB</unitPattern>
+				<unitPattern count="one">{0}PB</unitPattern>
+				<unitPattern count="other">{0}PB</unitPattern>
 			</unit>
 			<unit type="digital-terabyte">
-				<displayName>TB</displayName>
-				<unitPattern count="one" draft="contributed">{0}TB</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}TB</unitPattern>
+				<unitPattern count="one">{0}TB</unitPattern>
+				<unitPattern count="other">{0}TB</unitPattern>
 			</unit>
 			<unit type="digital-terabit">
-				<displayName draft="contributed">Tb</displayName>
-				<unitPattern count="one" draft="contributed">{0}Tb</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}Tb</unitPattern>
+				<displayName>Tb</displayName>
+				<unitPattern count="one">{0}Tb</unitPattern>
+				<unitPattern count="other">{0}Tb</unitPattern>
 			</unit>
 			<unit type="digital-gigabyte">
-				<displayName draft="contributed">GB</displayName>
-				<unitPattern count="one" draft="contributed">{0}GB</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}GB</unitPattern>
+				<displayName>GB</displayName>
+				<unitPattern count="one">{0}GB</unitPattern>
+				<unitPattern count="other">{0}GB</unitPattern>
 			</unit>
 			<unit type="digital-gigabit">
-				<displayName draft="contributed">Gb</displayName>
-				<unitPattern count="one" draft="contributed">{0}Gb</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}Gb</unitPattern>
+				<displayName>Gb</displayName>
+				<unitPattern count="one">{0}Gb</unitPattern>
+				<unitPattern count="other">{0}Gb</unitPattern>
 			</unit>
 			<unit type="digital-megabyte">
-				<displayName draft="contributed">MB</displayName>
-				<unitPattern count="one" draft="contributed">{0}MB</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}MB</unitPattern>
+				<displayName>MB</displayName>
+				<unitPattern count="one">{0}MB</unitPattern>
+				<unitPattern count="other">{0}MB</unitPattern>
 			</unit>
 			<unit type="digital-megabit">
-				<displayName draft="contributed">Mb</displayName>
-				<unitPattern count="one" draft="contributed">{0}Mb</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}Mb</unitPattern>
+				<displayName>Mb</displayName>
+				<unitPattern count="one">{0}Mb</unitPattern>
+				<unitPattern count="other">{0}Mb</unitPattern>
 			</unit>
 			<unit type="digital-kilobyte">
-				<displayName draft="contributed">kB</displayName>
-				<unitPattern count="one" draft="contributed">{0}kB</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kB</unitPattern>
+				<displayName>kB</displayName>
+				<unitPattern count="one">{0}kB</unitPattern>
+				<unitPattern count="other">{0}kB</unitPattern>
 			</unit>
 			<unit type="digital-kilobit">
-				<displayName draft="contributed">kb</displayName>
-				<unitPattern count="one" draft="contributed">{0}kb</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}kb</unitPattern>
+				<displayName>kb</displayName>
+				<unitPattern count="one">{0}kb</unitPattern>
+				<unitPattern count="other">{0}kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
-				<displayName draft="contributed">பை.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பை.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பை.</unitPattern>
+				<displayName>பை.</displayName>
+				<unitPattern count="one">{0}பை.</unitPattern>
+				<unitPattern count="other">{0}பை.</unitPattern>
 			</unit>
 			<unit type="digital-bit">
-				<displayName>பிட்</displayName>
-				<unitPattern count="one" draft="contributed">{0}பிட்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பிட்</unitPattern>
+				<unitPattern count="one">{0}பிட்</unitPattern>
+				<unitPattern count="other">{0}பிட்</unitPattern>
 			</unit>
 			<unit type="duration-century">
-				<displayName>நூ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}நூ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நூ.</unitPattern>
+				<unitPattern count="one">{0}நூ.</unitPattern>
+				<unitPattern count="other">{0}நூ.</unitPattern>
 			</unit>
 			<unit type="duration-decade">
-				<displayName draft="contributed">தசா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}தசா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}தசா.</unitPattern>
+				<displayName>தசா.</displayName>
+				<unitPattern count="one">{0}தசா.</unitPattern>
+				<unitPattern count="other">{0}தசா.</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>ஆண்டு</displayName>
 				<unitPattern count="one">{0} ஆ</unitPattern>
 				<unitPattern count="other">{0} ஆ</unitPattern>
-				<perUnitPattern>{0}/ஆ.</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
-				<displayName draft="contributed">கா.</displayName>
-				<unitPattern count="one" draft="contributed">{0} கா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} கா.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/கா.</perUnitPattern>
+				<displayName>கா.</displayName>
+				<unitPattern count="one">{0} கா.</unitPattern>
+				<unitPattern count="other">{0} கா.</unitPattern>
+				<perUnitPattern>{0}/கா.</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>மா</displayName>
 				<unitPattern count="one">{0} மா</unitPattern>
 				<unitPattern count="other">{0} மா</unitPattern>
-				<perUnitPattern>{0}/மா</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>வா</displayName>
 				<unitPattern count="one">{0} வா</unitPattern>
 				<unitPattern count="other">{0} வா</unitPattern>
-				<perUnitPattern>{0}/வா.</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>நா</displayName>
 				<unitPattern count="one">{0} நா</unitPattern>
 				<unitPattern count="other">{0} நா</unitPattern>
-				<perUnitPattern draft="contributed">{0}/நா</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>மணி</displayName>
 				<unitPattern count="one">{0} ம.நே.</unitPattern>
 				<unitPattern count="other">{0} ம.நே.</unitPattern>
-				<perUnitPattern draft="contributed">{0} /ம.நே</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>நிமி.</displayName>
 				<unitPattern count="one">{0} நிமி.</unitPattern>
 				<unitPattern count="other">{0} நிமி.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/நிமி.</perUnitPattern>
+				<perUnitPattern>{0}/நிமி.</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>வி.</displayName>
 				<unitPattern count="one">{0} வி.</unitPattern>
 				<unitPattern count="other">{0} வி.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/வி.</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>மி.வி.</displayName>
-				<unitPattern count="one">{0} மி.வி.</unitPattern>
-				<unitPattern count="other">{0} மி.வி.</unitPattern>
 			</unit>
 			<unit type="duration-microsecond">
 				<displayName>மை.விநா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}μs</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μs</unitPattern>
+				<unitPattern count="one">{0}μs</unitPattern>
+				<unitPattern count="other">{0}μs</unitPattern>
 			</unit>
 			<unit type="duration-nanosecond">
-				<displayName draft="contributed">நா.செ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}நா.செ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நா.செ.</unitPattern>
+				<displayName>நா.செ.</displayName>
+				<unitPattern count="one">{0}நா.செ.</unitPattern>
+				<unitPattern count="other">{0}நா.செ.</unitPattern>
 			</unit>
 			<unit type="electric-ampere">
-				<displayName>ஆம்ப்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஆம்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஆம்.</unitPattern>
+				<unitPattern count="one">{0}ஆம்.</unitPattern>
+				<unitPattern count="other">{0}ஆம்.</unitPattern>
 			</unit>
 			<unit type="electric-milliampere">
-				<displayName draft="contributed">மி.ஆ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மி.ஆ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மி.ஆ.</unitPattern>
+				<displayName>மி.ஆ.</displayName>
+				<unitPattern count="one">{0}மி.ஆ.</unitPattern>
+				<unitPattern count="other">{0}மி.ஆ.</unitPattern>
 			</unit>
 			<unit type="electric-ohm">
-				<displayName draft="contributed">ஓம்</displayName>
-				<unitPattern count="one" draft="contributed">{0}Ω</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}Ω</unitPattern>
+				<displayName>ஓம்</displayName>
+				<unitPattern count="one">{0}Ω</unitPattern>
+				<unitPattern count="other">{0}Ω</unitPattern>
 			</unit>
 			<unit type="electric-volt">
 				<displayName>வோல்ட்</displayName>
-				<unitPattern count="one" draft="contributed">{0}வோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}வோ.</unitPattern>
+				<unitPattern count="one">{0}வோ.</unitPattern>
+				<unitPattern count="other">{0}வோ.</unitPattern>
 			</unit>
 			<unit type="energy-kilocalorie">
-				<displayName>கி.கலோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.கலோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.கலோ.</unitPattern>
+				<unitPattern count="one">{0}கி.கலோ.</unitPattern>
+				<unitPattern count="other">{0}கி.கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
-				<displayName>கலோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கலோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கலோ.</unitPattern>
+				<unitPattern count="one">{0}கலோ.</unitPattern>
+				<unitPattern count="other">{0}கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>கலோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கலோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கலோ.</unitPattern>
+				<unitPattern count="one">{0}கலோ.</unitPattern>
+				<unitPattern count="other">{0}கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
-				<displayName>கி.ஜூ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.ஜூ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.ஜூ.</unitPattern>
+				<unitPattern count="one">{0}கி.ஜூ.</unitPattern>
+				<unitPattern count="other">{0}கி.ஜூ.</unitPattern>
 			</unit>
 			<unit type="energy-joule">
-				<displayName>ஜூல்</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஜூ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஜூ.</unitPattern>
+				<unitPattern count="one">{0}ஜூ.</unitPattern>
+				<unitPattern count="other">{0}ஜூ.</unitPattern>
 			</unit>
 			<unit type="energy-kilowatt-hour">
-				<displayName>கி.வா-ம.நே.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.வா.ம.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.வா.ம.</unitPattern>
+				<unitPattern count="one">{0}கி.வா.ம.</unitPattern>
+				<unitPattern count="other">{0}கி.வா.ம.</unitPattern>
 			</unit>
 			<unit type="energy-electronvolt">
-				<displayName draft="contributed">eV</displayName>
-				<unitPattern count="one" draft="contributed">{0}eV</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}eV</unitPattern>
+				<displayName>eV</displayName>
+				<unitPattern count="one">{0}eV</unitPattern>
+				<unitPattern count="other">{0}eV</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
-				<displayName>பி.டி.யூ</displayName>
-				<unitPattern count="one" draft="contributed">{0}பி.டி.யூ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பி.டி.யூ</unitPattern>
+				<unitPattern count="one">{0}பி.டி.யூ</unitPattern>
+				<unitPattern count="other">{0}பி.டி.யூ</unitPattern>
 			</unit>
 			<unit type="energy-therm-us">
-				<displayName>யூஎஸ் தெர்ம்</displayName>
-				<unitPattern count="one" draft="contributed">{0}யூஎஸ் தெ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}யூஎஸ் தெ.</unitPattern>
+				<unitPattern count="one">{0}யூஎஸ் தெ.</unitPattern>
+				<unitPattern count="other">{0}யூஎஸ் தெ.</unitPattern>
 			</unit>
 			<unit type="force-pound-force">
-				<displayName draft="contributed">ப.வி</displayName>
-				<unitPattern count="one" draft="contributed">{0}ப.வி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ப.வி</unitPattern>
+				<displayName>ப.வி</displayName>
+				<unitPattern count="one">{0}ப.வி</unitPattern>
+				<unitPattern count="other">{0}ப.வி</unitPattern>
 			</unit>
 			<unit type="force-newton">
-				<displayName draft="contributed">நியூ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}நியூ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நியூ.</unitPattern>
+				<displayName>நியூ.</displayName>
+				<unitPattern count="one">{0}நியூ.</unitPattern>
+				<unitPattern count="other">{0}நியூ.</unitPattern>
 			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
-				<displayName draft="contributed">கி.வா.ம./100கி.மி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.வா.ம./100கி.மி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.வா.ம./100கி.மி.</unitPattern>
+				<displayName>கி.வா.ம./100கி.மி.</displayName>
+				<unitPattern count="one">{0}கி.வா.ம./100கி.மி.</unitPattern>
+				<unitPattern count="other">{0}கி.வா.ம./100கி.மி.</unitPattern>
 			</unit>
 			<unit type="frequency-gigahertz">
-				<displayName>ஜி.ஹெஸ்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஜி.ஹெ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஜி.ஹெ.</unitPattern>
+				<unitPattern count="one">{0}ஜி.ஹெ.</unitPattern>
+				<unitPattern count="other">{0}ஜி.ஹெ.</unitPattern>
 			</unit>
 			<unit type="frequency-megahertz">
-				<displayName>மெ.ஹெஸ்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெ.ஹெ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெ.ஹெ.</unitPattern>
+				<unitPattern count="one">{0}மெ.ஹெ.</unitPattern>
+				<unitPattern count="other">{0}மெ.ஹெ.</unitPattern>
 			</unit>
 			<unit type="frequency-kilohertz">
-				<displayName>கி.ஹெஸ்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.ஹெ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.ஹெ.</unitPattern>
+				<unitPattern count="one">{0}கி.ஹெ.</unitPattern>
+				<unitPattern count="other">{0}கி.ஹெ.</unitPattern>
 			</unit>
 			<unit type="frequency-hertz">
-				<displayName>ஹெஸ்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஹெ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஹெ.</unitPattern>
+				<unitPattern count="one">{0}ஹெ.</unitPattern>
+				<unitPattern count="other">{0}ஹெ.</unitPattern>
 			</unit>
 			<unit type="graphics-em">
-				<displayName>எம்</displayName>
-				<unitPattern count="one" draft="contributed">{0}எம்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}எம்</unitPattern>
+				<unitPattern count="one">{0}எம்</unitPattern>
+				<unitPattern count="other">{0}எம்</unitPattern>
 			</unit>
 			<unit type="graphics-pixel">
-				<displayName>பிக்</displayName>
-				<unitPattern count="one" draft="contributed">{0}பிக்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பிக்</unitPattern>
+				<unitPattern count="one">{0}பிக்</unitPattern>
+				<unitPattern count="other">{0}பிக்</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>மெ.பிக்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}எம்.பி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}எம்.பி</unitPattern>
+				<unitPattern count="one">{0}எம்.பி</unitPattern>
+				<unitPattern count="other">{0}எம்.பி</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-centimeter">
-				<displayName>பிக். / செ.மீ</displayName>
-				<unitPattern count="one" draft="contributed">{0}பி/செ.மீ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பி/செ.மீ</unitPattern>
+				<unitPattern count="one">{0}பி/செ.மீ</unitPattern>
+				<unitPattern count="other">{0}பி/செ.மீ</unitPattern>
 			</unit>
 			<unit type="graphics-pixel-per-inch">
-				<displayName>பிக். / அங்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பி/அங்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பி/அங்.</unitPattern>
+				<unitPattern count="one">{0}பி/அங்.</unitPattern>
+				<unitPattern count="other">{0}பி/அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>பு / செ.மீ</displayName>
-				<unitPattern count="one" draft="contributed">{0}பு/செ.மீ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பு/செ.மீ</unitPattern>
+				<unitPattern count="one">{0}பு/செ.மீ</unitPattern>
+				<unitPattern count="other">{0}பு/செ.மீ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>பு / அங்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பு/அங்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பு/அங்.</unitPattern>
+				<unitPattern count="one">{0}பு/அங்.</unitPattern>
+				<unitPattern count="other">{0}பு/அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>புள்ளி</displayName>
-				<unitPattern count="one" draft="contributed">{0}புள்ளி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}புள்ளி</unitPattern>
+				<unitPattern count="one">{0}புள்ளி</unitPattern>
+				<unitPattern count="other">{0}புள்ளி</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
-				<displayName>R⊕</displayName>
-				<unitPattern count="one" draft="contributed">{0}R⊕</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}R⊕</unitPattern>
+				<unitPattern count="one">{0}R⊕</unitPattern>
+				<unitPattern count="other">{0}R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
-				<displayName>கி.மீ.</displayName>
 				<unitPattern count="one">{0}கி.மீ.</unitPattern>
 				<unitPattern count="other">{0}கி.மீ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/கி.மீ.</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
-				<displayName>மீ.</displayName>
 				<unitPattern count="one">{0}மீ.</unitPattern>
 				<unitPattern count="other">{0}மீ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/மீ.</perUnitPattern>
-			</unit>
-			<unit type="length-decimeter">
-				<displayName draft="contributed">டெ.மீ</displayName>
-				<unitPattern count="one" draft="contributed">{0} டெ.மீ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} டெ.மீ</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
-				<displayName>செ.மீ.</displayName>
 				<unitPattern count="one">{0}செ.மீ.</unitPattern>
 				<unitPattern count="other">{0}செ.மீ.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/செ.மீ.</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
-				<displayName>மி.மீ.</displayName>
 				<unitPattern count="one">{0}மி.மீ.</unitPattern>
 				<unitPattern count="other">{0}மி.மீ.</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>மை.மீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}μமீ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μமீ.</unitPattern>
+				<unitPattern count="one">{0}μமீ.</unitPattern>
+				<unitPattern count="other">{0}μமீ.</unitPattern>
 			</unit>
 			<unit type="length-nanometer">
-				<displayName>நா.மீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}நா.மீ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நா.மீ.</unitPattern>
-			</unit>
-			<unit type="length-picometer">
-				<displayName>பை.மீ</displayName>
-				<unitPattern count="one">{0} பை.மீ.</unitPattern>
-				<unitPattern count="other">{0} பை.மீ.</unitPattern>
+				<unitPattern count="one">{0}நா.மீ.</unitPattern>
+				<unitPattern count="other">{0}நா.மீ.</unitPattern>
 			</unit>
 			<unit type="length-mile">
-				<displayName draft="contributed">மை.</displayName>
-				<unitPattern count="one">{0} மை.</unitPattern>
-				<unitPattern count="other">{0} மை.</unitPattern>
-			</unit>
-			<unit type="length-yard">
-				<displayName draft="contributed">கெஜ.</displayName>
-				<unitPattern count="one">{0} கெஜ.</unitPattern>
-				<unitPattern count="other">{0} கெஜ.</unitPattern>
-			</unit>
-			<unit type="length-foot">
-				<displayName draft="contributed">அடி</displayName>
-				<unitPattern count="one">{0} அடி</unitPattern>
-				<unitPattern count="other">{0} அடி</unitPattern>
-				<perUnitPattern draft="contributed">{0}/அடி</perUnitPattern>
+				<displayName>மை.</displayName>
 			</unit>
 			<unit type="length-inch">
-				<displayName draft="contributed">அங்.</displayName>
-				<unitPattern count="one">{0} அங்.</unitPattern>
-				<unitPattern count="other">{0} அங்.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/அங்.</perUnitPattern>
+				<displayName>அங்.</displayName>
 			</unit>
 			<unit type="length-parsec">
-				<displayName>பு.நொ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பு.நொ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பு.நொ.</unitPattern>
+				<unitPattern count="one">{0}பு.நொ.</unitPattern>
+				<unitPattern count="other">{0}பு.நொ.</unitPattern>
 			</unit>
 			<unit type="length-light-year">
-				<displayName draft="contributed">ஒ.ஆ.</displayName>
-				<unitPattern count="one">{0} ஒ.ஆ.</unitPattern>
-				<unitPattern count="other">{0} ஒ.ஆ.</unitPattern>
+				<displayName>ஒ.ஆ.</displayName>
 			</unit>
 			<unit type="length-astronomical-unit">
-				<displayName>வா.அ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}வா.அ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}வா.அ.</unitPattern>
+				<unitPattern count="one">{0}வா.அ.</unitPattern>
+				<unitPattern count="other">{0}வா.அ.</unitPattern>
 			</unit>
 			<unit type="length-furlong">
-				<displayName>பர்</displayName>
-				<unitPattern count="one" draft="contributed">{0}பர்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பர்</unitPattern>
+				<unitPattern count="one">{0}பர்</unitPattern>
+				<unitPattern count="other">{0}பர்</unitPattern>
 			</unit>
 			<unit type="length-fathom">
-				<displayName>ஃபே.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஃபே.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஃபே.</unitPattern>
+				<unitPattern count="one">{0}ஃபே.</unitPattern>
+				<unitPattern count="other">{0}ஃபே.</unitPattern>
 			</unit>
 			<unit type="length-nautical-mile">
-				<displayName>க.மை.</displayName>
-				<unitPattern count="one" draft="contributed">{0}க.மை.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}க.மை.</unitPattern>
-			</unit>
-			<unit type="length-mile-scandinavian">
-				<displayName draft="contributed">ஸ்.மை.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ஸ்.மை.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ஸ்.மை.</unitPattern>
+				<unitPattern count="one">{0}க.மை.</unitPattern>
+				<unitPattern count="other">{0}க.மை.</unitPattern>
 			</unit>
 			<unit type="length-point">
-				<displayName>அ.பு.</displayName>
-				<unitPattern count="one" draft="contributed">{0}அ.பு.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}அ.பு.</unitPattern>
+				<unitPattern count="one">{0}அ.பு.</unitPattern>
+				<unitPattern count="other">{0}அ.பு.</unitPattern>
 			</unit>
 			<unit type="length-solar-radius">
-				<displayName draft="contributed">R☉</displayName>
-				<unitPattern count="one" draft="contributed">{0}R☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}R☉</unitPattern>
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0}R☉</unitPattern>
+				<unitPattern count="other">{0}R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
-				<displayName draft="contributed">லக்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}லக்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}லக்.</unitPattern>
+				<displayName>லக்.</displayName>
+				<unitPattern count="one">{0}லக்.</unitPattern>
+				<unitPattern count="other">{0}லக்.</unitPattern>
 			</unit>
 			<unit type="light-candela">
 				<displayName>கே.</displayName>
-				<unitPattern count="one">{0} கே.</unitPattern>
-				<unitPattern count="other">{0} கே.</unitPattern>
 			</unit>
 			<unit type="light-lumen">
-				<displayName>லூம.</displayName>
-				<unitPattern count="one" draft="contributed">{0}லூம.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}லூம.</unitPattern>
+				<unitPattern count="one">{0}லூம.</unitPattern>
+				<unitPattern count="other">{0}லூம.</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
-				<displayName draft="contributed">L☉</displayName>
-				<unitPattern count="one" draft="contributed">{0}L☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}L☉</unitPattern>
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0}L☉</unitPattern>
+				<unitPattern count="other">{0}L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
-				<displayName>ட.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ட.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ட.</unitPattern>
+				<unitPattern count="one">{0}ட.</unitPattern>
+				<unitPattern count="other">{0}ட.</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
-				<displayName>கி.கி.</displayName>
 				<unitPattern count="one">{0}கி.கி.</unitPattern>
 				<unitPattern count="other">{0}கி.கி.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/கி.கி.</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>கிராம்</displayName>
-				<unitPattern count="one">{0} கி.</unitPattern>
-				<unitPattern count="other">{0} கி.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/கி.</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
-				<displayName>மி.கி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மி.கி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மி.கி.</unitPattern>
+				<unitPattern count="one">{0}மி.கி.</unitPattern>
+				<unitPattern count="other">{0}மி.கி.</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
-				<displayName draft="contributed">μகி</displayName>
-				<unitPattern count="one" draft="contributed">{0}μகி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}μகி</unitPattern>
+				<unitPattern count="one">{0}μகி</unitPattern>
+				<unitPattern count="other">{0}μகி</unitPattern>
 			</unit>
 			<unit type="mass-ton">
-				<displayName>டன்</displayName>
-				<unitPattern count="one" draft="contributed">{0}டன்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}டன்</unitPattern>
-			</unit>
-			<unit type="mass-stone">
-				<displayName draft="contributed">ஸ்டோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} ஸ்டோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ஸ்டோ.</unitPattern>
-			</unit>
-			<unit type="mass-pound">
-				<displayName draft="contributed">பவு.</displayName>
-				<unitPattern count="one">{0} பவு.</unitPattern>
-				<unitPattern count="other">{0} பவு.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/பவு.</perUnitPattern>
-			</unit>
-			<unit type="mass-ounce">
-				<displayName draft="contributed">அவு.</displayName>
-				<unitPattern count="one">{0} அவு.</unitPattern>
-				<unitPattern count="other">{0} அவு.</unitPattern>
-				<perUnitPattern draft="contributed">{0}/அவு.</perUnitPattern>
+				<unitPattern count="one">{0}டன்</unitPattern>
+				<unitPattern count="other">{0}டன்</unitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
-				<displayName>அவு. டி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}அவு. டி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}அவு. டி.</unitPattern>
+				<unitPattern count="one">{0}அவு. டி.</unitPattern>
+				<unitPattern count="other">{0}அவு. டி.</unitPattern>
 			</unit>
 			<unit type="mass-carat">
-				<displayName>கேர.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கேர.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கேர.</unitPattern>
+				<unitPattern count="one">{0}கேர.</unitPattern>
+				<unitPattern count="other">{0}கேர.</unitPattern>
 			</unit>
 			<unit type="mass-dalton">
-				<displayName draft="contributed">டா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}டா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}டா.</unitPattern>
+				<displayName>டா.</displayName>
+				<unitPattern count="one">{0}டா.</unitPattern>
+				<unitPattern count="other">{0}டா.</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
-				<displayName draft="contributed">M⊕</displayName>
-				<unitPattern count="one" draft="contributed">{0}M⊕</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}M⊕</unitPattern>
+				<displayName>M⊕</displayName>
+				<unitPattern count="one">{0}M⊕</unitPattern>
+				<unitPattern count="other">{0}M⊕</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
-				<displayName draft="contributed">M☉</displayName>
-				<unitPattern count="one" draft="contributed">{0}M☉</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}M☉</unitPattern>
+				<displayName>M☉</displayName>
+				<unitPattern count="one">{0}M☉</unitPattern>
+				<unitPattern count="other">{0}M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
-				<displayName>கிரைன்</displayName>
-				<unitPattern count="one" draft="contributed">{0}கிரைன்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கிரைன்</unitPattern>
+				<unitPattern count="one">{0}கிரைன்</unitPattern>
+				<unitPattern count="other">{0}கிரைன்</unitPattern>
 			</unit>
 			<unit type="power-gigawatt">
-				<displayName>கி.வாட்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கி.வாட்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கி.வாட்.</unitPattern>
+				<unitPattern count="one">{0}கி.வாட்.</unitPattern>
+				<unitPattern count="other">{0}கி.வாட்.</unitPattern>
 			</unit>
 			<unit type="power-megawatt">
-				<displayName>மெ.வா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெ.வா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெ.வா.</unitPattern>
-			</unit>
-			<unit type="power-kilowatt">
-				<displayName>கி.வா.</displayName>
-				<unitPattern count="one">{0} கி.வா.</unitPattern>
-				<unitPattern count="other">{0} கி.வா.</unitPattern>
-			</unit>
-			<unit type="power-watt">
-				<displayName>வா.</displayName>
-				<unitPattern count="one">{0} வா.</unitPattern>
-				<unitPattern count="other">{0} வா.</unitPattern>
+				<unitPattern count="one">{0}மெ.வா.</unitPattern>
+				<unitPattern count="other">{0}மெ.வா.</unitPattern>
 			</unit>
 			<unit type="power-milliwatt">
-				<displayName>மி.வா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மி.வா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மி.வா.</unitPattern>
+				<unitPattern count="one">{0}மி.வா.</unitPattern>
+				<unitPattern count="other">{0}மி.வா.</unitPattern>
 			</unit>
 			<unit type="power-horsepower">
-				<displayName>கு.தி.</displayName>
 				<unitPattern count="one">{0} கு.வே.</unitPattern>
 				<unitPattern count="other">{0} கு.வே.</unitPattern>
 			</unit>
-			<unit type="pressure-millimeter-ofhg">
-				<displayName draft="contributed">பாத. மி.மீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} பாத. மி.மீ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} பாத. மி.மீ.</unitPattern>
-			</unit>
-			<unit type="pressure-pound-force-per-square-inch">
-				<displayName draft="contributed">psi</displayName>
-				<unitPattern count="one" draft="contributed">{0} psi</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} psi</unitPattern>
-			</unit>
 			<unit type="pressure-inch-ofhg">
-				<displayName draft="contributed">பா. அங்.</displayName>
+				<displayName>பா. அங்.</displayName>
 				<unitPattern count="one">{0} பா.அங்.</unitPattern>
 				<unitPattern count="other">{0} பா.அங்.</unitPattern>
 			</unit>
 			<unit type="pressure-bar">
-				<displayName>பார்</displayName>
-				<unitPattern count="one" draft="contributed">{0}பார்</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பார்</unitPattern>
-			</unit>
-			<unit type="pressure-millibar">
-				<displayName draft="contributed">மி.பா.</displayName>
-				<unitPattern count="one">{0} மி.பா.</unitPattern>
-				<unitPattern count="other">{0} மி.பா.</unitPattern>
+				<unitPattern count="one">{0}பார்</unitPattern>
+				<unitPattern count="other">{0}பார்</unitPattern>
 			</unit>
 			<unit type="pressure-atmosphere">
-				<displayName>atm</displayName>
-				<unitPattern count="one" draft="contributed">{0}atm</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}atm</unitPattern>
+				<unitPattern count="one">{0}atm</unitPattern>
+				<unitPattern count="other">{0}atm</unitPattern>
 			</unit>
 			<unit type="pressure-pascal">
-				<displayName>பா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பா.</unitPattern>
+				<unitPattern count="one">{0}பா.</unitPattern>
+				<unitPattern count="other">{0}பா.</unitPattern>
 			</unit>
 			<unit type="pressure-hectopascal">
-				<displayName draft="contributed">ஹெ.பாஸ்.</displayName>
 				<unitPattern count="one">{0} ஹெ.பா.</unitPattern>
 				<unitPattern count="other">{0} ஹெ.பா.</unitPattern>
 			</unit>
 			<unit type="pressure-kilopascal">
-				<displayName>கிபா</displayName>
-				<unitPattern count="one" draft="contributed">{0}கிபா</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கிபா</unitPattern>
+				<unitPattern count="one">{0}கிபா</unitPattern>
+				<unitPattern count="other">{0}கிபா</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
-				<displayName>மெபா</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெபா</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெபா</unitPattern>
+				<unitPattern count="one">{0}மெபா</unitPattern>
+				<unitPattern count="other">{0}மெபா</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>கி.மீ./ம.</displayName>
 				<unitPattern count="one">{0}கி.மீ./ம.</unitPattern>
 				<unitPattern count="other">{0}கி.மீ./ம.</unitPattern>
 			</unit>
-			<unit type="speed-meter-per-second">
-				<displayName draft="contributed">மீ/வி</displayName>
-				<unitPattern count="one">{0} மீ/வி</unitPattern>
-				<unitPattern count="other">{0} மீ/வி</unitPattern>
-			</unit>
-			<unit type="speed-mile-per-hour">
-				<displayName draft="contributed">மை/ம.நே.</displayName>
-				<unitPattern count="one">{0} மை/ம.நே.</unitPattern>
-				<unitPattern count="other">{0} மை/ம.நே.</unitPattern>
-			</unit>
 			<unit type="speed-knot">
-				<displayName>நா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}நா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நா.</unitPattern>
+				<unitPattern count="one">{0}நா.</unitPattern>
+				<unitPattern count="other">{0}நா.</unitPattern>
 			</unit>
-			<unit type="temperature-generic">
-				<displayName draft="contributed">°</displayName>
-				<unitPattern count="one" draft="contributed">{0}°</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}°</unitPattern>
+			<unit type="speed-beaufort">
+				<unitPattern count="one">பியூ.{0}</unitPattern>
+				<unitPattern count="other">பியூ.{0}</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°செ</displayName>
-				<unitPattern count="one">{0}°செ.</unitPattern>
-				<unitPattern count="other">{0}°செ.</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
-				<displayName draft="contributed">°ஃபா</displayName>
-				<unitPattern count="one">{0}°ஃபா.</unitPattern>
-				<unitPattern count="other">{0}°ஃபா.</unitPattern>
-			</unit>
-			<unit type="temperature-kelvin">
-				<displayName draft="contributed">கெல்.</displayName>
-				<unitPattern count="one" draft="contributed">{0} கெல்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} கெல்.</unitPattern>
+				<displayName>°ஃபா</displayName>
 			</unit>
 			<unit type="torque-pound-force-foot">
-				<displayName>ப.அடி</displayName>
-				<unitPattern count="one" draft="contributed">{0}ப.அடி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ப.அடி</unitPattern>
+				<unitPattern count="one">{0}ப.அடி</unitPattern>
+				<unitPattern count="other">{0}ப.அடி</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
-				<displayName>நியூ.மீ</displayName>
-				<unitPattern count="one" draft="contributed">{0}நியூ.மீ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}நியூ.மீ</unitPattern>
+				<unitPattern count="one">{0}நியூ.மீ</unitPattern>
+				<unitPattern count="other">{0}நியூ.மீ</unitPattern>
 			</unit>
 			<unit type="volume-cubic-kilometer">
-				<displayName>கிமீ³</displayName>
 				<unitPattern count="one">{0} க.கி.மீ.</unitPattern>
 				<unitPattern count="other">{0} க.கி.மீ.</unitPattern>
 			</unit>
 			<unit type="volume-cubic-meter">
-				<displayName>மீ³</displayName>
-				<unitPattern count="one" draft="contributed">{0}மீ³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மீ³</unitPattern>
-				<perUnitPattern>{0}/மீ³</perUnitPattern>
+				<unitPattern count="one">{0}மீ³</unitPattern>
+				<unitPattern count="other">{0}மீ³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-centimeter">
-				<displayName>செ.மீ.³</displayName>
-				<unitPattern count="one" draft="contributed">{0}செ.மீ.³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}செ.மீ.³</unitPattern>
-				<perUnitPattern>{0}/செ.மீ.³</perUnitPattern>
+				<unitPattern count="one">{0}செ.மீ.³</unitPattern>
+				<unitPattern count="other">{0}செ.மீ.³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
-				<displayName>மை³</displayName>
 				<unitPattern count="one">{0} க.மை.</unitPattern>
 				<unitPattern count="other">{0} க.மை.</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
-				<displayName>யா.³</displayName>
-				<unitPattern count="one" draft="contributed">{0}யா.³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}யா.³</unitPattern>
+				<unitPattern count="one">{0}யா.³</unitPattern>
+				<unitPattern count="other">{0}யா.³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-foot">
-				<displayName>அடி³</displayName>
-				<unitPattern count="one" draft="contributed">{0}அடி³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}அடி³</unitPattern>
+				<unitPattern count="one">{0}அடி³</unitPattern>
+				<unitPattern count="other">{0}அடி³</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
-				<displayName>அங்.³</displayName>
-				<unitPattern count="one" draft="contributed">{0}அங்.³</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}அங்.³</unitPattern>
+				<unitPattern count="one">{0}அங்.³</unitPattern>
+				<unitPattern count="other">{0}அங்.³</unitPattern>
 			</unit>
 			<unit type="volume-megaliter">
-				<displayName>மெ.லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெ.லி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெ.லி.</unitPattern>
+				<unitPattern count="one">{0}மெ.லி.</unitPattern>
+				<unitPattern count="other">{0}மெ.லி.</unitPattern>
 			</unit>
 			<unit type="volume-hectoliter">
-				<displayName>ஹெ.லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஹெ.லி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஹெ.லி.</unitPattern>
+				<unitPattern count="one">{0}ஹெ.லி.</unitPattern>
+				<unitPattern count="other">{0}ஹெ.லி.</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>லி.</displayName>
 				<unitPattern count="one">{0}லி.</unitPattern>
 				<unitPattern count="other">{0}லி.</unitPattern>
-				<perUnitPattern>{0}/லி.</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
-				<displayName>டெ.லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}டெ.லி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}டெ.லி.</unitPattern>
+				<unitPattern count="one">{0}டெ.லி.</unitPattern>
+				<unitPattern count="other">{0}டெ.லி.</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
-				<displayName>செ.லி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}செ.லி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}செ.லி.</unitPattern>
+				<unitPattern count="one">{0}செ.லி.</unitPattern>
+				<unitPattern count="other">{0}செ.லி.</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
-				<displayName>மிலி</displayName>
-				<unitPattern count="one" draft="contributed">{0}மிலி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மிலி</unitPattern>
+				<unitPattern count="one">{0}மிலி</unitPattern>
+				<unitPattern count="other">{0}மிலி</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
-				<displayName>மெ.பி.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெ.பி.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெ.பி.</unitPattern>
+				<unitPattern count="one">{0}மெ.பி.</unitPattern>
+				<unitPattern count="other">{0}மெ.பி.</unitPattern>
 			</unit>
 			<unit type="volume-cup-metric">
-				<displayName>மெ.கோப்பை</displayName>
-				<unitPattern count="one" draft="contributed">{0}மெ.கோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மெ.கோ.</unitPattern>
+				<unitPattern count="one">{0}மெ.கோ.</unitPattern>
+				<unitPattern count="other">{0}மெ.கோ.</unitPattern>
 			</unit>
 			<unit type="volume-acre-foot">
-				<displayName>ஏக். அடி</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஏக். அடி</unitPattern>
+				<unitPattern count="one">{0}ஏக். அடி</unitPattern>
 				<unitPattern count="other">{0}ஏக். அடி</unitPattern>
 			</unit>
 			<unit type="volume-bushel">
 				<displayName>புசல்</displayName>
-				<unitPattern count="one" draft="contributed">{0}புச.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}புச.</unitPattern>
+				<unitPattern count="one">{0}புச.</unitPattern>
+				<unitPattern count="other">{0}புச.</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
-				<displayName>கேல.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கேல.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கேல.</unitPattern>
-				<perUnitPattern>{0}/கேல.</perUnitPattern>
+				<unitPattern count="one">{0}கேல.</unitPattern>
+				<unitPattern count="other">{0}கேல.</unitPattern>
 			</unit>
 			<unit type="volume-gallon-imperial">
-				<displayName>இம். கேல.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கே.இம்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கே.இம்.</unitPattern>
-				<perUnitPattern>{0}/கேல. இம்.</perUnitPattern>
+				<unitPattern count="one">{0}கே.இம்.</unitPattern>
+				<unitPattern count="other">{0}கே.இம்.</unitPattern>
 			</unit>
 			<unit type="volume-quart">
-				<displayName>குவாட்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}குவா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}குவா.</unitPattern>
+				<unitPattern count="one">{0}குவா.</unitPattern>
+				<unitPattern count="other">{0}குவா.</unitPattern>
 			</unit>
 			<unit type="volume-pint">
 				<displayName>பின்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பின்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பின்.</unitPattern>
+				<unitPattern count="one">{0}பின்.</unitPattern>
+				<unitPattern count="other">{0}பின்.</unitPattern>
 			</unit>
 			<unit type="volume-cup">
-				<displayName>கோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கோ.</unitPattern>
+				<unitPattern count="one">{0}கோ.</unitPattern>
+				<unitPattern count="other">{0}கோ.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce">
-				<displayName>தி. அவு.</displayName>
-				<unitPattern count="one" draft="contributed">{0}தி.அவு.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}தி.அவு.</unitPattern>
+				<unitPattern count="one">{0}தி.அவு.</unitPattern>
+				<unitPattern count="other">{0}தி.அவு.</unitPattern>
 			</unit>
 			<unit type="volume-fluid-ounce-imperial">
-				<displayName>இம்பீ. தி. அவு.</displayName>
-				<unitPattern count="one" draft="contributed">{0}தி. அ. இ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}தி. அ. இ.</unitPattern>
+				<unitPattern count="one">{0}தி. அ. இ.</unitPattern>
+				<unitPattern count="other">{0}தி. அ. இ.</unitPattern>
 			</unit>
 			<unit type="volume-tablespoon">
-				<displayName>மே.க.</displayName>
-				<unitPattern count="one" draft="contributed">{0}மே.க.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}மே.க.</unitPattern>
+				<unitPattern count="one">{0}மே.க.</unitPattern>
+				<unitPattern count="other">{0}மே.க.</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
-				<displayName>தே.க.</displayName>
-				<unitPattern count="one" draft="contributed">{0}தே.க.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}தே.க.</unitPattern>
+				<unitPattern count="one">{0}தே.க.</unitPattern>
+				<unitPattern count="other">{0}தே.க.</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
-				<displayName draft="contributed">பீப்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பீப்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பீப்.</unitPattern>
+				<displayName>பீப்.</displayName>
+				<unitPattern count="one">{0}பீப்.</unitPattern>
+				<unitPattern count="other">{0}பீப்.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon">
-				<displayName>இ.க.</displayName>
-				<unitPattern count="one" draft="contributed">{0}இ.க.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}இ.க.</unitPattern>
+				<unitPattern count="one">{0}இ.க.</unitPattern>
+				<unitPattern count="other">{0}இ.க.</unitPattern>
 			</unit>
 			<unit type="volume-dessert-spoon-imperial">
-				<displayName>இ.க. இம்பீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}இ.க. இ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}இ.க. இ.</unitPattern>
+				<unitPattern count="one">{0}இ.க. இ.</unitPattern>
+				<unitPattern count="other">{0}இ.க. இ.</unitPattern>
 			</unit>
 			<unit type="volume-drop">
-				<displayName>துளி</displayName>
-				<unitPattern count="one" draft="contributed">{0}துளி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}துளி</unitPattern>
+				<unitPattern count="one">{0}துளி</unitPattern>
+				<unitPattern count="other">{0}துளி</unitPattern>
 			</unit>
 			<unit type="volume-dram">
-				<displayName draft="contributed">தி.டிரா.</displayName>
-				<unitPattern count="one" draft="contributed">{0}தி.டிரா.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}தி.டிரா.</unitPattern>
+				<displayName>தி.டிரா.</displayName>
+				<unitPattern count="one">{0}தி.டிரா.</unitPattern>
+				<unitPattern count="other">{0}தி.டிரா.</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
-				<displayName>ஜிக.</displayName>
-				<unitPattern count="one" draft="contributed">{0}ஜிக.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}ஜிக.</unitPattern>
+				<unitPattern count="one">{0}ஜிக.</unitPattern>
+				<unitPattern count="other">{0}ஜிக.</unitPattern>
 			</unit>
 			<unit type="volume-pinch">
-				<displayName>சிட்டி</displayName>
-				<unitPattern count="one" draft="contributed">{0}சிட்டி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}சிட்டி</unitPattern>
+				<unitPattern count="one">{0}சிட்டி</unitPattern>
+				<unitPattern count="other">{0}சிட்டி</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
-				<displayName>குவாட். இம்பீ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கு. இம்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கு. இம்.</unitPattern>
+				<unitPattern count="one">{0}கு. இம்.</unitPattern>
+				<unitPattern count="other">{0}கு. இம்.</unitPattern>
 			</unit>
-			<coordinateUnit>
-				<displayName>திசை</displayName>
-				<coordinateUnitPattern type="east">{0}கி</coordinateUnitPattern>
-				<coordinateUnitPattern type="north">{0}வ</coordinateUnitPattern>
-				<coordinateUnitPattern type="south">{0}தெ</coordinateUnitPattern>
-				<coordinateUnitPattern type="west">{0}மே</coordinateUnitPattern>
-			</coordinateUnit>
 		</unitLength>
-		<durationUnit type="hm">
-			<durationUnitPattern>h:mm</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="hms">
-			<durationUnitPattern>h:mm:ss</durationUnitPattern>
-		</durationUnit>
-		<durationUnit type="ms">
-			<durationUnitPattern>m:ss</durationUnitPattern>
-		</durationUnit>
 	</units>
 	<listPatterns>
 		<listPattern>
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} மற்றும் {1}</listPatternPart>
 			<listPatternPart type="2">{0} மற்றும் {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="or">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0} அல்லது {1}</listPatternPart>
 			<listPatternPart type="2">{0} அல்லது {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} அல்லது {1}</listPatternPart>
-			<listPatternPart type="2">{0} அல்லது {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="or-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} அல்லது {1}</listPatternPart>
-			<listPatternPart type="2">{0} அல்லது {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-narrow">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} மற்றும் {1}</listPatternPart>
-			<listPatternPart type="2">{0} மற்றும் {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="standard-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0} மற்றும் {1}</listPatternPart>
-			<listPatternPart type="2">{0} மற்றும் {1}</listPatternPart>
-		</listPattern>
-		<listPattern type="unit">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
-			<listPatternPart type="end">{0}, {1}</listPatternPart>
-			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-narrow">
 			<listPatternPart type="start">{0} {1}</listPatternPart>
@@ -10776,8 +9172,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="2">{0} {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit-short">
-			<listPatternPart type="start">{0}, {1}</listPatternPart>
-			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -10790,10 +9184,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</posix>
 	<characterLabels>
 		<characterLabelPattern type="all">{0} — அனைத்தும்</characterLabelPattern>
-		<characterLabelPattern type="category-list">{0}: {1}</characterLabelPattern>
 		<characterLabelPattern type="compatibility">{0} — இணக்கத்தன்மை</characterLabelPattern>
 		<characterLabelPattern type="enclosed">{0} — உள்ளடங்கியவை</characterLabelPattern>
 		<characterLabelPattern type="extended">{0} — நீட்டிக்கப்பட்டவை</characterLabelPattern>
+		<characterLabelPattern type="facing-left" draft="contributed">{0} இடதுபுறம் எதிர்கொள்ளுதல்</characterLabelPattern>
+		<characterLabelPattern type="facing-right" draft="contributed">{0} வலதுபுறம் எதிர்கொள்ளுதல்</characterLabelPattern>
 		<characterLabelPattern type="historic">{0} — வரலாறுடையவை</characterLabelPattern>
 		<characterLabelPattern type="miscellaneous">{0} — பிற</characterLabelPattern>
 		<characterLabelPattern type="other">{0} — மற்றவை</characterLabelPattern>

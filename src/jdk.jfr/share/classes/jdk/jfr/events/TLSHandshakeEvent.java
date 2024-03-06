@@ -39,6 +39,7 @@ import jdk.jfr.internal.RemoveFields;
 @Description("Parameters used in TLS Handshake")
 @MirrorEvent(className = "jdk.internal.event.TLSHandshakeEvent")
 @RemoveFields("duration")
+@StackFilter("sun.security.ssl.Finished::recordEvent")
 public final class TLSHandshakeEvent extends AbstractJDKEvent {
     @Label("Peer Host")
     public String peerHost;

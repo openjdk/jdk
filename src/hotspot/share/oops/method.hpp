@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,6 +249,12 @@ class Method : public Metadata {
   u2  max_locals() const                       { return constMethod()->max_locals(); }
   void set_max_locals(int size)                { constMethod()->set_max_locals(size); }
 
+  void set_deprecated() { constMethod()->set_deprecated(); }
+  bool deprecated() const { return constMethod()->deprecated(); }
+
+  void set_deprecated_for_removal() { constMethod()->set_deprecated_for_removal(); }
+  bool deprecated_for_removal() const { return constMethod()->deprecated_for_removal(); }
+
   int highest_comp_level() const;
   void set_highest_comp_level(int level);
   int highest_osr_comp_level() const;
@@ -307,6 +313,9 @@ class Method : public Metadata {
   MethodData* method_data() const              {
     return _method_data;
   }
+
+  // mark an exception handler as entered (used to prune dead catch blocks in C2)
+  void set_exception_handler_entered(int handler_bci);
 
   MethodCounters* method_counters() const {
     return _method_counters;
@@ -386,7 +395,8 @@ public:
   void remove_unshareable_flags() NOT_CDS_RETURN;
 
   // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(constMethod()->num_stack_arg_slots(), 2) : constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -444,7 +454,7 @@ public:
   void mask_for(int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -715,6 +725,7 @@ public:
 
   // Clear methods
   static void clear_jmethod_ids(ClassLoaderData* loader_data);
+  void clear_jmethod_id();
   static void print_jmethod_ids_count(const ClassLoaderData* loader_data, outputStream* out) PRODUCT_RETURN;
 
   // Get this method's jmethodID -- allocate if it doesn't exist

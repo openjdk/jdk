@@ -200,6 +200,150 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
  * floating-point values, the three relations only differ if at least
  * one argument is zero or NaN.
  *
+ * <h2><a id=decimalToBinaryConversion>Decimal &harr; Binary Conversion Issues</a></h2>
+ *
+ * Many surprising results of binary floating-point arithmetic trace
+ * back to aspects of decimal to binary conversion and binary to
+ * decimal conversion. While integer values can be exactly represented
+ * in any base, which fractional values can be exactly represented in
+ * a base is a function of the base. For example, in base 10, 1/3 is a
+ * repeating fraction (0.33333....); but in base 3, 1/3 is exactly
+ * 0.1<sub>(3)</sub>, that is 1&nbsp;&times;&nbsp;3<sup>-1</sup>.
+ * Similarly, in base 10, 1/10 is exactly representable as 0.1
+ * (1&nbsp;&times;&nbsp;10<sup>-1</sup>), but in base 2, it is a
+ * repeating fraction (0.0001100110011...<sub>(2)</sub>).
+ *
+ * <p>Values of the {@code float} type have {@value Float#PRECISION}
+ * bits of precision and values of the {@code double} type have
+ * {@value Double#PRECISION} bits of precision. Therefore, since 0.1
+ * is a repeating fraction in base 2 with a four-bit repeat, {@code
+ * 0.1f} != {@code 0.1d}. In more detail, including hexadecimal
+ * floating-point literals:
+ *
+ * <ul>
+ * <li>The exact numerical value of {@code 0.1f} ({@code 0x1.99999a0000000p-4f}) is
+ *     0.100000001490116119384765625.
+ * <li>The exact numerical value of {@code 0.1d} ({@code 0x1.999999999999ap-4d}) is
+ *     0.1000000000000000055511151231257827021181583404541015625.
+ * </ul>
+ *
+ * These are the closest {@code float} and {@code double} values,
+ * respectively, to the numerical value of 0.1.  These results are
+ * consistent with a {@code float} value having the equivalent of 6 to
+ * 9 digits of decimal precision and a {@code double} value having the
+ * equivalent of 15 to 17 digits of decimal precision. (The
+ * equivalent precision varies according to the different relative
+ * densities of binary and decimal values at different points along the
+ * real number line.)
+ *
+ * <p>This representation hazard of decimal fractions is one reason to
+ * use caution when storing monetary values as {@code float} or {@code
+ * double}. Alternatives include:
+ * <ul>
+ * <li>using {@link java.math.BigDecimal BigDecimal} to store decimal
+ * fractional values exactly
+ *
+ * <li>scaling up so the monetary value is an integer &mdash; for
+ * example, multiplying by 100 if the value is denominated in cents or
+ * multiplying by 1000 if the value is denominated in mills &mdash;
+ * and then storing that scaled value in an integer type
+ *
+ *</ul>
+ *
+ * <p>For each finite floating-point value and a given floating-point
+ * type, there is a contiguous region of the real number line which
+ * maps to that value. Under the default round to nearest rounding
+ * policy (JLS {@jls 15.4}), this contiguous region for a value is
+ * typically one {@linkplain Math#ulp ulp} (unit in the last place)
+ * wide and centered around the exactly representable value. (At
+ * exponent boundaries, the region is asymmetrical and larger on the
+ * side with the larger exponent.) For example, for {@code 0.1f}, the
+ * region can be computed as follows:
+ *
+ * <br>// Numeric values listed are exact values
+ * <br>oneTenthApproxAsFloat = 0.100000001490116119384765625;
+ * <br>ulpOfoneTenthApproxAsFloat = Math.ulp(0.1f) = 7.450580596923828125E-9;
+ * <br>// Numeric range that is converted to the float closest to 0.1, _excludes_ endpoints
+ * <br>(oneTenthApproxAsFloat - &frac12;ulpOfoneTenthApproxAsFloat, oneTenthApproxAsFloat + &frac12;ulpOfoneTenthApproxAsFloat) =
+ * <br>(0.0999999977648258209228515625, 0.1000000052154064178466796875)
+ *
+ * <p>In particular, a correctly rounded decimal to binary conversion
+ * of any string representing a number in this range, say by {@link
+ * Float#parseFloat(String)}, will be converted to the same value:
+ *
+ * {@snippet lang="java" :
+ * Float.parseFloat("0.0999999977648258209228515625000001"); // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.099999998");                          // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.1");                                  // rounds up to oneTenthApproxAsFloat
+ * Float.parseFloat("0.100000001490116119384765625");        // exact conversion
+ * Float.parseFloat("0.100000005215406417846679687");        // rounds down to oneTenthApproxAsFloat
+ * Float.parseFloat("0.100000005215406417846679687499999");  // rounds down to oneTenthApproxAsFloat
+ * }
+ *
+ * <p>Similarly, an analogous range can be constructed  for the {@code
+ * double} type based on the exact value of {@code double}
+ * approximation to {@code 0.1d} and the numerical value of {@code
+ * Math.ulp(0.1d)} and likewise for other particular numerical values
+ * in the {@code float} and {@code double} types.
+ *
+ * <p>As seen in the above conversions, compared to the exact
+ * numerical value the operation would have without rounding, the same
+ * floating-point value as a result can be:
+ * <ul>
+ * <li>greater than the exact result
+ * <li>equal to the exact result
+ * <li>less than the exact result
+ * </ul>
+ *
+ * A floating-point value doesn't "know" whether it was the result of
+ * rounding up, or rounding down, or an exact operation; it contains
+ * no history of how it was computed. Consequently, the sum of
+ * {@snippet lang="java" :
+ * 0.1f + 0.1f + 0.1f + 0.1f + 0.1f + 0.1f + 0.1f + 0.1f + 0.1f + 0.1f;
+ * // Numerical value of computed sum: 1.00000011920928955078125,
+ * // the next floating-point value larger than 1.0f, equal to Math.nextUp(1.0f).
+ * }
+ * or
+ * {@snippet lang="java" :
+ * 0.1d + 0.1d + 0.1d + 0.1d + 0.1d + 0.1d + 0.1d + 0.1d + 0.1d + 0.1d;
+ * // Numerical value of computed sum: 0.99999999999999988897769753748434595763683319091796875,
+ * // the next floating-point value smaller than 1.0d, equal to Math.nextDown(1.0d).
+ * }
+ *
+ * should <em>not</em> be expected to be exactly equal to 1.0, but
+ * only to be close to 1.0. Consequently, the following code is an
+ * infinite loop:
+ *
+ * {@snippet lang="java" :
+ * double d = 0.0;
+ * while (d != 1.0) { // Surprising infinite loop
+ *   d += 0.1; // Sum never _exactly_ equals 1.0
+ * }
+ * }
+ *
+ * Instead, use an integer loop count for counted loops:
+ *
+ * {@snippet lang="java" :
+ * double d = 0.0;
+ * for (int i = 0; i < 10; i++) {
+ *   d += 0.1;
+ * } // Value of d is equal to Math.nextDown(1.0).
+ * }
+ *
+ * or test against a floating-point limit using ordered comparisons
+ * ({@code <}, {@code <=}, {@code >}, {@code >=}):
+ *
+ * {@snippet lang="java" :
+ *  double d = 0.0;
+ *  while (d <= 1.0) {
+ *    d += 0.1;
+ *  } // Value of d approximately 1.0999999999999999
+ *  }
+ *
+ * While floating-point arithmetic may have surprising results, IEEE
+ * 754 floating-point arithmetic follows a principled design and its
+ * behavior is predictable on the Java platform.
+ *
  * @jls 4.2.3 Floating-Point Types, Formats, and Values
  * @jls 4.2.4. Floating-Point Operations
  * @jls 15.21.1 Numerical Equality Operators == and !=
@@ -750,6 +894,7 @@ public final class Double extends Number
      *             represented by the {@code String} argument.
      * @throws     NumberFormatException  if the string does not contain a
      *             parsable number.
+     * @see Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      */
     public static Double valueOf(String s) throws NumberFormatException {
         return new Double(parseDouble(s));
@@ -786,6 +931,7 @@ public final class Double extends Number
      * @throws NumberFormatException if the string does not contain
      *         a parsable {@code double}.
      * @see    java.lang.Double#valueOf(String)
+     * @see    Double##decimalToBinaryConversion Decimal &harr; Binary Conversion Issues
      * @since 1.2
      */
     public static double parseDouble(String s) throws NumberFormatException {

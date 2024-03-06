@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,12 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
-static jvmtiEnv *jvmti = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int method_entry_count = 0;
 static int method_exit_count = 0;
 static int breakpoint_count = 0;
@@ -63,7 +63,7 @@ set_breakpoint(JNIEnv *jni, jclass klass, const char *mname)
   jlocation location = (jlocation)0L;
   jvmtiError err;
 
-  if (method == NULL) {
+  if (method == nullptr) {
     jni->FatalError("Error in set_breakpoint: not found method");
   }
   err = jvmti->SetBreakpoint(method, location);
@@ -131,13 +131,13 @@ VirtualThreadMount(jvmtiEnv *jvmti, ...) {
   if (done) {
     return; // defence against JVMTI_ERROR_WRONG_PHASE failures
   }
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jlocation loc = 0L;
   jvmtiError err;
 
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -162,13 +162,13 @@ VirtualThreadUnmount(jvmtiEnv *jvmti, ...) {
   if (done) {
     return; // defence against JVMTI_ERROR_WRONG_PHASE failures
   }
-  jmethodID method = NULL;
+  jmethodID method = nullptr;
   jlocation loc = 0L;
   jvmtiError err;
 
   va_list ap;
-  JNIEnv* jni = NULL;
-  jthread thread = NULL;
+  JNIEnv* jni = nullptr;
+  jthread thread = nullptr;
 
   va_start(ap, jvmti);
   jni = va_arg(ap, JNIEnv*);
@@ -239,24 +239,24 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_THREAD_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;
   }
 
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, nullptr);
   if (err != JVMTI_ERROR_NONE) {
     LOG("error in JVMTI SetEventNotificationMode: %d\n", err);
     return JNI_ERR;
@@ -276,16 +276,16 @@ Java_BreakpointInYieldTest_enableEvents(JNIEnv *jni, jclass klass, jthread threa
 
   LOG("enableEvents: started\n");
 
-  jclass k1 = find_class(jvmti, jni, NULL, "Ljava/lang/VirtualThread;");
-  jclass k2 = find_class(jvmti, jni, NULL, "Ljdk/internal/vm/Continuation;");
-  if (k1 == NULL || k2 == NULL) {
+  jclass k1 = find_class(jvmti, jni, nullptr, "Ljava/lang/VirtualThread;");
+  jclass k2 = find_class(jvmti, jni, nullptr, "Ljdk/internal/vm/Continuation;");
+  if (k1 == nullptr || k2 == nullptr) {
     jni->FatalError("Did not find one of the classes by name: VirtualThread or Continuation");
   }
   set_breakpoint(jni, k1, "run");
   set_breakpoint(jni, k2, "yield");
 
   // Enable Breakpoint events globally
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
   LOG("enableEvents: finished\n");
@@ -297,19 +297,19 @@ Java_BreakpointInYieldTest_check(JNIEnv *jni, jclass cls) {
   jvmtiError err;
   done = true; // defence against JVMTI_ERROR_WRONG_PHASE failures
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_THREAD_START, nullptr);
   check_jvmti_status(jni, err, "check: error in JVMTI SetEventNotificationMode: disable THREAD_START");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_VIRTUAL_THREAD_START, nullptr);
   check_jvmti_status(jni, err, "check: error in JVMTI SetEventNotificationMode: disable VIRTUAL_THREAD_START");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_MOUNT, nullptr);
   check_jvmti_status(jni, err, "check: error in JVMTI SetEventNotificationMode: disable VIRTUAL_THREAD_MOUNT");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, EXT_EVENT_VIRTUAL_THREAD_UNMOUNT, nullptr);
   check_jvmti_status(jni, err, "check: error in JVMTI SetEventNotificationMode: disable VIRTUAL_THREAD_UNMOUNT");
 
-  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_DISABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "check: error in JVMTI SetEventNotificationMode: disable BREAKPOINT");
 
   LOG("\n");

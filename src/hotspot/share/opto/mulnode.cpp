@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -281,45 +281,86 @@ Node *MulINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return res;                   // Return final result
 }
 
-// Classes to perform mul_ring() for MulI/MulLNode.
+// This template class performs type multiplication for MulI/MulLNode. NativeType is either jint or jlong.
+// In this class, the inputs of the MulNodes are named left and right with types [left_lo,left_hi] and [right_lo,right_hi].
 //
-// This class checks if all cross products of the left and right input of a multiplication have the same "overflow value".
-// Without overflow/underflow:
-// Product is positive? High signed multiplication result: 0
-// Product is negative? High signed multiplication result: -1
+// In general, the multiplication of two x-bit values could produce a result that consumes up to 2x bits if there is
+// enough space to hold them all. We can therefore distinguish the following two cases for the product:
+// - no overflow (i.e. product fits into x bits)
+// - overflow (i.e. product does not fit into x bits)
 //
-// We normalize these values (see normalize_overflow_value()) such that we get the same "overflow value" by adding 1 if
-// the product is negative. This allows us to compare all the cross product "overflow values". If one is different,
-// compared to the others, then we know that this multiplication has a different number of over- or underflows compared
-// to the others. In this case, we need to use bottom type and cannot guarantee a better type. Otherwise, we can take
-// the min und max of all computed cross products as type of this Mul node.
-template<typename IntegerType>
-class IntegerMulRing {
-  using NativeType = std::conditional_t<std::is_same<TypeInt, IntegerType>::value, jint, jlong>;
+// When multiplying the two x-bit inputs 'left' and 'right' with their x-bit types [left_lo,left_hi] and [right_lo,right_hi]
+// we need to find the minimum and maximum of all possible products to define a new type. To do that, we compute the
+// cross product of [left_lo,left_hi] and [right_lo,right_hi] in 2x-bit space where no over- or underflow can happen.
+// The cross product consists of the following four multiplications with 2x-bit results:
+// (1) left_lo * right_lo
+// (2) left_lo * right_hi
+// (3) left_hi * right_lo
+// (4) left_hi * right_hi
+//
+// Let's define the following two functions:
+// - Lx(i): Returns the lower x bits of the 2x-bit number i.
+// - Ux(i): Returns the upper x bits of the 2x-bit number i.
+//
+// Let's first assume all products are positive where only overflows are possible but no underflows. If there is no
+// overflow for a product p, then the upper x bits of the 2x-bit result p are all zero:
+//     Ux(p) = 0
+//     Lx(p) = p
+//
+// If none of the multiplications (1)-(4) overflow, we can truncate the upper x bits and use the following result type
+// with x bits:
+//      [result_lo,result_hi] = [MIN(Lx(1),Lx(2),Lx(3),Lx(4)),MAX(Lx(1),Lx(2),Lx(3),Lx(4))]
+//
+// If any of these multiplications overflows, we could pessimistically take the bottom type for the x bit result
+// (i.e. all values in the x-bit space could be possible):
+//      [result_lo,result_hi] = [NativeType_min,NativeType_max]
+//
+// However, in case of any overflow, we can do better by analyzing the upper x bits of all multiplications (1)-(4) with
+// 2x-bit results. The upper x bits tell us something about how many times a multiplication has overflown the lower
+// x bits. If the upper x bits of (1)-(4) are all equal, then we know that all of these multiplications overflowed
+// the lower x bits the same number of times:
+//     Ux((1)) = Ux((2)) = Ux((3)) = Ux((4))
+//
+// If all upper x bits are equal, we can conclude:
+//     Lx(MIN((1),(2),(3),(4))) = MIN(Lx(1),Lx(2),Lx(3),Lx(4)))
+//     Lx(MAX((1),(2),(3),(4))) = MAX(Lx(1),Lx(2),Lx(3),Lx(4)))
+//
+// Therefore, we can use the same precise x-bit result type as for the no-overflow case:
+//     [result_lo,result_hi] = [(MIN(Lx(1),Lx(2),Lx(3),Lx(4))),MAX(Lx(1),Lx(2),Lx(3),Lx(4)))]
+//
+//
+// Now let's assume that (1)-(4) are signed multiplications where over- and underflow could occur:
+// Negative numbers are all sign extend with ones. Therefore, if a negative product does not underflow, then the
+// upper x bits of the 2x-bit result are all set to ones which is minus one in two's complement. If there is an underflow,
+// the upper x bits are decremented by the number of times an underflow occurred. The smallest possible negative product
+// is NativeType_min*NativeType_max, where the upper x bits are set to NativeType_min / 2 (b11...0). It is therefore
+// impossible to underflow the upper x bits. Thus, when having all ones (i.e. minus one) in the upper x bits, we know
+// that there is no underflow.
+//
+// To be able to compare the number of over-/underflows of positive and negative products, respectively, we normalize
+// the upper x bits of negative 2x-bit products by adding one. This way a product has no over- or underflow if the
+// normalized upper x bits are zero. Now we can use the same improved type as for strictly positive products because we
+// can compare the upper x bits in a unified way with N() being the normalization function:
+//     N(Ux((1))) = N(Ux((2))) = N(Ux((3)) = N(Ux((4)))
+template<typename NativeType>
+class IntegerTypeMultiplication {
 
   NativeType _lo_left;
   NativeType _lo_right;
   NativeType _hi_left;
   NativeType _hi_right;
-  NativeType _lo_lo_product;
-  NativeType _lo_hi_product;
-  NativeType _hi_lo_product;
-  NativeType _hi_hi_product;
   short _widen_left;
   short _widen_right;
 
   static const Type* overflow_type();
-  static NativeType multiply_high_signed_overflow_value(NativeType x, NativeType y);
+  static NativeType multiply_high(NativeType x, NativeType y);
+  const Type* create_type(NativeType lo, NativeType hi) const;
 
-  // Pre-compute cross products which are used at several places
-  void compute_cross_products() {
-    _lo_lo_product = java_multiply(_lo_left, _lo_right);
-    _lo_hi_product = java_multiply(_lo_left, _hi_right);
-    _hi_lo_product = java_multiply(_hi_left, _lo_right);
-    _hi_hi_product = java_multiply(_hi_left, _hi_right);
+  static NativeType multiply_high_signed_overflow_value(NativeType x, NativeType y) {
+    return normalize_overflow_value(x, y, multiply_high(x, y));
   }
 
-  bool cross_products_not_same_overflow() const {
+  bool cross_product_not_same_overflow_value() const {
     const NativeType lo_lo_high_product = multiply_high_signed_overflow_value(_lo_left, _lo_right);
     const NativeType lo_hi_high_product = multiply_high_signed_overflow_value(_lo_left, _hi_right);
     const NativeType hi_lo_high_product = multiply_high_signed_overflow_value(_hi_left, _lo_right);
@@ -329,66 +370,95 @@ class IntegerMulRing {
            hi_lo_high_product != hi_hi_high_product;
   }
 
+  bool does_product_overflow(NativeType x, NativeType y) const {
+    return multiply_high_signed_overflow_value(x, y) != 0;
+  }
+
   static NativeType normalize_overflow_value(const NativeType x, const NativeType y, NativeType result) {
     return java_multiply(x, y) < 0 ? result + 1 : result;
   }
 
  public:
-  IntegerMulRing(const IntegerType* left, const IntegerType* right) : _lo_left(left->_lo), _lo_right(right->_lo),
-    _hi_left(left->_hi), _hi_right(right->_hi), _widen_left(left->_widen), _widen_right(right->_widen)  {
-    compute_cross_products();
-  }
+  template<class IntegerType>
+  IntegerTypeMultiplication(const IntegerType* left, const IntegerType* right)
+      : _lo_left(left->_lo), _lo_right(right->_lo),
+        _hi_left(left->_hi), _hi_right(right->_hi),
+        _widen_left(left->_widen), _widen_right(right->_widen)  {}
 
   // Compute the product type by multiplying the two input type ranges. We take the minimum and maximum of all possible
   // values (requires 4 multiplications of all possible combinations of the two range boundary values). If any of these
   // multiplications overflows/underflows, we need to make sure that they all have the same number of overflows/underflows
   // If that is not the case, we return the bottom type to cover all values due to the inconsistent overflows/underflows).
   const Type* compute() const {
-    if (cross_products_not_same_overflow()) {
+    if (cross_product_not_same_overflow_value()) {
       return overflow_type();
     }
-    const NativeType min = MIN4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
-    const NativeType max = MAX4(_lo_lo_product, _lo_hi_product, _hi_lo_product, _hi_hi_product);
-    return IntegerType::make(min, max, MAX2(_widen_left, _widen_right));
+
+    NativeType lo_lo_product = java_multiply(_lo_left, _lo_right);
+    NativeType lo_hi_product = java_multiply(_lo_left, _hi_right);
+    NativeType hi_lo_product = java_multiply(_hi_left, _lo_right);
+    NativeType hi_hi_product = java_multiply(_hi_left, _hi_right);
+    const NativeType min = MIN4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    const NativeType max = MAX4(lo_lo_product, lo_hi_product, hi_lo_product, hi_hi_product);
+    return create_type(min, max);
+  }
+
+  bool does_overflow() const {
+    return does_product_overflow(_lo_left, _lo_right) ||
+           does_product_overflow(_lo_left, _hi_right) ||
+           does_product_overflow(_hi_left, _lo_right) ||
+           does_product_overflow(_hi_left, _hi_right);
   }
 };
 
-
 template <>
-const Type* IntegerMulRing<TypeInt>::overflow_type() {
+const Type* IntegerTypeMultiplication<jint>::overflow_type() {
   return TypeInt::INT;
 }
 
 template <>
-jint IntegerMulRing<TypeInt>::multiply_high_signed_overflow_value(const jint x, const jint y) {
+jint IntegerTypeMultiplication<jint>::multiply_high(const jint x, const jint y) {
   const jlong x_64 = x;
   const jlong y_64 = y;
   const jlong product = x_64 * y_64;
-  const jint result = (jint)((uint64_t)product >> 32u);
-  return normalize_overflow_value(x, y, result);
+  return (jint)((uint64_t)product >> 32u);
 }
 
 template <>
-const Type* IntegerMulRing<TypeLong>::overflow_type() {
+const Type* IntegerTypeMultiplication<jint>::create_type(jint lo, jint hi) const {
+  return TypeInt::make(lo, hi, MAX2(_widen_left, _widen_right));
+}
+
+template <>
+const Type* IntegerTypeMultiplication<jlong>::overflow_type() {
   return TypeLong::LONG;
 }
 
 template <>
-jlong IntegerMulRing<TypeLong>::multiply_high_signed_overflow_value(const jlong x, const jlong y) {
-  const jlong result = multiply_high_signed(x, y);
-  return normalize_overflow_value(x, y, result);
+jlong IntegerTypeMultiplication<jlong>::multiply_high(const jlong x, const jlong y) {
+  return multiply_high_signed(x, y);
+}
+
+template <>
+const Type* IntegerTypeMultiplication<jlong>::create_type(jlong lo, jlong hi) const {
+  return TypeLong::make(lo, hi, MAX2(_widen_left, _widen_right));
 }
 
 // Compute the product type of two integer ranges into this node.
 const Type* MulINode::mul_ring(const Type* type_left, const Type* type_right) const {
-  const IntegerMulRing<TypeInt> integer_mul_ring(type_left->is_int(), type_right->is_int());
-  return integer_mul_ring.compute();
+  const IntegerTypeMultiplication<jint> integer_multiplication(type_left->is_int(), type_right->is_int());
+  return integer_multiplication.compute();
+}
+
+bool MulINode::does_overflow(const TypeInt* type_left, const TypeInt* type_right) {
+  const IntegerTypeMultiplication<jint> integer_multiplication(type_left, type_right);
+  return integer_multiplication.does_overflow();
 }
 
 // Compute the product type of two long ranges into this node.
 const Type* MulLNode::mul_ring(const Type* type_left, const Type* type_right) const {
-  const IntegerMulRing<TypeLong> integer_mul_ring(type_left->is_long(), type_right->is_long());
-  return integer_mul_ring.compute();
+  const IntegerTypeMultiplication<jlong> integer_multiplication(type_left->is_long(), type_right->is_long());
+  return integer_multiplication.compute();
 }
 
 //=============================================================================
@@ -610,6 +680,13 @@ Node *AndINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return progress;
   }
 
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_INT) && AddNode::is_not(phase, in(2), T_INT)) {
+    Node* or_a_b = new OrINode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_INT);
+  }
+
   // Special case constant AND mask
   const TypeInt *t2 = phase->type( in(2) )->isa_int();
   if( !t2 || !t2->is_con() ) return MulNode::Ideal(phase, can_reshape);
@@ -748,6 +825,13 @@ Node *AndLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   Node* progress = AndIL_add_shift_and_mask(phase, T_LONG);
   if (progress != nullptr) {
     return progress;
+  }
+
+  // Convert "(~a) & (~b)" into "~(a | b)"
+  if (AddNode::is_not(phase, in(1), T_LONG) && AddNode::is_not(phase, in(2), T_LONG)) {
+    Node* or_a_b = new OrLNode(in(1)->in(1), in(2)->in(1));
+    Node* tn = phase->transform(or_a_b);
+    return AddNode::make_not(phase, tn, T_LONG);
   }
 
   // Special case constant AND mask
@@ -1297,15 +1381,12 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeInt::INT;
 
-  if (t2 == TypeInt::INT)
-    return TypeInt::INT;
-
   const TypeInt *r1 = t1->is_int(); // Handy access
   const TypeInt *r2 = t2->is_int(); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 31, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= BitsPerJavaInteger-1;  // semantics of Java shifts
     // Shift by a multiple of 32 does nothing:
@@ -1327,11 +1408,22 @@ const Type* RShiftINode::Value(PhaseGVN* phase) const {
     return ti;
   }
 
-  if( !r1->is_con() || !r2->is_con() )
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeInt::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeInt::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
     return TypeInt::INT;
+  }
 
   // Signed shift right
-  return TypeInt::make( r1->get_con() >> (r2->get_con()&31) );
+  return TypeInt::make(r1->get_con() >> (r2->get_con() & 31));
 }
 
 //=============================================================================
@@ -1359,15 +1451,12 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
   if (t1 == Type::BOTTOM || t2 == Type::BOTTOM)
     return TypeLong::LONG;
 
-  if (t2 == TypeInt::INT)
-    return TypeLong::LONG;
-
   const TypeLong *r1 = t1->is_long(); // Handy access
   const TypeInt  *r2 = t2->is_int (); // Handy access
 
   // If the shift is a constant, just shift the bounds of the type.
   // For example, if the shift is 63, we just propagate sign bits.
-  if (r2->is_con()) {
+  if (!r1->is_con() && r2->is_con()) {
     uint shift = r2->get_con();
     shift &= (2*BitsPerJavaInteger)-1;  // semantics of Java shifts
     // Shift by a multiple of 64 does nothing:
@@ -1389,7 +1478,21 @@ const Type* RShiftLNode::Value(PhaseGVN* phase) const {
     return tl;
   }
 
-  return TypeLong::LONG;                // Give up
+  if (!r1->is_con() || !r2->is_con()) {
+    // If the left input is non-negative the result must also be non-negative, regardless of what the right input is.
+    if (r1->_lo >= 0) {
+      return TypeLong::make(0, r1->_hi, MAX2(r1->_widen, r2->_widen));
+    }
+
+    // Conversely, if the left input is negative then the result must be negative.
+    if (r1->_hi <= -1) {
+      return TypeLong::make(r1->_lo, -1, MAX2(r1->_widen, r2->_widen));
+    }
+
+    return TypeLong::LONG;
+  }
+
+  return TypeLong::make(r1->get_con() >> (r2->get_con() & 63));
 }
 
 //=============================================================================

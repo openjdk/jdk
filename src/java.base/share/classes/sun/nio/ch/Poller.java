@@ -94,14 +94,16 @@ abstract class Poller {
     }
 
     /**
-     * Register the file descriptor.
+     * Register the file descriptor. The registration is "one shot", meaning it should
+     * be polled at most once.
      */
     abstract void implRegister(int fdVal) throws IOException;
 
     /**
      * Deregister the file descriptor.
+     * @param polled true if the file descriptor has already been polled
      */
-    abstract void implDeregister(int fdVal);
+    abstract void implDeregister(int fdVal, boolean polled);
 
     /**
      * Poll for events. The {@link #polled(int)} method is invoked for each
@@ -182,23 +184,23 @@ abstract class Poller {
     }
 
     /**
-     * Registers the file descriptor.
+     * Registers the file descriptor to be polled at most once when the file descriptor
+     * is ready for I/O.
      */
     private void register(int fdVal) throws IOException {
-        Thread previous = map.putIfAbsent(fdVal, Thread.currentThread());
+        Thread previous = map.put(fdVal, Thread.currentThread());
         assert previous == null;
         implRegister(fdVal);
     }
 
     /**
-     * Deregister the file descriptor, a no-op if already polled.
+     * Deregister the file descriptor so that the file descriptor is not polled.
      */
     private void deregister(int fdVal) {
         Thread previous = map.remove(fdVal);
-        assert previous == null || previous == Thread.currentThread();
-        if (previous != null) {
-            implDeregister(fdVal);
-        }
+        boolean polled = (previous == null);
+        assert polled || previous == Thread.currentThread();
+        implDeregister(fdVal, polled);
     }
 
     /**
@@ -366,7 +368,7 @@ abstract class Poller {
 
             // check power of 2
             if (count != Integer.highestOneBit(count)) {
-                String msg = propName + " is set to a vale that is not a power of 2";
+                String msg = propName + " is set to a value that is not a power of 2";
                 throw new IllegalArgumentException(msg);
             }
             return count;
