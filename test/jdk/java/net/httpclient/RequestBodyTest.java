@@ -21,24 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8087112
- * @modules java.net.http
- *          java.logging
- *          jdk.httpserver
- * @library /test/lib
- * @compile ../../../com/sun/net/httpserver/LogFilter.java
- * @compile ../../../com/sun/net/httpserver/EchoHandler.java
- * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
- * @build jdk.test.lib.net.SimpleSSLContext
- * @build LightWeightHttpServer
- * @build jdk.test.lib.Platform
- * @build jdk.test.lib.util.FileUtils
- * @run testng/othervm RequestBodyTest
- * @run testng/othervm/java.security.policy=RequestBodyTest.policy RequestBodyTest
- */
-
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -74,6 +56,23 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static org.testng.Assert.*;
 
+/*
+ * @test
+ * @bug 8087112
+ * @modules java.net.http
+ *          java.logging
+ *          jdk.httpserver
+ * @library /test/lib
+ * @compile ../../../com/sun/net/httpserver/LogFilter.java
+ * @compile ../../../com/sun/net/httpserver/EchoHandler.java
+ * @compile ../../../com/sun/net/httpserver/FileServerHandler.java
+ * @build jdk.test.lib.net.SimpleSSLContext
+ * @build LightWeightHttpServer
+ * @build jdk.test.lib.Platform
+ * @build jdk.test.lib.util.FileUtils
+ * @run testng/othervm RequestBodyTest
+ * @run testng/othervm/java.security.policy=RequestBodyTest.policy RequestBodyTest
+ */
 public class RequestBodyTest {
 
     static final String fileroot = System.getProperty("test.src", ".") + "/docs";

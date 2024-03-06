@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,12 +119,19 @@ public class LightWeightHttpServer {
         System.out.println("HTTP server port = " + port);
         httpsport = httpsServer.getAddress().getPort();
         System.out.println("HTTPS server port = " + httpsport);
-        httproot = "http://localhost:" + port + "/";
-        httpsroot = "https://localhost:" + httpsport + "/";
+        httproot = "http://" + makeServerAuthority(httpServer.getAddress()) + "/";
+        httpsroot = "https://" + makeServerAuthority(httpsServer.getAddress()) + "/";
 
         proxy = new ProxyServer(0, false);
         proxyPort = proxy.getPort();
         System.out.println("Proxy port = " + proxyPort);
+    }
+
+    private static String makeServerAuthority(final InetSocketAddress addr) {
+        final String hostIP = addr.getAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + addr.getPort();
     }
 
     public static void stop() throws IOException {
