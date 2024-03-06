@@ -55,7 +55,6 @@ import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;

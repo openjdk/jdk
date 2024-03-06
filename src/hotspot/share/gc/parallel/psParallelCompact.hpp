@@ -405,10 +405,6 @@ public:
 
   size_t block_count() const { return _block_count; }
   inline BlockData* block(size_t block_idx) const;
-  inline size_t     block(const BlockData* block_ptr) const;
-
-  void add_obj(HeapWord* addr, size_t len);
-  void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
   // destination of region n is simply the start of region n.  Both arguments
@@ -1043,9 +1039,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifndef PRODUCT
 
  public:
-
-  PSParallelCompact();
-
   static bool invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 
