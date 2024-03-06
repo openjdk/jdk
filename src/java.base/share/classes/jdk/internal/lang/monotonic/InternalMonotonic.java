@@ -27,9 +27,6 @@ package jdk.internal.lang.monotonic;
 
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -53,11 +50,13 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 return v;
             }
             // Now, fall back to volatile semantics
-            v = valueVolatile();
-            if (v != null) {
-                return v;
-            }
-            throw noSuchElement();
+            return valueVolatile();
+            //if (v != null) {
+            //    return v;
+            //}
+            //return null;
+
+            //throw noSuchElement();
         }
 
         @Override
@@ -68,7 +67,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @Override
         public void put(V value) {
             Objects.requireNonNull(value);
-            freeze();
+            MonotonicUtil.freeze();
             if (caeValue(value) != null) {
                 throw valueAlreadyBound(get());
             }
@@ -77,7 +76,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @Override
         public V putIfAbsent(V value) {
             Objects.requireNonNull(value);
-            freeze();
+            MonotonicUtil.freeze();
             V witness = caeValue(value);
             return witness == null ? value : witness;
         }
@@ -87,11 +86,11 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
-        @SuppressWarnings("unchecked")
+/*        @SuppressWarnings("unchecked")
         @Override
         public V computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (V) (Object) s.invokeExact());
-        }
+        }*/
 
         private <T> V computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, V> mapper) {
             // Optimistically try plain semantics first
@@ -114,14 +113,17 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 }
                 try {
                     v = mapper.apply(supplier);
+                    if (v == null) {
+                        // Do not record a value
+                        return null;
+                    }
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
                     }
                     throw new NoSuchElementException(t);
                 }
-                Objects.requireNonNull(v);
-                freeze();
+                MonotonicUtil.freeze();
                 witness = caeValue(v);
             }
             if (witness == null) {
@@ -130,7 +132,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return witness;
         }
 
-        @Override
+/*        @Override
         public MethodHandle getter() {
             class Holder {
                 static final MethodHandle HANDLE;
@@ -145,7 +147,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 }
             }
             return Holder.HANDLE;
-        }
+        }*/
 
         @Override
         public String toString() {
@@ -163,7 +165,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         }
     }
 
-    final class NullableReferenceMonotonic<V> extends AbstractNullableMonotonic<V> implements InternalMonotonic<V> {
+/*    final class NullableReferenceMonotonic<V> extends AbstractNullableMonotonic<V> implements InternalMonotonic<V> {
 
         private static final long VALUE_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(NullableReferenceMonotonic.class, "value");
 
@@ -177,7 +179,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != null) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return null;
             }
             // Now, fall back to volatile semantics
@@ -185,7 +187,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != null) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return null;
             }
             throw noSuchElement();
@@ -194,7 +196,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @Override
         public synchronized void put(V value) {
             Objects.requireNonNull(value);
-            freeze();
+            MonotonicUtil.freeze();
             // Prevent several threads from succeeding in binding null values
             if (caeValue(value) != null || !casBound()) {
                 throw valueAlreadyBound(get());
@@ -204,7 +206,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         @Override
         public V putIfAbsent(V value) {
             Objects.requireNonNull(value);
-            freeze();
+            MonotonicUtil.freeze();
             V witness = caeValue(value);
             return witness == null ? value : witness;
         }
@@ -226,7 +228,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != null) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return null;
             }
             // Now, fall back to volatile semantics
@@ -234,13 +236,13 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != null) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return null;
             }
             // Make sure the supplier is only invoked at most once by this method
             synchronized (supplier) {
                 // Re-check
-                if (boundVolatile()) {
+                if (isBoundVolatile()) {
                     return get();
                 }
                 try {
@@ -252,11 +254,11 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                     throw new NoSuchElementException(t);
                 }
                 V witness = caeValue(v);
-                if (witness == null && !bound) {
+                if (witness == null && !isBound()) {
                     casBound();
                 }
                 if (witness == null) {
-                    freeze();
+                    MonotonicUtil.freeze();
                 }
                 return witness == null ? v : witness;
             }
@@ -289,7 +291,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return (V) MonotonicUtil.UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
         }
 
-    }
+    }*/
 
     final class IntMonotonic extends AbstractNullableMonotonic<Integer> implements InternalMonotonic<Integer> {
 
@@ -300,16 +302,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @Override
         public Integer get() {
-            return get0();
-        }
-
-        private int get0() {
             // Optimistically try plain semantics first
             int v = value;
             if (v != 0) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return 0;
             }
             // Now, fall back to volatile semantics
@@ -317,10 +315,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return 0;
             }
-            throw noSuchElement();
+            return null;
         }
 
         @Override
@@ -328,10 +326,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
-        @Override
+/*        @Override
         public Integer computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (Integer) (Object)s.invokeExact());
-        }
+        }*/
 
         private <T> Integer computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, ? extends Integer> mapper) {
             // Optimistically try plain semantics first
@@ -339,7 +337,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return 0;
             }
             // Now, fall back to volatile semantics
@@ -347,7 +345,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return 0;
             }
 
@@ -355,11 +353,16 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             // Make sure the supplier is only invoked at most once by this method
             synchronized (supplier) {
                 // Re-check
-                if (boundVolatile()) {
+                if (isBoundVolatile()) {
                     return get();
                 }
                 try {
-                    v = mapper.apply(supplier);
+                    Integer newValue = mapper.apply(supplier);
+                    if (newValue == null) {
+                        // Do not record a value
+                        return null;
+                    }
+                    v = newValue;
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -370,7 +373,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 // No freeze needed for primitive values
                 witness = caeValue(v);
             }
-            if (witness == 0 && !bound) {
+            if (witness == 0 && !isBound()) {
                 casBound();
             }
             return witness == 0 ? v : witness;
@@ -391,24 +394,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             int witness = caeValue(value);
-            return witness == 0 ? value : witness;
-        }
-
-        @Override
-        public MethodHandle getter() {
-            class Holder {
-                static final MethodHandle HANDLE;
-                static {
-                    try {
-                        HANDLE = MethodHandles.lookup()
-                                .findVirtual(IntMonotonic.class, "get0", MethodType.methodType(int.class))
-                                .asType(MethodType.methodType(int.class, Monotonic.class));
-                    } catch (ReflectiveOperationException e) {
-                        throw new ExceptionInInitializerError(e);
-                    }
-                }
+            if (witness == 0) {
+                casBound();
+                return value;
+            } else {
+                return witness;
             }
-            return Holder.HANDLE;
         }
 
         private int valueVolatile() {
@@ -430,16 +421,12 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
 
         @Override
         public Long get() {
-            return get0();
-        }
-
-        private long get0() {
             // Optimistically try plain semantics first
             long v = value;
             if (v != 0) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return 0L;
             }
             // Now, fall back to volatile semantics
@@ -447,10 +434,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return 0L;
             }
-            throw noSuchElement();
+            return null;
         }
 
         @Override
@@ -458,10 +445,10 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             return computeIfUnbound0(supplier, Supplier::get);
         }
 
-        @Override
+/*        @Override
         public Long computeIfAbsent(MethodHandle supplier) {
             return computeIfUnbound0(supplier, s -> (Long) (Object)s.invokeExact());
-        }
+        }*/
 
         private <T> Long computeIfUnbound0(T supplier, MonotonicUtil.ThrowingFunction<T, ? extends Long> mapper) {
             // Optimistically try plain semantics first
@@ -469,7 +456,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (bound) {
+            if (isBound()) {
                 return 0L;
             }
             // Now, fall back to volatile semantics
@@ -477,7 +464,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             if (v != 0) {
                 return v;
             }
-            if (boundVolatile()) {
+            if (isBoundVolatile()) {
                 return 0L;
             }
 
@@ -485,11 +472,16 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             // Make sure the supplier is only invoked at most once by this method
             synchronized (supplier) {
                 // Re-check
-                if (boundVolatile()) {
+                if (isBoundVolatile()) {
                     return get();
                 }
                 try {
-                    v = mapper.apply(supplier);
+                    Long newValue = mapper.apply(supplier);
+                    if (newValue == null) {
+                        // Do not record a value
+                        return null;
+                    }
+                    v = newValue;
                 } catch (Throwable t) {
                     if (t instanceof Error e) {
                         throw e;
@@ -500,7 +492,7 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                 // No freeze needed for primitive values
                 witness = caeValue(v);
             }
-            if (witness == 0 && !bound) {
+            if (witness == 0 && !isBound()) {
                 casBound();
             }
             return witness == 0 ? v : witness;
@@ -521,36 +513,20 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
             Objects.requireNonNull(value);
             // No freeze needed for primitive values
             long witness = caeValue(value);
-            return witness == 0 ? value : witness;
-        }
-
-        @Override
-        public MethodHandle getter() {
-            class Holder {
-                static final MethodHandle HANDLE;
-                static {
-                    try {
-                        HANDLE = MethodHandles.lookup()
-                                .findVirtual(LongMonotonic.class, "get0", MethodType.methodType(long.class))
-                                .asType(MethodType.methodType(long.class, Monotonic.class));
-                    } catch (ReflectiveOperationException e) {
-                        throw new ExceptionInInitializerError(e);
-                    }
-                }
+            if (witness == 0) {
+                casBound();
+                return value;
+            } else {
+                return witness;
             }
-            return Holder.HANDLE;
         }
 
-        private int valueVolatile() {
-            return MonotonicUtil.UNSAFE.getIntVolatile(this, VALUE_OFFSET);
-        }
-
-        private boolean casValue(long value) {
-            return MonotonicUtil.UNSAFE.compareAndSetLong(this, VALUE_OFFSET, 0, value);
+        private long valueVolatile() {
+            return MonotonicUtil.UNSAFE.getLongVolatile(this, VALUE_OFFSET);
         }
 
         private long caeValue(long value) {
-            return MonotonicUtil.UNSAFE.compareAndExchangeLong(this, VALUE_OFFSET, 0, value);
+            return MonotonicUtil.UNSAFE.compareAndExchangeLong(this, VALUE_OFFSET, 0L, value);
         }
 
     }
@@ -560,11 +536,11 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         private static final long BOUND_OFFSET = MonotonicUtil.UNSAFE.objectFieldOffset(AbstractNullableMonotonic.class, "bound");
 
         @Stable
-        boolean bound;
+        private boolean bound;
 
         @Override
-        public boolean isPresent() {
-            return bound || boundVolatile();
+        public final boolean isPresent() {
+            return bound || isBoundVolatile();
         }
 
         @Override
@@ -575,8 +551,11 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                             : ".unbound");
         }
 
+        protected final boolean isBound() {
+            return bound;
+        }
 
-        protected final boolean boundVolatile() {
+        protected final boolean isBoundVolatile() {
             return MonotonicUtil.UNSAFE.getBooleanVolatile(this, BOUND_OFFSET);
         }
 
@@ -592,10 +571,6 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
                         : ".unbound");
     }
 
-    static NoSuchElementException noSuchElement() {
-        return new NoSuchElementException();
-    }
-
     static IllegalStateException valueAlreadyBound(Object value) {
         return new IllegalStateException("A value is already bound: " + value);
     }
@@ -609,28 +584,17 @@ public sealed interface InternalMonotonic<V> extends Monotonic<V> {
         };
     }
 
-    /**
-     * Performs a "freeze" operation, required to ensure safe publication under plain memory read
-     * semantics.
-     * <p>
-     * This inserts a memory barrier, thereby establishing a happens-before constraint. This
-     * prevents the reordering of store operations across the freeze boundary.
-     */
-    static void freeze() {
-        // Issue a store fence, which is sufficient
-        // to provide protection against store/store reordering.
-        // See VarHandle::releaseFence
-        MonotonicUtil.UNSAFE.storeFence();
-    }
-
-    static <V> Monotonic<V> ofNullable(Class<? extends V> backingType) {
+/*    static <V> Monotonic<V> ofNullable(Class<? extends V> backingType) {
         return new NullableReferenceMonotonic<>();
-    }
+    }*/
 
-    static <V> List<V> ofList(Class<? extends V> backingElementType,
-                              int size) {
-        Objects.requireNonNull(backingElementType);
-        return new InternalMonotonicList.ReferenceList<>(size);
+    @SuppressWarnings("unchecked")
+    static <V> Monotonic.List<V> ofList(Class<? extends V> backingElementType,
+                                        int size) {
+        return (Monotonic.List<V>) switch (backingElementType) {
+            case Class<? extends V> c when c.equals(int.class) -> new InternalMonotonicList.IntList(size);
+            default -> new InternalMonotonicList.ReferenceList<>(size);
+        };
     }
 
     static <K, V> Map<K, V> ofMap(Class<? extends V> backingValueType,

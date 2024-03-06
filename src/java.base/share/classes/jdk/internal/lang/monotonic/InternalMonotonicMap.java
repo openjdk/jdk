@@ -137,15 +137,17 @@ public sealed interface InternalMonotonicMap<K, V>
         }
 
 
-        @Override
+/*        @Override
         public V computeIfAbsent(K key, MethodHandle mapper) {
             throw new UnsupportedOperationException();
-        }
+        }*/
 
+/*
         @Override
         public MethodHandle getter() {
             throw new UnsupportedOperationException();
         }
+*/
 
         @Override
         public boolean containsKey(Object o) {

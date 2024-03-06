@@ -34,10 +34,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -45,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class BasicMonotonicListTest {
 
-    private static final int SIZE = 20;
+    private static final int SIZE = 7;
     private static final int INDEX = 2;
 
     @Test
@@ -60,8 +62,8 @@ final class BasicMonotonicListTest {
     @ParameterizedTest
     @MethodSource("emptyLists")
     void empty(Class<?> carrier, Monotonic.List<Integer> list) {
-        assertTrue(list.isEmpty());
-        assertEquals(0, list.size());
+        assertFalse(list.isEmpty());
+        assertEquals(SIZE, list.size());
 
         IntStream.range(0, SIZE).forEach(i ->
                 assertFalse(list.isPresent(i))
@@ -71,7 +73,7 @@ final class BasicMonotonicListTest {
                 assertFalse(list.isPresent(i))
         );
 
-        assertEquals("[]", list.toString());
+        assertEquals(expectedToString(list), list.toString());
 
         IntStream.range(0, SIZE)
                 .forEach(i ->
@@ -85,7 +87,7 @@ final class BasicMonotonicListTest {
     @MethodSource("singleLists")
     void single(Class<?> carrier, Monotonic.List<Integer> list) {
         assertFalse(list.isEmpty());
-        assertEquals(1, list.size());
+        assertEquals(SIZE, list.size());
 
         IntStream.range(0, SIZE).forEach(i ->
                 assertEquals(i == INDEX, list.isPresent(i))
@@ -94,7 +96,7 @@ final class BasicMonotonicListTest {
         Iterator<Integer> iterator = list.iterator();
         assertTrue(iterator.hasNext());
 
-        assertEquals("[" + INDEX + "]", list.toString());
+        assertEquals(expectedToString(list), list.toString());
 
         IntStream.range(0, SIZE)
                 .filter(i -> i != INDEX)
@@ -112,7 +114,7 @@ final class BasicMonotonicListTest {
     void uoe(String name, Consumer<List<Integer>> op) {
         for (Class<Integer> carrier : List.of(int.class, Integer.class)) {
             Monotonic.List<Integer> empty = Monotonic.ofList(carrier, SIZE);
-            assertThrows(UnsupportedOperationException.class, () -> op.accept(empty), name);
+            assertThrows(UnsupportedOperationException.class, () -> op.accept(empty), name + " (" + carrier + ")");
         }
     }
 
@@ -121,7 +123,7 @@ final class BasicMonotonicListTest {
     void npe(String name, BiConsumer<Monotonic.List<?>, ?> op) {
         for (Class<Integer> carrier : List.of(int.class, Integer.class)) {
             Monotonic.List<Object> empty = Monotonic.ofList(carrier, SIZE);
-            assertThrows(NullPointerException.class, () -> op.accept(empty, null), name);
+            assertThrows(NullPointerException.class, () -> op.accept(empty, null), name + " (" + carrier + ")");
         }
     }
 
@@ -196,16 +198,10 @@ final class BasicMonotonicListTest {
         }
     }
 
-    private Monotonic.List<Integer> newEmpty() {
-        Monotonic.List<Integer> single = Monotonic.ofList(int.class, SIZE);
-        single.put(INDEX, INDEX);
-        return single;
-    }
-
-    private Monotonic.List<Integer> newSingle() {
-        Monotonic.List<Integer> single = Monotonic.ofList(int.class, SIZE);
-        single.put(INDEX, INDEX);
-        return single;
+    static String expectedToString(List<?> list) {
+        return "[" + list.stream()
+                .map(Objects::toString)
+                .collect(Collectors.joining(", ")) + "]";
     }
 
 }

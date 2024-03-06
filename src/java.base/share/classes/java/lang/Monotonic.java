@@ -29,7 +29,6 @@ import jdk.internal.lang.monotonic.InternalMonotonic;
 import jdk.internal.lang.monotonic.InternalMonotonicList;
 import jdk.internal.lang.monotonic.InternalMonotonicMap;
 
-import java.lang.invoke.MethodHandle;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
@@ -49,6 +48,10 @@ import java.util.function.Supplier;
  * @param <V> value type
  * @since 23
  */
+// Todo: If the supplier/mapper returns null, no value is recorded.
+// Todo: Update fields.cpp to trust Monotonic, Monotonic.List, Monotonic.Map
+//       This is an advantage with having separate types
+// Todo: Remove ifPresent as this can be replaced with get(...) != null
 public sealed interface Monotonic<V> permits InternalMonotonic {
 
     /**
@@ -92,6 +95,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * value using the provided {@code supplier}.
      *
      * <p>
+     * If the supplier returns {@code null}, no value is bound.
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
      * value is bound. The most common usage is to construct a new object serving as an
      * initial mapped value or memoized result, as in:
@@ -123,56 +127,57 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      */
     V computeIfAbsent(Supplier<? extends V> supplier);
 
-    /**
-     * If a value is {@linkplain #isPresent() not present}, attempts to compute and bind a
-     * value using the provided {@code supplier}.
-     *
-     * <p>
-     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is bound. The most common usage is to construct a new object serving as an
-     * initial mapped value or memoized result, as in:
-     *
-     * <pre> {@code
-     * Value witness = monotonic.computeIfAbsent(handle);
-     * }</pre>
-     *
-     * @implSpec The implementation logic is equivalent to the following steps for this
-     * {@code monotonic}:
-     *
-     * <pre> {@code
-     * if (!monotonic.isPresent()) {
-     *     V newValue = (V) (Object) supplier.invokeExact(monotonic);
-     *     monotonic.put(newValue);
-     *     return newValue;
-     * } else {
-     *     return monotonic.get();
-     * }
-     * }</pre>
-     * Except it is thread-safe and will only return the same witness value regardless if
-     * invoked by several threads.
-     *
-     * <p>The implementation guarantees the provided {@code supplier} is invoked
-     * once (if successful) even if invoked from several threads.
-     *
-     * @param supplier the supplier to compute a value
-     * @return the current (existing or computed) present value
-     */
-    V computeIfAbsent(MethodHandle supplier);
+//    /**
+//     * If a value is {@linkplain #isPresent() not present}, attempts to compute and bind a
+//     * value using the provided {@code supplier}.
+//     *
+//     * <p>
+//     * If the supplier returns {@code null}, no value is bound.
+//     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
+//     * value is bound. The most common usage is to construct a new object serving as an
+//     * initial mapped value or memoized result, as in:
+//     *
+//     * <pre> {@code
+//     * Value witness = monotonic.computeIfAbsent(handle);
+//     * }</pre>
+//     *
+//     * @implSpec The implementation logic is equivalent to the following steps for this
+//     * {@code monotonic}:
+//     *
+//     * <pre> {@code
+//     * if (!monotonic.isPresent()) {
+//     *     V newValue = (V) (Object) supplier.invokeExact(monotonic);
+//     *     monotonic.put(newValue);
+//     *     return newValue;
+//     * } else {
+//     *     return monotonic.get();
+//     * }
+//     * }</pre>
+//     * Except it is thread-safe and will only return the same witness value regardless if
+//     * invoked by several threads.
+//     *
+//     * <p>The implementation guarantees the provided {@code supplier} is invoked
+//     * once (if successful) even if invoked from several threads.
+//     *
+//     * @param supplier the supplier to compute a value
+//     * @return the current (existing or computed) present value
+//     */
+//    V computeIfAbsent(MethodHandle supplier);
 
-    /**
-     * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound value
-     * of this monotonic}
-     * <p>
-     * The returned getter's return type reflects directly on the backing type of this
-     * monotonic value. The getter can be used to obtain the present value without boxing
-     * but will otherwise behave as the {@linkplain #get()} method.
-     * <p>
-     * The returned getter will have a sole parameter of type {@linkplain Monotonic} which
-     * represents the "this" parameter.
-     *
-     * @see #get()
-     */
-    MethodHandle getter();
+//    /**
+//     * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound value
+//     * of this monotonic}
+//     * <p>
+//     * The returned getter's return type reflects directly on the backing type of this
+//     * monotonic value. The getter can be used to obtain the present value without boxing
+//     * but will otherwise behave as the {@linkplain #get()} method.
+//     * <p>
+//     * The returned getter will have a sole parameter of type {@linkplain Monotonic} which
+//     * represents the "this" parameter.
+//     *
+//     * @see #get()
+//     */
+//    MethodHandle getter();
 
     /**
      * A <em>monotonic list</em> where elements can be bound at most once.
@@ -263,6 +268,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          * {@code mapper}.
          *
          * <p>
+         * If the mapper function returns {@code null}, no value is bound.
          * If the mapper throws an (unchecked) exception, the exception is rethrown, and
          * no value is bound. The most common usage is to construct a new object serving
          * as an initial mapped value or memoized result, as in:
@@ -295,60 +301,61 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          */
         V computeIfAbsent(int index, IntFunction<? extends V> mapper);
 
-        /**
-         * If a value is {@linkplain #isPresent() not present} at the provided
-         * {@code index}, attempts to compute and bind a value by applying the provided
-         * {@code mapper}.
-         *
-         * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-         * no value is bound. The most common usage is to construct a new object serving
-         * as an initial mapped value or memoized result, as in:
-         *
-         * <pre> {@code
-         * Value witness = monotonicList.computeIfAbsent(index, handle);
-         * }</pre>
-         *
-         * @implSpec The implementation logic is equivalent to the following steps for
-         * this {@code monotonic}:
-         *
-         * <pre> {@code
-         * if (!monotonicList.isPresent(index)) {
-         *     V newValue = (V) (Object) supplier.invokeExact(monotonicList, index);
-         *     monotonic.put(index, newValue);
-         *     return newValue;
-         * } else {
-         *     return monotonic.get();
-         * }
-         * }</pre>
-         * Except it is thread-safe and will only return the same witness value regardless
-         * if invoked by several threads.
-         *
-         * <p>The implementation guarantees the provided {@code mapper} is invoked
-         * once per index (if successful) even if invoked from several threads.
-         *
-         * @param index of the element to bind/get
-         * @param mapper the mapper to compute a value
-         * @return the current (existing or computed) present value
-         *
-         */
-        V computeIfAbsent(int index, MethodHandle mapper);
+//        /**
+//         * If a value is {@linkplain #isPresent() not present} at the provided
+//         * {@code index}, attempts to compute and bind a value by applying the provided
+//         * {@code mapper}.
+//         *
+//         * <p>
+//         * If the mapper function returns {@code null}, no value is bound.
+//         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
+//         * no value is bound. The most common usage is to construct a new object serving
+//         * as an initial mapped value or memoized result, as in:
+//         *
+//         * <pre> {@code
+//         * Value witness = monotonicList.computeIfAbsent(index, handle);
+//         * }</pre>
+//         *
+//         * @implSpec The implementation logic is equivalent to the following steps for
+//         * this {@code monotonic}:
+//         *
+//         * <pre> {@code
+//         * if (!monotonicList.isPresent(index)) {
+//         *     V newValue = (V) (Object) supplier.invokeExact(monotonicList, index);
+//         *     monotonic.put(index, newValue);
+//         *     return newValue;
+//         * } else {
+//         *     return monotonic.get();
+//         * }
+//         * }</pre>
+//         * Except it is thread-safe and will only return the same witness value regardless
+//         * if invoked by several threads.
+//         *
+//         * <p>The implementation guarantees the provided {@code mapper} is invoked
+//         * once per index (if successful) even if invoked from several threads.
+//         *
+//         * @param index of the element to bind/get
+//         * @param mapper the mapper to compute a value
+//         * @return the current (existing or computed) present value
+//         *
+//         */
+//        V computeIfAbsent(int index, MethodHandle mapper);
 
-        /**
-         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
-         * value of this monotonic}
-         * <p>
-         * The returned getter's return type reflects directly on the backing type of this
-         * monotonic liat. The getter can be used to obtain the present value without
-         * boxing but will otherwise behave as the {@linkplain #get(int)} method.
-         * <p>
-         * The returned getter will have a first parameter of type
-         * {@linkplain Monotonic.List} which represents the "this" parameter and
-         * a second parameter of type {@code int} which represents the index.
-         *
-         * @see #get(int)
-         */
-        MethodHandle getter();
+//        /**
+//         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
+//         * value of this monotonic}
+//         * <p>
+//         * The returned getter's return type reflects directly on the backing type of this
+//         * monotonic liat. The getter can be used to obtain the present value without
+//         * boxing but will otherwise behave as the {@linkplain #get(int)} method.
+//         * <p>
+//         * The returned getter will have a first parameter of type
+//         * {@linkplain Monotonic.List} which represents the "this" parameter and
+//         * a second parameter of type {@code int} which represents the index.
+//         *
+//         * @see #get(int)
+//         */
+//         MethodHandle getter();
     }
 
     /**
@@ -431,60 +438,61 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
         @Override
         V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
 
-        /**
-         * If a value is {@linkplain #isPresent() not present} for the provided
-         * {@code key}, attempts to compute and bind a value by applying the provided
-         * {@code mapper}.
-         *
-         * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-         * no value is bound. The most common usage is to construct a new object serving
-         * as an initial mapped value or memoized result, as in:
-         *
-         * <pre> {@code
-         * Value witness = monotonicMap.computeIfAbsent(key, handle);
-         * }</pre>
-         *
-         * @implSpec The implementation logic is equivalent to the following steps for
-         * this {@code monotonic}:
-         *
-         * <pre> {@code
-         * if (!monotonicMap.isPresent(key)) {
-         *     V newValue = (V) (Object) supplier.invokeExact(monotonicMap, index);
-         *     monotonic.put(index, newValue);
-         *     return newValue;
-         * } else {
-         *     return monotonic.get();
-         * }
-         * }</pre>
-         * Except it is thread-safe and will only return the same witness value regardless
-         * if invoked by several threads.
-         *
-         * <p>The implementation guarantees the provided {@code mapper} is invoked
-         * once per index (if successful) even if invoked from several threads.
-         *
-         * @param key of the value to bind/get
-         * @param mapper the mapper to compute a value
-         * @return the current (existing or computed) present value
-         *
-         */
-        V computeIfAbsent(K key, MethodHandle mapper);
+//        /**
+//         * If a value is {@linkplain #isPresent() not present} for the provided
+//         * {@code key}, attempts to compute and bind a value by applying the provided
+//         * {@code mapper}.
+//         *
+//         * <p>
+//         * If the mapper function returns {@code null}, no value is bound.
+//         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
+//         * no value is bound. The most common usage is to construct a new object serving
+//         * as an initial mapped value or memoized result, as in:
+//         *
+//         * <pre> {@code
+//         * Value witness = monotonicMap.computeIfAbsent(key, handle);
+//         * }</pre>
+//         *
+//         * @implSpec The implementation logic is equivalent to the following steps for
+//         * this {@code monotonic}:
+//         *
+//         * <pre> {@code
+//         * if (!monotonicMap.isPresent(key)) {
+//         *     V newValue = (V) (Object) supplier.invokeExact(monotonicMap, index);
+//         *     monotonic.put(index, newValue);
+//         *     return newValue;
+//         * } else {
+//         *     return monotonic.get();
+//         * }
+//         * }</pre>
+//         * Except it is thread-safe and will only return the same witness value regardless
+//         * if invoked by several threads.
+//         *
+//         * <p>The implementation guarantees the provided {@code mapper} is invoked
+//         * once per index (if successful) even if invoked from several threads.
+//         *
+//         * @param key of the value to bind/get
+//         * @param mapper the mapper to compute a value
+//         * @return the current (existing or computed) present value
+//         *
+//         */
+//        V computeIfAbsent(K key, MethodHandle mapper);
 
-        /**
-         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
-         * value of this monotonic}
-         * <p>
-         * The returned getter's return type reflects directly on the backing type of this
-         * monotonic map. The getter can be used to obtain the present value without
-         * boxing but will otherwise behave as the {@linkplain #get(Object)} method.
-         * <p>
-         * The returned getter will have a first parameter of type
-         * {@linkplain Monotonic.Map} which represents the "this" parameter and
-         * a second parameter of type {@code K} which represents the key.
-         *
-         * @see #get(Object)
-         */
-        MethodHandle getter();
+//        /**
+//         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
+//         * value of this monotonic}
+//         * <p>
+//         * The returned getter's return type reflects directly on the backing type of this
+//         * monotonic map. The getter can be used to obtain the present value without
+//         * boxing but will otherwise behave as the {@linkplain #get(Object)} method.
+//         * <p>
+//         * The returned getter will have a first parameter of type
+//         * {@linkplain Monotonic.Map} which represents the "this" parameter and
+//         * a second parameter of type {@code K} which represents the key.
+//         *
+//         * @see #get(Object)
+//         */
+//         MethodHandle getter();
     }
 
     // Factories
@@ -506,23 +514,23 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
         return InternalMonotonic.of(backingType);
     }
 
-    /**
-     * {@return a new Monotonic for which a bound nullable value where non-null values can
-     * be backed by the provided {@code backingType}}
-     * <p>
-     * It is up to to the implementation if the provided {@code backingType} is actually
-     * used.
-     *
-     * @param backingType a class literal that (optionally) can be used to store a bound
-     *                    non-null value
-     * @param <V>         the type to bind
-     * @param <T>         the type of the backing class
-     */
-    // Todo: Valhalla makes this redundant?
-    static <T extends V, V> Monotonic<V> ofNullable(Class<T> backingType) {
-        Objects.requireNonNull(backingType);
-        return InternalMonotonic.ofNullable(backingType);
-    }
+//    /**
+//     * {@return a new Monotonic for which a bound nullable value where non-null values can
+//     * be backed by the provided {@code backingType}}
+//     * <p>
+//     * It is up to to the implementation if the provided {@code backingType} is actually
+//     * used.
+//     *
+//     * @param backingType a class literal that (optionally) can be used to store a bound
+//     *                    non-null value
+//     * @param <V>         the type to bind
+//     * @param <T>         the type of the backing class
+//     */
+//    // Todo: Valhalla makes this redundant?
+//    static <T extends V, V> Monotonic<V> ofNullable(Class<T> backingType) {
+//        Objects.requireNonNull(backingType);
+//        return InternalMonotonic.ofNullable(backingType);
+//    }
 
     /**
      * {@return a new monotonic, lazy {@linkplain List } where the element can be backed

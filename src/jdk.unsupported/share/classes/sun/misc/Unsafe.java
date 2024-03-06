@@ -32,6 +32,7 @@ import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.util.List;
 import java.util.Set;
 
 
@@ -654,6 +655,11 @@ public final class Unsafe {
         }
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
+        }
+        for (String name: List.of("java.lang.Monotonic", "java.lang.Monotonic.List", "java.lang.Monotonic.Map")) {
+            if (f.getType().getName().equals(name)) {
+                throw new UnsupportedOperationException("can't get field offset for a " + name + "java.lang.Monotonic: " + f);
+            }
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }

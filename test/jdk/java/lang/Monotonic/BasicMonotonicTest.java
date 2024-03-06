@@ -28,8 +28,6 @@
 
 import org.junit.jupiter.api.Test;
 
-import java.lang.invoke.MethodHandle;
-import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
@@ -50,7 +48,7 @@ final class BasicMonotonicTest {
     void testIntegerOld() {
         Monotonic<Integer> m = Monotonic.of(Integer.class);
         assertFalse(m.isPresent());
-        assertThrows(NoSuchElementException.class, m::get);
+        assertNull(m.get());
 
         m.put(42);
         assertTrue(m.isPresent());
@@ -59,7 +57,7 @@ final class BasicMonotonicTest {
         assertTrue(m.isPresent());
         assertEquals(42, m.get());
 
-        MethodHandle handle = m.getter();
+/*        MethodHandle handle = m.getter();
         assertEquals(Object.class, handle.type().returnType());
         assertEquals(1, handle.type().parameterCount());
         assertEquals(Monotonic.class, handle.type().parameterType(0));
@@ -68,14 +66,14 @@ final class BasicMonotonicTest {
             assertEquals(42, i);
         } catch (Throwable t) {
             fail(t);
-        }
+        }*/
     }
 
     @Test
     void testIntOld() {
         Monotonic<Integer> m = Monotonic.of(int.class);
         assertFalse(m.isPresent());
-        assertThrows(NoSuchElementException.class, m::get);
+        assertNull(m.get());
 
         m.put(42);
         assertTrue(m.isPresent());
@@ -88,7 +86,7 @@ final class BasicMonotonicTest {
         };
         assertDoesNotThrow(() -> m.computeIfAbsent(throwingSupplier));
 
-        MethodHandle handle = m.getter();
+/*        MethodHandle handle = m.getter();
         assertEquals(int.class, handle.type().returnType());
         assertEquals(1, handle.type().parameterCount());
 
@@ -98,27 +96,27 @@ final class BasicMonotonicTest {
             assertEquals(42, i);
         } catch (Throwable t) {
             fail(t);
-        }
+        }*/
     }
 
     @Test
     void testString() {
-        testMonotonic(String.class, "A", "B", monotonic -> (String) (Object) monotonic.getter().invokeExact(monotonic));
+        testMonotonic(String.class, "A", "B");
     }
 
     @Test
     void testInteger() {
-        testMonotonic(Integer.class, 42, 13, monotonic -> (Integer) (Object) monotonic.getter().invokeExact(monotonic));
+        testMonotonic(Integer.class, 42, 13);
     }
 
     @Test
     void testInt() {
-        testMonotonic(int.class, 42, 13, monotonic -> (int) monotonic.getter().invokeExact(monotonic));
+        testMonotonic(int.class, 42, 13);
     }
 
     @Test
     void testLong() {
-        testMonotonic(long.class, 42L, 13L, monotonic -> (long) monotonic.getter().invokeExact(monotonic));
+        testMonotonic(long.class, 42L, 13L);
     }
 
     interface MethodHandleInvoker<T> {
@@ -127,13 +125,12 @@ final class BasicMonotonicTest {
 
     <T> void testMonotonic(Class<T> type,
                            T first,
-                           T second,
-                           MethodHandleInvoker<T> invoker) {
+                           T second) {
 
         // unbound
         Monotonic<T> m = Monotonic.of(type);
         assertFalse(m.isPresent());
-        assertThrows(NoSuchElementException.class, m::get);
+        assertNull(m.get());
 
         // bind()
         m.put(first);
@@ -144,7 +141,7 @@ final class BasicMonotonicTest {
         assertEquals(first, m.get());
 
         // getter()
-        MethodHandle handle = m.getter();
+/*        MethodHandle handle = m.getter();
         if (type.isPrimitive()) {
             assertEquals(type, handle.type().returnType());
         } else {
@@ -158,7 +155,7 @@ final class BasicMonotonicTest {
             assertEquals(first, t);
         } catch (Throwable t) {
             fail(t);
-        }
+        }*/
 
         // computeIfAbsent()
         Supplier<T> throwingSupplier = () -> {
