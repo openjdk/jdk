@@ -321,6 +321,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
     }
 
     protected byte[] generateTestMethodProlog(byte[] bytes) {
+        return bytes;
     }
 
     protected abstract byte[] generateCPEntryData(byte[] bytes);

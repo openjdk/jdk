@@ -25,23 +25,15 @@ package vm.mlvm.cp.share;
 
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.Label;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicCallSiteDesc;
 import java.lang.constant.MethodHandleDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Random;
-import jdk.internal.classfile.Label;
-
-import javax.lang.model.type.TypeKind;
-
-import jdk.internal.classfile.Classfile;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.ClassWriterExt;
-import jdk.internal.org.objectweb.asm.Handle;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import jdk.internal.org.objectweb.asm.Type;
+import java.lang.classfile.TypeKind;
 
 import vm.mlvm.share.ClassfileGenerator;
 import vm.mlvm.share.Env;
@@ -99,7 +91,7 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
      */
     @Override
     protected byte[] createTargetMethod(byte[] bytes) {
-        createThrowRuntimeExceptionMethod(ClassFile.of().parse(bytes), true, TARGET_METHOD_NAME, TARGET_METHOD_SIGNATURE);
+        return createThrowRuntimeExceptionMethod(bytes, true, TARGET_METHOD_NAME, TARGET_METHOD_SIGNATURE);
     }
 
     /**
@@ -109,7 +101,7 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
      */
     @Override
     protected byte[] createBootstrapMethod(byte[] bytes) {
-        createThrowRuntimeExceptionMethod(bytes, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
+        return createThrowRuntimeExceptionMethod(bytes, true, BOOTSTRAP_METHOD_NAME, BOOTSTRAP_METHOD_SIGNATURE);
     }
 
     /**
@@ -130,9 +122,9 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
                                             ClassDesc.ofDescriptor(INSTANCE_BOOTSTRAP_FIELD_SIGNATURE),
                                             ClassFile.ACC_PUBLIC)));
 
-            super.generateCommonData(bytes);
+            bytes = super.generateCommonData(bytes);
 
-            createThrowRuntimeExceptionMethod(ClassFile.of().parse(bytes), false, INSTANCE_BOOTSTRAP_METHOD_NAME, INSTANCE_BOOTSTRAP_METHOD_SIGNATURE);
+            return createThrowRuntimeExceptionMethod(bytes, false, INSTANCE_BOOTSTRAP_METHOD_NAME, INSTANCE_BOOTSTRAP_METHOD_SIGNATURE);
     }
 
     Label throwMethodLabel;
