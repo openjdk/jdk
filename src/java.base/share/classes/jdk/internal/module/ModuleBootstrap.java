@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -802,14 +802,18 @@ public final class ModuleBootstrap {
     }
 
     /**
-     * Process the --enable-native-access option to grant access to restricted methods to selected modules.
-     * Also add Enable native access from JDK modules.
+     * Grants native access to modules selected using the --enable-native-access
+     * command line option, and also to JDK modules that need the access.
      */
     private static void addEnableNativeAccess(ModuleLayer layer) {
         addEnableNativeAccess(layer, USER_NATIVE_ACCESS_MODULES, true);
         addEnableNativeAccess(layer, JDK_NATIVE_ACCESS_MODULES, false);
     }
 
+    /**
+     * Grants native access for the given modules in the given layer.
+     * Warns optionally about modules that were specified, but not present in the layer.
+     */
     private static void addEnableNativeAccess(ModuleLayer layer, Set<String> moduleNames, boolean shouldWarn) {
         for (String name : moduleNames) {
             if (name.equals("ALL-UNNAMED")) {
