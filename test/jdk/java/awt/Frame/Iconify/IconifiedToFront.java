@@ -38,7 +38,7 @@ import java.awt.Robot;
 import java.awt.Toolkit;
 
 public class IconifiedToFront {
-    private static final int PAUSE_MS = 1500;
+    private static final int PAUSE_MS = 500;
     private static Robot robot;
 
     public static void main(String[] args) throws Exception {
