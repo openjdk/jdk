@@ -51,9 +51,7 @@
 class DefNewGeneration;
 class GCMemoryManager;
 class ContiguousSpace;
-
 class OopClosure;
-class GCStats;
 
 class Generation: public CHeapObj<mtGC> {
   friend class VMStructs;
@@ -72,9 +70,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Performance Counters
   CollectorCounters* _gc_counters;
-
-  // Statistics for garbage collection
-  GCStats* _gc_stats;
 
   // Initialize the generation.
   Generation(ReservedSpace rs, size_t initial_byte_size);
@@ -167,15 +162,6 @@ class Generation: public CHeapObj<mtGC> {
   // "oop" (initializing the allocated block). If the allocation is
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Generations may keep statistics about collection. This method
-  // updates those statistics. current_generation is the generation
-  // that was most recently collected. This allows the generation to
-  // decide what statistics are valid to collect. For example, the
-  // generation can decide to gather the amount of promoted data if
-  // the collection of the young generation has completed.
-  GCStats* gc_stats() const { return _gc_stats; }
-  virtual void update_gc_stats(Generation* current_generation, bool full) {}
 
   // Printing
   virtual const char* name() const = 0;
