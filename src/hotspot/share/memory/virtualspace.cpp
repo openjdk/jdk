@@ -516,17 +516,15 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
   // The necessary attach point alignment for generated wish addresses.
   // This is needed to increase the chance of attaching for mmap and shmat.
-  const size_t os_attach_point_alignment =
-#ifdef AIX
   // AIX is the only platform that uses System V shm for reserving virtual memory.
   // In this case, the required alignment of the allocated size (64K) and the alignment
   // of possible start points of the memory region (256M) differ.
   // This is not reflected by os_allocation_granularity().
   // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
-      os::vm_page_size() == 4*K ? 4*K : 256*M;
-#else
-      os::vm_allocation_granularity();
-#endif
+  const size_t os_attach_point_alignment =
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+
   const size_t attach_point_alignment = lcm(alignment, os_attach_point_alignment);
 
   char *aligned_heap_base_min_address = (char *)align_up((void *)HeapBaseMinAddress, alignment);
