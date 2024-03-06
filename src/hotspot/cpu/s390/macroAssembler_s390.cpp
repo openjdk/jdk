@@ -3283,7 +3283,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
 
   // Current thread already owns the lock. Just increment recursion count.
   z_asi(Address(monitor_tagged, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 1);
-  z_ltgr(zero, zero); // restore CC
+  z_cgr(zero, zero); // restore CC
 
   bind(done);
 
