@@ -570,8 +570,6 @@ class GrowableBitMap : public BitMap {
   // Copy the region [start, end) of the bitmap
   // Bits in the selected range are copied to a newly allocated map
   bm_word_t* copy_of_range(idx_t start_bit, idx_t end_bit);
-  // Copy the region from the start bit to the end of the map
-  bm_word_t* copy_of_range(idx_t start_bit);
 
  public:
   // Set up and optionally clear the bitmap memory.

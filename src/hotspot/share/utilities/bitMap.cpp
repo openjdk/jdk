@@ -115,7 +115,7 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
   bm_word_t* new_map = derived->allocate(end_word - start_word);
 
   // All words need to be shifted by this amount
-  idx_t shift = bit_in_word(start_bit);
+  idx_t const shift = bit_in_word(start_bit);
   // Bits shifted out by a word need to be passed into the next
   idx_t carry = 0;
 
@@ -130,11 +130,6 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
   }
 
   return new_map;
-}
-
-template <class BitMapWithAllocator>
-bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit) {
-  return copy_of_range(start_bit, size());
 }
 
 template <class BitMapWithAllocator>
