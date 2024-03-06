@@ -367,7 +367,6 @@ public:
     // These enable optimizations that are only partially implemented.  Use
     // debug builds to prevent the code fragments from breaking.
     HeapWord*            _data_location;
-    HeapWord*            _highest_ref;
 #endif  // #ifdef ASSERT
 
 #ifdef ASSERT
