@@ -55,9 +55,7 @@ import javax.swing.JOptionPane;
  * @build PassFailJFrame
  * @run main/manual Collate2DPrintingTest
  */
-public class Collate2DPrintingTest
-        extends Frame implements Doc, Printable {
-
+public class Collate2DPrintingTest implements Doc, Printable {
     private static JComponent createTestUI() {
         HashPrintRequestAttributeSet prSet = new HashPrintRequestAttributeSet();
         PrintService defService = PrintServiceLookup.lookupDefaultPrintService();
@@ -99,11 +97,13 @@ public class Collate2DPrintingTest
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
         main.add(Box.createVerticalGlue());
         main.add(print2D);
+        main.add(Box.createVerticalStrut(4));
         main.add(printMerlin);
         main.add(Box.createVerticalGlue());
         return main;
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex)
             throws PrinterException {
         g.drawString("Page: " + pageIndex, 100, 100);
@@ -114,22 +114,27 @@ public class Collate2DPrintingTest
         }
     }
 
+    @Override
     public DocAttributeSet getAttributes() {
         return null;
     }
 
+    @Override
     public DocFlavor getDocFlavor() {
         return DocFlavor.SERVICE_FORMATTED.PRINTABLE;
     }
 
+    @Override
     public Object getPrintData() {
         return this;
     }
 
+    @Override
     public Reader getReaderForText() {
         return null;
     }
 
+    @Override
     public InputStream getStreamForBytes() {
         return null;
     }

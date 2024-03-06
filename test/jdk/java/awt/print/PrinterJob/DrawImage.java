@@ -46,6 +46,7 @@ import java.awt.print.PrinterJob;
  */
 public class DrawImage {
     private static final int OBJECT_BORDER = 15;
+
     private static final String INSTRUCTIONS =
             "This test will automatically initiate a print\n\n" +
             "Test passes if you get a printout of a gray rectangle\n" +

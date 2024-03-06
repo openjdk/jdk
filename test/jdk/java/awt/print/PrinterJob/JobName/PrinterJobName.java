@@ -37,7 +37,8 @@ import java.awt.print.PrinterJob;
  * @run main/manual PrinterJobName
  */
 public class PrinterJobName implements Printable {
-    private static final String THE_NAME = "Testing the Jobname setting";
+    private static final String THE_NAME = "Testing the Job name setting";
+
     private static final String INSTRUCTIONS =
             "This test prints a page with a banner/job name of\n\n" +
             THE_NAME;

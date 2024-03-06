@@ -46,7 +46,7 @@ import javax.swing.JOptionPane;
  * @build PassFailJFrame
  * @run main/manual InvalidPage
  */
-public class InvalidPage extends Frame implements Printable {
+public class InvalidPage implements Printable {
     private static JComponent createTestUI() {
         JButton b = new JButton("Print");
         b.addActionListener((ae) -> {
@@ -118,7 +118,7 @@ public class InvalidPage extends Frame implements Printable {
             " appear in a different colour, and the output near the edge of\n" +
             " the page may be clipped. This is OK. Hold up both pieces of paper\n" +
             " to the light and confirm that the lines and text (where present)\n" +
-            " are positioned identically on both pages\n" +
+            " are positioned identically on both pages\n\n" +
             " The test fails if the output from the two\n" +
             " pages of a job is aligned differently";
 
@@ -129,6 +129,7 @@ public class InvalidPage extends Frame implements Printable {
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
                 .splitUI(InvalidPage::createTestUI)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
