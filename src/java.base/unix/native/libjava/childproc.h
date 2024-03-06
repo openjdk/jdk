@@ -72,13 +72,6 @@ extern char **environ;
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
 
-/* TODO: Refactor. */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
  */

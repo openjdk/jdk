@@ -31,12 +31,6 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 /* Defines SO_REUSEPORT */
 #ifndef SO_REUSEPORT
 #ifdef __linux__

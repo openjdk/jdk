@@ -37,13 +37,6 @@
 #include "jni_util.h"
 #include "net_util.h"
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-
 /**
  * Creates a SDP socket.
  */

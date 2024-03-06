@@ -40,13 +40,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-/* Initially copied from src/solaris/native/sun/nio/ch/nio_util.h */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 typedef pollset_t pollset_create_func(int maxfd);
 typedef int pollset_destroy_func(pollset_t ps);
 typedef int pollset_ctl_func(pollset_t ps, struct poll_ctl *pollctl_array, int array_length);

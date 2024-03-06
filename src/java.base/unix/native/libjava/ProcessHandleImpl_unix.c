@@ -131,19 +131,6 @@
  */
 #define WTERMSIG_RETURN(status) (WTERMSIG(status) + 0x80)
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
-#define RESTARTABLE_RETURN_PTR(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == NULL) && (errno == EINTR)); \
-} while(0)
-
-
 /* Field id for jString 'command' in java.lang.ProcessHandleImpl.Info */
 jfieldID ProcessHandleImpl_Info_commandID;
 
