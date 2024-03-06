@@ -235,12 +235,6 @@ JNU_GetStaticFieldByName(JNIEnv *env,
  * Miscellaneous utilities used by the class libraries
  */
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 #define IS_NULL(obj) ((obj) == NULL)
 #define JNU_IsNull(env,obj) ((obj) == NULL)
 

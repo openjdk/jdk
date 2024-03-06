@@ -44,6 +44,7 @@
 
 #include "jni.h"
 #include "jni_util.h"
+#include "jni_util_md.h"
 #include "jlong.h"
 #include "jdk_util.h"
 #include "io_util.h"

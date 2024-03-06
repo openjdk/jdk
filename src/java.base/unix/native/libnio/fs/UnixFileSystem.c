@@ -25,6 +25,7 @@
 
 #include "jni.h"
 #include "jni_util.h"
+#include "jni_util_md.h"
 #include "jlong.h"
 
 #include "nio.h"
