@@ -30,7 +30,7 @@ extern "C" {
 static jvmtiEnv *jvmti = nullptr;
 static jrawMonitorID monitor = nullptr;
 static bool is_waiting = false;
- 
+
 static void check_thread_not_interrupted(JNIEnv *jni, int check_idx) {
   jint state = get_thread_state(jvmti, jni, nullptr);
 
@@ -51,7 +51,7 @@ Java_InterruptRawMonitor_waitForCondition(JNIEnv *jni, jclass clazz, jthread thr
     state = get_thread_state(jvmti, jni, thread);
     LOG("main: waitForCondition: target Thread State: (0x%x) %s\n",
         state, TranslateState(state));
-    rml.wait(10); 
+    rml.wait(10);
   }
   state = get_thread_state(jvmti, jni, thread);
   LOG("main: waitForCondition: target Thread State: (0x%x) %s\n\n",

@@ -1640,7 +1640,7 @@ oop java_lang_Thread::holder(oop java_thread) {
 }
 oop java_lang_Thread::interrupt_lock(oop java_thread) {
   return java_thread->obj_field(_interruptLock_offset);
-} 
+}
 
 bool java_lang_Thread::interrupted(oop java_thread) {
   // Make sure the caller can safely access oops.
