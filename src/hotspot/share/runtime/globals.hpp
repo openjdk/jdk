@@ -894,10 +894,6 @@ const int ObjectAlignmentInBytes = 8;
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
                                                                             \
-  product(uintx, ProcessDistributionStride, 4,                              \
-          "Stride through processors when distributing processes")          \
-          range(0, max_juint)                                               \
-                                                                            \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
                                                                             \
