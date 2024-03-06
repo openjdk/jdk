@@ -32,7 +32,7 @@ import sun.awt.windows.WToolkit;
 
 public class PlatformGraphicsInfo {
 
-    private static boolean hasDisplays;
+    private static final boolean hasDisplays;
 
     static {
         loadAWTLibrary();
