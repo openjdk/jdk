@@ -1610,14 +1610,16 @@ public class Attr extends JCTree.Visitor {
     }
 
     public void visitSwitchExpression(JCSwitchExpression tree) {
+        boolean wrongContext = false;
+
         tree.polyKind = (pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly) ?
                 PolyKind.STANDALONE : PolyKind.POLY;
 
         if (tree.polyKind == PolyKind.POLY && resultInfo.pt.hasTag(VOID)) {
             //this means we are returning a poly conditional from void-compatible lambda expression
             resultInfo.checkContext.report(tree, diags.fragment(Fragments.SwitchExpressionTargetCantBeVoid));
-            result = tree.type = types.createErrorType(resultInfo.pt);
-            return;
+            resultInfo = recoveryInfo;
+            wrongContext = true;
         }
 
         ResultInfo condInfo = tree.polyKind == PolyKind.STANDALONE ?
@@ -1655,7 +1657,7 @@ public class Attr extends JCTree.Visitor {
 
         Type owntype = (tree.polyKind == PolyKind.STANDALONE) ? condType(caseTypePositions.toList(), caseTypes.toList()) : pt();
 
-        result = tree.type = check(tree, owntype, KindSelector.VAL, resultInfo);
+        result = tree.type = wrongContext? types.createErrorType(pt()) : check(tree, owntype, KindSelector.VAL, resultInfo);
     }
     //where:
         CheckContext switchExpressionContext(CheckContext checkContext) {

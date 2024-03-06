@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ include lib/JvmFlags.gmk
 # Setup compilation of the main Hotspot native library (libjvm).
 
 JVM_OUTPUTDIR := $(JVM_VARIANT_OUTPUTDIR)/libjvm
-JVM_MAPFILE := $(JVM_OUTPUTDIR)/mapfile
 
 ################################################################################
 # Platform independent setup
@@ -146,12 +145,28 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 # operator new.
 LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
 
+ifeq ($(call isTargetOs, windows), true)
+  ifeq ($(STATIC_LIBS), true)
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
+  else
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  endif
+
+  JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
+endif
+
+ifeq ($(call isTargetOs, linux), true)
+  HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
+
+  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
+endif
+
 ################################################################################
 # Now set up the actual compilation of the main hotspot native library
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     NAME := jvm, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
+    LINK_TYPE := C++, \
     OUTPUT_DIR := $(JVM_LIB_OUTPUTDIR), \
     SRC := $(JVM_SRC_DIRS), \
     EXCLUDES := $(JVM_EXCLUDES), \
@@ -169,6 +184,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_gcc_jvmciCodeInstaller.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_jvmtiTagMap.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_postaloc.cpp := address, \
+    DISABLED_WARNINGS_gcc_shenandoahLock.cpp := stringop-overflow, \
     DISABLED_WARNINGS_gcc_synchronizer.cpp := stringop-overflow, \
     DISABLED_WARNINGS_clang := $(DISABLED_WARNINGS_clang), \
     DISABLED_WARNINGS_clang_arguments.cpp := missing-field-initializers, \
@@ -194,8 +210,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/objs, \
-    MAPFILE := $(JVM_MAPFILE), \
-    USE_MAPFILE_FOR_SYMBOLS := true, \
     STRIPFLAGS := $(JVM_STRIPFLAGS), \
     EMBED_MANIFEST := true, \
     RC_FILEDESC := $(HOTSPOT_VM_DISTRO) $(OPENJDK_TARGET_CPU_BITS)-Bit $(JVM_VARIANT) VM, \
@@ -204,11 +218,47 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     STATIC_LIB_EXCLUDE_OBJS := $(LIBJVM_STATIC_EXCLUDE_OBJS), \
 ))
 
+ifeq ($(call isTargetOs, windows), true)
+  # The following lines create a list of vftable symbols to be filtered out of
+  # the symbol file. Removing this line causes the linker to complain about too
+  # many (> 64K) symbols, so the _guess_ is that this line is here to keep down
+  # the number of exported symbols below that limit.
+  #
+  # Some usages of C++ lambdas require the vftable symbol of classes that use
+  # the lambda type as a template parameter. The usage of those classes won't
+  # link if their vftable symbols are removed. That's why there's an exception
+  # for vftable symbols containing the string 'lambda'.
+  #
+  # A very simple example of a lambda usage that fails if the lambda vftable
+  # symbols are missing in the symbol file:
+  #
+  # #include <functional>
+  # std::function<void()> f = [](){}
+  FILTER_SYMBOLS_AWK_SCRIPT := \
+      '{ \
+        if ($$7 ~ /\?\?_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print "  " $$7; \
+      }'
+
+  # A more correct solution would be to send BUILD_LIBJVM_ALL_OBJS instead of
+  # cd && *.obj, but this will result in very long command lines, which could be
+  # problematic.
+  $(WIN_EXPORT_FILE): $(BUILD_LIBJVM_ALL_OBJS)
+	$(call LogInfo, Generating list of symbols to export from object files)
+	$(call MakeDir, $(@D))
+	$(ECHO) "EXPORTS" > $@.tmp
+	$(CD) $(BUILD_LIBJVM_OBJECT_DIR) && \
+	    $(DUMPBIN) -symbols *$(OBJ_SUFFIX) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u >> $@.tmp
+	$(RM) $@
+	$(MV) $@.tmp $@
+
+  $(BUILD_LIBJVM_TARGET): $(WIN_EXPORT_FILE)
+endif
+
 # Always recompile abstract_vm_version.cpp if libjvm needs to be relinked. This ensures
 # that the internal vm version is updated as it relies on __DATE__ and __TIME__
 # macros.
 ABSTRACT_VM_VERSION_OBJ := $(JVM_OUTPUTDIR)/objs/abstract_vm_version$(OBJ_SUFFIX)
-$(ABSTRACT_VM_VERSION_OBJ): $(filter-out $(ABSTRACT_VM_VERSION_OBJ) $(JVM_MAPFILE), \
+$(ABSTRACT_VM_VERSION_OBJ): $(filter-out $(ABSTRACT_VM_VERSION_OBJ), \
     $(BUILD_LIBJVM_TARGET_DEPS))
 
 ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
@@ -235,11 +285,6 @@ endif
 #             In hotspot this is caused by throw() in declaration of new() in nmethod.hpp.
 # 1540-1090 : (I) The destructor of "..." might not be called.
 # 1540-1639 : (I) The behavior of long type bit fields has changed ...
-
-# Include mapfile generation. It relies on BUILD_LIBJVM_ALL_OBJS which is only
-# defined after the above call to BUILD_LIBJVM. Mapfile will be generated
-# after all object files are built, but before the jvm library is linked.
-include lib/JvmMapfile.gmk
 
 TARGETS += $(BUILD_LIBJVM)
 

@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
@@ -128,26 +127,17 @@ void ShenandoahCodeRoots::disarm_nmethods() {
 class ShenandoahNMethodUnlinkClosure : public NMethodClosure {
 private:
   bool                      _unloading_occurred;
-  volatile bool             _failed;
   ShenandoahHeap* const     _heap;
   BarrierSetNMethod* const  _bs;
-
-  void set_failed() {
-    Atomic::store(&_failed, true);
-  }
 
 public:
   ShenandoahNMethodUnlinkClosure(bool unloading_occurred) :
       _unloading_occurred(unloading_occurred),
-      _failed(false),
       _heap(ShenandoahHeap::heap()),
       _bs(ShenandoahBarrierSet::barrier_set()->barrier_set_nmethod()) {}
 
   virtual void do_nmethod(nmethod* nm) {
     assert(_heap->is_concurrent_weak_root_in_progress(), "Only this phase");
-    if (failed()) {
-      return;
-    }
 
     ShenandoahNMethod* nm_data = ShenandoahNMethod::gc_data(nm);
     assert(!nm_data->is_unregistered(), "Should not see unregistered entry");
@@ -170,27 +160,19 @@ public:
     }
 
     // Clear compiled ICs and exception caches
-    if (!nm->unload_nmethod_caches(_unloading_occurred)) {
-      set_failed();
-    }
-  }
-
-  bool failed() const {
-    return Atomic::load(&_failed);
+    nm->unload_nmethod_caches(_unloading_occurred);
   }
 };
 
 class ShenandoahUnlinkTask : public WorkerTask {
 private:
   ShenandoahNMethodUnlinkClosure      _cl;
-  ICRefillVerifier*                   _verifier;
   ShenandoahConcurrentNMethodIterator _iterator;
 
 public:
-  ShenandoahUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
+  ShenandoahUnlinkTask(bool unloading_occurred) :
     WorkerTask("Shenandoah Unlink NMethods"),
     _cl(unloading_occurred),
-    _verifier(verifier),
     _iterator(ShenandoahCodeRoots::table()) {
     MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     _iterator.nmethods_do_begin();
@@ -202,35 +184,15 @@ public:
   }
 
   virtual void work(uint worker_id) {
-    ICRefillVerifierMark mark(_verifier);
     _iterator.nmethods_do(&_cl);
-  }
-
-  bool success() const {
-    return !_cl.failed();
   }
 };
 
 void ShenandoahCodeRoots::unlink(WorkerThreads* workers, bool unloading_occurred) {
   assert(ShenandoahHeap::heap()->unload_classes(), "Only when running concurrent class unloading");
 
-  for (;;) {
-    ICRefillVerifier verifier;
-
-    {
-      ShenandoahUnlinkTask task(unloading_occurred, &verifier);
-      workers->run_task(&task);
-      if (task.success()) {
-        return;
-      }
-    }
-
-    // Cleaning failed because we ran out of transitional IC stubs,
-    // so we have to refill and try again. Refilling requires taking
-    // a safepoint, so we temporarily leave the suspendible thread set.
-    SuspendibleThreadSetLeaver sts;
-    InlineCacheBuffer::refill_ic_stubs();
-  }
+  ShenandoahUnlinkTask task(unloading_occurred);
+  workers->run_task(&task);
 }
 
 void ShenandoahCodeRoots::purge() {

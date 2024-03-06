@@ -44,9 +44,11 @@
 
  public:
   // Code used by cmpFastLock and cmpFastUnlock mach instructions in .ad file.
-  // See full description in macroAssembler_riscv.cpp.
   void fast_lock(Register object, Register box, Register tmp1, Register tmp2, Register tmp3);
   void fast_unlock(Register object, Register box, Register tmp1, Register tmp2);
+  // Code used by cmpFastLockLightweight and cmpFastUnlockLightweight mach instructions in .ad file.
+  void fast_lock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
+  void fast_unlock_lightweight(Register object, Register tmp1, Register tmp2, Register tmp3);
 
   void string_compare(Register str1, Register str2,
                       Register cnt1, Register cnt2, Register result,
@@ -92,8 +94,7 @@
   void arrays_hashcode_elload(Register dst, Address src, BasicType eltype);
 
   void string_equals(Register r1, Register r2,
-                     Register result, Register cnt1,
-                     int elem_size);
+                     Register result, Register cnt1);
 
   // refer to conditional_branches and float_conditional_branches
   static const int bool_test_bits = 3;
@@ -188,8 +189,7 @@
   void expand_bits_l_v(Register dst, Register src, Register mask);
 
   void string_equals_v(Register r1, Register r2,
-                       Register result, Register cnt1,
-                       int elem_size);
+                       Register result, Register cnt1);
 
   void arrays_equals_v(Register r1, Register r2,
                        Register result, Register cnt1,

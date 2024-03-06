@@ -540,18 +540,6 @@ public class BasicFloat
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
     private static void fail(String problem,
                              FloatBuffer xb, FloatBuffer yb,
                              float x, float y) {

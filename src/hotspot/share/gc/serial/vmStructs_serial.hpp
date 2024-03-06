@@ -32,6 +32,13 @@
 #define VM_STRUCTS_SERIALGC(nonstatic_field,                                                                \
                             volatile_nonstatic_field,                                                       \
                             static_field)                                                                   \
+  nonstatic_field(Generation,                        _reserved,              MemRegion)                     \
+  nonstatic_field(Generation,                        _virtual_space,         VirtualSpace)                  \
+  nonstatic_field(Generation,                        _stat_record,           Generation::StatRecord)        \
+                                                                                                            \
+  nonstatic_field(Generation::StatRecord,            invocations,            int)                           \
+  nonstatic_field(Generation::StatRecord,            accumulated_time,       elapsedTimer)                  \
+                                                                                                            \
   nonstatic_field(TenuredGeneration,                 _rs,                    CardTableRS*)                  \
   nonstatic_field(TenuredGeneration,                 _bts,                   SerialBlockOffsetSharedArray*) \
   nonstatic_field(TenuredGeneration,                 _shrink_factor,         size_t)                        \
@@ -61,6 +68,8 @@
 #define VM_TYPES_SERIALGC(declare_type,                                       \
                           declare_toplevel_type,                              \
                           declare_integer_type)                               \
+  declare_toplevel_type(Generation)                                           \
+  declare_toplevel_type(Generation::StatRecord)                               \
   declare_type(SerialHeap,                   CollectedHeap)                   \
   declare_type(TenuredGeneration,            Generation)                      \
   declare_type(TenuredSpace,                 ContiguousSpace)                 \
@@ -73,6 +82,8 @@
   declare_toplevel_type(SerialBlockOffsetTable)
 
 #define VM_INT_CONSTANTS_SERIALGC(declare_constant,                           \
-                                  declare_constant_with_value)
+                                  declare_constant_with_value)                \
+  declare_constant(Generation::LogOfGenGrain)                                 \
+  declare_constant(Generation::GenGrain)
 
 #endif // SHARE_GC_SERIAL_VMSTRUCTS_SERIAL_HPP

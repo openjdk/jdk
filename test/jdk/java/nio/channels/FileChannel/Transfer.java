@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4434723 4482726 4559072 4795550 5081340 5103988 6984545
+ * @bug 4434723 4482726 4559072 4795550 5081340 5103988 6984545 8325382
  * @summary Test FileChannel.transferFrom and transferTo (use -Dseed=X to set PRNG seed)
  * @library ..
  * @library /test/lib
@@ -48,11 +48,13 @@ import java.nio.channels.Pipe;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.spi.SelectorProvider;
+import java.nio.file.Files;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import jdk.test.lib.RandomFactory;
 
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 public class Transfer {
@@ -155,6 +157,33 @@ public class Transfer {
             source.close();
 
             f.delete();
+        }
+    }
+
+    @Test
+    public void transferToNoThrow() throws IOException { // for bug 8325382
+        File source = File.createTempFile("before", "after");
+        source.deleteOnExit();
+
+        CharSequence csq = "Reality is greater than the sum of its parts.";
+        Files.writeString(source.toPath(), csq);
+        final long length = csq.length();
+        Assert.assertEquals(source.length(), length);
+
+        File target = File.createTempFile("before", "after");
+        target.deleteOnExit();
+
+        try (FileInputStream in = new FileInputStream(source);
+             FileOutputStream out = new FileOutputStream(target);
+             FileChannel chSource = in.getChannel();
+             FileChannel chTarget = out.getChannel()) {
+            // The count of bytes requested to transfer must exceed
+            // FileChannelImpl.MAPPED_TRANSFER_THRESHOLD which is
+            // currently 16384
+            long n = chSource.transferTo(length, 16385, chTarget);
+
+            // At the end of the input so no bytes should be transferred
+            Assert.assertEquals(n, 0);
         }
     }
 

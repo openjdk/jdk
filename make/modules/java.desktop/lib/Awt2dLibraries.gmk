@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -506,8 +506,10 @@ else
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
    # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    # maybe-uninitialized required for GCC 8 builds. Not required for GCC 9+.
+   # calloc-transposed-args required for GCC 14 builds. (fixed upstream in Harfbuzz 032c931e1c0cfb20f18e5acb8ba005775242bd92)
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type \
-       expansion-to-defined dangling-reference maybe-uninitialized
+       expansion-to-defined dangling-reference maybe-uninitialized \
+       calloc-transposed-args
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
@@ -560,9 +562,9 @@ LIBFONTMANAGER_CFLAGS += $(X_CFLAGS) -DLE_STANDALONE -DHEADLESS
 #   libawt_xawt). See JDK-8196516 for details.
 $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     NAME := fontmanager, \
+    LINK_TYPE := C++, \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
-    TOOLCHAIN := TOOLCHAIN_LINK_CXX, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \

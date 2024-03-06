@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,16 +51,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.spi.LocaleNameProvider;
 import java.util.stream.Stream;
 
+import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
-import sun.security.action.GetPropertyAction;
 import sun.util.locale.BaseLocale;
 import sun.util.locale.InternalLocaleBuilder;
 import sun.util.locale.LanguageTag;
 import sun.util.locale.LocaleExtensions;
 import sun.util.locale.LocaleMatcher;
-import sun.util.locale.LocaleObjectCache;
 import sun.util.locale.LocaleSyntaxException;
 import sun.util.locale.LocaleUtils;
 import sun.util.locale.ParseStatus;
@@ -987,29 +986,20 @@ public final class Locale implements Cloneable, Serializable {
             if (locale != null) {
                 return locale;
             }
-            return Cache.LOCALECACHE.get(baseloc);
+            return LOCALE_CACHE.computeIfAbsent(baseloc, Locale::createLocale);
         } else {
             LocaleKey key = new LocaleKey(baseloc, extensions);
-            return Cache.LOCALECACHE.get(key);
+            return LOCALE_CACHE.computeIfAbsent(key, Locale::createLocale);
         }
     }
 
-    private static class Cache extends LocaleObjectCache<Object, Locale> {
-
-        private static final Cache LOCALECACHE = new Cache();
-
-        private Cache() {
-        }
-
-        @Override
-        protected Locale createObject(Object key) {
-            if (key instanceof BaseLocale) {
-                return new Locale((BaseLocale)key, null);
-            } else {
-                LocaleKey lk = (LocaleKey)key;
-                return new Locale(lk.base, lk.exts);
-            }
-        }
+    private static final ReferencedKeyMap<Object, Locale> LOCALE_CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
+    private static Locale createLocale(Object key) {
+        return switch (key) {
+            case BaseLocale base -> new Locale(base, null);
+            case LocaleKey lk -> new Locale(lk.base, lk.exts);
+            default -> throw new InternalError("should not happen");
+        };
     }
 
     private static final class LocaleKey {
