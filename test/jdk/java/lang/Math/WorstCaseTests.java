@@ -500,7 +500,6 @@ public class WorstCaseTests {
         return failures;
     }
 
-
     private static int testAtan2Case(double input1, double input2, double expected) {
         int failures = 0;
          // Cannot represent exact result, allow 1 additional ulp on top of documented bound.
@@ -616,7 +615,6 @@ public class WorstCaseTests {
 
         return failures;
     }
-
 
     private static int testHypotCase(double input1, double input2, double expected) {
         int failures = 0;
