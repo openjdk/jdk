@@ -28,9 +28,32 @@
 #include "opto/node.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/traceAutoVectorizationTag.hpp"
+#include "utilities/pair.hpp"
 
 // Code in this file and the vectorization.cpp contains shared logics and
 // utilities for C2's loop auto-vectorization.
+
+class VStatus : public StackObj {
+private:
+  const char* _failure_reason;
+
+  VStatus(const char* failure_reason) : _failure_reason(failure_reason) {}
+
+public:
+  static VStatus make_success() { return VStatus(nullptr); }
+
+  static VStatus make_failure(const char* failure_reason) {
+    assert(failure_reason != nullptr, "must have reason");
+    return VStatus(failure_reason);
+  }
+
+  bool is_success() const { return _failure_reason == nullptr; }
+
+  const char* failure_reason() const {
+    assert(!is_success(), "only failures have reason");
+    return _failure_reason;
+  }
+};
 
 #ifndef PRODUCT
 // Access to TraceAutoVectorization tags
@@ -61,7 +84,6 @@ private:
 
   NOT_PRODUCT(VTrace _vtrace;)
 
-  static constexpr char const* SUCCESS                    = "success";
   static constexpr char const* FAILURE_ALREADY_VECTORIZED = "loop already vectorized";
   static constexpr char const* FAILURE_UNROLL_ONLY        = "loop only wants to be unrolled";
   static constexpr char const* FAILURE_VECTOR_WIDTH       = "vector_width must be power of 2";
@@ -108,11 +130,27 @@ public:
   const VTrace& vtrace()      const { return _vtrace; }
 
   bool is_trace_preconditions() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::PRECONDITIONS);
+  }
+
+  bool is_trace_loop_analyzer() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::LOOP_ANALYZER);
+  }
+
+  bool is_trace_memory_slices() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::MEMORY_SLICES);
+  }
+
+  bool is_trace_body() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::BODY);
+  }
+
+  bool is_trace_vector_element_type() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
   }
 
   bool is_trace_pointer_analysis() const {
-    return vtrace().is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
+    return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
 #endif
 
@@ -128,7 +166,7 @@ public:
   bool check_preconditions();
 
 private:
-  const char* check_preconditions_helper();
+  VStatus check_preconditions_helper();
 };
 
 // Optimization to keep allocation of large arrays in AutoVectorization low.
@@ -166,6 +204,292 @@ private:
   }
 };
 
+// Submodule of VLoopAnalyzer.
+// Identify and mark all reductions in the loop.
+class VLoopReductions : public StackObj {
+private:
+  typedef const Pair<const Node*, int> PathEnd;
+
+  const VLoop& _vloop;
+  VectorSet _loop_reductions;
+
+public:
+  VLoopReductions(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _loop_reductions(arena){};
+
+  NONCOPYABLE(VLoopReductions);
+
+private:
+  // Search for a path P = (n_1, n_2, ..., n_k) such that:
+  // - original_input(n_i, input) = n_i+1 for all 1 <= i < k,
+  // - path(n) for all n in P,
+  // - k <= max, and
+  // - there exists a node e such that original_input(n_k, input) = e and end(e).
+  // Return <e, k>, if P is found, or <nullptr, -1> otherwise.
+  // Note that original_input(n, i) has the same behavior as n->in(i) except
+  // that it commutes the inputs of binary nodes whose edges have been swapped.
+  template <typename NodePredicate1, typename NodePredicate2>
+  static PathEnd find_in_path(const Node* n1, uint input, int max,
+                              NodePredicate1 path, NodePredicate2 end) {
+    const PathEnd no_path(nullptr, -1);
+    const Node* current = n1;
+    int k = 0;
+    for (int i = 0; i <= max; i++) {
+      if (current == nullptr) {
+        return no_path;
+      }
+      if (end(current)) {
+        return PathEnd(current, k);
+      }
+      if (!path(current)) {
+        return no_path;
+      }
+      current = original_input(current, input);
+      k++;
+    }
+    return no_path;
+  }
+
+public:
+  // Find and mark reductions in a loop. Running mark_reductions() is similar to
+  // querying is_reduction(n) for every node in the loop, but stricter in
+  // that it assumes counted loops and requires that reduction nodes are not
+  // used within the loop except by their reduction cycle predecessors.
+  void mark_reductions();
+
+  // Whether n is a reduction operator and part of a reduction cycle.
+  // This function can be used for individual queries outside auto-vectorization,
+  // e.g. to inform matching in target-specific code. Otherwise, the
+  // almost-equivalent but faster mark_reductions() is preferable.
+  static bool is_reduction(const Node* n);
+
+  // Whether n is marked as a reduction node.
+  bool is_marked_reduction(const Node* n) const { return _loop_reductions.test(n->_idx); }
+
+  bool is_marked_reduction_loop() const { return !_loop_reductions.is_empty(); }
+
+  // Are s1 and s2 reductions with a data path between them?
+  bool is_marked_reduction_pair(Node* s1, Node* s2) const;
+
+private:
+  // Whether n is a standard reduction operator.
+  static bool is_reduction_operator(const Node* n);
+
+  // Whether n is part of a reduction cycle via the 'input' edge index. To bound
+  // the search, constrain the size of reduction cycles to LoopMaxUnroll.
+  static bool in_reduction_cycle(const Node* n, uint input);
+
+  // Reference to the i'th input node of n, commuting the inputs of binary nodes
+  // whose edges have been swapped. Assumes n is a commutative operation.
+  static Node* original_input(const Node* n, uint i);
+};
+
+// Submodule of VLoopAnalyzer.
+// Find the memory slices in the loop.
+class VLoopMemorySlices : public StackObj {
+private:
+  const VLoop& _vloop;
+
+  GrowableArray<PhiNode*> _heads;
+  GrowableArray<MemNode*> _tails;
+
+public:
+  VLoopMemorySlices(Arena* arena, const VLoop& vloop) :
+    _vloop(vloop),
+    _heads(arena, 8, 0, nullptr),
+    _tails(arena, 8, 0, nullptr) {};
+  NONCOPYABLE(VLoopMemorySlices);
+
+  void find_memory_slices();
+
+  const GrowableArray<PhiNode*>& heads() const { return _heads; }
+  const GrowableArray<MemNode*>& tails() const { return _tails; }
+
+  // Get all memory nodes of a slice, in reverse order
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*>& slice) const;
+
+  bool same_memory_slice(MemNode* m1, MemNode* m2) const;
+
+#ifndef PRODUCT
+  void print() const;
+#endif
+};
+
+// Submodule of VLoopAnalyzer.
+// Finds all nodes in the body, and creates a mapping node->_idx to a body_idx.
+// This mapping is used so that subsequent datastructures sizes only grow with
+// the body size, and not the number of all nodes in the compilation.
+class VLoopBody : public StackObj {
+private:
+  static constexpr char const* FAILURE_NODE_NOT_ALLOWED = "encontered unhandled node";
+
+  const VLoop& _vloop;
+
+  // Mapping body_idx -> Node*
+  GrowableArray<Node*> _body;
+
+  // Mapping node->_idx -> body_idx
+  // Can be very large, and thus lives in VSharedData
+  GrowableArray<int>& _body_idx;
+
+public:
+  VLoopBody(Arena* arena, const VLoop& vloop, VSharedData& vshared) :
+    _vloop(vloop),
+    _body(arena, vloop.estimated_body_length(), 0, nullptr),
+    _body_idx(vshared.node_idx_to_loop_body_idx()) {}
+
+  NONCOPYABLE(VLoopBody);
+
+  VStatus construct();
+  const GrowableArray<Node*>& body() const { return _body; }
+  NOT_PRODUCT( void print() const; )
+
+  int bb_idx(const Node* n) const {
+    assert(_vloop.in_bb(n), "must be in basic block");
+    return _body_idx.at(n->_idx);
+  }
+
+private:
+  void set_bb_idx(Node* n, int i) {
+    _body_idx.at_put_grow(n->_idx, i);
+  }
+};
+
+// Submodule of VLoopAnalyzer.
+// Compute the vector element type for every node in the loop body.
+// We need to do this to be able to vectorize the narrower integer
+// types (byte, char, short). In the C2 IR, their operations are
+// done with full int type with 4 byte precision (e.g. AddI, MulI).
+// Example:  char a,b,c;  a = (char)(b + c);
+// However, if we can prove the the upper bits are only truncated,
+// and the lower bits for the narrower type computed correctly, we
+// can compute the operations in the narrower type directly (e.g we
+// perform the AddI or MulI with 1 or 2 bytes). This allows us to
+// fit more operations in a vector, and can remove the otherwise
+// required conversion (int <-> narrower type).
+// We compute the types backwards (use-to-def): If all use nodes
+// only require the lower bits, then the def node can do the operation
+// with only the lower bits, and we propagate the narrower type to it.
+class VLoopTypes : public StackObj {
+private:
+  const VLoop&     _vloop;
+  const VLoopBody& _body;
+
+  // bb_idx -> vector element type
+  GrowableArray<const Type*> _velt_type;
+
+public:
+  VLoopTypes(Arena* arena,
+             const VLoop& vloop,
+             const VLoopBody& body) :
+    _vloop(vloop),
+    _body(body),
+    _velt_type(arena, vloop.estimated_body_length(), 0, nullptr) {}
+  NONCOPYABLE(VLoopTypes);
+
+  void compute_vector_element_type();
+  NOT_PRODUCT( void print() const; )
+
+  const Type* velt_type(const Node* n) const {
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    const Type* t = _velt_type.at(_body.bb_idx(n));
+    assert(t != nullptr, "must have type");
+    return t;
+  }
+
+  BasicType velt_basic_type(const Node* n) const {
+    return velt_type(n)->array_element_basic_type();
+  }
+
+  int data_size(Node* s) const {
+    int bsize = type2aelembytes(velt_basic_type(s));
+    assert(bsize != 0, "valid size");
+    return bsize;
+  }
+
+  bool same_velt_type(Node* n1, Node* n2) const {
+    const Type* vt1 = velt_type(n1);
+    const Type* vt2 = velt_type(n2);
+    if (vt1->basic_type() == T_INT && vt2->basic_type() == T_INT) {
+      // Compare vectors element sizes for integer types.
+      return data_size(n1) == data_size(n2);
+    }
+    return vt1 == vt2;
+  }
+
+  int vector_width(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return MIN2(ABS(_vloop.iv_stride()), Matcher::max_vector_size(bt));
+  }
+
+  int vector_width_in_bytes(const Node* n) const {
+    BasicType bt = velt_basic_type(n);
+    return vector_width(n) * type2aelembytes(bt);
+  }
+
+private:
+  void set_velt_type(Node* n, const Type* t) {
+    assert(t != nullptr, "cannot set nullptr");
+    assert(_vloop.in_bb(n), "only call on nodes in loop");
+    _velt_type.at_put(_body.bb_idx(n), t);
+  }
+
+  // Smallest type containing range of values
+  const Type* container_type(Node* n) const;
+};
+
+// Analyze the loop in preparation for auto-vectorization. This class is
+// deliberately structured into many submodules, which are as independent
+// as possible, though some submodules do require other submodules.
+class VLoopAnalyzer : StackObj {
+private:
+  static constexpr char const* FAILURE_NO_MAX_UNROLL         = "slp max unroll analysis required";
+  static constexpr char const* FAILURE_NO_REDUCTION_OR_STORE = "no reduction and no store in loop";
+
+  const VLoop&         _vloop;
+
+  // Arena for all submodules
+  Arena                _arena;
+
+  // If all submodules are setup successfully, we set this flag at the
+  // end of the constructor
+  bool                 _success;
+
+  // Submodules
+  VLoopReductions      _reductions;
+  VLoopMemorySlices    _memory_slices;
+  VLoopBody            _body;
+  VLoopTypes           _types;
+
+public:
+  VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
+    _vloop(vloop),
+    _arena(mtCompiler),
+    _success(false),
+    _reductions      (&_arena, vloop),
+    _memory_slices   (&_arena, vloop),
+    _body            (&_arena, vloop, vshared),
+    _types           (&_arena, vloop, _body)
+  {
+    _success = setup_submodules();
+  }
+  NONCOPYABLE(VLoopAnalyzer);
+
+  bool success() const { return _success; }
+
+  // Read-only accessors for submodules
+  const VLoop& vloop()                           const { return _vloop; }
+  const VLoopReductions& reductions()            const { return _reductions; }
+  const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
+  const VLoopBody& body()                        const { return _body; }
+  const VLoopTypes& types()                      const { return _types; }
+
+private:
+  bool setup_submodules();
+  VStatus setup_submodules_helper();
+};
+
 // A vectorization pointer (VPointer) has information about an address for
 // dependence checking and vector alignment. It's usually bound to a memory
 // operation in a counted loop for vectorizable analysis.
@@ -190,10 +514,9 @@ class VPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for vpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for vpointer trace
 
-  const VLoop&    vloop() const { return _vloop; }
-  PhaseIdealLoop* phase() const { return vloop().phase(); }
-  IdealLoopTree*  lpt() const   { return vloop().lpt(); }
-  PhiNode*        iv() const    { return vloop().iv(); }
+  PhaseIdealLoop* phase() const { return _vloop.phase(); }
+  IdealLoopTree*  lpt() const   { return _vloop.lpt(); }
+  PhiNode*        iv() const    { return _vloop.iv(); }
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -266,7 +589,7 @@ class VPointer : public ArenaObj {
   bool overlap_possible_with_any_in(Node_List* p) {
     for (uint k = 0; k < p->size(); k++) {
       MemNode* mem = p->at(k)->as_Mem();
-      VPointer p_mem(mem, vloop());
+      VPointer p_mem(mem, _vloop);
       // Only if we know that we have Less or Greater can we
       // be sure that there can never be an overlap between
       // the two memory regions.

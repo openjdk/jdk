@@ -429,7 +429,7 @@ public interface JavaLangAccess {
      * Prepends constant and the stringly representation of value into buffer,
      * given the coder and final index. Index is measured in chars, not in bytes!
      */
-    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value, String prefix);
+    long stringConcatHelperPrepend(long indexCoder, byte[] buf, String value);
 
     /**
      * Get the string concat initial coder
