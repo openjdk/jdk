@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -34,7 +35,6 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
 /*
@@ -76,7 +76,7 @@ public class PrintTranslatedFont extends Frame {
         TextCanvas c = new TextCanvas();
         add("Center", c);
 
-        JButton b = new JButton("Print");
+        Button b = new Button("Print");
         add("South", b);
         b.addActionListener(e -> {
             PrinterJob pj = PrinterJob.getPrinterJob();
@@ -97,7 +97,7 @@ public class PrintTranslatedFont extends Frame {
         pack();
     }
 
-    static class TextCanvas extends Panel implements Printable {
+    private static class TextCanvas extends Panel implements Printable {
         @Override
         public void paint(Graphics g) {
             Graphics2D g2d = (Graphics2D) g;
@@ -116,7 +116,7 @@ public class PrintTranslatedFont extends Frame {
             return Printable.PAGE_EXISTS;
         }
 
-        public void paint(Graphics2D g2d) {
+        private void paint(Graphics2D g2d) {
             Font f = new Font("Dialog", Font.PLAIN, 20);
             int tx = 20;
             int ty = 20;
@@ -140,6 +140,7 @@ public class PrintTranslatedFont extends Frame {
             g2d.drawLine(posx + tx, posy + ty + 2, posx + tx + sw, posy + ty + 2);
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(450, 250);
         }

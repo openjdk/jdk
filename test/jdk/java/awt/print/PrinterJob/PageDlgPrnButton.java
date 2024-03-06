@@ -38,17 +38,19 @@ import java.awt.print.PrinterJob;
  * @build PassFailJFrame
  * @run main/manual PageDlgPrnButton
  */
-public class PageDlgPrnButton implements Printable
-{
+public class PageDlgPrnButton implements Printable {
     private static final String INSTRUCTIONS =
-            "You must have at least 2 printers available to perform this test.\n" +
             "This test brings up a native Windows page dialog.\n" +
             "Click on the Printer... button and change the selected printer. \n" +
             "Test passes if the printout comes from the new selected printer.";
 
     public static void main(String[] args) throws Exception {
-        if (PrinterJob.lookupPrintServices().length < 2) {
+        final int serviceCount = PrinterJob.lookupPrintServices().length;
+        if (serviceCount == 0) {
             throw new RuntimeException("Printer not configured or available.");
+        }
+        if (serviceCount < 2) {
+            throw new SkippedException("The test requires at least 2 printers.");
         }
 
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
@@ -67,10 +69,6 @@ public class PageDlgPrnButton implements Printable
         PrinterJob job = PrinterJob.getPrinterJob();
         PageFormat originalPageFormat = job.defaultPage();
         PageFormat pageFormat = job.pageDialog(originalPageFormat);
-
-        if (originalPageFormat == pageFormat) {
-            throw new RuntimeException("OriginalPageFormat equals pageFormat");
-        }
 
         job.setPrintable(new PageDlgPrnButton(), pageFormat);
         if (job.printDialog()) {

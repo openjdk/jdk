@@ -39,12 +39,13 @@ import javax.swing.JOptionPane;
  * @bug 4396835
  * @summary Compound font string not printing.
  * @key printer
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PrintCompoundString
  */
 public class PrintCompoundString implements Printable {
     private static final String STR = "Test string compound printing \u2203\u2200\u2211";
+
     private static final String INSTRUCTIONS =
             "This test should print following text\n\n" +
             STR +"\n\n" +

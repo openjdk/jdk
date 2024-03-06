@@ -45,6 +45,7 @@ import javax.swing.JOptionPane;
  */
 public class PrintParenString implements Printable {
     private static final String STR = "String containing unclosed parenthesis (.";
+
     private static final String INSTRUCTIONS =
             "This test should print a page with following text\n\n" +
             STR + "\n\n" +

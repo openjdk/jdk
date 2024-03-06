@@ -119,7 +119,7 @@ public class PrintNullString extends Frame {
             return PAGE_EXISTS;
         }
 
-        public void paint(Graphics2D g2d) {
+        private void paint(Graphics2D g2d) {
             // API 1: null & empty drawString(String, int, int);
             try {
                 g2d.drawString(nullStr, 20, 40);
@@ -173,6 +173,7 @@ public class PrintNullString extends Frame {
             }
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(450, 250);
         }
