@@ -80,7 +80,9 @@ public class DisposeInActionEventTest {
                     .build()
                     .awaitAndCheck();
         } finally {
-            systemTray.remove(trayIcon);
+            if (systemTray != null) {
+                systemTray.remove(trayIcon);
+            }
         }
     }
 
