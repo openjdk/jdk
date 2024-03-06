@@ -48,7 +48,6 @@ import java.awt.print.PrinterJob;
  * @run main/manual PageSetupDialog
  */
 public class PageSetupDialog extends Frame implements Printable {
-
     PrinterJob myPrinterJob;
     PageFormat myPageFormat;
     Label pw, ph, pglm, pgiw, pgrm, pgtm, pgih, pgbm;
@@ -200,8 +199,8 @@ public class PageSetupDialog extends Frame implements Printable {
         pack();
     }
 
+    @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
-
         if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
@@ -229,13 +228,13 @@ public class PageSetupDialog extends Frame implements Printable {
     }
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
                 .testUI(PageSetupDialog::new)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)

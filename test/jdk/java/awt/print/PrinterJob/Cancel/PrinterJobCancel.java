@@ -44,10 +44,9 @@ public class PrinterJobCancel extends Thread implements Printable {
     private final boolean okayed;
     private static final String INSTRUCTIONS =
             "Test that print job cancellation works.\n\n" +
-            "This test starts after clicking OK / Print button, while the job is\n" +
-            "progress automatically cancels the print job.\n" +
-            "You should see a message on System.out that the job\n" +
-            "was properly cancelled.";
+            "This test starts after clicking OK / Print button.\n" +
+            "While the print job is in progress, the test automatically cancels it.\n" +
+            "The test will complete automatically.";
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
@@ -65,9 +64,8 @@ public class PrinterJobCancel extends Thread implements Printable {
             pjc.start();
             Thread.sleep(5000);
             pjc.pj.cancel();
-        }
-        else {
-            PassFailJFrame.forceFail("User cancelled");
+        } else {
+            PassFailJFrame.forceFail("User cancelled printing");
         }
         passFailJFrame.awaitAndCheck();
     }
@@ -89,8 +87,7 @@ public class PrinterJobCancel extends Thread implements Printable {
             PassFailJFrame.forcePass();
         } catch (PrinterException prex) {
             prex.printStackTrace();
-            PassFailJFrame.forceFail("This is wrong .. we shouldn't be here, " +
-                                     "Looks like a test failure");
+            PassFailJFrame.forceFail("Unexpected PrinterException caught:" + prex.getMessage());
         } finally {
             System.out.println("DONE PRINTING");
             if (!cancelWorked) {
@@ -99,8 +96,8 @@ public class PrinterJobCancel extends Thread implements Printable {
         }
     }
 
+    @Override
     public int print(Graphics g, PageFormat pagef, int pidx) {
-
         if (pidx > 5) {
             return (Printable.NO_SUCH_PAGE);
         }
@@ -108,7 +105,6 @@ public class PrinterJobCancel extends Thread implements Printable {
         Graphics2D g2d = (Graphics2D) g;
         g2d.translate(pagef.getImageableX(), pagef.getImageableY());
         g2d.setColor(Color.black);
-
         g2d.drawString(("This is page" + (pidx + 1)), 60, 80);
         // Need to slow things down a bit .. important not to try this
         // on the event dispatching thread of course.

@@ -70,8 +70,8 @@ public class PrintAllFonts implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 
+    @Override
     public int print(Graphics g, PageFormat pf, int pageIndex) {
-
         if (fontNum >= allFonts.length && pageIndex > thisPage) {
             return NO_SUCH_PAGE;
         }

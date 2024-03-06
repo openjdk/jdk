@@ -48,7 +48,6 @@ import java.awt.print.PrinterJob;
  */
 public class RasterTest extends Frame implements ActionListener {
     private final RasterCanvas c;
-
     private static final String INSTRUCTIONS =
             "This test uses rendering operations which force the implementation\n" +
             "to print the page as a raster\n" +
@@ -59,7 +58,6 @@ public class RasterTest extends Frame implements ActionListener {
             "subtle color changes.";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
@@ -101,9 +99,8 @@ public class RasterTest extends Frame implements ActionListener {
     }
 
     private static class RasterCanvas extends Canvas implements Printable {
-
+        @Override
         public int print(Graphics g, PageFormat pgFmt, int pgIndex) {
-
             if (pgIndex > 0) {
                 return Printable.NO_SUCH_PAGE;
             }
@@ -115,15 +112,12 @@ public class RasterTest extends Frame implements ActionListener {
             return Printable.PAGE_EXISTS;
         }
 
+        @Override
         public void paint(Graphics g) {
             doPaint(g);
         }
 
-        public void paintComponent(Graphics g) {
-            doPaint(g);
-        }
-
-        public void doPaint(Graphics g) {
+        private void doPaint(Graphics g) {
             BufferedImage bimg = new BufferedImage(200, 200,
                     BufferedImage.TYPE_INT_ARGB);
             Graphics ig = bimg.getGraphics();
@@ -147,6 +141,7 @@ public class RasterTest extends Frame implements ActionListener {
             g2.fillRect(10, 240, 200, 200);
         }
 
+        @Override
         public Dimension getPreferredSize() {
             return new Dimension(500, 500);
         }

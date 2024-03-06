@@ -49,7 +49,6 @@ import javax.swing.JOptionPane;
  * @run main/manual ValidatePage
  */
 public class ValidatePage extends Frame implements Printable {
-
     PrinterJob myPrinterJob;
     PageFormat myPageFormat;
     Label pw, ph, pglm, pgrm, pgiw, pgih, pgtm, pgbm;
@@ -64,7 +63,7 @@ public class ValidatePage extends Frame implements Printable {
     Label myImageableHeightLabel;
     Label myOrientationLabel;
 
-    protected void displayPageFormatAttributes() {
+    private void displayPageFormatAttributes() {
         myWidthLabel.setText("Format Width = " + drnd(myPageFormat.getWidth()));
         myHeightLabel.setText("Format Height = " + drnd(myPageFormat.getHeight()));
         myImageableXLabel.setText("Format Left Margin = " + drnd(myPageFormat.getImageableX()));
@@ -237,8 +236,8 @@ public class ValidatePage extends Frame implements Printable {
         setSize(700, 500);
     }
 
+    @Override
     public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) {
-
         if (pageIndex > 0) {
             return Printable.NO_SUCH_PAGE;
         }
@@ -291,13 +290,13 @@ public class ValidatePage extends Frame implements Printable {
             "Print: to the current printer. Not vital for this test request.";
 
     public static void main(String[] args) throws Exception {
-
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
         }
 
         PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
                 .testUI(ValidatePage::new)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
