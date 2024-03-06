@@ -3698,14 +3698,15 @@ instruct vconvHF2F(vReg dst, vReg src, vRegMask_V0 v0) %{
 
 // single precision -> half
 
-instruct vconvF2HF(vReg dst, vReg src, vReg tmp, vRegMask_V0 v0) %{
+instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
   match(Set dst (VectorCastF2HF src));
-  effect(TEMP_DEF dst, TEMP v0, TEMP tmp);
+  effect(TEMP_DEF dst, TEMP v0, TEMP vtmp, TEMP tmp);
   format %{ "vfncvt.f.f.w $dst, $src\t# convert single to half precision" %}
   ins_encode %{
     __ float_to_float16_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
-                          as_VectorRegister($tmp$$reg), Matcher::vector_length(this));
+                          as_VectorRegister($vtmp$$reg), $tmp$$Register,
+                          Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
