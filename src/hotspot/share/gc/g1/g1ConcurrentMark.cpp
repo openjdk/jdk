@@ -1221,9 +1221,9 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
         _num_humongous_regions_removed++;
         _freed_bytes += hr->used();
         hr->set_containing_set(nullptr);
-        _g1h->free_humongous_region(hr, _local_cleanup_list);
         hr->clear_cardtable();
         _g1h->concurrent_mark()->clear_statistics(hr);
+        _g1h->free_humongous_region(hr, _local_cleanup_list);
       };
 
       _g1h->humongous_obj_regions_iterate(hr, on_humongous_region);
