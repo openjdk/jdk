@@ -99,7 +99,8 @@ public:
     _allow_cfg (allow_cfg),
     _cl        (nullptr),
     _cl_exit   (nullptr),
-    _iv        (nullptr) {}
+    _iv        (nullptr),
+    _pre_loop_end (nullptr) {}
   NONCOPYABLE(VLoop);
 
   IdealLoopTree* lpt()        const { return _lpt; };
