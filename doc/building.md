@@ -403,7 +403,7 @@ C, and C++14 for C++.
 
 ### gcc
 
-The minimum accepted version of gcc is 6.0. Older versions will not be accepted
+The minimum accepted version of gcc is 10.0. Older versions will not be accepted
 by `configure`.
 
 The JDK is currently known to compile successfully with gcc version 13.2 or

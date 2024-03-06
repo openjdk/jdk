@@ -154,7 +154,7 @@ class TenuredGeneration: public Generation {
   // Performance Counter support
   void update_counters();
 
-  virtual void record_spaces_top();
+  void record_spaces_top();
 
   // Statistics
 

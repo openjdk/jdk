@@ -2729,10 +2729,6 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
   {
     Address addr = mem2address(opcode, base, index, scale, disp);
     if (addr.getMode() == Address::base_plus_offset) {
-      /* If we get an out-of-range offset it is a bug in the compiler,
-         so we assert here. */
-      assert(Address::offset_ok_for_immed(addr.offset(), exact_log2(size_in_memory)),
-             "c2 compiler bug");
       /* Fix up any out-of-range offsets. */
       assert_different_registers(rscratch1, base);
       assert_different_registers(rscratch1, reg);
