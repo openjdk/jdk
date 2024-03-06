@@ -183,4 +183,15 @@ public class CheckedMapBash {
         };
         return Arrays.asList(params);
     }
+
+    @Test(groups = "type_check")
+    public static void testTypeCheck() {
+        try {
+            Map m = Collections.checkedMap(new HashMap<>(), Integer.class, Integer.class);
+            m.merge("key", "value", (v1, v2) -> null);
+            m.merge("key", 3, (v1, v2) -> v2);
+            fail("Should throw ClassCastException");
+        } catch (ClassCastException ignore) {
+        }
+    }
 }

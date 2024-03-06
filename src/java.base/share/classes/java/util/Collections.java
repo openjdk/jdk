@@ -3921,6 +3921,7 @@ public class Collections {
             Objects.requireNonNull(func);
             return (k, v) -> {
                 V newValue = func.apply(k, v);
+                System.out.println("key:" + k + "value:" + v);
                 typeCheck(k, newValue);
                 return newValue;
             };
@@ -4050,6 +4051,7 @@ public class Collections {
         public V merge(K key, V value,
                 BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
             Objects.requireNonNull(remappingFunction);
+            typeCheck(key, value);
             return m.merge(key, value, (v1, v2) -> {
                 V newValue = remappingFunction.apply(v1, v2);
                 typeCheck(null, newValue);
