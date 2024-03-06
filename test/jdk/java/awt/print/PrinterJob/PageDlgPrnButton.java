@@ -29,13 +29,15 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 4956397
  * @key printer
  * @requires os.family=="windows"
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @library /test/lib /java/awt/regtesthelpers
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PageDlgPrnButton
  */
 public class PageDlgPrnButton implements Printable {
