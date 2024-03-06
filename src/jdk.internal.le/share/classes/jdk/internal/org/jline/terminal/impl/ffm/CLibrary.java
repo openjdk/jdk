@@ -265,14 +265,18 @@ class CLibrary {
             c_cc[VINTR] = (byte) t.getControlChar(Attributes.ControlChar.VINTR);
             c_cc[VQUIT] = (byte) t.getControlChar(Attributes.ControlChar.VQUIT);
             c_cc[VSUSP] = (byte) t.getControlChar(Attributes.ControlChar.VSUSP);
-            c_cc[VDSUSP] = (byte) t.getControlChar(Attributes.ControlChar.VDSUSP);
+            if (VDSUSP != (-1)) {
+                c_cc[VDSUSP] = (byte) t.getControlChar(Attributes.ControlChar.VDSUSP);
+            }
             c_cc[VSTART] = (byte) t.getControlChar(Attributes.ControlChar.VSTART);
             c_cc[VSTOP] = (byte) t.getControlChar(Attributes.ControlChar.VSTOP);
             c_cc[VLNEXT] = (byte) t.getControlChar(Attributes.ControlChar.VLNEXT);
             c_cc[VDISCARD] = (byte) t.getControlChar(Attributes.ControlChar.VDISCARD);
             c_cc[VMIN] = (byte) t.getControlChar(Attributes.ControlChar.VMIN);
             c_cc[VTIME] = (byte) t.getControlChar(Attributes.ControlChar.VTIME);
-            c_cc[VSTATUS] = (byte) t.getControlChar(Attributes.ControlChar.VSTATUS);
+            if (VSTATUS != (-1)) {
+                c_cc[VSTATUS] = (byte) t.getControlChar(Attributes.ControlChar.VSTATUS);
+            }
             c_cc().copyFrom(java.lang.foreign.MemorySegment.ofArray(c_cc));
         }
 
@@ -431,14 +435,18 @@ class CLibrary {
             cc.put(Attributes.ControlChar.VINTR, (int) c_cc[VINTR]);
             cc.put(Attributes.ControlChar.VQUIT, (int) c_cc[VQUIT]);
             cc.put(Attributes.ControlChar.VSUSP, (int) c_cc[VSUSP]);
-            cc.put(Attributes.ControlChar.VDSUSP, (int) c_cc[VDSUSP]);
+            if (VDSUSP != (-1)) {
+                cc.put(Attributes.ControlChar.VDSUSP, (int) c_cc[VDSUSP]);
+            }
             cc.put(Attributes.ControlChar.VSTART, (int) c_cc[VSTART]);
             cc.put(Attributes.ControlChar.VSTOP, (int) c_cc[VSTOP]);
             cc.put(Attributes.ControlChar.VLNEXT, (int) c_cc[VLNEXT]);
             cc.put(Attributes.ControlChar.VDISCARD, (int) c_cc[VDISCARD]);
             cc.put(Attributes.ControlChar.VMIN, (int) c_cc[VMIN]);
             cc.put(Attributes.ControlChar.VTIME, (int) c_cc[VTIME]);
-            cc.put(Attributes.ControlChar.VSTATUS, (int) c_cc[VSTATUS]);
+            if (VSTATUS != (-1)) {
+                cc.put(Attributes.ControlChar.VSTATUS, (int) c_cc[VSTATUS]);
+            }
             // Return
             return attr;
         }
@@ -684,19 +692,19 @@ class CLibrary {
     private static final int VWERASE;
     private static final int VKILL;
     private static final int VREPRINT;
-    private static int VERASE2;
+    private static final int VERASE2;
     private static final int VINTR;
     private static final int VQUIT;
     private static final int VSUSP;
-    private static int VDSUSP;
+    private static final int VDSUSP;
     private static final int VSTART;
     private static final int VSTOP;
     private static final int VLNEXT;
     private static final int VDISCARD;
     private static final int VMIN;
-    private static int VSWTC;
+    private static final int VSWTC;
     private static final int VTIME;
-    private static int VSTATUS;
+    private static final int VSTATUS;
 
     private static final int IGNBRK;
     private static final int BRKINT;
@@ -838,6 +846,9 @@ class CLibrary {
             VWERASE = 14;
             VLNEXT = 15;
             VEOL2 = 16;
+            VERASE2 = -1;
+            VDSUSP = -1;
+            VSTATUS = -1;
 
             IGNBRK = 0x0000001;
             BRKINT = 0x0000002;
@@ -960,6 +971,9 @@ class CLibrary {
             VWERASE = 14;
             VLNEXT = 15;
             VEOL2 = 16;
+            VERASE2 = -1;
+            VDSUSP = -1;
+            VSTATUS = -1;
 
             IGNBRK = 0x0000001;
             BRKINT = 0x0000002;
@@ -1080,6 +1094,8 @@ class CLibrary {
             VMIN = 16;
             VTIME = 17;
             VSTATUS = 18;
+            VERASE2 = -1;
+            VSWTC = -1;
 
             IGNBRK = 0x00000001;
             BRKINT = 0x00000002;
@@ -1173,6 +1189,7 @@ class CLibrary {
             VMIN = 16;
             VTIME = 17;
             VSTATUS = 18;
+            VSWTC = -1;
 
             IGNBRK = 0x0000001;
             BRKINT = 0x0000002;
