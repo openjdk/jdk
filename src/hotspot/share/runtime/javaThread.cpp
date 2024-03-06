@@ -566,31 +566,52 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     assert(this == Thread::current(), "invariant");
     return false;
   }
+
   oop thread_oop = vthread_or_thread();
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
   bool interrupted = java_lang_Thread::interrupted(thread_oop);
 
   if (!(interrupted && clear_interrupted)) {
     return interrupted;
   }
+  assert(this == Thread::current(), "only the current thread can clear");
 
+  // NOTE that since there is no "lock" around the interrupt and
+  // is_interrupted operations, there is the possibility that the
+  // interrupted flag will be "false" but that the
+  // low-level events will be in the signaled state. This is
+  // intentional. The effect of this is that Object.wait() and
+  // LockSupport.park() will appear to have a spurious wakeup, which
+  // is allowed and not harmful, and the possibility is so rare that
+  // it is not worth the added complexity to add yet another lock.
+  // For the sleep event an explicit reset is performed on entry
+  // to JavaThread::sleep, so there is no early return. It has also been
+  // recommended not to put the interrupted flag into the "event"
+  // structure because it hides the issue.
+  // Also, because there is no lock, we must only clear the interrupt
+  // state if we are going to report that we were interrupted; otherwise
+  // an interrupt that happens just after we read the field would be lost.
+  if (!is_virtual) { // platform thread
+    java_lang_Thread::set_interrupted(threadObj(), false);
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
+    return interrupted;
+  }
+
+  // Virtual thread: clear interrupt status for both virtual and
+  // carrier threads under the interruptLock protection.
   JavaThread* current = JavaThread::current();
   HandleMark hm(current);
   Handle thread_h(current, thread_oop);
   ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
 
-  // re-check under the interruptLock protection
+  // re-check the interrupt status under the interruptLock protection
   interrupted = java_lang_Thread::interrupted(thread_h());
 
   if (interrupted) {
-    assert(this == Thread::current(), "only the current thread can clear");
-    java_lang_Thread::set_interrupted(thread_h(), false);
-    if (thread_h() != threadObj()) {
-      // thread_oop is virtual, clear carrier thread interrupt status as well
-      java_lang_Thread::set_interrupted(threadObj(), false);
-    }
+    java_lang_Thread::set_interrupted(thread_h(), false);  // clear for virtual
+    java_lang_Thread::set_interrupted(threadObj(), false); // clear for carrier
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
-
   return interrupted;
 }
 
