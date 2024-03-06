@@ -200,7 +200,7 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             return formatIterable(d, iterable, l);
         }
         else if (arg instanceof Type type) {
-            return printer.visit(type.stripAnnotations(), l);
+            return printer.visit(type.stripMetadata(), l);
         }
         else if (arg instanceof JCDiagnostic.AnnotatedType type) {
             return printer.visit(type.type(), l);
