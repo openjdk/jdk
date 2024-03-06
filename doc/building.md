@@ -382,7 +382,7 @@ one-to-one correlation between target operating system and toolchain.
 | ------------------ | ------------------------- |
 | Linux              | gcc, clang                |
 | macOS              | Apple Xcode (using clang) |
-| AIX                | IBM XL C/C++              |
+| AIX                | IBM Open XL C/C++         |
 | Windows            | Microsoft Visual Studio   |
 
 Please see the individual sections on the toolchains for version
