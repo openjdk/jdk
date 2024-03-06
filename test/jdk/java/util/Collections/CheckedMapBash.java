@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4904067 5023830 7129185 8072015
+ * @bug     4904067 5023830 7129185 8072015 8292955
  * @summary Unit test for Collections.checkedMap
  * @author  Josh Bloch
  * @run testng CheckedMapBash
