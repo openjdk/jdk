@@ -494,7 +494,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
-    snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
+    snprintf(buf1, sizeof(buf1), "%d:%d:%d:%s", c->childenv[0], c->childenv[1], c->fail[1], c->version);
     /* NULL-terminated argv array.
      * argv[0] contains path to jspawnhelper, to follow conventions.
      * argv[1] contains the fd string as argument to jspawnhelper
@@ -609,6 +609,10 @@ startChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     }
 }
 
+#ifndef VERSION_NUMBER
+#error VERSION_NUMBER must be defined
+#endif
+
 JNIEXPORT jint JNICALL
 Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                                        jobject process,
@@ -640,6 +644,7 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     c->argv = NULL;
     c->envv = NULL;
     c->pdir = NULL;
+    c->version = VERSION_NUMBER;
 
     /* Convert prog + argBlock into a char ** argv.
      * Add one word room for expansion of argv for use by

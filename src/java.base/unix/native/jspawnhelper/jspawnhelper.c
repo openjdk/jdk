@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -49,6 +50,10 @@ extern int errno;
 #define ERR_MALLOC 1
 #define ERR_PIPE 2
 #define ERR_ARGS 3
+
+#ifndef VERSION_NUMBER
+#error VERSION_NUMBER must be defined
+#endif
 
 void error (int fd, int err) {
     if (write (fd, &err, sizeof(err)) != sizeof(err)) {
@@ -139,6 +144,7 @@ int main(int argc, char *argv[]) {
     struct stat buf;
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
+    char version[20];
     sigset_t unblock_signals;
 
     if (argc != 2) {
@@ -148,12 +154,17 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
-    r = sscanf (argv[1], "%d:%d:%d", &fdinr, &fdinw, &fdout);
-    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
+    r = sscanf (argv[1], "%d:%d:%d:%s", &fdinr, &fdinw, &fdout, version);
+    if (r == 4 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))
             shutItDown();
     } else {
+        shutItDown();
+    }
+
+    if (strcmp(VERSION_NUMBER, version) != 0) {
+        fprintf(stderr, "Expected jspawnhelper for Java %s, but jspawnhelper for Java %s was found.\n", version, VERSION_NUMBER);
         shutItDown();
     }
 

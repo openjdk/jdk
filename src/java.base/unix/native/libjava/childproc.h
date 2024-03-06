@@ -94,6 +94,7 @@ typedef struct _ChildStuff
     const char *pdir;
     int redirectErrorStream;
     int sendAlivePing;
+    const char *version;
 } ChildStuff;
 
 /* following used in addition when mode is SPAWN */
