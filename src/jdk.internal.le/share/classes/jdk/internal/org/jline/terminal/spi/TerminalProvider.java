@@ -57,7 +57,7 @@ public interface TerminalProvider {
 
     static TerminalProvider load(String name) throws IOException {
         switch (name) {
-//            case "exec": return new ExecTerminalProvider();
+            case "exec": return new ExecTerminalProvider();
             case "ffm": return new FfmTerminalProvider();
         }
         ClassLoader cl = Thread.currentThread().getContextClassLoader();
