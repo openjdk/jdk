@@ -184,7 +184,7 @@ jlong os::total_swap_space() {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
-  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return -1;
   }
   return (jlong)vmusage.xsu_total;
@@ -197,7 +197,7 @@ jlong os::free_swap_space() {
 #if defined(__APPLE__)
   struct xsw_usage vmusage;
   size_t size = sizeof(vmusage);
-  if (sysctlbyname("vm.swapusage", &vmusage, &size, NULL, 0) != 0) {
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
     return -1;
   }
   return (jlong)vmusage.xsu_avail;

@@ -168,11 +168,6 @@
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(uint, GCLockerEdenExpansionPercent, 5,                            \
-          "How much the GC can expand the eden by while the GC locker "     \
-          "is active (as a percentage)")                                    \
-          range(0, 100)                                                     \
-                                                                            \
   product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
