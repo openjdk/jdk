@@ -1910,7 +1910,7 @@ class DataNodeGraph : public StackObj {
 
  public:
   // Clone the provided data node collection and rewire the clones in such a way to create an identical graph copy.
-  // Set `new_ctrl` as ctrl for the cloned nodes.
+  // Set 'new_ctrl' as ctrl for the cloned nodes.
   const OrigToNewHashtable& clone(Node* new_ctrl) {
     assert(_orig_to_new.number_of_entries() == 0, "should not call this method twice in a row");
     clone_data_nodes(new_ctrl);
