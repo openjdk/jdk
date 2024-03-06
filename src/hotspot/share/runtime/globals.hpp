@@ -220,10 +220,6 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, NUMAStats, false,                                           \
           "Print NUMA stats in detailed heap information")                  \
                                                                             \
-  product(uintx, NUMAPageScanRate, 256,                                     \
-          "Maximum number of pages to include in the page scan procedure")  \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions are used when available")       \
                                                                             \
@@ -897,13 +893,6 @@ const int ObjectAlignmentInBytes = 8;
                                                                             \
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of methods during oop map generation")           \
-                                                                            \
-  develop(bool, FLSVerifyDictionary, false,                                 \
-          "Do lots of (expensive) FLS dictionary verification")             \
-                                                                            \
-  product(uintx, ProcessDistributionStride, 4,                              \
-          "Stride through processors when distributing processes")          \
-          range(0, max_juint)                                               \
                                                                             \
   develop(bool, TraceFinalizerRegistration, false,                          \
           "Trace registration of final references")                         \
