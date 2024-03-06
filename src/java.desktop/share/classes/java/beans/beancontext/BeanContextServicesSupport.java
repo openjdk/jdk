@@ -54,6 +54,9 @@ import java.util.TooManyListenersException;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class      BeanContextServicesSupport extends BeanContextSupport
        implements BeanContextServices {
 

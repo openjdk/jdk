@@ -59,6 +59,9 @@ import java.util.Map;
  * @author Laurence P. G. Cable
  * @since 1.2
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class      BeanContextSupport extends BeanContextChildSupport
        implements BeanContext,
                   Serializable,

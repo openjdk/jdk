@@ -103,7 +103,7 @@ public class Beans {
      * @throws IOException if an I/O error occurs.
      * @since 1.2
      */
-    @SuppressWarnings("deprecation")
+    @SuppressWarnings({"deprecation", "removal"})
     public static Object instantiate(ClassLoader cls, String beanName,
                                      BeanContext beanContext)
             throws IOException, ClassNotFoundException {
@@ -352,7 +352,7 @@ public class Beans {
         return result;
     }
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({ "unchecked", "removal" })
     private static void unsafeBeanContextAdd(BeanContext beanContext, Object res) {
         beanContext.add(res);
     }

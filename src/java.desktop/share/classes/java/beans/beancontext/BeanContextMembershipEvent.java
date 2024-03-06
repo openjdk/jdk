@@ -50,6 +50,9 @@ import java.util.Iterator;
  * @see         java.beans.beancontext.BeanContextEvent
  * @see         java.beans.beancontext.BeanContextMembershipListener
  */
+
+@SuppressWarnings("removal")
+@Deprecated(forRemoval=true, since="23")
 public class BeanContextMembershipEvent extends BeanContextEvent {
 
     /**

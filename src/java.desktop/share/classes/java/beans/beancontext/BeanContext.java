@@ -53,7 +53,8 @@ import java.util.Locale;
  * @see java.util.Collection
  */
 
-@SuppressWarnings("rawtypes")
+@Deprecated(forRemoval=true, since="23")
+@SuppressWarnings({"rawtypes", "removal"})
 public interface BeanContext extends BeanContextChild, Collection, DesignMode, Visibility {
 
     /**
