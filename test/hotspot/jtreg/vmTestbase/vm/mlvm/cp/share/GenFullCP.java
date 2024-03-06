@@ -133,7 +133,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
 
 
     // If set_cause is true it expects a Throwable (the cause) to be on top of the stack when called.
-    protected static CodeBuilder createThrowRuntimeExceptionCodeHelper(CodeBuilder cob, String msg, boolean set_cause) {
+    protected static void createThrowRuntimeExceptionCodeHelper(CodeBuilder cob, String msg, boolean set_cause) {
 
         cob.new_(ClassDesc.ofInternalName(JL_RUNTIMEEXCEPTION))
                 .dup()
@@ -150,7 +150,6 @@ public abstract class GenFullCP extends ClassfileGenerator {
                                             + fd(JL_THROWABLE)));
         }
         cob.athrow();
-        return cob;
     }
 
     protected static byte[] createThrowRuntimeExceptionMethod(byte[] bytes, boolean isStatic, String methodName,
@@ -171,6 +170,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
     }
 
     protected byte[] createClassInitMethod(byte[] bytes) {
+        return bytes;
     }
 
     protected byte[] createInitMethod(byte[] bytes) {
