@@ -233,7 +233,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     static final int RS_LOCK          = 1 <<  3;   // lowest seqlock bit
 
     // spin/sleep limits for runState locking and elsewhere
-    static final int SPIN_WAITS       = 1 <<  7;   // max calls to onSpinWait
+    static final int SPIN_WAITS       = 1 <<  8;   // max calls to onSpinWait
     static final int MIN_SLEEP        = 1 << 10;   // approx 1 usec as nanos
     static final int MAX_SLEEP        = 1 << 20;   // approx 1 sec  as nanos
 
@@ -533,7 +533,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             if (!internal)
                 unlockPhase();
             if (room != 0 && a[m & (s - 1)] == null && pool != null)
-                pool.signalWork(false, a, p, null);
+                pool.signalWork(a, p, null);
         }
 
         /**
@@ -1089,7 +1089,7 @@ public class ForkJoinPool extends AbstractExecutorService {
             }
             unlockRunState();
             if (replaceable)
-                signalWork(false, null, 0, null);
+                signalWork(null, 0, null);
         }
         if (ex != null)
             ForkJoinTask.rethrow(ex);
@@ -1099,13 +1099,11 @@ public class ForkJoinPool extends AbstractExecutorService {
      * Releases an idle worker, or creates one if not enough exist,
      * returning on contention if a signal task is already taken.
      *
-     * @param propagating true if  propagating signal
      * @param a if nonnull, a task array holding task signalled
      * @param k index of task in array
      * @param task the signalled task or null if just checking presence
      */
-    final void signalWork(boolean propagating, ForkJoinTask<?>[] a, int k,
-                          ForkJoinTask<?> task) {
+    final void signalWork(ForkJoinTask<?>[] a, int k, ForkJoinTask<?> task) {
         int pc = parallelism;
         for (long c = ctl;;) {
             ForkJoinTask<?> t;
@@ -1140,8 +1138,6 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 break;
             }
-            if (propagating && (c & RC_MASK) >= (nc & RC_MASK))
-                break;
         }
     }
 
@@ -1192,7 +1188,7 @@ public class ForkJoinPool extends AbstractExecutorService {
                             sum += (p & 0xffffffffL) | ((long)b << 32);
                             if ((p & IDLE) == 0 || s - b > 0) {
                                 if ((i & 1) == 0 && compareAndSetCtl(c, c))
-                                    signalWork(false, q.array, q.base, null);
+                                    signalWork(q.array, q.base, null);
                                 return -1;
                             }
                         }
@@ -1235,88 +1231,91 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return src and seed for next use, negative if no tasks found
      */
     private long scan(WorkQueue w, long stat, int cfg) {
-        if (w == null)                              // currently impossible
-            return stat;
         int r = (int)stat;                          // random seed
         int src = (int)(stat >>> 32);               // last steal or -1
-        long polls = 0L;                            // total # slots scanned
-        int phase = w.phase;                        // IDLE set when deactivated
-        while ((runState & STOP) == 0) {
+        long spins = 0L;                            // countdown since deactivate
+        outer: while (w != null && (runState & STOP) == 0) {
             WorkQueue[] qs = queues;
             int n = (qs == null) ? 0 : qs.length;
-            long pctl = ctl;                        // for signal check
-            int i = r, step = (r >>> 16) | 1;       // for random permutation
+            int phase = w.phase;                    // IDLE set when deactivated
+            long prevCtl = ctl;                     // for signal check
             r ^= r << 13; r ^= r >>> 17; r ^= r << 5; // advance xorshift
-            int prevPhase = phase;
+            int i = r, step = (r >>> 16) | 1;       // scan random permutation
             boolean rescan = false;
             for (int l = n; l > 0; --l, i += step) {
-                int j; WorkQueue q;
-                if ((q = qs[j = i & SMASK & (n - 1)]) != null) {
-                    for (;;) {
-                        ++polls;
-                        int b = q.base, cap, k, nb, nk; ForkJoinTask<?>[] a;
-                        if ((a = q.array) == null || (cap = a.length) <= 0)
-                            break;
-                        long kp = slotOffset(k = b & (cap - 1));
-                        ForkJoinTask<?> t = a[k];
+                int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
+                if ((q = qs[j = i & SMASK & (n - 1)]) != null &&
+                    (a = q.array) != null && (cap = a.length) > 0) {
+                    --spins;
+                    for (int misses = 0, b, k, nb, nk;;) {
+                        ForkJoinTask<?> t = a[k = (cap - 1) & (b = q.base)];
                         U.loadFence();              // re-read
-                        if (q.base != b || a[k] != t) {
-                            if (rescan)             // reduce contention
-                                break;
-                            else
-                                continue;           // inconsistent
-                        }
+                        if (q.base != b)
+                            continue;               // inconsistent
                         ForkJoinTask<?> nt = a[nk = (nb = b + 1) & (cap - 1)];
-                        ForkJoinTask<?> st = a[(nb + 1) & (cap - 1)];
-                        if (t == null) {
-                            if (!rescan && (nt != null || st != null ||
-                                            q.top - nb > 0))
-                                rescan = true;      // probe before reading top
+                        long kp = slotOffset(k);
+                        if (a[k] != t)              // stale
+                            continue;
+                        else if (t == null) {
+                            if ((a[(nb + 1) & (cap - 1)] != null ||
+                                 nt != null) &&     // probe 2 slots as filter
+                                (!rescan && misses <= 2 && q.top - nb > 0))
+                                rescan = true;
                             break;
                         }
-                        if ((phase & IDLE) != 0) {  // recheck or reactivate
-                            long sp = w.stackPred & LMASK, c; int nextp;
+                        else if ((phase & IDLE) != 0) { // recheck or reactivate
+                            long sp = w.stackPred & LMASK, sc; int np;
                             if (((phase = w.phase) & IDLE) != 0) {
-                                if (rescan ||
-                                    (nextp = phase + 1) != (int)(c = ctl))
+                                if ((np = phase + 1) != (int)(sc = ctl))
                                     break;          // ineligible
-                                long nc = sp | ((c + RC_UNIT) & UMASK);
-                                if (a[k] != t || !compareAndSetCtl(c, nc))
-                                    continue;
-                                w.phase = nextp;    // self-signalled
+                                else if (!compareAndSetCtl(
+                                             sc, sp | ((sc + RC_UNIT) & UMASK)))
+                                    continue outer; // restart
+                                w.phase = phase = np;
                             }
-                            rescan = true;
+                            rescan = true;          // rescan if cannot take
                         }
-                        if (U.compareAndSetReference(a, kp, t, null)) {
+                        else if (U.compareAndSetReference(a, kp, t, null)) {
                             q.base = nb;
                             w.setSource(j);         // fully fenced
-                            long taken = ((long)j << 32) | (r & LMASK);
-                            if (src != j)           // propagate signal
-                                signalWork(true, a, nk, nt);
+                            long ran = ((long)j << 32) | (r & LMASK);
+                            if (src != (src = j))   // propagate signal
+                                signalWork(a, nk, nt);
                             w.topLevelExec(t, q, nb, cfg);
-                            return taken;
+                            return ran;
                         }
+                        else if (a[k] == null)      // contended
+                            ++misses;
                     }
                 }
             }
-            phase = w.phase;
-            long sc = ctl, ac = sc & RC_MASK, dc = ac - (pctl & RC_MASK);
-            if ((phase & IDLE) != 0) {
-                if (ac <= 0L ||
-                    (!rescan && polls >= SPIN_WAITS && (sc == pctl || dc < 0L)))
-                    break;                          // block or terminate
-            }
-            else if (!rescan && (phase == prevPhase || dc <= 0L)) {
-                int idle = phase | IDLE;            // try to deactivate
-                long qc = ((idle + IDLE) & LMASK) | ((sc - RC_UNIT) & UMASK);
-                w.stackPred = (int)sc;              // set ctl stack link
-                w.phase = idle;
-                if (!compareAndSetCtl(sc, qc))
-                    w.phase = phase;                // back out
-                else {
-                    phase = idle;
-                    polls = 0L;
-                    src = -1;
+            if (!rescan) {
+                long c, ac;
+                phase = w.phase;
+                if ((ac = (c = ctl) & RC_MASK) <= 0L)
+                    break;                          // check quiescence
+                if (c == prevCtl || ac < (prevCtl & RC_MASK)) { // stable
+                    if ((phase & IDLE) == 0) {      // try to deactivate
+                        long ap = (phase + (IDLE << 1)) & LMASK;
+                        spins = SPIN_WAITS;
+                        src = -1;
+                        w.stackPred = (int)c;       // set ctl stack link
+                        w.phase = phase | IDLE;
+                        while (c != (c = compareAndExchangeCtl(
+                                         c, ap | ((c - RC_UNIT) & UMASK)))) {
+                            if (ac <= (ac = (c & RC_MASK))) {
+                                w.phase = phase;    // back out if nondecreasing
+                                break;
+                            }
+                            w.stackPred = (int)c;   // retry
+                        }
+                    }
+                    else { // possibly loop to reduce park/unpark flailing
+                        while ((w.phase & IDLE) != 0 && --spins > 0L)
+                            Thread.onSpinWait();
+                        if (spins <= 0)             // block
+                            break;
+                    }
                 }
             }
         }
@@ -1330,23 +1329,21 @@ public class ForkJoinPool extends AbstractExecutorService {
      * @return nonzero for exit
      */
     private int awaitWork(WorkQueue w) {
-        long c = ctl;
         int p = IDLE, phase;
         if (w != null && (p = (phase = w.phase) & IDLE) != 0) {
-            LockSupport.setCurrentBlocker(this);
             int nextPhase = phase + IDLE;
-            int tc = (short)(c >>> TC_SHIFT), ac = (short)(c >>> RC_SHIFT);
-            long deadline = 0L;            // set if all idle and w is ctl top
-            if (ac <= 0 && (int)c == nextPhase) {
-                int np = parallelism, nt = tc;
+            long deadline = 0L, c;         // set if all idle and w is ctl top
+            if (((c = ctl) & RC_MASK) <= 0L && (int)c == nextPhase) {
+                int np = parallelism, nt = (short)(c >>> TC_SHIFT);
                 long delay = keepAlive;    // scale if not fully populated
                 if (nt != (nt = Math.max(nt, np)) && nt > 0)
                     delay = Math.max(TIMEOUT_SLOP, delay / nt);
                 long d = delay + System.currentTimeMillis();
                 deadline = (d == 0L) ? 1L : d;
             }
-            w.parking = 1;             // enable unpark
-            for (;;) {                 // emulate LockSupport.park
+            LockSupport.setCurrentBlocker(this);
+            w.parking = 1;                 // enable unpark
+            for (;;) {                     // emulate LockSupport.park
                 if ((runState & STOP) != 0)
                     break;
                 if ((p = w.phase & IDLE) == 0)
@@ -1356,8 +1353,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                     break;
                 if ((runState & STOP) != 0)
                     break;
-                Thread.interrupted();  // clear for next park
-                if (deadline != 0L &&  // try to trim
+                Thread.interrupted();      // clear for next park
+                if (deadline != 0L &&      // try to trim
                     deadline - System.currentTimeMillis() < TIMEOUT_SLOP) {
                     long sp = w.stackPred & LMASK, dc = ctl;
                     long nc = sp | (UMASK & (dc - TC_UNIT));
@@ -1376,10 +1373,10 @@ public class ForkJoinPool extends AbstractExecutorService {
                         }
                         break;
                     }
-                    deadline = 0L;     // no longer trimmable
+                    deadline = 0L;         // no longer trimmable
                 }
             }
-            w.parking = 0;             // disable unpark
+            w.parking = 0;                 // disable unpark
             LockSupport.setCurrentBlocker(null);
         }
         return p;
