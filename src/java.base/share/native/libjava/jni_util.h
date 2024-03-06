@@ -27,6 +27,7 @@
 #define JNI_UTIL_H
 
 #include "jni.h"
+#include "jni_util_md.h"
 #include "jlong.h"
 
 #ifdef __cplusplus

@@ -25,7 +25,6 @@
  */
 
 #include "jni_util.h"
-#include "jni_util_md.h"
 
 #include <sys/socket.h>
 #include <sys/stat.h>

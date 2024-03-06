@@ -35,7 +35,6 @@
 
 #include "jni.h"
 #include "jni_util.h"
-#include "jni_util_md.h"
 #include "net_util.h"
 
 /**

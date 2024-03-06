@@ -38,7 +38,6 @@
 
 #include "jvm.h"
 #include "jni_util.h"
-#include "jni_util_md.h"
 #include "TimeZone_md.h"
 #include "path_util.h"
 
