@@ -882,10 +882,12 @@ public final class ModuleLayer {
     }
 
     /**
-     * Update module named {@code name} to allow access to restricted methods.
+     * Updates the module with the given {@code name} in this layer
+     * to allow access to restricted methods.
      *
-     * @param name the name of the module for which the native access should be enabled
-     * @return {@code true} iff the module was present in this layer,
+     * @param name the name of the module for which the native access
+     *             should be enabled
+     * @return {@code true} iff the module is present in this layer,
      *         {@code false} otherwise
      */
     boolean addEnableNativeAccess(String name) {
