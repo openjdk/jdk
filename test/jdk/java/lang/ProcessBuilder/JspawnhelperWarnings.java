@@ -31,49 +31,29 @@
  * @run main/othervm/timeout=300 JspawnhelperWarnings
  */
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 public class JspawnhelperWarnings {
 
     private static final int TIMEOUT = 60;
 
-    private static void jspawnhelperWithNArgs(int args) throws Exception {
-        System.out.println("Running jspawnhelper with "+args+" args");
-        String[] argArray = new String[args +1];
-        Arrays.fill(argArray, "1");
-        argArray[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
-        for (int i = 0; i < argArray.length; ++i)
-            System.out.println(argArray[i]);
-        Process p = Runtime.getRuntime().exec(argArray);
-
+    private static void jspawnhelperWithNArgs(int nArgs) throws Exception {
+        System.out.println("Running jspawnhelper with "+nArgs+" args");
+        String[] args = new String[nArgs +1];
+        Arrays.fill(args, "1");
+        args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
+        Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
+        OutputAnalyzer oa = new OutputAnalyzer(p);
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new Exception("Child process timed out after " + TIMEOUT + " seconds");
+            throw new RuntimeException("jspawnhelper timed out after " + TIMEOUT + " seconds");
         }
-
-        try (BufferedReader br = p.inputReader()) {
-            String line = br.readLine();
-            System.out.println(line);
-            while (line != null && !line.startsWith("This command is not for general use")) {
-                System.out.println(line);
-                line = br.readLine();
-            }
-            if (line == null) {
-                throw new Exception("Wrong output from parent process");
-            }
-            System.out.println(line);
-        }
-
-        if (p.exitValue() != 1)
-            throw new Exception("Unexpected exit value from jspawnhelper "+ p.exitValue());
+        oa.shouldHaveExitValue(1);
+        oa.shouldContain("This command is not for general use");
     }
 
      public static void main(String[] args) throws Exception {
