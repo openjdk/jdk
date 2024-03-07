@@ -645,7 +645,10 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             val[count + 2] = 'l';
             val[count + 3] = 'l';
         } else {
-            StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
+            StringUTF16.putChar(val, count, 'n');
+            StringUTF16.putChar(val, count + 1, 'u');
+            StringUTF16.putChar(val, count + 2, 'l');
+            StringUTF16.putChar(val, count + 3, 'l');
         }
         this.count = count + 4;
         return this;
@@ -786,9 +789,16 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
             }
         } else {
             if (b) {
-                StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+                StringUTF16.putChar(val, count, 't');
+                StringUTF16.putChar(val, count + 1, 'r');
+                StringUTF16.putChar(val, count + 2, 'u');
+                StringUTF16.putChar(val, count + 3, 'e');
             } else {
-                StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
+                StringUTF16.putChar(val, count, 'f');
+                StringUTF16.putChar(val, count + 1, 'a');
+                StringUTF16.putChar(val, count + 2, 'l');
+                StringUTF16.putChar(val, count + 3, 's');
+                StringUTF16.putChar(val, count + 4, 'e');
             }
         }
         this.count = spaceNeeded;
