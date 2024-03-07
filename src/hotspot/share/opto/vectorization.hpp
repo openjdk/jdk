@@ -324,6 +324,7 @@ public:
 class VLoopBody : public StackObj {
 private:
   static constexpr char const* FAILURE_NODE_NOT_ALLOWED = "encontered unhandled node";
+  static constexpr char const* FAILURE_UNEXPECTED_CTRL  = "data node in loop has no input in loop";
 
   const VLoop& _vloop;
 
