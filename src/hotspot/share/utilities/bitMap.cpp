@@ -108,16 +108,16 @@ bm_word_t* GrowableBitMap<BitMapWithAllocator>::copy_of_range(idx_t start_bit, i
   idx_t const cutoff = bit_in_word(end_bit);
   idx_t const start_word = to_words_align_down(start_bit);
   idx_t const end_word = to_words_align_up(end_bit);
-  bm_word_t* const old_map = map();
+  const bm_word_t* const old_map = map();
 
-  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+  const BitMapWithAllocator* const derived = static_cast<BitMapWithAllocator*>(this);
 
-  bm_word_t* new_map = derived->allocate(end_word - start_word);
+  bm_word_t* const new_map = derived->allocate(end_word - start_word);
 
   // All words need to be shifted by this amount
   idx_t const shift = bit_in_word(start_bit);
   // Bits shifted out by a word need to be passed into the next
-  idx_t carry = 0;
+  bm_word_t carry = 0;
 
   // Iterate the map backwards as the shift will result in carry-out bits
   for (idx_t i = end_word; i-- > start_word;) {
@@ -138,9 +138,9 @@ void GrowableBitMap<BitMapWithAllocator>::truncate(idx_t start_bit, idx_t end_bi
   const idx_t new_size_in_bits = end_bit - start_bit;
   bm_word_t* const old_map = map();
 
-  bm_word_t* new_map = copy_of_range(start_bit, end_bit);
+  bm_word_t* const new_map = copy_of_range(start_bit, end_bit);
 
-  BitMapWithAllocator* derived = static_cast<BitMapWithAllocator*>(this);
+  const BitMapWithAllocator* const derived = static_cast<BitMapWithAllocator*>(this);
   // Free and clear old map to avoid left over bits
   derived->free(old_map, old_size_in_words);
   update(nullptr, 0);

@@ -239,6 +239,38 @@ class BitMapTruncateTest {
 
     EXPECT_TRUE(map.is_same(expected));
   }
+
+  template <class ResizableBitMapClass>
+  static void testRandom() {
+    for (int i = 0; i < 100; i++) {
+      ResourceMark rm;
+
+      const size_t max_size = 1024;
+      const size_t size = os::random() % max_size + 1;
+      const size_t truncate_size = os::random() % size + 1;
+      const size_t truncate_start = size == truncate_size ? 0 : os::random() % (size - truncate_size);
+
+      ResizableBitMapClass map(size);
+      ResizableBitMapClass result(truncate_size);
+
+      for (BitMap::idx_t idx = 0; idx < truncate_start; idx++) {
+        if (os::random() % 2 == 0) {
+          map.set_bit(idx);
+        }
+      }
+
+      for (BitMap::idx_t idx = 0; idx < truncate_size; idx++) {
+        if (os::random() % 2 == 0) {
+          map.set_bit(truncate_start + idx);
+          result.set_bit(idx);
+        }
+      }
+
+      map.truncate(truncate_start, truncate_start + truncate_size);
+
+      EXPECT_TRUE(map.is_same(result));
+    }
+  }
 };
 
 // TestArenaBitMap is the shorthand combination of Arena and ArenaBitMap.
@@ -392,5 +424,14 @@ TEST_VM(BitMap, truncate_one_word) {
   BitMapTruncateTest::testTruncateOneWord<TestCHeapBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
   BitMapTruncateTest::testTruncateOneWord<TestArenaBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
+}
+
+TEST_VM(BitMap, truncate_random) {
+  BitMapTruncateTest::testRandom<ResourceBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type ResourceBitMap";
+  BitMapTruncateTest::testRandom<TestCHeapBitMap>();
+  EXPECT_FALSE(HasFailure()) << "Failed on type CHeapBitMap";
+  BitMapTruncateTest::testRandom<TestArenaBitMap>();
   EXPECT_FALSE(HasFailure()) << "Failed on type ArenaBitMap";
 }
