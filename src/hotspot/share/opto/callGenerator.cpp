@@ -990,31 +990,31 @@ class LateInlineScopedValueCallGenerator : public LateInlineCallGenerator {
     // never saw a cache hit. In that case, when the ScopedValueGetHitsInCacheNode is expanded, only code to probe
     // the second location is added back to the IR.
     //
-    // Before transformation:        After transformation:                      After expansion:                         
-    // cache = scopedValueCache();   cache = currentThread.scopedValueCache;    cache = currentThread.scopedValueCache;  
+    // Before transformation:        After transformation:                      After expansion:
+    // cache = scopedValueCache();   cache = currentThread.scopedValueCache;    cache = currentThread.scopedValueCache;
     // if (cache == null) {          if (hits_in_cache(cache)) {                if (cache != null && second_entry_hits) {
-    //   goto slow_call;               result = load_from_cache;                  result = second_entry;                 
-    // }                             } else {                                   } else {                                 
-    // if (first_entry_hits) {         if (cache == null) {                       if (cache == null) {                   
-    //   uncommon_trap();                goto slow_call;                            goto slow_call;                      
-    // } else {                        }                                          }                                      
-    //   if (second_entry_hits) {      if (first_entry_hits) {                    if (first_entry_hits) {                
-    //     result = second_entry;        uncommon_trap();                           uncommon_trap();                     
-    //   } else {                      } else {                                   } else {                               
-    //     goto slow_call;               if (second_entry_hits) {                   if (second_entry_hits) {             
-    //   }                                  halt;                                      halt;                             
-    // }                                  } else {                                   } else {                            
-    // continue:                            goto slow_call;                            goto slow_call;                   
-    // ...                               }                                          }                                    
-    // return;                         }                                          }                                      
-    //                               }                                          }                                        
-    // slow_call:                    continue:                                  continue:                                
-    // result = slowGet();           ...                                        ...                                      
-    // goto continue;                return;                                    return;                                  
-    //                                                                                                                   
-    //                               slow_call:                                 slow_call:                               
-    //                               result = slowGet();                        result = slowGet();                      
-    //                               goto continue;                             goto continue;                           
+    //   goto slow_call;               result = load_from_cache;                  result = second_entry;
+    // }                             } else {                                   } else {
+    // if (first_entry_hits) {         if (cache == null) {                       if (cache == null) {
+    //   uncommon_trap();                goto slow_call;                            goto slow_call;
+    // } else {                        }                                          }
+    //   if (second_entry_hits) {      if (first_entry_hits) {                    if (first_entry_hits) {
+    //     result = second_entry;        uncommon_trap();                           uncommon_trap();
+    //   } else {                      } else {                                   } else {
+    //     goto slow_call;               if (second_entry_hits) {                   if (second_entry_hits) {
+    //   }                                  halt;                                      halt;
+    // }                                  } else {                                   } else {
+    // continue:                            goto slow_call;                            goto slow_call;
+    // ...                               }                                          }
+    // return;                         }                                          }
+    //                               }                                          }
+    // slow_call:                    continue:                                  continue:
+    // result = slowGet();           ...                                        ...
+    // goto continue;                return;                                    return;
+    //
+    //                               slow_call:                                 slow_call:
+    //                               result = slowGet();                        result = slowGet();
+    //                               goto continue;                             goto continue;
     //
     void remove_first_probe_if_when_it_never_hits() {
       if (_first_cache_probe_iff == nullptr || _second_cache_probe_iff == nullptr) {
