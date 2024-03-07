@@ -50,7 +50,10 @@ import java.util.Objects;
  * file system. {@code Path} defines the {@link #getFileName() getFileName},
  * {@link #getParent getParent}, {@link #getRoot getRoot}, and {@link #subpath
  * subpath} methods to access the path components or a subsequence of its name
- * elements, and {@link #getExtension() getExtension} to obtain its extension.
+ * elements, {@link #getExtension() getExtension} to obtain its file name
+ * extension, and {@link #withoutExtension withoutExtension} and
+ * {@link #withExtension withExtension} to remove or alter the extension,
+ * respectively.
  *
  * <p> In addition to accessing the components of a path, a {@code Path} also
  * defines the {@link #resolve(Path) resolve} and {@link #resolveSibling(Path)
@@ -262,6 +265,17 @@ public interface Path
      * including the last period, then the extension is
      * {@linkplain String#isEmpty empty}.
      *
+     * <p> A typical case is where a file name string contains a single
+     * period character followed by an extension which usually indicates
+     * the contents or purpose of the file. For example, a file named
+     * {@code "archive.zip"} has extension {@code "zip"} which signals that
+     * the file is in the <i>ZIP</i> losslessly compressed archive file format.
+     *
+     * <p> A compound file name extension has two or more concatenated extension
+     * strings such as in {@code "archive.tar.gz"}, which signifies that
+     * the file is an archive file ({@code "tar"}) losslessly compressed
+     * according to the <i>gzip</i> format.
+     *
      * @implSpec
      * The default implementation is in most cases equivalent for this path to:
      * {@snippet lang="java" :
@@ -305,8 +319,17 @@ public interface Path
     }
 
     /**
-     * Returns a copy of this {@code Path} with the file name extension removed.
-     * If this path has no extension, then the path is returned unchanged.
+     * Returns a {@code Path} with the same sequence of elements as this
+     * path, but with no file name extension. If this path has no extension,
+     * then the path is returned unchanged.
+     *
+     * <p> For example, an audio track's extension might be removed as:
+     * {@snippet lang="java" :
+     *     Path music = Path.of("library/audio/track.flac");
+     *     Path noise = lossless.withoutExtension();
+     * }
+     * where {@code noise.toString()} would return
+     * {@code "library/audio/track"}.
      *
      * <p> A compound extension may be replaced by invoking this method and
      * then the {@linkplain #withExtension withExtension} method on the result.
@@ -318,15 +341,6 @@ public interface Path
      * }
      * where {@code q.toString()} would return {@code "archive.zip"}.
      *
-     * @apiNote
-     * This method must satisfy the invariant:
-     * {@snippet lang="java" :
-     *     assert equals(Path.of(withoutExtension().toString()
-     *         + (getExtension().isEmpty() ? "" : ("." + getExtension())));
-     * }
-     * wherein the {@code Path}-{@code String} conversions are assumed to be
-     * lossless.
-     *
      * @implSpec
      * The default implementation is equivalent for this path to:
      * {@snippet lang="java" :
@@ -337,6 +351,14 @@ public interface Path
      *             toString().length() - getExtension().length() - 1));
      *     }
      * }
+     *
+     * This method must satisfy the invariant:
+     * {@snippet lang="java" :
+     *     assert equals(Path.of(withoutExtension().toString()
+     *         + (getExtension().isEmpty() ? "" : ("." + getExtension())));
+     * }
+     * wherein the {@code Path}-{@code String} conversions are assumed to be
+     * lossless.
      *
      * @return the resulting path or this path if it does not contain a file
      *         name extension
@@ -351,16 +373,15 @@ public interface Path
         if (ext.isEmpty())
             return this;
         String str = toString();
-        return Path.of(str.substring(0, str.length() - ext.length() - 1));
+        return resolveSibling(str.substring(0, str.length() - ext.length() - 1));
     }
 
     /**
-     * Returns a copy of this {@code Path} with the file name extension altered.
-     * If the specified extension is non-{@code null},
-     * non-{@linkplain String#isEmpty empty}, and not
-     * {@linkplain String#isBlank blank}, then a {@code '.'} and then
-     * {@code extension} are appended to the path returned by
-     * {@linkplain #withoutExtension wihoutExtension}, otherwise the path
+     * Returns a {@code Path} with the same sequence of elements as this path,
+     * but with an altered file name extension. If the specified extension is
+     * non-{@code null} and non-{@linkplain String#isEmpty empty}, then a
+     * {@code '.'} and then {@code extension} are appended to the path returned
+     * by {@linkplain #withoutExtension wihoutExtension}, otherwise the path
      * returned by {@linkplain #withoutExtension wihoutExtension} is returned.
      *
      * <p> For example, an audio track's extension might be changed as:
@@ -371,7 +392,7 @@ public interface Path
      * where {@code lossy.toString()} would return
      * {@code "library/audio/track.mp3"}.
      *
-     * <p> An additional extension may be appended so as to form a compound
+     * <p> A compound extension may be formed by appending an additional
      * extension as:
      * {@snippet lang="java" :
      *     Path p = Path.of("archive.tar");
@@ -379,23 +400,23 @@ public interface Path
      * }
      * where {@code q.toString()} would return {@code "archive.tar.gz"}.
      *
-     * @apiNote
-     * This method must satisfy the invariant:
-     * {@snippet lang="java" :
-     *     assert equals(withExtension(getExtension()));
-     * }
-     *
      * @implSpec
      * The default implementation is equivalent for this path to:
      *
      * {@snippet lang="java" :
      *     Path p = withoutExtension();
-     *     if (extension == null || extension.isEmpty() || extension.isBlank()) {
+     *     if (extension == null || extension.isEmpty()) {
      *         return p;
      *     } else {
      *         return p.resolveSibling(p.getFileName() + "." + extension);
      *     }
      * }
+     *
+     * This method must satisfy the invariant:
+     * {@snippet lang="java" :
+     *     assert equals(withExtension(getExtension()));
+     * }
+     *
      * @param extension
      *        the extension to add, may be {@code null}
      *
@@ -409,7 +430,7 @@ public interface Path
      */
     default Path withExtension(String extension) {
         Path path = withoutExtension();
-        if (extension == null || extension.isEmpty() || extension.isBlank())
+        if (extension == null || extension.isEmpty())
             return path;
 
         return path.resolveSibling(path.getFileName() + "." + extension);
