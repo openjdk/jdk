@@ -234,6 +234,25 @@ public class SimpleJavaFileObject implements JavaFileObject {
      * <p>All other methods will behave as described in the documentation in this class,
      * if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
      *
+     * <p>This method can be, for example, used to compile an in-memory String
+     * to a set of classfile in a target directory:
+     * {@snippet lang="java":
+     *      var code = """
+     *                 public class CompiledCode {}
+     *                 """;
+     *      var compiler = ToolProvider.getSystemJavaCompiler();
+     *      var targetDirectory = "...";
+     *      var task = compiler.getTask(null,
+     *                                  null,
+     *                                  null,
+     *                                  List.of("-d", targetDirectory),
+     *                                  null,
+     *                                  List.of(SimpleJavaFileObject.forSource(new URI("mem://CompiledCode.java"), code)));
+     *      if (!task.call()) {
+     *          throw new IllegalStateException("Compilation failed!");
+     *      }
+     * }
+     *
      * @param uri that should be used for this {@code JavaFileObject}
      * @param content the content of the {@code JavaFileObject}
      * @return a {@code JavaFileObject} representing the given source content.
