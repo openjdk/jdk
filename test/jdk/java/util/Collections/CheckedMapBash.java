@@ -189,6 +189,12 @@ public class CheckedMapBash {
         try {
             Map m = Collections.checkedMap(new HashMap<>(), Integer.class, Integer.class);
             m.merge("key", "value", (v1, v2) -> null);
+            fail("Should throw ClassCastException");
+        } catch (ClassCastException ignore) {
+        }
+
+        try {
+            Map m = Collections.checkedMap(new HashMap<>(), Integer.class, Integer.class);
             m.merge("key", 3, (v1, v2) -> v2);
             fail("Should throw ClassCastException");
         } catch (ClassCastException ignore) {
