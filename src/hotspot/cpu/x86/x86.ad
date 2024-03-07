@@ -3874,6 +3874,9 @@ instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   ins_cost(150);
   ins_encode %{
     assert(UseSSE >= 4, "required");
+    if ((UseAVX == 0) && ($dst$$XMMRegister != $src$$XMMRegister)) {
+    __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ roundsd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
   %}
   ins_pipe(pipe_slow);
