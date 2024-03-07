@@ -43,6 +43,8 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
+// Count consecutive ones in forward order, starting from start_idx.  Requires that there is at least one zero
+// between start_idx and index value _num_bits - 1 inclusive.
 size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx / _bits_per_array_element;
@@ -50,11 +52,11 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   size_t bit_number = start_idx % _bits_per_array_element;
   size_t the_bit = ((size_t) 0x01) << bit_number;
   size_t omit_mask = the_bit - 1;
-  size_t mask = ((size_t) ((ssize_t) -1)) & omit_mask;
+  size_t mask = ((size_t) ((ssize_t) -1)) & ~omit_mask;
 
   if ((element_bits & mask) == mask) {
     size_t counted_ones = _bits_per_array_element - bit_number;
-    return counted_ones + count_leading_ones(start_idx + counted_ones);
+    return counted_ones + count_leading_ones(start_idx - counted_ones);
   } else {
     size_t counted_ones;
     for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
@@ -95,10 +97,10 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   size_t bit_number = start_idx % _bits_per_array_element;
   size_t the_bit = ((size_t) 0x01) << bit_number;
   size_t element_bits = _bitmap[array_idx];
-
-  if ((ssize_t) (_bits_per_array_element - bit_number) >= count) {
+  if ((ssize_t) (bit_number + count <= _bits_per_array_element)) {
     // All relevant bits reside within this array element
-    size_t overreach_mask = ((size_t) 0x1 << (bit_number + count)) - 1;
+    size_t overreach_mask =
+      (bit_number + count == _bits_per_array_element)? ~((size_t) 0): ((size_t) 0x1 << (bit_number + count)) - 1;
     size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
     size_t exact_mask = overreach_mask & ~exclude_mask;
     return (element_bits & exact_mask) == exact_mask? true: false;
@@ -123,10 +125,9 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   size_t bit_number = last_idx % _bits_per_array_element;
   size_t the_bit = ((size_t) 0x01) << bit_number;
   size_t element_bits = _bitmap[array_idx];
-
   if ((ssize_t) (bit_number + 1) >= count) {
     // All relevant bits reside within this array element
-    size_t overreach_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+    size_t overreach_mask = (bit_number == _bits_per_array_element - 1)? ~((size_t) 0): ((size_t) 0x1 << (bit_number + 1)) - 1;
     size_t exclude_mask = ((size_t) 0x1 << (bit_number + 1 - count)) - 1;
     size_t exact_mask = overreach_mask & ~exclude_mask;
     return (element_bits & exact_mask) == exact_mask? true: false;
@@ -155,6 +156,7 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
     size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
     element_bits &= ~mask_out;
   }
+
   while (start_idx <= start_boundary) {
     if (!element_bits) {
       // move to the next element
@@ -181,7 +183,8 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
   return boundary_idx;
 }
 
-ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssize_t last_idx, ssize_t boundary_idx) const {
+ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
+  const size_t num_bits, ssize_t last_idx, const ssize_t boundary_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
 
   // Stop looking if there are not num_bits remaining in probe space.
@@ -220,17 +223,17 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(size_t num_bits, ssiz
 }
 
 void ShenandoahRegionPartitions::dump_bitmap_all() const {
-  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+  printf("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts[Mutator], _rightmosts[Mutator], _leftmosts[Collector], _rightmosts[Collector]);
-  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+  printf("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
                _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
 
 #ifdef _LP64
-  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  printf("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #else
-  log_info(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  printf("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #endif
   dump_bitmap_range(0, _max-1);
 }
