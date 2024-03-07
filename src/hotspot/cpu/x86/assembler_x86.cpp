@@ -13571,6 +13571,11 @@ void Assembler::notq(Register dst) {
   emit_int16((unsigned char)0xF7, (0xD0 | encode));
 }
 
+void Assembler::btq(Register dst, Register src) {
+  int encode = prefixq_and_encode(src->encoding(), dst->encoding());
+  emit_int24(0x0F, (unsigned char)0xA3, (encode | 0xC0));
+}
+
 void Assembler::btsq(Address dst, int imm8) {
   assert(isByte(imm8), "not a byte");
   InstructionMark im(this);
