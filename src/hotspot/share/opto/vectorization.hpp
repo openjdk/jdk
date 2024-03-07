@@ -493,7 +493,7 @@ public:
   bool mutually_independent(const Node_List* nodes) const;
 
 private:
-  void add_node(MemNode* n, GrowableArray<int>& extra_pred_edges);
+  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
   int depth(const Node* n) const { return _depth.at(_body.bb_idx(n)); }
   void set_depth(const Node* n, int d) { _depth.at_put(_body.bb_idx(n), d); }
   void compute_depth();
@@ -506,16 +506,16 @@ private:
   class DependencyNode : public ArenaObj {
   private:
     MemNode* _node; // Corresponding ideal node
-    const uint _extra_pred_edges_length;
-    int* _extra_pred_edges; // extra pred-edges, mapping to bb_idx
+    const uint _memory_pred_edges_length;
+    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
   public:
-    DependencyNode(MemNode* n, GrowableArray<int>& extra_pred_edges, Arena* arena);
+    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
     NONCOPYABLE(DependencyNode);
-    uint extra_pred_edges_length() const { return _extra_pred_edges_length; }
+    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
 
-    int extra_pred_edge(uint i) const {
-      assert(i < _extra_pred_edges_length, "bounds check");
-      return _extra_pred_edges[i];
+    int memory_pred_edge(uint i) const {
+      assert(i < _memory_pred_edges_length, "bounds check");
+      return _memory_pred_edges[i];
     }
   };
 
@@ -534,9 +534,9 @@ public:
     int _next_pred;
     int _end_pred;
 
-    // Iterate in dependency_node->extra_pred_edge(i)
-    int _next_extra_pred;
-    int _end_extra_pred;
+    // Iterate in dependency_node->memory_pred_edge(i)
+    int _next_memory_pred;
+    int _end_memory_pred;
   public:
     PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
     NONCOPYABLE(PredsIterator);
