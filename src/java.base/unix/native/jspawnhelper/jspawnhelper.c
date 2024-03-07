@@ -144,7 +144,8 @@ int main(int argc, char *argv[]) {
     struct stat buf;
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
-    char version[20];
+    int jdk_feature, jdk_interim, jdk_update, jdk_patch;
+    int jspawn_feature, jspawn_interim, jspawn_update, jspawn_patch;
     sigset_t unblock_signals;
 
     if (argc != 2) {
@@ -154,8 +155,8 @@ int main(int argc, char *argv[]) {
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
-    r = sscanf (argv[1], "%d:%d:%d:%s", &fdinr, &fdinw, &fdout, version);
-    if (r == 4 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
+    r = sscanf (argv[1], "%d:%d:%d:%d.%d.%d.%d", &fdinr, &fdinw, &fdout, &jdk_feature, &jdk_interim, &jdk_update, &jdk_patch);
+    if (r == 7 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))
             shutItDown();
@@ -163,8 +164,17 @@ int main(int argc, char *argv[]) {
         shutItDown();
     }
 
-    if (strcmp(VERSION_NUMBER, version) != 0) {
-        fprintf(stderr, "Expected jspawnhelper for Java %s, but jspawnhelper for Java %s was found.\n", version, VERSION_NUMBER);
+    // Check that JDK version and jspawnhelper version are the same
+    r = sscanf (VERSION_NUMBER, "%d.%d.%d.%d", &jspawn_feature, &jspawn_interim, &jspawn_update, &jspawn_patch);
+    if (r == 4) {
+        if (jdk_feature != jspawn_feature || jdk_interim != jspawn_interim ||
+            jdk_update != jspawn_update || jdk_patch != jspawn_patch) {
+
+            fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d+%d,", jspawn_feature, jspawn_interim, jspawn_update, jspawn_patch);
+            fprintf(stderr, "but jspawnhelper for Java %d.%d.%d+%d was found.\n", jdk_feature, jdk_interim, jdk_update, jdk_patch);
+            shutItDown();
+        }
+    } else {
         shutItDown();
     }
 
