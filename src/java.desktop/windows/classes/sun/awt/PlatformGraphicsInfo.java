@@ -52,10 +52,6 @@ public class PlatformGraphicsInfo {
 
     private static native boolean hasDisplays0();
 
-    private static boolean hasDisplays() {
-        return hasDisplays;
-    }
-
     public static GraphicsEnvironment createGE() {
         return new Win32GraphicsEnvironment();
     }
@@ -66,7 +62,7 @@ public class PlatformGraphicsInfo {
 
     public static boolean getDefaultHeadlessProperty() {
         // If we don't find usable displays, we run headless.
-        return !hasDisplays();
+        return !hasDisplays;
     }
 
     /*
