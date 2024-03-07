@@ -2015,13 +2015,13 @@ const int ObjectAlignmentInBytes = 8;
                 "rewriting/transformation independently of the JVMTI "      \
                 "can_{retransform/redefine}_classes capabilities.")         \
                                                                             \
-  product(bool, HashSecondarySupers,  true, EXPERIMENTAL,                   \
-                "Use hash table to scan secondary supers.")                 \
-                                                                            \
-  product(bool, UseSecondarySuperCache, true, EXPERIMENTAL,                 \
+  product(bool, UseSecondarySuperCache, true, DIAGNOSTIC,                   \
           "Use secondary super cache during subtype checks")                \
                                                                             \
-  product(bool, VerifySecondarySupers, true, DIAGNOSTIC,                    \
+  product(bool, HashSecondarySupers,  false, DIAGNOSTIC,                    \
+                "Use hash table to scan secondary supers.")                 \
+                                                                            \
+  product(bool, VerifySecondarySupers, false, DIAGNOSTIC,                   \
           "Use secondary super cache during subtype checks")                \
                                                                             \
   product(bool, StressSecondarySuperHash, false, DIAGNOSTIC,                \

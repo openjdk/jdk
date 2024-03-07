@@ -1763,9 +1763,18 @@ void VM_Version::get_processor_features() {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       UsePopCountInstruction = true;
     }
-  } else if (UsePopCountInstruction) {
-    warning("POPCNT instruction is not available on this CPU");
-    FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+    if (FLAG_IS_DEFAULT(HashSecondarySupers)) {
+      HashSecondarySupers = true;
+    }
+  } else {
+    if (UsePopCountInstruction) {
+      warning("POPCNT instruction is not available on this CPU");
+      FLAG_SET_DEFAULT(UsePopCountInstruction, false);
+    }
+    if (HashSecondarySupers) {
+      warning("HashSecondarySupers is not available on this CPU");
+      FLAG_SET_DEFAULT(HashSecondarySupers, false);
+    }
   }
 
   // Use fast-string operations if available.

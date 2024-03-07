@@ -3621,7 +3621,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
-  st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash_slot(); st->cr();
+  st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash_slot()); st->cr();
   st->print(BULLET"bitmap:            0x%lx", _bitmap);                                st->cr();
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();

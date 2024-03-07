@@ -4918,40 +4918,12 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     cmpl(result, 0);
     jcc(Assembler::notEqual, done);  // Agree.
 
-    {
-      Label OK;
-      jcc(Assembler::equal, OK);
-
-      push_CPU_state();
-      mov(c_rarg1, r_sub_klass);
-      mov_metadata(c_rarg0, super_klass);
-      call(RuntimeAddress
-           (CAST_FROM_FN_PTR(address, &piddle)));
-      pop_CPU_state();
-
-      bind(OK);
-    }
-
     STOP("VerifySecondarySupers 1 failed");
 
     // Present
     bind(hit);
     cmpl(result, 0);
     jcc(Assembler::equal, done); // Agree.
-
-    {
-      Label OK;
-      jcc(Assembler::equal, OK);
-
-      push_CPU_state();
-      mov(c_rarg1, r_sub_klass);
-      mov_metadata(c_rarg0, super_klass);
-      call(RuntimeAddress
-           (CAST_FROM_FN_PTR(address, &piddle)));
-      pop_CPU_state();
-
-      bind(OK);
-    }
 
     STOP("VerifySecondarySupers 2 failed");
 
