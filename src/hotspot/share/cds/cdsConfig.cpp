@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,10 +48,10 @@ char* CDSConfig::_dynamic_archive_path = nullptr;
 
 int CDSConfig::get_status() {
   assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
-  return (is_dumping_archive()               ? IS_DUMPING_ARCHIVE : 0) |
-         (is_dumping_static_archive()        ? IS_DUMPING_STATIC_ARCHIVE : 0) |
-         (is_logging_lambda_form_invokers()  ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
-         (is_using_archive()                 ? IS_USING_ARCHIVE : 0);
+  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
+         (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
+         (is_using_archive()                ? IS_USING_ARCHIVE : 0);
 }
 
 

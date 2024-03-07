@@ -42,10 +42,10 @@ import jdk.internal.access.SharedSecrets;
 
 public class CDS {
     // Must be in sync with cdsConfig.hpp
-    private static final int IS_DUMPING_ARCHIVE                     = 1 << 0;
-    private static final int IS_DUMPING_STATIC_ARCHIVE              = 1 << 1;
-    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS        = 1 << 2;
-    private static final int IS_USING_ARCHIVE                       = 1 << 3;
+    private static final int IS_DUMPING_ARCHIVE              = 1 << 0;
+    private static final int IS_DUMPING_STATIC_ARCHIVE       = 1 << 1;
+    private static final int IS_LOGGING_LAMBDA_FORM_INVOKERS = 1 << 2;
+    private static final int IS_USING_ARCHIVE                = 1 << 3;
     private static final int configStatus = getCDSConfigStatus();
 
     /**
