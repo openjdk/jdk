@@ -28,7 +28,7 @@
  * @bug 8325567
  * @requires (os.family == "linux") | (os.family == "aix")
  * @library /test/lib
- * @run driver JspawnhelperWarnings
+ * @driver JspawnhelperWarnings
  * @run main/othervm/timeout=300 JspawnhelperWarnings
  */
 
@@ -41,11 +41,9 @@ import jdk.test.lib.process.ProcessTools;
 
 public class JspawnhelperWarnings {
 
-    private static final int TIMEOUT = 60;
-
-    private static void jspawnhelperWithNArgs(int nArgs) throws Exception {
+    private static void tryWithNArgs(int nArgs) throws Exception {
         System.out.println("Running jspawnhelper with " + nArgs + " args");
-        String[] args = new String[nArgs +1];
+        String[] args = new String[nArgs + 1];
         Arrays.fill(args, "1");
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
@@ -53,9 +51,9 @@ public class JspawnhelperWarnings {
         oa.shouldContain("This command is not for general use");
     }
 
-     public static void main(String[] args) throws Exception {
-        for (int nArgs = 0; nArgs < 10; nArgs++){
-            jspawnhelperWithNArgs(nArgs);
+    public static void main(String[] args) throws Exception {
+        for (int nArgs = 0; nArgs < 10; nArgs++) {
+            tryWithNArgs(nArgs);
         }
     }
 }
