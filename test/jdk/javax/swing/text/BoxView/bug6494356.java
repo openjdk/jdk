@@ -27,7 +27,9 @@
  * @summary Test that BoxView.layout() is not called with negative arguments
  * @run main bug6494356
  */
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.io.Writer;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -51,37 +53,48 @@ public class bug6494356 {
     private static final CountDownLatch latch = new CountDownLatch(1);
 
     public static void main(final String[] args) throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                ep = new JEditorPane();
-                ep.setEditorKitForContentType("text/html", new MyEditorKit());
-                ep.addPropertyChangeListener("page", new PropertyChangeListener() {
-                    public void propertyChange(PropertyChangeEvent pce) {
-                        if (pce.getPropertyName().equals("page")) {
-                            latch.countDown();
-                        }
-                    }
-                });
-                JFrame f = new JFrame();
-                f.setTitle("6494356");
-                f.setSize(new Dimension(
-                        Toolkit.getDefaultToolkit().getScreenSize().width, 600));
-                f.setContentPane(ep);
-                f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                f.setVisible(true);
-                File file = new File("file:" + testSrc + "/" + "bug6494356.html");
-                try {
-                    ep.setPage(file.toString());
-                } catch (Exception ex) {
-                    testPassed = false;
-                    throw new RuntimeException(ex);
-                }
-            }
-        });
+        final Path file = Path.of("bug6494356.html");
 
-        latch.await();
-        if (!testPassed) {
-            throw new RuntimeException("test failed.");
+        try {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    ep = new JEditorPane();
+                    ep.setEditorKitForContentType("text/html", new MyEditorKit());
+                    ep.addPropertyChangeListener("page", new PropertyChangeListener() {
+                        public void propertyChange(PropertyChangeEvent pce) {
+                            if (pce.getPropertyName().equals("page")) {
+                                latch.countDown();
+                            }
+                        }
+                    });
+                    JFrame f = new JFrame();
+                    f.setTitle("6494356");
+                    f.setSize(new Dimension(
+                        Toolkit.getDefaultToolkit().getScreenSize().width, 600));
+                    f.setContentPane(ep);
+                    f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                    f.setVisible(true);
+                    try (Writer writer = Files.newBufferedWriter(file)) {
+                        writer.write("<p>Paragraph</p>");
+                    } catch (Exception e) {
+                        testPassed = false;
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        ep.setPage("file:" + file);
+                    } catch (Exception ex) {
+                        testPassed = false;
+                        throw new RuntimeException(ex);
+                    }
+                }
+            });
+
+            latch.await();
+            if (!testPassed) {
+                throw new RuntimeException("test failed.");
+            }
+        } finally {
+            Files.delete(file);
         }
         System.out.println("6494356 OK");
     }
