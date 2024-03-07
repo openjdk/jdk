@@ -41,14 +41,17 @@ import java.awt.print.PrinterJob;
 public class PrintAllFonts implements Printable {
     private static final int LINE_HEIGHT = 18;
     private static final int FONT_SIZE = 14;
+
     private final Font[] allFonts =
             GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
     private int fontNum = 0;
     private int startNum = 0;
     private int thisPage = 0;
+
     private static final String INSTRUCTIONS =
             "This bug is system dependent and is not always reproducible.\n" +
-            "Font names will be printed in two columns, normal and italic.\n" +
+            "Font names will be printed in two columns.\n" +
+            "First column non synthesised and second column with synthesised italic.\n" +
             "A passing test will have all text printed with correct font style.";
 
     public static void main(String[] args) throws Exception {
@@ -58,6 +61,7 @@ public class PrintAllFonts implements Printable {
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
                 .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
                 .build();

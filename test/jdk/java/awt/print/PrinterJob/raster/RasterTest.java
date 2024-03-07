@@ -87,7 +87,7 @@ public class RasterTest extends Frame implements ActionListener {
     public void actionPerformed(ActionEvent e) {
         PrinterJob pj = PrinterJob.getPrinterJob();
 
-        if (pj != null && pj.printDialog()) {
+        if (pj.printDialog()) {
             pj.setPrintable(c);
             try {
                 pj.print();
