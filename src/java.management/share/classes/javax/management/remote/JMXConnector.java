@@ -150,7 +150,7 @@ public interface JMXConnector extends Closeable {
      * connect} method), or it has been closed, or it has broken.
      *
      * @exception UnsupportedOperationException if a non-null delegationSubject
-     * is specifed. Subject Delegation has been removed.
+     * is specified. Subject Delegation has been removed.
      *
      * @deprecated This method supported the legacy Subject Delegation feature,
      * and is only useful in conjunction with other APIs which are deprecated and
