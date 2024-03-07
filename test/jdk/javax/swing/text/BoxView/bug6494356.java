@@ -25,13 +25,14 @@
  * @bug 6494356
  * @key headful
  * @summary Test that BoxView.layout() is not called with negative arguments
- * @run main bug6494356 bug6494356.html
+ * @run main bug6494356
  */
+import java.io.File;
+
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -53,7 +54,7 @@ public class bug6494356 {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 ep = new JEditorPane();
-                ep.setEditorKitForContentType("text/html", editorKit);
+                ep.setEditorKitForContentType("text/html", new MyEditorKit());
                 ep.addPropertyChangeListener("page", new PropertyChangeListener() {
                     public void propertyChange(PropertyChangeEvent pce) {
                         if (pce.getPropertyName().equals("page")) {
@@ -68,8 +69,9 @@ public class bug6494356 {
                 f.setContentPane(ep);
                 f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 f.setVisible(true);
+                File file = new File("file:" + testSrc + "/" + "bug6494356.html");
                 try {
-                    ep.setPage("file:" + testSrc + "/" + args[0]);
+                    ep.setPage(file.toString());
                 } catch (Exception ex) {
                     testPassed = false;
                     throw new RuntimeException(ex);
@@ -114,13 +116,12 @@ public class bug6494356 {
 
         }
 
-        static ViewFactory viewFactory = new MyViewFactory();
+        final ViewFactory viewFactory = new MyViewFactory();
 
         public ViewFactory getViewFactory() {
             return viewFactory;
         }
     }
 
-    static MyEditorKit editorKit = new MyEditorKit();
 }
 
