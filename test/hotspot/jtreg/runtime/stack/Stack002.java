@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,24 +53,14 @@
  *     4302288 the second stack overflow causes Classic VM to exit on win32
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack002
+ * @run main/othervm/timeout=900 Stack002
  */
 
-package nsk.stress.stack;
-
-
-import java.io.PrintStream;
-
-public class stack002 {
+public class Stack002 {
     static final long timeout = 10000; // 10 seconds
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        Tester tester = new Tester(out);
+        Tester tester = new Tester();
         Timer timer = new Timer(tester);
         timer.start();
         tester.start();
@@ -78,21 +68,18 @@ public class stack002 {
             try {
                 timer.join();
             } catch (InterruptedException e) {
-                e.printStackTrace(out);
-                return 2;
+                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
-        out.println("Maximal depth: " + tester.maxdepth);
-        return 0;
+        System.out.println("Maximal depth: " + tester.maxdepth);
     }
 
     private static class Tester extends Thread {
         int maxdepth;
-        PrintStream out;
         public volatile boolean stop;
 
-        public Tester(PrintStream out) {
-            this.out = out;
+        public Tester() {
             maxdepth = 0;
             stop = false;
         }
@@ -108,10 +95,7 @@ public class stack002 {
                     return;
                 }
                 recurse(depth + 1);
-            } catch (Error error) {
-                if (!(error instanceof StackOverflowError) &&
-                        !(error instanceof OutOfMemoryError))
-                    throw error;
+            } catch (StackOverflowError | OutOfMemoryError e) {
                 recurse(depth + 1);
             }
         }
@@ -129,9 +113,9 @@ public class stack002 {
             started = System.currentTimeMillis();
             while (System.currentTimeMillis() - started < timeout) {
                 try {
-                    this.sleep(1000);
+                    Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace(tester.out);
+                    e.printStackTrace();
                     return;
                 };
             }
