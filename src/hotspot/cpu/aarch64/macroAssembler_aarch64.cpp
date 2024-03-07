@@ -1572,6 +1572,13 @@ do {                                                                    \
          r_sub_klass == r4 && result == r5, "registers must match aarch64.ad"); \
 } while(0)
 
+static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
+  super->print();
+  sub->print();
+  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
+        sub, super, expected, result);
+}
+
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp,

@@ -12262,7 +12262,6 @@ instruct partialSubtypeCheckI(rsi_RegP sub, immP super, rdi_RegP result,
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
-    __ block_comment("maybe!");
     __ check_klass_subtype_slow_path($sub$$Register, (Klass*)$super$$constant, $temp1$$Register, $temp2$$Register,
                                      $temp3$$Register, $temp4$$Register, $temp5$$Register,
                                      $result$$Register);
