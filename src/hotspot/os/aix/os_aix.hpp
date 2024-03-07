@@ -177,6 +177,10 @@ class Aix {
   // (on AIX, using libperfstat, on PASE with libo4.so).
   // Returns true if ok, false if error.
   static bool get_meminfo(meminfo_t* pmi);
+
+  static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc);
+  static void* resolve_function_descriptor(void* p);
+
 };
 
 #endif // OS_AIX_OS_AIX_HPP

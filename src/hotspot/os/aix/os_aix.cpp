@@ -1156,22 +1156,35 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   if (!filename || strlen(filename) == 0) {
-    ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
-    return NULL;
+    if (ebuf != nullptr && ebuflen > 0) {
+      ::strncpy(ebuf, "dll_load: empty filename specified", ebuflen - 1);
+    }
+    return nullptr;
   }
 
-  // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
-  void * result= ::dlopen(filename, RTLD_LAZY);
-  if (result != NULL) {
-    Events::log_dll_message(NULL, "Loaded shared library %s", filename);
+  // RTLD_LAZY has currently the same behavior as RTLD_NOW
+  // The dl is loaded immediately with all its dependants.
+  int dflags = RTLD_LAZY;
+  // check for filename ending with ')', it indicates we want to load
+  // a MEMBER module that is a member of an archive.
+  int flen = strlen(filename);
+  if (flen > 0 && filename[flen - 1] == ')') {
+    dflags |= RTLD_MEMBER;
+  }
+
+  void* result;
+  const char* error_report = nullptr;
+  JFR_ONLY(NativeLibraryLoadEvent load_event(filename, &result);)
+  result = Aix_dlopen(filename, dflags, &error_report);
+  if (result != nullptr) {
+    Events::log_dll_message(nullptr, "Loaded shared library %s", filename);
     // Reload dll cache. Don't do this in signal handling.
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
     return result;
   } else {
     // error analysis when dlopen fails
-    const char* error_report = ::dlerror();
-    if (error_report == NULL) {
+    if (error_report == nullptr) {
       error_report = "dlerror returned no error description";
     }
     if (ebuf != NULL && ebuflen > 0) {
@@ -3118,3 +3131,10 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {}
+
+#endif // INCLUDE_JFR
+
