@@ -225,14 +225,14 @@ public class SimpleJavaFileObject implements JavaFileObject {
     }
 
     /**
-     * Creates a {@link JavaFileObject} which will be represents the given source content.
+     * Creates a {@link JavaFileObject} which represents the given source content.
      *
      * <p>The provided {@code uri} will be returned from {@link #toUri()}.
      * The provided {@code content} will be returned from {@link #getCharContent(boolean)}.
      * The {@link #getKind()} method will return {@link Kind#SOURCE}.
      *
      * <p>All other methods will behave as described in the documentation in this class,
-     * if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
+     * as if the constructor is called with {@code uri} and {@code Kind.SOURCE}.
      *
      * <p>This method can be, for example, used to compile an in-memory String
      * to a set of classfile in a target directory:
@@ -253,7 +253,7 @@ public class SimpleJavaFileObject implements JavaFileObject {
      *      }
      * }
      *
-     * @param uri that should be used for this {@code JavaFileObject}
+     * @param uri that should be used for the resulting {@code JavaFileObject}
      * @param content the content of the {@code JavaFileObject}
      * @return a {@code JavaFileObject} representing the given source content.
      * @since 23
