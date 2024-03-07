@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,8 +134,14 @@ public final class ECParameters extends AlgorithmParametersSpi {
     }
 
     protected void engineInit(byte[] params) throws IOException {
-        NamedCurve spec = ECUtil.getECParameterSpec(params);
-        if (spec != null) {
+        DerValue encodedParams = new DerValue(params);
+        if (encodedParams.tag == DerValue.tag_ObjectId) {
+            ObjectIdentifier oid = encodedParams.getOID();
+            NamedCurve spec = CurveDB.lookup(oid.toString());
+            if (spec == null) {
+                throw new IOException("Unknown named curve: " + oid);
+            }
+
             namedCurve = spec;
             return;
         }
