@@ -290,32 +290,15 @@ public class Debug {
     private String extraInfo() {
         String retString = "";
         if (printThreadDetails) {
-            retString = toHexString(Thread.currentThread().threadId()) + "|" +
-                    Thread.currentThread().getName() + "|" + formatCaller();
+            retString = "0x" + Long.toHexString(
+                    Thread.currentThread().threadId()).toUpperCase(Locale.ROOT) +
+                    "|" + Thread.currentThread().getName() + "|" + formatCaller();
         }
         if (printDateTime) {
             retString += (retString.isEmpty() ? "" : "|")
                     + FormatHolder.DATE_TIME_FORMATTER.format(Instant.now());
         }
         return retString.isEmpty() ? "" : "[" + retString + "]";
-
-    }
-
-    // copied from sun/security/ssl/Utilities.java for now
-    private static String toHexString(long lv) {
-        StringBuilder builder = new StringBuilder(128);
-
-        boolean isFirst = true;
-        do {
-            if (isFirst) {
-                isFirst = false;
-            } else {
-                builder.append(' ');
-            }
-            HEX_FORMATTER.toHexDigits(builder, (byte)lv);
-            lv >>>= 8;
-        } while (lv != 0);
-        return builder.reverse().toString();
     }
 
     /**
