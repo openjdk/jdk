@@ -55,13 +55,13 @@ public class DisposeInActionEventTest {
                     "SystemTray is not supported.");
         }
         String clickInstruction =
-                (Platform.isOSX()) ? "Right-click the" : "Double click the left mouse";
+                (Platform.isOSX()) ? "Right-click" : "Double click (left mouse button)";
 
         String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
                        "  don't see a tray icon, please, make sure that the tray area\n" +
                        "  (also called Taskbar Status Area on MS Windows, Notification\n" +
                        "  Area on Gnome or System Tray on KDE) is visible.\n\n" +
-                        clickInstruction + " button on the tray icon to trigger the\n" +
+                        clickInstruction + " the tray icon to trigger the\n" +
                        "  action event. Brief information about action events is printed\n" +
                        "  in the frame. After each action event, the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
