@@ -65,8 +65,7 @@ public class DisposeInActionEventTest {
                        "  action event. Brief information about action events is printed\n" +
                        "  in the frame. After each action event, the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
-                       "The test performs some automatic checks when removing the icon.\n" +
-                       "  If something is wrong, the test will automatically fail.\n" +
+                       "If something is wrong, the test will automatically fail.\n" +
                        "  Repeat clicks several times. Press PASS button.";
 
         try {
