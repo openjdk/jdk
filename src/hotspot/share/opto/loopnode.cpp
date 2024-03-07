@@ -3904,7 +3904,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
 //  CountedLoopNode *cl = loop->_head->as_CountedLoop();
   BaseCountedLoopNode *cl;
-  if (loop->_head->is_CountedLoop()) {
+  if (iv_bt == T_INT) {
     cl = loop->_head->as_CountedLoop();
   } else {
     cl = loop->_head->as_LongCountedLoop();
@@ -3991,8 +3991,13 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 //      Node* ratio_init = new MulINode(init, ratio);
 
       Node* init_conv = init;
-      if (sc2_bt == T_LONG && iv_bt != T_LONG) {
-        init_conv = new ConvI2LNode(init);
+      if (iv_bt != sc2_bt) {
+        if (sc2_bt == T_LONG) {
+          init_conv = new ConvI2LNode(init);
+        } else {
+          init_conv = new ConvL2INode(init);
+        }
+
         _igvn.register_new_node_with_optimizer(init_conv, init);
         set_early_ctrl(init_conv, false);
       }
@@ -4007,8 +4012,12 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 //      Node* ratio_idx = new MulINode(phi, ratio);
 
       Node* phi_conv = phi;
-      if (sc2_bt == T_LONG && iv_bt != T_LONG) {
-        phi_conv = new ConvI2LNode(phi);
+      if (iv_bt != sc2_bt) {
+        if (sc2_bt == T_LONG) {
+          phi_conv = new ConvI2LNode(phi);
+        } else {
+          phi_conv = new ConvL2INode(phi);
+        }
         _igvn.register_new_node_with_optimizer(phi_conv, phi);
         set_early_ctrl(phi_conv, false);
       }
@@ -4088,14 +4097,16 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     phase->replace_parallel_iv(this);
   } else if (_head->is_LongCountedLoop() ||
              phase->is_counted_loop(_head, loop, T_LONG)) {
-    if (LoopStripMiningIter == 0 || _head->as_LongCountedLoop()->is_strip_mined()) {
-      // Indicate we do not need a safepoint here
-      _has_sfpt = 1;
-    }
+//    if (LoopStripMiningIter == 0 || _head->as_LongCountedLoop()->is_strip_mined()) {
+//      // Indicate we do not need a safepoint here
+//      _has_sfpt = 1;
+//    }
+//
+//    // Remove safepoints
+//    bool keep_one_sfpt = !(_has_call || _has_sfpt);
 
-    // Remove safepoints
-    bool keep_one_sfpt = !(_has_call || _has_sfpt);
-    remove_safepoints(phase, keep_one_sfpt);
+    // TODO: Long counted loop is deliberately never strip mined. Why? (L2213)
+    remove_safepoints(phase, true);
 
     // Look for induction variables
     phase->replace_parallel_iv(this);
