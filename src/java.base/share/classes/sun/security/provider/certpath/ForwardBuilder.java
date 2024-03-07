@@ -513,9 +513,9 @@ public final class ForwardBuilder extends Builder {
              */
             String debugMsg = null;
             if (debug != null) {
-                debug.println(METHOD_NME +" SAME NAMESPACE AS TRUSTED TEST...");
+                debug.println(METHOD_NME + " SAME NAMESPACE AS TRUSTED TEST...");
                 debugMsg = METHOD_NME + " distance (number of " +
-                    "RDNS) from cert%1$s issuer to trusted subject %2$s: %3$d";
+                    "RDNs) from cert%1$s issuer to trusted subject %2$s: %3$d";
             }
 
             X500Name cIssuer1Name = X500Name.asX500Name(cIssuer1);
@@ -527,19 +527,21 @@ public final class ForwardBuilder extends Builder {
                 X500Name tSubjectName = X500Name.asX500Name(tSubject);
                 int d1 = distanceToCommonAncestor(tSubjectName, cIssuer1Name);
                 int d2 = distanceToCommonAncestor(tSubjectName, cIssuer2Name);
+                if (debug != null) {
+                    if (d1 != -1) {
+                        debug.println(String.format(debugMsg, "1", tSubject, d1));
+                    }
+                    if (d2 != -1) {
+                        debug.println(String.format(debugMsg, "2", tSubject, d2));
+                    }
+                }
                 if (d1 == -1 && d2 == -1) {
                     // neither cert has a common non-geographical ancestor with
                     // trust anchor, so continue checking other trust anchors
                     continue;
                 }
                 if (d1 != -1) {
-                    if (debug != null) {
-                        debug.println(String.format(debugMsg, "1", tSubject, d1));
-                    }
                     if (d2 != -1) {
-                        if (debug != null) {
-                            debug.println(String.format(debugMsg, "2", tSubject, d2));
-                        }
                         // both certs share a common non-geographical ancestor
                         // with trust anchor. Prefer the one that is closer
                         // to the trust anchor.
@@ -550,9 +552,6 @@ public final class ForwardBuilder extends Builder {
                         return -1;
                     }
                 } else if (d2 != -1) {
-                    if (debug != null) {
-                        debug.println(String.format(debugMsg, "2", tSubject, d2));
-                    }
                     // cert2 shares a common non-geographical ancestor with
                     // trust anchor, so it is preferred.
                     return 1;
@@ -562,7 +561,7 @@ public final class ForwardBuilder extends Builder {
             /* Otherwise, certs are equally preferable.
              */
             if (debug != null) {
-                debug.println(METHOD_NME + " no tests matched; RETURN 0");
+                debug.println(METHOD_NME + " no tests matched; RETURN -1");
             }
             return -1;
         }

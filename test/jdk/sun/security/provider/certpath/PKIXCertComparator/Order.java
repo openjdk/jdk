@@ -56,6 +56,8 @@ public class Order {
         kpg.initialize(2048);
 
         // Create top-level root CA cert with KIDs (Subject and Auth KeyIds)
+        // A root CA doesn't usually have an Auth KeyId but for this test,
+        // it doesn't matter.
         CertAndKeyPair rootCA =
             createCert(null, "CN=Root CA, O=Java, C=US", true, true);
         System.out.println(rootCA.cert);
