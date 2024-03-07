@@ -118,7 +118,7 @@ JvmtiGetLoadedClasses::getClassLoaderClasses(JvmtiEnv *env, jobject initiatingLo
   LoadedClassesClosure closure(env, true);
   {
     // To get a consistent list of classes we need MultiArray_lock to ensure
-    // array classes aren't created during this walk. This walks through the
+    // array classes aren't created by another thread this walk. This walks through the
     // InstanceKlass::_array_klasses links.
     RecursiveLocker ma(MultiArray_lock, Thread::current());
     MutexLocker sd(SystemDictionary_lock);

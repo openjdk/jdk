@@ -332,7 +332,7 @@ class MutexUnlocker: StackObj {
 };
 
 // Instance of a RecursiveLock that may be held through Java heap allocation, which may include calls to Java,
-// and JNI event notification for resource exhausted for metaspace or heap.
+// and JNI event notification for resource exhaustion for metaspace or heap.
 extern RecursiveMutex* MultiArray_lock;
 
 // RAII locker for a RecursiveMutex.  See comments in mutex.hpp for more information.

@@ -1549,7 +1549,7 @@ ArrayKlass* InstanceKlass::array_klass(int n, TRAPS) {
     // Recursively lock array allocation
     RecursiveLocker rl(MultiArray_lock, THREAD);
 
-    // This thread is the creator.
+    // Check if another thread created the array klass while we were waiting for the lock.
     if (array_klasses() == nullptr) {
       ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
       // use 'release' to pair with lock-free load
