@@ -28,8 +28,7 @@
  * @bug 8325567
  * @requires (os.family == "linux") | (os.family == "aix")
  * @library /test/lib
- * @driver JspawnhelperWarnings
- * @run main/othervm/timeout=300 JspawnhelperWarnings
+ * @run driver JspawnhelperWarnings
  */
 
 import java.nio.file.Paths;
@@ -45,6 +44,7 @@ public class JspawnhelperWarnings {
         System.out.println("Running jspawnhelper with " + nArgs + " args");
         String[] args = new String[nArgs + 1];
         Arrays.fill(args, "1");
+        args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
