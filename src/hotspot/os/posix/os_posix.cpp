@@ -610,9 +610,11 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 
 bool os::get_host_name(char* buf, size_t buflen) {
   struct utsname name;
-  uname(&name);
-  jio_snprintf(buf, buflen, "%s", name.nodename);
-  return true;
+  if (uname(&name) == 0) {
+    jio_snprintf(buf, buflen, "%s", name.nodename);
+    return true;
+  }
+  return false;
 }
 
 #ifndef _LP64
