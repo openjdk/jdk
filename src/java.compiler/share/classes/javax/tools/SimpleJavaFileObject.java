@@ -247,7 +247,7 @@ public class SimpleJavaFileObject implements JavaFileObject {
      *                                  null,
      *                                  List.of("-d", targetDirectory),
      *                                  null,
-     *                                  List.of(SimpleJavaFileObject.forSource(new URI("mem://CompiledCode.java"), code)));
+     *                                  List.of(SimpleJavaFileObject.forSource(URI.create("mem://CompiledCode.java"), code)));
      *      if (!task.call()) {
      *          throw new IllegalStateException("Compilation failed!");
      *      }
