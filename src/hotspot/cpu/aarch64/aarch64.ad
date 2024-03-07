@@ -16711,7 +16711,6 @@ instruct partialSubtypeCheckI(iRegP_R4 sub, immP super, vRegD vtemp, iRegP_R5 re
   format %{ "partialSubtypeCheck $result, $sub, super" %}
 
   ins_encode %{
-    __ block_comment("maybe!");
     __ check_klass_subtype_slow_path($sub$$Register, (Klass*)$super$$constant, $temp$$Register, $temp2$$Register,
                                      $temp3$$Register, $temp4$$Register, as_FloatRegister($vtemp$$reg),
                                      $result$$Register);
