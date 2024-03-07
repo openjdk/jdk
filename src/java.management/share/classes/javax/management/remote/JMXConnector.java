@@ -153,9 +153,7 @@ public interface JMXConnector extends Closeable {
      * is specified. Subject Delegation has been removed.
      *
      * @deprecated This method supported the legacy Subject Delegation feature,
-     * and is only useful in conjunction with other APIs which are deprecated and
-     * subject to removal in a future release. Consequently, this method is also
-     * deprecated and subject to removal. There is no replacement.
+     * which has been removed.  There is no replacement.
      */
     @Deprecated(since="21", forRemoval=true)
     public default MBeanServerConnection getMBeanServerConnection(Subject delegationSubject)
