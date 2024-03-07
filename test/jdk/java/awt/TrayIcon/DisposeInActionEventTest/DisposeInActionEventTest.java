@@ -62,12 +62,11 @@ public class DisposeInActionEventTest {
                        "  Area on Gnome or System Tray on KDE) is visible.\n\n" +
                         clickInstruction + " the button on the tray icon to trigger the\n" +
                        "  action event. Brief information about action events is printed\n" +
-                       "  in the frame. After each action event the tray icon is removed from\n" +
+                       "  in the frame. After each action event, the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
                        "The test performs some automatic checks when removing the icon. If\n" +
-                       "  something is wrong the corresponding message the test will automatically fail.\n" +
-                       "  Repeat clicks several times. If no 'Test FAILED' messages\n" +
-                       "  are printed, press PASS button else FAIL button.";
+                       "  something is wrong, the test will automatically fail.\n" +
+                       "  Repeat clicks several times. Press PASS button.";
 
         try {
             PassFailJFrame.builder()
