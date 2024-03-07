@@ -290,7 +290,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
             bytes = generateTestMethodProlog(bytes);
 
             // TODO: check real CP size and also limit number of iterations in this cycle
-            while (constCount < CP_CONST_COUNT && cw.getBytecodeLength(ClassFile.of().parse(bytes)) < MAX_METHOD_SIZE) {
+            while (constCount < CP_CONST_COUNT && cw.getByteCodeLength(ClassFile.of().parse(bytes)) < MAX_METHOD_SIZE) {
                 bytes = generateCPEntryData(bytes, methodName, TEST_METHOD_SIGNATURE, ClassFile.ACC_PUBLIC);
                 ++constCount;
             }
@@ -298,9 +298,9 @@ public abstract class GenFullCP extends ClassfileGenerator {
             bytes = generateTestMethodEpilog(bytes);
             Env.traceNormal("Method " + fullClassName + "." + methodName + "(): "
                     + constCount + " constants in CP, "
-                    + cw.getBytecodeLength(ClassFile.of().parse(bytes)) + " bytes of code");
+                    + cw.getByteCodeLength(ClassFile.of().parse(bytes)) + " bytes of code");
 
-            mainMV.visitInsn(Opcodes.DUP);
+            MainMV.visitInsn(Opcodes.DUP);
             mainMV.visitMethodInsn(Opcodes.INVOKEVIRTUAL, fullClassName, methodName, TEST_METHOD_SIGNATURE);
 
             ++methodNum;

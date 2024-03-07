@@ -24,6 +24,9 @@
 package jdk.internal.org.objectweb.asm;
 
 import java.lang.classfile.ClassModel;
+import java.lang.classfile.CodeModel;
+import java.lang.classfile.MethodModel;
+import java.lang.classfile.attribute.CodeAttribute;
 import java.lang.reflect.InaccessibleObjectException;
 
 public class ClassWriterExt extends ClassWriter {
