@@ -3664,9 +3664,6 @@ class StubGenerator: public StubCodeGenerator {
 
 #undef __
 #define __ this->
-
-#if COMPILER2_OR_JVMCI
-
   class Sha2Generator : public MacroAssembler {
     StubCodeGenerator* _cgen;
    public:
@@ -4047,9 +4044,6 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
   };
-
-#endif // COMPILER2_OR_JVMCI
-
 #undef __
 #define __ masm->
 
@@ -4429,8 +4423,6 @@ class StubGenerator: public StubCodeGenerator {
     m5_FF_GG_HH_II_epilogue(reg_cache, a, b, c, d, k, s, t, rtmp1);
   }
 
-#if COMPILER2_OR_JVMCI
-
   // Arguments:
   //
   // Inputs:
@@ -4681,8 +4673,6 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-#endif // COMPILER2_OR_JVMCI
-
   /**
    * Perform the quarter round calculations on values contained within four vector registers.
    *
@@ -4714,8 +4704,6 @@ class StubGenerator: public StubCodeGenerator {
     __ vxor_vv(bVec, bVec, cVec);
     __ vrole32_vi(bVec, 7, tmp_vr);
   }
-
-#if COMPILER2_OR_JVMCI
 
   /**
    * int com.sun.crypto.provider.ChaCha20Cipher.implChaCha20Block(int[] initState, byte[] result)
@@ -4820,8 +4808,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return (address) start;
   }
-
-#endif // COMPILER2_OR_JVMCI
 
 
   // ------------------------ SHA-1 intrinsic ------------------------
@@ -5016,8 +5002,6 @@ class StubGenerator: public StubCodeGenerator {
     __ mv(prev_e, e);
   }
 
-#if COMPILER2_OR_JVMCI
-
   // Intrinsic for:
   //   void sun.security.provider.SHA.implCompress0(byte[] buf, int ofs)
   //   void sun.security.provider.DigestBase.implCompressMultiBlock0(byte[] b, int ofs, int limit)
@@ -5164,8 +5148,6 @@ class StubGenerator: public StubCodeGenerator {
 
     return (address) start;
   }
-
-#endif // COMPILER2_OR_JVMCI
 
 
 
