@@ -30,13 +30,11 @@ import jdk.internal.math.FloatToDecimal;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Spliterator;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
-import jdk.internal.util.ByteArrayLittleEndian;
 import jdk.internal.util.Preconditions;
 
 import static java.lang.String.COMPACT_STRINGS;
@@ -63,42 +61,6 @@ import static java.lang.String.checkOffset;
  */
 abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
     permits StringBuilder, StringBuffer {
-
-    private static final class Constants {
-        static final int TRUE_LATIN1;
-        static final long TRUE_UTF16;
-
-        static final int FALS_LATIN1;
-        static final long FALS_UTF16;
-
-        static final int NULL_LATIN1;
-        static final long NULL_UTF16;
-
-        static {
-            byte[] bytes4 = new byte[] {'t', 'r', 'u', 'e'};
-            byte[] bytes8 = new byte[8];
-
-            TRUE_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            StringLatin1.inflate(bytes4, 0, bytes8, 0, 4);
-            TRUE_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-
-            bytes4[0] = 'f';
-            bytes4[1] = 'a';
-            bytes4[2] = 'l';
-            bytes4[3] = 's';
-            FALS_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            StringLatin1.inflate(bytes4, 0, bytes8, 0, 4);
-            FALS_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-
-            bytes4[0] = 'n';
-            bytes4[1] = 'u';
-            bytes4[2] = 'l';
-            bytes4[3] = 'l';
-            NULL_LATIN1 = ByteArrayLittleEndian.getInt(bytes4, 0);
-            StringLatin1.inflate(bytes4, 0, bytes8, 0, 4);
-            NULL_UTF16 = ByteArrayLittleEndian.getLong(bytes8, 0);
-        }
-    }
 
     /**
      * The value is used for character storage.
@@ -678,9 +640,12 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         int count = this.count;
         byte[] val = this.value;
         if (isLatin1()) {
-            ByteArrayLittleEndian.setInt(val, count, Constants.NULL_LATIN1);
+            val[count] = 'n';
+            val[count + 1] = 'u';
+            val[count + 2] = 'l';
+            val[count + 3] = 'l';
         } else {
-            ByteArrayLittleEndian.setLong(val, count << 1, Constants.NULL_UTF16);
+            StringUTF16.putCharsAt(val, count, 'n', 'u', 'l', 'l');
         }
         this.count = count + 4;
         return this;
@@ -807,21 +772,23 @@ abstract sealed class AbstractStringBuilder implements Appendable, CharSequence
         ensureCapacityInternal(spaceNeeded);
         byte[] val = this.value;
         if (isLatin1()) {
-            ByteArrayLittleEndian.setInt(
-                    val,
-                    count,
-                    b ? Constants.TRUE_LATIN1 : Constants.FALS_LATIN1);
-            if (!b) {
+            if (b) {
+                val[count] = 't';
+                val[count + 1] = 'r';
+                val[count + 2] = 'u';
+                val[count + 3] = 'e';
+            } else {
+                val[count] = 'f';
+                val[count + 1] = 'a';
+                val[count + 2] = 'l';
+                val[count + 3] = 's';
                 val[count + 4] = 'e';
             }
         } else {
-            ByteArrayLittleEndian.setLong(
-                    val,
-                    count << 1,
-                    b ? Constants.TRUE_UTF16 : Constants.FALS_UTF16
-            );
-            if (!b) {
-                StringUTF16.putChar(val, count + 4, 'e');
+            if (b) {
+                StringUTF16.putCharsAt(val, count, 't', 'r', 'u', 'e');
+            } else {
+                StringUTF16.putCharsAt(val, count, 'f', 'a', 'l', 's', 'e');
             }
         }
         this.count = spaceNeeded;
