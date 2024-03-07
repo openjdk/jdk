@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ import java.util.Locale;
  * </pre>
  * which is the fully qualified class name of the class implementing
  * {@code DateFormatProvider}.
- * <h3>Invocation of Locale Sensitive Services</h3>
+ * <h2>Invocation of Locale Sensitive Services</h2>
  * <p>
  * Locale sensitive factory methods and methods for name retrieval in the
  * {@code java.text} and {@code java.util} packages invoke
@@ -120,33 +120,27 @@ import java.util.Locale;
  * property on the java launcher command line. Setting it at runtime with
  * {@link System#setProperty(String, String)} is discouraged and it may not affect
  * the order.
- * JDK Reference Implementation provides the following four
+ * JDK Reference Implementation provides the following three
  * locale providers:
  * <ul>
  * <li> "CLDR": A provider based on Unicode Consortium's
  * <a href="http://cldr.unicode.org/">CLDR Project</a>.
- * <li> "COMPAT": represents the locale sensitive services that is compatible
- * with the prior JDK releases up to JDK 8 (same as JDK 8's "JRE"). This
- * provider is deprecated and will be removed in the future release of JDK.
  * <li> "SPI": represents the locale sensitive services implementing the subclasses of
  * this {@code LocaleServiceProvider} class.
  * <li> "HOST": A provider that reflects the user's custom settings in the
  * underlying operating system. This provider may not be available, depending
  * on the JDK Reference Implementation.
- * <li> "JRE": represents a synonym to "COMPAT". This name
- * is deprecated and will be removed in the future release of JDK.
  * </ul>
  * <p>
  * For example, if the following is specified in the property:
  * <pre>
- * java.locale.providers=SPI,CLDR,COMPAT
+ * java.locale.providers=SPI,CLDR
  * </pre>
  * the locale sensitive services in the SPI providers are looked up first. If the
- * desired locale sensitive service is not available, then the runtime looks for CLDR,
- * COMPAT in that order.
+ * desired locale sensitive service is not available, then the runtime looks for CLDR.
  * <p>
- * The default order for looking up the preferred locale providers is "CLDR,COMPAT",
- * so specifying "CLDR,COMPAT" is identical to the default behavior. Applications which
+ * The default value for looking up the preferred locale providers is "CLDR",
+ * so specifying "CLDR" is identical to the default behavior. Applications which
  * require implementations of the locale sensitive services must explicitly specify
  * "SPI" in order for the Java runtime to load them from the classpath.
  *

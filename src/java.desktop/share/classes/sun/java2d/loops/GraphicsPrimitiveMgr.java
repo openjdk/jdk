@@ -245,7 +245,7 @@ public final class GraphicsPrimitiveMgr {
      * A holder for general primitives to avoid circular dependencies
      * between GraphicsPrimitiveMgr and Blit/etc classes.
      */
-    final static class GeneralPrimitives {
+    static final class GeneralPrimitives {
 
         private static GraphicsPrimitive[] primitives;
 

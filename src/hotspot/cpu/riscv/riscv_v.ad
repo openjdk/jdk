@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_VectorCastHF2F:
+      case Op_VectorCastF2HF:
+        return UseZvfh;
       default:
         break;
     }
@@ -3656,6 +3659,37 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
                    bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ---------------- Convert Half Floating to Floating Vector Operations ----------------
+
+// half precision -> single
+
+instruct vconvHF2F(vReg dst, vReg src, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (VectorCastHF2F src));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vfwcvt.f.f.v $dst, $src\t# convert half to single precision" %}
+  ins_encode %{
+    __ float16_to_float_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                          Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// single precision -> half
+
+instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (VectorCastF2HF src));
+  effect(TEMP_DEF dst, TEMP v0, TEMP vtmp, TEMP tmp);
+  format %{ "vfncvt.f.f.w $dst, $src\t# convert single to half precision" %}
+  ins_encode %{
+    __ float_to_float16_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                          as_VectorRegister($vtmp$$reg), $tmp$$Register,
+                          Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

@@ -29,7 +29,6 @@
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
@@ -913,23 +912,6 @@ void CodeCache::verify_clean_inline_caches() {
 #endif
 }
 
-void CodeCache::verify_icholder_relocations() {
-#ifdef ASSERT
-  // make sure that we aren't leaking icholders
-  int count = 0;
-  FOR_ALL_HEAPS(heap) {
-    FOR_ALL_BLOBS(cb, *heap) {
-      CompiledMethod *nm = cb->as_compiled_method_or_null();
-      if (nm != nullptr) {
-        count += nm->verify_icholder_relocations();
-      }
-    }
-  }
-  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
-         CompiledICHolder::live_count(), "must agree");
-#endif
-}
-
 // Defer freeing of concurrently cleaned ExceptionCache entries until
 // after a global handshake operation.
 void CodeCache::release_exception_cache(ExceptionCache* entry) {
@@ -1748,6 +1730,10 @@ void CodeCache::print() {
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
   int full_count = 0;
+  julong total_used = 0;
+  julong total_max_used = 0;
+  julong total_free = 0;
+  julong total_size = 0;
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1756,10 +1742,17 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     } else {
       st->print("CodeCache:");
     }
+    size_t size = total/K;
+    size_t used = (total - heap->unallocated_capacity())/K;
+    size_t max_used = heap->max_allocated_capacity()/K;
+    size_t free = heap->unallocated_capacity()/K;
+    total_size += size;
+    total_used += used;
+    total_max_used += max_used;
+    total_free += free;
     st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
                  "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
-                 total/K, (total - heap->unallocated_capacity())/K,
-                 heap->max_allocated_capacity()/K, heap->unallocated_capacity()/K);
+                 size, used, max_used, free);
 
     if (detailed) {
       st->print_cr(" bounds [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT "]",
@@ -1772,17 +1765,22 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
   }
 
   if (detailed) {
-    st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
-                       " adapters=" UINT32_FORMAT,
-                       blob_count(), nmethod_count(), adapter_count());
-    st->print_cr(" compilation: %s", CompileBroker::should_compile_new_jobs() ?
+    if (SegmentedCodeCache) {
+      st->print("CodeCache:");
+      st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
+                   "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
+                   total_size, total_used, total_max_used, total_free);
+    }
+    st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                 ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                 blob_count(), nmethod_count(), adapter_count(), full_count);
+    st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
+                 CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
                  "disabled (interpreter mode)" :
-                 "disabled (not enough contiguous free space left)");
-    st->print_cr("              stopped_count=%d, restarted_count=%d",
+                 "disabled (not enough contiguous free space left)",
                  CompileBroker::get_total_compiler_stopped_count(),
                  CompileBroker::get_total_compiler_restarted_count());
-    st->print_cr(" full_count=%d", full_count);
   }
 }
 

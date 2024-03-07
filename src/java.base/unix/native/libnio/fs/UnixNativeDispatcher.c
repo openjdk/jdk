@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <limits.h>
 #include <fcntl.h>
 #include <dirent.h>
@@ -54,22 +55,8 @@
 #include <sys/sysmacros.h> // makedev macros
 #endif
 
-#if defined(__linux__) || defined(_AIX)
-#include <string.h>
-#endif
-
-#ifdef _ALLBSD_SOURCE
-#include <string.h>
-
-#define stat64 stat
-#ifndef MACOSX
-#define statvfs64 statvfs
-#endif
-
-#define open64 open
-#define fstat64 fstat
-#define lstat64 lstat
-#define readdir64 readdir
+#if defined(_AIX)
+  #define statvfs statvfs64
 #endif
 
 #if defined(__linux__)
@@ -170,14 +157,6 @@ struct my_statx
 
 #include "sun_nio_fs_UnixNativeDispatcher.h"
 
-#if defined(_AIX)
-  #define DIR DIR64
-  #define dirent dirent64
-  #define opendir opendir64
-  #define readdir readdir64
-  #define closedir closedir64
-#endif
-
 /**
  * Size of password or group entry when not available via sysconf
  */
@@ -231,8 +210,8 @@ static jfieldID entry_dev;
 /**
  * System calls that may not be available at run time.
  */
-typedef int openat64_func(int, const char *, int, ...);
-typedef int fstatat64_func(int, const char *, struct stat64 *, int);
+typedef int openat_func(int, const char *, int, ...);
+typedef int fstatat_func(int, const char *, struct stat *, int);
 typedef int unlinkat_func(int, const char*, int);
 typedef int renameat_func(int, const char*, int, const char*);
 typedef int futimesat_func(int, const char *, const struct timeval *);
@@ -244,8 +223,8 @@ typedef int statx_func(int dirfd, const char *restrict pathname, int flags,
                        unsigned int mask, struct my_statx *restrict statxbuf);
 #endif
 
-static openat64_func* my_openat64_func = NULL;
-static fstatat64_func* my_fstatat64_func = NULL;
+static openat_func* my_openat_func = NULL;
+static fstatat_func* my_fstatat_func = NULL;
 static unlinkat_func* my_unlinkat_func = NULL;
 static renameat_func* my_renameat_func = NULL;
 static futimesat_func* my_futimesat_func = NULL;
@@ -261,8 +240,8 @@ static statx_func* my_statx_func = NULL;
  */
 #if defined(__linux__) && (defined(__i386) || defined(__arm__))
 #define FSTATAT64_SYSCALL_AVAILABLE
-static int fstatat64_wrapper(int dfd, const char *path,
-                             struct stat64 *statbuf, int flag)
+static int fstatat_wrapper(int dfd, const char *path,
+                             struct stat *statbuf, int flag)
 {
     #ifndef __NR_fstatat64
     #define __NR_fstatat64  300
@@ -273,8 +252,8 @@ static int fstatat64_wrapper(int dfd, const char *path,
 
 #if defined(__linux__) && defined(_LP64) && defined(__NR_newfstatat)
 #define FSTATAT64_SYSCALL_AVAILABLE
-static int fstatat64_wrapper(int dfd, const char *path,
-                             struct stat64 *statbuf, int flag)
+static int fstatat_wrapper(int dfd, const char *path,
+                           struct stat *statbuf, int flag)
 {
     return syscall(__NR_newfstatat, dfd, path, statbuf, flag);
 }
@@ -375,11 +354,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
     /* system calls that might not be available at run time */
 
 #if defined(_ALLBSD_SOURCE)
-    my_openat64_func = (openat64_func*)dlsym(RTLD_DEFAULT, "openat");
-    my_fstatat64_func = (fstatat64_func*)dlsym(RTLD_DEFAULT, "fstatat");
+    my_openat_func = (openat_func*)dlsym(RTLD_DEFAULT, "openat");
+    my_fstatat_func = (fstatat_func*)dlsym(RTLD_DEFAULT, "fstatat");
 #else
-    my_openat64_func = (openat64_func*) dlsym(RTLD_DEFAULT, "openat64");
-    my_fstatat64_func = (fstatat64_func*) dlsym(RTLD_DEFAULT, "fstatat64");
+    // Make sure we link to the 64-bit version of the functions
+    my_openat_func = (openat_func*) dlsym(RTLD_DEFAULT, "openat64");
+    my_fstatat_func = (fstatat_func*) dlsym(RTLD_DEFAULT, "fstatat64");
 #endif
     my_unlinkat_func = (unlinkat_func*) dlsym(RTLD_DEFAULT, "unlinkat");
     my_renameat_func = (renameat_func*) dlsym(RTLD_DEFAULT, "renameat");
@@ -389,6 +369,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 #endif
     my_futimens_func = (futimens_func*) dlsym(RTLD_DEFAULT, "futimens");
 #if defined(_AIX)
+    // Make sure we link to the 64-bit version of the function
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir64");
 #else
     my_fdopendir_func = (fdopendir_func*) dlsym(RTLD_DEFAULT, "fdopendir");
@@ -396,8 +377,8 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
 #if defined(FSTATAT64_SYSCALL_AVAILABLE)
     /* fstatat64 missing from glibc */
-    if (my_fstatat64_func == NULL)
-        my_fstatat64_func = (fstatat64_func*)&fstatat64_wrapper;
+    if (my_fstatat_func == NULL)
+        my_fstatat_func = (fstatat_func*)&fstatat_wrapper;
 #endif
 
     /* supports futimes or futimesat, futimens, and/or lutimes */
@@ -416,7 +397,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_init(JNIEnv* env, jclass this)
 
     /* supports openat, etc. */
 
-    if (my_openat64_func != NULL &&  my_fstatat64_func != NULL &&
+    if (my_openat_func != NULL &&  my_fstatat_func != NULL &&
         my_unlinkat_func != NULL && my_renameat_func != NULL &&
         my_futimesat_func != NULL && my_fdopendir_func != NULL)
     {
@@ -543,7 +524,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_open0(JNIEnv* env, jclass this,
     jint fd;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
-    RESTARTABLE(open64(path, (int)oflags, (mode_t)mode), fd);
+    RESTARTABLE(open(path, (int)oflags, (mode_t)mode), fd);
     if (fd == -1) {
         throwUnixException(env, errno);
     }
@@ -557,12 +538,12 @@ Java_sun_nio_fs_UnixNativeDispatcher_openat0(JNIEnv* env, jclass this, jint dfd,
     jint fd;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
-    if (my_openat64_func == NULL) {
+    if (my_openat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
         return -1;
     }
 
-    RESTARTABLE((*my_openat64_func)(dfd, path, (int)oflags, (mode_t)mode), fd);
+    RESTARTABLE((*my_openat_func)(dfd, path, (int)oflags, (mode_t)mode), fd);
     if (fd == -1) {
         throwUnixException(env, errno);
     }
@@ -638,9 +619,9 @@ static void copy_statx_attributes(JNIEnv* env, struct my_statx* buf, jobject att
 #endif
 
 /**
- * Copy stat64 members into sun.nio.fs.UnixFileAttributes
+ * Copy stat members into sun.nio.fs.UnixFileAttributes
  */
-static void copy_stat64_attributes(JNIEnv* env, struct stat64* buf, jobject attrs) {
+static void copy_stat_attributes(JNIEnv* env, struct stat* buf, jobject attrs) {
     (*env)->SetIntField(env, attrs, attrs_st_mode, (jint)buf->st_mode);
     (*env)->SetLongField(env, attrs, attrs_st_ino, (jlong)buf->st_ino);
     (*env)->SetLongField(env, attrs, attrs_st_dev, (jlong)buf->st_dev);
@@ -674,7 +655,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
     int err;
-    struct stat64 buf;
+    struct stat buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
     struct my_statx statx_buf;
@@ -682,7 +663,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
     unsigned int mask = STATX_ALL;
 
     if (my_statx_func != NULL) {
-        // Prefer statx over stat64 on Linux if it's available
+        // Prefer statx over stat on Linux if it's available
         RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
@@ -692,9 +673,9 @@ Java_sun_nio_fs_UnixNativeDispatcher_stat0(JNIEnv* env, jclass this,
         }
     }
 #endif
-    RESTARTABLE(stat64(path, &buf), err);
+    RESTARTABLE(stat(path, &buf), err);
     if (err == 0) {
-        copy_stat64_attributes(env, &buf, attrs);
+        copy_stat_attributes(env, &buf, attrs);
         return 0;
     } else {
         return errno;
@@ -706,7 +687,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     jlong pathAddress, jobject attrs)
 {
     int err;
-    struct stat64 buf;
+    struct stat buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
     struct my_statx statx_buf;
@@ -714,7 +695,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
     unsigned int mask = STATX_ALL;
 
     if (my_statx_func != NULL) {
-        // Prefer statx over stat64 on Linux if it's available
+        // Prefer statx over stat on Linux if it's available
         RESTARTABLE(statx_wrapper(AT_FDCWD, path, flags, mask, &statx_buf), err);
         if (err == 0) {
             copy_statx_attributes(env, &statx_buf, attrs);
@@ -725,11 +706,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_lstat0(JNIEnv* env, jclass this,
         return;
     }
 #endif
-    RESTARTABLE(lstat64(path, &buf), err);
+    RESTARTABLE(lstat(path, &buf), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        copy_stat64_attributes(env, &buf, attrs);
+        copy_stat_attributes(env, &buf, attrs);
     }
 }
 
@@ -738,7 +719,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
     jobject attrs)
 {
     int err;
-    struct stat64 buf;
+    struct stat buf;
 #if defined(__linux__)
     struct my_statx statx_buf;
     int flags = AT_EMPTY_PATH | AT_STATX_SYNC_AS_STAT;
@@ -757,11 +738,11 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstat0(JNIEnv* env, jclass this, jint fd,
         return;
     }
 #endif
-    RESTARTABLE(fstat64((int)fd, &buf), err);
+    RESTARTABLE(fstat((int)fd, &buf), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        copy_stat64_attributes(env, &buf, attrs);
+        copy_stat_attributes(env, &buf, attrs);
     }
 }
 
@@ -770,7 +751,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     jlong pathAddress, jint flag, jobject attrs)
 {
     int err;
-    struct stat64 buf;
+    struct stat buf;
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 #if defined(__linux__)
     struct my_statx statx_buf;
@@ -778,7 +759,7 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     unsigned int mask = STATX_ALL;
 
     if (my_statx_func != NULL) {
-        // Prefer statx over stat64 on Linux if it's available
+        // Prefer statx over stat on Linux if it's available
         if (((int)flag & AT_SYMLINK_NOFOLLOW) > 0) { // flag set in java code
             flags |= AT_SYMLINK_NOFOLLOW;
         }
@@ -793,15 +774,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_fstatat0(JNIEnv* env, jclass this, jint dfd
     }
 #endif
 
-    if (my_fstatat64_func == NULL) {
+    if (my_fstatat_func == NULL) {
         JNU_ThrowInternalError(env, "should not reach here");
         return;
     }
-    RESTARTABLE((*my_fstatat64_func)((int)dfd, path, &buf, (int)flag), err);
+    RESTARTABLE((*my_fstatat_func)((int)dfd, path, &buf, (int)flag), err);
     if (err == -1) {
         throwUnixException(env, errno);
     } else {
-        copy_stat64_attributes(env, &buf, attrs);
+        copy_stat_attributes(env, &buf, attrs);
     }
 }
 
@@ -1210,14 +1191,14 @@ Java_sun_nio_fs_UnixNativeDispatcher_statvfs0(JNIEnv* env, jclass this,
 #ifdef MACOSX
     struct statfs buf;
 #else
-    struct statvfs64 buf;
+    struct statvfs buf;
 #endif
     const char* path = (const char*)jlong_to_ptr(pathAddress);
 
 #ifdef MACOSX
     RESTARTABLE(statfs(path, &buf), err);
 #else
-    RESTARTABLE(statvfs64(path, &buf), err);
+    RESTARTABLE(statvfs(path, &buf), err);
 #endif
     if (err == -1) {
         throwUnixException(env, errno);
