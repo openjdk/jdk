@@ -114,12 +114,8 @@ public class DocLintTest {
         fm = javac.getStandardFileManager(null, null, null);
         try {
             fm.setLocation(StandardLocation.CLASS_OUTPUT, Arrays.asList(new File(".")));
-            file = new SimpleJavaFileObject(URI.create("Test.java"), JavaFileObject.Kind.SOURCE) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncoding) {
-                    return code;
-                }
-            };
+            file = SimpleJavaFileObject.forSource(URI.create("Test.java"),
+                                                  code);
 
             test(Collections.<String>emptyList(),
                     Main.Result.OK,

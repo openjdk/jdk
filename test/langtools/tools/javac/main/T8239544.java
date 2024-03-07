@@ -58,12 +58,8 @@ public class T8239544 {
         CompileState.ATTR, CompileState.FLOW, CompileState.TRANSTYPES, CompileState.TRANSPATTERNS, CompileState.UNLAMBDA, CompileState.LOWER}; //everything except GENERATE
 
     public static void main(String... args) throws IOException {
-        var f = new SimpleJavaFileObject(URI.create("TestLambdaClass.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return "@Deprecated public class TestLambdaClass {{new Thread(() -> {});}}";
-            }
-        };
+        var f = SimpleJavaFileObject.forSource(URI.create("TestLambdaClass.java"), 
+                                               "@Deprecated public class TestLambdaClass {{new Thread(() -> {});}}");
         for (String compilePolicy : TESTED_COMPILE_POLICIES) {
             for (CompileState stop : TESTED_COMPILE_STATES) {
                 var ctx = new Context();

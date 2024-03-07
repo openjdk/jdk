@@ -209,12 +209,8 @@ public class StringTemplateTest {
 //        System.out.println(source);
         if (ToolProvider.getSystemJavaCompiler().getTask(null, fileManager, null,
                 List.of("--enable-preview", "-source", String.valueOf(Runtime.version().feature())), null,
-                List.of(new SimpleJavaFileObject(URI.create("StringTemplateTest$.java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return source;
-            }
-        })).call()) {
+                List.of(SimpleJavaFileObject.forSource(URI.create("StringTemplateTest$.java"), source))
+           ).call()) {
             return fileManager.getClassLoader(CLASS_OUTPUT).loadClass("StringTemplateTest$");
         } else {
             throw new AssertionError("compilation failed");

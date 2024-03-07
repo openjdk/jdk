@@ -75,12 +75,9 @@ public class Test {
 
             // verify the generated code is valid Java by compiling it
             JavacTool tool2 = JavacTool.create();
-            JavaFileObject fo = new SimpleJavaFileObject(URI.create("output"), JavaFileObject.Kind.SOURCE) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                    return out;
-                }
-            };
+            JavaFileObject fo =
+                    SimpleJavaFileObject.forSource(URI.create("output"),
+                                                   out);
             JavacTask t2 = tool2.getTask(null, fm, null, null, null, Collections.singleton(fo));
             boolean ok = t2.call();
             if (!ok)

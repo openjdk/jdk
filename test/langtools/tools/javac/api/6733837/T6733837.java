@@ -40,7 +40,6 @@ import java.util.Arrays;
 import java.util.List;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import static javax.tools.JavaFileObject.Kind;
 import com.sun.source.util.JavacTask;
 
 public class T6733837 extends ToolTester {
@@ -52,11 +51,9 @@ public class T6733837 extends ToolTester {
     }
 
     public void exec() {
-        JavaFileObject sfo = new SimpleJavaFileObject(URI.create("myfo:/Test.java"),Kind.SOURCE) {
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return "\tclass ErroneousWithTab";
-            }
-        };
+        JavaFileObject sfo =
+            SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"),
+                                           "\tclass ErroneousWithTab");
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
         List<? extends JavaFileObject> files = Arrays.asList(sfo);

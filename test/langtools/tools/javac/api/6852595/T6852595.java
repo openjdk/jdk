@@ -44,15 +44,11 @@ import com.sun.source.util.TreePath;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.tree.JCTree.*;
 
-import static javax.tools.JavaFileObject.Kind;
-
 public class T6852595 {
     public static void main(String[] args) throws IOException {
-        JavaFileObject sfo = new SimpleJavaFileObject(URI.create("myfo:/Test.java"),Kind.SOURCE) {
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return "class BadName { Object o = j; }";
-            }
-        };
+        JavaFileObject sfo =
+                SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"),
+                                               "class BadName { Object o = j; }");
         List<? extends JavaFileObject> files = Arrays.asList(sfo);
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavacTask ct = (JavacTask)tool.getTask(null, null, null, null, null, files);

@@ -34,17 +34,14 @@
 import java.lang.classfile.*;
 import java.lang.classfile.attribute.MethodParameterInfo;
 import java.lang.classfile.attribute.MethodParametersAttribute;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
-import javax.tools.JavaFileObject.Kind;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.ToolProvider;
 
@@ -73,13 +70,8 @@ public class LegacyOutputTest {
     List<String> getParameterNames(String release) throws Exception {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         JavaFileObject fileObject =
-                new SimpleJavaFileObject(URI.create("Test.java"), Kind.SOURCE) {
-                    @Override
-                    public CharSequence getCharContent(boolean ignoreEncodingErrors)
-                            throws IOException {
-                        return "class Test { void f(int x, int y) {} }";
-                    }
-                };
+                SimpleJavaFileObject.forSource(URI.create("Test.java"),
+                                               "class Test { void f(int x, int y) {} }");
         CompilationTask task =
                 tool.getTask(
                         null,

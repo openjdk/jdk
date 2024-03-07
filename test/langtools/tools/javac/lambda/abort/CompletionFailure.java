@@ -99,13 +99,9 @@ public class CompletionFailure {
             bw.close();
         }
 
-        SimpleJavaFileObject asJFO(java.io.File dir) {
-            return new SimpleJavaFileObject(new File(dir, filename).toURI(), JavaFileObject.Kind.SOURCE) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    return contents;
-                }
-            };
+        JavaFileObject asJFO(java.io.File dir) {
+            return SimpleJavaFileObject.forSource(new File(dir, filename).toURI(),
+                                                  contents);
         }
     }
 

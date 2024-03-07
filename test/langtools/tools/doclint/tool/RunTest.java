@@ -188,12 +188,8 @@ public class RunTest {
     }
 
     JavaFileObject createFile(String name, final String body) {
-        return new SimpleJavaFileObject(URI.create(name), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                return body;
-            }
-        };
+        return SimpleJavaFileObject.forSource(URI.create(name),
+                                              body);
     }
 
     void error(String msg) {

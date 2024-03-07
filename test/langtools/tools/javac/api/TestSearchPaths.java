@@ -482,12 +482,8 @@ public class TestSearchPaths {
     }
 
     JavaFileObject getSource(final String source) {
-        return new SimpleJavaFileObject(getURIFromSource(source), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return source;
-            }
-        };
+        return SimpleJavaFileObject.forSource(getURIFromSource(source),
+                                              source);
     }
 
     void callTask(List<String> options, List<JavaFileObject> files) {

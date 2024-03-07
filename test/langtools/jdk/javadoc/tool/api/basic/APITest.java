@@ -115,13 +115,8 @@ class APITest {
     }
 
     protected JavaFileObject createSimpleJavaFileObject(final String binaryName, final String content) {
-        return new SimpleJavaFileObject(
-                URI.create("myfo:///" + binaryName + ".java"), JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncoding) {
-                return content;
-            }
-        };
+        return SimpleJavaFileObject.forSource(
+                URI.create("myfo:///" + binaryName + ".java"), content);
     }
 
     protected void checkFiles(File dir, Set<String> expectFiles) {

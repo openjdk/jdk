@@ -30,17 +30,11 @@
  */
 
 import com.sun.source.util.JavacTask;
-import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URL;
 import java.util.Arrays;
 import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 
 public class Abort {
@@ -85,13 +79,9 @@ public class Abort {
             bw.close();
         }
 
-        SimpleJavaFileObject asJFO(java.io.File dir) {
-            return new SimpleJavaFileObject(new java.io.File(dir, filename).toURI(), JavaFileObject.Kind.SOURCE) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    return contents;
-                }
-            };
+        JavaFileObject asJFO(java.io.File dir) {
+            return SimpleJavaFileObject.forSource(new java.io.File(dir, filename).toURI(),
+                                                  contents);
         }
     }
 

@@ -63,15 +63,10 @@ public class StringFoldingPosTest {
     }
 
     private static JavaFileObject makeSource(String name, String code) {
-        return new SimpleJavaFileObject(
+        return SimpleJavaFileObject.forSource(
                 URI.create(
                         "file:/" + name.replace('.', '/') + JavaFileObject.Kind.SOURCE.extension),
-                JavaFileObject.Kind.SOURCE) {
-            @Override
-            public CharSequence getCharContent(boolean ignoreEncodingErrors) {
-                return code;
-            }
-        };
+                code);
     }
 
     private void run(

@@ -53,13 +53,9 @@ public class TestCircularClassfile {
             this.sourceStr = sourceStr;
         }
 
-        SimpleJavaFileObject getSource() {
-            return new SimpleJavaFileObject(URI.create("myfo:/Test.java"), JavaFileObject.Kind.SOURCE) {
-                @Override
-                public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
-                    return sourceStr;
-                }
-            };
+        JavaFileObject getSource() {
+            return SimpleJavaFileObject.forSource(URI.create("myfo:/Test.java"),
+                                                  sourceStr);
         }
     }
 
