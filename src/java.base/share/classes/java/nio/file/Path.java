@@ -326,7 +326,7 @@ public interface Path
      * <p> For example, an audio track's extension might be removed as:
      * {@snippet lang="java" :
      *     Path music = Path.of("library/audio/track.flac");
-     *     Path noise = lossless.withoutExtension();
+     *     Path noise = music.withoutExtension();
      * }
      * where {@code noise.toString()} would return
      * {@code "library/audio/track"}.
@@ -347,14 +347,15 @@ public interface Path
      *     if (getExtension().isEmpty()) {
      *         return this;
      *     } else {
-     *         return Path.of(toString().substring(0,
-     *             toString().length() - getExtension().length() - 1));
+     *         String str = getFileName().toString();
+     *         return resolveSibling(str.substring(0,
+     *                               str.length() - ext.length() - 1));
      *     }
      * }
      *
      * This method must satisfy the invariant:
      * {@snippet lang="java" :
-     *     assert equals(Path.of(withoutExtension().toString()
+     *     assert toString().equals(withoutExtension().toString()
      *         + (getExtension().isEmpty() ? "" : ("." + getExtension())));
      * }
      * wherein the {@code Path}-{@code String} conversions are assumed to be
@@ -372,7 +373,7 @@ public interface Path
         String ext = getExtension();
         if (ext.isEmpty())
             return this;
-        String str = toString();
+        String str = getFileName().toString();
         return resolveSibling(str.substring(0, str.length() - ext.length() - 1));
     }
 
