@@ -146,7 +146,11 @@ $(call FillFindCache, $(JVM_SRC_DIRS))
 LIBJVM_STATIC_EXCLUDE_OBJS := operator_new.o
 
 ifeq ($(call isTargetOs, windows), true)
-  WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  ifeq ($(STATIC_LIBS), true)
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/static-win-exports.def
+  else
+    WIN_EXPORT_FILE := $(JVM_OUTPUTDIR)/win-exports.def
+  endif
 
   JVM_LDFLAGS += -def:$(WIN_EXPORT_FILE)
 endif
@@ -232,7 +236,7 @@ ifeq ($(call isTargetOs, windows), true)
   # std::function<void()> f = [](){}
   FILTER_SYMBOLS_AWK_SCRIPT := \
       '{ \
-        if ($$7 ~ /\?\?_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print $$7; \
+        if ($$7 ~ /\?\?_7.*@@6B@/ && $$7 !~ /type_info/ && $$7 !~ /lambda/) print "  " $$7; \
       }'
 
   # A more correct solution would be to send BUILD_LIBJVM_ALL_OBJS instead of
@@ -241,10 +245,9 @@ ifeq ($(call isTargetOs, windows), true)
   $(WIN_EXPORT_FILE): $(BUILD_LIBJVM_ALL_OBJS)
 	$(call LogInfo, Generating list of symbols to export from object files)
 	$(call MakeDir, $(@D))
-	$(CD) $(JVM_OUTPUTDIR)/objs && \
-	    $(DUMPBIN) -symbols *$(OBJ_SUFFIX) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u > $@.syms
 	$(ECHO) "EXPORTS" > $@.tmp
-	$(AWK) '{ if ($$0 ~ ".") { print "  " $$0 } }'  < $@.syms >> $@.tmp
+	$(CD) $(BUILD_LIBJVM_OBJECT_DIR) && \
+	    $(DUMPBIN) -symbols *$(OBJ_SUFFIX) | $(AWK) $(FILTER_SYMBOLS_AWK_SCRIPT) | $(SORT) -u >> $@.tmp
 	$(RM) $@
 	$(MV) $@.tmp $@
 
