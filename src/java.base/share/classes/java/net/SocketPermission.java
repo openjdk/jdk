@@ -225,6 +225,8 @@ public final class SocketPermission extends Permission
     // port range on host
     private transient int[] portrange;
 
+    private transient boolean defaultDeny = false;
+
     // true if this SocketPermission represents a hostname
     // that failed our reverse mapping heuristic test
     private transient boolean untrusted;
@@ -296,6 +298,10 @@ public final class SocketPermission extends Permission
         super(getHost(host));
         // name initialized to getHost(host); NPE detected in getHost()
         init(getName(), mask);
+    }
+
+    private void setDeny() {
+        defaultDeny = true;
     }
 
     private static String getHost(String host) {
@@ -605,7 +611,8 @@ public final class SocketPermission extends Permission
         if (trusted) return false;
         if (invalid || untrusted) return true;
         try {
-            if (!trustNameService && sun.net.www.URLConnection.isProxiedHost(hostname)) {
+            if (!trustNameService && (defaultDeny ||
+                    sun.net.www.URLConnection.isProxiedHost(hostname))) {
                 if (this.cname == null) {
                     this.getCanonName();
                 }
