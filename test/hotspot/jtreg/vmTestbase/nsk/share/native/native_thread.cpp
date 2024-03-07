@@ -25,7 +25,7 @@
 #include <stdio.h>
 
 /* testbase_nsk threads: */
-#include <native_thread.h>
+#include <native_thread.hpp>
 
 /***************************************************************/
 

@@ -56,7 +56,6 @@ public class VMDeprecatedOptions {
         ArrayList<String[]> deprecated = new ArrayList(
           Arrays.asList(new String[][] {
             // deprecated non-alias flags:
-            {"TLABStats",                 "false"},
             {"AllowRedefinitionToAddDeleteMethods", "true"},
 
             // deprecated alias flags (see also aliased_jvm_flags):

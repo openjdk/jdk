@@ -2998,7 +2998,7 @@ public class Lower extends TreeTranslator {
                             boxIfNeeded(make.Ident(dollar_s), types.unboxedType(tree.expr.type)));
                 } else {
                     exactnessCheck = make.at(tree.pos())
-                            .TypeTest(tree.expr, make.Type(types.boxedClass(tree.pattern.type).type))
+                            .TypeTest(make.Ident(dollar_s), make.Type(types.boxedClass(tree.pattern.type).type))
                             .setType(syms.booleanType);
                 }
 

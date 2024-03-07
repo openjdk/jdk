@@ -30,9 +30,7 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.StartElementTree;
 import com.sun.source.util.DocTreeFactory;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -220,14 +218,10 @@ public class DocFilesHandler {
             List<Content> subnavLinks = new ArrayList<>();
             var pkg = dfElement.getPackageElement();
             if (configuration.showModules) {
-                var mdle = utils.elementUtils.getModuleOf(element);
-                subnavLinks.add(links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
-                        Text.of(mdle.getQualifiedName()),
-                        pkg.isUnnamed() ? HtmlStyle.currentSelection : null, ""));
+                subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(element), pkg.isUnnamed()));
             }
             if (!pkg.isUnnamed()) {
-                subnavLinks.add(links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
-                        getLocalizedPackageName(pkg), HtmlStyle.currentSelection, ""));
+                subnavLinks.add(getBreadcrumbLink(pkg, true));
             }
             return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
         }
