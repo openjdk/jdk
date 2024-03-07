@@ -36,6 +36,25 @@ import java.io.EOFException;
  * This class implements a stream filter for reading compressed data in
  * the GZIP file format.
  *
+ * <p>
+ * The GZIP compressed data format is self-delimiting, i.e., it includes an explicit trailer
+ * frame that marks the end of the compressed data. Therefore it's possible for the underlying
+ * input to contain additional data beyond the end of the GZIP data. If that occurs, this class
+ * will automatically attempt to continue by decoding a new GZIP-compressed data stream.
+ * In this way, decoding of concatenated GZIP-compressed data streams is supported by default.
+ *
+ * <p>
+ * However, this also means that if the underlying input contains non-GZIP data following
+ * one or more GZIP-compressed data streams, then this class will read some small portion of
+ * that non-GZIP data before finally discarding it and returning EOF; or, it may misinterpret
+ * that data as the start of a new, valid GZIP compressed data stream, before throwing an
+ * inevitable {@link ZipException} when that turns out not to be the case.
+ *
+ * <p>
+ * Therefore, even though the GZIP compressed data format is self-delimiting, when the GZIP
+ * compressed data is followed by non-GZIP data this class cannot be relied upon to stop
+ * reading from the underlying input stream precisely at the last byte of valid GZIP data.
+ *
  * @see         InflaterInputStream
  * @author      David Connelly
  * @since 1.1
