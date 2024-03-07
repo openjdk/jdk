@@ -58,7 +58,7 @@ public class LineWidget extends Widget implements PopupMenuProvider {
     public final int HOVER_ARROW_SIZE = 8;
     public final int BOLD_STROKE_WIDTH = 2;
     public final int HOVER_STROKE_WIDTH = 3;
-    private final static double ZOOM_FACTOR = 0.1;
+    private static final double ZOOM_FACTOR = 0.1;
     private final OutputSlot outputSlot;
     private final DiagramScene scene;
     private final List<Connection> connections;

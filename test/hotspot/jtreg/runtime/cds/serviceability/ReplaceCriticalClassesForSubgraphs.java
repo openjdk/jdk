@@ -47,7 +47,8 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
 
             // CDS should not be disabled -- these critical classes cannot be replaced because
             // JvmtiExport::early_class_hook_env() is false.
-            "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
+            "-subgraph java/lang/module/Configuration java.lang.module.Configuration",
+            "-subgraph java/lang/ModuleLayer java.lang.ModuleLayer",
             "-subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.

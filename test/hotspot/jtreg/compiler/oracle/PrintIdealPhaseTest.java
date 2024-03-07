@@ -81,7 +81,7 @@ public class PrintIdealPhaseTest {
         options.add("-XX:CompileCommand=PrintIdealPhase," + getTestClass() + "::test," + cmdPhases);
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
         if (valid) {
             oa.shouldHaveExitValue(0)
             .shouldContain("CompileCommand: PrintIdealPhase compiler/oracle/PrintIdealPhaseTest$TestMain.test const char* PrintIdealPhase = '"+cmdPhases.replace(',', ' ')+"'")

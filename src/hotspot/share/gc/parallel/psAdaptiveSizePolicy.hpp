@@ -27,7 +27,6 @@
 
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcStats.hpp"
 #include "gc/shared/gcUtil.hpp"
 #include "utilities/align.hpp"
 
@@ -72,8 +71,8 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   // Footprint statistics
   AdaptiveWeightedAverage* _avg_base_footprint;
 
-  // Statistical data gathered for GC
-  GCStats _gc_stats;
+  // Statistics for promoted objs
+  AdaptivePaddedNoZeroDevAverage*   _avg_promoted;
 
   // Variable for estimating the major and minor pause times.
   // These variables represent linear least-squares fits of
@@ -90,8 +89,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   double _latest_major_mutator_interval_seconds;
 
   const size_t _space_alignment; // alignment for eden, survivors
-
-  const double _gc_minor_pause_goal_sec;    // goal for maximum minor gc pause
 
   // The amount of live data in the heap at the last full GC, used
   // as a baseline to help us determine when we need to perform the
@@ -113,9 +110,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
 
  private:
 
-  // Accessors
-  double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
-
   void adjust_eden_for_minor_pause_time(size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal
   // Returned sizes are not necessarily aligned.
@@ -135,14 +129,10 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                                    size_t desired_total);
 
   // Size in bytes for an increment or decrement of eden.
-  virtual size_t eden_increment(size_t cur_eden, uint percent_change);
-  virtual size_t eden_decrement(size_t cur_eden);
   size_t eden_decrement_aligned_down(size_t cur_eden);
   size_t eden_increment_with_supplement_aligned_up(size_t cur_eden);
 
   // Size in bytes for an increment or decrement of the promotion area
-  virtual size_t promo_increment(size_t cur_promo, uint percent_change);
-  virtual size_t promo_decrement(size_t cur_promo);
   size_t promo_decrement_aligned_down(size_t cur_promo);
   size_t promo_increment_with_supplement_aligned_up(size_t cur_promo);
 
@@ -173,12 +163,9 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   virtual GCPolicyKind kind() const { return _gc_ps_adaptive_size_policy; }
 
  public:
-  virtual size_t eden_increment(size_t cur_eden);
-  virtual size_t promo_increment(size_t cur_promo);
-
   // Accessors for use by performance counters
   AdaptivePaddedNoZeroDevAverage*  avg_promoted() const {
-    return _gc_stats.avg_promoted();
+    return _avg_promoted;
   }
   AdaptiveWeightedAverage* avg_base_footprint() const {
     return _avg_base_footprint;
@@ -194,7 +181,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
                        size_t init_survivor_size,
                        size_t space_alignment,
                        double gc_pause_goal_sec,
-                       double gc_minor_pause_goal_sec,
                        uint gc_time_ratio);
 
   // Methods indicating events of interest to the adaptive size policy,

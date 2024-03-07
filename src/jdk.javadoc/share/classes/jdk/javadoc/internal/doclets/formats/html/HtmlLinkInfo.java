@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,7 +85,7 @@ public class HtmlLinkInfo {
     private Kind context = Kind.PLAIN;
 
     // The fragment of the link.
-    private String fragment = "";
+    private String fragment = null;
 
     // The member this link points to (if any).
     private Element targetMember;

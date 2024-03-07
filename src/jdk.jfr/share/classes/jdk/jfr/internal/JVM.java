@@ -50,7 +50,7 @@ public final class JVM {
      */
     public static final Object CHUNK_ROTATION_MONITOR = new ChunkRotationMonitor();
 
-    private volatile static boolean nativeOK;
+    private static volatile boolean nativeOK;
 
     private static native void registerNatives();
 
@@ -626,6 +626,12 @@ public final class JVM {
      * JVM runs in a container.
      */
     public static native long hostTotalMemory();
+
+    /**
+     * Returns the total amount of swap memory of the host system whether or not this
+     * JVM runs in a container.
+     */
+    public static native long hostTotalSwapMemory();
 
     /**
      * Emit a jdk.DataLoss event for the specified amount of bytes.

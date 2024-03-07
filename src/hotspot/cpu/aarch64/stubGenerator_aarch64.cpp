@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2022, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -5327,19 +5327,6 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
-  address generate_dlog() {
-    __ align(CodeEntryAlignment);
-    StubCodeMark mark(this, "StubRoutines", "dlog");
-    address entry = __ pc();
-    FloatRegister vtmp0 = v0, vtmp1 = v1, vtmp2 = v2, vtmp3 = v3, vtmp4 = v4,
-        vtmp5 = v5, tmpC1 = v16, tmpC2 = v17, tmpC3 = v18, tmpC4 = v19;
-    Register tmp1 = r0, tmp2 = r1, tmp3 = r2, tmp4 = r3, tmp5 = r4;
-    __ fast_log(vtmp0, vtmp1, vtmp2, vtmp3, vtmp4, vtmp5, tmpC1, tmpC2, tmpC3,
-        tmpC4, tmp1, tmp2, tmp3, tmp4, tmp5);
-    return entry;
-  }
-
-
   // code for comparing 16 characters of strings with Latin1 and Utf16 encoding
   void compare_string_16_x_LU(Register tmpL, Register tmpU, Label &DIFF1,
       Label &DIFF2) {
@@ -5484,6 +5471,32 @@ class StubGenerator: public StubCodeGenerator {
       __ subw(result, tmp1, rscratch1);
     __ bind(DONE);
       __ ret(lr);
+    return entry;
+  }
+
+  // r0 = input (float16)
+  // v0 = result (float)
+  // v1 = temporary float register
+  address generate_float16ToFloat() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "float16ToFloat");
+    address entry = __ pc();
+    BLOCK_COMMENT("Entry:");
+    __ flt16_to_flt(v0, r0, v1);
+    __ ret(lr);
+    return entry;
+  }
+
+  // v0 = input (float)
+  // r0 = result (float16)
+  // v1 = temporary float register
+  address generate_floatToFloat16() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "floatToFloat16");
+    address entry = __ pc();
+    BLOCK_COMMENT("Entry:");
+    __ flt_to_flt16(r0, v0, v1);
+    __ ret(lr);
     return entry;
   }
 
@@ -8333,17 +8346,18 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
     }
 
-    // Disabled until JDK-8210858 is fixed
-    // if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dlog)) {
-    //   StubRoutines::_dlog = generate_dlog();
-    // }
-
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dsin)) {
       StubRoutines::_dsin = generate_dsin_dcos(/* isCos = */ false);
     }
 
     if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_dcos)) {
       StubRoutines::_dcos = generate_dsin_dcos(/* isCos = */ true);
+    }
+
+    if (vmIntrinsics::is_intrinsic_available(vmIntrinsics::_float16ToFloat) &&
+        vmIntrinsics::is_intrinsic_available(vmIntrinsics::_floatToFloat16)) {
+      StubRoutines::_hf2f = generate_float16ToFloat();
+      StubRoutines::_f2hf = generate_floatToFloat16();
     }
   }
 

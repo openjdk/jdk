@@ -93,24 +93,24 @@ public class TestMetaSpaceLog {
   }
 
   private static void testMetaSpaceUpdate() throws Exception {
-    ProcessBuilder pb =
-      ProcessTools.createTestJavaProcessBuilder(
-          "-Xlog:gc*",
-          "-Xbootclasspath/a:.",
-          "-XX:+UnlockDiagnosticVMOptions",
-          "-XX:+WhiteBoxAPI",
-          "-Xmx1000M",
-          "-Xms1000M",
-          StressMetaSpace.class.getName());
-
     OutputAnalyzer output = null;
     try {
-      output = new OutputAnalyzer(pb.start());
+      output = ProcessTools.executeTestJava(
+            "-Xlog:gc*",
+            "-Xbootclasspath/a:.",
+            "-XX:+UnlockDiagnosticVMOptions",
+            "-XX:+WhiteBoxAPI",
+            "-Xmx1000M",
+            "-Xms1000M",
+            StressMetaSpace.class.getName());
+
       verifyContainsMetaSpaceUpdate(output);
     } catch (Exception e) {
       // For error diagnosis: print and throw.
       e.printStackTrace();
-      output.reportDiagnosticSummary();
+      if (output != null) {
+        output.reportDiagnosticSummary();
+      }
       throw e;
     }
   }

@@ -28,6 +28,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -48,6 +49,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Maps {
     private SimpleRandom rng;
     private Map<Integer, Integer> map;
+    private Map<Integer, Integer> staticMap;
     private Integer[] key;
 
     private int removesPerMaxRandom;
@@ -55,9 +57,11 @@ public class Maps {
     private int total;
     private int position;
 
+    @Param("10000")
+    private int nkeys;
+
     @Setup
     public void initTest() {
-        int nkeys = 10000;
         int pRemove = 10;
         int pInsert = 90;
         removesPerMaxRandom = (int) ((pRemove / 100.0 * 0x7FFFFFFFL));
@@ -65,10 +69,12 @@ public class Maps {
 
         rng = new SimpleRandom();
         map = new ConcurrentHashMap<>();
+        staticMap = new ConcurrentHashMap<>();
         total = 0;
         key = new Integer[nkeys];
         for (int i = 0; i < key.length; ++i) {
             key[i] = rng.next();
+            staticMap.put(rng.next(), rng.next());
         }
         position = key.length / 2;
     }
@@ -104,6 +110,21 @@ public class Maps {
         }
         total += r;
         position = pos;
+    }
+
+    @Benchmark
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapCopyConstructor() {
+        return new ConcurrentHashMap<>(staticMap);
+    }
+
+    @Benchmark
+    public ConcurrentHashMap<Integer, Integer> testConcurrentHashMapPutAll() {
+        ConcurrentHashMap<Integer, Integer> map = new ConcurrentHashMap<>(nkeys);
+        for (int i = 0; i < nkeys; ++i) {
+            map.put(rng.next(), rng.next());
+        }
+        map.putAll(staticMap);
+        return map;
     }
 
     private static class SimpleRandom {

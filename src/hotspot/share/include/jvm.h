@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1152,10 +1152,10 @@ JNIEXPORT void JNICALL
 JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean hide);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide);
+JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide);
 
 JNIEXPORT void JNICALL
-JVM_VirtualThreadDisableSuspend(JNIEnv* env, jobject vthread, jboolean enter);
+JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter);
 
 /*
  * Core reflection support.

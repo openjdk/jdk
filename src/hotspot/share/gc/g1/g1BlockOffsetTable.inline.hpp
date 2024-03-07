@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"

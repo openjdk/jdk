@@ -44,7 +44,7 @@ public class TestPrintC1Statistics {
         options.add("-XX:+PrintC1Statistics");
         options.add("--version");
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
 
         oa.shouldHaveExitValue(0).shouldContain("C1 Runtime statistics");
     }

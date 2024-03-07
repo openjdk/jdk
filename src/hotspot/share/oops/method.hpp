@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -395,7 +395,8 @@ public:
   void remove_unshareable_flags() NOT_CDS_RETURN;
 
   // the number of argument reg slots that the compiled method uses on the stack.
-  int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
+  int num_stack_arg_slots(bool rounded = true) const {
+    return rounded ? align_up(constMethod()->num_stack_arg_slots(), 2) : constMethod()->num_stack_arg_slots(); }
 
   virtual void metaspace_pointers_do(MetaspaceClosure* iter);
   virtual MetaspaceObj::Type type() const { return MethodType; }
@@ -453,7 +454,7 @@ public:
   void mask_for(int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }

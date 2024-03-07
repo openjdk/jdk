@@ -175,8 +175,6 @@ class os::Aix {
   static bool platform_print_native_stack(outputStream* st, const void* context, char *buf, int buf_size, address& lastpc);
   static void* resolve_function_descriptor(void* p);
 
-  // Simulate the library search algorithm of dlopen() (in os::dll_load)
-  static int stat64x_via_LIBPATH(const char* path, struct stat64x* stat);
 };
 
 #endif // OS_AIX_OS_AIX_HPP

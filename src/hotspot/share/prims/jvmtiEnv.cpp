@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2896,26 +2896,20 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
     return JVMTI_ERROR_NONE;
   }
 
-
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  int result_count = 0;
-  // First, count the fields.
-  FilteredFieldStream flds(ik, true, true);
-  result_count = flds.field_count();
+  FilteredJavaFieldStream flds(ik);
 
-  // Allocate the result and fill it in
-  jfieldID* result_list = (jfieldID*) jvmtiMalloc(result_count * sizeof(jfieldID));
-  // The JVMTI spec requires fields in the order they occur in the class file,
-  // this is the reverse order of what FieldStream hands out.
-  int id_index = (result_count - 1);
+  int result_count = flds.field_count();
 
-  for (FilteredFieldStream src_st(ik, true, true); !src_st.eos(); src_st.next()) {
-    result_list[id_index--] = jfieldIDWorkaround::to_jfieldID(
-                                            ik, src_st.offset(),
-                                            src_st.access_flags().is_static());
+  // Allocate the result and fill it in.
+  jfieldID* result_list = (jfieldID*)jvmtiMalloc(result_count * sizeof(jfieldID));
+  for (int i = 0; i < result_count; i++, flds.next()) {
+    result_list[i] = jfieldIDWorkaround::to_jfieldID(ik, flds.offset(),
+                                                     flds.access_flags().is_static());
   }
-  assert(id_index == -1, "just checking");
+  assert(flds.done(), "just checking");
+
   // Fill in the results
   *field_count_ptr = result_count;
   *fields_ptr = result_list;

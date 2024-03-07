@@ -54,10 +54,11 @@ public:
   const TypeTuple* _extra_types;
 
   public:
-  ConstraintCastNode(Node* n, const Type* t, ConstraintCastNode::DependencyType dependency,
+  ConstraintCastNode(Node* ctrl, Node* n, const Type* t, ConstraintCastNode::DependencyType dependency,
                      const TypeTuple* extra_types)
           : TypeNode(t,2), _dependency(dependency), _extra_types(extra_types) {
     init_class_id(Class_ConstraintCast);
+    init_req(0, ctrl);
     init_req(1, n);
   }
   virtual Node* Identity(PhaseGVN* phase);
@@ -68,8 +69,7 @@ public:
   virtual bool depends_only_on_test() const { return _dependency == RegularDependency; }
   bool carry_dependency() const { return _dependency != RegularDependency; }
   TypeNode* dominating_cast(PhaseGVN* gvn, PhaseTransform* pt) const;
-  static Node* make_cast(int opcode, Node* c, Node* n, const Type* t, DependencyType dependency, const TypeTuple* extra_types);
-  static Node* make(Node* c, Node *n, const Type *t, DependencyType dependency, BasicType bt);
+  static Node* make_cast_for_basic_type(Node* c, Node* n, const Type* t, DependencyType dependency, BasicType bt);
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;
@@ -102,20 +102,19 @@ class CastIINode: public ConstraintCastNode {
 
   public:
   CastIINode(Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
-    : ConstraintCastNode(n, t, dependency, types), _range_check_dependency(range_check_dependency) {
+    : ConstraintCastNode(nullptr, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
     init_class_id(Class_CastII);
   }
-  CastIINode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false)
-    : ConstraintCastNode(n, t, dependency, nullptr), _range_check_dependency(range_check_dependency) {
+  CastIINode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, bool range_check_dependency = false, const TypeTuple* types = nullptr)
+    : ConstraintCastNode(ctrl, n, t, dependency, types), _range_check_dependency(range_check_dependency) {
     init_class_id(Class_CastII);
-    init_req(0, ctrl);
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  bool has_range_check() {
+  bool has_range_check() const {
 #ifdef _LP64
     return _range_check_dependency;
 #else
@@ -124,6 +123,8 @@ class CastIINode: public ConstraintCastNode {
 #endif
   }
 
+  CastIINode* pin_array_access_node() const;
+
 #ifndef PRODUCT
   virtual void dump_spec(outputStream* st) const;
 #endif
@@ -131,13 +132,8 @@ class CastIINode: public ConstraintCastNode {
 
 class CastLLNode: public ConstraintCastNode {
 public:
-  CastLLNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency)
-    : ConstraintCastNode(n, t, dependency, nullptr) {
-    init_class_id(Class_CastLL);
-    init_req(0, ctrl);
-  }
-  CastLLNode(Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-          : ConstraintCastNode(n, t, dependency, types) {
+  CastLLNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastLL);
   }
 
@@ -149,8 +145,8 @@ public:
 
 class CastFFNode: public ConstraintCastNode {
 public:
-  CastFFNode(Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-          : ConstraintCastNode(n, t, dependency, types) {
+  CastFFNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastFF);
   }
   virtual int Opcode() const;
@@ -159,8 +155,8 @@ public:
 
 class CastDDNode: public ConstraintCastNode {
 public:
-  CastDDNode(Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-          : ConstraintCastNode(n, t, dependency, types) {
+  CastDDNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastDD);
   }
   virtual int Opcode() const;
@@ -169,8 +165,8 @@ public:
 
 class CastVVNode: public ConstraintCastNode {
 public:
-  CastVVNode(Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-          : ConstraintCastNode(n, t, dependency, types) {
+  CastVVNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+          : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CastVV);
   }
   virtual int Opcode() const;
@@ -182,8 +178,8 @@ public:
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node *n, const Type *t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-    : ConstraintCastNode(n, t, dependency, types) {
+  CastPPNode (Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+    : ConstraintCastNode(ctrl, n, t, dependency, types) {
   }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
@@ -193,10 +189,9 @@ class CastPPNode: public ConstraintCastNode {
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
 class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode(Node *c, Node *n, const Type *t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
-    : ConstraintCastNode(n, t, dependency, types) {
+  CheckCastPPNode(Node* ctrl, Node* n, const Type* t, DependencyType dependency = RegularDependency, const TypeTuple* types = nullptr)
+    : ConstraintCastNode(ctrl, n, t, dependency, types) {
     init_class_id(Class_CheckCastPP);
-    init_req(0, c);
   }
 
   virtual const Type* Value(PhaseGVN* phase) const;
