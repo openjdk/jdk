@@ -57,10 +57,10 @@ public class ColConvCCMTest extends ColConvTest {
     final static double [] ACCURACY = {
     // Accuracy for color conversions
         2.5,        // sRGB
-        45.0,       // LINEAR_RGB
+        (isOpenProfile() ? 45.0 : 10.1), // LINEAR_RGB
         10.5,       // GRAY
-        215.0,      // PYCC
-        56.0        // CIEXYZ
+        (isOpenProfile() ? 215.0 : 64.5), // PYCC
+        (isOpenProfile() ? 56.0 : 55.5) // CIEXYZ
     };
 
     final static String [] gldImgNames = {

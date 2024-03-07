@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6476665 8326661
+ * @bug 6476665
  * @summary Verifies color conversion of Direct Color Model based images
  * @run main ColConvDCMTest
  */
@@ -65,7 +65,7 @@ public class ColConvDCMTest extends ColConvTest {
     final static double [] ACCURACY = {
         // Accuracy for color conversions
         2.5, // sRGB
-        45.0 // LINEAR_RGB
+        (isOpenProfile() ? 45.0 : 2.5), // LINEAR_RGB
     };
 
     final static String [] gldImgNames = {
