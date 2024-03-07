@@ -4884,6 +4884,10 @@ void MacroAssembler::klass_subtype_fallback() {
   ret(0);
 }
 
+void piddle(Klass *super, Klass *sub) {
+  asm("nop");
+}
+
 // Make sure that the hashed lookup and a linear scan agree.
 void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
                                                     Klass *super_klass,
@@ -4897,6 +4901,7 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
   if (VerifySecondarySupers) {
 
     push(rax);
+    push(rax);
     push(rcx);
     push(rdi);
 
@@ -4907,6 +4912,8 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     // Skip to start of data.
     addptr(rdi, Array<Klass*>::base_offset_in_bytes());
 
+    mov_metadata(rax, super_klass);
+
     // Scan RCX words at [RDI] for an occurrence of RAX.
     // Set NZ/Z based on last compare.
     // Z flag value will not be set by 'repne' if RCX == 0 since 'repne' does
@@ -4915,9 +4922,9 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     testptr(rax,rax); // Set Z = 0
     repne_scan();
 
-    // Unspill the temp. registers:
     pop(rdi);
     pop(rcx);
+    pop(rax);
     pop(rax);
 
     Label hit, fail, done;
@@ -4928,14 +4935,42 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     cmpl(result, 0);
     jcc(Assembler::notEqual, done);  // Agree.
 
-    STOP("VerifySecondarySupers failed");
+    {
+      Label OK;
+      jcc(Assembler::equal, OK);
+
+      push_CPU_state();
+      mov(c_rarg1, r_sub_klass);
+      mov_metadata(c_rarg0, super_klass);
+      call(RuntimeAddress
+           (CAST_FROM_FN_PTR(address, &piddle)));
+      pop_CPU_state();
+
+      bind(OK);
+    }
+
+    STOP("VerifySecondarySupers 1 failed");
 
     // Present
     bind(hit);
     cmpl(result, 0);
     jcc(Assembler::equal, done); // Agree.
 
-    STOP("VerifySecondarySupers failed");
+    {
+      Label OK;
+      jcc(Assembler::equal, OK);
+
+      push_CPU_state();
+      mov(c_rarg1, r_sub_klass);
+      mov_metadata(c_rarg0, super_klass);
+      call(RuntimeAddress
+           (CAST_FROM_FN_PTR(address, &piddle)));
+      pop_CPU_state();
+
+      bind(OK);
+    }
+
+    STOP("VerifySecondarySupers 2 failed");
 
     bind(done);
   }
