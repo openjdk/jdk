@@ -549,12 +549,9 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         final ObjectName[] names = new ObjectName[] {name};
         final MarshalledObject<NotificationFilter>[] filters =
                 Util.cast(new MarshalledObject<?>[] {filter});
-        final Subject[] delegationSubjects = new Subject[] {
-            delegationSubject
-        };
 
         final Integer[] listenerIDs =
-                addListenersWithSubjects(names,filters,delegationSubjects,
+                addListenersWithSubjects(names,filters,null,
                 reconnect);
 
         if (debug) logger.debug("addListenerWithSubject","listenerID="
@@ -580,7 +577,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
         try {
             listenerIDs = connection.addNotificationListeners(names,
                     filters,
-                    delegationSubjects);
+                    null);
         } catch (NoSuchObjectException noe) {
             // maybe reconnect
             if (reconnect) {
@@ -588,7 +585,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
                 listenerIDs = connection.addNotificationListeners(names,
                         filters,
-                        delegationSubjects);
+                        null);
             } else {
                 throw noe;
             }
@@ -1226,8 +1223,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                     new MarshalledObject<NotificationFilter>(filter),
                     null, true);
             rmiNotifClient.addNotificationListener(listenerID, name, listener,
-                    filter, handback,
-                    null);
+                    filter, handback);
         }
 
         public void removeNotificationListener(ObjectName name,
@@ -1420,12 +1416,11 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 new ObjectName[] {MBeanServerDelegate.DELEGATE_NAME};
             final MarshalledObject<NotificationFilter>[] filters =
                 Util.cast(new MarshalledObject<?>[] {sFilter});
-            final Subject[] subjects = new Subject[] {null};
             try {
                 listenerIDs =
                         connection.addNotificationListeners(names,
                         filters,
-                        subjects);
+                        null);
 
             } catch (IOException ioe) {
                 communicatorAdmin.gotIOException(ioe);
@@ -1433,7 +1428,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 listenerIDs =
                         connection.addNotificationListeners(names,
                         filters,
-                        subjects);
+                        null);
             }
             return listenerIDs[0];
         }
@@ -1551,7 +1546,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
             ClientListenerInfo[] clis = new ClientListenerInfo[len];
 
-            final Subject[] subjects = new Subject[len];
             final ObjectName[] names = new ObjectName[len];
             final NotificationListener[] listeners = new NotificationListener[len];
             final NotificationFilter[] filters = new NotificationFilter[len];
@@ -1560,7 +1554,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             final Object[] handbacks = new Object[len];
 
             for (i=0;i<len;i++) {
-                subjects[i]  = old[i].getDelegationSubject();
                 names[i]     = old[i].getObjectName();
                 listeners[i] = old[i].getListener();
                 filters[i]   = old[i].getNotificationFilter();
@@ -1569,15 +1562,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
             }
 
             try {
-                Integer[] ids = addListenersWithSubjects(names,mFilters,subjects,false);
+                Integer[] ids = addListenersWithSubjects(names,mFilters,null,false);
 
                 for (i=0;i<len;i++) {
                     clis[i] = new ClientListenerInfo(ids[i],
                             names[i],
                             listeners[i],
                             filters[i],
-                            handbacks[i],
-                            subjects[i]);
+                            handbacks[i]);
                 }
 
                 rmiNotifClient.postReconnection(clis);
@@ -1592,15 +1584,14 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
                 try {
                     Integer id = addListenerWithSubject(names[i],
                             new MarshalledObject<NotificationFilter>(filters[i]),
-                            subjects[i],
+                            null,
                             false);
 
                     clis[j++] = new ClientListenerInfo(id,
                             names[i],
                             listeners[i],
                             filters[i],
-                            handbacks[i],
-                            subjects[i]);
+                            handbacks[i]);
                 } catch (InstanceNotFoundException infe) {
                     logger.warning("reconnectNotificationListeners",
                             "Can't reconnect listener for " +
