@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,20 +21,29 @@
  * questions.
  */
 
-/*
-  @test
-  @key headful
-  @bug       6182359
-  @summary   Tests that Window having non-focusable owner can't be a focus owner.
-  @library   ../../regtesthelpers
-  @build     Util
-  @run       main NonfocusableOwnerTest
-*/
-
-import java.awt.*;
-import java.awt.event.*;
 import test.java.awt.regtesthelpers.Util;
 
+import java.awt.AWTEvent;
+import java.awt.Button;
+import java.awt.Dialog;
+import java.awt.Frame;
+import java.awt.KeyboardFocusManager;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.Window;
+import java.awt.event.AWTEventListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.WindowEvent;
+
+/*
+ ( @test
+ * @key headful
+ * @bug 6182359
+ * @summary Tests that Window having non-focusable owner can't be a focus owner.
+ * @library ../../regtesthelpers
+ * @build Util
+ * @run main NonfocusableOwnerTest
+ */
 public class NonfocusableOwnerTest {
     Robot robot = Util.createRobot();
     Frame frame;
@@ -55,7 +64,7 @@ public class NonfocusableOwnerTest {
                 }
             }, FocusEvent.FOCUS_EVENT_MASK | WindowEvent.WINDOW_FOCUS_EVENT_MASK | WindowEvent.WINDOW_EVENT_MASK);
 
-        frame = new Frame("Frame");
+        frame = new Frame("NonfocusableOwnerTest");
         frame.setName("Frame-owner");
         frame.setBounds(100, 0, 100, 100);
         dialog = new Dialog(frame, "Dialog");
