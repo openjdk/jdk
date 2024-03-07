@@ -2565,7 +2565,7 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-  // Advanced SIMD across lanes                                         \
+  // Advanced SIMD across lanes
 #define INSN(name, opc)                                                 \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {   \
     starti;                                                             \
