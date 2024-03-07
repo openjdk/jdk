@@ -112,6 +112,9 @@ public class DisposeInActionEventTest {
                     Thread.sleep(1000);
                     systemTray.add(trayIcon);
                 } catch (AWTException | InterruptedException e) {
+                    if (systemTray != null) {
+                        systemTray.remove(trayIcon);
+                    }
                     e.printStackTrace();
                     PassFailJFrame.forceFail("Exception caught: " + e.getMessage());
                 }
@@ -121,6 +124,9 @@ public class DisposeInActionEventTest {
         try {
             systemTray.add(trayIcon);
         } catch (AWTException e) {
+            if (systemTray != null) {
+                systemTray.remove(trayIcon);
+            }
             e.printStackTrace();
             PassFailJFrame.forceFail("Exception caught: " + e.getMessage());
         }
