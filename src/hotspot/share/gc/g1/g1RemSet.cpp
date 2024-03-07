@@ -1289,21 +1289,36 @@ public:
       Ticks start = Ticks::now();
 
       _dirty_card_buffers = NEW_C_HEAP_ARRAY(BufferNode::Stack, num_workers, mtGC);
-      for (uint i = 0; i < num_workers; i++)
-      {
+      for (uint i = 0; i < num_workers; i++) {
         new (&_dirty_card_buffers[i]) BufferNode::Stack();
       }
 
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
-      BufferNode* cur = buffers._head;
+
+      size_t num_buffers = (buffers._entry_count / G1UpdateBufferSize);
+      size_t buffers_per_thread = MAX2(num_buffers / num_workers, (size_t)1);
+
+      BufferNode* head = buffers._head;
+      BufferNode* tail = head;
 
       uint worker = 0;
-      while (cur != nullptr) {
-        BufferNode* next = cur->next();
-        cur->set_next(nullptr);
-        _dirty_card_buffers[worker++ % num_workers].push(*cur);
-        cur = next;
+      while (tail != nullptr) {
+        size_t count = 0;
+        BufferNode* cur = tail->next();
+
+        while (count < buffers_per_thread && cur != nullptr) {
+          tail = cur;
+          cur = tail->next();
+          count++;
+        }
+
+        tail->set_next(nullptr);
+        _dirty_card_buffers[worker++ % num_workers].prepend(*head, *tail);
+
+        assert(cur != nullptr || tail == buffers._tail, "Must be");
+        head = cur;
+        tail = cur;
       }
 
       Tickspan total = Ticks::now() - start;
