@@ -57,7 +57,7 @@ public class PropertiesStoreTest {
     private static final String DATE_FORMAT_PATTERN = "EEE MMM dd HH:mm:ss zzz uuuu";
     // use a neutral locale, since when the date comment was written by Properties.store(...),
     // it internally calls the Date.toString() which always writes in a locale insensitive manner
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.ROOT);
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern(DATE_FORMAT_PATTERN, Locale.US);
     private static final Locale PREV_LOCALE = Locale.getDefault();
 
     @DataProvider(name = "propsProvider")
