@@ -4701,6 +4701,10 @@ do {                                                                    \
          "registers must match aarch64.ad");                            \
 } while(0)
 
+void piddle(Klass *super, Klass *sub) {
+  asm("nop");
+}
+
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp1,
@@ -4731,23 +4735,16 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
 
   CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
 
-  movptr(r_array_index, Address(r_sub_klass, Klass::bitmap_offset()));
-
-  // push_CPU_state();
-  // mov(c_rarg1, r_sub_klass);
-  // mov_metadata(c_rarg0, super_klass);
-  // call(RuntimeAddress
-  //      (CAST_FROM_FN_PTR(address, &piddle)));
-  // pop_CPU_state();
+  movptr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movptr(r_array_index, r_bitmap);
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
   u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
-  movptr(r_bitmap, r_array_index);
-  shlq(r_array_index, 63 - bit);
-  cmpq(r_array_index, 0); // We test the MSB of r_array_index, i.e. its sign bit
-  jcc(Assembler::greaterEqual, L_failure);
+  salq(r_array_index, 63 - bit);
+  // We test the MSB of r_array_index, i.e. its sign bit
+  jcc(Assembler::positive, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
@@ -4779,13 +4776,6 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   if (bit != 0) {
     rorq(r_bitmap, bit);
   }
-
-  // push_CPU_state();
-  // mov(c_rarg1, r_sub_klass);
-  // mov_metadata(c_rarg0, super_klass);
-  // call(RuntimeAddress
-  //      (CAST_FROM_FN_PTR(address, &piddle)));
-  // pop_CPU_state();
 
   call(RuntimeAddress
        (CAST_FROM_FN_PTR(address, StubRoutines::_klass_subtype_fallback_stub)));
@@ -4882,10 +4872,6 @@ void MacroAssembler::klass_subtype_fallback() {
 
   bind(L_success);
   ret(0);
-}
-
-void piddle(Klass *super, Klass *sub) {
-  asm("nop");
 }
 
 // Make sure that the hashed lookup and a linear scan agree.

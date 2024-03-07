@@ -291,15 +291,17 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t
       bitmap |= uint64_t(1) << slot;
       return;
     }
-    int existing_dist = (secondaries->at(slot)->hash_slot() - slot) & 63;
-    if (existing_dist < dist) {
-      Klass *tmp = secondaries->at(slot);
-      secondaries->at_put(slot, sec);
-      sec = tmp;
-      dist = existing_dist;
+    if (secondaries->length() > 20) {
+      int existing_dist = (secondaries->at(slot)->hash_slot() - slot) & 63;
+      if (existing_dist < dist) {
+        Klass *tmp = secondaries->at(slot);
+        secondaries->at_put(slot, sec);
+        sec = tmp;
+        dist = existing_dist;
+      }
+      ++dist;
     }
     slot = (slot + 1) & 63;
-    ++dist;
   }
 }
 
@@ -315,7 +317,13 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
   GrowableArray<Klass*>* hashed_secondaries
     = new GrowableArray<Klass*>(MAX(64, length));
 
-  for (int i = 0; i < hashed_secondaries->capacity(); i++)   hashed_secondaries->push(nullptr);
+  for (int i = 0; i < hashed_secondaries->capacity(); i++) {
+    hashed_secondaries->push(nullptr);
+  }
+
+  if (length == 30) {
+    asm("nop");
+  }
 
   for (int j = 0; j < length; j++) {
     Klass *k = secondaries->at(j);
@@ -329,7 +337,8 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
   }
 
   if (rewrite) {
-    // Pack the secondaries array by removing all nulls.
+    // Pack the hashed secondaries array by copying it into the
+    // scondaries array, sans nulls.
     int i = 0;
     int maxprobe = 0;
     for (int slot = 0; slot < hashed_secondaries->length(); slot++) {

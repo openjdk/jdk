@@ -3701,11 +3701,20 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"itable length      %d (start addr: " PTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
-  if (_secondary_supers) {
+  if ((Verbose || WizardMode) && _secondary_supers != nullptr) {
     st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
+    int longest_distance = 0;
     for (int i = 0; i < _secondary_supers->length(); i++) {
-      st->print_cr("  %d:  %p (slot=%d)", i, _secondary_supers->at(i), _secondary_supers->at(i)->hash() >> secondary_shift());
+      unsigned home_slot = _secondary_supers->at(i)->hash() >> secondary_shift();
+      if (home_slot > 0) {
+        home_slot = population_count(_bitmap << (64 - home_slot));
+      }
+      int distance = (i - home_slot) & 63;
+      longest_distance = MAX2(longest_distance, distance);
+      st->print_cr("  %d:  %p (home slot=%d) %s", i, _secondary_supers->at(i),
+                   home_slot, distance == 0 ? "*" : "");
     }
+    st->print_cr("  longest probe distance = %d", longest_distance);
   }
 
   FieldPrinter print_static_field(st);
