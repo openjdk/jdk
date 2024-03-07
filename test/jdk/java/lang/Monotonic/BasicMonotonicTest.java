@@ -63,6 +63,30 @@ final class BasicMonotonicTest {
     }
 
     @Test
+    void bindIfAbsent() {
+        Integer i = m.bindIfAbsent(FIRST);
+        assertTrue(m.isPresent());
+        assertEquals(FIRST, i);
+        assertEquals(FIRST, m.get());
+
+        assertEquals(FIRST, m.bindIfAbsent(FIRST));
+        assertEquals(FIRST, m.bindIfAbsent(SECOND));
+        assertEquals(FIRST, m.bindIfAbsent(null));
+    }
+
+    @Test
+    void bindIfAbsentNull() {
+        Integer i = m.bindIfAbsent(null);
+        assertTrue(m.isPresent());
+        assertNull(i);
+        assertNull(m.get());
+
+        assertNull(m.bindIfAbsent(null));
+        assertNull(m.bindIfAbsent(FIRST));
+        assertNull(m.bindIfAbsent(SECOND));
+    }
+
+    @Test
     void computeIfAbsent() {
         m.computeIfAbsent(() -> FIRST);
         assertEquals(FIRST, m.get());

@@ -142,8 +142,8 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          * attempts to compute and bind a value using the provided {@code mapper},
          * returning the (pre-existing or newly bound) value.
          * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
-         * value is bound.
+         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
+         * no value is bound.
          *
          * @param index to inspect
          * @param mapper to be used for computing a value
@@ -172,8 +172,8 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
          * attempts to compute and bind a value using the provided {@code mapper},
          * returning the (pre-existing or newly bound) value.
          * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
-         * value is bound.
+         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
+         * no value is bound.
          *
          * @param key to inspect
          * @param mapper to be used for computing a value
@@ -193,12 +193,12 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param <V> the value type to bind
      */
     static <V> Monotonic<V> of() {
-        return new InternalMonotonic<>();
+        return InternalMonotonic.of();
     }
 
     /**
-     * {@return a thread-safe, memoized supplier backed by a monotonic value where the
-     * memoized value is obtained by invoking the provided {@code suppler}}
+     * {@return a thread-safe, memoized supplier backed by a new empty monotonic value
+     * where the memoized value is obtained by invoking the provided {@code suppler}}
      *
      * @param supplier   to be used for computing a value
      * @param background if true, spawns a virtual background thread that per-computes
@@ -209,12 +209,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
                                       boolean background) {
         Objects.requireNonNull(supplier);
-        Monotonic<V> monotonic = Monotonic.of();
-        Supplier<V> result = () -> monotonic.computeIfAbsent(supplier);
-        if (background) {
-            Thread.startVirtualThread(result::get);
-        }
-        return result;
+        return InternalMonotonic.asMemoized(supplier, background);
     }
 
     /**
@@ -234,7 +229,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
 
     /**
      * {@return a new shallowly immutable, thread-safe, lazy {@linkplain Map } where the
-     * {@linkplain java.util.Map#keySet() keys} contains precisely the provided
+     * {@linkplain java.util.Map#keySet() keys} contains precisely the distinct provided
      * {@code keys} and where the values are distinct empty monotonic values}
      *
      * @param keys the keys in the map

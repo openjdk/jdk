@@ -26,11 +26,7 @@
 package jdk.internal.lang.monotonic;
 
 import jdk.internal.vm.annotation.Stable;
-
-import java.util.AbstractMap;
-import java.util.Collection;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 import java.util.function.Supplier;
 
 public final class InternalMonotonic<V> implements Monotonic<V> {
@@ -42,7 +38,7 @@ public final class InternalMonotonic<V> implements Monotonic<V> {
             MonotonicUtil.UNSAFE.objectFieldOffset(InternalMonotonic.class, "bound");
 
     /**
-     * Holds the actual bound value.
+     * Holds the actual bound (nullable) value.
      */
     @Stable
     private V value;
@@ -52,6 +48,8 @@ public final class InternalMonotonic<V> implements Monotonic<V> {
      */
     @Stable
     private boolean bound;
+
+    InternalMonotonic() {}
 
     @Override
     public boolean isPresent() {
@@ -87,7 +85,6 @@ public final class InternalMonotonic<V> implements Monotonic<V> {
 
     @Override
     public void bind(V v) {
-        Objects.requireNonNull(v);
         if (caeValue(v) != null || !casBound()) {
             throw valueAlreadyBound();
         }
@@ -95,7 +92,11 @@ public final class InternalMonotonic<V> implements Monotonic<V> {
 
     @Override
     public V bindIfAbsent(V v) {
-        Objects.requireNonNull(v);
+        if (isBoundVolatile()) {
+           return get();
+        }
+        // Todo: investigate race where a null value is bound by another thread
+        //       exactly here and we try to set another value in this thread.
         V witness = caeValue(v);
         if (witness == null) {
             // We might have bound `null` previously
@@ -176,6 +177,30 @@ public final class InternalMonotonic<V> implements Monotonic<V> {
             MonotonicUtil.freeze();
         }
         return (V) MonotonicUtil.UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
+    }
+
+    public static <V> Monotonic<V> of() {
+        return new InternalMonotonic<>();
+    }
+
+    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
+                                             boolean background) {
+        Monotonic<V> monotonic = Monotonic.of();
+        Supplier<V> result = new Supplier<V>() {
+            @Override
+            public V get() {
+                return monotonic.computeIfAbsent(supplier);
+            }
+        };
+        if (background) {
+            Thread.startVirtualThread(new Runnable() {
+                @Override
+                public void run() {
+                    result.get();
+                }
+            });
+        }
+        return result;
     }
 
 }

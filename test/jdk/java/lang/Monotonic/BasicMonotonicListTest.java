@@ -32,6 +32,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -78,34 +79,45 @@ final class BasicMonotonicListTest {
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, BiConsumer<List<Monotonic<Integer>>, Object> op) {
-        assertThrows(NullPointerException.class, () -> op.accept(null, null), name);
-
+    void npe(String name, Consumer<List<Monotonic<Integer>>> op) {
+        assertThrows(NullPointerException.class, () -> op.accept(list), name);
     }
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
-                Arguments.of("clear", asConsumer(List::clear)),
-                Arguments.of("removeIf", asConsumer(l -> l.removeIf(Objects::isNull))),
-                Arguments.of("add", asConsumer(l -> l.add(Monotonic.of())))
-                // Todo: add stuff
+                Arguments.of("add",          asConsumer(l -> l.add(Monotonic.of()))),
+                Arguments.of("remove",       asConsumer(l -> l.remove(Monotonic.of()))),
+                Arguments.of("addAll(C)",    asConsumer(l -> l.addAll(List.of()))),
+                Arguments.of("addAll(i, C)", asConsumer(l -> l.addAll(1, List.of()))),
+                Arguments.of("removeAll",    asConsumer(l -> l.removeAll(List.<Monotonic<Integer>>of()))),
+                Arguments.of("retainAll",    asConsumer(l -> l.retainAll(List.<Monotonic<Integer>>of()))),
+                Arguments.of("replaceAll",   asConsumer(l -> l.replaceAll(_ -> Monotonic.of()))),
+                Arguments.of("sort",         asConsumer(l -> l.sort(null))),
+                Arguments.of("clear",        asConsumer(List::clear)),
+                Arguments.of("set(i, E)",    asConsumer(l -> l.set(1, Monotonic.of()))),
+                Arguments.of("add(i, E)",    asConsumer(l -> l.add(1, Monotonic.of()))),
+                Arguments.of("remove(i)",    asConsumer(l -> l.remove(1))),
+                Arguments.of("removeIf",     asConsumer(l -> l.removeIf(Objects::isNull))),
+                Arguments.of("addFirst",     asConsumer(l -> l.addFirst(Monotonic.of()))),
+                Arguments.of("addLast",      asConsumer(l -> l.addLast(Monotonic.of()))),
+                Arguments.of("removeFirst",  asConsumer(List::removeFirst)),
+                Arguments.of("removeLast",   asConsumer(List::removeLast))
         );
     }
 
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
-                Arguments.of("toArray", asBiConsumer((l, o) -> l.toArray((Object[]) o))),
-                Arguments.of("containsAll", asBiConsumer((l, o) -> l.containsAll((Collection<?>) o)))
+                Arguments.of("toArray",     asConsumer(l -> l.toArray((Object[]) null))),
+                Arguments.of("toArray",     asConsumer(l -> l.toArray((IntFunction<Monotonic<Integer>[]>) null))),
+                Arguments.of("containsAll", asConsumer(l -> l.containsAll(null))),
+                Arguments.of("forEach",     asConsumer(l -> l.forEach(null))),
+                Arguments.of("indexOf",     asConsumer(l -> l.indexOf(null))),
+                Arguments.of("lastIndexOf", asConsumer(l -> l.lastIndexOf(null)))
         );
     }
 
     private static Consumer<List<Monotonic<Integer>>> asConsumer(Consumer<List<Monotonic<Integer>>> consumer) {
         return consumer;
-    }
-
-    private static BiConsumer<List<Monotonic<Integer>>, Object> asBiConsumer(
-            BiConsumer<List<Monotonic<Integer>>, Object> biConsumer) {
-        return biConsumer;
     }
 
     static final class CountingIntFunction<T> implements IntFunction<T> {

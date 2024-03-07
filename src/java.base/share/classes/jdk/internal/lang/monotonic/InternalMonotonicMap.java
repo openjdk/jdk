@@ -57,7 +57,7 @@ public final class InternalMonotonicMap<K, B>
 
     // keys array not trusted
     @SuppressWarnings("unchecked")
-    public InternalMonotonicMap(Object[] keys) {
+    InternalMonotonicMap(Object[] keys) {
         this.size = keys.length;
 
         int len = EXPAND_FACTOR * keys.length * 2;
@@ -67,7 +67,7 @@ public final class InternalMonotonicMap<K, B>
         for (Object key : keys) {
             @SuppressWarnings("unchecked")
             K k = Objects.requireNonNull((K) key);
-            int idx = probe(k);
+            int idx = probe(table, k);
             if (idx >= 0) {
                 throw new IllegalArgumentException("duplicate key: " + k);
             } else {
@@ -85,6 +85,10 @@ public final class InternalMonotonicMap<K, B>
     // Callers are relying on this method to perform an implicit nullcheck
     // of pk.
     private int probe(Object pk) {
+        return probe(table, pk);
+    }
+
+    private int probe(Object[] table, Object pk) {
         int idx = Math.floorMod(pk.hashCode(), table.length >> 1) << 1;
         while (true) {
             @SuppressWarnings("unchecked")
@@ -130,19 +134,6 @@ public final class InternalMonotonicMap<K, B>
     private static long offset(int index) {
         return Unsafe.ARRAY_OBJECT_BASE_OFFSET + (long) index * Unsafe.ARRAY_OBJECT_INDEX_SCALE;
     }
-
-
-/*        @Override
-        public V computeIfAbsent(K key, MethodHandle mapper) {
-            throw new UnsupportedOperationException();
-        }*/
-
-/*
-        @Override
-        public MethodHandle getter() {
-            throw new UnsupportedOperationException();
-        }
-*/
 
     @Override
     public boolean containsKey(Object o) {
@@ -231,70 +222,29 @@ public final class InternalMonotonicMap<K, B>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override
-    public Monotonic<B> put(K key, Monotonic<B> value) {
+    @Override public Monotonic<B> put(K key, Monotonic<B> value) {
         throw uoe();
     }
-
-    @Override
-    public Monotonic<B> remove(Object key) {
+    @Override public Monotonic<B> remove(Object key) {
         throw uoe();
     }
-
-    @Override
-    public void putAll(Map<? extends K, ? extends Monotonic<B>> m) {
+    @Override public void putAll(Map<? extends K, ? extends Monotonic<B>> m) {throw uoe();}
+    @Override public void clear() {
         throw uoe();
     }
-
-    @Override
-    public void clear() {
+    @Override public void replaceAll(BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> function) {throw uoe();}
+    @Override public Monotonic<B> putIfAbsent(K key, Monotonic<B> value) {throw uoe();}
+    @Override public boolean remove(Object key, Object value) {
         throw uoe();
     }
-
-    @Override
-    public void replaceAll(BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> function) {
+    @Override public boolean replace(K key, Monotonic<B> oldValue, Monotonic<B> newValue) {throw uoe();}
+    @Override public Monotonic<B> replace(K key, Monotonic<B> value) {
         throw uoe();
     }
-
-    @Override
-    public Monotonic<B> putIfAbsent(K key, Monotonic<B> value) {
-        throw uoe();
-    }
-
-    @Override
-    public boolean remove(Object key, Object value) {
-        throw uoe();
-    }
-
-    @Override
-    public boolean replace(K key, Monotonic<B> oldValue, Monotonic<B> newValue) {
-        throw uoe();
-    }
-
-    @Override
-    public Monotonic<B> replace(K key, Monotonic<B> value) {
-        throw uoe();
-    }
-
-    @Override
-    public Monotonic<B> computeIfAbsent(K key, Function<? super K, ? extends Monotonic<B>> mappingFunction) {
-        throw uoe();
-    }
-
-    @Override
-    public Monotonic<B> computeIfPresent(K key, BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {
-        throw uoe();
-    }
-
-    @Override
-    public Monotonic<B> compute(K key, BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {
-        throw uoe();
-    }
-
-    @Override
-    public Monotonic<B> merge(K key, Monotonic<B> value, BiFunction<? super Monotonic<B>, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {
-        throw uoe();
-    }
+    @Override public Monotonic<B> computeIfAbsent(K key, Function<? super K, ? extends Monotonic<B>> mappingFunction) {throw uoe();}
+    @Override public Monotonic<B> computeIfPresent(K key, BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {throw uoe();}
+    @Override public Monotonic<B> compute(K key, BiFunction<? super K, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {throw uoe();}
+    @Override public Monotonic<B> merge(K key, Monotonic<B> value, BiFunction<? super Monotonic<B>, ? super Monotonic<B>, ? extends Monotonic<B>> remappingFunction) {throw uoe();}
 
     @Override
     public B computeMonotonicIfAbsent(K key, Function<? super K, ? extends B> mapper) {
@@ -310,22 +260,36 @@ public final class InternalMonotonicMap<K, B>
             if (monotonic.isPresent()) {
                 return monotonic.get();
             }
-            Supplier<B> supplier = () -> mapper.apply(key);
+            Supplier<B> supplier = new Supplier<B>() {
+                @Override
+                public B get() {
+                    return mapper.apply(key);
+                }
+            };
             return monotonic.computeIfAbsent(supplier);
         }
     }
 
     public static <K, V> Monotonic.Map<K, V> ofMap(Collection<? extends K> keys) {
-/*        // Todo: come up with a lazy map
-        // Todo: check that the keys do not contain duplicates
-        Monotonic.Map.Entry<K, Monotonic<V>>[] entries = new Monotonic.Map.Entry[keys.size()];
-        int i = 0;
-        for (K key : keys) {
-            entries[i++] = new AbstractMap.SimpleImmutableEntry<>(key, Monotonic.of());
-        }
-        // Todo: This cast does not work...
-        return (Monotonic.List<Monotonic<V>>) Map.ofEntries(entries);*/
-        return new InternalMonotonicMap<>(keys.toArray());
+        // Checks for null keys and removes any duplicates
+        Object[] keyArray = Set.copyOf(keys)
+                .toArray();
+        return new InternalMonotonicMap<>(keyArray);
     }
+
+//    @SuppressWarnings("unchecked")
+//    public static <K, V> Monotonic.Map<K, V> ofEagerMap(Collection<? extends K> keys) {
+//        K[] keyArray = (K[]) Set.copyOf(keys)
+//                .toArray();
+//        // Checks for null keys and removes any duplicates
+//
+//        Monotonic.Map.Entry<K, Monotonic<V>>[] entries = new Monotonic.Map.Entry[keys.size()];
+//        int i = 0;
+//        for (K key : keyArray) {
+//            entries[i++] = new AbstractMap.SimpleImmutableEntry<>(key, Monotonic.of());
+//        }
+//        // Todo: This cast does not work...
+//        return (Monotonic.List<Monotonic<V>>) Map.ofEntries(entries);*/
+//    }
 
 }

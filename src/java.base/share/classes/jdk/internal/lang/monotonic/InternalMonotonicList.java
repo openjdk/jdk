@@ -29,6 +29,7 @@ import jdk.internal.vm.annotation.Stable;
 
 import java.util.AbstractList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
@@ -44,13 +45,12 @@ public final class InternalMonotonicList<B>
     private final Monotonic<B>[] elements;
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public InternalMonotonicList(int size) {
+    InternalMonotonicList(int size) {
         this.elements = (Monotonic<B>[]) new Monotonic[size];
     }
 
     @Override
     public Monotonic<B> get(int index) {
-        Objects.checkIndex(index, size());
         Monotonic<B> m = elements[index];
         if (m != null) {
             return m;
@@ -70,39 +70,33 @@ public final class InternalMonotonicList<B>
     }
 
     // all mutating methods throw UnsupportedOperationException
+    @Override public boolean add(Monotonic<B> v) {throw uoe();}
+    @Override public boolean addAll(Collection<? extends Monotonic<B>> c) {throw uoe();}
+    @Override public boolean addAll(int index, Collection<? extends Monotonic<B>> c) {throw uoe();}
+    @Override public void clear() {throw uoe();}
+    @Override public boolean remove(Object o) {throw uoe();}
+    @Override public boolean removeAll(Collection<?> c) {throw uoe();}
+    @Override public boolean removeIf(Predicate<? super Monotonic<B>> filter) {throw uoe();}
+    @Override public boolean retainAll(Collection<?> c) {throw uoe();}
+    @Override public void sort(Comparator<? super Monotonic<B>> c) {throw uoe();}
+
     @Override
-    public boolean add(Monotonic<B> v) {
-        throw uoe();
+    public int indexOf(Object o) {
+        Objects.requireNonNull(o);
+        return super.indexOf(o);
     }
 
     @Override
-    public boolean addAll(int index, Collection<? extends Monotonic<B>> c) {
-        throw uoe();
+    public int lastIndexOf(Object o) {
+        Objects.requireNonNull(o);
+        return super.lastIndexOf(o);
     }
 
     @Override
-    public void clear() {
-        throw uoe();
-    }
-
-    @Override
-    public boolean remove(Object o) {
-        throw uoe();
-    }
-
-    @Override
-    public boolean removeAll(Collection<?> c) {
-        throw uoe();
-    }
-
-    @Override
-    public boolean removeIf(Predicate<? super Monotonic<B>> filter) {
-        throw uoe();
-    }
-
-    @Override
-    public boolean retainAll(Collection<?> c) {
-        throw uoe();
+    public Monotonic.List<B> reversed() {
+        // Todo: Fix this
+        throw new UnsupportedOperationException();
+        //return ReverseOrderListView.of(this, true); // we must assume it's modifiable
     }
 
     @Override
@@ -117,7 +111,12 @@ public final class InternalMonotonicList<B>
             if (monotonic.isPresent()) {
                 return monotonic.get();
             }
-            Supplier<B> supplier = () -> mapper.apply(index);
+            Supplier<B> supplier = new Supplier<B>() {
+                @Override
+                public B get() {
+                    return mapper.apply(index);
+                }
+            };
             return monotonic.computeIfAbsent(supplier);
         }
     }
