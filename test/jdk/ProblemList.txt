@@ -623,6 +623,7 @@ com/sun/security/sasl/gsskerb/ConfSecurityLayer.java            8039280 generic-
 com/sun/security/sasl/gsskerb/NoSecurityLayer.java              8039280 generic-all
 sun/security/provider/PolicyFile/GrantAllPermToExtWhenNoPolicy.java 8039280 generic-all
 sun/security/provider/PolicyParser/PrincipalExpansionError.java 8039280 generic-all
+javax/net/ssl/SSLSession/CertMsgCheck.java                      8326705 generic-all
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8316183 linux-ppc64le
 
@@ -688,6 +689,7 @@ javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 # This test fails on macOS 14
 javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
+javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8316151 macosx-all
 
 ############################################################################
 

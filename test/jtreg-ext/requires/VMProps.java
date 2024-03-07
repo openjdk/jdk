@@ -652,14 +652,15 @@ public class VMProps implements Callable<Map<String, String>> {
      * Checks if we are in <i>almost</i> out-of-box configuration, i.e. the flags
      * which JVM is started with don't affect its behavior "significantly".
      * {@code TEST_VM_FLAGLESS} enviroment variable can be used to force this
-     * method to return true and allow any flags.
+     * method to return true or false and allow or reject any flags.
      *
      * @return true if there are no JVM flags
      */
     private String isFlagless() {
         boolean result = true;
-        if (System.getenv("TEST_VM_FLAGLESS") != null) {
-            return "" + result;
+        String flagless = System.getenv("TEST_VM_FLAGLESS");
+        if (flagless != null) {
+            return "" + "true".equalsIgnoreCase(flagless);
         }
 
         List<String> allFlags = allFlags().toList();

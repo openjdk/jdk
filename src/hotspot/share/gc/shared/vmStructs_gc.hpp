@@ -98,14 +98,13 @@
   nonstatic_field(CollectedHeap,               _is_gc_active,                                 bool)                                  \
   nonstatic_field(CollectedHeap,               _total_collections,                            unsigned int)                          \
                                                                                                                                      \
+  nonstatic_field(ContiguousSpace,             _bottom,                                       HeapWord*)                             \
+  nonstatic_field(ContiguousSpace,             _end,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _top,                                          HeapWord*)                             \
   nonstatic_field(ContiguousSpace,             _saved_mark_word,                              HeapWord*)                             \
                                                                                                                                      \
   nonstatic_field(MemRegion,                   _start,                                        HeapWord*)                             \
-  nonstatic_field(MemRegion,                   _word_size,                                    size_t)                                \
-                                                                                                                                     \
-  nonstatic_field(Space,                       _bottom,                                       HeapWord*)                             \
-  nonstatic_field(Space,                       _end,                                          HeapWord*)
+  nonstatic_field(MemRegion,                   _word_size,                                    size_t)
 
 #define VM_TYPES_GC(declare_type,                                         \
                     declare_toplevel_type,                                \
@@ -135,8 +134,7 @@
   /******************************************/                            \
                                                                           \
   declare_toplevel_type(CollectedHeap)                                    \
-  declare_toplevel_type(Space)                                            \
-           declare_type(ContiguousSpace,             Space)               \
+  declare_toplevel_type(ContiguousSpace)                                  \
   declare_toplevel_type(BarrierSet)                                       \
            declare_type(ModRefBarrierSet,             BarrierSet)         \
            declare_type(CardTableBarrierSet,          ModRefBarrierSet)   \
@@ -164,7 +162,6 @@
   declare_toplevel_type(HeapWord*)                                        \
   declare_toplevel_type(HeapWord* volatile)                               \
   declare_toplevel_type(MemRegion*)                                       \
-  declare_toplevel_type(Space*)                                           \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
                                                                           \
   declare_toplevel_type(BarrierSet::FakeRtti)

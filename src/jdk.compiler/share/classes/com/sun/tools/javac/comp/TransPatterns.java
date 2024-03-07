@@ -988,6 +988,7 @@ public class TransPatterns extends TreeTranslator {
                        commonBinding.type.tsym == currentBinding.type.tsym &&
                        commonBinding.isUnnamedVariable() == currentBinding.isUnnamedVariable() &&
                        !previousNullable &&
+                       !currentNullable &&
                        new TreeDiffer(List.of(commonBinding), List.of(currentBinding))
                                .scan(commonNestedExpression, currentNestedExpression)) {
                 accummulator.add(c.head);
