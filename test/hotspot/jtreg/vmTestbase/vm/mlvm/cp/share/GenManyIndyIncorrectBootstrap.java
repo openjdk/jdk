@@ -255,14 +255,13 @@ public class GenManyIndyIncorrectBootstrap extends GenFullCP {
                     cob.instanceof_(ClassDesc.of(DIRECT_ERROR)); // Check if the object on top of the stack is of the specified type
                     cob.ifne(nextBlockLabel);
 
-                    // Not the exception we were expectiong, throw error
+                    // Not the exception we were expecting, throw error
                     cob.aload(1);
                     createThrowRuntimeExceptionCodeHelper(cob,
                             "invokedynamic got an unexpected exception (expected " + DIRECT_ERROR
                                     + ", bootstrap type" + kind
                                     + ", opcode=" + kind.refKind + ")!", true);
 
-                    // Unable to place this code once in the method epilog due to bug in ASM
                     cob.labelBinding(throwLabel);
                     createThrowRuntimeExceptionCodeHelper(cob,
                             "invokedynamic should always throw (bootstrap type"
