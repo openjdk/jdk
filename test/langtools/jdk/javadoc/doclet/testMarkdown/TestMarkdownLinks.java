@@ -155,6 +155,66 @@ public class TestMarkdownLinks extends JavadocTester {
     }
 
     @Test
+    public void testLinkToHeadingAnchor(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class C {
+                        /// Method m1.
+                        /// # Lorem Ipsum.
+                        ///
+                        /// Lorem ipsum [reference in same comment][##lorem-ipsum--heading].
+                        public void m1() { }
+                        /// Method m2.
+                        /// Lorem ipsum [reference in another comment][##lorem-ipsum--heading].
+                        public void m2() { }
+                    }
+                    """,
+                """
+                    package p;
+                    /// Lorem ipsum [reference in another class][C##lorem-ipsum--heading].
+                    public class D {
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p");
+
+    }
+
+    @Test
+    public void testLinkToUserAnchor(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    public class C {
+                        /// Method m1.
+                        /// <span id="lorem-ipsum">Lorem Ipsum</span>.
+                        ///
+                        /// Lorem ipsum [reference in same comment][##lorem-ipsum].
+                        public void m1() { }
+                        /// Method m2.
+                        /// Lorem ipsum [reference in another comment][##lorem-ipsum].
+                        public void m2() { }
+                    }
+                    """,
+                """
+                    package p;
+                    /// Lorem ipsum [reference in another class][C##lorem-ipsum].
+                    public class D {
+                    }""");
+
+        javadoc("-d", base.resolve("api").toString(),
+                "-Xdoclint:none",
+                "--source-path", src.toString(),
+                "p");
+
+    }
+
+    @Test
     public void testLinkElementKinds(Path base) throws Exception {
         Path src = base.resolve("src");
         tb.writeJavaFiles(src,
