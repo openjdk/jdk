@@ -1171,7 +1171,7 @@ public:
   bool is_deleteable_safept(Node* sfpt);
 
   // Replace parallel induction variable (parallel to trip counter)
-  void replace_parallel_iv(IdealLoopTree *loop, BasicType iv_bt);
+  void replace_parallel_iv(IdealLoopTree *loop);
 
   Node *dom_lca( Node *n1, Node *n2 ) const {
     return find_non_split_ctrl(dom_lca_internal(n1, n2));
