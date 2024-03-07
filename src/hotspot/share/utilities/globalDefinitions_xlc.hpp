@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2024 IBM Corp. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +94,7 @@
 
 // NULL vs NULL_WORD:
 // Some platform/tool-chain combinations can't assign NULL to an integer
-// type so we define NULL_WORD to use in those contexts. For xlc they are the same.
+// type so we define NULL_WORD to use in those contexts.
 #define NULL_WORD  0L
 
 // checking for nanness
