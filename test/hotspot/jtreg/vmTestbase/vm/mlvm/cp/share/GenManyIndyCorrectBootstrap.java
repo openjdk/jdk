@@ -26,10 +26,7 @@ package vm.mlvm.cp.share;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassTransform;
-import java.lang.constant.ClassDesc;
-import java.lang.constant.DirectMethodHandleDesc;
-import java.lang.constant.MethodHandleDesc;
-import java.lang.constant.MethodTypeDesc;
+import java.lang.constant.*;
 
 import vm.mlvm.share.ClassfileGenerator;
 import vm.mlvm.share.Env;
@@ -127,7 +124,7 @@ public class GenManyIndyCorrectBootstrap extends GenFullCP {
                                                 MethodTypeDesc.ofDescriptor(methodSignature), accessFlags,
                                                 mb -> mb.withCode(
                                                                 cob -> {
-                                                                        MethodHandleDesc bsm;
+                                                                        DirectMethodHandleDesc bsm;
                                                                         if (Env.getRNG().nextBoolean()) {
                                                                                  bsm = MethodHandleDesc.ofMethod(
                                                                                         DirectMethodHandleDesc.Kind.SPECIAL,
@@ -143,7 +140,7 @@ public class GenManyIndyCorrectBootstrap extends GenFullCP {
                                                                                         MethodTypeDesc.ofDescriptor(BOOTSTRAP_METHOD_SIGNATURE)
                                                                                 );
                                                                         }
-                                                                        cob.ldc(bsm);
+                                                                        cob.invokedynamic(DynamicCallSiteDesc.of(bsm, TARGET_METHOD_NAME, MethodTypeDesc.ofDescriptor(TARGET_METHOD_SIGNATURE)));
 
                                                                 }))));
                 return bytes;
