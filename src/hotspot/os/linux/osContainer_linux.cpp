@@ -59,6 +59,7 @@ void OSContainer::init() {
     return; // Required subsystem files not found or other error
   }
   _is_containerized = cgroup_subsystem->is_containerized();
+  log_trace(os, container)("OSContainer::init: is_containerized() = %s", _is_containerized ? "true" : "false");
 }
 
 const char * OSContainer::container_type() {

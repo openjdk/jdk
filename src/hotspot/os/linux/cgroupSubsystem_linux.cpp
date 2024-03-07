@@ -154,6 +154,22 @@ void CgroupSubsystemFactory::set_controller_paths(CgroupInfo* cg_infos,
   }
 }
 
+/*
+ * Determine whether or not the mount options, which are comma separated,
+ * contain the 'ro' string.
+ */
+static bool find_ro_opt(char* mount_opts) {
+  char* token;
+  char* mo_ptr = mount_opts;
+  // mount options are comma-separated (man proc).
+  while ((token = strsep(&mo_ptr, ",")) != NULL) {
+    if (strcmp(token, "ro") == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
                                             const char* proc_cgroups,
                                             const char* proc_self_cgroup,
@@ -453,22 +469,6 @@ bool CgroupSubsystemFactory::determine_type(CgroupInfo* cg_infos,
   *flags = CGROUPS_V1;
   return true;
 };
-
-/*
- * Determine whether or not the mount options, which are comma separated,
- * contain the 'ro' string.
- */
-bool CgroupSubsystemFactory::find_ro_opt(char* mount_opts) {
-  char* token;
-  char* mo_ptr = mount_opts;
-  // mount options are comma-separated (man proc).
-  while ((token = strsep(&mo_ptr, ",")) != NULL) {
-    if (strcmp(token, "ro") == 0) {
-      return true;
-    }
-  }
-  return false;
-}
 
 void CgroupSubsystemFactory::cleanup(CgroupInfo* cg_infos) {
   assert(cg_infos != nullptr, "Invariant");

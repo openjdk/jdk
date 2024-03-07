@@ -332,7 +332,6 @@ class CgroupSubsystemFactory: AllStatic {
     }
 #endif
 
-    static bool find_ro_opt(char* mount_opts);
     static void set_controller_paths(CgroupInfo* cg_infos,
                                      int controller,
                                      const char* name,
