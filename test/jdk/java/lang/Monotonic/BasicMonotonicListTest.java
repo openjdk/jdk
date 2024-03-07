@@ -31,8 +31,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.lang.invoke.MethodHandle;
-import java.util.Iterator;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,126 +49,62 @@ final class BasicMonotonicListTest {
     private static final int SIZE = 7;
     private static final int INDEX = 2;
 
+    private Monotonic.List<Integer> list;
+
+    @BeforeEach
+    void setup() {
+        list = Monotonic.ofList(SIZE);
+    }
+
     @Test
-    void testTypes() {
-        Monotonic.List<Integer> ml1 = Monotonic.ofList(Integer.class, SIZE);
-        Monotonic.List<Integer> ml2 = Monotonic.ofList(int.class, SIZE);
-        Monotonic.List<Number> ml3 = Monotonic.ofList(Integer.class, SIZE);
-        Monotonic.List<Object> ml4 = Monotonic.ofList(Integer.class, SIZE);
-        Monotonic.List<Object> ml5 = Monotonic.ofList(int.class, SIZE);
-    }
+    void empty() {
 
-    @ParameterizedTest
-    @MethodSource("emptyLists")
-    void empty(Class<?> carrier, Monotonic.List<Integer> list) {
         assertFalse(list.isEmpty());
         assertEquals(SIZE, list.size());
 
         IntStream.range(0, SIZE).forEach(i ->
-                assertFalse(list.isPresent(i))
-        );
-
-        IntStream.range(0, SIZE).forEach(i ->
-                assertFalse(list.isPresent(i))
+                assertFalse(list.get(i).isPresent())
         );
 
         assertEquals(expectedToString(list), list.toString());
-
-        IntStream.range(0, SIZE)
-                .forEach(i ->
-                        assertNull(list.get(i))
-                );
-
-        assertEquals(-1, list.indexOf(INDEX));
-    }
-
-    @ParameterizedTest
-    @MethodSource("singleLists")
-    void single(Class<?> carrier, Monotonic.List<Integer> list) {
-        assertFalse(list.isEmpty());
-        assertEquals(SIZE, list.size());
-
-        IntStream.range(0, SIZE).forEach(i ->
-                assertEquals(i == INDEX, list.isPresent(i))
-        );
-
-        Iterator<Integer> iterator = list.iterator();
-        assertTrue(iterator.hasNext());
-
-        assertEquals(expectedToString(list), list.toString());
-
-        IntStream.range(0, SIZE)
-                .filter(i -> i != INDEX)
-                .forEach(i ->
-                        assertNull(list.get(i))
-                );
-
-        assertEquals(INDEX, list.get(INDEX));
-
-        assertEquals(INDEX, list.indexOf(INDEX));
     }
 
     @ParameterizedTest
     @MethodSource("unsupportedOperations")
-    void uoe(String name, Consumer<List<Integer>> op) {
-        for (Class<Integer> carrier : List.of(int.class, Integer.class)) {
-            Monotonic.List<Integer> empty = Monotonic.ofList(carrier, SIZE);
-            assertThrows(UnsupportedOperationException.class, () -> op.accept(empty), name + " (" + carrier + ")");
-        }
+    void uoe(String name, Consumer<List<Monotonic<Integer>>> op) {
+        assertThrows(UnsupportedOperationException.class, () -> op.accept(list), name);
     }
+
 
     @ParameterizedTest
     @MethodSource("nullOperations")
-    void npe(String name, BiConsumer<Monotonic.List<?>, ?> op) {
-        for (Class<Integer> carrier : List.of(int.class, Integer.class)) {
-            Monotonic.List<Object> empty = Monotonic.ofList(carrier, SIZE);
-            assertThrows(NullPointerException.class, () -> op.accept(empty, null), name + " (" + carrier + ")");
-        }
-    }
+    void npe(String name, BiConsumer<List<Monotonic<Integer>>, Object> op) {
+        assertThrows(NullPointerException.class, () -> op.accept(null, null), name);
 
-    private static Stream<Arguments> emptyLists() {
-        return Stream.of(
-                Arguments.of(int.class, Monotonic.ofList(int.class, SIZE)),
-                Arguments.of(Integer.class, Monotonic.ofList(Integer.class, SIZE))
-        );
-    }
-
-    private static Stream<Arguments> singleLists() {
-        Monotonic.List<Integer> primitive = Monotonic.ofList(int.class, SIZE);
-        primitive.put(INDEX, INDEX);
-        Monotonic.List<Integer> reference = Monotonic.ofList(Integer.class, SIZE);
-        reference.put(INDEX, INDEX);
-        return Stream.of(
-                Arguments.of(int.class, primitive),
-                Arguments.of(Integer.class, reference)
-        );
     }
 
     private static Stream<Arguments> unsupportedOperations() {
         return Stream.of(
                 Arguments.of("clear", asConsumer(List::clear)),
-                Arguments.of("removeIf", asConsumer(l -> l.removeIf(i -> i == INDEX))),
-                Arguments.of("add", asConsumer(l -> l.add(13)))
+                Arguments.of("removeIf", asConsumer(l -> l.removeIf(Objects::isNull))),
+                Arguments.of("add", asConsumer(l -> l.add(Monotonic.of())))
                 // Todo: add stuff
         );
     }
 
     private static Stream<Arguments> nullOperations() {
         return Stream.of(
-                Arguments.of("computeIfAbsent(MethodHandle)", asBiConsumer((l, o) -> l.computeIfAbsent(0, (MethodHandle) o))),
-                Arguments.of("computeIfAbsent(Supplier)", asBiConsumer((l, o) -> l.computeIfAbsent(0, (IntFunction<?>) o))),
-                Arguments.of("putIfAbsent", asBiConsumer((l, o) -> l.putIfAbsent(0, o)))
-                // Arguments.of("indexOf", asBiConsumer(List::indexOf))
+                Arguments.of("toArray", asBiConsumer((l, o) -> l.toArray((Object[]) o))),
+                Arguments.of("containsAll", asBiConsumer((l, o) -> l.containsAll((Collection<?>) o)))
         );
     }
 
-    private static Consumer<Monotonic.List<Integer>> asConsumer(
-            Consumer<Monotonic.List<Integer>> consumer) {
+    private static Consumer<List<Monotonic<Integer>>> asConsumer(Consumer<List<Monotonic<Integer>>> consumer) {
         return consumer;
     }
 
-    private static BiConsumer<Monotonic.List<Object>, Object> asBiConsumer(
-            BiConsumer<Monotonic.List<Object>, Object> biConsumer) {
+    private static BiConsumer<List<Monotonic<Integer>>, Object> asBiConsumer(
+            BiConsumer<List<Monotonic<Integer>>, Object> biConsumer) {
         return biConsumer;
     }
 

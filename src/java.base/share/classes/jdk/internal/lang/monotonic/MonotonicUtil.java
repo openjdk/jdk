@@ -41,11 +41,11 @@ final class MonotonicUtil {
     }
 
     /**
-     * Performs a "freeze" operation, required to ensure safe publication under plain memory read
-     * semantics.
+     * Performs a "freeze" operation, required to ensure safe publication under plain
+     * memory read semantics.
      * <p>
-     * This inserts a memory barrier, thereby establishing a happens-before constraint. This
-     * prevents the reordering of store operations across the freeze boundary.
+     * This inserts a memory barrier, thereby establishing a happens-before constraint.
+     * This prevents the reordering of store operations across the freeze boundary.
      */
     static void freeze() {
         // Issue a store fence, which is sufficient
@@ -66,7 +66,4 @@ final class MonotonicUtil {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }
 
-    interface ThrowingFunction<T, R> {
-        R apply(T t) throws Throwable;
-    }
 }

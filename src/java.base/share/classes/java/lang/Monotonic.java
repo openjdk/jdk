@@ -32,7 +32,6 @@ import jdk.internal.lang.monotonic.InternalMonotonicMap;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.RandomAccess;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -48,10 +47,6 @@ import java.util.function.Supplier;
  * @param <V> value type
  * @since 23
  */
-// Todo: If the supplier/mapper returns null, no value is recorded.
-// Todo: Update fields.cpp to trust Monotonic, Monotonic.List, Monotonic.Map
-//       This is an advantage with having separate types
-// Todo: Remove ifPresent as this can be replaced with get(...) != null
 public sealed interface Monotonic<V> permits InternalMonotonic {
 
     /**
@@ -67,35 +62,32 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     boolean isPresent();
 
     /**
-     * Binds the monotonic value to the provided {@code value}.
+     * Binds the monotonic value to the provided {@code value} or throws an
+     * exception if a value is already present.
+     * .
      *
      * @param value to bind
      * @throws IllegalStateException if a value is already present
-     * @throws NullPointerException  if the backing type is a primitive type and a
-     *                               {@code value} of {@code null} is provided.
      */
-    void put(V value);
+    void bind(V value);
 
     /**
      * Binds the monotonic value to the provided {@code value}} if a value is not present,
-     * returning the present value.
+     * and returns the bound value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
      * in binding a value and that (witness) value will be returned to all threads.
      *
      * @param value to bind
      * @return the bound value
-     * @throws NullPointerException if the backing type is a primitive type and a
-     *                              {@code value} of {@code null} is provided.
      */
-    V putIfAbsent(V value);
+    V bindIfAbsent(V value);
 
     /**
      * If a value is {@linkplain #isPresent() not present}, attempts to compute and bind a
      * value using the provided {@code supplier}.
      *
      * <p>
-     * If the supplier returns {@code null}, no value is bound.
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
      * value is bound. The most common usage is to construct a new object serving as an
      * initial mapped value or memoized result, as in:
@@ -122,448 +114,161 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * <p>The implementation guarantees the provided {@code supplier} is invoked
      * once (if successful) even if invoked from several threads.
      *
-     * @param supplier the supplier to compute a value
+     * @param supplier to be used for computing a value
      * @return the current (existing or computed) present value
      */
     V computeIfAbsent(Supplier<? extends V> supplier);
 
-//    /**
-//     * If a value is {@linkplain #isPresent() not present}, attempts to compute and bind a
-//     * value using the provided {@code supplier}.
-//     *
-//     * <p>
-//     * If the supplier returns {@code null}, no value is bound.
-//     * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-//     * value is bound. The most common usage is to construct a new object serving as an
-//     * initial mapped value or memoized result, as in:
-//     *
-//     * <pre> {@code
-//     * Value witness = monotonic.computeIfAbsent(handle);
-//     * }</pre>
-//     *
-//     * @implSpec The implementation logic is equivalent to the following steps for this
-//     * {@code monotonic}:
-//     *
-//     * <pre> {@code
-//     * if (!monotonic.isPresent()) {
-//     *     V newValue = (V) (Object) supplier.invokeExact(monotonic);
-//     *     monotonic.put(newValue);
-//     *     return newValue;
-//     * } else {
-//     *     return monotonic.get();
-//     * }
-//     * }</pre>
-//     * Except it is thread-safe and will only return the same witness value regardless if
-//     * invoked by several threads.
-//     *
-//     * <p>The implementation guarantees the provided {@code supplier} is invoked
-//     * once (if successful) even if invoked from several threads.
-//     *
-//     * @param supplier the supplier to compute a value
-//     * @return the current (existing or computed) present value
-//     */
-//    V computeIfAbsent(MethodHandle supplier);
-
-//    /**
-//     * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound value
-//     * of this monotonic}
-//     * <p>
-//     * The returned getter's return type reflects directly on the backing type of this
-//     * monotonic value. The getter can be used to obtain the present value without boxing
-//     * but will otherwise behave as the {@linkplain #get()} method.
-//     * <p>
-//     * The returned getter will have a sole parameter of type {@linkplain Monotonic} which
-//     * represents the "this" parameter.
-//     *
-//     * @see #get()
-//     */
-//    MethodHandle getter();
-
     /**
-     * A <em>monotonic list</em> where elements can be bound at most once.
-     * <p>
-     * Only non-null elements are supported.
-     * <p>
-     * The state of a monotonic element can only go from absent to present and
-     * consequently, an element can only be bound at most once.
+     * A special {@code java.util.List<Monotonic<V>>} that is eligible for constant
+     * folding by the JVM and that provides additional convenience methods.
      *
-     * @implSpec Implementations of this interface are immutable and thread-safe.
+     * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
      *
-     * @param <V> the monotonic value type
+     * @param <B> the bound type for the Monotonic elements in this list
      */
-    sealed interface List<V>
-            extends java.util.List<V>, RandomAccess
-            permits InternalMonotonicList {
+    interface List<B> extends java.util.List<Monotonic<B>> {
 
         /**
-         * {@inheritDoc}
-         *
-         * @throws IndexOutOfBoundsException if the index is out of range
-         *                                   ({@code index < 0 || index >= size()})
-         * // Todo: return 'null" instead as the Map::get operator does?
-         * @throws NoSuchElementException    if no value is present at the provided
-         *                                   {@code index}
-         */
-        V get(int index);
-
-        /**
-         * {@return {@code true} if, and only if, a value is present at the provided
-         * {@code index}}
-         * @param index of the element to inspect
-         */
-        boolean isPresent(int index);
-
-        /**
-         * Binds the monotonic element to the provided {@code element} at the provided
-         * {@code index}.
-         *
-         * @param index of the element to bind
-         * @param element to bind
-         * @throws ClassCastException        if the class of the specified element
-         *                                   prevents it from being added to this list
-         * @throws NullPointerException      if the specified element is null
-         * @throws IllegalArgumentException  if some property of the specified element
-         *                                   prevents it from being added to this list
-         * @throws IndexOutOfBoundsException if the index is out of range
-         *                                   ({@code index < 0 || index >= size()})
-         * @throws IllegalStateException     if an element is already present
-         */
-        default void put(int index, V element) {
-            set(index, element);
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ClassCastException        if the class of the specified element
-         *                                   prevents it from being added to this list
-         * @throws NullPointerException      if the specified element is null
-         * @throws IllegalArgumentException  if some property of the specified element
-         *                                   prevents it from being added to this list
-         * @throws IndexOutOfBoundsException if the index is out of range
-         *                                   ({@code index < 0 || index >= size()})
-         * @throws IllegalStateException     if an element is already present
-         */
-        V set(int index, V element);
-
-        /**
-         * Binds the monotonic element to the provided {@code element}} at the provided
-         * {@code index} if an element is absent, returning the present element.
-         * <p>
-         * If several threads invoke this method simultaneously, only one thread will
-         * succeed in binding an element and that (witness) element will be returned to all
-         * threads.
-         *
-         * @param index index of the element to bind/return
-         * @param element to bind
-         * @return the bound element
-         * @throws NullPointerException if the backing type is a primitive type and a
-         *                              {@code element} of {@code null} is provided.
-         */
-        V putIfAbsent(int index, V element);
-
-        /**
-         * If a value is {@linkplain #isPresent() not present} at the provided
-         * {@code index}, attempts to compute and bind a value by applying the provided
-         * {@code mapper}.
+         * If a monotonic value is {@linkplain #isPresent() not present} at the provided
+         * {@code index}, attempts to compute and bind a value using the provided {@code mapper}.
          *
          * <p>
-         * If the mapper function returns {@code null}, no value is bound.
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-         * no value is bound. The most common usage is to construct a new object serving
-         * as an initial mapped value or memoized result, as in:
+         * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+         * value is bound.
          *
-         * <pre> {@code
-         * Value witness = monotonicList.computeIfAbsent(index, Value::new);
-         * }</pre>
+         * @param index to inspect
+         * @param mapper to be used for computing a value
          *
-         * @implSpec The implementation logic is equivalent to the following steps for
-         * this {@code monotonic}:
-         *
-         * <pre> {@code
-         * if (!monotonicList.isPresent(index)) {
-         *     V newValue = supplier.get(index);
-         *     monotonic.put(index, newValue);
-         *     return newValue;
-         * } else {
-         *     return monotonic.get();
-         * }
-         * }</pre>
-         * Except it is thread-safe and will only return the same witness value regardless
-         * if invoked by several threads.
-         *
-         * <p>The implementation guarantees the provided {@code mapper} is invoked
-         * once per index (if successful) even if invoked from several threads.
-         *
-         * @param index of the element to bind/get
-         * @param mapper the mapper to compute a value
-         * @return the current (existing or computed) present value
+         * @return the current (existing or computed) present monotonic value
          */
-        V computeIfAbsent(int index, IntFunction<? extends V> mapper);
-
-//        /**
-//         * If a value is {@linkplain #isPresent() not present} at the provided
-//         * {@code index}, attempts to compute and bind a value by applying the provided
-//         * {@code mapper}.
-//         *
-//         * <p>
-//         * If the mapper function returns {@code null}, no value is bound.
-//         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-//         * no value is bound. The most common usage is to construct a new object serving
-//         * as an initial mapped value or memoized result, as in:
-//         *
-//         * <pre> {@code
-//         * Value witness = monotonicList.computeIfAbsent(index, handle);
-//         * }</pre>
-//         *
-//         * @implSpec The implementation logic is equivalent to the following steps for
-//         * this {@code monotonic}:
-//         *
-//         * <pre> {@code
-//         * if (!monotonicList.isPresent(index)) {
-//         *     V newValue = (V) (Object) supplier.invokeExact(monotonicList, index);
-//         *     monotonic.put(index, newValue);
-//         *     return newValue;
-//         * } else {
-//         *     return monotonic.get();
-//         * }
-//         * }</pre>
-//         * Except it is thread-safe and will only return the same witness value regardless
-//         * if invoked by several threads.
-//         *
-//         * <p>The implementation guarantees the provided {@code mapper} is invoked
-//         * once per index (if successful) even if invoked from several threads.
-//         *
-//         * @param index of the element to bind/get
-//         * @param mapper the mapper to compute a value
-//         * @return the current (existing or computed) present value
-//         *
-//         */
-//        V computeIfAbsent(int index, MethodHandle mapper);
-
-//        /**
-//         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
-//         * value of this monotonic}
-//         * <p>
-//         * The returned getter's return type reflects directly on the backing type of this
-//         * monotonic liat. The getter can be used to obtain the present value without
-//         * boxing but will otherwise behave as the {@linkplain #get(int)} method.
-//         * <p>
-//         * The returned getter will have a first parameter of type
-//         * {@linkplain Monotonic.List} which represents the "this" parameter and
-//         * a second parameter of type {@code int} which represents the index.
-//         *
-//         * @see #get(int)
-//         */
-//         MethodHandle getter();
+        B computeMonotonicIfAbsent(int index, IntFunction<? extends B> mapper);
     }
 
     /**
-     * A <em>monotonic map</em> where values can be bound at most once.
-     * <p>
-     * Only non-null keys and values are supported and the keys are restricted to
-     * the ones provided at construction via the factory
-     * {@linkplain Monotonic#ofMap(Class, Collection)}
-     * <p>
-     * The state of a monotonic value can only go from absent to present and
-     * consequently, a value can only be bound at most once.
+     * A special {@code java.util.Map<K, Monotonic<V>>} that is eligible for constant
+     * folding by the JVM and that provides additional convenience methods.
      *
-     * @implSpec Implementations of this interface are immutable and thread-safe.
+     * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
      *
      * @param <K> the type of keys maintained by this map
-     * @param <V> the type of monotonic values
+     * @param <B> the bound type for the mapped Monotonic values in this map
      */
-    sealed interface Map<K, V>
-            extends java.util.Map<K, V> permits InternalMonotonicMap {
+    interface Map<K, B> extends java.util.Map<K, Monotonic<B>> {
 
         /**
-         * {@inheritDoc}
+         * If a monotonic value is {@linkplain #isPresent() not present} for the provided
+         * {@code key}, attempts to compute and bind a value using the provided {@code mapper}.
          *
-         * @throws NullPointerException   if the specified key is null
+         * <p>
+         * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
+         * value is bound.
+         *
+         * @param key to inspect
+         * @param mapper to be used for computing a value
+         *
+         * @return the current (existing or computed) present monotonic value
+         * @throws IllegalArgumentException if no association exists for the provided
+         *         {@code key}.
          */
-        @Override
-        V get(Object key);
-
-        /**
-         * {@return {@code true} if, and only if, a value is present for the provided
-         * {@code key}}
-         *
-         * @param key of the element to inspect
-         */
-        default boolean isPresent(K key) {
-            return containsKey(key);
-        }
-
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ClassCastException       if the class of the specified value
-         *                                  prevents it from being added to this map
-         * @throws NullPointerException     if the specified key or value is null
-         * @throws IllegalArgumentException if some property of the specified value
-         *                                  prevents it from being added to this map
-         * @throws IllegalArgumentException if the key is not in the pre-set collection
-         *                                  of keys specified at the time this map was
-         *                                  created
-         * @throws IllegalStateException    if a value is already present
-         *
-         */
-        @Override
-        V put(K key, V value);
-
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ClassCastException       if the class of the specified value
-         *                                  prevents it from being added to this map
-         * @throws NullPointerException     if the specified key or value is null
-         * @throws IllegalArgumentException if the key is not in the pre-set collection
-         *                                  of keys specified at the time this map was
-         *                                  created
-         * @throws IllegalStateException    if a value is already present
-         */
-        @Override
-        V putIfAbsent(K key, V value);
-
-        /**
-         * {@inheritDoc}
-         *
-         * @throws ClassCastException       if the class of the specified value
-         *                                  prevents it from being added to this map
-         * @throws NullPointerException     if the specified key or value is null
-         * @throws IllegalArgumentException if the key is not in the pre-set collection
-         *                                  of keys specified at the time this map was
-         *                                  created
-         */
-        @Override
-        V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
-
-//        /**
-//         * If a value is {@linkplain #isPresent() not present} for the provided
-//         * {@code key}, attempts to compute and bind a value by applying the provided
-//         * {@code mapper}.
-//         *
-//         * <p>
-//         * If the mapper function returns {@code null}, no value is bound.
-//         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-//         * no value is bound. The most common usage is to construct a new object serving
-//         * as an initial mapped value or memoized result, as in:
-//         *
-//         * <pre> {@code
-//         * Value witness = monotonicMap.computeIfAbsent(key, handle);
-//         * }</pre>
-//         *
-//         * @implSpec The implementation logic is equivalent to the following steps for
-//         * this {@code monotonic}:
-//         *
-//         * <pre> {@code
-//         * if (!monotonicMap.isPresent(key)) {
-//         *     V newValue = (V) (Object) supplier.invokeExact(monotonicMap, index);
-//         *     monotonic.put(index, newValue);
-//         *     return newValue;
-//         * } else {
-//         *     return monotonic.get();
-//         * }
-//         * }</pre>
-//         * Except it is thread-safe and will only return the same witness value regardless
-//         * if invoked by several threads.
-//         *
-//         * <p>The implementation guarantees the provided {@code mapper} is invoked
-//         * once per index (if successful) even if invoked from several threads.
-//         *
-//         * @param key of the value to bind/get
-//         * @param mapper the mapper to compute a value
-//         * @return the current (existing or computed) present value
-//         *
-//         */
-//        V computeIfAbsent(K key, MethodHandle mapper);
-
-//        /**
-//         * {@return a MethodHandle that can be used to {@linkplain #get() get} the bound
-//         * value of this monotonic}
-//         * <p>
-//         * The returned getter's return type reflects directly on the backing type of this
-//         * monotonic map. The getter can be used to obtain the present value without
-//         * boxing but will otherwise behave as the {@linkplain #get(Object)} method.
-//         * <p>
-//         * The returned getter will have a first parameter of type
-//         * {@linkplain Monotonic.Map} which represents the "this" parameter and
-//         * a second parameter of type {@code K} which represents the key.
-//         *
-//         * @see #get(Object)
-//         */
-//         MethodHandle getter();
+        B computeMonotonicIfAbsent(K key, Function<? super K, ? extends B> mapper);
     }
 
     // Factories
 
     /**
-     * {@return a new Monotonic for which a bound non-null value can be backed by the
-     * provided {@code backingType}}
-     * <p>
-     * It is up to to the implementation if the provided {@code backingType} is actually
-     * used.
+     * {@return a new Monotonic}
      *
-     * @param backingType a class literal that (optionally) can be used to store a bound
-     *                    value
-     * @param <V>         the type to bind
-     * @param <T>         the type of the backing class
+     * @param <V> the value type to bind
      */
-    static <T extends V, V> Monotonic<V> of(Class<T> backingType) {
-        Objects.requireNonNull(backingType);
-        return InternalMonotonic.of(backingType);
-    }
-
-//    /**
-//     * {@return a new Monotonic for which a bound nullable value where non-null values can
-//     * be backed by the provided {@code backingType}}
-//     * <p>
-//     * It is up to to the implementation if the provided {@code backingType} is actually
-//     * used.
-//     *
-//     * @param backingType a class literal that (optionally) can be used to store a bound
-//     *                    non-null value
-//     * @param <V>         the type to bind
-//     * @param <T>         the type of the backing class
-//     */
-//    // Todo: Valhalla makes this redundant?
-//    static <T extends V, V> Monotonic<V> ofNullable(Class<T> backingType) {
-//        Objects.requireNonNull(backingType);
-//        return InternalMonotonic.ofNullable(backingType);
-//    }
-
-    /**
-     * {@return a new monotonic, lazy {@linkplain List } where the element can be backed
-     * by the provided {@code backingElementType} and with a
-     * {@linkplain java.util.List#size()} equal or less than the provided {@code size}}
-     *
-     * @param backingElementType a class literal that (optionally) can be used to store a
-     *                           bound monotonic value
-     * @param size               the maximum size of the returned monotonic list
-     * @param <V>                the type of the monotonic values in the returned list
-     */
-    static <V> Monotonic.List<V> ofList(Class<? extends V> backingElementType,
-                                        int size) {
-        Objects.requireNonNull(backingElementType);
-        return InternalMonotonic.ofList(backingElementType, size);
+    static <V> Monotonic<V> of() {
+        return new InternalMonotonic<>();
     }
 
     /**
-     * {@return a new monotonic, lazy {@linkplain Map } where the values can be backed by
-     * the provided {@code backingValueType} and where the
-     * {@linkplain java.util.Map#keySet() keys} can only contain the provided
+     * {@return a thread-safe, memoized supplier backed by a monotonic value where the
+     * memoized value is obtained by invoking the provided {@code suppler}}
+     *
+     * @param supplier   to be used for computing a value
+     * @param background if true, spawns a virtual background thread that per-computes
+     *                   a memoized value
+     * @param <V>        the type of the value to memoize
+     * @see Monotonic#computeIfAbsent(Supplier)
+     */
+    static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
+                                      boolean background) {
+        Objects.requireNonNull(supplier);
+        Monotonic<V> monotonic = Monotonic.of();
+        Supplier<V> result = () -> monotonic.computeIfAbsent(supplier);
+        if (background) {
+            Thread.startVirtualThread(result::get);
+        }
+        return result;
+    }
+
+    /**
+     * {@return a new shallowly immutable, lazy {@linkplain List } of monotonic values
+     * with a {@linkplain List#size()} equal to the provided {@code size}}
+     *
+     * @param size the size of the returned monotonic list
+     * @param <B>  the bound type for the Monotonic elements in this list
+     */
+    static <B> Monotonic.List<B> ofList(int size) {
+        if (size < 0) {
+            throw new IllegalArgumentException();
+        }
+        return InternalMonotonicList.of(size);
+    }
+
+    /**
+     * {@return a new shallowly immutable, {@linkplain Map } where the
+     * {@linkplain java.util.Map#keySet() keys} contains only the provided
      * {@code keys}}
      *
-     * @param backingValueType a class literal that (optionally) can be used to store a
-     *                         bound monotonic value
      * @param keys             the potential keys in the map
      * @param <K>              the type of keys maintained by the returned map
      * @param <V>              the type of the values in the returned map
      */
-    static <K, V> Monotonic.Map<K, V> ofMap(Class<? extends V> backingValueType,
-                                            Collection<? extends K> keys) {
+    static <K, V> Monotonic.Map<K, V> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
-        return InternalMonotonic.ofMap(backingValueType, keys);
+        return InternalMonotonicMap.ofMap(keys);
     }
+
+/*    static <V> V computeIfAbsent(List<Monotonic<V>> list,
+                                 int index,
+                                 IntFunction<? extends V> mapper) {
+        Objects.requireNonNull(list);
+        Objects.checkIndex(index, list.size());
+        Objects.requireNonNull(mapper);
+        Monotonic<V> monotonic = list.get(index);
+        if (monotonic.isPresent()) {
+            return monotonic.get();
+        }
+        synchronized (mapper) {
+            if (monotonic.isPresent()) {
+                return monotonic.get();
+            }
+            Supplier<V> supplier = () -> mapper.apply(index);
+            return monotonic.computeIfAbsent(supplier);
+        }
+    }
+
+    static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
+                                    K key,
+                                    Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(map);
+        Objects.requireNonNull(mapper);
+        Monotonic<V> monotonic = Objects.requireNonNull(map.get(key), "No such key");
+        if (monotonic.isPresent()) {
+            return monotonic.get();
+        }
+        synchronized (mapper) {
+            if (monotonic.isPresent()) {
+                return monotonic.get();
+            }
+            Supplier<V> supplier = () -> mapper.apply(key);
+            return monotonic.computeIfAbsent(supplier);
+        }
+    }*/
 
 }

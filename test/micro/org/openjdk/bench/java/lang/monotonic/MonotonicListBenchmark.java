@@ -39,7 +39,7 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2)
-public class MonotonicList {
+public class MonotonicListBenchmark {
 
     private static final int SIZE = 100;
 
@@ -52,7 +52,7 @@ public class MonotonicList {
         }
 
         Integer get(int index) {
-            return list.get(index);
+            return list.get(index).get();
         }
     }
 
@@ -71,30 +71,27 @@ public class MonotonicList {
 
     private static final List<Monotonic<Integer>> WRAPPED =
             IntStream.range(0, SIZE)
-                    .mapToObj(i -> Monotonic.of(int.class))
+                    .mapToObj(i -> Monotonic.<Integer>of())
                     .toList();
     static {
-        WRAPPED.get(8).put(8);
+        WRAPPED.get(8).bind(8);
     }
 
-    private static final Monotonic.List<Integer> PRIMITIVE_LIST = initList(Monotonic.ofList(int.class, SIZE));
-    private static final Monotonic.List<Integer> REFERENCE_LIST = initList(Monotonic.ofList(Integer.class, SIZE));
+    private static final Monotonic.List<Integer> REFERENCE_LIST = initList(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = initList(new ArrayList<>(SIZE));
 
-    private static final MonotonicHolder PRIMITIVE_HOLDER = new MonotonicHolder(initList(Monotonic.ofList(int.class, SIZE)));
-    private static final MonotonicHolder REFERENCE_HOLDER = new MonotonicHolder(initList(Monotonic.ofList(Integer.class, SIZE)));
+    private static final MonotonicHolder REFERENCE_HOLDER = new MonotonicHolder(initList(Monotonic.ofList(SIZE)));
     private static final Holder ARRAY_HOLDER = new Holder(initList(new ArrayList<>(SIZE)));
 
-    private final Monotonic.List<Integer> primitiveList = initList(Monotonic.ofList(int.class, SIZE));
-    private final Monotonic.List<Integer> referenceList = initList(Monotonic.ofList(Integer.class, SIZE));
+    private final Monotonic.List<Integer> referenceList = initList(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
     private final List<Monotonic<Integer>> wrappedList;
 
-    public MonotonicList() {
+    public MonotonicListBenchmark() {
         this.wrappedList = IntStream.range(0, SIZE)
-                .mapToObj(i -> Monotonic.of(int.class))
+                .mapToObj(i -> Monotonic.<Integer>of())
                 .toList();
-        wrappedList.get(8).put(8);
+        wrappedList.get(8).bind(8);
     }
 
     @Setup
@@ -102,52 +99,32 @@ public class MonotonicList {
     }
 
     @Benchmark
-    public int staticGetPrimitive() {
-        return PRIMITIVE_LIST.get(8);
+    public Integer staticMonotonic() {
+        return REFERENCE_LIST.get(8).get();
     }
 
     @Benchmark
-    public Integer staticGetReference() {
-        return REFERENCE_LIST.get(8);
-    }
-
-    @Benchmark
-    public Integer staticGetArrayList() {
+    public Integer staticArrayList() {
         return ARRAY_LIST.get(8);
     }
 
     @Benchmark
-    public int staticWrapped() {
-        return PRIMITIVE_LIST.get(8);
-    }
-
-    @Benchmark
-    public int holderGetPrimitive() {
-        return PRIMITIVE_HOLDER.get(8);
-    }
-
-    @Benchmark
-    public Integer holderGetReference() {
+    public Integer holderMonotonic() {
         return REFERENCE_HOLDER.get(8);
     }
 
     @Benchmark
-    public Integer holderGetArrayList() {
+    public Integer holderArrayList() {
         return ARRAY_HOLDER.get(8);
     }
 
     @Benchmark
-    public int instanceGetPrimitive() {
-        return primitiveList.get(8);
+    public Integer instanceMonotonic() {
+        return referenceList.get(8).get();
     }
 
     @Benchmark
-    public Integer instanceGetReference() {
-        return referenceList.get(8);
-    }
-
-    @Benchmark
-    public Integer instanceGetArrayList() {
+    public Integer instanceArrayList() {
         return arrayList.get(8);
     }
 
@@ -156,12 +133,19 @@ public class MonotonicList {
         return wrappedList.get(8).get();
     }
 
-    private static <T extends List<Integer>> T initList(T list) {
-        for (int i = list.size(); i < SIZE; i++) {
-            list.add(null);
-        }
-        list.set(8, 8);
+    private static Monotonic.List<Integer> initList(Monotonic.List<Integer> list) {
+        list.get(8).bind(8);
         return list;
     }
+
+    private static List<Integer> initList(List<Integer> list) {
+        for (int i = 0; i < 9; i++) {
+            list.add(i);
+
+        }
+        return list;
+    }
+
+
 
 }

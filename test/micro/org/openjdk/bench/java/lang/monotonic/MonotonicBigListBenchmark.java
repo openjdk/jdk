@@ -39,16 +39,14 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2)
-public class MonotonicBigList {
+public class MonotonicBigListBenchmark {
 
     private static final int SIZE = 100_000;
 
-    private static final Monotonic.List<Integer> RANDOM_INDICES = random(Monotonic.ofList(int.class, SIZE));
-
-    private static final Monotonic.List<Integer> PRIMITIVE_LIST = random(Monotonic.ofList(int.class, SIZE));
+    private static final Monotonic.List<Integer> PRIMITIVE_LIST = random(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
-    private final Monotonic.List<Integer> primitiveList = random(Monotonic.ofList(int.class, SIZE));
+    private final Monotonic.List<Integer> primitiveList = random(Monotonic.ofList(SIZE));
     private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
     @Setup
@@ -56,54 +54,54 @@ public class MonotonicBigList {
     }
 
     @Benchmark
-    public int staticGetPrimitive() {
+    public int staticMonotonic() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += PRIMITIVE_LIST.get(RANDOM_INDICES.get(i));
+            sum += PRIMITIVE_LIST.get(i).get();
         }
         return sum;
     }
 
     @Benchmark
-    public int staticGetArrayList() {
+    public int staticArrayList() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += ARRAY_LIST.get(RANDOM_INDICES.get(i));
+            sum += ARRAY_LIST.get(i);
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int instanceMonotonic() {
+        int sum = 0;
+        for (int i = 0; i < SIZE; i++) {
+            sum += primitiveList.get(i).get();
         }
         return sum;
     }
 
 
     @Benchmark
-    public int instancePrimitiveList() {
+    public Integer instanceArrayList() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += primitiveList.get(RANDOM_INDICES.get(i));
+            sum += arrayList.get(i);
         }
         return sum;
     }
 
-
-    @Benchmark
-    public Integer instanceGetArrayList() {
-        int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += arrayList.get(RANDOM_INDICES.get(i));
-        }
-        return sum;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <E extends Integer, T extends List<E>> T random(T list) {
+    private static Monotonic.List<Integer> random(Monotonic.List<Integer> list) {
         Random rnd = new Random();
-        if (list instanceof Monotonic.List<?> ml) {
-            for (int i = 0; i < SIZE; i++) {
-                ((Monotonic.List<Integer>) ml).put(i, rnd.nextInt(0, SIZE));
-            }
-        } else {
-            for (int i = 0; i < SIZE; i++) {
-                ((List<Integer>) list).add(rnd.nextInt(0, Integer.SIZE));
-            }
+        for (int i = 0; i < SIZE; i++) {
+            list.get(i).bind(rnd.nextInt(0, SIZE));
+        }
+        return list;
+    }
+
+    private static List<Integer> random(List<Integer> list) {
+        Random rnd = new Random();
+        for (int i = 0; i < SIZE; i++) {
+            list.add(rnd.nextInt(0, Integer.SIZE));
         }
         return list;
     }

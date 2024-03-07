@@ -44,11 +44,11 @@ final class JepDemo {
     static
     class Init {
         // 1. Declare a monotonic value
-        private static final Monotonic<Logger> LOGGER = Monotonic.of(Logger.class);
+        private static final Monotonic<Logger> LOGGER = Monotonic.of();
 
         static void init() {
             // 2. Bind the monotonic value "later"
-            LOGGER.put(Logger.getLogger("com.foo.Bar"));
+            LOGGER.bind(Logger.getLogger("com.foo.Bar"));
         }
 
         static Logger logger() {
@@ -61,7 +61,7 @@ final class JepDemo {
     static
     class Bar2 {
         // 1. Declare a monotonic
-        private static final Monotonic<Logger> LOGGER = Monotonic.of(Logger.class);
+        private static final Monotonic<Logger> LOGGER = Monotonic.of();
 
         static Logger logger() {
             // 2. Access the monotonic value with as-declared-final performance
@@ -73,10 +73,24 @@ final class JepDemo {
     static
     class Bar3 {
         // 1. Declare a monotonic value
-        private static final Monotonic<Logger> MONOTONIC = Monotonic.of(Logger.class);
+        private static final Monotonic<Logger> MONOTONIC = Monotonic.of();
         // 2. Declare a memoized (cached) Supplier backed by the monotonic value
         private static final Supplier<Logger> LOGGER = () -> MONOTONIC
                 .computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
+
+        static Logger logger() {
+            // 2. Access the memoized value with as-declared-final performance
+            //    (evaluation made before the first access)
+            return LOGGER.get();
+        }
+    }
+
+    static
+    class Bar4 {
+        // 1. Declare a memoized (cached) Supplier backed by the monotonic value that
+        //    is pre-computed in the background
+        private static final Supplier<Logger> LOGGER =
+                Monotonic.asMemoized( () -> Logger.getLogger("com.foo.Bar") , true);
 
         static Logger logger() {
             // 2. Access the memoized value with as-declared-final performance
@@ -91,14 +105,14 @@ final class JepDemo {
         private final Monotonic.List<Integer> numberCache;
 
         public Fibonacci(int upperBound) {
-            numberCache = Monotonic.ofList(int.class, upperBound);
+            numberCache = Monotonic.ofList(upperBound);
         }
 
         public int number(int n) {
             return (n < 2)
                     ? n
-                    : numberCache.computeIfAbsent(n - 1, this::number)
-                    + numberCache.computeIfAbsent(n - 2, this::number);
+                    : numberCache.computeMonotonicIfAbsent(n - 1, this::number)
+                    + numberCache.computeMonotonicIfAbsent(n - 2, this::number);
         }
 
     }
@@ -110,9 +124,9 @@ final class JepDemo {
 
         public Fibonacci2(int upperBound) {
             Monotonic.List<Integer> monotonicList =
-                    Monotonic.ofList(int.class, upperBound);
+                    Monotonic.ofList(upperBound);
             numCache =
-                    i -> monotonicList.computeIfAbsent(i, this::number);
+                    i -> monotonicList.computeMonotonicIfAbsent(i, this::number);
         }
 
         public int number(int n) {
@@ -129,9 +143,9 @@ final class JepDemo {
         private final IntFunction<Integer> numCache;
 
         public Fibonacci3(int upperBound) {
-            Monotonic.List<Integer> monotonicList = Monotonic.ofList(int.class, upperBound);
-            monotonicList.put(8, 21);
-            numCache = i -> monotonicList.computeIfAbsent(i, this::number);
+            Monotonic.List<Integer> monotonicList = Monotonic.ofList(upperBound);
+            monotonicList.get(8).bind(21);
+            numCache = i -> monotonicList.computeMonotonicIfAbsent(i, this::number);
         }
 
         public int number(int n) {
@@ -147,10 +161,10 @@ final class JepDemo {
     class MapDemo {
 
         private static final Monotonic.Map<String, Logger> LOGGERS =
-                Monotonic.ofMap(Logger.class, Set.of("com.foo.Bar", "com.foo.Baz"));
+                Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         static Logger logger(String name) {
-            return LOGGERS.computeIfAbsent(name, Logger::getLogger);
+            return LOGGERS.computeMonotonicIfAbsent(name, Logger::getLogger);
         }
     }
 
@@ -158,11 +172,11 @@ final class JepDemo {
     class MapDemo2 {
 
         private static final Monotonic.Map<String, Logger> MONO_MAP =
-                Monotonic.ofMap(Logger.class, Set.of("com.foo.Bar", "com.foo.Baz"));
+                Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
 
         // 1. Declare a memoized (cached) function backed by a monotonic map
         private static final Function<String, Logger> LOGGERS =
-                k -> MONO_MAP.computeIfAbsent(k, Logger::getLogger);
+                k -> MONO_MAP.computeMonotonicIfAbsent(k, Logger::getLogger);
 
         static Logger logger(String name) {
             // 2. Access the memoized value with as-declared-final performance
