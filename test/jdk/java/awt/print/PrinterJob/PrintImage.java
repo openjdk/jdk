@@ -52,11 +52,19 @@ public class PrintImage extends Frame implements ActionListener {
     private final MenuItem print1Menu = new MenuItem("PrintTest1");
     private final MenuItem print2Menu = new MenuItem("PrintTest2");
     private static final String INSTRUCTIONS =
-            "Printing must be done in Japanese 2nd Edition.\n" +
-            "Preferably Canon LaserShot A309GII.\n" +
+            "Select PrintTest1 in the File menu.\n" +
+            "Print Dialog will appear.\n" +
+            "Click OK to start the first print job.\n" +
             "\n" +
-            "Passing test : Output of text image for PrintTest1 and PrintTest2 should be\n" +
-            "same as that on the screen.";
+            "Select PrintTest2 in the File menu.\n" +
+            "Page Setup Dialog will appear.\n" +
+            "Click OK.\n" +
+            "Print Dialog will appear.\n" +
+            "Click OK to start the second print job.\n" +
+            "\n" +
+            "The text in the printouts for PrintTest1 and PrintTest2 should be\n" +
+            "same as that on the screen.\n" +
+            "Press Pass if they are, otherwise press Fail.";
 
     public static void main(String[] argv) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
@@ -90,7 +98,7 @@ public class PrintImage extends Frame implements ActionListener {
         me.add(print1Menu);
         me.add(print2Menu);
         mb.add(me);
-        this.setMenuBar(mb);
+        setMenuBar(mb);
 
         print1Menu.addActionListener(this);
         print2Menu.addActionListener(this);

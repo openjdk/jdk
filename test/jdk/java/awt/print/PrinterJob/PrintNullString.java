@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.awt.Button;
 import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -33,7 +34,6 @@ import java.awt.print.PrinterJob;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
 
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 
 /*
@@ -48,10 +48,13 @@ import javax.swing.JOptionPane;
 public class PrintNullString extends Frame {
     private static final String INSTRUCTIONS =
             "This test should print a page which contains the same\n" +
-            "text messages as in the test window on the screen\n" +
-            "The messages should contain only 'OK' and 'expected' messages\n" +
+            "text messages as in the test window on the screen.\n" +
+            "\n" +
+            "The messages should contain only 'OK' and 'expected' messages.\n" +
+            "Press Pass if it's the case; otherwise press Fail.\n" +
+            "\n" +
             "If the page fails to print, but there were no exceptions\n" +
-            "then the problem is likely elsewhere (ie your printer)";
+            "then the problem is likely elsewhere (i.e. your printer)";
 
     public static void main(String[] args) throws Exception {
         if (PrinterJob.lookupPrintServices().length == 0) {
@@ -73,7 +76,7 @@ public class PrintNullString extends Frame {
         TextCanvas c = new TextCanvas();
         add("Center", c);
 
-        JButton b = new JButton("Print");
+        Button b = new Button("Print");
         add("South", b);
         b.addActionListener(e -> {
             PrinterJob pj = PrinterJob.getPrinterJob();

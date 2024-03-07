@@ -50,9 +50,7 @@ public class PrintTranslatedFont extends Frame {
     private static final String INSTRUCTIONS =
             "This test should print a page which contains the same\n" +
             "content as the test window on the screen, in particular the lines\n" +
-            "should be immediately under the text\n" +
-            "You should also monitor the command line to see if any exceptions\n" +
-            "were thrown\n" +
+            "should be immediately under the text\n\n" +
             "If an exception is thrown, or the page doesn't print properly\n" +
             "then the test fails";
 
