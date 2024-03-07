@@ -1075,6 +1075,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalEngineIsKeyEntry(entry);
+    }
+
+    private boolean internalEngineIsKeyEntry(Entry entry) {
         return entry instanceof KeyEntry;
     }
 
@@ -1085,8 +1089,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      * @return true if the entry identified by the given alias is a
      * <i>trusted certificate entry</i>, false otherwise.
      */
+
     public boolean engineIsCertificateEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
+        return internalEngineIsCertificateEntry(entry);
+    }
+
+    private boolean internalEngineIsCertificateEntry(Entry entry) {
         return entry instanceof CertEntry certEntry &&
                 certEntry.trustedKeyUsage != null;
     }
@@ -1316,7 +1325,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (protParam == null) {
-            if (engineIsCertificateEntry(alias)) {
+            if (internalEngineIsCertificateEntry(entry)) {
                 if (entry instanceof CertEntry &&
                     ((CertEntry) entry).trustedKeyUsage != null) {
 
@@ -1335,10 +1344,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (protParam instanceof KeyStore.PasswordProtection) {
-            if (engineIsCertificateEntry(alias)) {
+            if (internalEngineIsCertificateEntry(entry)) {
                 throw new UnsupportedOperationException
                     ("trusted certificate entries are not password-protected");
-            } else if (engineIsKeyEntry(alias)) {
+            } else if (internalEngineIsKeyEntry(entry)) {
                 KeyStore.PasswordProtection pp =
                         (KeyStore.PasswordProtection)protParam;
                 char[] password = pp.getPassword();
@@ -1355,7 +1364,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     return new KeyStore.SecretKeyEntry((SecretKey)key,
                         entry.attributes);
                 }
-            } else if (!engineIsKeyEntry(alias)) {
+            } else if (!internalEngineIsKeyEntry(entry)) {
                 throw new UnsupportedOperationException
                     ("untrusted certificate entries are not " +
                         "password-protected");
