@@ -130,6 +130,7 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
 
+    // Ensure atomic creation of higher dimensions
     RecursiveLocker rl(MultiArray_lock, THREAD);
 
     if (higher_dimension() == nullptr) {
@@ -138,7 +139,7 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
       // use 'release' to pair with lock-free load
       release_set_higher_dimension(ak);
-
+      assert(ak->lower_dimension() == this, "lower dimension mismatch");
     }
   }
 
