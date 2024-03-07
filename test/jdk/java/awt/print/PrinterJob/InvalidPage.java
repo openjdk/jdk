@@ -110,9 +110,9 @@ public class InvalidPage implements Printable {
 
     private static final String INSTRUCTIONS =
             " Press the print button, which brings up a print dialog.\n" +
-            " In the dialog select a printer and press the print button.\n" +
+            " In the dialog select a printer and press the print button.\n\n" +
             " Repeat for all the printers as you have installed\n" +
-            " On Solaris and Linux just one printer is sufficient.\n" +
+            " On Solaris and Linux just one printer is sufficient.\n\n" +
             " Collect the output and examine it, each print job has two pages\n" +
             " of very similar output, except that the 2nd page of the job may\n" +
             " appear in a different colour, and the output near the edge of\n" +

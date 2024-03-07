@@ -55,7 +55,7 @@ public class DrawImage {
     private final BufferedImage image;
     private final PageFormat pageFormat;
 
-    public DrawImage(BufferedImage image) {
+    private DrawImage(BufferedImage image) {
         this.image = image;
         PrinterJob pj = PrinterJob.getPrinterJob();
         pageFormat = pj.defaultPage();
@@ -71,7 +71,7 @@ public class DrawImage {
         int x = (int) pageFormat.getImageableX();
         int y = (int) pageFormat.getImageableY();
 
-        // make slightly smaller (25) than max possible width
+        // Make the image slightly smaller (25) than max possible width
         float scaleFactor = ((float) ((paperW - 25) - OBJECT_BORDER - OBJECT_BORDER)
                                    / (float) (image.getWidth()));
 
@@ -85,7 +85,7 @@ public class DrawImage {
         return Printable.PAGE_EXISTS;
     }
 
-    public void print() throws PrinterException {
+    private void print() throws PrinterException {
         final PrinterJob pj = PrinterJob.getPrinterJob();
         pj.setJobName("Print Image");
         pj.setPrintable(this::printImage);
@@ -100,9 +100,6 @@ public class DrawImage {
         }
 
         BufferedImage image = prepareFrontImage();
-        if (image == null) {
-            throw new RuntimeException("Image creation failed");
-        }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
                 .instructions(INSTRUCTIONS)
@@ -115,11 +112,12 @@ public class DrawImage {
         passFailJFrame.awaitAndCheck();
     }
 
-    public static BufferedImage prepareFrontImage() {
+    private static BufferedImage prepareFrontImage() {
         // build my own test images
         BufferedImage result = new BufferedImage(400, 200,
                                    BufferedImage.TYPE_BYTE_GRAY);
-        int w = result.getWidth(), h = result.getHeight();
+        int w = result.getWidth();
+        int h = result.getHeight();
 
         Graphics2D g2D = (Graphics2D) result.getGraphics();
         g2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING,

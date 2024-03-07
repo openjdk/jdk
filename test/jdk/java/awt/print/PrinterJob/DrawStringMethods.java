@@ -45,9 +45,9 @@ import java.text.AttributedString;
  */
 public class DrawStringMethods implements Printable {
     private static final String INSTRUCTIONS =
-            " This test will automatically initiate a print\n" +
+            " This test will automatically initiate a print.\n" +
             "\n" +
-            " Confirm that the methods are printed.\n" +
+            " Confirm that the following methods are printed:\n" +
             " For Graphics: drawString, drawString, drawChars, drawBytes\n" +
             " For Graphics2D: drawString, drawString, drawGlyphVector";
 
@@ -73,7 +73,7 @@ public class DrawStringMethods implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 
-    public static AttributedCharacterIterator getIterator(String s) {
+    private static AttributedCharacterIterator getIterator(String s) {
         return new AttributedString(s).getIterator();
     }
 
