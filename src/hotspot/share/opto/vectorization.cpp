@@ -247,7 +247,7 @@ void VLoopDependencyGraph::compute_depth() {
 void VLoopDependencyGraph::print() const {
   tty->print_cr("\nVLoopDependencyGraph::print:");
 
-  tty->print_cr(" Extra pred edges:");
+  tty->print_cr(" Memory pred edges:");
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     const DependencyNode* dn = dependency_node(n);
