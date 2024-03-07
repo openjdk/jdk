@@ -42,7 +42,7 @@ import java.util.function.Supplier;
  * The state of a monotonic value can only go from absent to present and consequently, a
  * value can only be bound at most once.
  *
- * @implSpec Implementations of this interface are immutable and thread-safe.
+ * @implSpec The implementation of this interface is immutable and thread-safe.
  *
  * @param <V> value type
  * @since 23
@@ -50,21 +50,24 @@ import java.util.function.Supplier;
 public sealed interface Monotonic<V> permits InternalMonotonic {
 
     /**
-     * {@return the monotonic value or throws an exception if no value is present}
+     * If a value is present, returns the value, otherwise throws
+     * {@code NoSuchElementException}.
      *
+     * @return the value (nullable) present in this monotonic
      * @throws NoSuchElementException if no value is present
      */
     V get();
 
     /**
-     * {@return {@code true} if, and only if, a value is present}
+     * If a value is present, returns {@code true}, otherwise {@code false}.
+     *
+     * @return {@code true} if a value is present, otherwise {@code false}
      */
     boolean isPresent();
 
     /**
-     * Binds the monotonic value to the provided {@code value} or throws an
+     * Binds the monotonic value to the provided (nullable) {@code value} or throws an
      * exception if a value is already present.
-     * .
      *
      * @param value to bind
      * @throws IllegalStateException if a value is already present
@@ -72,8 +75,8 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     void bind(V value);
 
     /**
-     * Binds the monotonic value to the provided {@code value}} if a value is not present,
-     * and returns the bound value.
+     * If no value is present, binds the monotonic value to the provided (nullable)
+     * {@code value}}, returning the (pre-existing or newly bound) value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
      * in binding a value and that (witness) value will be returned to all threads.
@@ -84,13 +87,14 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     V bindIfAbsent(V value);
 
     /**
-     * If a value is {@linkplain #isPresent() not present}, attempts to compute and bind a
-     * value using the provided {@code supplier}.
+     * If no value {@linkplain #isPresent() present}, attempts to compute and bind a
+     * new (nullable) value using the provided {@code supplier}, returning the
+     * (pre-existing or newly bound) value.
      *
      * <p>
      * If the supplier throws an (unchecked) exception, the exception is rethrown, and no
-     * value is bound. The most common usage is to construct a new object serving as an
-     * initial mapped value or memoized result, as in:
+     * value is bound. The most common usage is to construct a new object serving as a
+     * lazily computed value or memoized result, as in:
      *
      * <pre> {@code
      * Value witness = monotonic.computeIfAbsent(Value::new);
@@ -112,16 +116,20 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * invoked by several threads.
      *
      * <p>The implementation guarantees the provided {@code supplier} is invoked
-     * once (if successful) even if invoked from several threads.
+     * once (if successful) even if invoked from several threads and may block when
+     * synchronizing on the provided {@code supplier}.
      *
      * @param supplier to be used for computing a value
-     * @return the current (existing or computed) present value
+     * @return the current (pre-existing or computed) value
      */
     V computeIfAbsent(Supplier<? extends V> supplier);
 
     /**
-     * A special {@code java.util.List<Monotonic<V>>} that is eligible for constant
+     * A special {@code java.util.List<Monotonic<B>>} that is eligible for constant
      * folding by the JVM and that provides additional convenience methods.
+     * <p>
+     * The elements {@code E} in this {@linkplain java.util.List java.util.List&lt;E&gt;}
+     * is of type {@code E = Monotonic&lt;B&gt;}.
      *
      * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
      *
@@ -130,9 +138,9 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     interface List<B> extends java.util.List<Monotonic<B>> {
 
         /**
-         * If a monotonic value is {@linkplain #isPresent() not present} at the provided
-         * {@code index}, attempts to compute and bind a value using the provided {@code mapper}.
-         *
+         * If no value {@linkplain #isPresent()} at the provided {@code index},
+         * attempts to compute and bind a value using the provided {@code mapper},
+         * returning the (pre-existing or newly bound) value.
          * <p>
          * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
          * value is bound.
@@ -146,8 +154,11 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     }
 
     /**
-     * A special {@code java.util.Map<K, Monotonic<V>>} that is eligible for constant
-     * folding by the JVM and that provides additional convenience methods.
+     * A special {@code java.util.Map&lt;K, Monotonic&lt;B&gt;&gt;} that is eligible for
+     * constant folding by the JVM and that provides additional convenience methods.
+     * <p>
+     * The values {@code V} in this {@linkplain java.util.Map java.util.Map&lt;K, V&gt;}
+     * is of type {@code V = Monotonic&lt;B&gt;}.
      *
      * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
      *
@@ -157,9 +168,9 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     interface Map<K, B> extends java.util.Map<K, Monotonic<B>> {
 
         /**
-         * If a monotonic value is {@linkplain #isPresent() not present} for the provided
-         * {@code key}, attempts to compute and bind a value using the provided {@code mapper}.
-         *
+         * If no value {@linkplain #isPresent()} for the provided {@code key},
+         * attempts to compute and bind a value using the provided {@code mapper},
+         * returning the (pre-existing or newly bound) value.
          * <p>
          * If the mapper throws an (unchecked) exception, the exception is rethrown, and no
          * value is bound.
@@ -177,7 +188,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     // Factories
 
     /**
-     * {@return a new Monotonic}
+     * {@return a new empty Monotonic value}
      *
      * @param <V> the value type to bind
      */
@@ -207,8 +218,9 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     }
 
     /**
-     * {@return a new shallowly immutable, lazy {@linkplain List } of monotonic values
-     * with a {@linkplain List#size()} equal to the provided {@code size}}
+     * {@return a new shallowly immutable, thread-safe, lazy {@linkplain List } of
+     * distinct empty monotonic values with a {@linkplain List#size()} equal to the
+     * provided {@code size}}
      *
      * @param size the size of the returned monotonic list
      * @param <B>  the bound type for the Monotonic elements in this list
@@ -221,15 +233,15 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     }
 
     /**
-     * {@return a new shallowly immutable, {@linkplain Map } where the
-     * {@linkplain java.util.Map#keySet() keys} contains only the provided
-     * {@code keys}}
+     * {@return a new shallowly immutable, thread-safe, lazy {@linkplain Map } where the
+     * {@linkplain java.util.Map#keySet() keys} contains precisely the provided
+     * {@code keys} and where the values are distinct empty monotonic values}
      *
-     * @param keys             the potential keys in the map
-     * @param <K>              the type of keys maintained by the returned map
-     * @param <V>              the type of the values in the returned map
+     * @param keys the keys in the map
+     * @param <K>  the type of keys maintained by the returned map
+     * @param <B>  the bound type for the Monotonic values in this map
      */
-    static <K, V> Monotonic.Map<K, V> ofMap(Collection<? extends K> keys) {
+    static <K, B> Monotonic.Map<K, B> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
         return InternalMonotonicMap.ofMap(keys);
     }
