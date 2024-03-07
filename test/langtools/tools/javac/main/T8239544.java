@@ -58,7 +58,7 @@ public class T8239544 {
         CompileState.ATTR, CompileState.FLOW, CompileState.TRANSTYPES, CompileState.TRANSPATTERNS, CompileState.UNLAMBDA, CompileState.LOWER}; //everything except GENERATE
 
     public static void main(String... args) throws IOException {
-        var f = SimpleJavaFileObject.forSource(URI.create("TestLambdaClass.java"), 
+        var f = SimpleJavaFileObject.forSource(URI.create("TestLambdaClass.java"),
                                                "@Deprecated public class TestLambdaClass {{new Thread(() -> {});}}");
         for (String compilePolicy : TESTED_COMPILE_POLICIES) {
             for (CompileState stop : TESTED_COMPILE_STATES) {

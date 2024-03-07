@@ -41,7 +41,7 @@ import javax.tools.ToolProvider;
 
 public class T6608214 {
     public static void main(String[] args) throws IOException {
-        JavaFileObject sfo = 
+        JavaFileObject sfo =
             SimpleJavaFileObject.forSource(URI.create(""),
                                            "class Test<S> { <T extends S & Runnable> void test(){}}");
         List<? extends JavaFileObject> files = Arrays.asList(sfo);
