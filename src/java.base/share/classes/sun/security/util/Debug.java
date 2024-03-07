@@ -52,9 +52,6 @@ public class Debug {
     private static boolean timeStampInfoAll;
     private static boolean dateTimeFormatInitialized;
 
-    private static final HexFormat HEX_FORMATTER =
-            HexFormat.of().withUpperCase();
-
     static {
         args = GetPropertyAction.privilegedGetProperty("java.security.debug");
 
