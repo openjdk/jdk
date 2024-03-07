@@ -3897,19 +3897,35 @@ bool PhaseIdealLoop::is_deleteable_safept(Node* sfpt) {
 
 //---------------------------replace_parallel_iv-------------------------------
 // Replace parallel induction variable (parallel to trip counter)
-void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
-  assert(loop->_head->is_CountedLoop(), "");
-  CountedLoopNode *cl = loop->_head->as_CountedLoop();
-  if (!cl->is_valid_counted_loop(T_INT)) {
-    return;         // skip malformed counted loop
+void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop, BasicType iv_bt) {
+// TODO
+//  assert(loop->_head->is_CountedLoop(), "");
+  assert(loop->_head->is_CountedLoop() || loop->_head->is_LongCountedLoop(), "");
+
+  iv_bt = loop->_head->is_CountedLoop() ? T_INT : T_LONG;
+
+//  CountedLoopNode *cl = loop->_head->as_CountedLoop();
+  BaseCountedLoopNode *cl;
+  if (iv_bt == T_INT) {
+    cl = loop->_head->as_CountedLoop();
+  } else {
+    cl = loop->_head->as_LongCountedLoop();
   }
+
+  // skip malformed counted loops
+  if (iv_bt == T_INT && !cl->is_valid_counted_loop(T_INT)) {
+    return;
+  } else if (!cl->is_valid_counted_loop(T_LONG)) {
+    return;
+  }
+
   Node *incr = cl->incr();
   if (incr == nullptr) {
     return;         // Dead loop?
   }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  int stride_con = cl->stride_con();
+  long stride_con = cl->stride_con();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -3981,8 +3997,12 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 //      Node* ratio_init = new MulINode(init, ratio);
 
       Node* init_conv = init;
-      if (sc2_bt == T_LONG) {
-        init_conv = new ConvI2LNode(init);
+      if (iv_bt != sc2_bt) {
+        if (sc2_bt == T_INT) {
+          init_conv = new ConvL2INode(init); // TODO: overflow?
+        } else {
+          init_conv = new ConvI2LNode(init);
+        }
         _igvn.register_new_node_with_optimizer(init_conv, init);
         set_early_ctrl(init_conv, false);
       }
@@ -3997,8 +4017,12 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 //      Node* ratio_idx = new MulINode(phi, ratio);
 
       Node* phi_conv = phi;
-      if (sc2_bt == T_LONG) {
-        phi_conv = new ConvI2LNode(phi);
+      if (iv_bt != sc2_bt) {
+        if (sc2_bt == T_INT) {
+          phi_conv = new ConvL2INode(phi); // TODO: overflow?
+        } else {
+          phi_conv = new ConvI2LNode(phi);
+        }
         _igvn.register_new_node_with_optimizer(phi_conv, phi);
         set_early_ctrl(phi_conv, false);
       }
@@ -4075,10 +4099,20 @@ void IdealLoopTree::counted_loop( PhaseIdealLoop *phase ) {
     remove_safepoints(phase, keep_one_sfpt);
 
     // Look for induction variables
-    phase->replace_parallel_iv(this);
+    phase->replace_parallel_iv(this, T_INT);
   } else if (_head->is_LongCountedLoop() ||
              phase->is_counted_loop(_head, loop, T_LONG)) {
-    remove_safepoints(phase, true);
+
+    if (LoopStripMiningIter == 0 || _head->as_LongCountedLoop()->is_strip_mined()) {
+      // Indicate we do not need a safepoint here
+      _has_sfpt = 1;
+    }
+
+    // Remove safepoints
+    bool keep_one_sfpt = !(_has_call || _has_sfpt);
+    remove_safepoints(phase, keep_one_sfpt);
+
+    phase->replace_parallel_iv(this, T_LONG);
   } else {
     assert(!_head->is_Loop() || !_head->as_Loop()->is_loop_nest_inner_loop(), "transformation to counted loop should not fail");
     if (_parent != nullptr && !_irreducible) {
