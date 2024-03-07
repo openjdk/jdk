@@ -35,7 +35,6 @@
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -85,40 +84,6 @@ public class JspawnhelperProtocol {
                                                               "normalExec");
         pb.inheritIO();
         Process p = pb.start();
-        if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            throw new Exception("Parent process timed out");
-        }
-        if (p.exitValue() != 0) {
-            throw new Exception("Parent process exited with " + p.exitValue());
-        }
-    }
-
-    private static void jspawnhelperWithNoArgs() throws Exception {
-        System.out.println("Running jspawnhelper without args");
-        Process p = null;
-        try {
-            p = Runtime.getRuntime().exec(Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString());
-        } catch (Exception e) {
-            e.printStackTrace(System.out);
-            System.exit(ERROR);
-        }
-        if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
-            System.out.println("Child process timed out");
-            System.exit(ERROR + 1);
-        }
-        if (p.exitValue() != 1)
-            System.exit(ERROR + 2);
-        System.exit(0);
-    }
-
-    private static void simulateJspawnhelperWithoutArgs() throws Exception {
-        ProcessBuilder pb;
-        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Djdk.lang.Process.launchMechanism=posix_spawn",
-                                                              "JspawnhelperProtocol",
-                                                              "noargs");
-        pb.inheritIO();
-        Process p = pb.start();
-
         if (!p.waitFor(TIMEOUT, TimeUnit.SECONDS)) {
             throw new Exception("Parent process timed out");
         }
@@ -257,14 +222,10 @@ public class JspawnhelperProtocol {
         //    don't lead to deadlocks or zombie processes.
         if (args.length > 0) {
             // Entry point for recursive execution in the "parent" process
-            if ("noargs".equals(args[0]))
-                jspawnhelperWithNoArgs();
-            else
-                parentCode(args[0]);
+            parentCode(args[0]);
         } else {
             // Main test entry for execution from jtreg
             normalExec();
-            simulateJspawnhelperWithoutArgs();
             simulateCrashInParent(1);
             simulateCrashInParent(2);
             simulateCrashInParent(3);

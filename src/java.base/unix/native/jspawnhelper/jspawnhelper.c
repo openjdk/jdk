@@ -63,6 +63,7 @@ void shutItDown() {
     fprintf(stdout, "only be run as the result of a call to\n");
     fprintf(stdout, "ProcessBuilder.start() or Runtime.exec() in a java ");
     fprintf(stdout, "application\n");
+    fflush(stdout);
     _exit(1);
 }
 
