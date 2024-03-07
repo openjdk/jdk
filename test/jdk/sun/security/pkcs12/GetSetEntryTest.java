@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8322767
+ * @bug 8327461
  * @summary engineGetEntry in PKCS12KeyStore should be thread-safe
  * @library /test/lib ../../../java/security/testlibrary
  * @modules java.base/sun.security.x509
