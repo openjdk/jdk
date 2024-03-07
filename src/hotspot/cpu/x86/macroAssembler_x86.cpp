@@ -4701,10 +4701,6 @@ do {                                                                    \
          "registers must match aarch64.ad");                            \
 } while(0)
 
-void piddle(Klass *super, Klass *sub) {
-  asm("nop");
-}
-
 void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
                                                    Klass *super_klass,
                                                    Register temp1,
@@ -4741,7 +4737,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
+  u1 bit = super_klass->hash_slot();
   salq(r_array_index, 63 - bit);
   // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
@@ -4758,9 +4754,9 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // We will consult the secondary-super array.
   movptr(r_array_base, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
 
-  // The value i in r_array_index is >= 1, so even though r_array_base
-  // points to the length, we don't need to adjust it to point to the
-  // data.
+  // We're asserting that the first word in an Array<Klass*> is the
+  // length, and the second word is the first word of the data. If
+  // that ever changes, r_array_base will have to be adjusted here.
   assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
   assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
 
@@ -4841,6 +4837,7 @@ void MacroAssembler::klass_subtype_fallback() {
     cmpq(r_super_klass, Address(r_array_base, r_array_index, Address::times_8));
     jcc(Assembler::equal, L_success);
 
+    // If the next bit in bitmap is zero, we're done.
     btq(r_bitmap, 1);
     jcc(Assembler::carryClear, L_failure);
 

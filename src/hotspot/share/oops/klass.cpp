@@ -273,7 +273,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uint64_t bitmap) {
 
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 #ifdef ASSERT
-  if (HashSecondarySupers && secondaries) {
+  if (HashSecondarySupers && secondaries != nullptr) {
     uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
     assert(_bitmap == real_bitmap, "must be");
   }
@@ -283,7 +283,7 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 
 void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t &bitmap) {
   int longest_probe = 0;
-  int slot = sec->hash() >> secondary_shift();
+  int slot = sec->hash_slot();
   int dist = 0;
   for (;;) {
     if (secondaries->at(slot) == nullptr) {
@@ -292,6 +292,10 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t
       return;
     }
     if (secondaries->length() > 20) {
+      // Use Robin Hood hashing to minimize the worst case search. As
+      // long as a hash table with linear probing is less than 1/3
+      // full and the hash is behaving like a random function we don't
+      // need to do this.
       int existing_dist = (secondaries->at(slot)->hash_slot() - slot) & 63;
       if (existing_dist < dist) {
         Klass *tmp = secondaries->at(slot);
@@ -304,12 +308,21 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t
     slot = (slot + 1) & 63;
   }
 }
+// Hashed secondary superclasses
+//
 
-#define ROBIN_HOOD true
-
+// We use a compressed 64-entry hash table with linear probing. We
+// compress first creating a hash table in the usual way, followed by
+// a pass that removes all the null entries. To indicate which entries
+// would have been null we use a bitmap that contains a 1 in each
+// position where an entry is present, 0 otherwise. This bitmap also
+// serves as a kind of Bloom filter, which allows us quickly to
+// eliminate the possibility that an item is a member of a set of
+// secondaries.
 uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
-  if (secondaries->length() == 0)
+  if (secondaries->length() == 0) {
     return 0;
+  }
 
   ResourceMark rm;
   uint64_t bitmap = 0;
@@ -321,15 +334,13 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
     hashed_secondaries->push(nullptr);
   }
 
-  if (length == 30) {
-    asm("nop");
-  }
-
   for (int j = 0; j < length; j++) {
     Klass *k = secondaries->at(j);
     unsigned int slot = k->hash_slot();
 
     if (j >= 64) {
+      // The secondary supers list is so long that it doesn't fit.
+      // Just copy it to the output.
       hashed_secondaries->at_put(j, k);
     } else {
       hash_insert(k, hashed_secondaries, bitmap);
@@ -338,7 +349,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   if (rewrite) {
     // Pack the hashed secondaries array by copying it into the
-    // scondaries array, sans nulls.
+    // secondaries array, sans nulls.
     int i = 0;
     int maxprobe = 0;
     for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
@@ -466,9 +477,6 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
-    if (secondaries->length() >= 20) {
-      asm("nop");
-    }
   }
 }
 

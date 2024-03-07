@@ -387,7 +387,6 @@ protected:
     CDS_ONLY(_shared_class_flags |= _is_shared_class;)
   }
 
-
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;

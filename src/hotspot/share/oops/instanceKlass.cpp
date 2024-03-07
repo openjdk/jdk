@@ -3621,7 +3621,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     }
   }
 
-  st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash() >> secondary_shift()); st->cr();
+  st->print(BULLET"hash:              0x%x (slot=%d)", hash(), hash_slot(); st->cr();
   st->print(BULLET"bitmap:            0x%lx", _bitmap);                                st->cr();
   st->print(BULLET"arrays:            "); Metadata::print_value_on_maybe_null(st, array_klasses()); st->cr();
   st->print(BULLET"methods:           "); methods()->print_value_on(st);               st->cr();
@@ -3705,7 +3705,7 @@ void InstanceKlass::print_on(outputStream* st) const {
     st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
     int longest_distance = 0;
     for (int i = 0; i < _secondary_supers->length(); i++) {
-      unsigned home_slot = _secondary_supers->at(i)->hash() >> secondary_shift();
+      unsigned home_slot = _secondary_supers->at(i)->hash_slot();
       if (home_slot > 0) {
         home_slot = population_count(_bitmap << (64 - home_slot));
       }

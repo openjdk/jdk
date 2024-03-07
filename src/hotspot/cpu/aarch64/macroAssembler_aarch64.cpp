@@ -1529,37 +1529,16 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   // Unspill the temp. registers:
   pop(pushed_registers, sp);
 
-#ifdef CHECK_KLASS_SUBTYPE_SLOW_PATH_CONSISTENCY
-  // Restore the flags
-  ldp(rscratch1, rscratch2, Address(post(sp, 2 * wordSize)));
-
-  {
-    Label OK1, OK2;
-    cbnz(rscratch1, OK1); // Branch if found in mask
-    br(Assembler::NE, OK1); // Branch if not found in mask and & not equal
-    stop("fubar");
-    bind(OK1);
-  }
-#endif
-
   br(Assembler::NE, *L_failure);
 
-  if (HashSecondarySupers) {
-    Label dont;
-    ldr(rscratch1, super_cache_addr);
-    cbnz(rscratch1, dont);
-    str(super_klass, super_cache_addr);
-    bind(dont);
-  } else {
-    str(super_klass, super_cache_addr);
-  }
+  // Success.  Cache the super we found and proceed in triumph.
+  str(super_klass, super_cache_addr);
+
   if (L_success != &L_fallthrough) {
     b(*L_success);
   }
 
 #undef IS_A_TEMP
-
-  BLOCK_COMMENT("} check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
 }
@@ -1611,7 +1590,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
-  u1 bit = checked_cast<u1> (super_klass->hash() >> (Klass::secondary_shift()));
+  u1 bit = super_klass->hash_slot();
   tbz(r_bitmap, bit, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
