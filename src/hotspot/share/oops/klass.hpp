@@ -196,8 +196,6 @@ protected:
   Klass(KlassKind kind);
   Klass();
 
-  void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
-
  public:
   int kind() { return _kind; }
 
@@ -215,6 +213,7 @@ protected:
   void set_super(Klass* k)           { _super = k; }
 
   // initializes _super link, _primary_supers & _secondary_supers arrays
+  bool initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces);
   void initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS);
 
   // klass-specific helper for initializing _secondary_supers

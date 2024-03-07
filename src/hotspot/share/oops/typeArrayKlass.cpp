@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,15 +53,11 @@ TypeArrayKlass* TypeArrayKlass::create_klass(BasicType type,
 
   TypeArrayKlass* ak = TypeArrayKlass::allocate(null_loader_data, type, sym, CHECK_NULL);
 
-  // Call complete_create_array_klass after all instance variables have been initialized.
-  complete_create_array_klass(ak, ak->super(), ModuleEntryTable::javabase_moduleEntry(), CHECK_NULL);
+  ak->initialize_supers(ak->super(), nullptr, CHECK_NULL);
+  ak->vtable().initialize_vtable();
 
-  // Add all classes to our internal class loader list here,
-  // including classes in the bootstrap (null) class loader.
-  // Do this step after creating the mirror so that if the
-  // mirror creation fails, loaded_classes_do() doesn't find
-  // an array class without a mirror.
-  null_loader_data->add_class(ak);
+  create_array_mirror_and_link(ak, CHECK_NULL);
+
   JFR_ONLY(ASSIGN_PRIMITIVE_CLASS_ID(ak);)
   return ak;
 }
@@ -72,7 +68,7 @@ TypeArrayKlass* TypeArrayKlass::allocate(ClassLoaderData* loader_data, BasicType
 
   int size = ArrayKlass::static_size(TypeArrayKlass::header_size());
 
-  return new (loader_data, size, THREAD) TypeArrayKlass(type, name);
+  return new (loader_data, size, MetaspaceObj::ClassType, THREAD) TypeArrayKlass(type, name);
 }
 
 TypeArrayKlass::TypeArrayKlass(BasicType type, Symbol* name) : ArrayKlass(name, Kind) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,6 +54,8 @@ protected:
   NONCOPYABLE(Array);
 
   inline void* operator new(size_t size, ClassLoaderData* loader_data, int length, TRAPS) throw();
+  // Version that returns null rather than throwing OOM.
+  inline void* operator new(size_t size, ClassLoaderData* loader_data, int length) throw();
 
   static size_t byte_sizeof(int length, size_t elm_byte_size) {
     return sizeof(Array<T>) + MAX2(length - 1, 0) * elm_byte_size;
