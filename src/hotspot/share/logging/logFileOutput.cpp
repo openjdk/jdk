@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,12 @@ const char* const LogFileOutput::FileOpenMode = "a";
 const char* const LogFileOutput::PidFilenamePlaceholder = "%p";
 const char* const LogFileOutput::TimestampFilenamePlaceholder = "%t";
 const char* const LogFileOutput::TimestampFormat = "%Y-%m-%d_%H-%M-%S";
+const char* const LogFileOutput::HostnameFilenamePlaceholder = "%hn";
 const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
+char        LogFileOutput::_hostname_str[HostnameBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(nullptr), _name(os::strdup_check_oom(name, mtLogging)),
@@ -49,7 +51,7 @@ LogFileOutput::LogFileOutput(const char* name)
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
-  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
+  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str, _hostname_str);
 }
 
 const char* LogFileOutput::cur_log_file_name() {
@@ -69,6 +71,11 @@ void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
   os::localtime_pd(&utc_time, &local_time);
   res = (int)strftime(_vm_start_time_str, sizeof(_vm_start_time_str), TimestampFormat, &local_time);
   assert(res > 0, "VM start time buffer too small.");
+
+  if (!os::get_host_name(_hostname_str, sizeof(_hostname_str))) {
+    res = jio_snprintf(_hostname_str, sizeof(_hostname_str), "%s", HostnameFilenamePlaceholder);
+    assert(res > 0, "Hostname buffer too small");
+  }
 }
 
 LogFileOutput::~LogFileOutput() {
@@ -377,82 +384,82 @@ void LogFileOutput::rotate() {
 
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
-                                    const char* timestamp_string) {
+                                    const char* timestamp_string,
+                                    const char* hostname_string) {
   char* result = nullptr;
 
-  // Lets start finding out if we have any %d and/or %t in the name.
+  // Lets start finding out if we have any %p, %t and/or %hn in the name.
   // We will only replace the first occurrence of any placeholder
   const char* pid = strstr(file_name, PidFilenamePlaceholder);
   const char* timestamp = strstr(file_name, TimestampFilenamePlaceholder);
+  const char* hostname = strstr(file_name, HostnameFilenamePlaceholder);
 
-  if (pid == nullptr && timestamp == nullptr) {
+  if (pid == nullptr && timestamp == nullptr && hostname == nullptr) {
     // We found no place-holders, return the simple filename
     return os::strdup_check_oom(file_name, mtLogging);
   }
 
   // At least one of the place-holders were found in the file_name
-  const char* first = "";
-  size_t first_pos = SIZE_MAX;
-  size_t first_replace_len = 0;
-
-  const char* second = "";
-  size_t second_pos = SIZE_MAX;
-  size_t second_replace_len = 0;
-
-  // If we found a %p, then setup our variables accordingly
+  size_t result_len =  strlen(file_name);
   if (pid != nullptr) {
-    if (timestamp == nullptr || pid < timestamp) {
-      first = pid_string;
-      first_pos = pid - file_name;
-      first_replace_len = strlen(PidFilenamePlaceholder);
-    } else {
-      second = pid_string;
-      second_pos = pid - file_name;
-      second_replace_len = strlen(PidFilenamePlaceholder);
-    }
+    result_len -= strlen(PidFilenamePlaceholder);
+    result_len += strlen(pid_string);
   }
-
   if (timestamp != nullptr) {
-    if (pid == nullptr || timestamp < pid) {
-      first = timestamp_string;
-      first_pos = timestamp - file_name;
-      first_replace_len = strlen(TimestampFilenamePlaceholder);
-    } else {
-      second = timestamp_string;
-      second_pos = timestamp - file_name;
-      second_replace_len = strlen(TimestampFilenamePlaceholder);
-    }
+    result_len -= strlen(TimestampFilenamePlaceholder);
+    result_len += strlen(timestamp_string);
   }
-
-  size_t first_len = strlen(first);
-  size_t second_len = strlen(second);
-
+  if (hostname != nullptr) {
+    result_len -= strlen(HostnameFilenamePlaceholder);
+    result_len += strlen(hostname_string);
+  }
   // Allocate the new buffer, size it to hold all we want to put in there +1.
-  size_t result_len =  strlen(file_name) + first_len - first_replace_len + second_len - second_replace_len;
   result = NEW_C_HEAP_ARRAY(char, result_len + 1, mtLogging);
 
   // Assemble the strings
   size_t file_name_pos = 0;
   size_t i = 0;
+
+  assert(PidFilenamePlaceholder[0] == '%' &&
+         TimestampFilenamePlaceholder[0] == '%' &&
+         HostnameFilenamePlaceholder[0] == '%', "must be");
   while (i < result_len) {
-    if (file_name_pos == first_pos) {
-      // We are in the range of the first placeholder
-      strcpy(result + i, first);
-      // Bump output buffer position with length of replacing string
-      i += first_len;
-      // Bump source buffer position to skip placeholder
-      file_name_pos += first_replace_len;
-    } else if (file_name_pos == second_pos) {
-      // We are in the range of the second placeholder
-      strcpy(result + i, second);
-      i += second_len;
-      file_name_pos += second_replace_len;
-    } else {
-      // Else, copy char by char of the original file
-      result[i] = file_name[file_name_pos++];
-      i++;
+    if (file_name[file_name_pos] == '%') {
+      // Replace the first occurrence of any placeholder
+      if (pid != nullptr && strncmp(&file_name[file_name_pos],
+                                    PidFilenamePlaceholder,
+                                    strlen(PidFilenamePlaceholder)) == 0) {
+        strcpy(result + i, pid_string);
+        i += strlen(pid_string);
+        file_name_pos += strlen(PidFilenamePlaceholder);
+        pid = nullptr;
+        continue;
+      }
+      if (timestamp != nullptr && strncmp(&file_name[file_name_pos],
+                                          TimestampFilenamePlaceholder,
+                                          strlen(TimestampFilenamePlaceholder)) == 0) {
+        strcpy(result + i, timestamp_string);
+        i += strlen(timestamp_string);
+        file_name_pos += strlen(TimestampFilenamePlaceholder);
+        timestamp = nullptr;
+        continue;
+      }
+      if (hostname != nullptr && strncmp(&file_name[file_name_pos],
+                                         HostnameFilenamePlaceholder,
+                                         strlen(HostnameFilenamePlaceholder)) == 0) {
+        strcpy(result + i, hostname_string);
+        i += strlen(hostname_string);
+        file_name_pos += strlen(HostnameFilenamePlaceholder);
+        hostname = nullptr;
+        continue;
+      }
     }
+    // Else, copy char by char of the original file
+    result[i++] = file_name[file_name_pos++];
   }
+  assert(i == result_len, "should be");
+  assert(file_name[file_name_pos] == '\0', "should be");
+
   // Add terminating char
   result[result_len] = '\0';
   return result;
