@@ -3196,7 +3196,7 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   Register temp = temp2;
   NearLabel done, object_has_monitor;
 
-  assert_different_registers(temp1, temp2, Z_R1_scratch);
+  assert_different_registers(temp1, temp2);
 
   BLOCK_COMMENT("compiler_fast_lock_object {");
 
@@ -3204,10 +3204,10 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_lg(displacedHeader, oopDesc::mark_offset_in_bytes(), oop);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
-    load_klass(Z_R1_scratch, oop);
-    z_l(Z_R1_scratch, Address(Z_R1_scratch, Klass::access_flags_offset()));
+    load_klass(temp, oop);
+    z_l(temp, Address(temp, Klass::access_flags_offset()));
     assert((JVM_ACC_IS_VALUE_BASED_CLASS & 0xFFFF) == 0, "or change following instruction");
-    z_nilh(Z_R1_scratch, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
+    z_nilh(temp, JVM_ACC_IS_VALUE_BASED_CLASS >> 16);
     z_brne(done);
   }
 
