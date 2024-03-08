@@ -194,7 +194,10 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
 {
     int res;
     shutdown(fd, SHUT_RDWR);
-    RESTARTABLE(close(fd), res);
+    res = close(fd);
+    if (res == -1) {
+        JNU_ThrowIOExceptionWithLastError(env, "close");
+    }
 }
 
 /*
