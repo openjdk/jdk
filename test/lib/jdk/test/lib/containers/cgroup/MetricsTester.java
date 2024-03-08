@@ -69,6 +69,17 @@ public class MetricsTester {
           tester.testMemoryUsage();
         }
         tester.testMisc();
+        testContainerized(m, inContainer);
+    }
+
+    private void testContainerized(m, inContainer) {
+        if (m.isContainerized() != inContainer) {
+            throw new RuntimeException("containerized test failed. " +
+                                       "Expected isContainerized()==" + inContainer +
+                                       " but got '" + m.isContainerized() + "'");
+            }
+        }
+        System.out.println("testContainerized() PASSED!");
     }
 
     public static void main(String[] args) throws Exception {

@@ -36,6 +36,12 @@ Java_jdk_internal_platform_CgroupMetrics_isUseContainerSupport(JNIEnv *env, jcla
     return JVM_IsUseContainerSupport();
 }
 
+JNIEXPORT jboolean JNICALL
+Java_jdk_internal_platform_CgroupMetrics_isContainerized0(JNIEnv *env, jclass ignored)
+{
+    return JVM_IsContainerized();
+}
+
 JNIEXPORT jlong JNICALL
 Java_jdk_internal_platform_CgroupMetrics_getTotalMemorySize0
   (JNIEnv *env, jclass ignored)

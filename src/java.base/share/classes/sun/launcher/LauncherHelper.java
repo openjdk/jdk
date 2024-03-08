@@ -370,6 +370,10 @@ public final class LauncherHelper {
         final long longRetvalNotSupported = -2;
 
         ostream.println(INDENT + "Provider: " + c.getProvider());
+        if (!c.isContainerized()) {
+            ostream.println(INDENT + "System not containerized.");
+            return;
+        }
         ostream.println(INDENT + "Effective CPU Count: " + c.getEffectiveCpuCount());
         ostream.println(formatCpuVal(c.getCpuPeriod(), INDENT + "CPU Period: ", longRetvalNotSupported));
         ostream.println(formatCpuVal(c.getCpuQuota(), INDENT + "CPU Quota: ", longRetvalNotSupported));
