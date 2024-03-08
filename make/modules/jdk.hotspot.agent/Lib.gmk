@@ -45,16 +45,16 @@ else ifeq ($(call isTargetOs, windows), true)
   endif
 endif
 
-SA_TOOLCHAIN := $(TOOLCHAIN_DEFAULT)
+SA_LINK_TYPE := C
 ifeq ($(call isTargetOs, linux), true)
-  SA_TOOLCHAIN := TOOLCHAIN_LINK_CXX
+  SA_LINK_TYPE := C++
 endif
 
 ################################################################################
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     NAME := saproc, \
-    TOOLCHAIN := $(SA_TOOLCHAIN), \
+    LINK_TYPE := $(SA_LINK_TYPE), \
     OPTIMIZATION := HIGH, \
     DISABLED_WARNINGS_gcc := sign-compare, \
     DISABLED_WARNINGS_gcc_ps_core.c := pointer-arith, \

@@ -56,6 +56,7 @@
 #include "opto/divnode.hpp"
 #include "opto/escape.hpp"
 #include "opto/idealGraphPrinter.hpp"
+#include "opto/locknode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/machnode.hpp"
 #include "opto/macro.hpp"
@@ -638,7 +639,6 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _env(ci_env),
                   _directive(directive),
                   _log(ci_env->log()),
-                  _failure_reason(nullptr),
                   _first_failure_details(nullptr),
                   _intrinsics        (comp_arena(), 0, 0, nullptr),
                   _macro_nodes       (comp_arena(), 8, 0, nullptr),
@@ -929,7 +929,6 @@ Compile::Compile( ciEnv* ci_env,
     _env(ci_env),
     _directive(directive),
     _log(ci_env->log()),
-    _failure_reason(nullptr),
     _first_failure_details(nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
@@ -4391,9 +4390,9 @@ void Compile::record_failure(const char* reason) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
-  if (_failure_reason == nullptr) {
+  if (_failure_reason.get() == nullptr) {
     // Record the first failure reason.
-    _failure_reason = reason;
+    _failure_reason.set(reason);
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(reason);
     }
@@ -4867,10 +4866,26 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
   if (length > 0) {
     // Have to keep this list until locks elimination during Macro nodes elimination.
     Lock_List* locks_list = new (comp_arena()) Lock_List(comp_arena(), length);
+    AbstractLockNode* alock = locks.at(0);
+    BoxLockNode* box = alock->box_node()->as_BoxLock();
     for (int i = 0; i < length; i++) {
       AbstractLockNode* lock = locks.at(i);
       assert(lock->is_coarsened(), "expecting only coarsened AbstractLock nodes, but got '%s'[%d] node", lock->Name(), lock->_idx);
       locks_list->push(lock);
+      BoxLockNode* this_box = lock->box_node()->as_BoxLock();
+      if (this_box != box) {
+        // Locking regions (BoxLock) could be Unbalanced here:
+        //  - its coarsened locks were eliminated in earlier
+        //    macro nodes elimination followed by loop unroll
+        //  - it is OSR locking region (no Lock node)
+        // Preserve Unbalanced status in such cases.
+        if (!this_box->is_unbalanced()) {
+          this_box->set_coarsened();
+        }
+        if (!box->is_unbalanced()) {
+          box->set_coarsened();
+        }
+      }
     }
     _coarsened_locks.append(locks_list);
   }
@@ -4946,6 +4961,38 @@ bool Compile::coarsened_locks_consistent() {
     }
   }
   return true;
+}
+
+// Mark locking regions (identified by BoxLockNode) as unbalanced if
+// locks coarsening optimization removed Lock/Unlock nodes from them.
+// Such regions become unbalanced because coarsening only removes part
+// of Lock/Unlock nodes in region. As result we can't execute other
+// locks elimination optimizations which assume all code paths have
+// corresponding pair of Lock/Unlock nodes - they are balanced.
+void Compile::mark_unbalanced_boxes() const {
+  int count = coarsened_count();
+  for (int i = 0; i < count; i++) {
+    Node_List* locks_list = _coarsened_locks.at(i);
+    uint size = locks_list->size();
+    if (size > 0) {
+      AbstractLockNode* alock = locks_list->at(0)->as_AbstractLock();
+      BoxLockNode* box = alock->box_node()->as_BoxLock();
+      if (alock->is_coarsened()) {
+        // coarsened_locks_consistent(), which is called before this method, verifies
+        // that the rest of Lock/Unlock nodes on locks_list are also coarsened.
+        assert(!box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+        for (uint j = 1; j < size; j++) {
+          assert(locks_list->at(j)->as_AbstractLock()->is_coarsened(), "only coarsened locks are expected here");
+          BoxLockNode* this_box = locks_list->at(j)->as_AbstractLock()->box_node()->as_BoxLock();
+          if (box != this_box) {
+            assert(!this_box->is_eliminated(), "regions with coarsened locks should not be marked as eliminated");
+            box->set_unbalanced();
+            this_box->set_unbalanced();
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

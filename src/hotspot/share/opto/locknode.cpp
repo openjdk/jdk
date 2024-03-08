@@ -40,7 +40,7 @@ const RegMask &BoxLockNode::out_RegMask() const {
 uint BoxLockNode::size_of() const { return sizeof(*this); }
 
 BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
-                                       _slot(slot), _is_eliminated(false) {
+                                       _slot(slot), _kind(BoxLockNode::Regular) {
   init_class_id(Class_BoxLock);
   init_flags(Flag_rematerialize);
   OptoReg::Name reg = OptoReg::stack2reg(_slot);
@@ -51,19 +51,48 @@ BoxLockNode::BoxLockNode( int slot ) : Node( Compile::current()->root() ),
   _inmask.Insert(reg);
 }
 
-//-----------------------------hash--------------------------------------------
 uint BoxLockNode::hash() const {
-  if (EliminateNestedLocks)
+  if (EliminateNestedLocks) {
     return NO_HASH; // Each locked region has own BoxLock node
-  return Node::hash() + _slot + (_is_eliminated ? Compile::current()->fixed_slots() : 0);
+  }
+  return Node::hash() + _slot + (is_eliminated() ? Compile::current()->fixed_slots() : 0);
 }
 
-//------------------------------cmp--------------------------------------------
 bool BoxLockNode::cmp( const Node &n ) const {
-  if (EliminateNestedLocks)
+  if (EliminateNestedLocks) {
     return (&n == this); // Always fail except on self
+  }
   const BoxLockNode &bn = (const BoxLockNode &)n;
-  return bn._slot == _slot && bn._is_eliminated == _is_eliminated;
+  return (bn._slot == _slot) && (bn.is_eliminated() == is_eliminated());
+}
+
+Node* BoxLockNode::Identity(PhaseGVN* phase) {
+  if (!EliminateNestedLocks && !this->is_eliminated()) {
+    Node* n = phase->hash_find(this);
+    if (n == nullptr || n == this) {
+      return this;
+    }
+    BoxLockNode* old_box = n->as_BoxLock();
+    // Set corresponding status (_kind) when commoning BoxLock nodes.
+    if (this->_kind != old_box->_kind) {
+      if (this->is_unbalanced()) {
+        old_box->set_unbalanced();
+      }
+      if (!old_box->is_unbalanced()) {
+        // Only Regular or Coarsened status should be here:
+        // Nested and Local are set only when EliminateNestedLocks is on.
+        if (old_box->is_regular()) {
+          assert(this->is_coarsened(),"unexpected kind: %s", _kind_name[(int)this->_kind]);
+          old_box->set_coarsened();
+        } else {
+          assert(this->is_regular(),"unexpected kind: %s", _kind_name[(int)this->_kind]);
+          assert(old_box->is_coarsened(),"unexpected kind: %s", _kind_name[(int)old_box->_kind]);
+        }
+      }
+    }
+    return old_box;
+  }
+  return this;
 }
 
 BoxLockNode* BoxLockNode::box_node(Node* box) {
@@ -90,6 +119,9 @@ OptoReg::Name BoxLockNode::reg(Node* box) {
 
 // Is BoxLock node used for one simple lock region (same box and obj)?
 bool BoxLockNode::is_simple_lock_region(LockNode** unique_lock, Node* obj, Node** bad_lock) {
+  if (is_unbalanced()) {
+    return false;
+  }
   LockNode* lock = nullptr;
   bool has_one_lock = false;
   for (uint i = 0; i < this->outcnt(); i++) {

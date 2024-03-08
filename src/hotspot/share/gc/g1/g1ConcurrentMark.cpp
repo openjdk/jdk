@@ -34,16 +34,16 @@
 #include "gc/g1/g1ConcurrentMarkThread.inline.hpp"
 #include "gc/g1/g1ConcurrentRebuildAndScrub.hpp"
 #include "gc/g1/g1DirtyCardQueue.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
+#include "gc/g1/g1HeapRegionSet.inline.hpp"
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1RegionMarkStatsCache.inline.hpp"
 #include "gc/g1/g1ThreadLocalData.hpp"
 #include "gc/g1/g1Trace.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionManager.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
-#include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -152,7 +152,8 @@ G1CMMarkStack::TaskQueueEntryChunk* G1CMMarkStack::ChunkAllocator::allocate_new_
 
     MutexLocker x(MarkStackChunkList_lock, Mutex::_no_safepoint_check_flag);
     if (Atomic::load_acquire(&_buckets[bucket]) == nullptr) {
-      if (!expand()) {
+      size_t desired_capacity = bucket_size(bucket) * 2;
+      if (!try_expand_to(desired_capacity)) {
         return nullptr;
       }
     }
@@ -196,21 +197,26 @@ bool G1CMMarkStack::ChunkAllocator::initialize(size_t initial_capacity, size_t m
   return true;
 }
 
-bool G1CMMarkStack::ChunkAllocator::expand() {
+bool G1CMMarkStack::ChunkAllocator::try_expand_to(size_t desired_capacity) {
   if (_capacity == _max_capacity) {
     log_debug(gc)("Can not expand overflow mark stack further, already at maximum capacity of " SIZE_FORMAT " chunks.", _capacity);
     return false;
   }
-  size_t old_capacity = _capacity;
-  // Double capacity if possible.
-  size_t new_capacity = MIN2(old_capacity * 2, _max_capacity);
 
-  if (reserve(new_capacity)) {
+  size_t old_capacity = _capacity;
+  desired_capacity = MIN2(desired_capacity, _max_capacity);
+
+  if (reserve(desired_capacity)) {
     log_debug(gc)("Expanded the mark stack capacity from " SIZE_FORMAT " to " SIZE_FORMAT " chunks",
-                  old_capacity, new_capacity);
+                  old_capacity, desired_capacity);
     return true;
   }
   return false;
+}
+
+bool G1CMMarkStack::ChunkAllocator::try_expand() {
+  size_t new_capacity = _capacity * 2;
+  return try_expand_to(new_capacity);
 }
 
 G1CMMarkStack::ChunkAllocator::~ChunkAllocator() {
@@ -234,6 +240,9 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
   size_t highest_bucket = get_bucket(new_capacity - 1);
   size_t i = get_bucket(_capacity);
 
+  // Allocate all buckets associated with indexes between the current capacity (_capacity)
+  // and the new capacity (new_capacity). This step ensures that there are no gaps in the
+  // array and that the capacity accurately reflects the reserved memory.
   for (; i <= highest_bucket; i++) {
     if (Atomic::load_acquire(&_buckets[i]) != nullptr) {
       continue; // Skip over already allocated buckets.
@@ -261,7 +270,7 @@ bool G1CMMarkStack::ChunkAllocator::reserve(size_t new_capacity) {
 }
 
 void G1CMMarkStack::expand() {
-  _chunk_allocator.expand();
+  _chunk_allocator.try_expand();
 }
 
 void G1CMMarkStack::add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem) {

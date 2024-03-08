@@ -1737,56 +1737,6 @@ operand immI0() %{
   interface(CONST_INTER);
 %}
 
-// Integer Immediate: the value 1
-operand immI_1() %{
-  predicate(n->get_int() == 1);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 2
-operand immI_2() %{
-  predicate(n->get_int() == 2);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 3
-operand immI_3() %{
-  predicate(n->get_int() == 3);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 4
-operand immI_4() %{
-  predicate(n->get_int() == 4);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Integer Immediate: the value 8
-operand immI_8() %{
-  predicate(n->get_int() == 8);
-  match(ConI);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Int Immediate non-negative
 operand immU31()
 %{
@@ -1917,27 +1867,6 @@ operand limmIn() %{
   interface(CONST_INTER);
 %}
 
-
-// Long Immediate: the value FF
-operand immL_FF() %{
-  predicate( n->get_long() == 0xFFL );
-  match(ConL);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long Immediate: the value FFFF
-operand immL_FFFF() %{
-  predicate( n->get_long() == 0xFFFFL );
-  match(ConL);
-  op_cost(0);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate: 32 or 64-bit
 operand immP() %{
   match(ConP);
@@ -1953,36 +1882,6 @@ operand immP0() %{
   match(ConP);
   op_cost(0);
 
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate
-operand immN()
-%{
-  match(ConN);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immNKlass()
-%{
-  match(ConNKlass);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Null Pointer Immediate
-operand immN0()
-%{
-  predicate(n->get_narrowcon() == 0);
-  match(ConN);
-
-  op_cost(0);
   format %{ %}
   interface(CONST_INTER);
 %}
