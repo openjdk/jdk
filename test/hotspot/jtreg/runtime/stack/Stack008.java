@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,28 +48,19 @@
  *     Making it bigger could cause timeouts on other platform.
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
- * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack008
+ * @run main/othervm/timeout=900 -Xss200K Stack008
  */
 
-package nsk.stress.stack;
-
-
-import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class stack008 {
+public class Stack008 {
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
         int depth;
         //
         // Measure maximal recursion depth until stack overflow:
         //
-        for (depth = 100; ; depth += 100)
+        for (depth = 100; ; depth += 100) {
             try {
                 invokeRecurse(depth);
             } catch (Throwable exception) {
@@ -77,30 +68,27 @@ public class stack008 {
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     break; // OK.
-                target.printStackTrace(out);
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
-                return 2;
+                target.printStackTrace();
+                throw new RuntimeException(exception);
             }
-        out.println("Max. depth: " + depth);
+        }
+        System.out.println("Max. depth: " + depth);
         //
         // Provoke stack overflow multiple times:
         //
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             try {
                 invokeRecurse(2 * depth);
-//              out.println("?");
+//              System.out.println("?");
             } catch (Throwable exception) {
                 Throwable target = getTargetException(exception);
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     continue; // OK.
-                target.printStackTrace(out);
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
-                return 2;
+                target.printStackTrace();
+                throw new RuntimeException(exception);
             }
-        return 0;
+        }
     }
 
     private static Throwable getTargetException(Throwable exception) {
@@ -118,7 +106,7 @@ public class stack008 {
     }
 
     static Method method = null;
-    static stack008 instance = null;
+    static Stack008 instance = null;
     static Object params[] = null;
 
     private static void invokeRecurse(int depth) throws Exception {
@@ -126,8 +114,8 @@ public class stack008 {
             //
             // Optimization trick: allocate once, use everywhere.
             //
-            instance = new stack008();
-            method = stack008.class.getMethod("recurse");
+            instance = new Stack008();
+            method = Stack008.class.getMethod("recurse");
             params = new Object[]{};
         }
         //
@@ -140,10 +128,11 @@ public class stack008 {
     int depth = 0;
 
     public void recurse() throws Exception {
-        if (depth > 0)
+        if (depth > 0) {
             //
             // Self-invoke via reflection:
             //
             invokeRecurse(depth - 1);
+        }
     }
 }

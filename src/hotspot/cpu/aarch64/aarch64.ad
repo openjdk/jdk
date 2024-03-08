@@ -4087,26 +4087,6 @@ operand immI_56()
   interface(CONST_INTER);
 %}
 
-operand immI_63()
-%{
-  predicate(n->get_int() == 63);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_64()
-%{
-  predicate(n->get_int() == 64);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immI_255()
 %{
   predicate(n->get_int() == 255);
@@ -4236,28 +4216,6 @@ operand immIScale()
   interface(CONST_INTER);
 %}
 
-// 26 bit signed offset -- for pc-relative branches
-operand immI26()
-%{
-  predicate(((-(1 << 25)) <= n->get_int()) && (n->get_int() < (1 << 25)));
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 19 bit signed offset -- for pc-relative loads
-operand immI19()
-%{
-  predicate(((-(1 << 18)) <= n->get_int()) && (n->get_int() < (1 << 18)));
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 5 bit signed integer
 operand immI5()
 %{
@@ -4274,27 +4232,6 @@ operand immIU7()
 %{
   predicate(Assembler::is_uimm(n->get_int(), 7));
   match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 12 bit unsigned offset -- for base plus immediate loads
-operand immIU12()
-%{
-  predicate((0 <= n->get_int()) && (n->get_int() < (1 << 12)));
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immLU12()
-%{
-  predicate((0 <= n->get_long()) && (n->get_long() < (1 << 12)));
-  match(ConL);
 
   op_cost(0);
   format %{ %}
@@ -4565,34 +4502,10 @@ operand immL0()
   interface(CONST_INTER);
 %}
 
-// 64 bit unit increment
-operand immL_1()
-%{
-  predicate(n->get_long() == 1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 64 bit unit decrement
 operand immL_M1()
 %{
   predicate(n->get_long() == -1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 32 bit offset of pc in thread anchor
-
-operand immL_pc_off()
-%{
-  predicate(n->get_long() == in_bytes(JavaThread::frame_anchor_offset()) +
-                             in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
   match(ConL);
 
   op_cost(0);
@@ -4681,30 +4594,6 @@ operand immByteMapBase()
   // Get base of card map
   predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
             (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate Minus One
-// this is used when we want to write the current PC to the thread anchor
-operand immP_M1()
-%{
-  predicate(n->get_ptr() == -1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate Minus Two
-// this is used when we want to write the current PC to the thread anchor
-operand immP_M2()
-%{
-  predicate(n->get_ptr() == -2);
   match(ConP);
 
   op_cost(0);
@@ -4976,45 +4865,12 @@ operand iRegL_R0()
   interface(REG_INTER);
 %}
 
-// Long 64 bit Register R2 only
-operand iRegL_R2()
-%{
-  constraint(ALLOC_IN_RC(r2_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Long 64 bit Register R3 only
-operand iRegL_R3()
-%{
-  constraint(ALLOC_IN_RC(r3_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R11 only
 operand iRegL_R11()
 %{
   constraint(ALLOC_IN_RC(r11_reg));
   match(RegL);
   match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Pointer 64 bit Register FP only
-operand iRegP_FP()
-%{
-  constraint(ALLOC_IN_RC(fp_reg));
-  match(RegP);
-  // match(iRegP);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -5073,33 +4929,6 @@ operand iRegN()
   constraint(ALLOC_IN_RC(any_reg32));
   match(RegN);
   match(iRegNNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegN_R0()
-%{
-  constraint(ALLOC_IN_RC(r0_reg));
-  match(iRegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegN_R2()
-%{
-  constraint(ALLOC_IN_RC(r2_reg));
-  match(iRegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegN_R3()
-%{
-  constraint(ALLOC_IN_RC(r3_reg));
-  match(iRegN);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -5255,222 +5084,6 @@ operand vRegD_V7()
   interface(REG_INTER);
 %}
 
-operand vRegD_V8()
-%{
-  constraint(ALLOC_IN_RC(v8_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V9()
-%{
-  constraint(ALLOC_IN_RC(v9_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V10()
-%{
-  constraint(ALLOC_IN_RC(v10_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V11()
-%{
-  constraint(ALLOC_IN_RC(v11_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V12()
-%{
-  constraint(ALLOC_IN_RC(v12_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V13()
-%{
-  constraint(ALLOC_IN_RC(v13_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V14()
-%{
-  constraint(ALLOC_IN_RC(v14_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V15()
-%{
-  constraint(ALLOC_IN_RC(v15_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V16()
-%{
-  constraint(ALLOC_IN_RC(v16_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V17()
-%{
-  constraint(ALLOC_IN_RC(v17_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V18()
-%{
-  constraint(ALLOC_IN_RC(v18_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V19()
-%{
-  constraint(ALLOC_IN_RC(v19_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V20()
-%{
-  constraint(ALLOC_IN_RC(v20_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V21()
-%{
-  constraint(ALLOC_IN_RC(v21_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V22()
-%{
-  constraint(ALLOC_IN_RC(v22_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V23()
-%{
-  constraint(ALLOC_IN_RC(v23_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V24()
-%{
-  constraint(ALLOC_IN_RC(v24_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V25()
-%{
-  constraint(ALLOC_IN_RC(v25_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V26()
-%{
-  constraint(ALLOC_IN_RC(v26_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V27()
-%{
-  constraint(ALLOC_IN_RC(v27_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V28()
-%{
-  constraint(ALLOC_IN_RC(v28_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V29()
-%{
-  constraint(ALLOC_IN_RC(v29_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V30()
-%{
-  constraint(ALLOC_IN_RC(v30_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V31()
-%{
-  constraint(ALLOC_IN_RC(v31_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
@@ -5572,15 +5185,6 @@ operand thread_RegP(iRegP reg)
   interface(REG_INTER);
 %}
 
-operand lr_RegP(iRegP reg)
-%{
-  constraint(ALLOC_IN_RC(lr_reg)); // link_reg
-  match(reg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 //----------Memory Operands----------------------------------------------------
 
 operand indirect(iRegP reg)
@@ -5655,20 +5259,6 @@ operand indIndex(iRegP reg, iRegL lreg)
   %}
 %}
 
-operand indOffI(iRegP reg, immIOffset off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
 operand indOffI1(iRegP reg, immIOffset1 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5726,20 +5316,6 @@ operand indOffI8(iRegP reg, immIOffset8 off)
 %}
 
 operand indOffI16(iRegP reg, immIOffset16 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indOffL(iRegP reg, immLoffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -5928,22 +5504,6 @@ operand indOffLN(iRegN reg, immLoffset off)
   %}
 %}
 
-
-
-// AArch64 opto stubs need to write to the pc slot in the thread anchor
-operand thread_anchor_pc(thread_RegP reg, immL_pc_off off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
