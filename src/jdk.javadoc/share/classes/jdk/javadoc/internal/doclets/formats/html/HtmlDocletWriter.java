@@ -1265,7 +1265,7 @@ public abstract class HtmlDocletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
-        ArrayList<Name> openTags = new ArrayList<>();
+        List<Name> openTags = new ArrayList<>();
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
             boolean isFirstNode = !iterator.hasPrevious();
