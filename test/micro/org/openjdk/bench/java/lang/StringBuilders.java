@@ -241,6 +241,53 @@ public class StringBuilders {
 
 
     @Benchmark
+    public String toStringCharUTF16WithBool8() {
+        StringBuilder result = new StringBuilder()
+                .append('\u6e29');
+        result.append(true);
+        result.append(false);
+        result.append(true);
+        result.append(true);
+        result.append(false);
+        result.append(true);
+        result.append(false);
+        result.append(false);
+        return result.toString();
+    }
+
+
+    @Benchmark
+    public String toStringCharWithNull8() {
+        StringBuilder result = new StringBuilder();
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        return result.toString();
+    }
+
+
+    @Benchmark
+    public String toStringCharUTF16WithNull8() {
+        StringBuilder result = new StringBuilder()
+                .append('\u6e29');
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        result.append((String) null);
+        return result.toString();
+    }
+
+
+    @Benchmark
     public String toStringCharWithFloat8() {
         StringBuilder result = new StringBuilder();
         result.append(113.110F);
