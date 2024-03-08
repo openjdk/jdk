@@ -297,8 +297,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     public Key engineGetKey(String alias, char[] password)
         throws NoSuchAlgorithmException, UnrecoverableKeyException {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        Key entryKey = internalGetKey(entry, password);
-        return entryKey;
+        return internalGetKey(entry, password);
     }
 
     private Key internalGetKey(Entry entry, char[] password)
@@ -476,8 +475,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public Certificate[] engineGetCertificateChain(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        Certificate[] certChain = internalGetCertificateChain(entry);
-        return certChain;
+        return internalGetCertificateChain(entry);
     }
 
     private Certificate[] internalGetCertificateChain(Entry entry) {
@@ -1076,10 +1074,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
      */
     public boolean engineIsKeyEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        return internalEngineIsKeyEntry(entry);
+        return internalIsKeyEntry(entry);
     }
 
-    private boolean internalEngineIsKeyEntry(Entry entry) {
+    private boolean internalIsKeyEntry(Entry entry) {
         return entry instanceof KeyEntry;
     }
 
@@ -1093,10 +1091,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
     public boolean engineIsCertificateEntry(String alias) {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        return internalEngineIsCertificateEntry(entry);
+        return internalIsCertificateEntry(entry);
     }
 
-    private boolean internalEngineIsCertificateEntry(Entry entry) {
+    private boolean internalIsCertificateEntry(Entry entry) {
         return entry instanceof CertEntry certEntry &&
                 certEntry.trustedKeyUsage != null;
     }
@@ -1326,7 +1324,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
 
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (protParam == null) {
-            if (internalEngineIsCertificateEntry(entry)) {
+            if (internalIsCertificateEntry(entry)) {
                 if (debug != null) {
                     debug.println("Retrieved a trusted certificate at " +
                             "alias '" + alias + "'");
@@ -1341,10 +1339,10 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         }
 
         if (protParam instanceof KeyStore.PasswordProtection) {
-            if (internalEngineIsCertificateEntry(entry)) {
+            if (internalIsCertificateEntry(entry)) {
                 throw new UnsupportedOperationException
                     ("trusted certificate entries are not password-protected");
-            } else if (internalEngineIsKeyEntry(entry)) {
+            } else if (internalIsKeyEntry(entry)) {
                 KeyStore.PasswordProtection pp =
                         (KeyStore.PasswordProtection)protParam;
                 char[] password = pp.getPassword();
