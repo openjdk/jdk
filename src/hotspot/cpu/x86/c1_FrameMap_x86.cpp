@@ -179,6 +179,12 @@ void FrameMap::initialize() {
   map_register( 9, r13);  r13_opr = LIR_OprFact::single_cpu(9);
   map_register(10, r14);  r14_opr = LIR_OprFact::single_cpu(10);
 
+  // r12 is not visible when UseCompressedOops is enabled.
+  // rbp is not visible when PreserveFramePointer is enabled.
+  //
+  // If !PreserveFramePointer && UseCompressedOops, rbp should be in front.
+  // If PreserveFramePointer && !UseCompressedOops, r12 should be in front.
+  // Otherwise, the order doesn't matter
   if (!PreserveFramePointer && UseCompressedOops) {
     map_register(11, rbp);  rbp_opr = LIR_OprFact::single_cpu(11);
     map_register(12, r12);  r12_opr = LIR_OprFact::single_cpu(12);
@@ -219,10 +225,6 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[9]  = r13_opr;
   _caller_save_cpu_regs[10] = r14_opr;
 
-  // rbp is allocated conditionally. It is not visbile to the
-  // allocator when PreserveFramePointer is enabled.
-  // r12 is allocated conditionally. With compressed oops it holds
-  // the heapbase value and is not visible to the allocator.
   if (!PreserveFramePointer && UseCompressedOops) {
     _caller_save_cpu_regs[11] = rbp_opr;
     _caller_save_cpu_regs[12] = r12_opr;
