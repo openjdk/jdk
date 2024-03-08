@@ -439,7 +439,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         private static final long PHASE;
         private static final long BASE;
         private static final long TOP;
-        private static final long SOURCE;
         private static final long ARRAY;
 
         final void updateBase(int v) {
@@ -447,9 +446,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
         final void updateTop(int v) {
             U.putIntOpaque(this, TOP, v);
-        }
-        final void setSource(int v) {
-            U.getAndSetInt(this, SOURCE, v);
         }
         final void updateArray(ForkJoinTask<?>[] a) {
             U.getAndSetReference(this, ARRAY, a);
@@ -824,7 +820,6 @@ public class ForkJoinPool extends AbstractExecutorService {
             PHASE = U.objectFieldOffset(klass, "phase");
             BASE = U.objectFieldOffset(klass, "base");
             TOP = U.objectFieldOffset(klass, "top");
-            SOURCE = U.objectFieldOffset(klass, "source");
             ARRAY = U.objectFieldOffset(klass, "array");
         }
     }
@@ -1111,9 +1106,6 @@ public class ForkJoinPool extends AbstractExecutorService {
         for (long c = ctl;;) {
             ForkJoinTask<?> t;
             WorkQueue[] qs = queues;
-            if (a != null && a.length > k && k >= 0 &&
-                ((t = a[k]) == null || (task != null && t != task)))
-                break;
             long ac = (c + RC_UNIT) & RC_MASK, nc;
             int sp = (int)c, i = sp & SMASK;
             if ((short)(c >>> RC_SHIFT) >= pc)
@@ -1141,6 +1133,9 @@ public class ForkJoinPool extends AbstractExecutorService {
                 }
                 break;
             }
+            if (a != null && a.length > k && k >= 0 &&
+                ((t = a[k]) == null || (task != null && t != task)))
+                break;
         }
     }
 
@@ -1236,7 +1231,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     private long scan(WorkQueue w, long stat, int cfg) {
         int r = (int)stat;                          // random seed
         int src = (int)(stat >>> 32);               // last steal or -1
-        long spins = 0L;                            // countdown since deactivate
+        int spinScans = 0;                          // rescans since deactivate
         outer: while (w != null && (runState & STOP) == 0) {
             WorkQueue[] qs = queues;
             int n = (qs == null) ? 0 : qs.length;
@@ -1249,21 +1244,20 @@ public class ForkJoinPool extends AbstractExecutorService {
                 int j, cap; WorkQueue q; ForkJoinTask<?>[] a;
                 if ((q = qs[j = i & SMASK & (n - 1)]) != null &&
                     (a = q.array) != null && (cap = a.length) > 0) {
-                    --spins;
-                    for (int misses = 0, b, k, nb, nk;;) {
-                        ForkJoinTask<?> t = a[k = (cap - 1) & (b = q.base)];
-                        U.loadFence();              // re-read
-                        if (q.base != b)
-                            continue;               // inconsistent
+                    for (int misses = 0;;) {
+                        int b = q.base, k, nb, nk; long kp; ForkJoinTask<?> t;
+                        do {                        // ensure consistent read
+                            t = a[k = b & (cap - 1)];
+                            U.loadFence();
+                        } while (b != (b = q.base));
                         ForkJoinTask<?> nt = a[nk = (nb = b + 1) & (cap - 1)];
-                        long kp = slotOffset(k);
-                        if (a[k] != t)              // stale
-                            continue;
+                        if (U.getReference(a, kp = slotOffset(k)) != t)
+                            ;                       // screen CAS
                         else if (t == null) {
-                            if ((a[(nb + 1) & (cap - 1)] != null ||
-                                 nt != null) &&     // probe 2 slots as filter
-                                (!rescan && misses <= 2 && q.top - nb > 0))
-                                rescan = true;
+                            if (!rescan && misses <= 2 &&
+                                (a[(nb + 1) & (cap - 1)] != null ||
+                                 nt != null || q.top - nb > 0))
+                                rescan = true;      // probe 2 slots as filter
                             break;
                         }
                         else if ((phase & IDLE) != 0) { // recheck or reactivate
@@ -1273,52 +1267,47 @@ public class ForkJoinPool extends AbstractExecutorService {
                                     break;          // ineligible
                                 else if (!compareAndSetCtl(
                                              sc, sp | ((sc + RC_UNIT) & UMASK)))
-                                    continue outer; // restart
+                                    continue outer; // lost race; restart
                                 w.phase = phase = np;
                             }
                             rescan = true;          // rescan if cannot take
                         }
                         else if (U.compareAndSetReference(a, kp, t, null)) {
                             q.base = nb;
-                            w.setSource(j);         // fully fenced
+                            w.source = j;           // volatile write
                             long ran = ((long)j << 32) | (r & LMASK);
-                            if (src != (src = j))   // propagate signal
-                                signalWork(a, nk, nt);
+                            if (src != (src = j) && nt != null && a[nk] == nt)
+                                signalWork(a, nk, nt); // propagate signal
                             w.topLevelExec(t, q, nb, cfg);
                             return ran;
                         }
-                        else if (a[k] == null)      // contended
-                            ++misses;
+                        else
+                            ++misses;               // probably contended
                     }
                 }
             }
             if (!rescan) {
-                long c, ac;
-                phase = w.phase;
-                if ((ac = (c = ctl) & RC_MASK) <= 0L)
-                    break;                          // check quiescence
-                if (c == prevCtl || ac < (prevCtl & RC_MASK)) { // stable
-                    if ((phase & IDLE) == 0) {      // try to deactivate
-                        long ap = (phase + (IDLE << 1)) & LMASK;
-                        spins = SPIN_WAITS;
+                U.fullFence();                      // for ctl comparison
+                int p = w.phase, ac; long c;        // avoid missed signals
+                if ((ac = (short)((c = ctl) >>> RC_SHIFT)) == 0 ||
+                    c == prevCtl || ac < (short)(prevCtl >>> RC_SHIFT)) {
+                    if ((p & IDLE) == 0) {          // try to deactivate
+                        long ap = (p + (IDLE << 1)) & LMASK;
+                        spinScans = 0;
                         src = -1;
                         w.stackPred = (int)c;       // set ctl stack link
-                        w.phase = phase | IDLE;
+                        w.phase = p | IDLE;
                         while (c != (c = compareAndExchangeCtl(
                                          c, ap | ((c - RC_UNIT) & UMASK)))) {
-                            if (ac <= (ac = (c & RC_MASK))) {
-                                w.phase = phase;    // back out if nondecreasing
+                            if (ac <= (ac = (short)(c >>> RC_SHIFT))) {
+                                w.phase = p;        // back out if nondecreasing
                                 break;
                             }
                             w.stackPred = (int)c;   // retry
                         }
                     }
-                    else { // possibly loop to reduce park/unpark flailing
-                        while ((w.phase & IDLE) != 0 && --spins > 0L)
-                            Thread.onSpinWait();
-                        if (spins <= 0)             // block
-                            break;
-                    }
+                    else if ((spinScans += ac + 1) >= SPIN_WAITS)
+                        break;                      // spins reduce park/unparks
                 }
             }
         }
@@ -3206,6 +3195,7 @@ public class ForkJoinPool extends AbstractExecutorService {
      * compensate for a thread that performs a blocking operation. When the
      * blocking operation is done then endCompensatedBlock must be invoked
      * with the value returned by this method to re-adjust the parallelism.
+     * @return value to use in endCompensatedBlock
      */
     final long beginCompensatedBlock() {
         int c;
@@ -3215,6 +3205,7 @@ public class ForkJoinPool extends AbstractExecutorService {
 
     /**
      * Re-adjusts parallelism after a blocking operation completes.
+     * @param post value from beginCompensatedBlock
      */
     void endCompensatedBlock(long post) {
         if (post > 0L) {
