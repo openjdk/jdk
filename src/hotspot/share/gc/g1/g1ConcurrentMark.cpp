@@ -1218,6 +1218,9 @@ class G1UpdateRegionLivenessAndSelectForRebuildTask : public WorkerTask {
 
       auto on_humongous_region = [&] (HeapRegion* hr) {
         assert(hr->used() > 0, "precondition");
+        assert(!hr->has_pinned_objects(), "precondition");
+        assert(hr->is_humongous(), "precondition");
+
         _num_humongous_regions_removed++;
         _freed_bytes += hr->used();
         hr->set_containing_set(nullptr);
@@ -1404,7 +1407,7 @@ void G1ConcurrentMark::remark() {
     _g1h->verifier()->verify_bitmap_clear(true /* above_tams_only */);
 
     {
-      GCTraceTime(Debug, gc, phases) debug("Select For Rebuild & Reclaim Empty Regions", _gc_timer_cm);
+      GCTraceTime(Debug, gc, phases) debug("Select For Rebuild and Reclaim Empty Regions", _gc_timer_cm);
 
       G1UpdateRegionLivenessAndSelectForRebuildTask cl(_g1h, this, _g1h->workers()->active_workers());
       uint const num_workers = MIN2(G1UpdateRegionLivenessAndSelectForRebuildTask::desired_num_workers(_g1h->num_regions()),
