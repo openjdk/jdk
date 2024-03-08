@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import jdk.internal.misc.CDS;
+//import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
@@ -323,13 +323,12 @@ class GenerateJLIClassesHelper {
                                     builder.addCallSiteType(methodType);
                                 } else {
                                     MethodType mt = HolderClassBuilder.asMethodType(methodType);
+                                    // Work around JDK-8327499
                                     if (HolderClassBuilder.checkInvokerTypeParams(mt)) {
                                         builder.addInvokerType(methodType);
                                     } else {
-                                        if (CDS.isDumpingArchive()) {
-                                            PlatformLogger.getLogger("java.lang.invoke")
-                                                    .warning("Invalid LF_RESOLVE " + parts[1] + " " + parts[2] + " " + parts[3]);
-                                        }
+                                        PlatformLogger.getLogger("java.lang.invoke")
+                                                .warning("Invalid LF_RESOLVE " + parts[1] + " " + parts[2] + " " + parts[3]);
                                     }
                                 }
                             } else if (parts[1].contains("DirectMethodHandle")) {

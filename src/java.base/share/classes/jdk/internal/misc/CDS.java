@@ -39,7 +39,6 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
-import java.lang.invoke.MethodType;
 
 public class CDS {
     private static final boolean isDumpingClassList;
@@ -111,20 +110,10 @@ public class CDS {
     public static native long getRandomSeedForDumping();
 
     /**
-     * Checks if the lambda form invoker is archivable. This is to avoid RuntimeException
-     * during CDS archive dumping.
-     */
-    private static boolean isInvokerArchivable(MethodType mt, String holder) {
-        final int lastParam = mt.parameterCount() - 1;
-        return ((mt.parameterCount() >= 2 && mt.parameterType(0) == Object.class
-                && mt.parameterType(lastParam) == Object.class) || isValidHolderName(holder));
-    }
-
-    /**
      * log lambda form invoker holder, name and method type
      */
-    public static void traceLambdaFormInvoker(String prefix, String holder, String name, String type, MethodType mt) {
-        if (isDumpingClassList && isInvokerArchivable(mt, holder)) {
+    public static void traceLambdaFormInvoker(String prefix, String holder, String name, String type) {
+        if (isDumpingClassList) {
             logLambdaFormInvoker(prefix + " " + holder + " " + name + " " + type);
         }
     }

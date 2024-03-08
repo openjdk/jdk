@@ -135,7 +135,7 @@ class MethodHandleStatics {
                     (resolvedMember != null ? " (success)" : " (fail)"));
         }
         if (CDS.isDumpingClassList()) {
-            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)), type);
+            CDS.traceLambdaFormInvoker("[LF_RESOLVE]", holder.getName(), name, shortenSignature(basicTypeSignature(type)));
         }
     }
 
