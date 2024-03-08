@@ -441,11 +441,6 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
 [
   COMPILER_NAME=$2
   SEARCH_LIST="$3"
-  SEARCH_PATH="$PATH"
-  if test "x$OPENJDK_TARGET_OS" = xaix && test "x$TOOLCHAIN_PATH" != x; then
-    # On AIX, we search the toolchain path first, if it is provided
-    SEARCH_PATH="$TOOLCHAIN_PATH:$PATH"
-  fi
 
   if test "x[$]$1" != x; then
     # User has supplied compiler name already, always let that override.
@@ -453,7 +448,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     if test "x`basename [$]$1`" = "x[$]$1"; then
       # A command without a complete path is provided, search $PATH.
 
-      UTIL_LOOKUP_PROGS(POTENTIAL_$1, [$]$1, $SEARCH_PATH)
+      UTIL_LOOKUP_PROGS(POTENTIAL_$1, [$]$1)
       if test "x$POTENTIAL_$1" != x; then
         $1=$POTENTIAL_$1
       else
@@ -475,7 +470,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     # If we are not cross compiling, then the default compiler name will be
     # used.
 
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(POTENTIAL_$1, $SEARCH_LIST, $SEARCH_PATH)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(POTENTIAL_$1, $SEARCH_LIST)
     if test "x$POTENTIAL_$1" != x; then
       $1=$POTENTIAL_$1
     else
