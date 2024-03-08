@@ -65,7 +65,7 @@ class RegisterSaver {
     int_reg           = 0,
     float_reg         = 1,
     excluded_reg      = 2,  // Not saved/restored.
-    v_reg	            = 3
+    v_reg             = 3
   } RegisterType;
 
   typedef enum {
