@@ -2488,22 +2488,30 @@ void VM_HeapDumper::work(uint worker_id) {
   // HPROF_HEAP_DUMP/HPROF_HEAP_DUMP_SEGMENT starts here
 
   ResourceMark rm;
-  // share global compressor, local DumpWriter is not responsible for its life cycle
-  DumpWriter segment_writer(DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
-                            writer()->is_overwrite(), writer()->compressor());
-  if (!segment_writer.has_error()) {
+  // For serial heap dump, write everything directly to global writer.
+  DumpWriter* local_writer = writer();
+  // For parallel heap dump, create a segment writer for a separte file
+  // containing a segment of the dump.
+  if (is_parallel_dump()) {
+    // share global compressor, local DumpWriter is not responsible for its life cycle
+    local_writer = new DumpWriter(
+        DumpMerger::get_writer_path(writer()->get_file_path(), dumper_id),
+        writer()->is_overwrite(), writer()->compressor());
+  }
+
+  if (!local_writer->has_error()) {
     if (is_vm_dumper(dumper_id)) {
       // dump some non-heap subrecords to heap dump segment
       TraceTime timer("Dump non-objects (part 2)", TRACETIME_LOG(Info, heapdump));
       // Writes HPROF_GC_CLASS_DUMP records
-      ClassDumper class_dumper(&segment_writer);
+      ClassDumper class_dumper(local_writer);
       ClassLoaderDataGraph::classes_do(&class_dumper);
 
       // HPROF_GC_ROOT_THREAD_OBJ + frames + jni locals
-      dump_threads(&segment_writer);
+      dump_threads(local_writer);
 
       // HPROF_GC_ROOT_JNI_GLOBAL
-      JNIGlobalsDumper jni_dumper(&segment_writer);
+      JNIGlobalsDumper jni_dumper(local_writer);
       JNIHandles::oops_do(&jni_dumper);
       // technically not jni roots, but global roots
       // for things like preallocated throwable backtraces
@@ -2511,7 +2519,7 @@ void VM_HeapDumper::work(uint worker_id) {
       // HPROF_GC_ROOT_STICKY_CLASS
       // These should be classes in the null class loader data, and not all classes
       // if !ClassUnloading
-      StickyClassDumper stiky_class_dumper(&segment_writer);
+      StickyClassDumper stiky_class_dumper(local_writer);
       ClassLoaderData::the_null_class_loader_data()->classes_do(&stiky_class_dumper);
     }
 
@@ -2524,7 +2532,7 @@ void VM_HeapDumper::work(uint worker_id) {
     // of the heap dump.
 
     TraceTime timer(is_parallel_dump() ? "Dump heap objects in parallel" : "Dump heap objects", TRACETIME_LOG(Info, heapdump));
-    HeapObjectDumper obj_dumper(&segment_writer, this);
+    HeapObjectDumper obj_dumper(local_writer, this);
     if (!is_parallel_dump()) {
       Universe::heap()->object_iterate(&obj_dumper);
     } else {
@@ -2532,20 +2540,23 @@ void VM_HeapDumper::work(uint worker_id) {
       _poi->object_iterate(&obj_dumper, worker_id);
     }
 
-    segment_writer.finish_dump_segment();
-    segment_writer.flush();
+    local_writer->finish_dump_segment();
+    local_writer->flush();
   }
 
-  _dumper_controller->dumper_complete(&segment_writer, writer());
+  if (is_parallel_dump()) {
+    _dumper_controller->dumper_complete(local_writer, writer());
+    delete local_writer;
 
-  if (is_vm_dumper(dumper_id)) {
-    _dumper_controller->wait_all_dumpers_complete();
+    if (is_vm_dumper(dumper_id)) {
+      _dumper_controller->wait_all_dumpers_complete();
 
-    // flush global writer
-    writer()->flush();
+      // flush global writer
+      writer()->flush();
 
-    // At this point, all fragments of the heapdump have been written to separate files.
-    // We need to merge them into a complete heapdump and write HPROF_HEAP_DUMP_END at that time.
+      // At this point, all fragments of the heapdump have been written to separate files.
+      // We need to merge them into a complete heapdump and write HPROF_HEAP_DUMP_END at that time.
+    }
   }
 }
 
@@ -2650,25 +2661,30 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   // record any error that the writer may have encountered
   set_error(writer.error());
 
-  // Heap dump process is done in two phases
-  //
-  // Phase 1: Concurrent threads directly write heap data to multiple heap files.
-  //          This is done by VM_HeapDumper, which is performed within safepoint.
-  //
-  // Phase 2: Merge multiple heap files into one complete heap dump file.
-  //          This is done by DumpMerger, which is performed outside safepoint
-
-  DumpMerger merger(path, &writer, dumper.dump_seq());
-  Thread* current_thread = Thread::current();
-  if (current_thread->is_AttachListener_thread()) {
-    // perform heapdump file merge operation in the current thread prevents us
-    // from occupying the VM Thread, which in turn affects the occurrence of
-    // GC and other VM operations.
-    merger.do_merge();
+  if (num_dump_threads == 1) {
+    DumperSupport::end_of_dump(&writer);
+    writer.flush();
   } else {
-    // otherwise, performs it by VM thread
-    VM_HeapDumpMerge op(&merger);
-    VMThread::execute(&op);
+    // Heap dump process is done in two phases
+    //
+    // Phase 1: Concurrent threads directly write heap data to multiple heap files.
+    //          This is done by VM_HeapDumper, which is performed within safepoint.
+    //
+    // Phase 2: Merge multiple heap files into one complete heap dump file.
+    //          This is done by DumpMerger, which is performed outside safepoint
+
+    DumpMerger merger(path, &writer, dumper.dump_seq());
+    Thread* current_thread = Thread::current();
+    if (current_thread->is_AttachListener_thread()) {
+      // perform heapdump file merge operation in the current thread prevents us
+      // from occupying the VM Thread, which in turn affects the occurrence of
+      // GC and other VM operations.
+      merger.do_merge();
+    } else {
+      // otherwise, performs it by VM thread
+      VM_HeapDumpMerge op(&merger);
+      VMThread::execute(&op);
+    }
   }
   if (writer.error() != nullptr) {
     set_error(writer.error());
