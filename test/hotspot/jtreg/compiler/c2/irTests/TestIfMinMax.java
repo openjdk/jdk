@@ -91,49 +91,49 @@ public class TestIfMinMax {
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
     public long testMinL1(long a, long b) {
         return a < b ? a : b;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
     public long testMinL2(long a, long b) {
         return a > b ? b : a;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL1(long a, long b) {
         return a > b ? a : b;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL2(long a, long b) {
         return a < b ? b : a;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
     public long testMinL1E(long a, long b) {
         return a <= b ? a : b;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MIN_L, "1" })
     public long testMinL2E(long a, long b) {
         return a >= b ? b : a;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL1E(long a, long b) {
         return a >= b ? a : b;
     }
 
     @Test
-    @IR(failOn = { IRNode.IF }, counts = { IRNode.CMOVE_L, "1" })
+    @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL2E(long a, long b) {
         return a <= b ? b : a;
     }

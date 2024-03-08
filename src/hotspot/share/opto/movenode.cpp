@@ -96,6 +96,12 @@ Node *CMoveNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     BoolNode* b = in(Condition)->as_Bool()->negate(phase);
     return make(in(Control), phase->transform(b), in(IfTrue), in(IfFalse), _type);
   }
+
+  Node* minmax = Ideal_minmax(phase, this);
+  if (minmax != nullptr) {
+    return minmax;
+  }
+
   return nullptr;
 }
 
@@ -186,17 +192,25 @@ CMoveNode *CMoveNode::make(Node *c, Node *bol, Node *left, Node *right, const Ty
 }
 
 // Try to identify min/max patterns in CMoves
-static Node* is_minmax(PhaseGVN* phase, Node* cmov) {
-  BoolNode* bol = cmov->in(CMoveNode::Condition)->isa_Bool();
+Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
+  // If we're post loop opts then don't attempt to match the min/max pattern, as this node might have been a
+  // MinL or MaxL that was already expanded during macro expansion.
+  if (phase->C->post_loop_opts_phase()) {
+    return nullptr;
+  }
+
+  // The BoolNode may have been idealized into a constant. If that's the case, then Identity should take care of it instead.
+  BoolNode* bol = cmove->in(CMoveNode::Condition)->isa_Bool();
   if (bol == nullptr) {
     return nullptr;
   }
 
   Node* cmp = bol->in(1);
-  int opcode = cmp->Opcode();
+  int cmove_op = cmove->Opcode();
+  int cmp_op = cmp->Opcode();
 
-  // Ensure comparison is an integral type
-  if (opcode != Op_CmpI && opcode != Op_CmpL) {
+  // Ensure comparison is an integral type, and that the cmove is of the same type.
+  if ((cmp_op != Op_CmpI || cmove_op != Op_CMoveI) && (cmp_op != Op_CmpL || cmove_op != Op_CMoveL)) {
     return nullptr;
   }
 
@@ -211,25 +225,25 @@ static Node* is_minmax(PhaseGVN* phase, Node* cmov) {
   Node* cmp_r = cmp->in(2);
 
   // The values being selected
-  Node* cmov_l = cmov->in(CMoveNode::IfTrue);
-  Node* cmov_r = cmov->in(CMoveNode::IfFalse);
+  Node* cmove_l = cmove->in(CMoveNode::IfTrue);
+  Node* cmove_r = cmove->in(CMoveNode::IfFalse);
 
   // For this transformation to be valid, the values being compared must be the same as the values being selected.
   // We accept two different forms, "a < b ? a : b" and "a < b ? b : a". For the first form, the lhs and rhs of the
-  // comparison and cmov are the same, resulting in a minimum. For the second form, the lhs and rhs of both are flipped,
+  // comparison and cmove are the same, resulting in a minimum. For the second form, the lhs and rhs of both are flipped,
   // resulting in a maximum. If neither form is found, bail out.
 
   bool is_max;
-  if (cmp_l == cmov_l && cmp_r == cmov_r) {
+  if (cmp_l == cmove_l && cmp_r == cmove_r) {
     is_max = false;
-  } else if (cmp_l == cmov_r && cmp_r == cmov_l) {
+  } else if (cmp_l == cmove_r && cmp_r == cmove_l) {
     is_max = true;
   } else {
     return nullptr;
   }
 
   // Create the Min/Max node based on the type and kind
-  if (opcode == Op_CmpL) {
+  if (cmp_op == Op_CmpL) {
     return MaxNode::build_min_max_long(phase, cmp_l, cmp_r, is_max);
   } else {
     return MaxNode::build_min_max_int(cmp_l, cmp_r, is_max);
@@ -257,11 +271,6 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
       BoolNode* b2 = b->negate(phase);
       return make(in(Control), phase->transform(b2), in(IfTrue), in(IfFalse), _type);
     }
-  }
-
-  Node* minmax = is_minmax(phase, this);
-  if (minmax != nullptr) {
-    return minmax;
   }
 
   // If we're late in the optimization process, we may have already expanded Conv2B nodes
@@ -306,27 +315,6 @@ Node *CMoveINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 
   return n;
-}
-
-Node* CMoveLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
-  // Try generic ideal first
-  Node* x = CMoveNode::Ideal(phase, can_reshape);
-  if (x != nullptr) {
-    return x;
-  }
-
-  // If we're post loop opts then don't attempt to match the min/max pattern, as this node might have been a
-  // MinL or MaxL that was already expanded during macro expansion.
-  if (phase->C->post_loop_opts_phase()) {
-    return nullptr;
-  }
-
-  Node* minmax = is_minmax(phase, this);
-  if (minmax != nullptr) {
-    return minmax;
-  }
-
-  return nullptr;
 }
 
 //=============================================================================

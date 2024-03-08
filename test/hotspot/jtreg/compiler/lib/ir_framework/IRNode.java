@@ -407,11 +407,6 @@ public class IRNode {
         beforeMatchingNameRegex(CMOVE_I, "CMoveI");
     }
 
-    public static final String CMOVE_L = PREFIX + "CMOVE_L" + POSTFIX;
-    static {
-        beforeMatchingNameRegex(CMOVE_L, "CMoveL");
-   }
-
     public static final String CMP_I = PREFIX + "CMP_I" + POSTFIX;
     static {
         beforeMatchingNameRegex(CMP_I, "CmpI");
