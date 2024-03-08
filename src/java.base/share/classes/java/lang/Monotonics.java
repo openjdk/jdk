@@ -153,9 +153,9 @@ public final class Monotonics {
      * @param <V>        the value type for the Monotonic values in the backing map
      * @see Monotonic#ofMap(Collection)
      */
-    public static <K, V> Supplier<V> asMemoized(Collection<? extends K> keys,
-                                                Function<? super K, ? extends V> mapper,
-                                                boolean background) {
+    public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
+                                                   Function<? super K, ? extends V> mapper,
+                                                   boolean background) {
         Objects.requireNonNull(mapper);
         return InternalMonotonicMap.asMemoized(keys, mapper, background);
     }

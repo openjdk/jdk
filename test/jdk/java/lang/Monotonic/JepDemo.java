@@ -144,9 +144,7 @@ final class JepDemo {
         private final IntFunction<Integer> numCache;
 
         public Fibonacci3(int upperBound) {
-            List<Monotonic<Integer>> monotonicList = Monotonic.ofList(upperBound);
-            monotonicList.get(8).bind(21);
-            numCache = i -> Monotonics.computeIfAbsent(monotonicList, i, this::number);
+            numCache = Monotonics.asMemoized(upperBound, this::number, true);
         }
 
         public int number(int n) {
@@ -172,12 +170,12 @@ final class JepDemo {
     static
     class MapDemo2 {
 
-        private static final Map<String, Monotonic<Logger>> MONO_MAP =
-                Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
         // 1. Declare a memoized (cached) function backed by a monotonic map
         private static final Function<String, Logger> LOGGERS =
-                k -> Monotonics.computeIfAbsent(MONO_MAP, k, Logger::getLogger);
+                Monotonics.asMemoized(
+                        Set.of("com.foo.Bar", "com.foo.Baz"),
+                        Logger::getLogger,
+                        true);
 
         static Logger logger(String name) {
             // 2. Access the memoized value with as-declared-final performance

@@ -255,9 +255,9 @@ public final class InternalMonotonicMap<K, V>
         return new InternalMonotonicMap<>(keyArray);
     }
 
-    public static <K, V> Supplier<V> asMemoized(Collection<? extends K> keys,
-                                                Function<? super K, ? extends V> mapper,
-                                                boolean background) {
+    public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
+                                                   Function<? super K, ? extends V> mapper,
+                                                   boolean background) {
         // Todo: Fix this
         throw new UnsupportedOperationException();
     }
