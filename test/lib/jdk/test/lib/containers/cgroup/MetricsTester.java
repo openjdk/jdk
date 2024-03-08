@@ -72,12 +72,11 @@ public class MetricsTester {
         testContainerized(m, inContainer);
     }
 
-    private void testContainerized(m, inContainer) {
+    private void testContainerized(Metrics m, boolean inContainer) {
         if (m.isContainerized() != inContainer) {
             throw new RuntimeException("containerized test failed. " +
                                        "Expected isContainerized()==" + inContainer +
                                        " but got '" + m.isContainerized() + "'");
-            }
         }
         System.out.println("testContainerized() PASSED!");
     }
