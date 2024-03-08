@@ -44,7 +44,7 @@ enum {
   pd_nof_xmm_regs_frame_map = XMMRegister::number_of_registers,    // number of registers used during code emission
 
 #ifdef _LP64
-  #define UNALLOCATED 4    // rsp, rbp, r15, r10
+  #define UNALLOCATED 3    // rsp, r15, r10
 #else
   #define UNALLOCATED 2    // rsp, rbp
 #endif // LP64
@@ -60,9 +60,9 @@ enum {
   pd_nof_fpu_regs_linearscan = pd_nof_fpu_regs_frame_map, // number of registers visible to linear scan
   pd_nof_xmm_regs_linearscan = pd_nof_xmm_regs_frame_map, // number of registers visible to linear scan
   pd_first_cpu_reg = 0,
-  pd_last_cpu_reg = NOT_LP64(5) LP64_ONLY(11),
+  pd_last_cpu_reg = NOT_LP64(5) LP64_ONLY(12),
   pd_first_byte_reg = NOT_LP64(2) LP64_ONLY(0),
-  pd_last_byte_reg = NOT_LP64(5) LP64_ONLY(11),
+  pd_last_byte_reg = NOT_LP64(5) LP64_ONLY(12),
   pd_first_fpu_reg = pd_nof_cpu_regs_frame_map,
   pd_last_fpu_reg =  pd_first_fpu_reg + 7,
   pd_first_xmm_reg = pd_nof_cpu_regs_frame_map + pd_nof_fpu_regs_frame_map,

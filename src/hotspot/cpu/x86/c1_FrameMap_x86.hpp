@@ -148,8 +148,14 @@
 
   static int adjust_reg_range(int range) {
     // Reduce the number of available regs (to free r12) in case of compressed oops
-    if (UseCompressedOops) return range - 1;
-    return range;
+    int subtrahend = 0;
+    if (PreserveFramePointer) {
+      subtrahend += 1;
+    }
+    if (UseCompressedOops) {
+      subtrahend += 1;
+    }
+    return range - subtrahend;
   }
 
   static int get_num_caller_save_xmms() {

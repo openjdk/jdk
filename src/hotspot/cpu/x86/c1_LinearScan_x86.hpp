@@ -32,13 +32,19 @@ inline bool LinearScan::is_processed_reg_num(int reg_num) {
   assert(FrameMap::rbp_opr->cpu_regnr() == 7, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
 #else
-  // rsp and rbp, r10, r15 (numbers [12,15]) are ignored
-  // r12 (number 11) is conditional on compressed oops.
-  assert(FrameMap::r12_opr->cpu_regnr() == 11, "wrong assumption below");
-  assert(FrameMap::r10_opr->cpu_regnr() == 12, "wrong assumption below");
-  assert(FrameMap::r15_opr->cpu_regnr() == 13, "wrong assumption below");
-  assert(FrameMap::rsp_opr->cpu_regnrLo() == 14, "wrong assumption below");
-  assert(FrameMap::rbp_opr->cpu_regnrLo() == 15, "wrong assumption below");
+  // rbp (number 11 or 12) is conditional on PreserveFramePointer
+  // r12 (number 11 or 12) is conditional on compressed oops.
+  if (!PreserveFramePointer && UseCompressedOops) {
+    assert(FrameMap::rbp_opr->cpu_regnr() == 11, "wrong assumption below");
+    assert(FrameMap::r12_opr->cpu_regnr() == 12, "wrong assumption below");
+  } else {
+    assert(FrameMap::r12_opr->cpu_regnr() == 11, "wrong assumption below");
+    assert(FrameMap::rbp_opr->cpu_regnr() == 12, "wrong assumption below");
+  }
+  // r10, r15 and rsp (numbers [13,15]) are ignored
+  assert(FrameMap::r10_opr->cpu_regnr() == 13, "wrong assumption below");
+  assert(FrameMap::r15_opr->cpu_regnr() == 14, "wrong assumption below");
+  assert(FrameMap::rsp_opr->cpu_regnrLo() == 15, "wrong assumption below");
   assert(reg_num >= 0, "invalid reg_num");
 #endif // _LP64
   return reg_num <= FrameMap::last_cpu_reg() || reg_num >= pd_nof_cpu_regs_frame_map;
