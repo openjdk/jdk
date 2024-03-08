@@ -25,13 +25,13 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack003.
+ * @summary converted from VM testbase nsk/stress/stack/stack004.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the same thread
- *     by invoking static recursive method for the given fixed depth
- *     of recursion (though, for a large depth).
+ *     by invoking final static recursive method for the given fixed
+ *     depth of recursion (though, for a large depth).
  *     This test makes measures a number of recursive invocations
  *     before 1st StackOverflowError, and then tries to reproduce
  *     such StackOverflowError 100 times -- each time by trying to
@@ -47,48 +47,38 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack003
+ * @run main/othervm/timeout=900 Stack004
  */
 
-package nsk.stress.stack;
-
-
-import java.io.PrintStream;
-
-public class stack003 {
-    final static int ITERATIONS = 100;
-    final static int INCREMENT = 100;
-
+public class Stack004 {
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
+        Stack004 test = new Stack004();
+        test.doRun();
     }
 
-    public static int run(String args[], PrintStream out) {
+    public void doRun() {
         int depth;
-        for (depth = 1; ; depth += INCREMENT)
+        for (depth = 100; ; depth += 100) {
             try {
                 recurse(depth);
-            } catch (StackOverflowError soe) {
-                break;
-            } catch (OutOfMemoryError oome) {
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
-        out.println("Max. depth: " + depth);
-        for (int i = 0; i < ITERATIONS; i++)
+        }
+        System.out.println("Max. depth: " + depth);
+        for (int i = 0; i < 100; i++) {
             try {
                 recurse(2 * depth);
-                out.println("?");
-            } catch (StackOverflowError soe) {
+                System.out.println("?");
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
-            } catch (OutOfMemoryError oome) {
-                // Also OK.
             }
-        return 0;
+        }
     }
 
-    static void recurse(int depth) {
-        if (depth > 0)
+    final static void recurse(int depth) {
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
 }

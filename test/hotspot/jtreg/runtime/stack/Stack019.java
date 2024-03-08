@@ -43,45 +43,22 @@
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
  * @requires os.family != "windows"
- * @library /vmTestbase
- * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss200K nsk.stress.stack.stack019 -eager
+ * @run main/othervm/timeout=900 -Xss200K Stack019
  */
 
-package nsk.stress.stack;
-
-
-import nsk.share.Terminator;
-
-import java.io.PrintStream;
-
-public class stack019 {
+public class Stack019 {
     private final static int CYCLES = 50;
     private final static int PROBES = 50;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        boolean verbose = false, eager = false;
-        for (int i = 0; i < args.length; i++)
-            if (args[i].toLowerCase().equals("-verbose"))
-                verbose = true;
-            else if (args[i].toLowerCase().equals("-eager"))
-                eager = true;
-        if (!eager)
-            Terminator.appoint(Terminator.parseAppointment(args));
         //
         // Measure recursive depth before stack overflow:
         //
         try {
             recurse(0);
-        } catch (StackOverflowError soe) {
-        } catch (OutOfMemoryError oome) {
+        } catch (StackOverflowError | OutOfMemoryError err) {
         }
-        out.println("Maximal recursion depth: " + maxDepth);
+        System.out.println("Maximal recursion depth: " + maxDepth);
         depthToTry = maxDepth;
 
         //
@@ -89,23 +66,15 @@ public class stack019 {
         //
         for (int i = 0; i < CYCLES; i++) {
             try {
-                out.println("Iteration: " + i + "/" + CYCLES);
+                System.out.println("Iteration: " + i + "/" + CYCLES);
                 trickyRecurse(0);
-                out.println("# TEST_BUG: stack overflow was expected!");
-                return 2;
-
-            } catch (StackOverflowError error) {
-            } catch (OutOfMemoryError oome) {
-                // It's OK: stack overflow was expected.
-
+                throw new RuntimeException("# TEST_BUG: stack overflow was expected!");
+            } catch (StackOverflowError | OutOfMemoryError error) {
+                // It's OK
             } catch (Throwable throwable) {
-                if (throwable instanceof ThreadDeath)
-                    throw (ThreadDeath) throwable;
-                throwable.printStackTrace(out);
-                return 2;
+                throw new RuntimeException(throwable);
             }
         }
-        return 0;
     }
 
     private static int maxDepth;
@@ -120,17 +89,14 @@ public class stack019 {
         try {
             maxDepth = depth;
             trickyRecurse(depth + 1);
-        } catch (Error error) {
-            if (!(error instanceof StackOverflowError) &&
-                    !(error instanceof OutOfMemoryError))
-                throw error;
-
+        } catch (StackOverflowError | OutOfMemoryError error){
             //
             // Stack problem caught: provoke it again,
             // if current stack is enough deep:
             //
-            if (depth < depthToTry - PROBES)
+            if (depth < depthToTry - PROBES) {
                 throw error;
+            }
             recurse(depth + 1);
         }
     }
