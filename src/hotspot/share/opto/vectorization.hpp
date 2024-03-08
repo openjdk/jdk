@@ -464,7 +464,7 @@ private:
   GrowableArray<DependencyNode*> _dependency_nodes;
 
   // Node depth in DAG: bb_idx -> depth
-  GrowableArray<int> _depth;
+  GrowableArray<int> _depths;
 
 protected:
   const VLoopBody& body() const { return _body; }
@@ -482,10 +482,10 @@ public:
                       vloop.estimated_body_length(),
                       vloop.estimated_body_length(),
                       nullptr),
-    _depth(arena,
-           vloop.estimated_body_length(),
-           vloop.estimated_body_length(),
-           0) {}
+    _depths(arena,
+            vloop.estimated_body_length(),
+            vloop.estimated_body_length(),
+            0) {}
   NONCOPYABLE(VLoopDependencyGraph);
 
   void construct();
@@ -494,8 +494,8 @@ public:
 
 private:
   void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
-  int depth(const Node* n) const { return _depth.at(_body.bb_idx(n)); }
-  void set_depth(const Node* n, int d) { _depth.at_put(_body.bb_idx(n), d); }
+  int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
+  void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
   void compute_depth();
   NOT_PRODUCT( void print() const; )
 
