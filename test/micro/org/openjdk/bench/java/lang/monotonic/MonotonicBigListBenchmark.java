@@ -43,10 +43,10 @@ public class MonotonicBigListBenchmark {
 
     private static final int SIZE = 100_000;
 
-    private static final Monotonic.List<Integer> PRIMITIVE_LIST = random(Monotonic.ofList(SIZE));
+    private static final List<Monotonic<Integer>> MONOTONIC_LIST = randomMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
-    private final Monotonic.List<Integer> primitiveList = random(Monotonic.ofList(SIZE));
+    private final List<Monotonic<Integer>> primitiveList = randomMono(Monotonic.ofList(SIZE));
     private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
     @Setup
@@ -57,7 +57,7 @@ public class MonotonicBigListBenchmark {
     public int staticMonotonic() {
         int sum = 0;
         for (int i = 0; i < SIZE; i++) {
-            sum += PRIMITIVE_LIST.get(i).get();
+            sum += MONOTONIC_LIST.get(i).get();
         }
         return sum;
     }
@@ -80,7 +80,6 @@ public class MonotonicBigListBenchmark {
         return sum;
     }
 
-
     @Benchmark
     public Integer instanceArrayList() {
         int sum = 0;
@@ -90,7 +89,7 @@ public class MonotonicBigListBenchmark {
         return sum;
     }
 
-    private static Monotonic.List<Integer> random(Monotonic.List<Integer> list) {
+    private static List<Monotonic<Integer>> randomMono(List<Monotonic<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
             list.get(i).bind(rnd.nextInt(0, SIZE));

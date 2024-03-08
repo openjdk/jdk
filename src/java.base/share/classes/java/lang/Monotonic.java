@@ -30,10 +30,10 @@ import jdk.internal.lang.monotonic.InternalMonotonicList;
 import jdk.internal.lang.monotonic.InternalMonotonicMap;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.function.Function;
-import java.util.function.IntFunction;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -124,66 +124,6 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      */
     V computeIfAbsent(Supplier<? extends V> supplier);
 
-    /**
-     * A special {@code java.util.List<Monotonic<B>>} that is eligible for constant
-     * folding by the JVM and that provides additional convenience methods.
-     * <p>
-     * The elements {@code E} in this {@linkplain java.util.List java.util.List&lt;E&gt;}
-     * is of type {@code E = Monotonic&lt;B&gt;}.
-     *
-     * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
-     *
-     * @param <B> the bound type for the Monotonic elements in this list
-     */
-    interface List<B> extends java.util.List<Monotonic<B>> {
-
-        /**
-         * If no value {@linkplain #isPresent()} at the provided {@code index},
-         * attempts to compute and bind a value using the provided {@code mapper},
-         * returning the (pre-existing or newly bound) value.
-         * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-         * no value is bound.
-         *
-         * @param index to inspect
-         * @param mapper to be used for computing a value
-         *
-         * @return the current (existing or computed) present monotonic value
-         */
-        B computeMonotonicIfAbsent(int index, IntFunction<? extends B> mapper);
-    }
-
-    /**
-     * A special {@code java.util.Map&lt;K, Monotonic&lt;B&gt;&gt;} that is eligible for
-     * constant folding by the JVM and that provides additional convenience methods.
-     * <p>
-     * The values {@code V} in this {@linkplain java.util.Map java.util.Map&lt;K, V&gt;}
-     * is of type {@code V = Monotonic&lt;B&gt;}.
-     *
-     * @implSpec Implementations of this interface are shallowly immutable and thread-safe.
-     *
-     * @param <K> the type of keys maintained by this map
-     * @param <B> the bound type for the mapped Monotonic values in this map
-     */
-    interface Map<K, B> extends java.util.Map<K, Monotonic<B>> {
-
-        /**
-         * If no value {@linkplain #isPresent()} for the provided {@code key},
-         * attempts to compute and bind a value using the provided {@code mapper},
-         * returning the (pre-existing or newly bound) value.
-         * <p>
-         * If the mapper throws an (unchecked) exception, the exception is rethrown, and
-         * no value is bound.
-         *
-         * @param key to inspect
-         * @param mapper to be used for computing a value
-         *
-         * @return the current (existing or computed) present monotonic value
-         * @throws IllegalArgumentException if no association exists for the provided
-         *         {@code key}.
-         */
-        B computeMonotonicIfAbsent(K key, Function<? super K, ? extends B> mapper);
-    }
 
     // Factories
 
@@ -197,30 +137,21 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
     }
 
     /**
-     * {@return a thread-safe, memoized supplier backed by a new empty monotonic value
-     * where the memoized value is obtained by invoking the provided {@code suppler}}
-     *
-     * @param supplier   to be used for computing a value
-     * @param background if true, spawns a virtual background thread that per-computes
-     *                   a memoized value
-     * @param <V>        the type of the value to memoize
-     * @see Monotonic#computeIfAbsent(Supplier)
-     */
-    static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
-                                      boolean background) {
-        Objects.requireNonNull(supplier);
-        return InternalMonotonic.asMemoized(supplier, background);
-    }
-
-    /**
      * {@return a new shallowly immutable, thread-safe, lazy {@linkplain List } of
-     * distinct empty monotonic values with a {@linkplain List#size()} equal to the
-     * provided {@code size}}
+     * {@code size} distinct empty monotonic values}
+     * <p>
+     * The returned {@code List} is equivalent to the following List:
+     * {@snippet lang=java :
+     * List<Monotonic<V>> list = IntStream.range(0, size)
+     *         .mapToObj(_ -> Monotonic.<V>of())
+     *         .toList();
+     * }
+     * except it creates the elements lazily as they are accessed.
      *
      * @param size the size of the returned monotonic list
-     * @param <B>  the bound type for the Monotonic elements in this list
+     * @param <V>  the value type for the Monotonic elements in this list
      */
-    static <B> Monotonic.List<B> ofList(int size) {
+    static <V> List<Monotonic<V>> ofList(int size) {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
@@ -231,51 +162,21 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * {@return a new shallowly immutable, thread-safe, lazy {@linkplain Map } where the
      * {@linkplain java.util.Map#keySet() keys} contains precisely the distinct provided
      * {@code keys} and where the values are distinct empty monotonic values}
+     * <p>
+     * The returned {@code Map} is equivalent to the following Map:
+     * {@snippet lang=java :
+     * Map<K, Monotonic<V>> map = Map.copyOf(keys.stream()
+     *         .collect(Collectors.toMap(Function.identity(), _ -> Monotonic.of())));
+     * }
+     * except it creates the values lazily as they are accessed.
      *
      * @param keys the keys in the map
      * @param <K>  the type of keys maintained by the returned map
-     * @param <B>  the bound type for the Monotonic values in this map
+     * @param <V>  the value type for the Monotonic values in this map
      */
-    static <K, B> Monotonic.Map<K, B> ofMap(Collection<? extends K> keys) {
+    static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
         return InternalMonotonicMap.ofMap(keys);
     }
-
-/*    static <V> V computeIfAbsent(List<Monotonic<V>> list,
-                                 int index,
-                                 IntFunction<? extends V> mapper) {
-        Objects.requireNonNull(list);
-        Objects.checkIndex(index, list.size());
-        Objects.requireNonNull(mapper);
-        Monotonic<V> monotonic = list.get(index);
-        if (monotonic.isPresent()) {
-            return monotonic.get();
-        }
-        synchronized (mapper) {
-            if (monotonic.isPresent()) {
-                return monotonic.get();
-            }
-            Supplier<V> supplier = () -> mapper.apply(index);
-            return monotonic.computeIfAbsent(supplier);
-        }
-    }
-
-    static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
-                                    K key,
-                                    Function<? super K, ? extends V> mapper) {
-        Objects.requireNonNull(map);
-        Objects.requireNonNull(mapper);
-        Monotonic<V> monotonic = Objects.requireNonNull(map.get(key), "No such key");
-        if (monotonic.isPresent()) {
-            return monotonic.get();
-        }
-        synchronized (mapper) {
-            if (monotonic.isPresent()) {
-                return monotonic.get();
-            }
-            Supplier<V> supplier = () -> mapper.apply(key);
-            return monotonic.computeIfAbsent(supplier);
-        }
-    }*/
 
 }

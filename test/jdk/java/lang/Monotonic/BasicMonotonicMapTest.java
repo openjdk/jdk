@@ -55,7 +55,7 @@ final class BasicMonotonicMapTest {
     private static final int SIZE = STRINGS.length;
     private static final String KEY = "C";
 
-    private Monotonic.Map<String, Integer> map;
+    private Map<String, Monotonic<Integer>> map;
 
     @BeforeEach
     void setup() {

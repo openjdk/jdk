@@ -43,47 +43,18 @@ public class MonotonicListBenchmark {
 
     private static final int SIZE = 100;
 
-    static class MonotonicHolder {
-
-        private final Monotonic.List<Integer> list;
-
-        public MonotonicHolder(Monotonic.List<Integer> list) {
-            this.list = list;
-        }
-
-        Integer get(int index) {
-            return list.get(index).get();
-        }
-    }
-
-    static class Holder {
-
-        private final List<Integer> list;
-
-        public Holder(List<Integer> list) {
-            this.list = list;
-        }
-
-        Integer get(int index) {
-            return list.get(index);
-        }
-    }
-
     private static final List<Monotonic<Integer>> WRAPPED =
             IntStream.range(0, SIZE)
-                    .mapToObj(i -> Monotonic.<Integer>of())
+                    .mapToObj(_ -> Monotonic.<Integer>of())
                     .toList();
     static {
         WRAPPED.get(8).bind(8);
     }
 
-    private static final Monotonic.List<Integer> REFERENCE_LIST = initList(Monotonic.ofList(SIZE));
+    private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = initList(new ArrayList<>(SIZE));
 
-    private static final MonotonicHolder REFERENCE_HOLDER = new MonotonicHolder(initList(Monotonic.ofList(SIZE)));
-    private static final Holder ARRAY_HOLDER = new Holder(initList(new ArrayList<>(SIZE)));
-
-    private final Monotonic.List<Integer> referenceList = initList(Monotonic.ofList(SIZE));
+    private final List<Monotonic<Integer>> referenceList = initMono(Monotonic.ofList(SIZE));
     private final List<Integer> arrayList = initList(new ArrayList<>(SIZE));
     private final List<Monotonic<Integer>> wrappedList;
 
@@ -100,22 +71,12 @@ public class MonotonicListBenchmark {
 
     @Benchmark
     public Integer staticMonotonic() {
-        return REFERENCE_LIST.get(8).get();
+        return MONOTONIC_LIST.get(8).get();
     }
 
     @Benchmark
     public Integer staticArrayList() {
         return ARRAY_LIST.get(8);
-    }
-
-    @Benchmark
-    public Integer holderMonotonic() {
-        return REFERENCE_HOLDER.get(8);
-    }
-
-    @Benchmark
-    public Integer holderArrayList() {
-        return ARRAY_HOLDER.get(8);
     }
 
     @Benchmark
@@ -133,7 +94,7 @@ public class MonotonicListBenchmark {
         return wrappedList.get(8).get();
     }
 
-    private static Monotonic.List<Integer> initList(Monotonic.List<Integer> list) {
+    private static List<Monotonic<Integer>> initMono(List<Monotonic<Integer>> list) {
         list.get(8).bind(8);
         return list;
     }

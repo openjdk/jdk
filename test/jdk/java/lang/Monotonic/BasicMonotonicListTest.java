@@ -50,7 +50,7 @@ final class BasicMonotonicListTest {
     private static final int SIZE = 7;
     private static final int INDEX = 2;
 
-    private Monotonic.List<Integer> list;
+    private List<Monotonic<Integer>> list;
 
     @BeforeEach
     void setup() {

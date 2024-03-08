@@ -254,18 +254,9 @@ static bool trust_final_non_static_fields(ciInstanceKlass* holder) {
 }
 
 const char* MONOTONIC_NAME = "java/lang/Monotonic";
-const char* MONOTONIC_LIST_NAME = "java/lang/Monotonic$List";
-const char* MONOTONIC_MAP_NAME = "java/lang/Monotonic$Map";
-const char* MONOTONIC_IMPL_PACKAGE = "jdk/internal/lang/monotonic";
 
 static bool trust_final_non_static_fields_of_type(Symbol* signature) {
   if (signature->equals(MONOTONIC_NAME) == 0) {
-    return true;
-  }
-  if (signature->equals(MONOTONIC_LIST_NAME) == 0) {
-    return true;
-  }
-  if (signature->equals(MONOTONIC_MAP_NAME) == 0) {
     return true;
   }
   return false;

@@ -30,28 +30,28 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.AbstractList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
-public final class InternalMonotonicList<B>
-        extends AbstractList<Monotonic<B>>
-        implements Monotonic.List<B> {
+public final class InternalMonotonicList<V>
+        extends AbstractList<Monotonic<V>>
+        implements List<Monotonic<V>> {
 
     @Stable
-    private final Monotonic<B>[] elements;
+    private final Monotonic<V>[] elements;
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     InternalMonotonicList(int size) {
-        this.elements = (Monotonic<B>[]) new Monotonic[size];
+        this.elements = (Monotonic<V>[]) new Monotonic[size];
     }
 
     @Override
-    public Monotonic<B> get(int index) {
-        Monotonic<B> m = elements[index];
+    public Monotonic<V> get(int index) {
+        Monotonic<V> m = elements[index];
         if (m != null) {
             return m;
         }
@@ -59,7 +59,7 @@ public final class InternalMonotonicList<B>
         if (m != null) {
             return m;
         }
-        Monotonic<B> created = Monotonic.of();
+        Monotonic<V> created = Monotonic.of();
         m = caeElement(index, created);
         return m == null ? created : m;
     }
@@ -70,15 +70,15 @@ public final class InternalMonotonicList<B>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override public boolean add(Monotonic<B> v) {throw uoe();}
-    @Override public boolean addAll(Collection<? extends Monotonic<B>> c) {throw uoe();}
-    @Override public boolean addAll(int index, Collection<? extends Monotonic<B>> c) {throw uoe();}
+    @Override public boolean add(Monotonic<V> v) {throw uoe();}
+    @Override public boolean addAll(Collection<? extends Monotonic<V>> c) {throw uoe();}
+    @Override public boolean addAll(int index, Collection<? extends Monotonic<V>> c) {throw uoe();}
     @Override public void clear() {throw uoe();}
     @Override public boolean remove(Object o) {throw uoe();}
     @Override public boolean removeAll(Collection<?> c) {throw uoe();}
-    @Override public boolean removeIf(Predicate<? super Monotonic<B>> filter) {throw uoe();}
+    @Override public boolean removeIf(Predicate<? super Monotonic<V>> filter) {throw uoe();}
     @Override public boolean retainAll(Collection<?> c) {throw uoe();}
-    @Override public void sort(Comparator<? super Monotonic<B>> c) {throw uoe();}
+    @Override public void sort(Comparator<? super Monotonic<V>> c) {throw uoe();}
 
     @Override
     public int indexOf(Object o) {
@@ -93,48 +93,35 @@ public final class InternalMonotonicList<B>
     }
 
     @Override
-    public Monotonic.List<B> reversed() {
+    public List<Monotonic<V>> reversed() {
         // Todo: Fix this
         throw new UnsupportedOperationException();
         //return ReverseOrderListView.of(this, true); // we must assume it's modifiable
     }
 
-    @Override
-    public B computeMonotonicIfAbsent(int index, IntFunction<? extends B> mapper) {
-        Objects.checkIndex(index, size());
-        Objects.requireNonNull(mapper);
-        Monotonic<B> monotonic = get(index);
-        if (monotonic.isPresent()) {
-            return monotonic.get();
-        }
-        synchronized (mapper) {
-            if (monotonic.isPresent()) {
-                return monotonic.get();
-            }
-            Supplier<B> supplier = new Supplier<B>() {
-                @Override
-                public B get() {
-                    return mapper.apply(index);
-                }
-            };
-            return monotonic.computeIfAbsent(supplier);
-        }
+    @SuppressWarnings("unchecked")
+    private Monotonic<V> elementVolatile(int index) {
+        return (Monotonic<V>) UNSAFE.getReferenceVolatile(elements, MonotonicUtil.objectOffset(index));
     }
 
     @SuppressWarnings("unchecked")
-    private Monotonic<B> elementVolatile(int index) {
-        return (Monotonic<B>) UNSAFE.getReferenceVolatile(elements, MonotonicUtil.objectOffset(index));
-    }
-
-    @SuppressWarnings("unchecked")
-    private Monotonic<B> caeElement(int index, Monotonic<B> created) {
+    private Monotonic<V> caeElement(int index, Monotonic<V> created) {
         // Make sure no reordering of store operations
         freeze();
-        return (Monotonic<B>) UNSAFE.compareAndExchangeReference(elements, MonotonicUtil.objectOffset(index), null, created);
+        return (Monotonic<V>) UNSAFE.compareAndExchangeReference(elements, MonotonicUtil.objectOffset(index), null, created);
     }
 
-    public static <B> Monotonic.List<B> of(int size) {
+    // Factories
+
+    public static <V> List<Monotonic<V>> of(int size) {
         return new InternalMonotonicList<>(size);
+    }
+
+    public static <V> IntFunction<V> asMemoized(int size,
+                                                IntFunction<? extends V> mapper,
+                                                boolean background) {
+        // Todo: Fix this
+        throw new UnsupportedOperationException();
     }
 
 }
