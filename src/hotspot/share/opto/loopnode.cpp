@@ -3919,7 +3919,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
   }
   Node *init = cl->init_trip();
   Node *phi  = cl->phi();
-  long stride_con = cl->stride_con();
+  jlong stride_con = cl->stride_con();
 
   // Visit all children, looking for Phis
   for (DUIterator i = cl->outs(); cl->has_out(i); i++) {
@@ -3955,7 +3955,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 
     //    int stride_con2 = incr2->in(2)->get_int();
     BasicType sc2_bt = incr2->Opcode() == Op_AddI ? T_INT : T_LONG;
-    long stride_con2 = incr2->in(2)->get_integer_as_long(sc2_bt);
+    jlong stride_con2 = incr2->in(2)->get_integer_as_long(sc2_bt);
 
     // The ratio of the two strides cannot be represented as an int
     // if stride_con2 is min_int and stride_con is -1.
@@ -3972,7 +3972,7 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
     // Instead we require 'stride_con2' to be a multiple of 'stride_con',
     // where +/-1 is the common case, but other integer multiples are
     // also easy to handle.
-    long ratio_con = stride_con2 / stride_con;
+    jlong ratio_con = stride_con2 / stride_con;
 
     if ((ratio_con * stride_con) == stride_con2) { // Check for exact
 #ifndef PRODUCT
