@@ -3234,7 +3234,7 @@ instruct vcvtUBtoX(vReg dst, vReg src) %{
 
 // VectorCastS2X, VectorUCastS2X
 
-instruct vcvtStoB(vReg dst, vReg src) %{
+instruct vcvtStoX(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE ||
             Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG ||
@@ -3242,7 +3242,7 @@ instruct vcvtStoB(vReg dst, vReg src) %{
             Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtStoB $dst, $src" %}
+  format %{ "vcvtStoX $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (bt == T_BYTE) {
