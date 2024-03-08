@@ -25,6 +25,8 @@
 
 package jdk.internal.reflect;
 
+import sun.nio.cs.UTF_8;
+
 class ClassFileAssembler implements ClassFileConstants {
     private ByteVector vec;
     private short cpIdx = 0;
@@ -98,9 +100,7 @@ class ClassFileAssembler implements ClassFileConstants {
     }
 
     public void emitConstantPoolUTF8(String str) {
-        // NOTE: can not use str.getBytes("UTF-8") here because of
-        // bootstrapping issues with the character set converters.
-        byte[] bytes = UTF8.encode(str);
+        byte[] bytes = str.getBytes(UTF_8.INSTANCE);
         emitByte(CONSTANT_Utf8);
         emitShort((short) bytes.length);
         for (int i = 0; i < bytes.length; i++) {

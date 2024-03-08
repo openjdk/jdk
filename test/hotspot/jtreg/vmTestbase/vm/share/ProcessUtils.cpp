@@ -31,7 +31,7 @@
 #include <unistd.h>
 #include <signal.h>
 #endif /* _WIN32 */
-#include "jni_tools.h"
+#include "jni_tools.hpp"
 
 extern "C" {
 
