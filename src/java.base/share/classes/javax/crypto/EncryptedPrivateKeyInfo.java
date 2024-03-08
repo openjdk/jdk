@@ -215,14 +215,10 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
         if (algParams == null) {
             throw new NullPointerException("algParams must be non-null");
         }
+
         AlgorithmId tmp;
-//        List<KnownOIDs> list = getPBES2(algParams.getAlgorithm());
         try {
-//            if (list == null) {
-                tmp = AlgorithmId.get(algParams);
- //           } else {
- //               tmp = AlgorithmId.get("PBES2");
- //           }
+            tmp = AlgorithmId.get(algParams);
         } catch (IllegalStateException e) {
             // This exception is thrown when algParams.getEncoded() fails.
             // While the spec of this constructor requires that
@@ -356,6 +352,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @param p        the Provider that will perform the encryption
      * @return the byte [ ]
      * @throws IOException the io exception
+     *
+     * @since 23
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password, String pbeAlgo, AlgorithmParameterSpec aps,
@@ -402,6 +400,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @param password the password used in the PBE encryption.
      * @return an EncryptedPrivateKeyInfo.
      * @throws IOException if an encryption error occurs.
+     *
+     * @since 23
      */
     public static EncryptedPrivateKeyInfo encryptKey(PrivateKey key,
         char[] password) throws IOException {
@@ -424,6 +424,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @return a PrivateKey
      * @throws IOException if an error occurs during parsing of the encrypted
      * data or creation of the key object.
+     *
+     * @since 23
      */
     public PrivateKey getKey(char[] password) throws IOException {
         return getKey(password, null);
@@ -437,6 +439,8 @@ public class EncryptedPrivateKeyInfo implements SecurityObject {
      * @return a PrivateKey
      * @throws IOException if an error occurs during parsing of the encrypted
      * data or creation of the key object.
+     *
+     * @since 23
      */
     public PrivateKey getKey(char[] password, Provider provider)
         throws IOException {

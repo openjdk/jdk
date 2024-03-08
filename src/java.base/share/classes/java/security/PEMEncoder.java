@@ -152,6 +152,8 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      *           SecurityObject.
      * @return PEM encoding in a String
      * @throws IOException on any error with the object or the encoding process.
+     * An exception is thrown when PEMEncoder is configured for encryption while
+     * encoding a SecurityObject that does not support encryption.
      */
     public String encodeToString(SecurityObject so) throws IOException {
             return new String(encode(so), StandardCharsets.UTF_8);
@@ -163,6 +165,8 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      * @param so the object that implements SecurityObject.
      * @return a PEM encoded string of the given SecurityObject.
      * @throws IOException on any error with the object or the encoding process.
+     * An exception is thrown when PEMEncoder is configured for encryption while
+     * encoding a SecurityObject that does not support encryption.
      */
     @Override
     public byte[] encode(SecurityObject so) throws IOException {
@@ -218,12 +222,12 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
     }
 
     /**
-     * Get a new immutable PEMEncoder instance configured to the default
+     * Returns a new immutable PEMEncoder instance configured to the default
      * encrypt algorithm and a given password.
      *
      * <p> Only {@link PrivateKey} will be encrypted with this newly configured
      * instance.  Other {@link SecurityObject} classes that do not support
-     * encrypted PEM will be encoded unencrypted by this instance.
+     * encrypted PEM will cause encode() to thrown an IOException..
      *
      * <p> Default algorithm defined by Security Property {@code
      * jdk.epkcs8.defaultAlgorithm}.  To configure all the encryption options

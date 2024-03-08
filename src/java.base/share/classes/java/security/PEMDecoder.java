@@ -307,6 +307,21 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             }
         }
 
+        /*
+         * If the object is a KeyPair, check if the tClass is set to private
+         * or public key.  Because PKCS8v2 can be a KeyPair, it is possible for
+         * someone to assume all their PEM private keys are only PrivateKey and
+         * not KeyPair.
+         */
+        if (so instanceof KeyPair kp) {
+            if ((PrivateKey.class).isAssignableFrom(tClass)) {
+                so = kp.getPrivate();
+            }
+            if ((PublicKey.class).isAssignableFrom(tClass)) {
+                so = kp.getPublic();
+            }
+        }
+
         try {
             return tClass.cast(so);
         } catch (ClassCastException e) {

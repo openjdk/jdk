@@ -53,6 +53,8 @@ public class PEMEncoderTest {
         keymap.keySet().stream().forEach(key -> testToString(key, encoder));
         System.out.println("New instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, new PEMEncoder()));
+//        System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
+//        keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
 
         keymap = generateObjKeyMap(PEMCerts.encryptedList);
         System.out.println("Same instance Encoder new withEnc test:");
@@ -113,7 +115,9 @@ public class PEMEncoderTest {
         byte[] result;
         PEMCerts.Entry entry = PEMCerts.getEntry(key);
         try {
-            result = encoder.withEncryption(entry.password()).encode(keymap.get(key));
+            result = encoder.withEncryption(
+                (entry.password() != null ? entry.password() : "fish".toCharArray()))
+                .encode(keymap.get(key));
         } catch (IOException e) {
             throw new AssertionError("Encrypted encoder use failure with " + entry.name(), e);
         }
