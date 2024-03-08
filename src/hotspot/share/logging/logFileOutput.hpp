@@ -48,7 +48,6 @@ class LogFileOutput : public LogFileStreamOutput {
   static const uint   MaxRotationFileCount = 1000;
   static char         _pid_str[PidBufferSize];
   static char         _vm_start_time_str[StartTimeBufferSize];
-  static char         _hostname_str[HostnameBufferSize];
 
   const char* _name;
   char* _file_name;
@@ -68,8 +67,7 @@ class LogFileOutput : public LogFileStreamOutput {
 
   void archive();
   void rotate();
-  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string,
-                       const char* hostname_string);
+  char *make_file_name(const char* file_name, const char* pid_string, const char* timestamp_string);
 
   bool should_rotate() {
     return _file_count > 0 && _rotate_size > 0 && _current_size >= _rotate_size;

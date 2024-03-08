@@ -43,7 +43,6 @@ const char* const LogFileOutput::FileSizeOptionKey = "filesize";
 const char* const LogFileOutput::FileCountOptionKey = "filecount";
 char        LogFileOutput::_pid_str[PidBufferSize];
 char        LogFileOutput::_vm_start_time_str[StartTimeBufferSize];
-char        LogFileOutput::_hostname_str[HostnameBufferSize];
 
 LogFileOutput::LogFileOutput(const char* name)
     : LogFileStreamOutput(nullptr), _name(os::strdup_check_oom(name, mtLogging)),
@@ -51,7 +50,7 @@ LogFileOutput::LogFileOutput(const char* name)
       _file_count(DefaultFileCount), _is_default_file_count(true), _archive_name_len(0),
       _rotate_size(DefaultFileSize), _current_size(0), _rotation_semaphore(1) {
   assert(strstr(name, Prefix) == name, "invalid output name '%s': missing prefix: %s", name, Prefix);
-  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str, _hostname_str);
+  _file_name = make_file_name(name + strlen(Prefix), _pid_str, _vm_start_time_str);
 }
 
 const char* LogFileOutput::cur_log_file_name() {
@@ -71,11 +70,6 @@ void LogFileOutput::set_file_name_parameters(jlong vm_start_time) {
   os::localtime_pd(&utc_time, &local_time);
   res = (int)strftime(_vm_start_time_str, sizeof(_vm_start_time_str), TimestampFormat, &local_time);
   assert(res > 0, "VM start time buffer too small.");
-
-  if (!os::get_host_name(_hostname_str, sizeof(_hostname_str))) {
-    res = jio_snprintf(_hostname_str, sizeof(_hostname_str), "%s", HostnameFilenamePlaceholder);
-    assert(res > 0, "Hostname buffer too small");
-  }
 }
 
 LogFileOutput::~LogFileOutput() {
@@ -384,8 +378,8 @@ void LogFileOutput::rotate() {
 
 char* LogFileOutput::make_file_name(const char* file_name,
                                     const char* pid_string,
-                                    const char* timestamp_string,
-                                    const char* hostname_string) {
+                                    const char* timestamp_string) {
+  char hostname_string[HostnameBufferSize];
   char* result = nullptr;
 
   // Lets start finding out if we have any %p, %t and/or %hn in the name.
@@ -410,6 +404,10 @@ char* LogFileOutput::make_file_name(const char* file_name,
     result_len += strlen(timestamp_string);
   }
   if (hostname != nullptr) {
+    if (!os::get_host_name(hostname_string, sizeof(hostname_string))) {
+      int res = jio_snprintf(hostname_string, sizeof(hostname_string), "%s", HostnameFilenamePlaceholder);
+      assert(res > 0, "Hostname buffer too small");
+    }
     result_len -= strlen(HostnameFilenamePlaceholder);
     result_len += strlen(hostname_string);
   }
