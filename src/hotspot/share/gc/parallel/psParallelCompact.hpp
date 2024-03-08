@@ -405,10 +405,6 @@ public:
 
   size_t block_count() const { return _block_count; }
   inline BlockData* block(size_t block_idx) const;
-  inline size_t     block(const BlockData* block_ptr) const;
-
-  void add_obj(HeapWord* addr, size_t len);
-  void add_obj(oop p, size_t len) { add_obj(cast_from_oop<HeapWord*>(p), len); }
 
   // Fill in the regions covering [beg, end) so that no data moves; i.e., the
   // destination of region n is simply the start of region n.  Both arguments
@@ -744,7 +740,6 @@ class ParMarkBitMapClosure: public StackObj {
  private:
   ParMarkBitMap* const        _bitmap;
   ParCompactionManager* const _compaction_manager;
-  DEBUG_ONLY(const size_t     _initial_words_remaining;) // Useful in debugger.
   size_t                      _words_remaining; // Words left to copy.
 
  protected:
@@ -756,9 +751,6 @@ ParMarkBitMapClosure::ParMarkBitMapClosure(ParMarkBitMap* bitmap,
                                            ParCompactionManager* cm,
                                            size_t words):
   _bitmap(bitmap), _compaction_manager(cm)
-#ifdef  ASSERT
-  , _initial_words_remaining(words)
-#endif
 {
   _words_remaining = words;
   _source = nullptr;
@@ -1016,14 +1008,8 @@ class PSParallelCompact : AllStatic {
   static HeapWord* compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction);
 
-  // Return true if dead space crosses onto the specified Region; bit must be
-  // the bit index corresponding to the first word of the Region.
-  static inline bool dead_space_crosses_boundary(const RegionData* region,
-                                                 idx_t bit);
-
-  // Summary phase utility routine to fill dead space (if any) at the dense
-  // prefix boundary.  Should only be called if the dense prefix is
-  // non-empty.
+  // Create a filler obj (if needed) right before the dense-prefix-boundary to
+  // make the heap parsable.
   static void fill_dense_prefix_end(SpaceId id);
 
   static void summarize_spaces_quick();
@@ -1053,9 +1039,6 @@ class PSParallelCompact : AllStatic {
 #endif  // #ifndef PRODUCT
 
  public:
-
-  PSParallelCompact();
-
   static bool invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 

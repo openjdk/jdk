@@ -24,8 +24,8 @@
 /*
  * @test
  * @summary test Date Format (Round Trip)
- * @bug 8008577
- * @run main/othervm -Djava.locale.providers=COMPAT,SPI DateFormatRoundTripTest
+ * @bug 8008577 8174269
+ * @run junit DateFormatRoundTripTest
  */
 
 import java.text.DateFormat;
