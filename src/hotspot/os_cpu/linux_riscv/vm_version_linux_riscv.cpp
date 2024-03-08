@@ -252,6 +252,8 @@ void VM_Version::rivos_features() {
   ext_Ztso.enable_feature();
   ext_Zihintpause.enable_feature();
 
+  ext_Zvfh.enable_feature();
+
   unaligned_access.enable_feature(MISALIGNED_FAST);
   satp_mode.enable_feature(VM_SV48);
 
