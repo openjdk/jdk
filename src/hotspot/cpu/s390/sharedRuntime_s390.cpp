@@ -80,6 +80,9 @@
 #define RegisterSaver_ExcludedFloatReg(regname) \
   { RegisterSaver::excluded_reg, regname->encoding(), regname->as_VMReg() }
 
+#define RegisterSaver_LiveVReg(regname) \
+  { RegisterSaver::v_reg,      regname->encoding(), regname->as_VMReg() }
+
 static const RegisterSaver::LiveRegType RegisterSaver_LiveRegs[] = {
   // Live registers which get spilled to the stack. Register positions
   // in this array correspond directly to the stack layout.
@@ -257,6 +260,26 @@ static const RegisterSaver::LiveRegType RegisterSaver_LiveVolatileRegs[] = {
   // RegisterSaver_ExcludedIntReg(Z_R15)  // stack pointer
 };
 
+static const RegisterSaver::LiveRegType RegisterSaver_LiveVRegs[] = {
+  // live vector registers (optional, only these ones are used by C2):
+  RegisterSaver_LiveVReg( Z_V16 ),
+  RegisterSaver_LiveVReg( Z_V17 ),
+  RegisterSaver_LiveVReg( Z_V18 ),
+  RegisterSaver_LiveVReg( Z_V19 ),
+  RegisterSaver_LiveVReg( Z_V20 ),
+  RegisterSaver_LiveVReg( Z_V21 ),
+  RegisterSaver_LiveVReg( Z_V22 ),
+  RegisterSaver_LiveVReg( Z_V23 ),
+  RegisterSaver_LiveVReg( Z_V24 ),
+  RegisterSaver_LiveVReg( Z_V25 ),
+  RegisterSaver_LiveVReg( Z_V26 ),
+  RegisterSaver_LiveVReg( Z_V27 ),
+  RegisterSaver_LiveVReg( Z_V28 ),
+  RegisterSaver_LiveVReg( Z_V29 ),
+  RegisterSaver_LiveVReg( Z_V30 ),
+  RegisterSaver_LiveVReg( Z_V31 )
+};
+
 int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
   int reg_space = -1;
   switch (reg_set) {
@@ -271,22 +294,30 @@ int RegisterSaver::live_reg_save_size(RegisterSet reg_set) {
 }
 
 
-int RegisterSaver::live_reg_frame_size(RegisterSet reg_set) {
-  return live_reg_save_size(reg_set) + frame::z_abi_160_size;
+int RegisterSaver::live_reg_frame_size(RegisterSet reg_set, bool save_vectors) {
+  const int vregstosave_num = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
+                                              sizeof(RegisterSaver::LiveRegType))
+                                            : 0;
+
+  return live_reg_save_size(reg_set) + vregstosave_num * v_reg_size + frame::z_abi_160_size;
 }
 
 
 // return_pc: Specify the register that should be stored as the return pc in the current frame.
-OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc) {
+OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg_set, Register return_pc, bool save_vectors) {
   // Record volatile registers as callee-save values in an OopMap so
   // their save locations will be propagated to the caller frame's
   // RegisterMap during StackFrameStream construction (needed for
   // deoptimization; see compiledVFrame::create_stack_value).
 
   // Calculate frame size.
-  const int frame_size_in_bytes  = live_reg_frame_size(reg_set);
+    const int vregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
+                                                   sizeof(RegisterSaver::LiveRegType))
+                                                  : 0;
+  const int register_save_size   = live_reg_save_size(reg_set) + vregstosave_num * v_reg_size;
+  const int frame_size_in_bytes  = frame::z_abi_160_size + register_save_size;
   const int frame_size_in_slots  = frame_size_in_bytes / sizeof(jint);
-  const int register_save_offset = frame_size_in_bytes - live_reg_save_size(reg_set);
+  const int register_save_offset = frame_size_in_bytes - register_save_size;
 
   // OopMap frame size is in c2 stack slots (sizeof(jint)) not bytes or words.
   OopMap* map = new OopMap(frame_size_in_slots, 0);
@@ -381,6 +412,25 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_stmg(first, last, first_offset, Z_SP);
 
+  for (int i = 0; i < vregstosave_num; i++) {
+    int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
+    //int reg_type = RegisterSaver_LiveVRegs[i].reg_type;
+
+    __ z_vst(as_VectorRegister(reg_num), Address(Z_SP, offset));
+
+    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
+        RegisterSaver_LiveVRegs[i].vmreg);
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
+        RegisterSaver_LiveVRegs[i].vmreg->next());
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
+        RegisterSaver_LiveVRegs[i].vmreg->next(2));
+    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
+        RegisterSaver_LiveVRegs[i].vmreg->next(3));
+    offset += v_reg_size;
+  }
+
+  assert(offset == frame_size_in_bytes, "consistency check");
+
   // And we're done.
   return map;
 }
@@ -432,14 +482,22 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
     }
     offset += reg_size;
   }
+  assert(offset == frame_size_in_bytes, "consistency check");
   return map;
 }
 
 
 // Pop the current frame and restore all the registers that we saved.
-void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg_set) {
+void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg_set, bool save_vectors) {
   int offset;
-  const int register_save_offset = live_reg_frame_size(reg_set) - live_reg_save_size(reg_set);
+  //const int register_save_offset = live_reg_frame_size(reg_set) - live_reg_save_size(reg_set);
+    // Calculate frame size.
+  const int vregstosave_num     = save_vectors ? (sizeof(RegisterSaver_LiveVRegs) /
+                                                   sizeof(RegisterSaver::LiveRegType))
+                                                  : 0;
+  const int register_save_size   = live_reg_save_size(reg_set) + vregstosave_num * v_reg_size;
+  const int frame_size_in_bytes  = frame::z_abi_160_size + register_save_size;
+  const int register_save_offset = frame_size_in_bytes - register_save_size;
 
   Register first = noreg;
   Register last = noreg;
@@ -516,6 +574,16 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
   assert(first != noreg, "Should spill at least one int reg.");
   __ z_lmg(first, last, first_offset, Z_SP);
 
+  for (int i = 0; i < vregstosave_num; i++) {
+    int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
+    //int reg_type = RegisterSaver_LiveVRegs[i].reg_type;
+
+    __ z_vl(as_VectorRegister(reg_num), Address(Z_SP, offset));
+
+    offset += v_reg_size;
+  }
+
+  assert(offset == frame_size_in_bytes, "consistency check");
   // Pop the frame.
   __ pop_frame();
 
@@ -526,14 +594,12 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
 
 // Pop the current frame and restore the registers that might be holding a result.
 void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
-  int i;
-  int offset;
   const int regstosave_num       = sizeof(RegisterSaver_LiveRegs) /
                                    sizeof(RegisterSaver::LiveRegType);
   const int register_save_offset = live_reg_frame_size(all_registers) - live_reg_save_size(all_registers);
 
   // Restore all result registers (ints and floats).
-  offset = register_save_offset;
+  int offset = register_save_offset;
   for (int i = 0; i < regstosave_num; i++, offset += reg_size) {
     int reg_num = RegisterSaver_LiveRegs[i].reg_num;
     int reg_type = RegisterSaver_LiveRegs[i].reg_type;
@@ -556,6 +622,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
         ShouldNotReachHere();
     }
   }
+  assert(offset == live_reg_frame_size(all_registers), "consistency check");
 }
 
 // ---------------------------------------------------------------------------
@@ -979,8 +1046,8 @@ static void gen_special_dispatch(MacroAssembler *masm,
 // Is the size of a vector size (in bytes) bigger than a size saved by default?
 // 8 bytes registers are saved by default on z/Architecture.
 bool SharedRuntime::is_wide_vector(int size) {
-  // Note, MaxVectorSize == 8 on this platform.
-  assert(size <= 8, "%d bytes vectors are not supported", size);
+  // Note, MaxVectorSize == 8/16 on this platform.
+  assert(size <= (SuperwordUseVX ? 16 : 8), "%d bytes vectors are not supported", size);
   return size > 8;
 }
 
@@ -2848,8 +2915,9 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
     __ z_lg(Z_R14, Address(Z_thread, JavaThread::saved_exception_pc_offset()));
   }
 
+  bool save_vectors = (poll_type == POLL_AT_VECTOR_LOOP);
   // Save registers, fpu state, and flags
-  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers);
+  map = RegisterSaver::save_live_registers(masm, RegisterSaver::all_registers, Z_R14, save_vectors);
 
   if (!cause_return) {
     // Keep a copy of the return pc to detect if it gets modified.
@@ -2881,7 +2949,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
 
   // Pending exception case, used (sporadically) by
   // api/java_lang/Thread.State/index#ThreadState et al.
-  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
+  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers, save_vectors);
 
   // Jump to forward_exception_entry, with the issuing PC in Z_R14
   // so it looks like the original nmethod called forward_exception_entry.
@@ -2894,7 +2962,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   if (!cause_return) {
     Label no_adjust;
      // If our stashed return pc was modified by the runtime we avoid touching it
-    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers);
+    const int offset_of_return_pc = _z_common_abi(return_pc) + RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, save_vectors);
     __ z_cg(Z_R6, offset_of_return_pc, Z_SP);
     __ z_brne(no_adjust);
 
@@ -2907,7 +2975,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   }
 
   // Normal exit, restore registers and exit.
-  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers);
+  RegisterSaver::restore_live_registers(masm, RegisterSaver::all_registers, save_vectors);
 
   __ z_br(Z_R14);
 
@@ -2915,7 +2983,7 @@ SafepointBlob* SharedRuntime::generate_handler_blob(address call_ptr, int poll_t
   masm->flush();
 
   // Fill-out other meta info
-  return SafepointBlob::create(&buffer, oop_maps, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers)/wordSize);
+  return SafepointBlob::create(&buffer, oop_maps, RegisterSaver::live_reg_frame_size(RegisterSaver::all_registers, save_vectors)/wordSize);
 }
 
 

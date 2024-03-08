@@ -64,6 +64,7 @@ class Register {
 public:
   enum {
     number_of_registers     = 16,
+    max_slots_per_register  = 2,
     number_of_arg_registers = 5
   };
 
@@ -164,12 +165,13 @@ constexpr ConditionRegister Z_CR = as_ConditionRegister(0);
 //=========================
 
 // The implementation of float registers for the z/Architecture.
-
+class VectorRegister;
 class FloatRegister {
   int _encoding;
 public:
   enum {
     number_of_registers     = 16,
+    max_slots_per_register  = 2,
     number_of_arg_registers = 4
   };
 
@@ -192,6 +194,8 @@ public:
   constexpr bool is_nonvolatile() const { return (8 <= _encoding && _encoding <= 15); }
 
   const char* name() const;
+  // convert to VR
+  VectorRegister to_vr() const;
 };
 
 inline constexpr FloatRegister as_FloatRegister(int encoding) {
@@ -285,6 +289,7 @@ class VectorRegister {
 public:
   enum {
     number_of_registers     = 32,
+    max_slots_per_register  = 4,
     number_of_arg_registers = 0
   };
 
@@ -379,20 +384,20 @@ constexpr VectorRegister Z_V31 = as_VectorRegister(31);
 
 // Need to know the total number of registers of all sorts for SharedInfo.
 // Define a class that exports it.
-
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-    number_of_registers =
-      (Register::number_of_registers +
-      FloatRegister::number_of_registers)
-      * 2 // register halves
-      + 1 // condition code register
-  };
-  static const int max_gpr;
-  static const int max_fpr;
-};
+    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
+    max_vr  = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
 
+    // A big enough number for C2: all the registers plus flags
+    // This number must be large enough to cover REG_COUNT (defined by c2) registers.
+    // There is no requirement that any ordering here matches any ordering c2 gives
+    // it's optoregs.
+    number_of_registers = max_vr + 1 // gpr/fpr/vr + flags
+  };
+};
 
 // Common register declarations used in assembler code.
 constexpr Register       Z_EXC_OOP = Z_R2;

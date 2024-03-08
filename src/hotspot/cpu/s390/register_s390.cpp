@@ -26,11 +26,6 @@
 #include "precompiled.hpp"
 #include "register_s390.hpp"
 
-
-const int ConcreteRegisterImpl::max_gpr = Register::number_of_registers * 2;
-const int ConcreteRegisterImpl::max_fpr = ConcreteRegisterImpl::max_gpr +
-                                          FloatRegister::number_of_registers * 2;
-
 const char* Register::name() const {
   const char* names[number_of_registers] = {
     "Z_R0",  "Z_R1",  "Z_R2",  "Z_R3",  "Z_R4",  "Z_R5",  "Z_R6",  "Z_R7",
@@ -54,5 +49,11 @@ const char* VectorRegister::name() const {
     "Z_V16", "Z_V17", "Z_V18", "Z_V19", "Z_V20", "Z_V21", "Z_V22", "Z_V23",
     "Z_V24", "Z_V25", "Z_V26", "Z_V27", "Z_V28", "Z_V29", "Z_V30", "Z_V31"
   };
-  return is_valid() ? names[encoding()] : "fnoreg";
+  return is_valid() ? names[encoding()] : "vnoreg";
+}
+
+// Method to convert a FloatRegister to a VectorRegister (VectorRegister)
+VectorRegister FloatRegister::to_vr() const {
+  if (*this == fnoreg) { return vnoreg; }
+  return as_VectorRegister(encoding());
 }
