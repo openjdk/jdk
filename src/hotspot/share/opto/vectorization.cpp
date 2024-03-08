@@ -286,7 +286,7 @@ VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
     _memory_pred_edges_length(memory_pred_edges.length()),
     _memory_pred_edges(nullptr)
 {
-  assert(memory_pred_edges.length() > 0, "not empty");
+  assert(memory_pred_edges.is_nonempty(), "not empty");
   uint bytes = memory_pred_edges.length() * sizeof(int);
   _memory_pred_edges = (int*)arena->Amalloc(bytes);
   memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
