@@ -2656,7 +2656,7 @@ public:
   }
 
   bool do_compress_zcb(Register reg1 = noreg, Register reg2 = noreg) const {
-    return do_compress() && VM_Version::ext_Zcb.enabled() &&
+    return do_compress() && UseZcb &&
            (reg1 == noreg || reg1->is_compressed_valid()) && (reg2 == noreg || reg2->is_compressed_valid());
   }
 

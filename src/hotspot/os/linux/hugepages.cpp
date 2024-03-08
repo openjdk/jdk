@@ -311,6 +311,19 @@ ExplicitHugePageSupport HugePages::_explicit_hugepage_support;
 THPSupport HugePages::_thp_support;
 ShmemTHPSupport HugePages::_shmem_thp_support;
 
+size_t HugePages::thp_pagesize_fallback() {
+    // Older kernels won't publish the THP page size. Fall back to default explicit huge page size,
+    // since that is likely to be the THP page size as well. Don't do it if the page size is considered
+    // too large to avoid large alignment waste. If explicit huge page size is unknown, use educated guess.
+    if (thp_pagesize() != 0) {
+        return thp_pagesize();
+    }
+    if (supports_explicit_hugepages()) {
+        return MIN2(default_explicit_hugepage_size(), 16 * M);
+    }
+    return 2 * M;
+}
+
 void HugePages::initialize() {
   _explicit_hugepage_support.scan_os();
   _thp_support.scan_os();

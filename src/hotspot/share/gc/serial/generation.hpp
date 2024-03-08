@@ -105,12 +105,6 @@ class Generation: public CHeapObj<mtGC> {
   // The largest number of contiguous free bytes in this or any higher generation.
   virtual size_t max_contiguous_available() const;
 
-  // Returns true if this generation cannot be expanded further
-  // without a GC. Override as appropriate.
-  virtual bool is_maximal_no_gc() const {
-    return _virtual_space.uncommitted_size() == 0;
-  }
-
   MemRegion reserved() const { return _reserved; }
 
   /* Returns "TRUE" iff "p" points into the reserved area of the generation. */
@@ -141,15 +135,6 @@ class Generation: public CHeapObj<mtGC> {
 
   // Thread-local allocation buffers
   virtual bool supports_tlab_allocation() const { return false; }
-
-  // "obj" is the address of an object in a younger generation.  Allocate space
-  // for "obj" in the current (or some higher) generation, and copy "obj" into
-  // the newly allocated space, if possible, returning the result (or null if
-  // the allocation failed).
-  //
-  // The "obj_size" argument is just obj->size(), passed along so the caller can
-  // avoid repeating the virtual call to retrieve it.
-  virtual oop promote(oop obj, size_t obj_size);
 
   // Returns "true" iff collect() should subsequently be called on this
   // this generation. See comment below.
@@ -182,9 +167,6 @@ class Generation: public CHeapObj<mtGC> {
   // "oop" (initializing the allocated block). If the allocation is
   // still unsuccessful, return "null".
   virtual HeapWord* expand_and_allocate(size_t word_size, bool is_tlab) = 0;
-
-  // Save the high water marks for the used space in a generation.
-  virtual void record_spaces_top() {}
 
   // Generations may keep statistics about collection. This method
   // updates those statistics. current_generation is the generation

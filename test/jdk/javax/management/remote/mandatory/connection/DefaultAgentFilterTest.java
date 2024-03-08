@@ -262,11 +262,9 @@ public class DefaultAgentFilterTest {
       * test other usages (Attributes, Query)
       */
     private static void testDefaultAgent(String propertyFile, String additionalArgument, int port, boolean testOperations) throws Exception {
-        List<String> pbArgs = new ArrayList<>(Arrays.asList(
-                "-cp",
-                System.getProperty("test.class.path"),
-                "-XX:+UsePerfData"
-        ));
+        List<String> pbArgs = new ArrayList<>();
+        pbArgs.add("-XX:+UsePerfData");
+
         // JMX config arguments, using propertyFile if non-null:
         pbArgs.add("-Dcom.sun.management.jmxremote.port=" + port);
         pbArgs.add("-Dcom.sun.management.jmxremote.authenticate=false");
@@ -280,7 +278,7 @@ public class DefaultAgentFilterTest {
         }
         pbArgs.add(TEST_APP_NAME);
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
                 pbArgs.toArray(new String[pbArgs.size()])
         );
 

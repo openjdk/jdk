@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "asm/codeBuffer.hpp"
 #include "asm/macroAssembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -1097,7 +1098,13 @@ void MacroAssembler::clear_mem(const Address& addr, unsigned int size) {
 }
 
 void MacroAssembler::align(int modulus) {
-  while (offset() % modulus != 0) z_nop();
+  align(modulus, offset());
+}
+
+void MacroAssembler::align(int modulus, int target) {
+  assert(((modulus % 2 == 0) && (target % 2 == 0)), "needs to be even");
+  int delta = target - offset();
+  while ((offset() + delta) % modulus != 0) z_nop();
 }
 
 // Special version for non-relocateable code if required alignment
@@ -2148,6 +2155,45 @@ void MacroAssembler::call_VM_leaf_base(address entry_point, bool allow_relocatio
 void MacroAssembler::call_VM_leaf_base(address entry_point) {
   bool allow_relocation = true;
   call_VM_leaf_base(entry_point, allow_relocation);
+}
+
+int MacroAssembler::ic_check_size() {
+  return 30 + (ImplicitNullChecks ? 0 : 6);
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  Register R2_receiver = Z_ARG1;
+  Register R0_scratch  = Z_R0_scratch;
+  Register R1_scratch  = Z_R1_scratch;
+  Register R9_data     = Z_inline_cache;
+  Label success, failure;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, offset() + ic_check_size());
+
+  int uep_offset = offset();
+  if (!ImplicitNullChecks) {
+    z_cgij(R2_receiver, 0, Assembler::bcondEqual, failure);
+  }
+
+  if (UseCompressedClassPointers) {
+    z_llgf(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
+  } else {
+    z_lg(R1_scratch, Address(R2_receiver, oopDesc::klass_offset_in_bytes()));
+  }
+  z_cg(R1_scratch, Address(R9_data, in_bytes(CompiledICData::speculated_klass_offset())));
+  z_bre(success);
+
+  bind(failure);
+  load_const(R1_scratch, AddressLiteral(SharedRuntime::get_ic_miss_stub()));
+  z_br(R1_scratch);
+  bind(success);
+
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point, offset() = %d, end_alignment = %d", offset(), end_alignment);
+  return uep_offset;
 }
 
 void MacroAssembler::call_VM_base(Register oop_result,

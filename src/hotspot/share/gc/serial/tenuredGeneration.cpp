@@ -267,14 +267,8 @@ HeapWord* TenuredGeneration::block_start(const void* p) const {
   return space()->block_start_const(p);
 }
 
-void TenuredGeneration::younger_refs_iterate(OopIterateClosure* blk) {
-  // Apply "cl->do_oop" to (the address of) (exactly) all the ref fields in
-  // "sp" that point into the young generation.
-  // The iteration is only over objects allocated at the start of the
-  // iterations; objects allocated as a result of applying the closure are
-  // not included.
-
-  _rs->younger_refs_in_space_iterate(space(), blk);
+void TenuredGeneration::scan_old_to_young_refs() {
+  _rs->scan_old_to_young_refs(space());
 }
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
@@ -417,6 +411,31 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
     res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
 
   return res;
+}
+
+oop TenuredGeneration::promote(oop obj, size_t obj_size) {
+  assert(obj_size == obj->size(), "bad obj_size passed in");
+
+#ifndef PRODUCT
+  if (SerialHeap::heap()->promotion_should_fail()) {
+    return nullptr;
+  }
+#endif  // #ifndef PRODUCT
+
+  // Allocate new object.
+  HeapWord* result = allocate(obj_size, false);
+  if (result == nullptr) {
+    // Promotion of obj into gen failed.  Try to expand and allocate.
+    result = expand_and_allocate(obj_size, false);
+    if (result == nullptr) {
+      return nullptr;
+    }
+  }
+
+  // Copy to new location.
+  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(obj), result, obj_size);
+  oop new_obj = cast_to_oop<HeapWord*>(result);
+  return new_obj;
 }
 
 void TenuredGeneration::collect(bool   full,

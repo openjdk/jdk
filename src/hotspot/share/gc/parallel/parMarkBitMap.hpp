@@ -81,10 +81,6 @@ public:
   // range [live_range_beg, live_range_end).  This is used to iterate over the
   // compacted region of the heap.  Return values:
   //
-  // incomplete         The iteration is not complete.  The last object that
-  //                    begins in the range does not end in the range;
-  //                    closure->source() is set to the start of that object.
-  //
   // complete           The iteration is complete.  All objects in the range
   //                    were processed and the closure is not full;
   //                    closure->source() is set one past the end of the range.

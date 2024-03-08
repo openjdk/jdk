@@ -869,12 +869,7 @@ uint BoxLockNode::size(PhaseRegAlloc *ra_) const {
 #define R_RTEMP "R_R12"
 void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   st->print_cr("\nUEP:");
-  if (UseCompressedClassPointers) {
-    st->print_cr("\tLDR_w " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-    st->print_cr("\tdecode_klass " R_RTEMP);
-  } else {
-    st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
-  }
+  st->print_cr("\tLDR   " R_RTEMP ",[R_R0 + oopDesc::klass_offset_in_bytes]\t! Inline cache check");
   st->print_cr("\tCMP   " R_RTEMP ",R_R8" );
   st->print   ("\tB.NE  SharedRuntime::handle_ic_miss_stub");
 }
@@ -882,13 +877,7 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   C2_MacroAssembler _masm(&cbuf);
-  Register iCache  = reg_to_register_object(Matcher::inline_cache_reg_encode());
-  assert(iCache == Ricklass, "should be");
-  Register receiver = R0;
-
-  __ load_klass(Rtemp, receiver);
-  __ cmp(Rtemp, iCache);
-  __ jump(SharedRuntime::get_ic_miss_stub(), relocInfo::runtime_call_type, noreg, ne);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
@@ -1241,7 +1230,7 @@ encode %{
       emit_call_reloc(cbuf, as_MachCall(), $meth, rspec);
 
       // Emit stubs for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledDirectCall::emit_to_interp_stub(cbuf);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;

@@ -28,7 +28,6 @@
 #include "code/exceptionHandlerTable.hpp"
 #include "code/scopeDesc.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/gcBehaviours.hpp"
@@ -36,7 +35,6 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.inline.hpp"
@@ -335,28 +333,6 @@ address CompiledMethod::oops_reloc_begin() const {
   return low_boundary;
 }
 
-int CompiledMethod::verify_icholder_relocations() {
-  ResourceMark rm;
-  int count = 0;
-
-  RelocIterator iter(this);
-  while(iter.next()) {
-    if (iter.type() == relocInfo::virtual_call_type) {
-      if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc(), this)) {
-        CompiledIC *ic = CompiledIC_at(&iter);
-        if (TraceCompiledIC) {
-          tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
-          ic->print();
-        }
-        assert(ic->cached_icholder() != nullptr, "must be non-nullptr");
-        count++;
-      }
-    }
-  }
-
-  return count;
-}
-
 // Method that knows how to preserve outgoing arguments at call. This method must be
 // called with a frame corresponding to a Java invoke
 void CompiledMethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
@@ -431,20 +407,6 @@ void CompiledMethod::clear_inline_caches() {
   }
 }
 
-// Clear IC callsites, releasing ICStubs of all compiled ICs
-// as well as any associated CompiledICHolders.
-void CompiledMethod::clear_ic_callsites() {
-  assert(CompiledICLocker::is_safe(this), "mt unsafe call");
-  ResourceMark rm;
-  RelocIterator iter(this);
-  while(iter.next()) {
-    if (iter.type() == relocInfo::virtual_call_type) {
-      CompiledIC* ic = CompiledIC_at(&iter);
-      ic->set_to_clean(false);
-    }
-  }
-}
-
 #ifdef ASSERT
 // Check class_loader is alive for this bit of metadata.
 class CheckClass : public MetadataClosure {
@@ -466,70 +428,22 @@ class CheckClass : public MetadataClosure {
 #endif // ASSERT
 
 
-bool CompiledMethod::clean_ic_if_metadata_is_dead(CompiledIC *ic) {
-  if (ic->is_clean()) {
-    return true;
-  }
-  if (ic->is_icholder_call()) {
-    // The only exception is compiledICHolder metadata which may
-    // yet be marked below. (We check this further below).
-    CompiledICHolder* cichk_metdata = ic->cached_icholder();
-
-    if (cichk_metdata->is_loader_alive()) {
-      return true;
-    }
-  } else {
-    Metadata* ic_metdata = ic->cached_metadata();
-    if (ic_metdata != nullptr) {
-      if (ic_metdata->is_klass()) {
-        if (((Klass*)ic_metdata)->is_loader_alive()) {
-          return true;
-        }
-      } else if (ic_metdata->is_method()) {
-        Method* method = (Method*)ic_metdata;
-        assert(!method->is_old(), "old method should have been cleaned");
-        if (method->method_holder()->is_loader_alive()) {
-          return true;
-        }
-      } else {
-        ShouldNotReachHere();
-      }
-    } else {
-      // This inline cache is a megamorphic vtable call. Those ICs never hold
-      // any Metadata and should therefore never be cleaned by this function.
-      return true;
-    }
-  }
-
-  return ic->set_to_clean();
+static void clean_ic_if_metadata_is_dead(CompiledIC *ic) {
+  ic->clean_metadata();
 }
 
 // Clean references to unloaded nmethods at addr from this one, which is not unloaded.
-template <class CompiledICorStaticCall>
-static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address addr, CompiledMethod* from,
+template <typename CallsiteT>
+static void clean_if_nmethod_is_unloaded(CallsiteT* callsite, CompiledMethod* from,
                                          bool clean_all) {
-  CodeBlob *cb = CodeCache::find_blob(addr);
-  CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
-  if (nm != nullptr) {
-    // Clean inline caches pointing to bad nmethods
-    if (clean_all || !nm->is_in_use() || nm->is_unloading() || (nm->method()->code() != nm)) {
-      if (!ic->set_to_clean(!from->is_unloading())) {
-        return false;
-      }
-      assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", p2i(from), from->method()->name_and_sig_as_C_string());
-    }
+  CodeBlob* cb = CodeCache::find_blob(callsite->destination());
+  if (!cb->is_compiled()) {
+    return;
   }
-  return true;
-}
-
-static bool clean_if_nmethod_is_unloaded(CompiledIC *ic, CompiledMethod* from,
-                                         bool clean_all) {
-  return clean_if_nmethod_is_unloaded(ic, ic->ic_destination(), from, clean_all);
-}
-
-static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, CompiledMethod* from,
-                                         bool clean_all) {
-  return clean_if_nmethod_is_unloaded(csc, csc->destination(), from, clean_all);
+  CompiledMethod* cm = cb->as_compiled_method();
+  if (clean_all || !cm->is_in_use() || cm->is_unloading() || cm->method()->code() != cm) {
+    callsite->set_to_clean();
+  }
 }
 
 // Cleans caches in nmethods that point to either classes that are unloaded
@@ -539,7 +453,7 @@ static bool clean_if_nmethod_is_unloaded(CompiledStaticCall *csc, CompiledMethod
 // nmethods are unloaded.  Return postponed=true in the parallel case for
 // inline caches found that point to nmethods that are not yet visited during
 // the do_unloading walk.
-bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
+void CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
   ResourceMark rm;
 
   // Exception cache only needs to be called if unloading occurred
@@ -547,16 +461,13 @@ bool CompiledMethod::unload_nmethod_caches(bool unloading_occurred) {
     clean_exception_cache();
   }
 
-  if (!cleanup_inline_caches_impl(unloading_occurred, false)) {
-    return false;
-  }
+  cleanup_inline_caches_impl(unloading_occurred, false);
 
 #ifdef ASSERT
   // Check that the metadata embedded in the nmethod is alive
   CheckClass check_class;
   metadata_do(&check_class);
 #endif
-  return true;
 }
 
 void CompiledMethod::run_nmethod_entry_barrier() {
@@ -578,8 +489,7 @@ void CompiledMethod::run_nmethod_entry_barrier() {
 void CompiledMethod::cleanup_inline_caches_whitebox() {
   assert_locked_or_safepoint(CodeCache_lock);
   CompiledICLocker ic_locker(this);
-  guarantee(cleanup_inline_caches_impl(false /* unloading_occurred */, true /* clean_all */),
-            "Inline cache cleaning in a safepoint can't fail");
+  cleanup_inline_caches_impl(false /* unloading_occurred */, true /* clean_all */);
 }
 
 address* CompiledMethod::orig_pc_addr(const frame* fr) {
@@ -587,7 +497,7 @@ address* CompiledMethod::orig_pc_addr(const frame* fr) {
 }
 
 // Called to clean up after class unloading for live nmethods
-bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
+void CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all) {
   assert(CompiledICLocker::is_safe(this), "mt unsafe call");
   ResourceMark rm;
 
@@ -602,26 +512,15 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       if (unloading_occurred) {
         // If class unloading occurred we first clear ICs where the cached metadata
         // is referring to an unloaded klass or method.
-        if (!clean_ic_if_metadata_is_dead(CompiledIC_at(&iter))) {
-          return false;
-        }
+        clean_ic_if_metadata_is_dead(CompiledIC_at(&iter));
       }
 
-      if (!clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all)) {
-        return false;
-      }
+      clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all);
       break;
 
     case relocInfo::opt_virtual_call_type:
-      if (!clean_if_nmethod_is_unloaded(CompiledIC_at(&iter), this, clean_all)) {
-        return false;
-      }
-      break;
-
     case relocInfo::static_call_type:
-      if (!clean_if_nmethod_is_unloaded(compiledStaticCall_at(iter.reloc()), this, clean_all)) {
-        return false;
-      }
+      clean_if_nmethod_is_unloaded(CompiledDirectCall::at(iter.reloc()), this, clean_all);
       break;
 
     case relocInfo::static_stub_type: {
@@ -672,8 +571,6 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
       break;
     }
   }
-
-  return true;
 }
 
 address CompiledMethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
