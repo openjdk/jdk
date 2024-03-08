@@ -27,14 +27,14 @@
  * @summary Test that BoxView.layout() is not called with negative arguments
  * @run main bug6494356
  */
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.io.Writer;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Writer;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.CountDownLatch;
 import javax.swing.JEditorPane;
 import javax.swing.JFrame;
@@ -48,7 +48,6 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.ParagraphView;
 
 public class bug6494356 {
-    static String testSrc = System.getProperty("test.src", ".");
     static JEditorPane ep;
     private static final CountDownLatch latch = new CountDownLatch(1);
 
