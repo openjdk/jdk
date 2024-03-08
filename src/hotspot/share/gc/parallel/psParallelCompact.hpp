@@ -279,9 +279,6 @@ public:
     // Number of times the block table was filled.
     DEBUG_ONLY(inline size_t blocks_filled_count() const;)
 
-    // The location of the java heap data that corresponds to this region.
-    inline HeapWord* data_location() const;
-
     // Whether this region is available to be claimed, has been claimed, or has
     // been completed.
     //
@@ -304,7 +301,7 @@ public:
 
     inline void set_destination_count(uint count);
     inline void set_live_obj_size(size_t words);
-    inline void set_data_location(HeapWord* addr);
+
     inline void set_completed();
     inline bool claim_unsafe();
 
@@ -363,11 +360,6 @@ public:
 
 #ifdef ASSERT
     size_t               _blocks_filled_count;   // Number of block table fills.
-
-    // These enable optimizations that are only partially implemented.  Use
-    // debug builds to prevent the code fragments from breaking.
-    HeapWord*            _data_location;
-    HeapWord*            _highest_ref;
 #endif  // #ifdef ASSERT
 
 #ifdef ASSERT
@@ -536,17 +528,6 @@ inline void ParallelCompactData::RegionData::decrement_destination_count()
   assert(_dc_and_los < dc_claimed, "already claimed");
   assert(_dc_and_los >= dc_one, "count would go negative");
   Atomic::add(&_dc_and_los, dc_mask);
-}
-
-inline HeapWord* ParallelCompactData::RegionData::data_location() const
-{
-  DEBUG_ONLY(return _data_location;)
-  NOT_DEBUG(return nullptr;)
-}
-
-inline void ParallelCompactData::RegionData::set_data_location(HeapWord* addr)
-{
-  DEBUG_ONLY(_data_location = addr;)
 }
 
 inline void ParallelCompactData::RegionData::set_completed()

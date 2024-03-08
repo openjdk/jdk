@@ -255,11 +255,11 @@ print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
   ParallelCompactData& sd = PSParallelCompact::summary_data();
   size_t dci = c->destination() ? sd.addr_to_region_idx(c->destination()) : 0;
   log_develop_trace(gc, compaction)(
-      REGION_IDX_FORMAT " " PTR_FORMAT " "
+      REGION_IDX_FORMAT " "
       REGION_IDX_FORMAT " " PTR_FORMAT " "
       REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
       REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
-      i, p2i(c->data_location()), dci, p2i(c->destination()),
+      i, dci, p2i(c->destination()),
       c->partial_obj_size(), c->live_obj_size(),
       c->data_size(), c->source_region(), c->destination_count());
 
@@ -540,7 +540,6 @@ ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
     _region_data[cur_region].set_destination(addr);
     _region_data[cur_region].set_destination_count(0);
     _region_data[cur_region].set_source_region(cur_region);
-    _region_data[cur_region].set_data_location(addr);
 
     // Update live_obj_size so the region appears completely full.
     size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
@@ -734,7 +733,6 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
       }
 
       _region_data[cur_region].set_destination_count(destination_count);
-      _region_data[cur_region].set_data_location(region_to_addr(cur_region));
       dest_addr += words;
     }
 
