@@ -5148,6 +5148,10 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, Address src2, int
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
+  if (VM_Version::supports_avx512ifma()) {
+    attributes.set_is_evex_instruction();
+    attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  }
   vex_prefix(src2, src1->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0xB4);
   emit_operand(dst, src2, 0);
@@ -5158,6 +5162,9 @@ void Assembler::vpmadd52luq(XMMRegister dst, XMMRegister src1, XMMRegister src2,
 
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
+  if (VM_Version::supports_avx512ifma()) {
+    attributes.set_is_evex_instruction();
+  }
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xB4, (0xC0 | encode));
 }
@@ -5185,6 +5192,10 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, Address src2, int
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
+  if (VM_Version::supports_avx512ifma()) {
+    attributes.set_is_evex_instruction();
+    attributes.set_address_attributes(/* tuple_type */ EVEX_FV, /* input_size_in_bits */ EVEX_NObit);
+  }
   vex_prefix(src2, src1->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8((unsigned char)0xB5);
   emit_operand(dst, src2, 0);
@@ -5195,6 +5206,9 @@ void Assembler::vpmadd52huq(XMMRegister dst, XMMRegister src1, XMMRegister src2,
 
   InstructionAttr attributes(vector_len, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ false, /* uses_vl */ true);
 
+  if (VM_Version::supports_avx512ifma()) {
+    attributes.set_is_evex_instruction();
+  }
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xB5, (0xC0 | encode));
 }
