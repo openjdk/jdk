@@ -26,15 +26,13 @@
 /*
  * @test
  * @bug 8325567
- * @requires (os.family == "linux") | (os.family == "aix")
+ * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
  * @library /test/lib
  * @run driver JspawnhelperWarnings
  */
 
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
