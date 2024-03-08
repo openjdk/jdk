@@ -309,7 +309,7 @@ public abstract class GenFullCP extends ClassfileGenerator {
         mainMV.visitInsn(Opcodes.POP);
         finishMethodCode(mainMV);
 
-        return new Klass[] { new Klass(this.pkgName, this.shortClassName, MAIN_METHOD_NAME, MAIN_METHOD_SIGNATURE, cw.toByteArray()) };
+        return new Klass[] { new Klass(this.pkgName, this.shortClassName, MAIN_METHOD_NAME, MAIN_METHOD_SIGNATURE, bytes) };
     }
 
     protected byte[] generateCommonData(byte[] bytes) {
