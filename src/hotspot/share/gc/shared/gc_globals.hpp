@@ -279,13 +279,6 @@
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
                                                                             \
-  develop(bool, MetadataAllocationFailALot, false,                          \
-          "Fail metadata allocations at intervals controlled by "           \
-          "MetadataAllocationFailALotInterval")                             \
-                                                                            \
-  develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
-          "Metadata allocation failure a lot interval")                     \
-                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \

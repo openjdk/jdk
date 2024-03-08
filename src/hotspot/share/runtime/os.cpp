@@ -1892,7 +1892,16 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();
 
-  const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
+  // AIX is the only platform that uses System V shm for reserving virtual memory.
+  // In this case, the required alignment of the allocated size (64K) and the alignment
+  // of possible start points of the memory region (256M) differ.
+  // This is not reflected by os_allocation_granularity().
+  // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
+  const size_t system_allocation_granularity =
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+
+  const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
   // Calculate first and last possible attach points:
   char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);

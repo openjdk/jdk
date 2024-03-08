@@ -115,6 +115,7 @@ define_pd_global(intx, InlineSmallCode,          1000);
   product(bool, UseZtso, false, EXPERIMENTAL, "Assume Ztso memory model")        \
   product(bool, UseZihintpause, false, EXPERIMENTAL,                             \
           "Use Zihintpause instructions")                                        \
+  product(bool, UseZvfh, false, EXPERIMENTAL, "Use Zvfh instructions")           \
   product(bool, UseZvkn, false, EXPERIMENTAL,                                    \
           "Use Zvkn group extension, Zvkned, Zvknhb, Zvkb, Zvkt")                \
   product(bool, UseRVVForBigIntegerShiftIntrinsics, true,                        \
