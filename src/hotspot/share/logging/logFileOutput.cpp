@@ -417,10 +417,6 @@ char* LogFileOutput::make_file_name(const char* file_name,
   // Assemble the strings
   size_t file_name_pos = 0;
   size_t i = 0;
-
-  assert(PidFilenamePlaceholder[0] == '%' &&
-         TimestampFilenamePlaceholder[0] == '%' &&
-         HostnameFilenamePlaceholder[0] == '%', "must be");
   while (i < result_len) {
     if (file_name[file_name_pos] == '%') {
       // Replace the first occurrence of any placeholder
