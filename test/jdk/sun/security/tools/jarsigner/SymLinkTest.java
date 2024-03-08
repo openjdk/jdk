@@ -57,7 +57,7 @@ public class SymLinkTest {
         Files.write(Path.of(ZIPFILENAME), ZIPBYTES);
 
         // check attributes before signing
-        verifyExternalAttrs(ZIPFILENAME);
+        verifyExternalFileAttributes(ZIPFILENAME);
 
         // generate key for signing
         SecurityTools.keytool(
@@ -82,7 +82,7 @@ public class SymLinkTest {
                 .shouldContain(WARNING_MSG);
 
         // recheck attributes after signing
-        verifyExternalAttrs(ZIPFILENAME);
+        verifyExternalFileAttributes(ZIPFILENAME);
 
         // verify zip file - expect warning
         SecurityTools.jarsigner(
@@ -95,7 +95,7 @@ public class SymLinkTest {
                 .shouldContain(WARNING_MSG);
     }
 
-    private static void verifyExternalAttrs(String zipFileName) throws IOException {
+    private static void verifyExternalFileAttributes(String zipFileName) throws IOException {
         // the 16 bit 'external file attributes' value should equal 0xa1ff - look for that pattern.
         // Such values can be read from zip file via 'unzip -Z -l -v <zipfile>'
         try (FileInputStream fis = new FileInputStream(ZIPFILENAME)) {
