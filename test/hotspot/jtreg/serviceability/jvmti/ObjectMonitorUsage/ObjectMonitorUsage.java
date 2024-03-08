@@ -31,9 +31,9 @@
  *     the expected values for the owner, entry_count, waiter_count
  *     fields of JVMTI_monitor_info.
  *     The testcases are the following:
- *       - unowned object without any waiting threads
+ *       - unowned object without any threads waiting
  *       - unowned object with threads waiting to be notified
- *       - owned object without any waiting threads
+ *       - owned object without any threads waiting
  *       - owned object with N threads waiting to enter the monitor
  *       - owned object with N threads waiting to be notified
  *       - owned object with N threads waiting to enter, from 0 to N threads
