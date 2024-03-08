@@ -58,26 +58,43 @@ void OSContainer::init() {
   if (cgroup_subsystem == nullptr) {
     return; // Required subsystem files not found or other error
   }
+  /*
+   * In order to avoid a false positive on is_containerized() on
+   * Linux systems outside a container *and* to ensure compatibility
+   * with in-container usage, we detemine is_containerized() by two
+   * steps:
+   * 1.) Determine if all the cgroup controllers are mounted read only.
+   *     If yes, is_containerized() == true. Otherwise, do the fallback
+   *     in 2.)
+   * 2.) Query for memory and cpu limits. If any limit is set, we set
+   *     is_containerized() == true.
+   *
+   * Step 1.) covers the basic in container use-cases. Step 2.) ensures
+   * that limits enforced by other means (e.g. systemd slice) are properly
+   * detected.
+   */
+  const char *reason;
   bool any_mem_cpu_limit_present = false;
   bool ctrl_ro = cgroup_subsystem->is_containerized();
   if (ctrl_ro) {
-    // If all controllers are mounted read-only, we are containerized.
-    log_trace(os, container)("is_containerized()=true because all controllers mounted read-only");
+    // in-container case
+    reason = " because all controllers are mounted read-only (container case)";
   } else {
     // We can be in one of two cases:
     //  1.) On a physical Linux system without any limit
     //  2.) On a physical Linux system with a limit enforced by other means (like systemd slice)
-    // In order to ensure we cover case 2) we query for cpu/memory limit. If either is present
-    // we are containerized. Otherwise we are not.
     any_mem_cpu_limit_present = cgroup_subsystem->memory_limit_in_bytes() > 0 ||
                                      os::Linux::active_processor_count() != cgroup_subsystem->active_processor_count();
     if (any_mem_cpu_limit_present) {
-      log_trace(os, container)("is_containerized()=true because either a cpu or a memory limit in place");
+      reason = " because either a cpu or a memory limit is present";
+    } else {
+      reason = " because no cpu or memory limit is present";
     }
   }
   _is_containerized = ctrl_ro || any_mem_cpu_limit_present;
-  log_debug(os, container)("OSContainer::init: is_containerized() = %s", _is_containerized ? "true" :
-		                                                        "false, because no limit detected");
+  log_debug(os, container)("OSContainer::init: is_containerized() = %s%s",
+                                                            _is_containerized ? "true" : "false",
+                                                            reason);
 }
 
 const char * OSContainer::container_type() {

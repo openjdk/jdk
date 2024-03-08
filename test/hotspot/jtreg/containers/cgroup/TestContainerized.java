@@ -22,7 +22,7 @@
  */
 
 /*
- * @test PlainRead
+ * @test
  * @bug 8261242
  * @key cgroups
  * @requires os.family == "linux"
@@ -30,19 +30,16 @@
  * @library /testlibrary /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI PlainRead
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestContainerized
  */
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.whitebox.WhiteBox;
 
-public class PlainRead {
+public class TestContainerized {
 
     public static void main(String[] args) throws Exception {
         WhiteBox wb = WhiteBox.getWhiteBox();
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-Xlog:os+container=trace", "-version");
-        pb.start();
-
         if (wb.isContainerized()) {
             throw new RuntimeException("Test failed! Expected not containerized on plain Linux.");
         }
