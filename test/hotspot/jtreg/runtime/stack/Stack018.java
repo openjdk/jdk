@@ -47,58 +47,24 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires (vm.opt.DeoptimizeALot != true & vm.compMode != "Xcomp" & vm.pageSize == 4096)
- * @library /vmTestbase
- * @build nsk.share.Terminator
- * @run main/othervm/timeout=900 -Xss220K nsk.stress.stack.stack018 -eager
+ * @run main/othervm/timeout=900 -Xss220K Stack018
  */
 
-package nsk.stress.stack;
-
-
-import nsk.share.Terminator;
-
-import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class stack018 extends Thread {
+public class Stack018 extends Thread {
     private final static int THREADS = 10;
     private final static int CYCLES = 10;
     private final static int STEP = 100;
     private final static int RESERVE = 100;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
+        Stack018 test = new Stack018();
+        test.doRun();
     }
 
-    public static int run(String args[], PrintStream out) {
-        verbose = false;
-        boolean eager = false;
-        for (int i = 0; i < args.length; i++)
-            if (args[i].toLowerCase().equals("-verbose"))
-                verbose = true;
-            else if (args[i].toLowerCase().equals("-eager"))
-                eager = true;
-        if (!eager)
-            Terminator.appoint(Terminator.parseAppointment(args));
-        stack018.out = out;
-        stack018 test = new stack018();
-        return test.doRun();
-    }
-
-    private static boolean verbose;
-    private static PrintStream out;
-
-    private void display(Object message) {
-        if (!verbose)
-            return;
-        synchronized (out) {
-            out.println(message.toString());
-        }
-    }
-
-    private int doRun() {
+    private void doRun() {
         //
         // Measure maximal recursion depth until stack overflow:
         //
@@ -112,10 +78,8 @@ public class stack018 extends Thread {
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     break; // OK.
-                target.printStackTrace(out);
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
-                return 2;
+                target.printStackTrace();
+                throw new RuntimeException(exception);
             }
         }
 
@@ -123,41 +87,38 @@ public class stack018 extends Thread {
             // The depth STEP was enough to cause StackOverflowError or OutOfMemoryError.
             maxDepth = STEP;
         }
-        out.println("Maximal recursion depth: " + maxDepth);
+        System.out.println("Maximal recursion depth: " + maxDepth);
 
         //
         // Run the tested threads:
         //
-        stack018 threads[] = new stack018[THREADS];
+        Stack018 threads[] = new Stack018[THREADS];
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new stack018();
+            threads[i] = new Stack018();
             threads[i].setName("Thread: " + (i + 1) + "/" + THREADS);
             threads[i].depthToTry = RESERVE * maxDepth;
             threads[i].start();
         }
-        for (int i = 0; i < threads.length; i++)
-            if (threads[i].isAlive())
+        for (int i = 0; i < threads.length; i++) {
+            if (threads[i].isAlive()) {
                 try {
                     threads[i].join();
                 } catch (InterruptedException exception) {
-                    exception.printStackTrace(out);
-                    return 2;
+                    throw new RuntimeException(exception);
                 }
-
+            }
+        }
         //
         // Check if unexpected exceptions were thrown:
         //
         int exitCode = 0;
-        for (int i = 0; i < threads.length; i++)
+        for (int i = 0; i < threads.length; i++) {
             if (threads[i].thrown != null) {
-                out.println("# " + threads[i].getName()
+                System.out.println("# " + threads[i].getName()
                         + ": " + threads[i].thrown);
-                exitCode = 2;
+                throw new RuntimeException("Exception in the thread " + threads[i], threads[i].thrown);
             }
-
-        if (exitCode != 0)
-            out.println("# TEST FAILED");
-        return exitCode;
+        }
     }
 
     private int depthToTry = 0;
@@ -167,7 +128,7 @@ public class stack018 extends Thread {
         String threadName = Thread.currentThread().getName();
         for (int i = 1; i <= CYCLES; i++)
             try {
-                display(threadName + ", iteration: " + i + "/" + CYCLES);
+                System.out.println(threadName + ", iteration: " + i + "/" + CYCLES);
                 invokeRecurse(depthToTry);
                 throw new Error("TEST_RFE: try deeper invocations!");
 
@@ -176,8 +137,6 @@ public class stack018 extends Thread {
                 if ((target instanceof StackOverflowError) ||
                         (target instanceof OutOfMemoryError))
                     continue; // OK.
-                if (target instanceof ThreadDeath)
-                    throw (ThreadDeath) target;
                 thrown = target;
                 break;
             }
@@ -205,7 +164,7 @@ public class stack018 extends Thread {
             //
             // Optimization trick: allocate once, use everywhere.
             //
-            method = stack018.class.getMethod("recurse");
+            method = Stack018.class.getMethod("recurse");
             params = new Object[]{};
         }
         this.depth = depth; // actual parameter
@@ -215,10 +174,11 @@ public class stack018 extends Thread {
     private int depth = 0; // actual parameter for recurse()
 
     public void recurse() throws Exception {
-        if (depth > 0)
+        if (depth > 0) {
             //
             // Self-invoke via reflection:
             //
             invokeRecurse(depth - 1);
+        }
     }
 }

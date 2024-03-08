@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,74 +25,59 @@
  * @test
  * @key stress
  *
- * @summary converted from VM testbase nsk/stress/stack/stack007.
+ * @summary converted from VM testbase nsk/stress/stack/stack003.
  * VM testbase keywords: [stress, stack, nonconcurrent]
  * VM testbase readme:
  * DESCRIPTION
  *     This test provokes multiple stack overflows in the same thread
- *     by invoking synchronized virtual recursive method for the given
- *     fixed depth of recursion (though, for a large depth).
+ *     by invoking static recursive method for the given fixed depth
+ *     of recursion (though, for a large depth).
  *     This test makes measures a number of recursive invocations
  *     before 1st StackOverflowError, and then tries to reproduce
- *     such StackOverflowError 10000 times -- each time by trying to
+ *     such StackOverflowError 100 times -- each time by trying to
  *     invoke the same recursive method for the given fixed depth
- *     of invocations (which is 10 times that depth just measured).
+ *     of invocations (which is twice that depth just measured).
  *     The test is deemed passed, if VM have not crashed.
  * COMMENTS
- *     This test crashes HS versions 1.3 and 1.4 on Win32, Solaris,
- *     and Linux platforms in all execution modes. However, it passes
- *     against HS 2.0 on Win32 platform.
- *     See also the bug:
+ *     This test crashes all HS versions (2.0, 1.3, 1.4) on all
+ *     platforms (Win32, Solaris, Linux) in all execution modes
+ *     (-Xint, -Xmixed, -Xcomp) in 100% of executions in which
+ *     I had tryied it.
+ *     See the bug:
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack007
+ * @run main/othervm/timeout=900 Stack003
  */
 
-package nsk.stress.stack;
-
-
-import java.io.PrintStream;
-
-public class stack007 implements stack007i {
-    final static int ITERATIONS = 1000;
+public class Stack003 {
+    final static int ITERATIONS = 100;
     final static int INCREMENT = 100;
 
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
 
-    public static int run(String args[], PrintStream out) {
-        stack007i test = new stack007();
         int depth;
-        for (depth = 100; ; depth += INCREMENT)
+        for (depth = 1; ; depth += INCREMENT) {
             try {
-                test.recurse(depth);
-            } catch (StackOverflowError soe) {
-                break;
-            } catch (OutOfMemoryError oome) {
+                recurse(depth);
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
-        out.println("Max. depth: " + depth);
-        for (int i = 0; i < ITERATIONS; i++)
+        }
+        System.out.println("Max. depth: " + depth);
+        for (int i = 0; i < ITERATIONS; i++) {
             try {
-                test.recurse(10 * depth);
-                out.println("?");
-            } catch (StackOverflowError soe) {
+                recurse(2 * depth);
+                System.out.println("?");
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
-            } catch (OutOfMemoryError oome) {
-                // Also OK.
             }
-        return 0;
+        }
     }
 
-    public synchronized void recurse(int depth) {
-        if (depth > 0)
+    static void recurse(int depth) {
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
-}
-
-interface stack007i {
-    void recurse(int depth);
 }

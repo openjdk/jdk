@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,50 +47,38 @@
  *     4366625 (P4/S4) multiple stack overflow causes HS crash
  *
  * @requires vm.opt.DeoptimizeALot != true
- * @run main/othervm/timeout=900 nsk.stress.stack.stack006
+ * @run main/othervm/timeout=900 Stack006
  */
 
-package nsk.stress.stack;
-
-
-import java.io.PrintStream;
-
-public class stack006 implements stack006i {
+public class Stack006 implements Stack006i {
     public static void main(String[] args) {
-        int exitCode = run(args, System.out);
-        System.exit(exitCode + 95);
-    }
-
-    public static int run(String args[], PrintStream out) {
-        stack006i test = new stack006();
+        Stack006i test = new Stack006();
         int depth;
-        for (depth = 100; ; depth += 100)
+        for (depth = 100; ; depth += 100) {
             try {
                 test.recurse(depth);
-            } catch (StackOverflowError soe) {
-                break;
-            } catch (OutOfMemoryError oome) {
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 break;
             }
-        out.println("Max. depth: " + depth);
-        for (int i = 0; i < 100; i++)
+        }
+        System.out.println("Max. depth: " + depth);
+        for (int i = 0; i < 100; i++) {
             try {
                 test.recurse(2 * depth);
-                out.println("?");
-            } catch (StackOverflowError soe) {
+                System.out.println("?");
+            } catch (StackOverflowError | OutOfMemoryError err) {
                 // OK.
-            } catch (OutOfMemoryError oome) {
-                // Also OK.
             }
-        return 0;
+        }
     }
 
     public void recurse(int depth) {
-        if (depth > 0)
+        if (depth > 0) {
             recurse(depth - 1);
+        }
     }
 }
 
-interface stack006i {
+interface Stack006i {
     void recurse(int depth);
 }
