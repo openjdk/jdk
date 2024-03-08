@@ -319,7 +319,7 @@ void VLoopDependencyGraph::PredsIterator::next() {
     _current = _node->in(_next_pred++);
   } else if (_next_memory_pred < _end_memory_pred) {
     int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
-    _current = _dependency_graph.body().body().at(pred_bb_idx);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
   } else {
     _current = nullptr; // done
   }

@@ -466,9 +466,6 @@ private:
   // Node depth in DAG: bb_idx -> depth
   GrowableArray<int> _depths;
 
-protected:
-  const VLoopBody& body() const { return _body; }
-
 public:
   VLoopDependencyGraph(Arena* arena,
                        const VLoop& vloop,
