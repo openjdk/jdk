@@ -754,7 +754,7 @@ public class Binder extends DebugeeBinder {
             vmArgs += " -Djdk.virtualThreadScheduler.parallelism=15";
         }
 
-        if (classPath != null) {
+        if (classPath != null && !vmArgs.contains("-cp") && !vmArgs.contains("-classpath")) {
             vmArgs += " -classpath " + quote + classPath + quote;
         }
 
