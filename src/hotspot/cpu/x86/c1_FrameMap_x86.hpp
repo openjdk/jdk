@@ -147,11 +147,13 @@
   }
 
   static int adjust_reg_range(int range) {
-    // Reduce the number of available regs (to free r12) in case of compressed oops
+    // Reduce the number of available regs conditionally
     int subtrahend = 0;
+    // Free rbp if PreserveFramePointer is enabled
     if (PreserveFramePointer) {
       subtrahend += 1;
     }
+    // Free r12 if UseCompressedOops is enabled
     if (UseCompressedOops) {
       subtrahend += 1;
     }
