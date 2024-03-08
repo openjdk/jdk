@@ -1328,6 +1328,12 @@ public:
 
   ~G1MergeHeapRootsTask() {
     if (_dirty_card_buffers != nullptr) {
+#ifdef ASSERT
+      using Stack = BufferNode::Stack;
+      for (uint i = 0; i < _num_workers; i++) {
+        _dirty_card_buffers[i].~Stack();
+      }
+#endif
       FREE_C_HEAP_ARRAY(BufferNode::Stack, _dirty_card_buffers);
     }
   }
