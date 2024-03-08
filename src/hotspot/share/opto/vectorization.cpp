@@ -207,7 +207,11 @@ void VLoopDependencyGraph::construct() {
           memory_pred_edges.append(_body.bb_idx(n2));
         }
       }
-      add_node(n1, memory_pred_edges);
+      if (memory_pred_edges.is_nonempty()) {
+        // Data edges are taken implicitly from the C2 graph, thus we only add
+        // a dependency node if we have memory edges.
+        add_node(n1, memory_pred_edges);
+      }
     }
     slice_nodes.clear();
   }
@@ -219,7 +223,7 @@ void VLoopDependencyGraph::construct() {
 
 void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
   assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
-  if (memory_pred_edges.length() == 0) { return; }
+  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
   DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
   _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
 }
