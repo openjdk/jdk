@@ -202,7 +202,7 @@ enum X509Authentication implements SSLAuthentication {
             ClientHandshakeContext chc, String[] keyTypes) {
         X509ExtendedKeyManager km = chc.sslContext.getX509KeyManager();
         if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-            SSLLogger.finest("X509ExtendedKeyManager being used: " +
+            SSLLogger.finest("X509KeyManager class: " +
                     km.getClass().getName());
         }
         String clientAlias = null;
@@ -275,7 +275,7 @@ enum X509Authentication implements SSLAuthentication {
             ServerHandshakeContext shc, String[] keyTypes) {
         X509ExtendedKeyManager km = shc.sslContext.getX509KeyManager();
         if (SSLLogger.isOn && SSLLogger.isOn("ssl")) {
-            SSLLogger.finest("X509ExtendedKeyManager being used: " +
+            SSLLogger.finest("X509KeyManager class: " +
                     km.getClass().getName());
         }
         String serverAlias = null;
