@@ -347,48 +347,46 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             return false;
         }
 
-        synchronized (keyStore) {
-            Entry newEntry = keyStore.getEntry(alias,
-                    builder.getProtectionParameter(alias));
-            if (!(newEntry instanceof PrivateKeyEntry)) {
-                return false;
-            }
-
-            PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
-            PrivateKey privateKey = privateKeyEntry.getPrivateKey();
-            Certificate[] certs = privateKeyEntry.getCertificateChain();
-
-            if ((certs == null) || (certs.length == 0) ||
-                    !(certs[0] instanceof X509Certificate)) {
-                return false;
-            }
-
-            if (!(certs instanceof X509Certificate[])) {
-                Certificate[] tmp = new X509Certificate[certs.length];
-                System.arraycopy(certs, 0, tmp, 0, certs.length);
-                certs = tmp;
-            }
-
-            X509Certificate cert = (X509Certificate) certs[0];
-            PublicKey publicKey = cert.getPublicKey();
-            if (!privateKey.getAlgorithm().equals(publicKey.getAlgorithm())) {
-                return false;
-            }
-
-            // Add to credentials map
-            String builderAlias = builderIndex + "." + alias;
-            X509Credentials cred = new X509Credentials(privateKey,
-                    (X509Certificate[]) certs);
-            credentialsMap.put(builderAlias, cred);
-
-            if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
-                SSLLogger.fine("found key for : " +
-                        "keystore builder index = " + builderIndex +
-                        " alias = " + alias, (Object[]) certs);
-            }
-
-            return true;
+        Entry newEntry = keyStore.getEntry(alias,
+                builder.getProtectionParameter(alias));
+        if (!(newEntry instanceof PrivateKeyEntry)) {
+            return false;
         }
+
+        PrivateKeyEntry privateKeyEntry = (PrivateKeyEntry) newEntry;
+        PrivateKey privateKey = privateKeyEntry.getPrivateKey();
+        Certificate[] certs = privateKeyEntry.getCertificateChain();
+
+        if ((certs == null) || (certs.length == 0) ||
+                !(certs[0] instanceof X509Certificate)) {
+            return false;
+        }
+
+        if (!(certs instanceof X509Certificate[])) {
+            Certificate[] tmp = new X509Certificate[certs.length];
+            System.arraycopy(certs, 0, tmp, 0, certs.length);
+            certs = tmp;
+        }
+
+        X509Certificate cert = (X509Certificate) certs[0];
+        PublicKey publicKey = cert.getPublicKey();
+        if (!privateKey.getAlgorithm().equals(publicKey.getAlgorithm())) {
+            return false;
+        }
+
+        // Add to credentials map
+        String builderAlias = builderIndex + "." + alias;
+        X509Credentials cred = new X509Credentials(privateKey,
+                (X509Certificate[]) certs);
+        credentialsMap.put(builderAlias, cred);
+
+        if (SSLLogger.isOn && SSLLogger.isOn("keymanager")) {
+            SSLLogger.fine("found key for : " +
+                    "keystore builder index = " + builderIndex +
+                    " alias = " + alias, (Object[]) certs);
+        }
+
+        return true;
     }
 
     // Update the credentialsMap with the up-to-date key and certificates
