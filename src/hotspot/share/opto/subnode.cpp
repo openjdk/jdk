@@ -1615,8 +1615,25 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.negate() );
   }
 
+  // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
+  // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
+  if (cop == Op_CmpU &&
+      cmp1_op == Op_AndI) {
+    Node* bound = nullptr;
+    if (_test._test == BoolTest::le) {
+      bound = cmp2;
+    } else if (_test._test == BoolTest::lt &&
+               cmp2->Opcode() == Op_AddI &&
+               cmp2->in(2)->find_int_con(0) == 1) {
+      bound = cmp2->in(1);
+    }
+    if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
+      return ConINode::make(1);
+    }
+  }
+
   // Change ((x & (m - 1)) u< m) into (m > 0)
-  // This is the off-by-one variant of ((x & m) u<= m)
+  // This is the off-by-one variant of the above
   if (cop == Op_CmpU &&
       _test._test == BoolTest::lt &&
       cmp1_op == Op_AndI) {
@@ -1805,28 +1822,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 // Simplify a Bool (convert condition codes to boolean (1 or 0)) node,
 // based on local information.   If the input is constant, do it.
 const Type* BoolNode::Value(PhaseGVN* phase) const {
-  Node *cmp = in(1);
-  if (cmp && cmp->is_Sub()) {
-    int cop = cmp->Opcode();
-    Node *cmp1 = cmp->in(1);
-    Node *cmp2 = cmp->in(2);
-
-    // Change ((x & m) u<= m) or ((m & x) u<= m) to always true
-    // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
-    if (cop == Op_CmpU && cmp1->Opcode() == Op_AndI) {
-      Node *bound = nullptr;
-      if (_test._test == BoolTest::le) {
-        bound = cmp2;
-      } else if (_test._test == BoolTest::lt && cmp2->Opcode() == Op_AddI && cmp2->in(2)->find_int_con(0) == 1) {
-        bound = cmp2->in(1);
-      }
-
-      if (cmp1->in(2) == bound || cmp1->in(1) == bound) {
-        return TypeInt::ONE;
-      }
-    }
-  }
-
   return _test.cc2logical( phase->type( in(1) ) );
 }
 
