@@ -1023,18 +1023,19 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
             debug.println("Removing entry at alias '" + alias + "'");
         }
 
-        Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
-        if (entry instanceof PrivateKeyEntry keyEntry) {
-            if (keyEntry.chain != null) {
-                certificateCount -= keyEntry.chain.length;
+        Entry entry = entries.remove(alias.toLowerCase(Locale.ENGLISH));
+        if (entry != null) {
+            if (entry instanceof PrivateKeyEntry keyEntry) {
+                if (keyEntry.chain != null) {
+                    certificateCount -= keyEntry.chain.length;
+                }
+                privateKeyCount--;
+            } else if (entry instanceof CertEntry) {
+                certificateCount--;
+            } else if (entry instanceof SecretKeyEntry) {
+                secretKeyCount--;
             }
-            privateKeyCount--;
-        } else if (entry instanceof CertEntry) {
-            certificateCount--;
-        } else if (entry instanceof SecretKeyEntry) {
-            secretKeyCount--;
         }
-        entries.remove(alias.toLowerCase(Locale.ENGLISH));
     }
 
     /**
