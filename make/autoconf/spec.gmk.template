@@ -498,8 +498,6 @@ COMPILER_COMMAND_FILE_FLAG := @COMPILER_COMMAND_FILE_FLAG@
 COMPILER_BINDCMD_FILE_FLAG := @COMPILER_BINDCMD_FILE_FLAG@
 
 CC_OUT_OPTION := @CC_OUT_OPTION@
-LD_OUT_OPTION := @LD_OUT_OPTION@
-AR_OUT_OPTION := @AR_OUT_OPTION@
 
 # Flags used for overriding the default opt setting for a C/C++ source file.
 C_O_FLAG_HIGHEST_JVM := @C_O_FLAG_HIGHEST_JVM@
@@ -604,10 +602,10 @@ BUILD_SYSROOT_LDFLAGS := @BUILD_SYSROOT_LDFLAGS@
 
 AS := @AS@
 
-# AR is used to create a static library (is ar in unix, lib.exe in windows)
 AR := @AR@
 ARFLAGS := @ARFLAGS@
-
+LIB := @LIB@
+LIBFLAGS := @LIBFLAGS@
 NM := @NM@
 NMFLAGS := @NMFLAGS@
 STRIP := @STRIP@
@@ -618,10 +616,6 @@ LIPO := @LIPO@
 INSTALL_NAME_TOOL := @INSTALL_NAME_TOOL@
 METAL := @METAL@
 METALLIB := @METALLIB@
-
-# Options to linker to specify a mapfile.
-# (Note absence of := assignment, because we do not want to evaluate the macro body here)
-SET_SHARED_LIBRARY_MAPFILE = @SET_SHARED_LIBRARY_MAPFILE@
 
 #
 # Options for generating debug symbols
