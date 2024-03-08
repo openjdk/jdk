@@ -896,7 +896,7 @@ PSParallelCompact::clear_data_covering_space(SpaceId id)
   HeapWord* const max_top = MAX2(top, _space_info[id].new_top());
 
   const idx_t beg_bit = _mark_bitmap.addr_to_bit(bot);
-  const idx_t end_bit = _mark_bitmap.align_range_end(_mark_bitmap.addr_to_bit(top));
+  const idx_t end_bit = _mark_bitmap.addr_to_bit(top);
   _mark_bitmap.clear_range(beg_bit, end_bit);
 
   const size_t beg_region = _summary_data.addr_to_region_idx(bot);
