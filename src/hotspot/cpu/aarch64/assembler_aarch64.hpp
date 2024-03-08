@@ -2565,22 +2565,6 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
-  // Advanced SIMD across lanes
-#define INSN(name, opc)                                                 \
-  void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {   \
-    starti;                                                             \
-    guarantee(T == T8B || T == T16B ||                                  \
-              T == T4H || T == T8H ||                                   \
-              T == T4S, "incorrect arrangement");                       \
-    int Q = T == T16B || T == T8H;                                      \
-    f(Q << 1, 31, 29), f(0b01110, 28, 24), f(T >> 1, 23, 22);           \
-    f(0b11000, 21, 17), f(opc, 16, 12), f(0b10, 11, 10), rf(Vn, 5), rf(Vd, 0); \
-  }
-
-  INSN(addv, 0b11011);
-
-#undef INSN
-
   // Advanced SIMD three different
 #define INSN(NAME, opc, opc2, acceptT2D)                                                \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn, FloatRegister Vm) { \
@@ -2611,6 +2595,7 @@ template<typename R, typename... Rx>
 
 #undef INSN
 
+  // Advanced SIMD across lanes
 #define INSN(NAME, opc, opc2, accepted) \
   void NAME(FloatRegister Vd, SIMD_Arrangement T, FloatRegister Vn) {                   \
     guarantee(T != T1Q && T != T1D, "incorrect arrangement");                           \
