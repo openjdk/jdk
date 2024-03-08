@@ -539,8 +539,8 @@ public:
     NONCOPYABLE(PredsIterator);
     void next();
     bool done() const { return _current == nullptr; }
-    Node* current() const { 
-      assert(!done(), "not done yet"); 
+    Node* current() const {
+      assert(!done(), "not done yet");
       return _current;
     }
   };
