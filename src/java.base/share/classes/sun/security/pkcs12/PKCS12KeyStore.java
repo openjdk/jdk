@@ -1327,17 +1327,13 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
         Entry entry = entries.get(alias.toLowerCase(Locale.ENGLISH));
         if (protParam == null) {
             if (internalEngineIsCertificateEntry(entry)) {
-                if (entry instanceof CertEntry &&
-                    ((CertEntry) entry).trustedKeyUsage != null) {
-
-                    if (debug != null) {
-                        debug.println("Retrieved a trusted certificate at " +
+                if (debug != null) {
+                    debug.println("Retrieved a trusted certificate at " +
                             "alias '" + alias + "'");
-                    }
-
-                    return new KeyStore.TrustedCertificateEntry(
-                        ((CertEntry)entry).cert, entry.attributes);
                 }
+
+                return new KeyStore.TrustedCertificateEntry(
+                        ((CertEntry)entry).cert, entry.attributes);
             } else {
                 throw new UnrecoverableKeyException
                         ("requested entry requires a password");
@@ -1365,7 +1361,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
                     return new KeyStore.SecretKeyEntry((SecretKey)key,
                         entry.attributes);
                 }
-            } else if (!internalEngineIsKeyEntry(entry)) {
+            } else {
                 throw new UnsupportedOperationException
                     ("untrusted certificate entries are not " +
                         "password-protected");
