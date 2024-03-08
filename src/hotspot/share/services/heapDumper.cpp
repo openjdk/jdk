@@ -2661,7 +2661,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   // record any error that the writer may have encountered
   set_error(writer.error());
 
-  if (num_dump_threads == 1) {
+  if (!dumper.is_parallel_dump()) {
     DumperSupport::end_of_dump(&writer);
     writer.flush();
   } else {
