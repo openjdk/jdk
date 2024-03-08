@@ -73,7 +73,6 @@ public class TestNewRatioFlag {
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-Xmx" + HEAP_SIZE,
                 "-Xms" + HEAP_SIZE,
                 "-XX:NewRatio=" + ratio,
