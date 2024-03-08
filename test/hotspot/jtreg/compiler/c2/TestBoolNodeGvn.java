@@ -19,13 +19,11 @@ public class TestBoolNodeGvn {
         TestFramework.run();
     }
 
-    /**
-     * Test changing ((x & m) u<= m) or ((m & x) u<= m) to always true, same with ((x & m) u< m+1) and ((m & x) u< m+1)
-     * The test is not applicable to x86 (32bit) for not having <code>Integer.compareUnsigned</code> intrinsified.
-     */
+    // Test changing ((x & m) u<= m) or ((m & x) u<= m) to always true
+    // Same with ((x & m) u< m+1) and ((m & x) u< m+1)
     @Test
     @Arguments({Argument.DEFAULT, Argument.DEFAULT})
-    @IR(failOn = IRNode.CMP_U, phase = CompilePhase.AFTER_PARSING, applyIfPlatform = {"x86", "false"})
+    @IR(failOn = IRNode.CMP_U, phase = CompilePhase.AFTER_PARSING)
     public static boolean test(int x, int m) {
         return Integer.compareUnsigned((x & m), m) > 0
                 & Integer.compareUnsigned((m & x), m) > 0
