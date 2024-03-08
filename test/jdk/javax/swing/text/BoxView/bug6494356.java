@@ -54,7 +54,9 @@ public class bug6494356 {
 
     public static void main(final String[] args) throws Exception {
         final Path file = Path.of("bug6494356.html");
-
+        try (Writer writer = Files.newBufferedWriter(file)) {
+            writer.write("<p>Paragraph</p>");
+        }
         try {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
@@ -74,12 +76,6 @@ public class bug6494356 {
                     f.setContentPane(ep);
                     f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                     f.setVisible(true);
-                    try (Writer writer = Files.newBufferedWriter(file)) {
-                        writer.write("<p>Paragraph</p>");
-                    } catch (Exception e) {
-                        testPassed = false;
-                        throw new RuntimeException(e);
-                    }
                     try {
                         ep.setPage("file:" + file);
                     } catch (Exception ex) {
