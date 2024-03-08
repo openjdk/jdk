@@ -2957,7 +2957,6 @@ VStatus VLoopBody::construct() {
         return VStatus::make_failure(VLoopBody::FAILURE_NODE_NOT_ALLOWED);
       }
 
-#ifdef ASSERT
       if (!n->is_CFG()) {
         bool found = false;
         for (uint j = 0; j < n->req(); j++) {
@@ -2967,9 +2966,17 @@ VStatus VLoopBody::construct() {
             break;
           }
         }
-        assert(found, "every non-cfg node must have an input that is also inside the loop");
-      }
+        if (!found) {
+          // If all inputs to a data-node are outside the loop, the node itself should be outside the loop.
+#ifndef PRODUCT
+          if (_vloop.is_trace_body()) {
+            tty->print_cr("VLoopBody::construct: fails because data node in loop has no input in loop:");
+            n->dump();
+          }
 #endif
+          return VStatus::make_failure(VLoopBody::FAILURE_UNEXPECTED_CTRL);
+        }
+      }
     }
   }
 
