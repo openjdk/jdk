@@ -300,7 +300,11 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ mov_metadata(rbx, entry);
   __ movptr(Address(r15_thread, JavaThread::callee_target_offset()), rbx); // just in case callee is deoptimized
 
+  __ push_cont_fastpath();
+
   __ call(Address(rbx, Method::from_compiled_offset()));
+
+  __ pop_cont_fastpath();
 
   // return value shuffle
   if (!needs_return_buffer) {

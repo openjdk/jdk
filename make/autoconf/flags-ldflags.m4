@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ AC_DEFUN([FLAGS_SETUP_LDFLAGS_HELPER],
     BASIC_LDFLAGS_JVM_ONLY="-Wl,-lC_r -bbigtoc"
 
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    BASIC_LDFLAGS="-nologo -opt:ref"
+    BASIC_LDFLAGS="-opt:ref"
     BASIC_LDFLAGS_JDK_ONLY="-incremental:no"
     BASIC_LDFLAGS_JVM_ONLY="-opt:icf,8 -subsystem:windows"
   fi

@@ -28,7 +28,7 @@
 #include "gc/g1/g1FullCollector.inline.hpp"
 #include "gc/g1/g1FullGCCompactionPoint.hpp"
 #include "gc/g1/g1FullGCCompactTask.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "logging/log.hpp"
 #include "oops/oop.inline.hpp"

@@ -173,27 +173,26 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   // The bitmap routines require the right boundary to be word-aligned.
   const idx_t search_end = align_range_end(range_end);
 
-  idx_t cur_beg = find_obj_beg(range_beg, search_end);
-  while (cur_beg < range_end) {
-    const idx_t cur_end = find_obj_end(cur_beg, search_end);
-    if (cur_end >= range_end) {
-      // The obj ends outside the range.
-      live_closure->set_source(bit_to_addr(cur_beg));
-      return incomplete;
+  idx_t cur_beg = range_beg;
+  while (true) {
+    cur_beg = find_obj_beg(cur_beg, search_end);
+    if (cur_beg >= range_end) {
+      break;
     }
 
-    const size_t size = obj_size(cur_beg, cur_end);
+    const size_t size = obj_size(cur_beg);
     IterationStatus status = live_closure->do_addr(bit_to_addr(cur_beg), size);
     if (status != incomplete) {
       assert(status == would_overflow || status == full, "sanity");
       return status;
     }
 
-    // Successfully processed the object; look for the next object.
-    cur_beg = find_obj_beg(cur_end + 1, search_end);
+    cur_beg += words_to_bits(size);
+    if (cur_beg >= range_end) {
+      break;
+    }
   }
 
-  live_closure->set_source(bit_to_addr(range_end));
   return complete;
 }
 
@@ -210,45 +209,41 @@ ParMarkBitMap::iterate(ParMarkBitMapClosure* live_closure,
   assert(range_end <= dead_range_end, "dead range invalid");
 
   // The bitmap routines require the right boundary to be word-aligned.
-  const idx_t live_search_end = align_range_end(range_end);
   const idx_t dead_search_end = align_range_end(dead_range_end);
 
   idx_t cur_beg = range_beg;
   if (range_beg < range_end && is_unmarked(range_beg)) {
     // The range starts with dead space.  Look for the next object, then fill.
+    // This must be the beginning of old/eden/from/to-space, so it's must be
+    // large enough for a filler.
     cur_beg = find_obj_beg(range_beg + 1, dead_search_end);
-    const idx_t dead_space_end = MIN2(cur_beg - 1, dead_range_end - 1);
+    const idx_t dead_space_end = cur_beg - 1;
     const size_t size = obj_size(range_beg, dead_space_end);
     dead_closure->do_addr(bit_to_addr(range_beg), size);
   }
 
   while (cur_beg < range_end) {
-    const idx_t cur_end = find_obj_end(cur_beg, live_search_end);
-    if (cur_end >= range_end) {
-      // The obj ends outside the range.
-      live_closure->set_source(bit_to_addr(cur_beg));
-      return incomplete;
-    }
-
-    const size_t size = obj_size(cur_beg, cur_end);
+    const size_t size = obj_size(cur_beg);
     IterationStatus status = live_closure->do_addr(bit_to_addr(cur_beg), size);
     if (status != incomplete) {
       assert(status == would_overflow || status == full, "sanity");
       return status;
     }
 
+    const idx_t dead_space_beg = cur_beg + words_to_bits(size);
+    if (dead_space_beg >= dead_search_end) {
+      break;
+    }
     // Look for the start of the next object.
-    const idx_t dead_space_beg = cur_end + 1;
     cur_beg = find_obj_beg(dead_space_beg, dead_search_end);
     if (cur_beg > dead_space_beg) {
       // Found dead space; compute the size and invoke the dead closure.
-      const idx_t dead_space_end = MIN2(cur_beg - 1, dead_range_end - 1);
-      const size_t size = obj_size(dead_space_beg, dead_space_end);
-      dead_closure->do_addr(bit_to_addr(dead_space_beg), size);
+      const idx_t dead_space_end = cur_beg - 1;
+      dead_closure->do_addr(bit_to_addr(dead_space_beg),
+                            obj_size(dead_space_beg, dead_space_end));
     }
   }
 
-  live_closure->set_source(bit_to_addr(range_end));
   return complete;
 }
 
