@@ -49,7 +49,7 @@
  *          /test/lib
  * @build nsk.jdi.AttachingConnector.attach.attach002
  *        nsk.jdi.AttachingConnector.attach.attach002t
- * @run driver
+ * @run main/othervm
  *      nsk.jdi.AttachingConnector.attach.attach002
  *      -verbose
  *      -arch=${os.family}-${os.simpleArch}
