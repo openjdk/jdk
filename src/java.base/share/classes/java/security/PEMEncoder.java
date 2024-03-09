@@ -66,14 +66,16 @@ import java.util.Objects;
  */
 final public class PEMEncoder implements Encoder<SecurityObject> {
 
+    final private static PEMEncoder PEM_ENCODER = new PEMEncoder();
+
     // If non-null, encoder is configured for encryption
     private Cipher cipher;
 
     /**
      * Create an immutable instance of PEMEncoder.
      */
-    public PEMEncoder() {
-        new PEMEncoder(null);
+    private PEMEncoder() {
+        this(null);
     }
 
     /**
@@ -83,6 +85,15 @@ final public class PEMEncoder implements Encoder<SecurityObject> {
      */
     private PEMEncoder(Cipher c) {
         cipher = c;
+    }
+
+    /**
+     * Returns a instance of PEMEncoder.
+     *
+     * @return PEMEncoder instance
+     */
+    static public PEMEncoder of() {
+        return PEM_ENCODER;
     }
 
     /**

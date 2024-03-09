@@ -24,6 +24,8 @@
  */
 
 import javax.crypto.EncryptedPrivateKeyInfo;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecurityObject;
 import java.security.cert.Certificate;
 import java.security.interfaces.*;

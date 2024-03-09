@@ -44,15 +44,15 @@ public class PEMEncoderTest {
 
     public static void main(String[] args) throws Exception {
         keymap = generateObjKeyMap(PEMCerts.entryList);
-        PEMEncoder encoder = new PEMEncoder();
+        PEMEncoder encoder = PEMEncoder.of();
         System.out.println("Same instance Encoder test:");
         keymap.keySet().stream().forEach(key -> test(key, encoder));
         System.out.println("New instance Encoder test:");
-        keymap.keySet().stream().forEach(key -> test(key, new PEMEncoder()));
+        keymap.keySet().stream().forEach(key -> test(key, PEMEncoder.of()));
         System.out.println("Same instance Encoder testToString:");
         keymap.keySet().stream().forEach(key -> testToString(key, encoder));
         System.out.println("New instance Encoder testToString:");
-        keymap.keySet().stream().forEach(key -> testToString(key, new PEMEncoder()));
+        keymap.keySet().stream().forEach(key -> testToString(key, PEMEncoder.of()));
 //        System.out.println("All SecurityObjects Same instance Encoder new withEnc test:");
 //        keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
 
@@ -60,7 +60,7 @@ public class PEMEncoderTest {
         System.out.println("Same instance Encoder new withEnc test:");
         keymap.keySet().stream().forEach(key -> testEncrypted(key, encoder));
         System.out.println("New instance Encoder and withEnc test:");
-        keymap.keySet().stream().forEach(key -> testEncrypted(key, new PEMEncoder()));
+        keymap.keySet().stream().forEach(key -> testEncrypted(key, PEMEncoder.of()));
         System.out.println("Same instance Encoder and withEnc test:");
         PEMEncoder encEncoder = encoder.withEncryption(PEMCerts.encryptedList.getFirst().password());
         keymap.keySet().stream().forEach(key -> test(key, encEncoder));
@@ -68,7 +68,7 @@ public class PEMEncoderTest {
 
     static Map generateObjKeyMap(List<PEMCerts.Entry> list) {
         Map<String, SecurityObject> keymap = new HashMap<>();
-        PEMDecoder pemd = new PEMDecoder();
+        PEMDecoder pemd = PEMDecoder.of();
         for (PEMCerts.Entry entry : list) {
             try {
                 if (entry.password() != null) {

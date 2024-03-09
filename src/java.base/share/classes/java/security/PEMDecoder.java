@@ -66,10 +66,12 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     final private Provider factory;
     final private char[] password;
 
+    final private static PEMDecoder PEM_DECODER = new PEMDecoder();
+
     /**
      * Create an immutable instance of PEMDecoder.
      */
-    public PEMDecoder() {
+    private PEMDecoder() {
         factory = null;
         password = null;
     }
@@ -84,6 +86,15 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
         super();
         factory = withFactory;
         password = withPassword;
+    }
+
+    /**
+     * Returns a instance of PEMDecoder.
+     *
+     * @return returns a PEMDecoder
+     */
+    public static PEMDecoder of() {
+        return PEM_DECODER;
     }
 
     /**

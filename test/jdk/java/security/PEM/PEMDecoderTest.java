@@ -60,6 +60,9 @@ public class PEMDecoderTest {
         testClass(PEMCerts.getEntry("privpem"), RSAPrivateKeySpec.class);
         testClass(PEMCerts.getEntry("privpem"), X509EncodedKeySpec.class, false);
         testClass(PEMCerts.getEntry("rsaCert"), X509EncodedKeySpec.class, false);
+        testClass(PEMCerts.getEntry("oasrfc8410"), PrivateKey.class, true);
+        testClass(PEMCerts.getEntry("oasrfc8410"), PublicKey.class, true);
+
     }
 
     static void testFailure(PEMCerts.Entry entry) {
@@ -68,7 +71,7 @@ public class PEMDecoderTest {
 
     static void testFailure(PEMCerts.Entry entry, Class c) {
         try {
-            test(entry.pem(), c, new PEMDecoder());
+            test(entry.pem(), c, PEMDecoder.of());
             throw new AssertionError("Failure with " +
                 entry.name() + ":  Not supposed to succeed.");
         } catch (NullPointerException e) {
@@ -81,7 +84,7 @@ public class PEMDecoderTest {
     }
 
     static void testEncrypted(PEMCerts.Entry entry) {
-        PEMDecoder decoder = new PEMDecoder();
+        PEMDecoder decoder = PEMDecoder.of();
         if (entry.clazz() != EncryptedPrivateKeyInfo.class) {
             decoder = decoder.withDecryption(entry.password());
         }
@@ -102,7 +105,7 @@ public class PEMDecoderTest {
     // Run test with a given Entry
     static void test(PEMCerts.Entry entry) {
         try {
-            test(entry.pem(), entry.clazz(), new PEMDecoder());
+            test(entry.pem(), entry.clazz(), PEMDecoder.of());
             System.out.println("PASS (" + entry.name() + ")");
         } catch (Exception | AssertionError e) {
             throw new RuntimeException("Error with PEM (" + entry.name() +
@@ -161,7 +164,7 @@ public class PEMDecoderTest {
     // result is the same
     static void testTwoKeys() throws IOException {
         PublicKey p1, p2;
-        PEMDecoder pd = new PEMDecoder();
+        PEMDecoder pd = PEMDecoder.of();
         p1 = pd.decode(PEMCerts.pubrsapem, RSAPublicKey.class);
         p2 = pd.decode(PEMCerts.pubrsapem, RSAPublicKey.class);
         if (!Arrays.equals(p1.getEncoded(), p2.getEncoded())) {
@@ -174,7 +177,7 @@ public class PEMDecoderTest {
     }
 
     static void testClass(PEMCerts.Entry entry, Class clazz) throws IOException {
-        var pk = new PEMDecoder().decode(entry.pem(), clazz);
+        var pk = PEMDecoder.of().decode(entry.pem(), clazz);
     }
 
     static void testClass(PEMCerts.Entry entry, Class clazz, boolean pass) throws RuntimeException {
