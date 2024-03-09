@@ -120,7 +120,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
             keyType = Pem.KeyType.CERTIFICATE;
         } else if (Arrays.mismatch(header, Pem.CRLHEADER) == -1 &&
             Arrays.mismatch(footer, Pem.CRLFOOTER) == -1) {
-            keyType = Pem.KeyType.PKCS1;
+            keyType = Pem.KeyType.CRL;
         } else if (Arrays.mismatch(header, Pem.PKCS1HEADER) == -1 &&
             Arrays.mismatch(footer, Pem.PKCS1FOOTER) == -1) {
             keyType = Pem.KeyType.PKCS1;
@@ -305,6 +305,15 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
          * KeySpec()
          */
         if ((KeySpec.class).isAssignableFrom(tClass)) {
+            if (so instanceof KeyPair kp) {
+                // Since a public key is possible in an OAS PEM
+                if ((X509EncodedKeySpec.class).isAssignableFrom(tClass)) {
+                    so = kp.getPublic();
+                } else {
+                    // Default assumption is a private key from OAS PEM.
+                    so = kp.getPrivate();
+                }
+            }
             if (so instanceof Key key) {
                 try {
                     // unchecked suppressed as we know tClass comes from KeySpec
