@@ -65,8 +65,9 @@ public class DisposeInActionEventTest {
                        "  action event. Brief information about action events is printed\n" +
                        "  in the frame. After each action event, the tray icon is removed from\n" +
                        "  the tray and then added back in a second.\n\n" +
-                       "If something is wrong, the test will automatically fail.\n" +
-                       "  Repeat clicks several times. Press PASS button.";
+                       "The test checks if any exceptions are thrown when removing and\n" +
+                       "  re-adding the icon. If something is wrong, the test will automatically fail.\n" +
+                       "  Repeat clicks several times Then press PASS button.";
 
         try {
             PassFailJFrame.builder()

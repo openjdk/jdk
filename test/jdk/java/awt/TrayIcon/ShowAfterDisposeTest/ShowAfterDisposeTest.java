@@ -43,7 +43,7 @@ import javax.swing.SwingUtilities;
  */
 public class ShowAfterDisposeTest {
     private static SystemTray tray;
-    private static TrayIcon icon ;
+    private static TrayIcon icon;
 
     public static void main(String[] args) throws Exception {
         if (!SystemTray.isSupported()) {
