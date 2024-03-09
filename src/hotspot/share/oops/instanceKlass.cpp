@@ -3711,8 +3711,8 @@ void InstanceKlass::print_on(outputStream* st) const {
       }
       int distance = (i - home_slot) & 63;
       longest_distance = MAX2(longest_distance, distance);
-      st->print_cr("  %d:  %p (home slot=%d) %s", i, _secondary_supers->at(i),
-                   home_slot, distance == 0 ? "*" : "");
+      st->print_cr("  %d:  %p (home slot=%d, distance = %d)", i, _secondary_supers->at(i),
+                   home_slot, distance);
     }
     st->print_cr("  longest probe distance = %d", longest_distance);
   }

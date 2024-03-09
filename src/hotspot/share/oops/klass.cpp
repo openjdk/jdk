@@ -26,6 +26,7 @@
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
 #include "classfile/javaClasses.inline.hpp"
@@ -54,6 +55,16 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
+
+// void Klass::init() {
+//   if (UsePerfData) {
+//     EXCEPTION_MARK;
+
+//     _secondary_hash_time_ticks =
+//       PerfDataManager::create_counter(SUN_RT, "secondarySupersHashTime",
+//                                       PerfData::U_Ticks, CHECK);
+//   }
+// }
 
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
@@ -85,6 +96,9 @@ void Klass::set_name(Symbol* n) {
   }
 
   if (HashSecondarySupers) {
+    elapsedTimer selftime;
+    selftime.start();
+
     // Special cases for the two superclasses of all Array instances.
     if (n == vmSymbols::java_lang_Cloneable()) {
       _hash = 0;
@@ -108,6 +122,11 @@ void Klass::set_name(Symbol* n) {
         hash_code = hash_code * (64 / 3);
         _hash = hash_code << secondary_shift();
       }
+    }
+
+    selftime.stop();
+    if (UsePerfData) {
+      ClassLoader::perf_secondary_hash_time()->inc(selftime.ticks());
     }
   }
 
@@ -281,22 +300,37 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   _secondary_supers = secondaries;
 }
 
-void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t &bitmap) {
+void ppt(GrowableArray<Klass*>* secondaries) {
+  int longest_distance = 0;
+  for (int i = 0; i < secondaries->length(); i++) {
+    if (secondaries->at(i)) {
+      unsigned home_slot = secondaries->at(i)->hash_slot();
+      int distance = (i - home_slot) & 63;
+      longest_distance = MAX2(longest_distance, distance);
+      tty->print_cr("  %d:  %p (home slot=%d, distance = %d)", i, secondaries->at(i),
+                   home_slot, distance);
+    }
+  }
+  tty->print_cr("  longest probe distance = %d", longest_distance);
+}
+
+void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
+                        uint64_t &bitmap, bool use_robin_hood) {
   int longest_probe = 0;
-  int slot = sec->hash_slot();
   int dist = 0;
-  for (;;) {
+  for (int slot = sec->hash_slot(); true; slot = (slot + 1) & 63) {
     if (secondaries->at(slot) == nullptr) {
       secondaries->at_put(slot, sec);
       bitmap |= uint64_t(1) << slot;
       return;
     }
-    if (secondaries->length() > 20) {
+    if (use_robin_hood) {
       // Use Robin Hood hashing to minimize the worst case search. As
       // long as a hash table with linear probing is less than 1/3
       // full and the hash is behaving like a random function we don't
-      // need to do this.
-      int existing_dist = (secondaries->at(slot)->hash_slot() - slot) & 63;
+      // really need to do this. However, in that case collisions are
+      // so rare that it costs very little.
+      int existing_dist = (slot - secondaries->at(slot)->hash_slot()) & 63;
       if (existing_dist < dist) {
         Klass *tmp = secondaries->at(slot);
         secondaries->at_put(slot, sec);
@@ -305,30 +339,37 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries, uint64_t
       }
       ++dist;
     }
-    slot = (slot + 1) & 63;
   }
 }
+
 // Hashed secondary superclasses
 //
-
 // We use a compressed 64-entry hash table with linear probing. We
-// compress first creating a hash table in the usual way, followed by
-// a pass that removes all the null entries. To indicate which entries
-// would have been null we use a bitmap that contains a 1 in each
-// position where an entry is present, 0 otherwise. This bitmap also
-// serves as a kind of Bloom filter, which allows us quickly to
-// eliminate the possibility that an item is a member of a set of
+// start by creating a hash table in the usual way, followed by a pass
+// that removes all the null entries. To indicate which entries would
+// have been null we use a bitmap that contains a 1 in each position
+// where an entry is present, 0 otherwise. This bitmap also serves as
+// a kind of Bloom filter, which in many cases allows us quickly to
+// eliminate the possibility that something is a member of a set of
 // secondaries.
 uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
-  if (secondaries->length() == 0) {
+  const int length = secondaries->length();
+
+  if (length == 0) {
     return 0;
   }
 
+  if (length >= 64) {
+    return ~(uint64_t)0;
+  }
+
+  elapsedTimer selftime;
+  selftime.start();
+
   ResourceMark rm;
   uint64_t bitmap = 0;
-  const int length = secondaries->length();
   GrowableArray<Klass*>* hashed_secondaries
-    = new GrowableArray<Klass*>(MAX(64, length));
+    = new GrowableArray<Klass*>(64);
 
   for (int i = 0; i < hashed_secondaries->capacity(); i++) {
     hashed_secondaries->push(nullptr);
@@ -336,15 +377,7 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   for (int j = 0; j < length; j++) {
     Klass *k = secondaries->at(j);
-    unsigned int slot = k->hash_slot();
-
-    if (j >= 64) {
-      // The secondary supers list is so long that it doesn't fit.
-      // Just copy it to the output.
-      hashed_secondaries->at_put(j, k);
-    } else {
-      hash_insert(k, hashed_secondaries, bitmap);
-    }
+    hash_insert(k, hashed_secondaries, bitmap, /*use_robin_hood*/true);
   }
 
   if (rewrite) {
@@ -358,6 +391,11 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
         i++;
       }
     }
+  }
+
+  selftime.stop();
+  if (UsePerfData) {
+    ClassLoader::perf_secondary_hash_time()->inc(selftime.ticks());
   }
 
   return bitmap;
@@ -477,6 +515,9 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
+    // if (s2->length() > 6) {
+    //   print();
+    // }
   }
 }
 
