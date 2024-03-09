@@ -56,16 +56,6 @@
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
 
-// void Klass::init() {
-//   if (UsePerfData) {
-//     EXCEPTION_MARK;
-
-//     _secondary_hash_time_ticks =
-//       PerfDataManager::create_counter(SUN_RT, "secondarySupersHashTime",
-//                                       PerfData::U_Ticks, CHECK);
-//   }
-// }
-
 void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
@@ -298,20 +288,6 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   }
 #endif
   _secondary_supers = secondaries;
-}
-
-void ppt(GrowableArray<Klass*>* secondaries) {
-  int longest_distance = 0;
-  for (int i = 0; i < secondaries->length(); i++) {
-    if (secondaries->at(i)) {
-      unsigned home_slot = secondaries->at(i)->hash_slot();
-      int distance = (i - home_slot) & 63;
-      longest_distance = MAX2(longest_distance, distance);
-      tty->print_cr("  %d:  %p (home slot=%d, distance = %d)", i, secondaries->at(i),
-                   home_slot, distance);
-    }
-  }
-  tty->print_cr("  longest probe distance = %d", longest_distance);
 }
 
 void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,

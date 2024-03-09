@@ -79,8 +79,6 @@ class Klass : public Metadata {
     UnknownKlassKind
   };
 
-  static void init();
-
   static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
  protected:
 
