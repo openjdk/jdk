@@ -66,15 +66,7 @@ final public class PEMDecoder implements Decoder<SecurityObject> {
     final private Provider factory;
     final private char[] password;
 
-    final private static PEMDecoder PEM_DECODER = new PEMDecoder();
-
-    /**
-     * Create an immutable instance of PEMDecoder.
-     */
-    private PEMDecoder() {
-        factory = null;
-        password = null;
-    }
+    final private static PEMDecoder PEM_DECODER = new PEMDecoder(null, null);
 
     /**
      * Creates a immutable instance with a specific KeyFactory and/or password.
