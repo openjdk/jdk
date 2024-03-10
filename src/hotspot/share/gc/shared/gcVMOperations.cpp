@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -215,11 +215,9 @@ void VM_CollectForMetadataAllocation::doit() {
   // Check again if the space is available.  Another thread
   // may have similarly failed a metadata allocation and induced
   // a GC that freed space for the allocation.
-  if (!MetadataAllocationFailALot) {
-    _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != nullptr) {
-      return;
-    }
+  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+  if (_result != nullptr) {
+    return;
   }
 
 #if INCLUDE_G1GC

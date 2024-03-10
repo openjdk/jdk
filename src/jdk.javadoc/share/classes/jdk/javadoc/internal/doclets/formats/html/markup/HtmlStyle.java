@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,13 @@ public enum HtmlStyle {
     //<editor-fold desc="navigation bar">
     //
     // The following constants are used for the main navigation bar that appears in the
-    // {@code header} and {@code footer} elements on each page.
+    // {@code header} element on each page, as well as the side navigation bar that displays
+    // the table of contents on some pages.
+
+    /**
+     * The class for the link representing the current element in breadcrumb navigation and table of contents.
+     */
+    currentSelection,
 
     /**
      * The class for the overall {@code div} element containing the {@code header} element for the page.
@@ -66,6 +72,21 @@ public enum HtmlStyle {
      * provided by the {@code -header} or {@code -footer} command line option.
      */
     aboutLanguage,
+
+    /**
+     * The class for the {@code input} element to filter items in the table of contents.
+     */
+    filterInput,
+
+    /**
+     * The class for the {@code button} element to hide the sidebar.
+     */
+    hideSidebar,
+
+    /**
+     * The class for the {@code div} element containing the sidebar and main content.
+     */
+    mainGrid,
 
     /**
      * The class for the highlighted item in the list of navigation links, indicating
@@ -80,6 +101,16 @@ public enum HtmlStyle {
     navBarToggleIcon,
 
     /**
+     * The class for the {@code div} element containing navigation elements.
+     */
+    navContent,
+
+    /**
+     * The class for the {@code div} element containing the button to show or hide the menu.
+     */
+    navMenuButton,
+
+    /**
      * The class for the primary list of navigation links.
      */
     navList,
@@ -88,6 +119,16 @@ public enum HtmlStyle {
      * The class for the {@code div} element containing the "Search" control.
      */
     navListSearch,
+
+    /**
+     * The class for the reset button in the sidebar filter input element.
+     */
+    resetFilter,
+
+    /**
+     * The class for the {@code button} element to show the sidebar.
+     */
+    showSidebar,
 
     /**
      * The class for a {@code div} element containing a link to skip the navigation header.
@@ -107,9 +148,19 @@ public enum HtmlStyle {
     subNavList,
 
     /**
-     * The class for the list of subsidiary navigation links for smaller displays.
+     * The class for a {@code nav} element containing a table of contents.
      */
-    subNavListSmall,
+    toc,
+
+    /**
+     * The class for the {@code div} element representing the header of the table of contents.
+     */
+    tocHeader,
+
+    /**
+     * The class used for list elements in the table of contents.
+     */
+    tocList,
 
     //</editor-fold>
 
@@ -123,21 +174,6 @@ public enum HtmlStyle {
      * The class for the element that contains all of the main heading for the page.
      */
     header,
-
-    /**
-     * The class for the "module" label in the heading for a package declaration.
-     */
-    moduleLabelInPackage,
-
-    /**
-     * The class for the "module" label in the heading for a type declaration.
-     */
-    moduleLabelInType,
-
-    /**
-     * The class for the "package" label in the heading for a type declaration.
-     */
-    packageLabelInType,
 
     /**
      * The class for the element containing the label and name for the module

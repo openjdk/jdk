@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,29 +23,20 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/serial/defNewGeneration.inline.hpp"
-#include "gc/serial/serialHeap.hpp"
-#include "gc/serial/tenuredGeneration.inline.hpp"
-#include "gc/shared/gcLocker.inline.hpp"
-#include "gc/shared/genMemoryPools.hpp"
-#include "gc/shared/scavengableNMethods.hpp"
-#include "gc/shared/strongRootsScope.hpp"
-#include "gc/shared/suspendibleThreadSet.hpp"
-#include "memory/universe.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "services/memoryManager.hpp"
-#include "serialVMOperations.hpp"
-
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/serial/cardTableRS.hpp"
+#include "gc/serial/defNewGeneration.inline.hpp"
 #include "gc/serial/genMarkSweep.hpp"
 #include "gc/serial/markSweep.hpp"
+#include "gc/serial/serialHeap.hpp"
+#include "gc/serial/serialMemoryPools.hpp"
+#include "gc/serial/serialVMOperations.hpp"
+#include "gc/serial/tenuredGeneration.inline.hpp"
 #include "gc/shared/cardTableBarrierSet.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
@@ -53,6 +44,7 @@
 #include "gc/shared/continuationGCSupport.inline.hpp"
 #include "gc/shared/gcId.hpp"
 #include "gc/shared/gcInitLogger.hpp"
+#include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
@@ -64,18 +56,23 @@
 #include "gc/shared/oopStorageSet.inline.hpp"
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
+#include "gc/shared/strongRootsScope.hpp"
+#include "gc/shared/suspendibleThreadSet.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceCounters.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
+#include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/vmThread.hpp"
+#include "services/memoryManager.hpp"
 #include "services/memoryService.hpp"
 #include "utilities/autoRestore.hpp"
 #include "utilities/debug.hpp"
@@ -96,13 +93,10 @@ SerialHeap::SerialHeap() :
     _young_gen(nullptr),
     _old_gen(nullptr),
     _rem_set(nullptr),
-    _soft_ref_policy(),
     _gc_policy_counters(new GCPolicyCounters("Copy:MSC", 2, 2)),
     _incremental_collection_failed(false),
-    _full_collections_completed(0),
     _young_manager(nullptr),
     _old_manager(nullptr),
-
     _eden_pool(nullptr),
     _survivor_pool(nullptr),
     _old_pool(nullptr) {
@@ -111,7 +105,6 @@ SerialHeap::SerialHeap() :
 }
 
 void SerialHeap::initialize_serviceability() {
-
   DefNewGeneration* young = young_gen();
 
   // Add a memory pool for each space and young gen doesn't
@@ -125,7 +118,7 @@ void SerialHeap::initialize_serviceability() {
                                                    young->max_survivor_size(),
                                                    false /* support_usage_threshold */);
   TenuredGeneration* old = old_gen();
-  _old_pool = new GenerationPool(old, "Tenured Gen", true);
+  _old_pool = new TenuredGenerationPool(old, "Tenured Gen", true);
 
   _young_manager->add_pool(_eden_pool);
   _young_manager->add_pool(_survivor_pool);
@@ -135,7 +128,6 @@ void SerialHeap::initialize_serviceability() {
   _old_manager->add_pool(_survivor_pool);
   _old_manager->add_pool(_old_pool);
   old->set_gc_manager(_old_manager);
-
 }
 
 GrowableArray<GCMemoryManager*> SerialHeap::memory_managers() {
@@ -151,17 +143,6 @@ GrowableArray<MemoryPool*> SerialHeap::memory_pools() {
   memory_pools.append(_survivor_pool);
   memory_pools.append(_old_pool);
   return memory_pools;
-}
-
-void SerialHeap::young_process_roots(OopClosure* root_closure,
-                                     OopIterateClosure* old_gen_closure,
-                                     CLDClosure* cld_closure) {
-  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations, false /* keepalive nmethods */);
-
-  process_roots(SO_ScavengeCodeCache, root_closure,
-                cld_closure, cld_closure, &mark_code_closure);
-
-  old_gen()->younger_refs_iterate(old_gen_closure);
 }
 
 void SerialHeap::safepoint_synchronize_begin() {
@@ -210,7 +191,7 @@ jint SerialHeap::initialize() {
   ReservedSpace young_rs = heap_rs.first_part(MaxNewSize);
   ReservedSpace old_rs = heap_rs.last_part(MaxNewSize);
 
-  _rem_set = create_rem_set(heap_rs.region());
+  _rem_set = new CardTableRS(heap_rs.region());
   _rem_set->initialize(young_rs.base(), old_rs.base());
 
   CardTableBarrierSet *bs = new CardTableBarrierSet(_rem_set);
@@ -223,11 +204,6 @@ jint SerialHeap::initialize() {
   GCInitLogger::print();
 
   return JNI_OK;
-}
-
-
-CardTableRS* SerialHeap::create_rem_set(const MemRegion& reserved_region) {
-  return new CardTableRS(reserved_region);
 }
 
 ReservedHeapSpace SerialHeap::allocate(size_t alignment) {
@@ -300,22 +276,8 @@ size_t SerialHeap::used() const {
   return _young_gen->used() + _old_gen->used();
 }
 
-void SerialHeap::save_used_regions() {
-  _old_gen->save_used_region();
-  _young_gen->save_used_region();
-}
-
 size_t SerialHeap::max_capacity() const {
   return _young_gen->max_capacity() + _old_gen->max_capacity();
-}
-
-// Update the _full_collections_completed counter
-// at the end of a stop-world full GC.
-unsigned int SerialHeap::update_full_collections_completed() {
-  assert(_full_collections_completed <= _total_full_collections,
-         "Can't complete more collections than were started");
-  _full_collections_completed = _total_full_collections;
-  return _full_collections_completed;
 }
 
 // Return true if any of the following is true:
@@ -331,7 +293,7 @@ bool SerialHeap::should_try_older_generation_allocation(size_t word_size) const 
          || incremental_collection_failed();
 }
 
-HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
+HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool is_tlab) {
   HeapWord* result = nullptr;
   if (_old_gen->should_allocate(size, is_tlab)) {
     result = _old_gen->expand_and_allocate(size, is_tlab);
@@ -346,7 +308,7 @@ HeapWord* SerialHeap::expand_heap_and_allocate(size_t size, bool   is_tlab) {
 }
 
 HeapWord* SerialHeap::mem_allocate_work(size_t size,
-                                              bool is_tlab) {
+                                        bool is_tlab) {
 
   HeapWord* result = nullptr;
 
@@ -443,8 +405,8 @@ HeapWord* SerialHeap::mem_allocate_work(size_t size,
 }
 
 HeapWord* SerialHeap::attempt_allocation(size_t size,
-                                               bool is_tlab,
-                                               bool first_only) {
+                                         bool is_tlab,
+                                         bool first_only) {
   HeapWord* res = nullptr;
 
   if (_young_gen->should_allocate(size, is_tlab)) {
@@ -462,7 +424,7 @@ HeapWord* SerialHeap::attempt_allocation(size_t size,
 }
 
 HeapWord* SerialHeap::mem_allocate(size_t size,
-                                         bool* gc_overhead_limit_was_exceeded) {
+                                   bool* gc_overhead_limit_was_exceeded) {
   return mem_allocate_work(size,
                            false /* is_tlab */);
 }
@@ -473,7 +435,7 @@ bool SerialHeap::must_clear_all_soft_refs() {
 }
 
 void SerialHeap::collect_generation(Generation* gen, bool full, size_t size,
-                                          bool is_tlab, bool run_verification, bool clear_soft_refs) {
+                                    bool is_tlab, bool run_verification, bool clear_soft_refs) {
   FormatBuffer<> title("Collect gen: %s", gen->short_name());
   GCTraceTime(Trace, gc, phases) t1(title);
   TraceCollectorStats tcs(gen->counters());
@@ -512,11 +474,11 @@ void SerialHeap::collect_generation(Generation* gen, bool full, size_t size,
   }
 }
 
-void SerialHeap::do_collection(bool           full,
-                                     bool           clear_all_soft_refs,
-                                     size_t         size,
-                                     bool           is_tlab,
-                                     GenerationType max_generation) {
+void SerialHeap::do_collection(bool full,
+                               bool clear_all_soft_refs,
+                               size_t size,
+                               bool is_tlab,
+                               GenerationType max_generation) {
   ResourceMark rm;
   DEBUG_ONLY(Thread* my_thread = Thread::current();)
 
@@ -554,7 +516,7 @@ void SerialHeap::do_collection(bool           full,
 
     print_heap_before_gc();
 
-    if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
+    if (run_verification && VerifyBeforeGC) {
       prepare_for_verify();
       prepared_for_verification = true;
     }
@@ -566,7 +528,7 @@ void SerialHeap::do_collection(bool           full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 0,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     if (size > 0 && (!is_tlab || _young_gen->supports_tlab_allocation()) &&
@@ -604,8 +566,7 @@ void SerialHeap::do_collection(bool           full,
 
     print_heap_before_gc();
 
-    if (!prepared_for_verification && run_verification &&
-        VerifyGCLevel <= 1 && VerifyBeforeGC) {
+    if (!prepared_for_verification && run_verification && VerifyBeforeGC) {
       prepare_for_verify();
     }
 
@@ -631,7 +592,7 @@ void SerialHeap::do_collection(bool           full,
                        full,
                        size,
                        is_tlab,
-                       run_verification && VerifyGCLevel <= 1,
+                       run_verification,
                        do_clear_all_soft_refs);
 
     CodeCache::on_gc_marking_cycle_finish();
@@ -650,7 +611,6 @@ void SerialHeap::do_collection(bool           full,
 
     // Resize the metaspace capacity after full collections
     MetaspaceGC::compute_new_size();
-    update_full_collections_completed();
 
     print_heap_change(pre_gc_values);
 
@@ -666,7 +626,7 @@ void SerialHeap::do_collection(bool           full,
 }
 
 bool SerialHeap::should_do_full_collection(size_t size, bool full, bool is_tlab,
-                                                 SerialHeap::GenerationType max_gen) const {
+                                           SerialHeap::GenerationType max_gen) const {
   return max_gen == OldGen && _old_gen->should_collect(full, size, is_tlab);
 }
 
@@ -778,10 +738,10 @@ static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
 void SerialHeap::process_roots(ScanningOption so,
-                                     OopClosure* strong_roots,
-                                     CLDClosure* strong_cld_closure,
-                                     CLDClosure* weak_cld_closure,
-                                     CodeBlobToOopClosure* code_roots) {
+                               OopClosure* strong_roots,
+                               CLDClosure* strong_cld_closure,
+                               CLDClosure* weak_cld_closure,
+                               CodeBlobToOopClosure* code_roots) {
   // General roots.
   assert(code_roots != nullptr, "code root closure should always be set");
 
@@ -847,7 +807,7 @@ void SerialHeap::collect(GCCause::Cause cause) {
 
   while (true) {
     VM_GenCollectFull op(gc_count_before, full_gc_count_before,
-                        cause, max_generation);
+                         cause, max_generation);
     VMThread::execute(&op);
 
     if (!GCCause::is_explicit_full_gc(cause)) {
@@ -874,7 +834,7 @@ void SerialHeap::do_full_collection(bool clear_all_soft_refs) {
 }
 
 void SerialHeap::do_full_collection(bool clear_all_soft_refs,
-                                          GenerationType last_generation) {
+                                    GenerationType last_generation) {
   do_collection(true,                   // full
                 clear_all_soft_refs,    // clear_all_soft_refs
                 0,                      // size
@@ -940,12 +900,15 @@ HeapWord* SerialHeap::block_start(const void* addr) const {
 bool SerialHeap::block_is_obj(const HeapWord* addr) const {
   assert(is_in_reserved(addr), "block_is_obj of address outside of heap");
   assert(block_start(addr) == addr, "addr must be a block start");
+
   if (_young_gen->is_in_reserved(addr)) {
-    return _young_gen->block_is_obj(addr);
+    return _young_gen->eden()->is_in(addr)
+        || _young_gen->from()->is_in(addr)
+        || _young_gen->to()  ->is_in(addr);
   }
 
-  assert(_old_gen->is_in_reserved(addr), "Some generation should contain the address");
-  return _old_gen->block_is_obj(addr);
+  assert(_old_gen->is_in_reserved(addr), "must be in old-gen");
+  return addr < _old_gen->space()->top();
 }
 
 size_t SerialHeap::tlab_capacity(Thread* thr) const {
@@ -967,8 +930,8 @@ size_t SerialHeap::unsafe_max_tlab_alloc(Thread* thr) const {
 }
 
 HeapWord* SerialHeap::allocate_new_tlab(size_t min_size,
-                                              size_t requested_size,
-                                              size_t* actual_size) {
+                                        size_t requested_size,
+                                        size_t* actual_size) {
   HeapWord* result = mem_allocate_work(requested_size /* size */,
                                        true /* is_tlab */);
   if (result != nullptr) {
@@ -982,19 +945,9 @@ void SerialHeap::prepare_for_verify() {
   ensure_parsability(false);        // no need to retire TLABs
 }
 
-void SerialHeap::generation_iterate(GenClosure* cl,
-                                          bool old_to_young) {
-  if (old_to_young) {
-    cl->do_generation(_old_gen);
-    cl->do_generation(_young_gen);
-  } else {
-    cl->do_generation(_young_gen);
-    cl->do_generation(_old_gen);
-  }
-}
-
 bool SerialHeap::is_maximal_no_gc() const {
-  return _young_gen->is_maximal_no_gc() && _old_gen->is_maximal_no_gc();
+  // We don't expand young-gen except at a GC.
+  return _old_gen->is_maximal_no_gc();
 }
 
 void SerialHeap::save_marks() {
@@ -1068,35 +1021,11 @@ void SerialHeap::print_heap_change(const PreGenGCValues& pre_gc_values) const {
   MetaspaceUtils::print_metaspace_change(pre_gc_values.metaspace_sizes());
 }
 
-class GenGCPrologueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_prologue(_full);
-  }
-  GenGCPrologueClosure(bool full) : _full(full) {};
-};
-
 void SerialHeap::gc_prologue(bool full) {
-  assert(InlineCacheBuffer::is_empty(), "should have cleaned up ICBuffer");
-
   // Fill TLAB's and such
   ensure_parsability(true);   // retire TLABs
 
-  // Walk generations
-  GenGCPrologueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
-};
-
-class GenGCEpilogueClosure: public SerialHeap::GenClosure {
- private:
-  bool _full;
- public:
-  void do_generation(Generation* gen) {
-    gen->gc_epilogue(_full);
-  }
-  GenGCEpilogueClosure(bool full) : _full(full) {};
+  _old_gen->gc_prologue();
 };
 
 void SerialHeap::gc_epilogue(bool full) {
@@ -1106,25 +1035,17 @@ void SerialHeap::gc_epilogue(bool full) {
 
   resize_all_tlabs();
 
-  GenGCEpilogueClosure blk(full);
-  generation_iterate(&blk, false);  // not old-to-young.
+  _young_gen->gc_epilogue(full);
+  _old_gen->gc_epilogue();
 
   MetaspaceCounters::update_performance_counters();
 };
 
 #ifndef PRODUCT
-class GenGCSaveTopsBeforeGCClosure: public SerialHeap::GenClosure {
- private:
- public:
-  void do_generation(Generation* gen) {
-    gen->record_spaces_top();
-  }
-};
-
 void SerialHeap::record_gen_tops_before_GC() {
   if (ZapUnusedHeapArea) {
-    GenGCSaveTopsBeforeGCClosure blk;
-    generation_iterate(&blk, false);  // not old-to-young.
+    _young_gen->record_spaces_top();
+    _old_gen->record_spaces_top();
   }
 }
 #endif  // not PRODUCT

@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ static char* reserve_at_eor_compatible_address(size_t size, bool aslr) {
       0x7ffc, 0x7ffe, 0x7fff
   };
   static constexpr int num_immediates = sizeof(immediates) / sizeof(immediates[0]);
-  const int start_index = aslr ? os::random() : 0;
+  const int start_index = aslr ? os::next_random((int)os::javaTimeNanos()) : 0;
   constexpr int max_tries = 64;
   for (int ntry = 0; result == nullptr && ntry < max_tries; ntry ++) {
     // As in os::attempt_reserve_memory_between, we alternate between higher and lower

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,35 @@
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
+#include "cds/classListWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "include/jvm_io.h"
 #include "logging/log.hpp"
+#include "memory/universe.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/java.hpp"
 #include "utilities/defaultStream.hpp"
 
 bool CDSConfig::_is_dumping_static_archive = false;
 bool CDSConfig::_is_dumping_dynamic_archive = false;
-
-// The ability to dump the FMG depends on many factors checked by
-// is_dumping_full_module_graph(), but can be unconditionally disabled by
-// _dumping_full_module_graph_disabled. (Ditto for loading the FMG).
-bool CDSConfig::_dumping_full_module_graph_disabled = false;
-bool CDSConfig::_loading_full_module_graph_disabled = false;
+bool CDSConfig::_is_using_optimized_module_handling = true;
+bool CDSConfig::_is_dumping_full_module_graph = true;
+bool CDSConfig::_is_using_full_module_graph = true;
 
 char* CDSConfig::_default_archive_path = nullptr;
 char* CDSConfig::_static_archive_path = nullptr;
 char* CDSConfig::_dynamic_archive_path = nullptr;
+
+int CDSConfig::get_status() {
+  assert(Universe::is_fully_initialized(), "status is finalized only after Universe is initialized");
+  return (is_dumping_archive()              ? IS_DUMPING_ARCHIVE : 0) |
+         (is_dumping_static_archive()       ? IS_DUMPING_STATIC_ARCHIVE : 0) |
+         (is_logging_lambda_form_invokers() ? IS_LOGGING_LAMBDA_FORM_INVOKERS : 0) |
+         (is_using_archive()                ? IS_USING_ARCHIVE : 0);
+}
+
 
 void CDSConfig::initialize() {
   if (is_dumping_static_archive()) {
@@ -61,6 +69,10 @@ void CDSConfig::initialize() {
   // UseSharedSpaces may be disabled if -XX:SharedArchiveFile is invalid.
   if (is_dumping_static_archive() || UseSharedSpaces) {
     init_shared_archive_paths();
+  }
+
+  if (!is_dumping_heap()) {
+    _is_dumping_full_module_graph = false;
   }
 }
 
@@ -225,14 +237,14 @@ void CDSConfig::init_shared_archive_paths() {
 
 void CDSConfig::check_system_property(const char* key, const char* value) {
   if (Arguments::is_internal_module_property(key)) {
-    MetaspaceShared::disable_optimized_module_handling();
+    stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
       strcmp(key, "java.system.class.loader") == 0) {
-    disable_loading_full_module_graph();
-    disable_dumping_full_module_graph();
+    stop_dumping_full_module_graph();
+    stop_using_full_module_graph();
     log_info(cds)("full module graph: disabled due to incompatible property: %s=%s", key, value);
   }
 }
@@ -355,53 +367,59 @@ bool CDSConfig::check_vm_args_consistency(bool patch_mod_javabase,  bool mode_fl
   return true;
 }
 
+bool CDSConfig::is_using_archive() {
+  return UseSharedSpaces; // TODO: UseSharedSpaces will be eventually replaced by CDSConfig::is_using_archive()
+}
+
+bool CDSConfig::is_logging_lambda_form_invokers() {
+  return ClassListWriter::is_enabled() || is_dumping_dynamic_archive();
+}
+
+void CDSConfig::stop_using_optimized_module_handling() {
+  _is_using_optimized_module_handling = false;
+  _is_dumping_full_module_graph = false; // This requires is_using_optimized_module_handling()
+  _is_using_full_module_graph = false; // This requires is_using_optimized_module_handling()
+}
+
 #if INCLUDE_CDS_JAVA_HEAP
 bool CDSConfig::is_dumping_heap() {
   // heap dump is not supported in dynamic dump
   return is_dumping_static_archive() && HeapShared::can_write();
 }
 
-bool CDSConfig::is_dumping_full_module_graph() {
-  if (!_dumping_full_module_graph_disabled &&
-      is_dumping_heap() &&
-      MetaspaceShared::use_optimized_module_handling()) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool CDSConfig::is_loading_full_module_graph() {
+bool CDSConfig::is_using_full_module_graph() {
   if (ClassLoaderDataShared::is_full_module_graph_loaded()) {
     return true;
   }
 
-  if (!_loading_full_module_graph_disabled &&
-      UseSharedSpaces &&
-      ArchiveHeapLoader::can_use() &&
-      MetaspaceShared::use_optimized_module_handling()) {
+  if (!_is_using_full_module_graph) {
+    return false;
+  }
+
+  if (UseSharedSpaces && ArchiveHeapLoader::can_use()) {
     // Classes used by the archived full module graph are loaded in JVMTI early phase.
     assert(!(JvmtiExport::should_post_class_file_load_hook() && JvmtiExport::has_early_class_hook_env()),
            "CDS should be disabled if early class hooks are enabled");
     return true;
   } else {
+    _is_using_full_module_graph = false;
     return false;
   }
 }
 
-void CDSConfig::disable_dumping_full_module_graph(const char* reason) {
-  if (!_dumping_full_module_graph_disabled) {
-    _dumping_full_module_graph_disabled = true;
+void CDSConfig::stop_dumping_full_module_graph(const char* reason) {
+  if (_is_dumping_full_module_graph) {
+    _is_dumping_full_module_graph = false;
     if (reason != nullptr) {
       log_info(cds)("full module graph cannot be dumped: %s", reason);
     }
   }
 }
 
-void CDSConfig::disable_loading_full_module_graph(const char* reason) {
+void CDSConfig::stop_using_full_module_graph(const char* reason) {
   assert(!ClassLoaderDataShared::is_full_module_graph_loaded(), "you call this function too late!");
-  if (!_loading_full_module_graph_disabled) {
-    _loading_full_module_graph_disabled = true;
+  if (_is_using_full_module_graph) {
+    _is_using_full_module_graph = false;
     if (reason != nullptr) {
       log_info(cds)("full module graph cannot be loaded: %s", reason);
     }

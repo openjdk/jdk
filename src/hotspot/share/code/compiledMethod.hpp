@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class ExceptionHandlerTable;
 class ImplicitExceptionTable;
 class AbstractCompiler;
 class xmlStream;
-class CompiledStaticCall;
+class CompiledDirectCall;
 class NativeCallWrapper;
 class ScopeDesc;
 class CompiledIC;
@@ -227,7 +227,7 @@ public:
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
-  virtual void print_pcs() = 0;
+  virtual void print_pcs_on(outputStream* st) = 0;
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
@@ -364,7 +364,7 @@ public:
 
   // Inline cache support for class unloading and nmethod unloading
  private:
-  bool cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
+  void cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
 
   address continuation_for_implicit_exception(address pc, bool for_div0_check);
 
@@ -373,13 +373,10 @@ public:
   void cleanup_inline_caches_whitebox();
 
   virtual void clear_inline_caches();
-  void clear_ic_callsites();
 
   // Execute nmethod barrier code, as if entering through nmethod call.
   void run_nmethod_entry_barrier();
 
-  // Verify and count cached icholder relocations.
-  int  verify_icholder_relocations();
   void verify_oop_relocations();
 
   bool has_evol_metadata();
@@ -389,13 +386,7 @@ public:
   // corresponds to the given method as well.
   virtual bool is_dependent_on_method(Method* dependee) = 0;
 
-  virtual NativeCallWrapper* call_wrapper_at(address call) const = 0;
-  virtual NativeCallWrapper* call_wrapper_before(address return_pc) const = 0;
   virtual address call_instruction_address(address pc) const = 0;
-
-  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const = 0;
-  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const = 0;
-  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const = 0;
 
   Method* attached_method(address call_pc);
   Method* attached_method_before_pc(address pc);
@@ -406,16 +397,13 @@ public:
  protected:
   address oops_reloc_begin() const;
 
- private:
-  bool static clean_ic_if_metadata_is_dead(CompiledIC *ic);
-
  public:
   // GC unloading support
   // Cleans unloaded klasses and unloaded nmethods in inline caches
 
   virtual bool is_unloading() = 0;
 
-  bool unload_nmethod_caches(bool class_unloading_occurred);
+  void unload_nmethod_caches(bool class_unloading_occurred);
   virtual void do_unloading(bool unloading_occurred) = 0;
 
 private:

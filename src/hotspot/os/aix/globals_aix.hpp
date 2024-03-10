@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2005, 2020, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,11 +49,12 @@
           "Allow VM to run with EXTSHM=ON.")                                        \
                                                                                     \
   /*  Maximum expected size of the data segment. That correlates with the      */   \
-  /*  to the maximum C Heap consumption we expect.                             */   \
-  /*  We need to know this because we need to leave "breathing space" for the  */   \
-  /*  data segment when placing the java heap. If that space is too small, we  */   \
-  /*  reduce our chance of getting a low heap address (needed for compressed   */   \
-  /*  Oops).                                                                   */   \
+  /*  maximum C Heap consumption we expect.                                    */   \
+  /*  We need to leave "breathing space" for the data segment when             */   \
+  /*  placing the java heap. If the MaxExpectedDataSegmentSize setting         */   \
+  /*  is too small, we might run into resource issues creating many native     */   \
+  /*  threads, if it is too large, we reduce our chance of getting a low heap  */   \
+  /*  address (needed for compressed Oops).                                    */   \
   product(uintx, MaxExpectedDataSegmentSize, 8*G,                                   \
           "Maximum expected Data Segment Size.")                                    \
                                                                                     \

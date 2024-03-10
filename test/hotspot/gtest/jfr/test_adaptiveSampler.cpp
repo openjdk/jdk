@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, Datadog, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -200,7 +200,7 @@ class JfrGTestAdaptiveSampling : public ::testing::Test {
 };
 
 void JfrGTestAdaptiveSampling::test(JfrGTestAdaptiveSampling::incoming inc, size_t sample_points_per_window, double error_factor, const char* const description) {
-  assert(description != NULL, "invariant");
+  assert(description != nullptr, "invariant");
   char output[1024] = "Adaptive sampling: ";
   strcat(output, description);
   fprintf(stdout, "=== %s\n", output);

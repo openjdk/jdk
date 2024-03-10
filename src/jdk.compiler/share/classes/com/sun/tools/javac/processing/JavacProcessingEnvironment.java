@@ -1268,9 +1268,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                 // we're specifically expecting Abort here, but if any Throwable
                 // comes by, we should flush all deferred diagnostics, rather than
                 // drop them on the ground.
-                deferredDiagnosticHandler.reportDeferredDiagnostics();
-                log.popDiagnosticHandler(deferredDiagnosticHandler);
-                compiler.setDeferredDiagnosticHandler(null);
+                compiler.reportDeferredDiagnosticAndClearHandler();
                 throw t;
             } finally {
                 if (!taskListener.isEmpty())

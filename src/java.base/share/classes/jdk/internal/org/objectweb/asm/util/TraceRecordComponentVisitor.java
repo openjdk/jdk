@@ -126,4 +126,3 @@ public final class TraceRecordComponentVisitor extends RecordComponentVisitor {
         super.visitEnd();
     }
 }
-

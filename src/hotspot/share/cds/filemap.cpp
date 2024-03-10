@@ -71,7 +71,7 @@
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 
 # include <sys/stat.h>
@@ -212,7 +212,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
-  _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
@@ -1664,9 +1664,9 @@ void FileMapInfo::close() {
 /*
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* map_memory(int fd, const char* file_name, size_t file_offset,
-                 char *addr, size_t bytes, bool read_only,
-                 bool allow_exec, MEMFLAGS flags = mtNone) {
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, flags);
@@ -1690,9 +1690,12 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     return false;
   }
   char *addr = r->mapped_base();
-  char *base = os::remap_memory(_fd, _full_path, r->file_offset(),
-                                addr, size, false /* !read_only */,
-                                r->allow_exec());
+  // This path should not be reached for Windows; see JDK-8222379.
+  assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
+  // Replace old mapping with new one that is writable.
+  char *base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              addr, size, false /* !read_only */,
+                              r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -1974,7 +1977,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::stop_using_full_module_graph();
   }
 }
 
@@ -2156,7 +2159,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       unmap_region(MetaspaceShared::hp);
@@ -2390,13 +2393,13 @@ bool FileMapHeader::validate() {
   }
 
   if (!_use_optimized_module_handling) {
-    MetaspaceShared::disable_optimized_module_handling();
+    CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static() && !_has_full_module_graph) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::disable_loading_full_module_graph("archive was created without full module graph");
+    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
   }
 
   return true;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,8 @@
 #include <string.h>
 #include <ctype.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -48,12 +48,12 @@ static jvmtiEventCallbacks callbacks;
 static jvmtiCapabilities caps;
 static jint result = PASSED;
 static field fields[] = {
-    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld0", "I", 0, NULL, NULL },
-    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld1", "I", 1, NULL, NULL },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld0", "I", 0, nullptr, nullptr },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld1", "I", 1, nullptr, nullptr },
     { "nsk/jvmti/SetFieldAccessWatch/setfldw001", "fld2",
-      "Lnsk/jvmti/SetFieldAccessWatch/setfldw001a;", 0, NULL, NULL },
-    { "nsk/jvmti/SetFieldAccessWatch/setfldw001a", "fld3", "[I", 0, NULL, NULL },
-    { "nsk/jvmti/SetFieldAccessWatch/setfldw001b", "fld4", "F", 0, NULL, NULL },
+      "Lnsk/jvmti/SetFieldAccessWatch/setfldw001a;", 0, nullptr, nullptr },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001a", "fld3", "[I", 0, nullptr, nullptr },
+    { "nsk/jvmti/SetFieldAccessWatch/setfldw001b", "fld4", "F", 0, nullptr, nullptr },
 };
 
 void setWatch(JNIEnv *env, jint ind) {
@@ -62,12 +62,12 @@ void setWatch(JNIEnv *env, jint ind) {
     field fld = fields[ind];
 
     cls = env->FindClass(fld.klass);
-    if (cls == NULL) {
+    if (cls == nullptr) {
         printf("Cannot find class \"%s\"\n", fld.klass);
         result = STATUS_FAILED;
         return;
     }
-    if (fld.fid == NULL) {
+    if (fld.fid == nullptr) {
         if (fld.stat) {
             fields[ind].fid = env->GetStaticFieldID(cls, fld.name, fld.sig);
         } else {
@@ -90,18 +90,18 @@ void JNICALL FieldAccess(jvmtiEnv *jvmti_env, JNIEnv *env,
         jthread thr, jmethodID method,
         jlocation location, jclass field_klass, jobject obj, jfieldID field) {
 
-    char *fld_name = NULL;
+    char *fld_name = nullptr;
     jint fld_ind = 0;
     size_t len = 0;
     jvmtiError err = jvmti_env->GetFieldName(field_klass, field,
-                                                &fld_name, NULL, NULL);
+                                                &fld_name, nullptr, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Error in GetFieldName: %s (%d)\n", TranslateError(err), err);
         result = STATUS_FAILED;
         return;
     }
-    if (fld_name == NULL) {
-        printf("GetFieldName returned NULL field name\n");
+    if (fld_name == nullptr) {
+        printf("GetFieldName returned null field name\n");
         result = STATUS_FAILED;
         return;
     }
@@ -133,7 +133,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     jvmtiError err;
 
     res = jvm->GetEnv((void **) &jvmti, JVMTI_VERSION_1_1);
-    if (res != JNI_OK || jvmti == NULL) {
+    if (res != JNI_OK || jvmti == nullptr) {
         printf("Wrong result of a valid call to GetEnv !\n");
         return JNI_ERR;
     }
@@ -169,7 +169,7 @@ jint  Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
         }
 
         err = jvmti->SetEventNotificationMode(JVMTI_ENABLE,
-                JVMTI_EVENT_FIELD_ACCESS, NULL);
+                JVMTI_EVENT_FIELD_ACCESS, nullptr);
         if (err != JVMTI_ERROR_NONE) {
             printf("Failed to enable JVMTI_EVENT_FIELD_ACCESS: %s (%d)\n",
                    TranslateError(err), err);
@@ -203,7 +203,7 @@ Java_nsk_jvmti_SetFieldAccessWatch_setfldw001_check(JNIEnv *env,
     jfieldID thrown_fid = fields[fld_ind].thrown_fid;
 
     if (caps.can_generate_field_access_events) {
-        if (flag == JNI_FALSE && thrown_fid != NULL) {
+        if (flag == JNI_FALSE && thrown_fid != nullptr) {
             result = STATUS_FAILED;
             printf("(Field %d) FIELD_ACCESS event without access watch set\n",
                    fld_ind);
