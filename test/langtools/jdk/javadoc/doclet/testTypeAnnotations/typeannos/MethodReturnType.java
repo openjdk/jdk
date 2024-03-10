@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ class MtdDefaultScope {
     // Old-style array syntax
     String array2FirstOld() @MRtnA [] { return null; }
     String array2SecondOld() [] @MRtnB [] { return null; }
+
+    @MRtnA int primitive() { return 0; }
+    @MRtnA int @MRtnB [] primitiveArray1Deep() { return null; }
 }
 
 class MtdModifiedScoped {
@@ -66,6 +69,9 @@ class MtdModifiedScoped {
     public final @MRtnA String @MRtnA [] @MRtnB [] array2Deep() { return null; }
     public final String @MRtnA [] [] array2First() { return null; }
     public final String [] @MRtnB [] array2Second() { return null; }
+
+    public final @MRtnA int primitive() { return 0; }
+    public final @MRtnA int @MRtnB [] primitiveArray1Deep() { return null; }
 }
 
 class MtdParameterized<K, V> { }
