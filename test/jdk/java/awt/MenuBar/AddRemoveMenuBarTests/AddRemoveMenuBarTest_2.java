@@ -54,7 +54,7 @@ public class AddRemoveMenuBarTest_2 {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("AddRemoveMenuBarTest_2 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

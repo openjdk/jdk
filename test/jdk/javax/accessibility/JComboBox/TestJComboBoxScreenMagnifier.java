@@ -54,7 +54,7 @@ public class TestJComboBoxScreenMagnifier {
 
     public static void main(String[] args) throws InterruptedException,
              InvocationTargetException {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("JComboBox Screen Magnifier Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

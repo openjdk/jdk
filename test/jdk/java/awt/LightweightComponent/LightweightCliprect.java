@@ -49,7 +49,7 @@ public class LightweightCliprect {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("LightweightCliprect Instructions Frame")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

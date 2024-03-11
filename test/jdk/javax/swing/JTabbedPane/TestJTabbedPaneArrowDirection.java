@@ -57,7 +57,7 @@ public class TestJTabbedPaneArrowDirection {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.gtk.GTKLookAndFeel");
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("JTabbedPane Arrow Direction Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

@@ -79,7 +79,7 @@ public class AcceleratorTest {
             cmdHash.put(CMD[i], 0);
         }
 
-        PassFailJFrame testFrame = new PassFailJFrame.Builder()
+        PassFailJFrame testFrame = PassFailJFrame.builder()
                 .title("Test Instructions Frame")
                 .instructions(instructions)
                 .testTimeOut(10)

@@ -57,7 +57,7 @@ public class FrameResizeTest_2 {
         """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("FrameResizeTest_2 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

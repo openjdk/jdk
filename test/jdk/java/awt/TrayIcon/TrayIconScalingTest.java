@@ -85,7 +85,7 @@ public class TrayIconScalingTest {
             System.out.println("SystemTray is not supported");
             return;
         }
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("TrayIcon Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(8)

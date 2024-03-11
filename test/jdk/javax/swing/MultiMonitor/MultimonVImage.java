@@ -64,7 +64,7 @@ public class MultimonVImage {
             "    issue, try to use the same or similar video cards for each monitor.";
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("MultimonVImage Instructions")
                 .instructions(instructionsText)
                 .testTimeOut(5)

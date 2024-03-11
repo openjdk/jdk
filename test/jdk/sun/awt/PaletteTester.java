@@ -90,7 +90,7 @@ public class PaletteTester {
 
     public static void main( String args[] ) throws Exception {
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                                         .title("PaletteTester Instructions")
                                         .instructions(INSTRUCTIONS)
                                         .testTimeOut(5)

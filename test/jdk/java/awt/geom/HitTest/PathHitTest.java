@@ -372,7 +372,7 @@ public class PathHitTest {
         }
 
         public static void doManual() throws Exception {
-            PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+            PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                     .title("PathHitTestManual Instructions")
                     .instructions(INSTRUCTIONS)
                     .testTimeOut(5)

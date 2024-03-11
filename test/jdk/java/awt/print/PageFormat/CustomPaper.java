@@ -167,7 +167,7 @@ public class CustomPaper implements Pageable, Printable {
                     + "Valid values: 4355514 or 4385157");
         };
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("CustomPaper Test Instructions")
                 .instructions(instructions)
                 .testTimeOut(5)

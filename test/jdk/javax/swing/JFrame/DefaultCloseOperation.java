@@ -74,7 +74,7 @@ public class DefaultCloseOperation extends JPanel {
 
     public static void main(String[] args) throws Exception {
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("DefaultCloseOperation Manual Test")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

@@ -49,7 +49,7 @@ public class bug4203039 {
             locations but can dock on the NORTH and WEST""";
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("bug4203039 Instructions")
                 .instructions(instructionsText)
                 .testTimeOut(5)

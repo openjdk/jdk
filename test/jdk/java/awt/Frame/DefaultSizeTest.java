@@ -44,7 +44,7 @@ public class DefaultSizeTest {
 
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("DefaultSizeTest Instructions Frame")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)

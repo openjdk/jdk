@@ -77,7 +77,7 @@ public class FrameRepackTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("FrameRepackTest Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
