@@ -73,6 +73,14 @@ public class ClassUnloadCommon {
      */
     public static ClassLoader newClassLoader() {
         String cp = System.getProperty("test.class.path", ".");
+        return newClassLoader(cp);
+    }
+
+    /**
+     * Creates a class loader that loads classes from the provided class path
+     * before delegating to the system class loader.
+     */
+    public static ClassLoader newClassLoader(String cp) {
         URL[] urls = Stream.of(cp.split(File.pathSeparator))
                 .map(Paths::get)
                 .map(ClassUnloadCommon::toURL)

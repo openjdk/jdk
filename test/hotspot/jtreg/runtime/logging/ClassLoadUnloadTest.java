@@ -49,7 +49,8 @@ public class ClassLoadUnloadTest {
     private static class ClassUnloadTestMain {
         public static void main(String... args) throws Exception {
             String className = "test.Empty";
-            ClassLoader cl = ClassUnloadCommon.newClassLoader();
+            String classPath = args[0];
+            ClassLoader cl = ClassUnloadCommon.newClassLoader(classPath);
             Class<?> c = cl.loadClass(className);
             cl = null; c = null;
             ClassUnloadCommon.triggerUnloading();
@@ -70,10 +71,12 @@ public class ClassLoadUnloadTest {
 
     // Use the same command-line heap size setting as ../ClassUnload/UnloadTest.java
     static OutputAnalyzer exec(String... args) throws Exception {
+        String classPath = System.getProperty("test.class.path", ".");
+
         List<String> argsList = new ArrayList<>();
         Collections.addAll(argsList, args);
         Collections.addAll(argsList, "-Xmn8m", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions",
-                           "-XX:+WhiteBoxAPI", "-XX:+ClassUnloading", ClassUnloadTestMain.class.getName());
+                           "-XX:+WhiteBoxAPI", "-XX:+ClassUnloading", ClassUnloadTestMain.class.getName(), classPath);
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(argsList);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
@@ -86,7 +89,7 @@ public class ClassLoadUnloadTest {
 
         //  -Xlog:class+unload=info
         output = exec("-Xlog:class+unload=info");
-        checkFor(output, "[class,unload]", "unloading class");
+        checkFor(output, "[class,unload]", "unloading class test.Empty");
 
         //  -Xlog:class+unload=off
         output = exec("-Xlog:class+unload=off");
