@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,54 +21,87 @@
  * questions.
  */
 
-/* @test %W% %E%
-   @bug 6798062
-   @summary Memory Leak on using getFiles of FileSystemView
-   @author Pavel Porvatov
-   @modules java.desktop/sun.awt
-            java.desktop/sun.awt.shell
-   @run applet/manual=done bug6798062.html
-*/
+/*
+ * @test
+ * @bug 6798062
+ * @requires (os.family == "windows")
+ * @summary Memory Leak on using getFiles of FileSystemView
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @modules java.desktop/sun.awt
+ *          java.desktop/sun.awt.shell
+ * @run main/manual bug6798062
+ */
 
 import sun.awt.OSInfo;
 import sun.awt.shell.ShellFolder;
 
-import javax.swing.*;
+import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.*;
 import java.io.File;
 import java.io.FileNotFoundException;
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
+import javax.swing.JComponent;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 
-public class bug6798062 extends JApplet {
+public class bug6798062 {
 
-    private final JSlider slider = new JSlider(0, 100);
+    private static final String instructionsText = """
+            The test is suitable only for Windows.
 
-    private final JTextField tfLink = new JTextField();
+            1. Create a link
+            2. Copy path to the link into TextField
+            3. Run the Windows Task Manager. Select the Processes tab and find the java process
+            4. Press the Start button in the test window
+            5. Wait several minutes and observe in the Windows Task Manager
+               that Memory Usage of java process is not increasing
+            If menory usage is increasing, click Fail else click Pass .  """;
 
-    private final JButton btnStart = new JButton("Start");
-
-    private final JButton btnStop = new JButton("Stop");
-
-    private final JButton btnGC = new JButton("Run System.gc()");
+    private static JSlider slider;
+    private static JFrame frame;
+    private static JTextField tfLink;
+    private static JButton btnStart;
+    private static JButton btnStop;
+    private static JButton btnGC;
 
     private ShellFolder folder;
-
     private Thread thread;
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("bug6798062");
+    public static void main(String[] args) throws Exception {
+         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("JFileChooser Instructions")
+                .instructions(instructionsText)
+                .testTimeOut(5)
+                .rows(10)
+                .columns(35)
+                .build();
 
-        frame.setSize(400, 300);
-        frame.setLocationRelativeTo(null);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.add(new bug6798062().initialize());
+        SwingUtilities.invokeAndWait(() -> {
+            slider = new JSlider(0, 100);
+            tfLink = new JTextField();
+            btnStart = new JButton("Start");
+            btnStop = new JButton("Stop");
+            btnGC = new JButton("Run System.gc()");
+            frame = new JFrame("bug6798062");
 
-        frame.setVisible(true);
-    }
+            frame.setSize(400, 300);
+            frame.setLocationRelativeTo(null);
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.add(new bug6798062().initialize());
 
-    public void init() {
-        add(initialize());
+            PassFailJFrame.addTestWindow(frame);
+            PassFailJFrame.positionTestWindow(frame,
+                    PassFailJFrame.Position.HORIZONTAL);
+            frame.setVisible(true);
+        });
+        passFailJFrame.awaitAndCheck();
     }
 
     private JComponent initialize() {
