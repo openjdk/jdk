@@ -39,7 +39,7 @@ import javax.swing.filechooser.FileFilter;
  */
 public final class FileFilterDescription {
 
-     private static final String instructionsText = """
+     private static final String INSTRUCTIONS = """
          1) Check that current filter in the opened JFileChooser is a "CustomFileFilter".
          2) Close the JFileChooser.
          3) Test will repeat steps 1 - 2 for all supported look and feels.
@@ -48,7 +48,7 @@ public final class FileFilterDescription {
     public static void main(String[] args) throws Exception {
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("JFileChooser Filefilter Instructions")
-                .instructions(instructionsText)
+                .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(10)
                 .columns(35)
@@ -65,9 +65,9 @@ public final class FileFilterDescription {
                 chooser.setFileFilter(new CustomFileFilter());
                 SwingUtilities.updateComponentTreeUI(chooser);
                 frame.add(chooser, BorderLayout.CENTER);
+                frame.pack();
                 PassFailJFrame.addTestWindow(frame);
                 PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
-                frame.pack();
                 chooser.showDialog(null, "Open");
             });
         }
