@@ -24,6 +24,7 @@
 /* @test
  * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
  *      8151582 8068693 8153209
+ * @library /test/lib
  * @run main/othervm AsyncCloseAndInterrupt
  * @key intermittent
  * @summary Comprehensive test of asynchronous closing and interruption
@@ -42,6 +43,9 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+
+import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class AsyncCloseAndInterrupt {
 
@@ -133,12 +137,13 @@ public class AsyncCloseAndInterrupt {
             if (!fifoFile.delete())
                 throw new IOException("Cannot delete existing fifo " + fifoFile);
         }
-        Process p = Runtime.getRuntime().exec("mkfifo " + fifoFile);
-        if (p.waitFor() != 0) {
+
+        OutputAnalyzer oa = ProcessTools.executeCommand("mkfifo",
+                                                        fifoFile.toString());
+        oa.waitFor();
+        if (oa.pid() != 0) {
             StringBuilder sb = new StringBuilder();
-            try (BufferedReader errorReader = p.errorReader()) {
-                errorReader.lines().forEach(o -> sb.append((String)o));
-            }
+            oa.asLines().stream().forEach(s -> sb.append(s));
             throw new IOException("Error creating fifo \"" +
                 fifoFile.getAbsolutePath() + "\" - " + sb);
         }
