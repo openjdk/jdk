@@ -46,7 +46,11 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 ##########################################################################################
 
-LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"' -DVERSION_NUMBER='"$(VERSION_NUMBER_FOUR_POSITIONS)"'
+LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"' \
+    -DVERSION_FEATURE=$(VERSION_FEATURE) \
+    -DVERSION_INTERIM=$(VERSION_INTERIM) \
+    -DVERSION_UPDATE=$(VERSION_UPDATE) \
+    -DVERSION_PATCH=$(VERSION_PATCH)
 
 ifeq ($(call isTargetOs, macosx), true)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c

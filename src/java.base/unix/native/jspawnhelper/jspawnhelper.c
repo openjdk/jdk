@@ -51,8 +51,20 @@ extern int errno;
 #define ERR_PIPE 2
 #define ERR_ARGS 3
 
-#ifndef VERSION_NUMBER
-#error VERSION_NUMBER must be defined
+#ifndef VERSION_FEATURE
+#error VERSION_FEATURE must be defined
+#endif
+
+#ifndef VERSION_INTERIM
+#error VERSION_INTERIM must be defined
+#endif
+
+#ifndef VERSION_UPDATE
+#error VERSION_UPDATE must be defined
+#endif
+
+#ifndef VERSION_PATCH
+#error VERSION_PATCH must be defined
 #endif
 
 void error (int fd, int err) {
@@ -145,7 +157,6 @@ int main(int argc, char *argv[]) {
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
     int jdk_feature, jdk_interim, jdk_update, jdk_patch;
-    int jspawn_feature, jspawn_interim, jspawn_update, jspawn_patch;
     sigset_t unblock_signals;
 
     if (argc != 2) {
@@ -165,16 +176,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Check that JDK version and jspawnhelper version are the same
-    r = sscanf (VERSION_NUMBER, "%d.%d.%d.%d", &jspawn_feature, &jspawn_interim, &jspawn_update, &jspawn_patch);
-    if (r == 4) {
-        if (jdk_feature != jspawn_feature || jdk_interim != jspawn_interim ||
-            jdk_update != jspawn_update || jdk_patch != jspawn_patch) {
-
-            fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d+%d,", jspawn_feature, jspawn_interim, jspawn_update, jspawn_patch);
-            fprintf(stderr, "but jspawnhelper for Java %d.%d.%d+%d was found.\n", jdk_feature, jdk_interim, jdk_update, jdk_patch);
-            shutItDown();
-        }
-    } else {
+    if (jdk_feature != VERSION_FEATURE || jdk_interim != VERSION_INTERIM || jdk_update != VERSION_UPDATE || jdk_patch != VERSION_PATCH) {
+        fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d+%d,", VERSION_FEATURE, VERSION_INTERIM, VERSION_UPDATE, VERSION_PATCH);
+        fprintf(stderr, "but jspawnhelper for Java %d.%d.%d+%d was found.\n", jdk_feature, jdk_interim, jdk_update, jdk_patch);
         shutItDown();
     }
 
