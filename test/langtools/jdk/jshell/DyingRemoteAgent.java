@@ -47,7 +47,7 @@ class DyingRemoteAgent extends RemoteExecutionControl {
         pm.put(JdiExecutionControlProvider.PARAM_REMOTE_AGENT, DyingRemoteAgent.class.getName());
         pm.put(JdiExecutionControlProvider.PARAM_HOST_NAME, host==null? "" : host);
         pm.put(JdiExecutionControlProvider.PARAM_LAUNCH, ""+isLaunch);
-        pm.put(JdiExecutionControlProvider.PARAM_TIMEOUT, ""+9000);
+        pm.put(JdiExecutionControlProvider.PARAM_TIMEOUT, ""+99000);
         // turn on logging of launch failures
         Logger.getLogger("jdk.jshell.execution").setLevel(Level.ALL);
         return JShell.builder()
