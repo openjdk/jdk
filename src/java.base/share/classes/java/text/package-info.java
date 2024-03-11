@@ -26,7 +26,7 @@
 /**
  * Provides classes and interfaces for handling text, dates, numbers,
  * and messages in a manner independent of natural languages.  This
- * means your application can be written to be
+ * means an application or library can be written to be
  * language-independent, and it can rely upon separate,
  * dynamically-linked localized resources. This allows the flexibility
  * of adding localizations for new localizations at any time.
