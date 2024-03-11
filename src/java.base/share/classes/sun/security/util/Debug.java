@@ -177,30 +177,19 @@ public class Debug {
      * @param option the debug option name
      * @param property debug setting for this option.
      *                 If "true" is included, a debug object is returned.
-     *                 If "false" is included, {@code null} is returned.
-     *                 Otherwise, fallback to {@code getInstance(option)}.
-     *                 Please note that to avoid accidentally enabling debug
-     *                 on {@code option}, the "all" value of the
-     *                 {@code java.security.debug} system property does not
-     *                 automatically cover this option.
-     *
-     * @return a new Debug object if the option is covered
+     *                 Otherwise, {@code null} is returned.
+     * @return a new Debug object if the option is enabled
      */
     public static Debug of(String option, String property) {
         if (property != null) {
             property = property.toLowerCase(Locale.ROOT);
-            if (property.contains("false")) {
-                return null;
-            }
             if (property.contains("true")) {
                 Debug d = new Debug();
                 d.prefix = option;
                 return d;
             }
         }
-        // Only call getInstance() when option is included in args.
-        // This prevents an object returned when args has "all".
-        return args.contains(option) ? getInstance(option) : null;
+        return null;
     }
 
     /**

@@ -37,38 +37,17 @@ public class LoginModuleDebug {
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             // debug option set to true
-            ProcessTools.executeTestJava("LoginDebug",
+            ProcessTools.executeTestJava("LoginModuleDebug",
                             "debug", "true")
                     .stdoutShouldBeEmpty()
                     .stderrShouldContain("krb5loginmodule:");
             // debug option set to false
-            ProcessTools.executeTestJava("LoginDebug",
+            ProcessTools.executeTestJava("LoginModuleDebug",
                             "debug", "false")
                     .stdoutShouldBeEmpty()
                     .stderrShouldNotContain("krb5loginmodule:");
             // no debug option
-            ProcessTools.executeTestJava("LoginDebug",
-                            "foo", "bar")
-                    .stdoutShouldBeEmpty()
-                    .stderrShouldNotContain("krb5loginmodule:");
-            // can also be set with system property
-            ProcessTools.executeTestJava(
-                    "-Djava.security.debug=krb5loginmodule",
-                    "LoginDebug",
-                            "foo", "bar")
-                    .stdoutShouldBeEmpty()
-                    .stderrShouldContain("krb5loginmodule:");
-            // debug option overrides system property
-            ProcessTools.executeTestJava(
-                            "-Djava.security.debug=krb5loginmodule",
-                            "LoginDebug",
-                            "debug", "false")
-                    .stdoutShouldBeEmpty()
-                    .stderrShouldNotContain("krb5loginmodule:");
-            // "all" does not cover
-            ProcessTools.executeTestJava(
-                            "-Djava.security.debug=all",
-                            "LoginDebug",
+            ProcessTools.executeTestJava("LoginModuleDebug",
                             "foo", "bar")
                     .stdoutShouldBeEmpty()
                     .stderrShouldNotContain("krb5loginmodule:");
