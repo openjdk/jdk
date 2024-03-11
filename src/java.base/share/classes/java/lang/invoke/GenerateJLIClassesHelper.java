@@ -25,7 +25,6 @@
 
 package java.lang.invoke;
 
-//import jdk.internal.misc.CDS;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import sun.invoke.util.Wrapper;
