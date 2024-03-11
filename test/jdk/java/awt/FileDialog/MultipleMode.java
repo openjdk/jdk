@@ -24,7 +24,6 @@
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Checkbox;
-import java.awt.EventQueue;
 import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -56,21 +55,18 @@ public class MultipleMode {
             """;
 
     public static void main(String[] args) throws Exception {
-
-        PassFailJFrame passFailJFrame = PassFailJFrame
-                .builder()
-                .title("MultipleMode test instructions")
-                .instructions(INSTRUCTIONS)
-                .rows(15)
-                .columns(40)
-                .build();
-
-        EventQueue.invokeAndWait(MultipleMode::init);
-
-        passFailJFrame.awaitAndCheck();
+        PassFailJFrame
+            .builder()
+            .title("MultipleMode test instructions")
+            .instructions(INSTRUCTIONS)
+            .rows(15)
+            .columns(40)
+            .testUI(MultipleMode::init)
+            .build()
+            .awaitAndCheck();
     }
 
-    private static void init() {
+    private static Frame init() {
         Frame frame = new Frame("MultipleMode");
         TextArea sysout = new TextArea("", 20, 80);
         sysout.setEditable(false);
@@ -79,7 +75,7 @@ public class MultipleMode {
 
         Button open = new Button("open");
         open.addActionListener(e -> {
-            FileDialog d = new FileDialog((Frame)null);
+            FileDialog d = new FileDialog(frame);
             d.setMultipleMode(mode.getState());
             d.setVisible(true);
 
@@ -104,10 +100,6 @@ public class MultipleMode {
 
         frame.pack();
 
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame,
-                PassFailJFrame.Position.HORIZONTAL);
-
-        frame.setVisible(true);
+        return frame;
     }
 }
