@@ -619,7 +619,7 @@ public class WorstCaseTests {
     private static int testHypotCase(double input1, double input2, double expected) {
         int failures = 0;
          // Cannot represent exact result, allow 1 additional ulp on top of documented bound, rounding up.
-        double ulps = 3.0;
+        double ulps = 3.0; // 1.5 + 1.0, rounded up
         failures += Tests.testUlpDiff("Math.hypot",       input1, input2, Math::hypot,       expected, ulps);
         failures += Tests.testUlpDiff("StrictMath.hypot", input1, input2, StrictMath::hypot, expected, ulps);
         return failures;
