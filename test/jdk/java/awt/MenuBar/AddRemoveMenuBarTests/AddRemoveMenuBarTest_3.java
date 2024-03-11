@@ -34,7 +34,6 @@ import java.awt.TextField;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -76,25 +75,15 @@ public class AddRemoveMenuBarTest_3  {
             Upon test completion, click Pass or Fail appropriately.
             """;
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("AddRemoveMenuBarTest_3 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(30)
                 .columns(38)
-                .build();
-
-        SwingUtilities.invokeAndWait(() -> {
-            AddRemoveMenuBar_3 frame = new AddRemoveMenuBar_3();
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(null,
-                    PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(AddRemoveMenuBar_3::new)
+                .build()
+                .awaitAndCheck();
     }
 }
 

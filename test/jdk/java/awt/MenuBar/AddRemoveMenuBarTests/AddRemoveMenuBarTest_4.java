@@ -27,7 +27,6 @@ import java.awt.Frame;
 import java.awt.Menu;
 import java.awt.MenuBar;
 import java.awt.MenuItem;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -61,25 +60,15 @@ public class AddRemoveMenuBarTest_4 {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("AddRemoveMenuBarTest_4 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(18)
                 .columns(45)
-                .build();
-
-        SwingUtilities.invokeAndWait(() -> {
-            AddRemoveMenuBar_4 frame = new AddRemoveMenuBar_4();
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(AddRemoveMenuBar_4::new)
+                .build()
+                .awaitAndCheck();
     }
 }
 
