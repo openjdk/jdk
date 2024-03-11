@@ -606,7 +606,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * Constructs a new BigInteger using a String with radix=10.
      * dot is allowed in the val.
      */
-    BigInteger(String val, int sign, int off, int numDigits) {
+    BigInteger(CharSequence val, int sign, int off, int numDigits) {
         signum = sign;
         // Pre-allocate array of expected size
         int numWords;
@@ -635,57 +635,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
                     continue;
                 int nextVal = Character.digit(c, 10);
                 if (nextVal == -1)
-                    throw new NumberFormatException(val);
-                numIndex++;
-                groupVal = 10 * groupVal + nextVal;
-            } while (numIndex < end);
-
-            if (groupIndex == 0)
-                magnitude[numWords - 1] = groupVal;
-            else
-                destructiveMulAdd(magnitude, intRadix[10], groupVal);
-        }
-
-        mag = trustedStripLeadingZeroInts(magnitude);
-        if (mag.length >= MAX_MAG_LENGTH) {
-            checkRange();
-        }
-    }
-
-    /*
-     * Constructs a new BigInteger using a String with radix=10.
-     * dot is allowed in the val.
-     */
-    BigInteger(char[] val, int sign, int off, int numDigits) {
-        signum = sign;
-        // Pre-allocate array of expected size
-        int numWords;
-        if (numDigits < 10)
-            numWords = 1;
-        else {
-            long numBits = ((numDigits * bitsPerDigit[10]) >>> 10) + 1;
-            if (numBits + 31 >= (1L << 32))
-                reportOverflow();
-            numWords = (int) (numBits + 31) >>> 5;
-        }
-        int[] magnitude = new int[numWords];
-
-        // Process first (potentially short) digit group
-        int digitsPerInt10 = digitsPerInt[10];
-        int firstGroupLen = numDigits % digitsPerInt10;
-        if (firstGroupLen == 0)
-            firstGroupLen = digitsPerInt10;
-
-        for (int numIndex = 0, groupIndex = 0; numIndex < numDigits; ++groupIndex) {
-            int end = numIndex + (groupIndex == 0 ? firstGroupLen : digitsPerInt10);
-            int groupVal = 0;
-            do {
-                char c = val[off++];
-                if (c == '.')
-                    continue;
-                int nextVal = Character.digit(c, 10);
-                if (nextVal == -1)
-                    throw new NumberFormatException(new String(val));
+                    throw new NumberFormatException(val.toString());
                 numIndex++;
                 groupVal = 10 * groupVal + nextVal;
             } while (numIndex < end);
