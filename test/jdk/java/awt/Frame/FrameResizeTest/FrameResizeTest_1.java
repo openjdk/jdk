@@ -53,25 +53,15 @@ public class FrameResizeTest_1 {
         """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("FrameResizeTest_1 Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(12)
                 .columns(45)
-                .build();
-
-        EventQueue.invokeAndWait(() -> {
-            FrameResize_1 frame = new FrameResize_1();
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(FrameResize_1::new)
+                .build()
+                .awaitAndCheck();
     }
 }
 
