@@ -27,7 +27,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -40,7 +39,6 @@ import javax.swing.SwingUtilities;
 
 public class Test4129681 {
     private static JLabel label;
-    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         String testInstructions = """
@@ -50,23 +48,20 @@ public class Test4129681 {
                 The test passes if the title of the border
                 is disabled as well as the label.
                 """;
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("JInternalFrame Instructions")
+
+        PassFailJFrame.builder()
+                .title("Test Instructions")
                 .instructions(testInstructions)
-                .testTimeOut(5)
                 .rows(6)
                 .columns(35)
-                .build();
-
-        SwingUtilities.invokeAndWait(() -> {
-            init();
-        });
-        passFailJFrame.awaitAndCheck();
+                .testUI(Test4129681::init)
+                .build()
+                .awaitAndCheck();
     }
 
-    public static void init() {
+    public static JFrame init() {
         JCheckBox check = new JCheckBox("Enable/Disable");
-        frame = new JFrame("Test Border Enable/Disable");
+        JFrame frame = new JFrame("Test Border Enable/Disable");
         check.addItemListener(event ->
                 label.setEnabled(ItemEvent.DESELECTED == event.getStateChange()));
 
@@ -77,8 +72,6 @@ public class Test4129681 {
         frame.add(BorderLayout.NORTH, check);
         frame.add(BorderLayout.CENTER, label);
         frame.setSize(300, 300);
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
-        frame.setVisible(true);
+        return frame;
     }
 }
