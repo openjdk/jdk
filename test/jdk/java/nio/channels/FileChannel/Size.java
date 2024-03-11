@@ -24,6 +24,7 @@
 /* @test
  * @bug 4563125
  * @summary Test size method of FileChannel
+ * @library /test/lib
  * @run main/othervm Size
  * @key randomness
  */
@@ -34,7 +35,7 @@ import java.nio.channels.*;
 import java.nio.file.FileStore;
 import java.nio.file.Path;
 import java.util.Random;
-
+import jtreg.SkippedException;
 
 /**
  * Testing FileChannel's size method.
@@ -83,8 +84,8 @@ public class Size {
             if ("File too large".equals(ioe.getMessage())) {
                 Path p = largeFile.toPath();
                 FileStore store = p.getFileSystem().provider().getFileStore(p);
-                if ("msdos".equals(store.type())) // FAT32
-                    return; // ignore IOE: file too big for 32 bits
+                if ("msdos".equals(store.type()))
+                    throw new SkippedException("file too big for FAT32");
             }
             throw ioe;
         }
