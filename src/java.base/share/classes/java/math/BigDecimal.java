@@ -598,7 +598,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                    + " contains more than one decimal point.");
+                                + " contains more than one decimal point.");
                         dot = true;
                     } else if (Character.isDigit(c)) { // slow path
                         int digit = Character.digit(c, 10);
@@ -621,8 +621,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         break; // [saves a test]
                     } else {
                         throw new NumberFormatException("Character " + c
-                                + " is neither a decimal digit number, decimal point, nor"
-                                + " \"e\" notation exponential mark.");
+                            + " is neither a decimal digit number, decimal point, nor"
+                            + " \"e\" notation exponential mark.");
                     }
 
                     if (--len == 0)
@@ -670,7 +670,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                    + " contains more than one decimal point.");
+                                + " contains more than one decimal point.");
                         dot = true;
                         if (idx == 0 && prec == 1)
                             start = offset;
@@ -678,7 +678,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // exponent expected
                         if ((c != 'e') && (c != 'E'))
                             throw new NumberFormatException("Character array"
-                                    + " is missing \"e\" notation exponential mark.");
+                                + " is missing \"e\" notation exponential mark.");
                         scl -= parseExp(in, offset, len);
                         break; // [saves a test]
                     }
@@ -1028,7 +1028,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                    + " contains more than one decimal point.");
+                                + " contains more than one decimal point.");
                         dot = true;
                     } else if (Character.isDigit(c)) { // slow path
                         int digit = Character.digit(c, 10);
@@ -1051,8 +1051,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         break; // [saves a test]
                     } else {
                         throw new NumberFormatException("Character " + c
-                                + " is neither a decimal digit number, decimal point, nor"
-                                + " \"e\" notation exponential mark.");
+                            + " is neither a decimal digit number, decimal point, nor"
+                            + " \"e\" notation exponential mark.");
                     }
 
                     if (--len == 0)
@@ -1100,7 +1100,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                    + " contains more than one decimal point.");
+                                + " contains more than one decimal point.");
                         dot = true;
                         if (idx == 0 && prec == 1)
                             start = offset;
@@ -1108,7 +1108,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // exponent expected
                         if ((c != 'e') && (c != 'E'))
                             throw new NumberFormatException("Character array"
-                                    + " is missing \"e\" notation exponential mark.");
+                                + " is missing \"e\" notation exponential mark.");
                         scl -= parseExp(val, offset, len);
                         break; // [saves a test]
                     }
