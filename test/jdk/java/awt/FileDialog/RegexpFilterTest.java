@@ -42,7 +42,7 @@ import java.awt.FileDialog;
  * @run main/othervm/manual -Dsun.awt.disableGtkFileDialogs=true RegexpFilterTest
 */
 public class RegexpFilterTest {
-    
+
     private static final String INSTRUCTIONS =
             """
             0. The test is only for X platforms
