@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,50 @@ public class Debug {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Get a Debug object corresponding to the given option on the given
+     * property value.
+     * <p>
+     * Note: unlike other {@code getInstance} methods, this method might
+     * return a Debug object even if the option is not set in the
+     * {@code java.security.debug} system property.
+     * <p>
+     * Usually, this method is used by other individual era-specific debug
+     * settings. For example,
+     * {@snippet lang=java:
+     * Map<String,String> settings = loadLoginSettings();
+     * String property = settings.get("logout");
+     * Debug debug = Debug.of("logout", setting);
+     * }
+     * @param option the debug option name
+     * @param property debug setting for this option.
+     *                 If "true" is included, a debug object is returned.
+     *                 If "false" is included, {@code null} is returned.
+     *                 Otherwise, fallback to {@code getInstance(option)}.
+     *                 Please note that to avoid accidentally enabling debug
+     *                 on {@code option}, the "all" value of the
+     *                 {@code java.security.debug} system property does not
+     *                 automatically cover this option.
+     *
+     * @return a new Debug object if the option is covered
+     */
+    public static Debug of(String option, String property) {
+        if (property != null) {
+            property = property.toLowerCase(Locale.ROOT);
+            if (property.contains("false")) {
+                return null;
+            }
+            if (property.contains("true")) {
+                Debug d = new Debug();
+                d.prefix = option;
+                return d;
+            }
+        }
+        // Only call getInstance() when option is included in args.
+        // This prevents an object returned when args has "all".
+        return args.contains(option) ? getInstance(option) : null;
     }
 
     /**
