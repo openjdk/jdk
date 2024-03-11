@@ -138,15 +138,13 @@ public class AsyncCloseAndInterrupt {
                 throw new IOException("Cannot delete existing fifo " + fifoFile);
         }
 
-        OutputAnalyzer oa = ProcessTools.executeCommand("mkfifo",
-                                                        fifoFile.toString());
+        ProcessBuilder pb = new ProcessBuilder("mkfifo", fifoFile.toString());
+        OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         oa.waitFor();
-        if (oa.pid() != 0) {
-            StringBuilder sb = new StringBuilder();
-            oa.asLines().stream().forEach(s -> sb.append(s));
+        if (oa.pid() != 0)
             throw new IOException("Error creating fifo \"" +
-                fifoFile.getAbsolutePath() + "\" - " + sb);
-        }
+                fifoFile.getAbsolutePath() + "\"\n" +
+                ProcessTools.getProcessLog(pb, oa));
         new RandomAccessFile(fifoFile, "rw").close();
     }
 
