@@ -1579,7 +1579,7 @@ void SuperWord::split_packs_only_implemented_with_smaller_size() {
                });
 }
 
-// Split packs that have mutual dependence, until all packs are mutually_independent.
+// Split packs that have a mutual dependency, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
   split_packs("SuperWord::split_packs_to_break_mutual_dependence",
                [&](const Node_List* pack) {
@@ -1587,7 +1587,8 @@ void SuperWord::split_packs_to_break_mutual_dependence() {
                  assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
                  if (!is_marked_reduction(pack->at(0)) &&
                      !mutually_independent(pack)) {
-                   // Split in half.
+                   // As a best guess, we split the pack in half. This way, we iteratively make the
+                   // packs smaller, until there is no dependency.
                    return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
                  }
                  return SplitTask::make_unchanged();
@@ -3013,8 +3014,8 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
     // 2. Check for matching uses: equal if both are superset of the other.
     //    Reductions have no pack uses, so they match trivially on the use packs.
     if (!is_reduction_pack &&
-        (!has_use_pack_superset(n0, n1) ||
-         !has_use_pack_superset(n1, n0))) {
+        !(has_use_pack_superset(n0, n1) &&
+          has_use_pack_superset(n1, n0))) {
       return i + 1;
     }
   }

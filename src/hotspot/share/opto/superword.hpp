@@ -336,7 +336,7 @@ private:
     bool is_split() const { return _kind == Split; }
     const char* message() const { return _message; }
 
-    int split_size() const {
+    uint split_size() const {
       assert(is_split(), "only split tasks have split_size");
       return _split_size;
     }
@@ -390,12 +390,8 @@ private:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
 
-  // Split packs at boundaries where left and right have different use or def packs.
   void split_packs_at_use_def_boundaries();
-  // Split packs that are only implemented with a smaller pack size. Also splits packs
-  // such that they eventually have power of 2 size.
   void split_packs_only_implemented_with_smaller_size();
-  // Split packs that have mutual dependence, until all packs are mutually_independent.
   void split_packs_to_break_mutual_dependence();
 
   // Filter out packs with various filter predicates
