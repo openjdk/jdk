@@ -653,72 +653,53 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     }
 
     /*
-     * Constructs a new BigInteger using a char array with radix=10.
-     * Sign is precalculated outside and not allowed in the val. The {@code val}
-     * array is assumed to be unchanged for the duration of the constructor
-     * call.
+     * Constructs a new BigInteger using a String with radix=10.
+     * dot is allowed in the val.
      */
-    BigInteger(char[] val, int sign, int len) {
-        int cursor = 0, numDigits;
-
-        // Skip leading zeros and compute number of digits in magnitude
-        while (cursor < len && Character.digit(val[cursor], 10) == 0) {
-            cursor++;
-        }
-        if (cursor == len) {
-            signum = 0;
-            mag = ZERO.mag;
-            return;
-        }
-
-        numDigits = len - cursor;
+    BigInteger(char[] val, int sign, int off, int numDigits) {
         signum = sign;
         // Pre-allocate array of expected size
         int numWords;
-        if (len < 10) {
+        if (numDigits < 10)
             numWords = 1;
-        } else {
+        else {
             long numBits = ((numDigits * bitsPerDigit[10]) >>> 10) + 1;
-            if (numBits + 31 >= (1L << 32)) {
+            if (numBits + 31 >= (1L << 32))
                 reportOverflow();
-            }
             numWords = (int) (numBits + 31) >>> 5;
         }
         int[] magnitude = new int[numWords];
 
         // Process first (potentially short) digit group
-        int firstGroupLen = numDigits % digitsPerInt[10];
+        int digitsPerInt10 = digitsPerInt[10];
+        int firstGroupLen = numDigits % digitsPerInt10;
         if (firstGroupLen == 0)
-            firstGroupLen = digitsPerInt[10];
-        magnitude[numWords - 1] = parseInt(val, cursor,  cursor += firstGroupLen);
+            firstGroupLen = digitsPerInt10;
 
-        // Process remaining digit groups
-        while (cursor < len) {
-            int groupVal = parseInt(val, cursor, cursor += digitsPerInt[10]);
-            destructiveMulAdd(magnitude, intRadix[10], groupVal);
+        for (int numIndex = 0, groupIndex = 0; numIndex < numDigits; ++groupIndex) {
+            int end = numIndex + (groupIndex == 0 ? firstGroupLen : digitsPerInt10);
+            int groupVal = 0;
+            do {
+                char c = val[off++];
+                if (c == '.')
+                    continue;
+                int nextVal = Character.digit(c, 10);
+                if (nextVal == -1)
+                    throw new NumberFormatException(new String(val));
+                numIndex++;
+                groupVal = 10 * groupVal + nextVal;
+            } while (numIndex < end);
+
+            if (groupIndex == 0)
+                magnitude[numWords - 1] = groupVal;
+            else
+                destructiveMulAdd(magnitude, intRadix[10], groupVal);
         }
+
         mag = trustedStripLeadingZeroInts(magnitude);
         if (mag.length >= MAX_MAG_LENGTH) {
             checkRange();
         }
-    }
-
-    // Create an integer with the digits between the two indexes
-    // Assumes start < end. The result may be negative, but it
-    // is to be treated as an unsigned value.
-    private int parseInt(char[] source, int start, int end) {
-        int result = Character.digit(source[start++], 10);
-        if (result == -1)
-            throw new NumberFormatException(new String(source));
-
-        for (int index = start; index < end; index++) {
-            int nextVal = Character.digit(source[index], 10);
-            if (nextVal == -1)
-                throw new NumberFormatException(new String(source));
-            result = 10*result + nextVal;
-        }
-
-        return result;
     }
 
     // bitsPerDigit in the given radix times 1024

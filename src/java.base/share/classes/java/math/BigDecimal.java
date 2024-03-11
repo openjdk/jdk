@@ -562,28 +562,22 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         // bad offset, etc.
         try {
             // handle the sign
-            boolean isneg = false;          // assume positive
-            if (in[offset] == '-') {
-                isneg = true;               // leading minus means negative
-                offset++;
-                len--;
-            } else if (in[offset] == '+') { // leading + allowed
-                offset++;
+            char c = in[offset];
+            boolean isneg = c == '-'; // leading minus means negative
+            if (isneg || c == '+') {
+                c = in[++offset];
                 len--;
             }
 
             // should now be at numeric part of the significand
             boolean dot = false;             // true when there is a '.'
-            char c;                          // current character
             boolean isCompact = (len <= MAX_COMPACT_DIGITS);
             // integer significand array & idx is the index to it. The array
             // is ONLY used when we can't use a compact representation.
-            int idx = 0;
             if (isCompact) {
                 // First compact case, we need not to preserve the character
                 // and we can just compute the value in place.
-                for (; len > 0; offset++, len--) {
-                    c = in[offset];
+                for (; ; ) {
                     if ((c == '0')) { // have zero
                         if (prec == 0)
                             prec = 1;
@@ -604,7 +598,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                + " contains more than one decimal point.");
+                                    + " contains more than one decimal point.");
                         dot = true;
                     } else if (Character.isDigit(c)) { // slow path
                         int digit = Character.digit(c, 10);
@@ -627,9 +621,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         break; // [saves a test]
                     } else {
                         throw new NumberFormatException("Character " + c
-                            + " is neither a decimal digit number, decimal point, nor"
-                            + " \"e\" notation exponential mark.");
+                                + " is neither a decimal digit number, decimal point, nor"
+                                + " \"e\" notation exponential mark.");
                     }
+
+                    if (--len == 0)
+                        break;
+                    c = in[++offset];
                 }
                 if (prec == 0) // no digits found
                     throw new NumberFormatException("No digits found.");
@@ -646,51 +644,53 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                     }
                 }
             } else {
-                char[] coeff = new char[len];
-                for (; len > 0; offset++, len--) {
-                    c = in[offset];
+                int start = offset;
+                for (int idx = 0; ; ) {
                     // have digit
                     if ((c >= '0' && c <= '9') || Character.isDigit(c)) {
                         // First compact case, we need not to preserve the character
                         // and we can just compute the value in place.
                         if (c == '0' || Character.digit(c, 10) == 0) {
                             if (prec == 0) {
-                                coeff[idx] = c;
+                                start = offset;
                                 prec = 1;
                             } else if (idx != 0) {
-                                coeff[idx++] = c;
+                                ++idx;
                                 ++prec;
-                            } // else c must be a redundant leading zero
+                            } else
+                                start = offset + 1;
                         } else {
                             if (prec != 1 || idx != 0)
                                 ++prec; // prec unchanged if preceded by 0s
-                            coeff[idx++] = c;
+                            ++idx;
                         }
                         if (dot)
                             ++scl;
-                        continue;
-                    }
-                    // have dot
-                    if (c == '.') {
+                    } else if (c == '.') {
                         // have dot
                         if (dot) // two dots
                             throw new NumberFormatException("Character array"
-                                + " contains more than one decimal point.");
+                                    + " contains more than one decimal point.");
                         dot = true;
-                        continue;
+                        if (idx == 0 && prec == 1)
+                            start = offset;
+                    } else {
+                        // exponent expected
+                        if ((c != 'e') && (c != 'E'))
+                            throw new NumberFormatException("Character array"
+                                    + " is missing \"e\" notation exponential mark.");
+                        scl -= parseExp(in, offset, len);
+                        break; // [saves a test]
                     }
-                    // exponent expected
-                    if ((c != 'e') && (c != 'E'))
-                        throw new NumberFormatException("Character array"
-                            + " is missing \"e\" notation exponential mark.");
-                    scl -= parseExp(in, offset, len);
-                    break; // [saves a test]
+                    if (--len == 0)
+                        break;
+                    c = in[++offset];
                 }
                 // here when no characters left
                 if (prec == 0) // no digits found
                     throw new NumberFormatException("No digits found.");
                 // Remove leading zeros from precision (digits count)
-                rb = new BigInteger(coeff, isneg ? -1 : 1, prec);
+                rb = new BigInteger(in, isneg ? -1 : 1, start, prec);
                 rs = compactValFor(rb);
                 int mcp = mc.precision;
                 if (mcp > 0 && (prec > mcp)) {
@@ -1055,9 +1055,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                                 + " \"e\" notation exponential mark.");
                     }
 
-                    if (--len == 0) {
+                    if (--len == 0)
                         break;
-                    }
                     c = val.charAt(++offset);
                 }
                 if (prec == 0) // no digits found
@@ -1086,14 +1085,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                                 start = offset;
                                 prec = 1;
                             } else if (idx != 0) {
-                                idx++;
+                                ++idx;
                                 ++prec;
                             } else
                                 start = offset + 1;
                         } else {
                             if (prec != 1 || idx != 0)
                                 ++prec; // prec unchanged if preceded by 0s
-                            idx++;
+                            ++idx;
                         }
                         if (dot)
                             ++scl;
@@ -1114,9 +1113,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         break; // [saves a test]
                     }
 
-                    if (--len == 0) {
+                    if (--len == 0)
                         break;
-                    }
                     c = val.charAt(++offset);
                 }
                 // here when no characters left

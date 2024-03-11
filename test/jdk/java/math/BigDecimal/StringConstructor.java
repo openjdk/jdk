@@ -102,6 +102,29 @@ public class StringConstructor {
                 throw new RuntimeException("String constructor failure.");
             }
         }
+
+        String[] strings = new String[] {
+                "12",
+                "00000012345",
+                ".2e000000000000001",
+                "1.2e000000000000001",
+                "-0.000000000006325524822672631550863255248226726315508",
+                "-6325524822672631550863255248226726315508.6325524822672631550863255248226726315508",
+                "1234e+123",
+                "1234567890123456789012345678901234567890"
+        };
+        for (String s : strings) {
+            BigDecimal bd = new BigDecimal(s);
+            BigDecimal bd1 = new BigDecimal(s.toCharArray());
+            if (!bd.equals(bd1)) {
+                System.err.println("bd string: " + s);
+            }
+            String bdString = bd.toString();
+            BigDecimal bdDoppel = new BigDecimal(bdString);
+            if (!bd.equals(bdDoppel)) {
+                System.err.println("bd string: " + bdString);
+            }
+        }
     }
 
     private static void roundtripWithAbnormalExponent(BigDecimal bd) {
@@ -136,6 +159,14 @@ public class StringConstructor {
                                    tmp + "precision = " + tmp.precision());
                 throw new RuntimeException("String constructor failure.");
             }
+
+            BigDecimal tmp1 = new BigDecimal(s.toCharArray());
+            // System.err.println("Testing " + s);
+            if (! expected.equals(tmp1) || tmp.precision() != 1) {
+                System.err.println("Bad conversion of " + s + "got " +
+                        tmp1 + "precision = " + tmp1.precision());
+                throw new RuntimeException("String constructor failure.");
+            }
         }
 
     }
@@ -168,6 +199,8 @@ public class StringConstructor {
 
     private static void testString0(String s, BigDecimal expected) {
         if (!expected.equals(new BigDecimal(s)))
+            throw new RuntimeException(s + " is not equal to " + expected);
+        if (!expected.equals(new BigDecimal(s.toCharArray())))
             throw new RuntimeException(s + " is not equal to " + expected);
     }
 

@@ -59,6 +59,7 @@ public class BigDecimals {
     /* array to hold the created objects. */
     private BigDecimal[] bigDecimals;
     private String[] stringInputs;
+    private char[][] charArrayInputs;
     private double[] doubleInputs;
     private BigDecimal[] hugeArray, largeArray, smallArray;
 
@@ -68,6 +69,7 @@ public class BigDecimals {
         dummyArr = new Object[TEST_SIZE];
         bigDecimals = new BigDecimal[TEST_SIZE];
         stringInputs = new String[TEST_SIZE];
+        charArrayInputs = new char[TEST_SIZE][];
         doubleInputs = new double[TEST_SIZE];
         for (int i = 0; i < TEST_SIZE; i++) {
             double value = (double) (i + 1);
@@ -87,6 +89,7 @@ public class BigDecimals {
 
             bigDecimals[i] = new BigDecimal(value);
             stringInputs[i] = "" + value;
+            charArrayInputs[i] = stringInputs[i].toCharArray();
             doubleInputs[i] = value;
         }
 
@@ -120,6 +123,15 @@ public class BigDecimals {
     @OperationsPerInvocation(TEST_SIZE)
     public void testConstructorWithString(Blackhole bh) {
         for (String s : stringInputs) {
+            bh.consume(new BigDecimal(s));
+        }
+    }
+
+    /** Invokes the (char[])-constructor of BigDecimal with various different values. */
+    @Benchmark
+    @OperationsPerInvocation(TEST_SIZE)
+    public void testConstructorWithCharArray(Blackhole bh) {
+        for (char[] s : charArrayInputs) {
             bh.consume(new BigDecimal(s));
         }
     }
