@@ -139,7 +139,7 @@ static void broadcast_additional_needles(bool sizeKnown, int size,
       __ jl_b(L_done);
     }
     if (isUL) {
-      // Expand and add compare for second element
+      // Expand and add compare for second element   ASGASG if UL and expanded
       __ movzbl(rTmp, Address(needle, 1));
       __ movdl(byte_1, rTmp);
       __ vpbroadcastw(byte_1, byte_1, Assembler::AVX_256bit);
