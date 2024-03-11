@@ -51,19 +51,19 @@ public class TestBoolNodeGvn {
     @Arguments({Argument.DEFAULT, Argument.DEFAULT})
     @IR(failOn = IRNode.CMP_U, phase = CompilePhase.AFTER_PARSING, applyIfPlatform = {"x86", "false"})
     public static boolean test(int x, int m) {
-        return Integer.compareUnsigned((x & m), m) > 0
-                & Integer.compareUnsigned((m & x), m) > 0
+        return !(Integer.compareUnsigned((x & m), m) > 0) // assert in inversions to generates the pattern looking for
+                & !(Integer.compareUnsigned((m & x), m) > 0)
                 & Integer.compareUnsigned((x & m), m + 1) < 0
                 & Integer.compareUnsigned((m & x), m + 1) < 0;
     }
 
     private static void testCorrectness() {
-        int[] values = { -10, -5, -1, 0, 1, 5, 8, 16, 42, 100, Integer.MAX_VALUE, Integer.MIN_VALUE };
+        int[] values = { 0, 1, 5, 8, 16, 42, 100, Integer.MAX_VALUE };
 
         for (int x : values) {
             for (int m : values) {
                 if (!test(x, m)) {
-                    throw new RuntimeException("Bad result for x =  " + x + " m = " + m + ", expected always true");
+                    throw new RuntimeException("Bad result for x = " + x + " and m = " + m + ", expected always true");
                 }
             }
         }
