@@ -66,18 +66,18 @@ public class ComboPopupBug {
         cb.addItem("test");
         cb.addItem("test2");
         cb.addItem("test3");
-        frame.getContentPane().add(cb, "North");
 
         JButton b = new JButton("Close");
         b.addActionListener(
                 (e)->{
                     try {
                         Thread.sleep(3000);
-                    }
-                    catch (Exception ex) {
+                    } catch (Exception ignored) {
                     }
                     frame.setVisible(false);
                 });
+
+        frame.getContentPane().add(cb, "North");
         frame.getContentPane().add(b, "South");
         frame.setSize(200, 200);
 
