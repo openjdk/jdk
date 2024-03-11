@@ -67,9 +67,6 @@ class ModifiedScoped {
     public final @FldA String @FldA [] @FldB [] array2Deep = null;
     public final String @FldA [] [] array2First = null;
     public final String [] @FldB [] array2Second = null;
-
-    public final @FldA int primitive = 0;
-    public final @FldA int @FldB [] primitiveArray1Deep = null;
 }
 
 class Parameterized<K, V> { }
