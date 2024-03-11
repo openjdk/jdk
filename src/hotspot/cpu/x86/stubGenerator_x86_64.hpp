@@ -540,23 +540,6 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
-  void string_indexof_big_loop_helper(int size, Label &bailout, Label &loop_top,
-                                      Register haystack, Register hsLength,
-                                      Register eq_mask, Register incr,
-                                      Register needle, Register hsPtrRet,
-                                      Register temp1,
-                                      StrIntrinsicNode::ArgEncoding ae);
-  void string_indexof_small_loop_helper(int size, Label &bailout,
-                                        StrIntrinsicNode::ArgEncoding ae);
-  void string_indexof_byte_compare_helper(int size, Label &L_noMatch,
-                                          Label &L_matchFound, Register needle,
-                                          Register needleVal, Register haystack,
-                                          Register mask, Register foundIndex,
-                                          Register tmp,
-                                          StrIntrinsicNode::ArgEncoding ae);
-  void string_indexof_preload_needle_helper(int size, Register needle,
-                                            Register needleVal,
-                                            StrIntrinsicNode::ArgEncoding ae);
   void generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding ae);
   void generate_string_indexof();
 
