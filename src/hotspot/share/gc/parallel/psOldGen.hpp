@@ -105,9 +105,6 @@ class PSOldGen : public CHeapObj<mtGC> {
   ObjectStartArray*     start_array()             { return &_start_array; }
   PSVirtualSpace*       virtual_space() const     { return _virtual_space;}
 
-  // Has the generation been successfully allocated?
-  bool is_allocated();
-
   // Size info
   size_t capacity_in_bytes() const        { return object_space()->capacity_in_bytes(); }
   size_t used_in_bytes() const            { return object_space()->used_in_bytes(); }

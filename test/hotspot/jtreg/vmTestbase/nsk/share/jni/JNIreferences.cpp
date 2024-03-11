@@ -22,7 +22,7 @@
  */
 #include "jni.h"
 #include <stdlib.h>
-#include "nsk_tools.h"
+#include "nsk_tools.hpp"
 
 extern "C" {
 

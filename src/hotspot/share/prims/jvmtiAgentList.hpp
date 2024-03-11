@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,14 +65,15 @@ class JvmtiAgentList : AllStatic {
   static void initialize();
   static void convert_xrun_agents();
 
- public:
   static void add(JvmtiAgent* agent) NOT_JVMTI_RETURN;
-  static void add(const char* name, char* options, bool absolute_path) NOT_JVMTI_RETURN;
-  static void add_xrun(const char* name, char* options, bool absolute_path) NOT_JVMTI_RETURN;
+
+ public:
+  static void add(const char* name, const char* options, bool absolute_path) NOT_JVMTI_RETURN;
+  static void add_xrun(const char* name, const char* options, bool absolute_path) NOT_JVMTI_RETURN;
 
   static void load_agents() NOT_JVMTI_RETURN;
-  static jint load_agent(const char* agent, const char* absParam,
-                         const char* options, outputStream* st) NOT_JVMTI_RETURN_(0);
+  static void load_agent(const char* agent, bool is_absolute_path,
+                         const char* options, outputStream* st) NOT_JVMTI_RETURN;
   static void load_xrun_agents() NOT_JVMTI_RETURN;
   static void unload_agents() NOT_JVMTI_RETURN;
 

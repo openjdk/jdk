@@ -76,6 +76,8 @@ compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 compiler/floatingpoint/TestSubnormalFloat.java 8317810 generic-i586
 compiler/floatingpoint/TestSubnormalDouble.java 8317810 generic-i586
 
+compiler/startup/StartupOutput.java 8326615 generic-x64
+
 #############################################################################
 
 # :hotspot_gc
@@ -105,7 +107,6 @@ runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
-runtime/CompressedOops/CompressedClassPointers.java 8322943 aix-ppc64
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java#checkDecoder 8305489 linux-all
 runtime/ErrorHandling/MachCodeFramesInErrorFile.java 8313315 linux-ppc64le
