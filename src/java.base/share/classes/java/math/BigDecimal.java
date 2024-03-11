@@ -631,7 +631,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
                 if (prec == 0) // no digits found
                     throw new NumberFormatException("No digits found.");
-                rs = isneg ? -rs : rs;
+                if (isneg)
+                    rs = -rs;
                 int mcp = mc.precision;
                 int drop = prec - mcp; // prec has range [1, MAX_INT], mcp has range [0, MAX_INT];
                                        // therefore, this subtraction cannot overflow
@@ -674,14 +675,14 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         dot = true;
                         if (idx == 0 && prec == 1)
                             start = offset;
-                    } else {
-                        // exponent expected
-                        if ((c != 'e') && (c != 'E'))
-                            throw new NumberFormatException("Character array"
-                                + " is missing \"e\" notation exponential mark.");
+                    } else if (c == 'e' || c == 'E') {
                         scl -= parseExp(in, offset, len);
                         break; // [saves a test]
-                    }
+                    } else
+                        throw new NumberFormatException("Character " + c
+                            + " is neither a decimal digit number, decimal point, nor"
+                            + " \"e\" notation exponential mark.");
+
                     if (--len == 0)
                         break;
                     c = in[++offset];
@@ -1046,14 +1047,13 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                         }
                         if (dot)
                             ++scl;
-                    } else if ((c == 'e') || (c == 'E')) {
+                    } else if (c == 'e' || c == 'E') {
                         scl -= parseExp(val, offset, len);
                         break; // [saves a test]
-                    } else {
+                    } else
                         throw new NumberFormatException("Character " + c
                             + " is neither a decimal digit number, decimal point, nor"
                             + " \"e\" notation exponential mark.");
-                    }
 
                     if (--len == 0)
                         break;
@@ -1061,7 +1061,8 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
                 if (prec == 0) // no digits found
                     throw new NumberFormatException("No digits found.");
-                rs = isneg ? -rs : rs;
+                if (isneg)
+                    rs = -rs;
                 int mcp = mc.precision;
                 int drop = prec - mcp; // prec has range [1, MAX_INT], mcp has range [0, MAX_INT];
                 // therefore, this subtraction cannot overflow
@@ -1123,7 +1124,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                 // Remove leading zeros from precision (digits count)
                 rb = new BigInteger(val, isneg ? -1 : 1, start, prec);
-
                 rs = compactValFor(rb);
                 int mcp = mc.precision;
                 if (mcp > 0 && (prec > mcp)) {
