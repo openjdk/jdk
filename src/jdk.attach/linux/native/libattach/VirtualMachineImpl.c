@@ -192,12 +192,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
 JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
-    int res;
     shutdown(fd, SHUT_RDWR);
-    res = close(fd);
-    if (res == -1) {
-        JNU_ThrowIOExceptionWithLastError(env, "close");
-    }
+    close(fd);
 }
 
 /*
