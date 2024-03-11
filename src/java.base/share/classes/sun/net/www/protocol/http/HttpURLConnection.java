@@ -2666,7 +2666,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     throw new AssertionError("should not reach here");
                 }
             }
-p            if (ret != null ) {
+            if (ret != null ) {
                 if (!ret.setHeaders(this, p, raw)) {
                     ret.disposeContext();
                     ret = null;
