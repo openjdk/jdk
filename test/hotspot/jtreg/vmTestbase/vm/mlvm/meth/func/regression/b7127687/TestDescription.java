@@ -25,8 +25,7 @@
 /*
  * @test
  * @bug 7127687
- * @modules java.base/jdk.internal.org.objectweb.asm
- *
+ * @enablePreview
  * @summary converted from VM Testbase vm/mlvm/meth/func/regression/b7127687.
  * VM Testbase keywords: [feature_mlvm, nonconcurrent]
  * VM Testbase readme:
