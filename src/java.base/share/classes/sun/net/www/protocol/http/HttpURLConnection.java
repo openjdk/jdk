@@ -335,13 +335,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private String userCookies = null;
     private String userCookies2 = null;
 
-    /* We only have a single static authenticator for now.
-     * REMIND:  backwards compatibility with JDK 1.1.  Should be
-     * eliminated for JDK 2.0.
-     */
-    @Deprecated
-    private static HttpAuthenticator defaultAuth;
-
     /* all the headers we send
      * NOTE: do *NOT* dump out the content of 'requests' in the
      * output or stacktrace since it may contain security-sensitive
@@ -943,14 +936,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                 return ResponseCache.getDefault();
             }
         });
-    }
-
-    /**
-     * @deprecated Use java.net.Authenticator.setDefault() instead.
-     */
-    @Deprecated
-    public static void setDefaultAuthenticator(HttpAuthenticator a) {
-        defaultAuth = a;
     }
 
     /**
@@ -2524,22 +2509,6 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     throw new AssertionError("should not reach here");
                 }
             }
-            // For backwards compatibility, we also try defaultAuth
-            // REMIND:  Get rid of this for JDK2.0.
-
-            if (ret == null && defaultAuth != null
-                && defaultAuth.schemeSupported(scheme)) {
-                try {
-                    @SuppressWarnings("deprecation")
-                    URL u = new URL("http", host, port, "/");
-                    String a = defaultAuth.authString(u, scheme, realm);
-                    if (a != null) {
-                        ret = new BasicAuthentication (true, host, port, realm, a);
-                        // not in cache by default - cache on success
-                    }
-                } catch (java.net.MalformedURLException ignored) {
-                }
-            }
             if (ret != null) {
                 if (!ret.setHeaders(this, p, raw)) {
                     ret.disposeContext();
@@ -2697,20 +2666,7 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
                     throw new AssertionError("should not reach here");
                 }
             }
-
-            // For backwards compatibility, we also try defaultAuth
-            // REMIND:  Get rid of this for JDK2.0.
-
-            if (ret == null && defaultAuth != null
-                && defaultAuth.schemeSupported(scheme)) {
-                String a = defaultAuth.authString(url, scheme, realm);
-                if (a != null) {
-                    ret = new BasicAuthentication (false, url, realm, a);
-                    // not in cache by default - cache on success
-                }
-            }
-
-            if (ret != null ) {
+p            if (ret != null ) {
                 if (!ret.setHeaders(this, p, raw)) {
                     ret.disposeContext();
                     ret = null;
