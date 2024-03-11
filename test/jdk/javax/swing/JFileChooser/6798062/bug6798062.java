@@ -53,7 +53,7 @@ import javax.swing.SwingUtilities;
 
 public class bug6798062 {
 
-    private static final String instructionsText = """
+    private static final String INSTRUCTIONS = """
             The test is suitable only for Windows.
 
             1. Create a link
@@ -75,33 +75,29 @@ public class bug6798062 {
     private Thread thread;
 
     public static void main(String[] args) throws Exception {
-         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+         PassFailJFrame.builder()
                 .title("JFileChooser Instructions")
-                .instructions(instructionsText)
-                .testTimeOut(5)
+                .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(35)
-                .build();
+                .testUI(bug6798062::createUI)
+                .build()
+                .awaitAndCheck();
+    }
 
-        SwingUtilities.invokeAndWait(() -> {
-            slider = new JSlider(0, 100);
-            tfLink = new JTextField();
-            btnStart = new JButton("Start");
-            btnStop = new JButton("Stop");
-            btnGC = new JButton("Run System.gc()");
-            frame = new JFrame("bug6798062");
+    private static JFrame createUI() {
+        slider = new JSlider(0, 100);
+        tfLink = new JTextField();
+        btnStart = new JButton("Start");
+        btnStop = new JButton("Stop");
+        btnGC = new JButton("Run System.gc()");
+        frame = new JFrame("bug6798062");
 
-            frame.setSize(400, 300);
-            frame.setLocationRelativeTo(null);
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new bug6798062().initialize());
+        frame.setSize(400, 300);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.add(new bug6798062().initialize());
 
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-            frame.setVisible(true);
-        });
-        passFailJFrame.awaitAndCheck();
+        return frame;
     }
 
     private JComponent initialize() {
@@ -109,18 +105,10 @@ public class bug6798062 {
             return new JLabel("The test is suitable only for Windows");
         }
 
-        String tempDir = System.getProperty("java.io.tmpdir");
-
-        if (tempDir.length() == 0) { // 'java.io.tmpdir' isn't guaranteed to be defined
-            tempDir = System.getProperty("user.home");
-        }
-
-        System.out.println("Temp directory: " + tempDir);
-
         try {
-            folder = ShellFolder.getShellFolder(new File(tempDir));
+            folder = ShellFolder.getShellFolder(new File("."));
         } catch (FileNotFoundException e) {
-            fail("Directory " + tempDir + " not found");
+            fail("Directory not found");
         }
 
         slider.setMajorTickSpacing(10);
@@ -186,6 +174,7 @@ public class bug6798062 {
     }
 
     private static void fail(String msg) {
+        PassFailJFrame.forceFail();
         throw new RuntimeException(msg);
     }
 
@@ -202,7 +191,7 @@ public class bug6798062 {
             try {
                 linkFolder = ShellFolder.getShellFolder(new File(link));
             } catch (FileNotFoundException e) {
-                e.printStackTrace();
+                fail("File not found");
 
                 linkFolder = null;
             }
@@ -217,7 +206,7 @@ public class bug6798062 {
                     try {
                         link.getLinkLocation();
                     } catch (FileNotFoundException e) {
-                        e.printStackTrace();
+                        fail("File not found");
                     }
                 }
 
