@@ -40,10 +40,12 @@ public interface ResolvedJavaType extends JavaType, ModifiersProvider, Annotated
     boolean hasFinalizer();
 
     /**
-     * Checks whether this type has any finalizable subclasses so far. Any decisions based on this
-     * information require the registration of a dependency, since this information may change.
+     * Checks whether this type might have finalizable subclasses. Any decisions based on a
+     * negative answer require the registration of a dependency, since this information may change.
+     * For example, dynamic class loading can later load a finalizable subclass.
      *
-     * @return {@code true} if this class has any subclasses with finalizers
+     * @return an {@link AssumptionResult} specifying if this class may have any subclasses with
+     *         finalizers along with any assumptions under which this answer holds
      */
     AssumptionResult<Boolean> hasFinalizableSubclass();
 
