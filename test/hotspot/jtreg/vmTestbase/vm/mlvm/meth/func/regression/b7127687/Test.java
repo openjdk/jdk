@@ -63,6 +63,7 @@ public class Test extends MlvmTest {
     private static ClassDesc generateClass(String name) throws ClassNotFoundException{
         byte[] bytes = ClassFile.of().build(ClassDesc.of(name),
                 ClassBuilder -> ClassBuilder
+                        .withVersion(ClassFile.JAVA_11_VERSION, 0)
                         .withFlags(ClassFile.ACC_PUBLIC)
                         .withSuperclass(ClassDesc.ofInternalName("java/lang/Object")));
 
