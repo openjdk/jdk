@@ -134,6 +134,16 @@ import java.util.Objects;
  * Use two single quotes in a row to produce a literal single quote. For example,
  * {@code new ChoiceFormat("1# ''one'' ").format(1)} returns {@code " 'one' "}.
  *
+ * @apiNote A subclass could perform more consistent pattern validation by
+ * throwing an {@code IllegalArgumentException} for all incorrect cases.
+ * @implNote Given an incorrect pattern, this implementation may either
+ * throw an exception or succeed and discard the incorrect portion. A {@code
+ * NumberFormatException} is thrown if a {@code limit} can not be
+ * parsed as a numeric value and an {@code IllegalArgumentException} is thrown
+ * if a {@code SubPattern} is missing, or the intervals are not ascending.
+ * Discarding the incorrect portion may result in a ChoiceFormat with
+ * empty {@code limits} and {@code formats}.
+ *
  * <h2>Usage Information</h2>
  *
  * <p>
@@ -227,11 +237,12 @@ public class ChoiceFormat extends NumberFormat {
     private static final long serialVersionUID = 1795184449645032964L;
 
     /**
-     * Apply the given pattern to this ChoiceFormat object. The syntax
-     * for the ChoiceFormat pattern can be seen in the {@linkplain ##patterns
-     * Patterns} section. Unlike {@link #setChoices(double[], String[])} this
-     * method will throw an {@code IllegalArgumentException} if the {@code
-     * limits} are not in ascending order.
+     * Apply the given pattern to this ChoiceFormat object. The syntax and error
+     * related caveats for the ChoiceFormat pattern can be found in the
+     * {@linkplain ##patterns Patterns} section. Unlike {@link #setChoices(double[],
+     * String[])}, this method will throw an {@code IllegalArgumentException} if
+     * the {@code limits} are not in ascending order.
+     *
      * @param newPattern a pattern string
      * @throws    NullPointerException if {@code newPattern}
      *            is {@code null}
@@ -399,9 +410,11 @@ public class ChoiceFormat extends NumberFormat {
 
     /**
      * Constructs a ChoiceFormat with limits and corresponding formats
-     * based on the pattern.
-     * The syntax for the ChoiceFormat pattern can be seen in the {@linkplain
-     * ##patterns Patterns} section.
+     * based on the pattern. The syntax and error related caveats for the
+     * ChoiceFormat pattern can be found in the {@linkplain ##patterns Patterns}
+     * section. Unlike {@link #ChoiceFormat(double[], String[])}, this constructor will
+     * throw an {@code IllegalArgumentException} if the {@code limits} are not
+     * in ascending order.
      *
      * @param newPattern the new pattern string
      * @throws    NullPointerException if {@code newPattern} is

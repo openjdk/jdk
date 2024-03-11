@@ -129,6 +129,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
+import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 
@@ -1289,21 +1290,28 @@ public abstract class HtmlDocletWriter {
         }
     }
 
-    boolean ignoreNonInlineTag(DocTree dtree) {
+    boolean ignoreNonInlineTag(DocTree dtree, List<Name> openTags) {
         Name name = null;
-        if (dtree.getKind() == Kind.START_ELEMENT) {
-            StartElementTree setree = (StartElementTree)dtree;
-            name = setree.getName();
-        } else if (dtree.getKind() == Kind.END_ELEMENT) {
-            EndElementTree eetree = (EndElementTree)dtree;
-            name = eetree.getName();
+        Kind kind = dtree.getKind();
+        if (kind == Kind.START_ELEMENT) {
+            name = ((StartElementTree)dtree).getName();
+        } else if (kind == Kind.END_ELEMENT) {
+            name = ((EndElementTree)dtree).getName();
         }
 
         if (name != null) {
             HtmlTag htmlTag = HtmlTag.get(name);
-            if (htmlTag != null &&
-                    htmlTag.blockType != jdk.javadoc.internal.doclint.HtmlTag.BlockType.INLINE) {
-                return true;
+            if (htmlTag != null) {
+                if (htmlTag.blockType != HtmlTag.BlockType.INLINE) {
+                    return true;
+                }
+                // Keep track of open inline tags that need to be closed, see 8326332
+                if (kind == START_ELEMENT && htmlTag.endKind == HtmlTag.EndKind.REQUIRED) {
+                    openTags.add(name);
+                } else if (kind == Kind.END_ELEMENT && !openTags.isEmpty()
+                        && openTags.getLast().equals(name)) {
+                    openTags.removeLast();
+                }
             }
         }
         return false;
@@ -1375,6 +1383,7 @@ public abstract class HtmlDocletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
+        List<Name> openTags = new ArrayList<>();
 
         var useMarkdown = trees.stream().anyMatch(t -> t.getKind() == Kind.MARKDOWN);
         var markdownHandler = useMarkdown ? new MarkdownHandler(element) : null;
@@ -1386,14 +1395,16 @@ public abstract class HtmlDocletWriter {
 
             if (context.isFirstSentence) {
                 // Ignore block tags
-                if (ignoreNonInlineTag(tag))
+                if (ignoreNonInlineTag(tag, openTags)) {
                     continue;
+                }
 
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && ((tag instanceof TextTree tt) && tt.getBody().isBlank()))
+                        && ((tag instanceof TextTree tt) && tt.getBody().isBlank())) {
                     continue;
+                }
 
                 // Ignore any leading html comments
                 if ((isFirstNode || commentRemoved) && tag.getKind() == COMMENT) {
@@ -1416,6 +1427,10 @@ public abstract class HtmlDocletWriter {
             markdownHandler.addContent(result);
         }
 
+        // Close any open inline tags
+        while (!openTags.isEmpty()) {
+            result.add(RawHtml.endElement(openTags.removeLast()));
+        }
         return result;
     }
 
@@ -1731,17 +1746,17 @@ public abstract class HtmlDocletWriter {
             return false;
         }
 
-                @Override
-                public Boolean visitDocRoot(DocRootTree node, Content content) {
-                    content.add(getInlineTagOutput(element, node, context));
-                    return false;
-                }
+        @Override
+        public Boolean visitDocRoot(DocRootTree node, Content content) {
+            content.add(getInlineTagOutput(element, node, context));
+            return false;
+        }
 
-                @Override
-                public Boolean visitEndElement(EndElementTree node, Content content) {
-                    content.add(RawHtml.endElement(node.getName()));
-                    return false;
-                }
+        @Override
+        public Boolean visitEndElement(EndElementTree node, Content content) {
+            content.add(RawHtml.endElement(node.getName()));
+            return false;
+        }
 
         @Override
         public Boolean visitEntity(EntityTree node, Content content) {
@@ -1785,23 +1800,23 @@ public abstract class HtmlDocletWriter {
             return (context.isFirstSentence && !output.isEmpty());
         }
 
-                @Override
-                public Boolean visitStartElement(StartElementTree node, Content content) {
-                    Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]")
-                            && isIndexable()) {
-                        createSectionIdAndIndex(node, trees, attrs, element, context);
-                    }
-                    for (DocTree dt : node.getAttributes()) {
-                        dt.accept(this, attrs);
-                    }
-                    content.add(RawHtml.startElement(node.getName(), attrs, node.isSelfClosing()));
-                    return false;
-                }
+        @Override
+        public Boolean visitStartElement(StartElementTree node, Content content) {
+            Content attrs = new ContentBuilder();
+            if (node.getName().toString().matches("(?i)h[1-6]")
+                    && isIndexable()) {
+                createSectionIdAndIndex(node, trees, attrs, element, context);
+            }
+            for (DocTree dt : node.getAttributes()) {
+                dt.accept(this, attrs);
+            }
+            content.add(RawHtml.startElement(node.getName(), attrs, node.isSelfClosing()));
+            return false;
+        }
 
-                private CharSequence textCleanup(String text, boolean isLast) {
-                    return textCleanup(text, isLast, false);
-                }
+        private CharSequence textCleanup(String text, boolean isLast) {
+            return textCleanup(text, isLast, false);
+        }
 
         private CharSequence textCleanup(String text, boolean isLast, boolean stripLeading) {
             boolean stripTrailing = context.isFirstSentence && isLast;
@@ -1825,17 +1840,16 @@ public abstract class HtmlDocletWriter {
             return false;
         }
 
-                @Override
-                protected Boolean defaultAction(DocTree node, Content content) {
-                    if (node instanceof InlineTagTree itt) {
-                        var output = getInlineTagOutput(element, itt, context);
-                        if (output != null) {
-                            content.add(output);
-                        }
-                    }
-                    return false;
+        @Override
+        protected Boolean defaultAction(DocTree node, Content content) {
+            if (node instanceof InlineTagTree itt) {
+                var output = getInlineTagOutput(element, itt, context);
+                if (output != null) {
+                    content.add(output);
                 }
-
+            }
+            return false;
+        }
     }
 
     private boolean equalsIgnoreCase(Name name, String s) {
