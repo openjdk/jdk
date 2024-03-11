@@ -42,8 +42,6 @@ public class Test4129681 {
 
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                When frame starts, you'll see a checkbox
-                and a label with a titled border.
                 Turn on the checkbox to disable the label.
                 The test passes if the title of the border
                 is disabled as well as the label.
@@ -52,7 +50,7 @@ public class Test4129681 {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(testInstructions)
-                .rows(6)
+                .rows(4)
                 .columns(35)
                 .testUI(Test4129681::init)
                 .build()
