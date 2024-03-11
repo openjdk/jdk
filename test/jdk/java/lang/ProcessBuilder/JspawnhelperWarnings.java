@@ -52,11 +52,11 @@ public class JspawnhelperWarnings {
     private static void testVersion() throws Exception {
         String[] args = new String[2];
         args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
-        args[1] = "1:1:1:1.1.1.1";
+        args[1] = "1:1:1:1:1:1:1";
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
-        oa.shouldContain("Expected jspawnhelper for Java 1.1.1+1");
+        oa.shouldContain("Expected jspawnhelper for Java 1.1.1.1");
     }
 
     public static void main(String[] args) throws Exception {
