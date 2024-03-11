@@ -56,8 +56,7 @@ public class RegexpFilterTest {
             """;
 
     public static void main(String[] args) throws Exception {
-
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        new PassFailJFrame.Builder()
                 .title("RegexpFilterTest Instructions")
                 .instructions(INSTRUCTIONS)
                 .splitUIRight(() -> {
@@ -68,8 +67,7 @@ public class RegexpFilterTest {
                 })
                 .rows(15)
                 .columns(40)
-                .build();
-
-        passFailJFrame.awaitAndCheck();
+                .build()
+                .awaitAndCheck();
     }
 }
