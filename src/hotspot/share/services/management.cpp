@@ -1949,7 +1949,7 @@ JVM_ENTRY(jint, jmm_DumpHeap0(JNIEnv *env, jstring outputfile, jboolean live))
                "Output file name cannot be null.", -1);
   }
   HeapDumper dumper(live ? true : false);
-  if (dumper.dump(name) != 0) {
+  if (dumper.dump(name, nullptr, -1, false, HeapDumper::default_num_of_dump_threads()) != 0) {
     const char* errmsg = dumper.error_as_C_string();
     THROW_MSG_(vmSymbols::java_io_IOException(), errmsg, -1);
   }
