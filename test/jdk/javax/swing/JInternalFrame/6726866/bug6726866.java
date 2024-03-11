@@ -43,38 +43,38 @@ import javax.swing.SwingUtilities;
 
 public class bug6726866 {
 
-    private static final String instructionsText = """
+    private static final String INSTRUCTIONS = """
             Drag the internal frame inside the green undecorated window,
             if you can drag it the test passes, otherwise fails. """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame.builder()
                 .title("JInternalFrame Instructions")
-                .instructions(instructionsText)
+                .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
-                .rows(10)
+                .rows(5)
                 .columns(35)
-                .build();
-        SwingUtilities.invokeAndWait(() -> {
-            JFrame frame = new JFrame("bug6726866");
-            frame.setUndecorated(true);
-            setWindowNonOpaque(frame);
+                .testUI(bug6726866::createUI)
+                .build()
+                .awaitAndCheck();
+    }
 
-            JDesktopPane desktop = new JDesktopPane();
-            desktop.setBackground(Color.GREEN);
-            JInternalFrame iFrame = new JInternalFrame("Test", true, true, true, true);
-            iFrame.add(new JLabel("internal Frame"));
-            iFrame.setBounds(10, 10, 300, 200);
-            iFrame.setVisible(true);
-            desktop.add(iFrame);
-            frame.add(desktop);
+    private static JFrame createUI() {
+        JFrame frame = new JFrame("bug6726866");
+        frame.setUndecorated(true);
+        setWindowNonOpaque(frame);
 
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setSize(400, 400);
-            frame.setVisible(true);
-            frame.toFront();
-        });
-        passFailJFrame.awaitAndCheck();
+        JDesktopPane desktop = new JDesktopPane();
+        desktop.setBackground(Color.GREEN);
+        JInternalFrame iFrame = new JInternalFrame("Test", true, true, true, true);
+        iFrame.add(new JLabel("internal Frame"));
+        iFrame.setBounds(10, 10, 300, 200);
+        iFrame.setVisible(true);
+        desktop.add(iFrame);
+        frame.add(desktop);
+
+        frame.setSize(400, 400);
+        return frame;
     }
 
     public static void setWindowNonOpaque(Window window) {
