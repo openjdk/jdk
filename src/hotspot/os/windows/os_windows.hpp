@@ -43,6 +43,8 @@ class os::win32 {
   static julong _physical_memory;
   static bool   _is_windows_server;
   static bool   _has_exit_bug;
+  static bool   _processor_group_warning_displayed;
+  static bool   _job_object_processor_group_warning_displayed;
 
   static int    _major_version;
   static int    _minor_version;
@@ -81,6 +83,19 @@ class os::win32 {
     return _build_minor;
   }
 
+  static void set_processor_group_warning_displayed(bool displayed)  {
+    _processor_group_warning_displayed = displayed;
+  }
+  static bool processor_group_warning_displayed() {
+    return _processor_group_warning_displayed;
+  }
+  static void set_job_object_processor_group_warning_displayed(bool displayed)  {
+    _job_object_processor_group_warning_displayed = displayed;
+  }
+  static bool job_object_processor_group_warning_displayed() {
+    return _job_object_processor_group_warning_displayed;
+  }
+
   // Processor info as provided by NT
   static int processor_type()  { return _processor_type;  }
   static int processor_level() {
@@ -97,7 +112,7 @@ class os::win32 {
 
   static void initialize_performance_counter();
   static void initialize_windows_version();
-  static DWORD active_processors_in_job_object();
+  static DWORD active_processors_in_job_object(DWORD* active_processor_groups = nullptr);
 
  public:
   // Generic interface:

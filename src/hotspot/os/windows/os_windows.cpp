@@ -868,22 +868,39 @@ int os::active_processor_count() {
     return ActiveProcessorCount;
   }
 
-  bool schedules_all_processor_groups = false;
-  if (UseAllWindowsProcessorGroups) {
-    // Starting with Windows 11 and Windows Server 2022, the OS has changed to
-    // make processes and their threads span all processors in the system,
-    // across all processor groups, by default. Therefore, we will allow all
-    // processors to be active processors on these operating systems. However,
-    // job objects can be used to restrict processor affinity across the
-    // processor groups. In this case, the number of active processors must be
-    // obtained from the processor affinity in the job object.
-    schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
-    if (schedules_all_processor_groups) {
-      DWORD processors_in_job_object = win32::active_processors_in_job_object();
+  bool schedules_all_processor_groups = win32::is_windows_11_or_greater() || win32::is_windows_server_2022_or_greater();
+  if (UseAllWindowsProcessorGroups && !schedules_all_processor_groups && !win32::processor_group_warning_displayed()) {
+    win32::set_processor_group_warning_displayed(true);
+    FLAG_SET_DEFAULT(UseAllWindowsProcessorGroups, false);
+    warning("The UseAllWindowsProcessorGroups flag is not supported on this Windows version and will be ignored.");
+  }
 
-      if (processors_in_job_object > 0) {
+  DWORD active_processor_groups = 0;
+  DWORD processors_in_job_object = win32::active_processors_in_job_object(&active_processor_groups);
+
+  if (processors_in_job_object > 0) {
+    if (schedules_all_processor_groups) {
+      // If UseAllWindowsProcessorGroups is enabled then all the processors in the job object
+      // can be used. Otherwise, we will fall through to inspecting the process affinity mask.
+      // This will result in using only the subset of the processors in the default processor
+      // group allowed by the job object i.e. only 1 processor group will be used and only
+      // the processors in that group that are allowed by the job object will be used.
+      // This preserves the behavior where older OpenJDK versions always used one processor
+      // group regardless of whether they were launched in a job object.
+      if (!UseAllWindowsProcessorGroups && active_processor_groups > 1) {
+        if (!win32::job_object_processor_group_warning_displayed()) {
+          win32::set_job_object_processor_group_warning_displayed(true);
+          warning("The Windows job object has enabled multiple processor groups (%d) but the UseAllWindowsProcessorGroups flag is off. Some processors might not be used.", active_processor_groups);
+        }
+      } else {
         return processors_in_job_object;
       }
+    } else {
+      if (active_processor_groups > 1 && !win32::job_object_processor_group_warning_displayed()) {
+        win32::set_job_object_processor_group_warning_displayed(true);
+        warning("The Windows job object has enabled multiple processor groups (%d) but only 1 is supported on this Windows version. Some processors might not be used.", active_processor_groups);
+      }
+      return processors_in_job_object;
     }
   }
 
@@ -3990,6 +4007,9 @@ int    os::win32::_minor_version             = 0;
 int    os::win32::_build_number              = 0;
 int    os::win32::_build_minor               = 0;
 
+bool   os::win32::_processor_group_warning_displayed = false;
+bool   os::win32::_job_object_processor_group_warning_displayed = false;
+
 void os::win32::initialize_windows_version() {
   if (_major_version > 0) {
     return; // nothing to do if the version has already been set
@@ -4056,7 +4076,10 @@ bool os::win32::is_windows_server_2022_or_greater() {
   return (windows_major_version() >= 10 && windows_build_number() >= 20348 && IsWindowsServer());
 }
 
-DWORD os::win32::active_processors_in_job_object() {
+DWORD os::win32::active_processors_in_job_object(DWORD* active_processor_groups) {
+  if (active_processor_groups != nullptr) {
+    *active_processor_groups = 0;
+  }
   BOOL is_in_job_object = false;
   if (IsProcessInJob(GetCurrentProcess(), nullptr, &is_in_job_object) == 0) {
     char buf[512];
@@ -4095,7 +4118,11 @@ DWORD os::win32::active_processors_in_job_object() {
 
           GROUP_AFFINITY* group_affinity_data = ((GROUP_AFFINITY*)job_object_information);
           for (DWORD i = 0; i < groups_found; i++, group_affinity_data++) {
-            processors += population_count(group_affinity_data->Mask);
+            DWORD processors_in_group = population_count(group_affinity_data->Mask);
+            processors += processors_in_group;
+            if (active_processor_groups != nullptr && processors_in_group > 0) {
+              (*active_processor_groups)++;
+            }
           }
 
           if (processors == 0) {
