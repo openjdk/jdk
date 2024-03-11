@@ -235,4 +235,40 @@ public class TestMarkdownFirstSentence extends JavadocTester {
                     </div>
                     </section>""");
     }
+
+    @Test
+    public void testExtraPara(Path base) throws Exception {
+        Path src = base.resolve("src");
+        tb.writeJavaFiles(src,
+                """
+                    package p;
+                    /// This is the class description.
+                    ///
+                    /// # Heading
+                    /// Lorem ipsum
+                    public class C { }
+                    """);
+        javadoc("-d", base.resolve("api").toString(),
+                "--no-platform-links",
+                "--source-path", src.toString(),
+                "p");
+
+        checkOutput("p/package-summary.html", true,
+                """
+                    <div class="col-first even-row-color class-summary class-summary-tab2"><a href="C.html" title="clas\
+                    s in p">C</a></div>
+                    <div class="col-last even-row-color class-summary class-summary-tab2">
+                    <div class="block">This is the class description.</div>
+                    </div>""");
+
+        checkOutput("p/C.html", true,
+                """
+                        <span class="element-name type-name-label">C</span>
+                        <span class="extends-implements">extends java.lang.Object</span></div>
+                        <div class="block"><p>This is the class description.</p>
+                        <h2 id="heading-heading">Heading</h2>
+                        <p>Lorem ipsum</p>
+                        </div>""");
+
+    }
 }
