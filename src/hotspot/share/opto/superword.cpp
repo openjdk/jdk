@@ -46,7 +46,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _dg(arena()),                                             // dependence graph
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -452,12 +451,6 @@ bool SuperWord::SLP_extract() {
   // Ensure extra info is allocated.
   initialize_node_info();
 
-  // build _dg
-  dependence_graph();
-
-  // compute function depth(Node*)
-  compute_max_depth();
-
   // Attempt vectorization
   find_adjacent_refs();
 
@@ -749,86 +742,6 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
   return iv_adjustment;
 }
 
-//---------------------------dependence_graph---------------------------
-// Construct dependency graph.
-// Add dependence edges to load/store nodes for memory dependence
-//    A.out()->DependNode.in(1) and DependNode.out()->B.prec(x)
-void SuperWord::dependence_graph() {
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  assert(cl->is_main_loop(), "SLP should only work on main loops");
-
-  // First, assign a dependence node to each memory node
-  for (int i = 0; i < body().length(); i++ ) {
-    Node* n = body().at(i);
-    if (n->is_Mem() || n->is_memory_phi()) {
-      _dg.make_node(n);
-    }
-  }
-
-  const GrowableArray<PhiNode*>& mem_slice_head = _vloop_analyzer.memory_slices().heads();
-  const GrowableArray<MemNode*>& mem_slice_tail = _vloop_analyzer.memory_slices().tails();
-
-  ResourceMark rm;
-  GrowableArray<Node*> slice_nodes;
-
-  // For each memory slice, create the dependences
-  for (int i = 0; i < mem_slice_head.length(); i++) {
-    PhiNode* head = mem_slice_head.at(i);
-    MemNode* tail = mem_slice_tail.at(i);
-
-    // Get slice in predecessor order (last is first)
-    _vloop_analyzer.memory_slices().get_slice_in_reverse_order(head, tail, slice_nodes);
-
-    // Make the slice dependent on the root
-    DepMem* slice = _dg.dep(head);
-    _dg.make_edge(_dg.root(), slice);
-
-    // Create a sink for the slice
-    DepMem* slice_sink = _dg.make_node(nullptr);
-    _dg.make_edge(slice_sink, _dg.tail());
-
-    // Now visit each pair of memory ops, creating the edges
-    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
-      Node* s1 = slice_nodes.at(j);
-
-      // If no dependency yet, use slice
-      if (_dg.dep(s1)->in_cnt() == 0) {
-        _dg.make_edge(slice, s1);
-      }
-      VPointer p1(s1->as_Mem(), _vloop);
-      bool sink_dependent = true;
-      for (int k = j - 1; k >= 0; k--) {
-        Node* s2 = slice_nodes.at(k);
-        if (s1->is_Load() && s2->is_Load())
-          continue;
-        VPointer p2(s2->as_Mem(), _vloop);
-
-        int cmp = p1.cmp(p2);
-        if (!VPointer::not_equal(cmp)) {
-          // Possibly same address
-          _dg.make_edge(s1, s2);
-          sink_dependent = false;
-        }
-      }
-      if (sink_dependent) {
-        _dg.make_edge(s1, slice_sink);
-      }
-    }
-
-#ifndef PRODUCT
-    if (is_trace_superword_dependence_graph()) {
-      tty->print_cr("\nDependence graph for slice: %d", head->_idx);
-      for (int q = 0; q < slice_nodes.length(); q++) {
-        _dg.print(slice_nodes.at(q));
-      }
-      tty->cr();
-    }
-#endif
-
-    slice_nodes.clear();
-  }
-}
-
 void VLoopMemorySlices::find_memory_slices() {
   assert(_heads.is_empty(), "not yet computed");
   assert(_tails.is_empty(), "not yet computed");
@@ -861,7 +774,7 @@ void VLoopMemorySlices::print() const {
 #endif
 
 // Get all memory nodes of a slice, in reverse order
-void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*> &slice) const {
+void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*> &slice) const {
   assert(slice.is_empty(), "start empty");
   Node* n = tail;
   Node* prev = nullptr;
@@ -871,7 +784,7 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
       Node* out = n->fast_out(i);
       if (out->is_Load()) {
         if (_vloop.in_bb(out)) {
-          slice.push(out);
+          slice.push(out->as_Load());
         }
       } else {
         // FIXME
@@ -889,7 +802,7 @@ void VLoopMemorySlices::get_slice_in_reverse_order(PhiNode* head, MemNode* tail,
       }//else
     }//for
     if (n == head) { break; }
-    slice.push(n);
+    slice.push(n->as_Mem());
     prev = n;
     assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);
@@ -1001,9 +914,8 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
   }
 }
 
-//------------------------------independent---------------------------
 // Is there no data path from s1 to s2 or s2 to s1?
-bool SuperWord::independent(Node* s1, Node* s2) {
+bool VLoopDependencyGraph::independent(Node* s1, Node* s2) const {
   int d1 = depth(s1);
   int d2 = depth(s2);
 
@@ -1024,9 +936,9 @@ bool SuperWord::independent(Node* s1, Node* s2) {
   worklist.push(deep);
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
       Node* pred = preds.current();
-      if (in_bb(pred) && depth(pred) >= min_d) {
+      if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
         if (pred == shallow) {
           return false; // found it -> dependent
         }
@@ -1045,7 +957,7 @@ bool SuperWord::independent(Node* s1, Node* s2) {
 // is the smallest depth of all nodes from the nodes list. Once we have
 // traversed all those nodes, and have not found another node from the
 // nodes list, we know that all nodes in the nodes list are independent.
-bool SuperWord::mutually_independent(const Node_List* nodes) const {
+bool VLoopDependencyGraph::mutually_independent(const Node_List* nodes) const {
   ResourceMark rm;
   Unique_Node_List worklist;
   VectorSet nodes_set;
@@ -1054,14 +966,14 @@ bool SuperWord::mutually_independent(const Node_List* nodes) const {
     Node* n = nodes->at(k);
     min_d = MIN2(min_d, depth(n));
     worklist.push(n); // start traversal at all nodes in nodes list
-    nodes_set.set(bb_idx(n));
+    nodes_set.set(_body.bb_idx(n));
   }
   for (uint i = 0; i < worklist.size(); i++) {
     Node* n = worklist.at(i);
-    for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
+    for (PredsIterator preds(*this, n); !preds.done(); preds.next()) {
       Node* pred = preds.current();
-      if (in_bb(pred) && depth(pred) >= min_d) {
-        if (nodes_set.test(bb_idx(pred))) {
+      if (_vloop.in_bb(pred) && depth(pred) >= min_d) {
+        if (nodes_set.test(_body.bb_idx(pred))) {
           return false; // found one -> dependent
         }
         worklist.push(pred);
@@ -1982,16 +1894,16 @@ void SuperWord::verify_packs() {
 }
 #endif
 
-// The PacksetGraph combines the DepPreds graph with the packset. In the PackSet
+// The PacksetGraph combines the dependency graph with the packset. In the PackSet
 // graph, we have two kinds of nodes:
 //  (1) pack-node:   Represents all nodes of some pack p in a single node, which
 //                   shall later become a vector node.
 //  (2) scalar-node: Represents a node that is not in any pack.
-// For any edge (n1, n2) in DepPreds, we add an edge to the PacksetGraph for the
-// PacksetGraph nodes corresponding to n1 and n2.
-// We work from the DepPreds graph, because it gives us all the data-dependencies,
-// as well as more refined memory-dependencies than the C2 graph. DepPreds does
-// not have cycles. But packing nodes can introduce cyclic dependencies. Example:
+// For any edge (n1, n2) in the dependency graph, we add an edge to the PacksetGraph for
+// the PacksetGraph nodes corresponding to n1 and n2.
+// We work from the dependency graph, because it gives us all the data-dependencies,
+// as well as more refined memory-dependencies than the C2 graph. The dependency graph
+// does not have cycles. But packing nodes can introduce cyclic dependencies. Example:
 //
 //                                                       +--------+
 //  A -> X                                               |        v
@@ -2055,11 +1967,10 @@ public:
   GrowableArray<int>& out(int pid) { return _out.at(pid - 1); }
   bool schedule_success() const { return _schedule_success; }
 
-  // Create nodes (from packs and scalar-nodes), and add edges, based on DepPreds.
+  // Create nodes (from packs and scalar-nodes), and add edges, based on the dependency graph.
   void build() {
     const GrowableArray<Node_List*>& packset = _slp->packset();
     const GrowableArray<Node*>& body = _slp->body();
-    const DepGraph& dg = _slp->dg();
     // Map nodes in packsets
     for (int i = 0; i < packset.length(); i++) {
       Node_List* p = packset.at(i);
@@ -2096,7 +2007,7 @@ public:
       for (uint k = 0; k < p->size(); k++) {
         Node* n = p->at(k);
         assert(pid == get_pid(n), "all nodes in pack have same pid");
-        for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+        for (VLoopDependencyGraph::PredsIterator preds(_slp->dependency_graph(), n); !preds.done(); preds.next()) {
           Node* pred = preds.current();
           int pred_pid = get_pid_or_zero(pred);
           if (pred_pid == pid && _slp->is_marked_reduction(n)) {
@@ -2118,7 +2029,7 @@ public:
       if (pid <= max_pid_packset) {
         continue; // Only scalar-nodes
       }
-      for (DepPreds preds(n, dg); !preds.done(); preds.next()) {
+      for (VLoopDependencyGraph::PredsIterator preds(_slp->dependency_graph(), n); !preds.done(); preds.next()) {
         Node* pred = preds.current();
         int pred_pid = get_pid_or_zero(pred);
         // Only add edges for mapped nodes (in body)
@@ -2209,7 +2120,7 @@ public:
 };
 
 // The C2 graph (specifically the memory graph), needs to be re-ordered.
-// (1) Build the PacksetGraph. It combines the DepPreds graph with the
+// (1) Build the PacksetGraph. It combines the dependency graph with the
 //     packset. The PacksetGraph gives us the dependencies that must be
 //     respected after scheduling.
 // (2) Schedule the PacksetGraph to the memops_schedule, which represents
@@ -3042,41 +2953,6 @@ void SuperWord::initialize_node_info() {
   grow_node_info(bb_idx(last));
 }
 
-//------------------------------compute_max_depth---------------------------
-// Compute max depth for expressions from beginning of block
-// Use to prune search paths during test for independence.
-void SuperWord::compute_max_depth() {
-  int ct = 0;
-  bool again;
-  do {
-    again = false;
-    for (int i = 0; i < body().length(); i++) {
-      Node* n = body().at(i);
-      if (!n->is_Phi()) {
-        int d_orig = depth(n);
-        int d_in   = 0;
-        for (DepPreds preds(n, _dg); !preds.done(); preds.next()) {
-          Node* pred = preds.current();
-          if (in_bb(pred)) {
-            d_in = MAX2(d_in, depth(pred));
-          }
-        }
-        if (d_in + 1 != d_orig) {
-          set_depth(n, d_in + 1);
-          again = true;
-        }
-      }
-    }
-    ct++;
-  } while (again);
-
-#ifndef PRODUCT
-  if (is_trace_superword_dependence_graph()) {
-    tty->print_cr("compute_max_depth iterated: %d times", ct);
-  }
-#endif
-}
-
 BasicType SuperWord::longer_type_for_conversion(Node* n) {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
         requires_long_to_int_conversion(n->Opcode())) ||
@@ -3733,141 +3609,6 @@ void SuperWord::print_stmt(Node* s) {
 // ========================= SWNodeInfo =====================
 
 const SWNodeInfo SWNodeInfo::initial;
-
-
-// ============================ DepGraph ===========================
-
-//------------------------------make_node---------------------------
-// Make a new dependence graph node for an ideal node.
-DepMem* DepGraph::make_node(Node* node) {
-  DepMem* m = new (_arena) DepMem(node);
-  if (node != nullptr) {
-    assert(_map.at_grow(node->_idx) == nullptr, "one init only");
-    _map.at_put_grow(node->_idx, m);
-  }
-  return m;
-}
-
-//------------------------------make_edge---------------------------
-// Make a new dependence graph edge from dpred -> dsucc
-DepEdge* DepGraph::make_edge(DepMem* dpred, DepMem* dsucc) {
-  DepEdge* e = new (_arena) DepEdge(dpred, dsucc, dsucc->in_head(), dpred->out_head());
-  dpred->set_out_head(e);
-  dsucc->set_in_head(e);
-  return e;
-}
-
-// ========================== DepMem ========================
-
-//------------------------------in_cnt---------------------------
-int DepMem::in_cnt() {
-  int ct = 0;
-  for (DepEdge* e = _in_head; e != nullptr; e = e->next_in()) ct++;
-  return ct;
-}
-
-//------------------------------out_cnt---------------------------
-int DepMem::out_cnt() {
-  int ct = 0;
-  for (DepEdge* e = _out_head; e != nullptr; e = e->next_out()) ct++;
-  return ct;
-}
-
-//------------------------------print-----------------------------
-void DepMem::print() {
-#ifndef PRODUCT
-  tty->print("  DepNode %d (", _node->_idx);
-  for (DepEdge* p = _in_head; p != nullptr; p = p->next_in()) {
-    Node* pred = p->pred()->node();
-    tty->print(" %d", pred != nullptr ? pred->_idx : 0);
-  }
-  tty->print(") [");
-  for (DepEdge* s = _out_head; s != nullptr; s = s->next_out()) {
-    Node* succ = s->succ()->node();
-    tty->print(" %d", succ != nullptr ? succ->_idx : 0);
-  }
-  tty->print_cr(" ]");
-#endif
-}
-
-// =========================== DepEdge =========================
-
-//------------------------------DepPreds---------------------------
-void DepEdge::print() {
-#ifndef PRODUCT
-  tty->print_cr("DepEdge: %d [ %d ]", _pred->node()->_idx, _succ->node()->_idx);
-#endif
-}
-
-// =========================== DepPreds =========================
-// Iterator over predecessor edges in the dependence graph.
-
-//------------------------------DepPreds---------------------------
-DepPreds::DepPreds(Node* n, const DepGraph& dg) {
-  _n = n;
-  _done = false;
-  if (_n->is_Store() || _n->is_Load()) {
-    _next_idx = MemNode::Address;
-    _end_idx  = n->req();
-    _dep_next = dg.dep(_n)->in_head();
-  } else if (_n->is_Mem()) {
-    _next_idx = 0;
-    _end_idx  = 0;
-    _dep_next = dg.dep(_n)->in_head();
-  } else {
-    _next_idx = 1;
-    _end_idx  = _n->req();
-    _dep_next = nullptr;
-  }
-  next();
-}
-
-//------------------------------next---------------------------
-void DepPreds::next() {
-  if (_dep_next != nullptr) {
-    _current  = _dep_next->pred()->node();
-    _dep_next = _dep_next->next_in();
-  } else if (_next_idx < _end_idx) {
-    _current  = _n->in(_next_idx++);
-  } else {
-    _done = true;
-  }
-}
-
-// =========================== DepSuccs =========================
-// Iterator over successor edges in the dependence graph.
-
-//------------------------------DepSuccs---------------------------
-DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
-  _n = n;
-  _done = false;
-  if (_n->is_Load()) {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || _n->is_memory_phi()) {
-    _next_idx = 0;
-    _end_idx  = 0;
-    _dep_next = dg.dep(_n)->out_head();
-  } else {
-    _next_idx = 0;
-    _end_idx  = _n->outcnt();
-    _dep_next = nullptr;
-  }
-  next();
-}
-
-//-------------------------------next---------------------------
-void DepSuccs::next() {
-  if (_dep_next != nullptr) {
-    _current  = _dep_next->succ()->node();
-    _dep_next = _dep_next->next_out();
-  } else if (_next_idx < _end_idx) {
-    _current  = _n->raw_out(_next_idx++);
-  } else {
-    _done = true;
-  }
-}
 
 //
 // --------------------------------- vectorization/simd -----------------------------------

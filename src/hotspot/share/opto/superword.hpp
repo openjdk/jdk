@@ -57,128 +57,6 @@
 
 class VPointer;
 
-// ========================= Dependence Graph =====================
-
-class DepMem;
-
-//------------------------------DepEdge---------------------------
-// An edge in the dependence graph.  The edges incident to a dependence
-// node are threaded through _next_in for incoming edges and _next_out
-// for outgoing edges.
-class DepEdge : public ArenaObj {
- protected:
-  DepMem* _pred;
-  DepMem* _succ;
-  DepEdge* _next_in;   // list of in edges, null terminated
-  DepEdge* _next_out;  // list of out edges, null terminated
-
- public:
-  DepEdge(DepMem* pred, DepMem* succ, DepEdge* next_in, DepEdge* next_out) :
-    _pred(pred), _succ(succ), _next_in(next_in), _next_out(next_out) {}
-
-  DepEdge* next_in()  { return _next_in; }
-  DepEdge* next_out() { return _next_out; }
-  DepMem*  pred()     { return _pred; }
-  DepMem*  succ()     { return _succ; }
-
-  void print();
-};
-
-//------------------------------DepMem---------------------------
-// A node in the dependence graph.  _in_head starts the threaded list of
-// incoming edges, and _out_head starts the list of outgoing edges.
-class DepMem : public ArenaObj {
- protected:
-  Node*    _node;     // Corresponding ideal node
-  DepEdge* _in_head;  // Head of list of in edges, null terminated
-  DepEdge* _out_head; // Head of list of out edges, null terminated
-
- public:
-  DepMem(Node* node) : _node(node), _in_head(nullptr), _out_head(nullptr) {}
-
-  Node*    node()                { return _node;     }
-  DepEdge* in_head()             { return _in_head;  }
-  DepEdge* out_head()            { return _out_head; }
-  void set_in_head(DepEdge* hd)  { _in_head = hd;    }
-  void set_out_head(DepEdge* hd) { _out_head = hd;   }
-
-  int in_cnt();  // Incoming edge count
-  int out_cnt(); // Outgoing edge count
-
-  void print();
-};
-
-//------------------------------DepGraph---------------------------
-class DepGraph {
- protected:
-  Arena* _arena;
-  GrowableArray<DepMem*> _map;
-  DepMem* _root;
-  DepMem* _tail;
-
- public:
-  DepGraph(Arena* a) : _arena(a), _map(a, 8,  0, nullptr) {
-    _root = new (_arena) DepMem(nullptr);
-    _tail = new (_arena) DepMem(nullptr);
-  }
-
-  DepMem* root() { return _root; }
-  DepMem* tail() { return _tail; }
-
-  // Return dependence node corresponding to an ideal node
-  DepMem* dep(Node* node) const { return _map.at(node->_idx); }
-
-  // Make a new dependence graph node for an ideal node.
-  DepMem* make_node(Node* node);
-
-  // Make a new dependence graph edge dprec->dsucc
-  DepEdge* make_edge(DepMem* dpred, DepMem* dsucc);
-
-  DepEdge* make_edge(Node* pred,   Node* succ)   { return make_edge(dep(pred), dep(succ)); }
-  DepEdge* make_edge(DepMem* pred, Node* succ)   { return make_edge(pred,      dep(succ)); }
-  DepEdge* make_edge(Node* pred,   DepMem* succ) { return make_edge(dep(pred), succ);      }
-
-  void print(Node* n)   { dep(n)->print(); }
-  void print(DepMem* d) { d->print(); }
-};
-
-//------------------------------DepPreds---------------------------
-// Iterator over predecessors in the dependence graph and
-// non-memory-graph inputs of ideal nodes.
-class DepPreds : public StackObj {
-private:
-  Node*    _n;
-  int      _next_idx, _end_idx;
-  DepEdge* _dep_next;
-  Node*    _current;
-  bool     _done;
-
-public:
-  DepPreds(Node* n, const DepGraph& dg);
-  Node* current() { return _current; }
-  bool  done()    { return _done; }
-  void  next();
-};
-
-//------------------------------DepSuccs---------------------------
-// Iterator over successors in the dependence graph and
-// non-memory-graph outputs of ideal nodes.
-class DepSuccs : public StackObj {
-private:
-  Node*    _n;
-  int      _next_idx, _end_idx;
-  DepEdge* _dep_next;
-  Node*    _current;
-  bool     _done;
-
-public:
-  DepSuccs(Node* n, DepGraph& dg);
-  Node* current() { return _current; }
-  bool  done()    { return _done; }
-  void  next();
-};
-
-
 // ========================= SuperWord =====================
 
 // -----------------------------SWNodeInfo---------------------------------
@@ -186,10 +64,9 @@ public:
 class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
-  int         _depth;     // Max expression (DAG) depth from block start
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _my_pack(nullptr) {}
+  SWNodeInfo() : _alignment(-1), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -211,8 +88,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
-
-  DepGraph _dg; // Dependence graph
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -280,16 +155,24 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.types().vector_width_in_bytes(n);
   }
 
+  // VLoopDependencyGraph Accessors
+  const VLoopDependencyGraph& dependency_graph() const {
+    return _vloop_analyzer.dependency_graph();
+  }
+
+  bool independent(Node* n1, Node* n2) const {
+    return _vloop_analyzer.dependency_graph().independent(n1, n2);
+  }
+
+  bool mutually_independent(const Node_List* nodes) const {
+    return _vloop_analyzer.dependency_graph().mutually_independent(nodes);
+  }
+
 #ifndef PRODUCT
   // TraceAutoVectorization and TraceSuperWord
   bool is_trace_superword_alignment() const {
     // Too verbose for TraceSuperWord
     return _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT);
-  }
-
-  bool is_trace_superword_dependence_graph() const {
-    return TraceSuperWord ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH);
   }
 
   bool is_trace_superword_adjacent_memops() const {
@@ -321,7 +204,6 @@ class SuperWord : public ResourceObj {
     return TraceSuperWord ||
            is_trace_align_vector() ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ALIGNMENT) ||
-           _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_DEPENDENCE_GRAPH) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_ADJACENT_MEMOPS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_REJECTIONS) ||
            _vloop.vtrace().is_trace(TraceAutoVectorizationTag::SW_PACKSET) ||
@@ -338,7 +220,6 @@ class SuperWord : public ResourceObj {
   bool     do_vector_loop()        { return _do_vector_loop; }
 
   const GrowableArray<Node_List*>& packset() const { return _packset; }
-  const DepGraph&                  dg()      const { return _dg; }
  private:
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
@@ -362,10 +243,6 @@ class SuperWord : public ResourceObj {
   int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
-  // Max expression (DAG) depth from beginning of the block for each node
-  int depth(Node* n) const                   { return _node_info.adr_at(bb_idx(n))->_depth; }
-  void set_depth(Node* n, int d)             { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_depth = d; }
-
   // my_pack
  public:
   Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
@@ -387,8 +264,6 @@ private:
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
   int get_iv_adjustment(MemNode* mem);
-  // Construct dependency graph.
-  void dependence_graph();
 
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
@@ -398,10 +273,6 @@ private:
   bool are_adjacent_refs(Node* s1, Node* s2);
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
-  // Is there no data path from s1 to s2 or s2 to s1?
-  bool independent(Node* s1, Node* s2);
-  // Are all nodes in nodes list mutually independent?
-  bool mutually_independent(const Node_List* nodes) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
