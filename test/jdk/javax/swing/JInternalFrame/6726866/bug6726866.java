@@ -51,7 +51,6 @@ public class bug6726866 {
         PassFailJFrame.builder()
                 .title("JInternalFrame Instructions")
                 .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
                 .rows(5)
                 .columns(35)
                 .testUI(bug6726866::createUI)
