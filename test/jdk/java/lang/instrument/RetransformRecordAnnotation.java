@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8315575
- * @summary test that records with invisible annotation can be retfansformed
+ * @summary test that records with invisible annotation can be retransformed
  *
  * @library /test/lib
  * @run shell MakeJAR.sh retransformAgent
