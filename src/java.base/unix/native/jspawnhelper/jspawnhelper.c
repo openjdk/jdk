@@ -168,17 +168,17 @@ int main(int argc, char *argv[]) {
 #endif
     r = sscanf (argv[1], "%d:%d:%d:%d.%d.%d.%d", &fdinr, &fdinw, &fdout, &jdk_feature, &jdk_interim, &jdk_update, &jdk_patch);
     if (r == 7 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
+        // Check that JDK version and jspawnhelper version are the same
+        if (jdk_feature != VERSION_FEATURE || jdk_interim != VERSION_INTERIM || jdk_update != VERSION_UPDATE || jdk_patch != VERSION_PATCH) {
+            fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d+%d, ", jdk_feature, jdk_interim, jdk_update, jdk_patch);
+            fprintf(stderr, "but jspawnhelper for Java %d.%d.%d+%d was found.\n", VERSION_FEATURE, VERSION_INTERIM, VERSION_UPDATE, VERSION_PATCH);
+            shutItDown();
+        }
+
         fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))
             shutItDown();
     } else {
-        shutItDown();
-    }
-
-    // Check that JDK version and jspawnhelper version are the same
-    if (jdk_feature != VERSION_FEATURE || jdk_interim != VERSION_INTERIM || jdk_update != VERSION_UPDATE || jdk_patch != VERSION_PATCH) {
-        fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d+%d,", VERSION_FEATURE, VERSION_INTERIM, VERSION_UPDATE, VERSION_PATCH);
-        fprintf(stderr, "but jspawnhelper for Java %d.%d.%d+%d was found.\n", jdk_feature, jdk_interim, jdk_update, jdk_patch);
         shutItDown();
     }
 

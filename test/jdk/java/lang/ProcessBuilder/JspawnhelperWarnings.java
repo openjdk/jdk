@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8325567
+ * @bug 8325567 8325621
  * @requires (os.family == "linux") | (os.family == "aix") | (os.family == "mac")
  * @library /test/lib
  * @run driver JspawnhelperWarnings
@@ -49,9 +49,21 @@ public class JspawnhelperWarnings {
         oa.shouldContain("This command is not for general use");
     }
 
+    private static void testVersion() throws Exception {
+        String[] args = new String[2];
+        args[0] = Paths.get(System.getProperty("java.home"), "lib", "jspawnhelper").toString();
+        args[1] = "1:1:1:1.1.1.1";
+        Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
+        OutputAnalyzer oa = new OutputAnalyzer(p);
+        oa.shouldHaveExitValue(1);
+        oa.shouldContain("Expected jspawnhelper for Java 1.1.1+1");
+    }
+
     public static void main(String[] args) throws Exception {
         for (int nArgs = 0; nArgs < 10; nArgs++) {
             tryWithNArgs(nArgs);
         }
+
+        testVersion();
     }
 }
