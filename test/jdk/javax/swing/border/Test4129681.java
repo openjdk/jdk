@@ -44,7 +44,7 @@ public class Test4129681 {
 
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                When applet starts, you'll see a checkbox
+                When frame starts, you'll see a checkbox
                 and a label with a titled border.
                 Turn on the checkbox to disable the label.
                 The test passes if the title of the border
@@ -77,7 +77,6 @@ public class Test4129681 {
         frame.add(BorderLayout.NORTH, check);
         frame.add(BorderLayout.CENTER, label);
         frame.setSize(300, 300);
-        frame.setLocationRelativeTo(null);
         PassFailJFrame.addTestWindow(frame);
         PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
         frame.setVisible(true);
