@@ -64,6 +64,7 @@ import java.awt.image.DataBuffer;
 import java.awt.image.DataBufferInt;
 import java.awt.image.ImageObserver;
 import java.awt.image.IndexColorModel;
+import java.awt.image.MultiResolutionImage;
 import java.awt.image.Raster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
@@ -1132,6 +1133,9 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // VI needs to make a new BI: this is unavoidable but
             // I don't expect VI's to be "huge" in any case.
             return ((VolatileImage)img).getSnapshot();
+        } else if (img instanceof MultiResolutionImage) {
+            return convertToBufferedImage((MultiResolutionImage) img,
+                                           img.getWidth(null), img.getHeight(null));
         } else {
             // may be null or may be some non-standard Image which
             // shouldn't happen as Image is implemented by the platform
@@ -1140,6 +1144,17 @@ public abstract class PathGraphics extends ProxyGraphics2D {
             // will need to support it here similarly to VI.
             return null;
         }
+    }
+
+    public static BufferedImage convertToBufferedImage(MultiResolutionImage multiResolutionImage,
+                                                       double width, double height ) {
+        Image resolutionImage = multiResolutionImage.getResolutionVariant(width,height);
+        BufferedImage bufferedImage = new BufferedImage(resolutionImage.getWidth(null),
+                                                        resolutionImage.getHeight(null),
+                                                        BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = bufferedImage.createGraphics();
+        g2d.drawImage(resolutionImage, 0, 0, (int)width, (int)height,null);
+        return bufferedImage;
     }
 
     /**

@@ -1317,7 +1317,7 @@ public class SwingUtilities2 {
      * returns true if the Graphics is print Graphics
      * false otherwise
      */
-    public static boolean isPrinting(Graphics g) {
+    static boolean isPrinting(Graphics g) {
         return (g instanceof PrinterGraphics || g instanceof PrintGraphics);
     }
 
