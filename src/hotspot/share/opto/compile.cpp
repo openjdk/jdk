@@ -4879,6 +4879,7 @@ void Compile::add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks) {
         // Locking regions (BoxLock) could be Unbalanced here:
         //  - its coarsened locks were eliminated in earlier
         //    macro nodes elimination followed by loop unroll
+        //  - it is OSR locking region (no Lock node)
         // Preserve Unbalanced status in such cases.
         if (!this_box->is_unbalanced()) {
           this_box->set_coarsened();

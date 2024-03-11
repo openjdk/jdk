@@ -122,7 +122,7 @@ jint ParallelScavengeHeap::initialize() {
   _gc_policy_counters =
     new PSGCAdaptivePolicyCounters("ParScav:MSC", 2, 2, _size_policy);
 
-  if (!PSParallelCompact::initialize()) {
+  if (!PSParallelCompact::initialize_aux_data()) {
     return JNI_ENOMEM;
   }
 

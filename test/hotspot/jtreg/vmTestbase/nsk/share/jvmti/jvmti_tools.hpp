@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +30,9 @@
 
 /*************************************************************/
 
-#include "nsk_tools.h"
-#include "jni_tools.h"
-#include "JVMTITools.h"
+#include "nsk_tools.hpp"
+#include "jni_tools.hpp"
+#include "JVMTITools.hpp"
 
 
 extern "C" {
@@ -81,7 +81,7 @@ int nsk_jvmti_parseOptions(const char options[]);
 
 /**
  * Creates JVMTI environment for the JVMTI test.
- * If something fails, complains an error and returns NULL.
+ * If something fails, complains an error and returns null.
  */
 jvmtiEnv* nsk_jvmti_createJVMTIEnv(JavaVM* jvm, void* reserved);
 
@@ -102,19 +102,19 @@ int nsk_jvmti_init_MA(jvmtiEventCallbacks* callbacks);
 
 /**
  * Returns thread object associated with agent thread..
- * If something fails, complains an error and returns NULL.
+ * If something fails, complains an error and returns null.
  */
 jthread nsk_jvmti_getAgentThread();
 
 /**
  * Returns JNI environment constructed for agent thread.
- * If something fails, complains an error and returns NULL.
+ * If something fails, complains an error and returns null.
  */
 JNIEnv* nsk_jvmti_getAgentJNIEnv();
 
 /**
  * Returns JVMTI environment constructed for agent.
- * If something fails, complains an error and returns NULL.
+ * If something fails, complains an error and returns null.
  */
 jvmtiEnv* nsk_jvmti_getAgentJVMTIEnv();
 
@@ -170,14 +170,14 @@ jint nsk_jvmti_getStatus();
 
 /**
  * Finds first class with given signatire among loaded classes.
- * If no class found or something fails, complains an error and returns NULL.
+ * If no class found or something fails, complains an error and returns null.
  * On success creates and returns global reference to the found class.
  */
 jclass nsk_jvmti_classBySignature(const char signature[]);
 
 /**
  * Finds first thread with given name among alive threads.
- * If no thread found or something fails, complains an error and returns NULL.
+ * If no thread found or something fails, complains an error and returns null.
  * On success creates and returns global reference to the found thread.
  */
 jthread nsk_jvmti_threadByName(const char name[]);
@@ -223,7 +223,7 @@ jlocation nsk_jvmti_clearLineBreakpoint(jclass cls, jmethodID method, int line);
 /********************* Events management *********************/
 
 /**
- * Enables or disables all events of given list for given thread or NULL.
+ * Enables or disables all events of given list for given thread or null.
  * If something fails, complains an error and returns 0 (NSK_FALSE).
  */
 int nsk_jvmti_enableEvents(jvmtiEventMode enable, int size,
@@ -258,14 +258,14 @@ int nsk_jvmti_disableNotification(jvmtiEnv *jvmti, jvmtiEvent event, jthread thr
 /******************** Access test options ********************/
 
 /**
- * Returns value of given option name; or NULL if no such option found.
- * If search name is NULL then complains an error and returns NULL.
+ * Returns value of given option name; or null if no such option found.
+ * If search name is null then complains an error and returns null.
  */
 const char* nsk_jvmti_findOptionValue(const char name[]);
 
 /**
  * Returns string value of given option; or defaultValue if no such option found.
- * If options is specified but has empty value then complains an error and returns NULL.
+ * If options is specified but has empty value then complains an error and returns null.
  */
 const char* nsk_jvmti_findOptionStringValue(const char name[], const char* defaultValue);
 
@@ -282,13 +282,13 @@ int nsk_jvmti_getOptionsCount();
 
 /**
  * Returns name of i-th parsed option.
- * If no such option then complains an error and returns NULL.
+ * If no such option then complains an error and returns null.
  */
 const char* nsk_jvmti_getOptionName(int i);
 
 /**
  * Returns value of i-th parsed option.
- * If no such option then complains an error and returns NULL.
+ * If no such option then complains an error and returns null.
  */
 const char* nsk_jvmti_getOptionValue(int i);
 

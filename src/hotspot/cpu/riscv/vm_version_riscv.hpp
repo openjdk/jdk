@@ -144,7 +144,7 @@ class VM_Version : public Abstract_VM_Version {
   decl(ext_Zbb         , "Zbb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbb))         \
   decl(ext_Zbc         , "Zbc"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zbs         , "Zbs"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZbs))         \
-  decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
+  decl(ext_Zcb         , "Zcb"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZcb))         \
   decl(ext_Zfh         , "Zfh"         , RV_NO_FLAG_BIT, true , UPDATE_DEFAULT(UseZfh))         \
   decl(ext_Zicsr       , "Zicsr"       , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
   decl(ext_Zifencei    , "Zifencei"    , RV_NO_FLAG_BIT, true , NO_UPDATE_DEFAULT)              \
