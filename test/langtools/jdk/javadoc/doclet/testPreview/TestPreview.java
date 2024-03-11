@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768 8261976 8277300 8282452 8287597 8325325
+ * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool

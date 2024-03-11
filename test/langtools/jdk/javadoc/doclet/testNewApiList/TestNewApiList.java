@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8263468 8269401 8268422 8287524
+ * @bug      8263468 8269401 8268422 8287524 8325874
  * @summary  New page for "recent" new API
  * @library  ../../lib
  * @modules  jdk.javadoc/jdk.javadoc.internal.tool
