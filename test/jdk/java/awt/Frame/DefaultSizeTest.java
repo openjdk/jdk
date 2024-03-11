@@ -44,25 +44,15 @@ public class DefaultSizeTest {
 
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("DefaultSizeTest Instructions Frame")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(10)
                 .columns(45)
+                .testUI(() -> new Frame("DefaultSize"))
                 .screenCapture()
-                .build();
-
-        EventQueue.invokeAndWait(() -> {
-            Frame frame = new Frame("DefaultSize");
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame
-                    .positionTestWindow(frame, PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .build()
+                .awaitAndCheck();
     }
 }
