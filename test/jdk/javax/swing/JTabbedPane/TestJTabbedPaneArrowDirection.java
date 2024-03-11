@@ -49,7 +49,7 @@ public class TestJTabbedPaneArrowDirection {
     private static JFrame frame;
     private static JTabbedPane tabPane;
     private static final String INSTRUCTIONS =
-            "1. Observe the arrows are ponting to left and right direction\n" +
+            "1. Observe the arrows are pointing to left and right direction\n" +
                " for tab placement set to TOP. Default tab placement is TOP.\n\n" +
             "2. Press BOTTOM to change the tab placement to bottom.\n\n" +
             "3. Observe arrows are pointing to the left and right direction.\n\n" +
