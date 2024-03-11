@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,46 @@
  * questions.
  */
 
+import java.awt.Font;
+import javax.swing.BorderFactory;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.border.TitledBorder;
+import javax.swing.SwingUtilities;
+
 /*
  * @test
  * @bug 4243289
  * @summary Tests that TitledBorder do not draw line through its caption
- * @author Peter Zhelezniakov
- * @run applet/manual=yesno Test4243289.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test4243289
  */
 
-import java.awt.Font;
-import javax.swing.BorderFactory;
-import javax.swing.JApplet;
-import javax.swing.JPanel;
-import javax.swing.border.TitledBorder;
+public class Test4243289 {
+    private static JFrame frame;
 
-public class Test4243289 extends JApplet {
-    public void init() {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                When frame starts, you'll see a panel with a TitledBorder
+                with title "Panel Title". If this title is overstriken with
+                the border line, test fails, otherwise it passes.
+                """;
+        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+                .title("JInternalFrame Instructions")
+                .instructions(testInstructions)
+                .testTimeOut(5)
+                .rows(4)
+                .columns(35)
+                .build();
+
+        SwingUtilities.invokeAndWait(() -> {
+            init();
+        });
+        passFailJFrame.awaitAndCheck();
+    }
+    public static void init() {
+        frame = new JFrame("Test TitledBorder");
         Font font = new Font("Dialog", Font.PLAIN, 12); // NON-NLS: the font name
         TitledBorder border = BorderFactory.createTitledBorder(
                 BorderFactory.createEtchedBorder(),
@@ -47,6 +71,10 @@ public class Test4243289 extends JApplet {
 
         JPanel panel = new JPanel();
         panel.setBorder(border);
-        getContentPane().add(panel);
+        frame.add(panel);
+        frame.setSize(300, 300);
+        PassFailJFrame.addTestWindow(frame);
+        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
+        frame.setVisible(true);
     }
 }
