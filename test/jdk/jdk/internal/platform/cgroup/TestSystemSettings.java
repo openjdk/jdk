@@ -40,6 +40,6 @@ public class TestSystemSettings {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XshowSettings:system", "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-	output.shouldContain("System not containerized.");
+        output.shouldContain("System not containerized.");
     }
 }

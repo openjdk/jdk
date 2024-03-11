@@ -337,7 +337,7 @@ class CgroupSubsystemFactory: AllStatic {
                                      const char* name,
                                      char* mount_path,
                                      char* root_path,
-				     bool read_only);
+                                     bool read_only);
     // Determine the cgroup type (version 1 or version 2), given
     // relevant paths to files. Sets 'flags' accordingly.
     static bool determine_type(CgroupInfo* cg_infos,

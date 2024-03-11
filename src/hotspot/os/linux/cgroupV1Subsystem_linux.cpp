@@ -205,9 +205,9 @@ bool CgroupV1Subsystem::is_containerized() {
   // the full logic.
   //
   return _memory->controller()->is_read_only() &&
-	 _cpu->controller()->is_read_only() &&
-	 _cpuacct->is_read_only() &&
-	 _cpuset->is_read_only();
+         _cpu->controller()->is_read_only() &&
+         _cpuacct->is_read_only() &&
+         _cpuset->is_read_only();
 }
 
 /* memory_usage_in_bytes
