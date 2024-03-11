@@ -1575,16 +1575,14 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
   size_t old_size = map->size_in_bytes();
 
   // Slice and resize bitmap
-  map->truncate(old_zeros, map->size_in_bits());
+  map->truncate(old_zeros, map->size());
 
   // We want to keep track of how many zeros were removed
   size_t new_zeros = map->find_first_set_bit(0);
-  size_t removed_zeros = old_zeros - new_zeros;
-  tty->print_cr("Zeros: %ld -> %ld", old_zeros, new_zeros);
 
   assert(new_zeros == 0, "Should have removed leading zeros");
   assert(map->size_in_bytes() <= old_size, "Map size should have decreased");
-  return old_zeros - new_zeros;
+  return old_zeros;
 }
 
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
@@ -1598,8 +1596,6 @@ char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInf
 
     header()->set_heap_oopmap_start_pos(removed_oop_zeros);
     header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
-    MetaspaceShared::set_heap_oopmap_start_pos(removed_oop_zeros);
-    MetaspaceShared::set_heap_ptrmap_start_pos(removed_ptr_zeros);
 
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();

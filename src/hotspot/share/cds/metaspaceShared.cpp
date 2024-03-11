@@ -97,8 +97,6 @@ void* MetaspaceShared::_shared_metaspace_static_top = nullptr;
 intx MetaspaceShared::_relocation_delta;
 char* MetaspaceShared::_requested_base_address;
 bool MetaspaceShared::_use_optimized_module_handling = true;
-size_t MetaspaceShared::_ptrmap_start_pos = 0;
-size_t MetaspaceShared::_oopmap_start_pos = 0;
 
 // The CDS archive is divided into the following regions:
 //     rw  - read-write metadata
@@ -928,10 +926,6 @@ void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {
   if (static_mapinfo != nullptr) {
     log_info(cds)("Core region alignment: " SIZE_FORMAT, static_mapinfo->core_region_alignment());
     dynamic_mapinfo = open_dynamic_archive();
-
-    // Leading zeros are needed to get correct offsets
-    _oopmap_start_pos = static_mapinfo->header()->heap_oopmap_start_pos();
-    _ptrmap_start_pos = static_mapinfo->header()->heap_ptrmap_start_pos();
 
     // First try to map at the requested address
     result = map_archives(static_mapinfo, dynamic_mapinfo, true);

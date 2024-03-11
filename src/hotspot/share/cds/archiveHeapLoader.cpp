@@ -164,7 +164,7 @@ void ArchiveHeapLoader::patch_compressed_embedded_pointers(BitMapView bm,
 
   // Optimization: if dumptime shift is the same as runtime shift, we can perform a
   // quick conversion from "dumptime narrowOop" -> "runtime narrowOop".
-  narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::current_info()->header()->heap_oopmap_start_pos();
+  narrowOop* patching_start = (narrowOop*)region.start() + FileMapInfo::current_info()->heap_oopmap_start_pos();
   if (_narrow_oop_shift == CompressedOops::shift()) {
     uint32_t quick_delta = (uint32_t)rt_encoded_bottom - (uint32_t)dt_encoded_bottom;
     log_info(cds)("CDS heap data relocation quick delta = 0x%x", quick_delta);
@@ -190,7 +190,7 @@ void ArchiveHeapLoader::patch_embedded_pointers(FileMapInfo* info,
   if (UseCompressedOops) {
     patch_compressed_embedded_pointers(bm, info, region);
   } else {
-    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + FileMapInfo::current_info()->header()->heap_oopmap_start_pos());
+    PatchUncompressedEmbeddedPointers patcher((oop*)region.start() + FileMapInfo::current_info()->heap_oopmap_start_pos());
     bm.iterate(&patcher);
   }
 }
@@ -310,7 +310,7 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
   uintptr_t oopmap = bitmap_base + r->oopmap_offset();
   BitMapView bm((BitMap::bm_word_t*)oopmap, r->oopmap_size_in_bits());
 
-  PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->header()->heap_oopmap_start_pos(), loaded_region);
+  PatchLoadedRegionPointers patcher((narrowOop*)load_address + FileMapInfo::current_info()->heap_oopmap_start_pos(), loaded_region);
   bm.iterate(&patcher);
   return true;
 }
@@ -443,7 +443,7 @@ void ArchiveHeapLoader::patch_native_pointers() {
   if (r->mapped_base() != nullptr && r->has_ptrmap()) {
     log_info(cds, heap)("Patching native pointers in heap region");
     BitMapView bm = r->ptrmap_view();
-    PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->header()->heap_ptrmap_start_pos());
+    PatchNativePointers patcher((Metadata**)r->mapped_base() + FileMapInfo::current_info()->heap_ptrmap_start_pos());
     bm.iterate(&patcher);
   }
 }
