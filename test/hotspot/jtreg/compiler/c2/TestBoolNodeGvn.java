@@ -17,6 +17,7 @@ import compiler.lib.ir_framework.TestFramework;
 public class TestBoolNodeGvn {
     public static void main(String[] args) {
         TestFramework.run();
+        testCorrectness();
     }
 
     /**
@@ -31,5 +32,17 @@ public class TestBoolNodeGvn {
                 & Integer.compareUnsigned((m & x), m) > 0
                 & Integer.compareUnsigned((x & m), m + 1) < 0
                 & Integer.compareUnsigned((m & x), m + 1) < 0;
+    }
+
+    private static void testCorrectness() {
+        int[] values = { -10, -5, -1, 0, 1, 5, 8, 16, 42, 100, Integer.MAX_VALUE, Integer.MIN_VALUE };
+
+        for (int x : values) {
+            for (int m : values) {
+                if (!test(x, m)) {
+                    throw new RuntimeException("Bad result for x =  " + x + " m = " + m + ", expected always true");
+                }
+            }
+        }
     }
 }
