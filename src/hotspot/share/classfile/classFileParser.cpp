@@ -5994,6 +5994,9 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   assert(_transitive_interfaces != nullptr, "invariant");
 
+  // Put the transitive interfaces into hash order
+  Klass::hash_secondary_supers((Array<Klass*>*)(address)_transitive_interfaces);
+
   // sort methods
   _method_ordering = sort_methods(_methods);
 

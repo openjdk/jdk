@@ -283,8 +283,10 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries, uint64_t bitmap) {
 void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
 #ifdef ASSERT
   if (HashSecondarySupers && secondaries != nullptr) {
-    uint64_t real_bitmap = hash_secondary_supers(secondaries, /*rewrite*/false);
-    assert(_bitmap == real_bitmap, "must be");
+    uint64_t bitmap;
+    bool hash_ok
+      = secondary_supers_already_hashed((Array<Klass*>*)(address)secondaries, &bitmap);
+    assert(hash_ok && _bitmap == bitmap, "Secondary supers array is corrupt");
   }
 #endif
   _secondary_supers = secondaries;
@@ -306,8 +308,14 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
       // full and the hash is behaving like a random function we don't
       // really need to do this. However, in that case collisions are
       // so rare that it costs very little.
-      int existing_dist = (slot - secondaries->at(slot)->hash_slot()) & 63;
-      if (existing_dist < dist) {
+      Klass *existing = secondaries->at(slot);
+      int existing_dist = (slot - existing->hash_slot()) & 63;
+      if (existing_dist < dist
+          // This tie-breaker ensures that the hash order is
+          // maintained, no matter what order the elements are
+          // inserted.
+          || ((existing_dist == dist)
+              && (uintptr_t(existing) < uintptr_t(sec)))) {
         Klass *tmp = secondaries->at(slot);
         secondaries->at_put(slot, sec);
         sec = tmp;
@@ -328,21 +336,38 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
 // a kind of Bloom filter, which in many cases allows us quickly to
 // eliminate the possibility that something is a member of a set of
 // secondaries.
-uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
-  const int length = secondaries->length();
-
-  if (length == 0) {
-    return 0;
-  }
-
-  if (length >= 64) {
-    return ~(uint64_t)0;
-  }
+//
+// If should_rewrite is true, the input array is overwritten. If
+// false, we scan the input array to see if it is alreasdy hashed.
+void Klass::hash_secondary_supers(Array<Klass*>* secondaries,
+                                  uint64_t *new_bitmap,
+                                  bool *already_hashed,
+                                  bool should_rewrite) {
+  ResourceMark rm;
 
   elapsedTimer selftime;
   selftime.start();
 
-  ResourceMark rm;
+  const int length = secondaries->length();
+  if (length == 0) {
+    *already_hashed = true;
+    *new_bitmap = 0;
+    return;
+  }
+
+  if (length == 1) {
+    *already_hashed = true;
+    int home_slot = secondaries->at(0)->hash_slot();
+    *new_bitmap = uint64_t(1) << home_slot;
+    return;
+  }
+
+  if (length >= 64) {
+    *already_hashed = true;
+    *new_bitmap = ~(uint64_t)0;
+    return;
+  }
+
   uint64_t bitmap = 0;
   GrowableArray<Klass*>* hashed_secondaries
     = new GrowableArray<Klass*>(64);
@@ -356,25 +381,37 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
     hash_insert(k, hashed_secondaries, bitmap, /*use_robin_hood*/true);
   }
 
-  if (rewrite) {
+  if (should_rewrite) {
     // Pack the hashed secondaries array by copying it into the
     // secondaries array, sans nulls.
     int i = 0;
-    int maxprobe = 0;
     for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
         secondaries->at_put(i, hashed_secondaries->at(slot));
         i++;
       }
     }
+  } else {
+    // Check that the secondary_supers array is sorted by hash order
+    *already_hashed = true;
+    int i = 0;
+    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+      if (hashed_secondaries->at(slot) != nullptr) {
+        if (secondaries->at(i) != hashed_secondaries->at(slot)) {
+          *already_hashed = false;
+          break;
+        }
+        i++;
+      }
+    }
   }
+
+  *new_bitmap = bitmap;
 
   selftime.stop();
   if (UsePerfData) {
     ClassLoader::perf_secondary_hash_time()->inc(selftime.ticks());
   }
-
-  return bitmap;
 }
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
@@ -480,7 +517,7 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
     }
 
     if (HashSecondarySupers) {
-      _bitmap = hash_secondary_supers(s2, /*rewrite*/true);
+      _bitmap = hash_secondary_supers(s2);
     }
 
   #ifdef ASSERT

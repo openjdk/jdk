@@ -1424,31 +1424,43 @@ bool InstanceKlass::can_be_primary_super_slow() const {
     return Klass::can_be_primary_super_slow();
 }
 
+long total_classes;
+long reused_lists;
+long non_reused_lists;
+
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
                                                                Array<InstanceKlass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
   Array<InstanceKlass*>* interfaces = transitive_interfaces;
   int num_secondaries = num_extra_slots + interfaces->length();
+  uint64_t bitmap;
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array());
     return nullptr;
-  } else if (! HashSecondarySupers && num_extra_slots == 0) {
+  } else {
+    total_classes++;
     // The secondary super list is exactly the same as the transitive interfaces, so
     // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
     // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
     // (but it's safe to do here because we won't write into _secondary_supers from this point on).
-    set_secondary_supers((Array<Klass*>*)(address)interfaces);
-    return nullptr;
-  } else {
-    // Copy transitive interfaces to a temporary growable array to be constructed
-    // into the secondary super list with extra slots.
-    GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
-    for (int i = 0; i < interfaces->length(); i++) {
-      secondaries->push(interfaces->at(i));
+    Array<Klass*>* as_Klass_array = (Array<Klass*>*)(address)interfaces;
+    if (num_extra_slots == 0
+        && secondary_supers_already_hashed(as_Klass_array, &bitmap)) {
+      set_secondary_supers(as_Klass_array, bitmap);
+      reused_lists++;
+      return nullptr;
+    } else {
+      non_reused_lists++;
+      // Copy transitive interfaces to a temporary growable array to be constructed
+      // into the secondary super list with extra slots.
+      GrowableArray<Klass*>* secondaries = new GrowableArray<Klass*>(interfaces->length());
+      for (int i = 0; i < interfaces->length(); i++) {
+        secondaries->push(interfaces->at(i));
+      }
+      return secondaries;
     }
-    return secondaries;
   }
 }
 
@@ -3705,9 +3717,10 @@ void InstanceKlass::print_on(outputStream* st) const {
     st->print_cr(BULLET"---- secondary supers (%d words):", _secondary_supers->length());
     int longest_distance = 0;
     for (int i = 0; i < _secondary_supers->length(); i++) {
-      unsigned home_slot = _secondary_supers->at(i)->hash_slot();
-      if (home_slot > 0) {
-        home_slot = population_count(_bitmap << (64 - home_slot));
+      unsigned tmp_slot = _secondary_supers->at(i)->hash_slot();
+      unsigned home_slot = 0;
+      if (tmp_slot > 0) {
+        home_slot = population_count(_bitmap << (64 -tmp_slot));
       }
       int distance = (i - home_slot) & 63;
       longest_distance = MAX2(longest_distance, distance);
