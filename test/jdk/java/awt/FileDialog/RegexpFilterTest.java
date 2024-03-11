@@ -60,7 +60,6 @@ public class RegexpFilterTest {
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
                 .title("RegexpFilterTest Instructions")
                 .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
                 .splitUIRight(() -> {
                     JButton show = new JButton("show");
                     show.addActionListener(e ->
