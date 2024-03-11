@@ -1296,21 +1296,20 @@ public:
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
 
-      size_t num_buffers = (buffers._entry_count / G1UpdateBufferSize);
-      size_t buffers_per_thread = MAX2(num_buffers / num_workers, (size_t)1);
+      size_t entries_per_thread = ceil(buffers._entry_count / (double)num_workers);
 
       BufferNode* head = buffers._head;
       BufferNode* tail = head;
 
       uint worker = 0;
       while (tail != nullptr) {
-        size_t count = 0;
+        size_t count = tail->size();
         BufferNode* cur = tail->next();
 
-        while (count < buffers_per_thread && cur != nullptr) {
+        while (count < entries_per_thread && cur != nullptr) {
           tail = cur;
+          count += tail->size();
           cur = tail->next();
-          count++;
         }
 
         tail->set_next(nullptr);
