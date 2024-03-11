@@ -49,7 +49,6 @@ public final class FileFilterDescription {
         PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .title("JFileChooser Filefilter Instructions")
                 .instructions(INSTRUCTIONS)
-                .testTimeOut(5)
                 .rows(10)
                 .columns(35)
                 .build();
