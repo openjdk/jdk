@@ -178,10 +178,6 @@ public:
 
   bool requires_barriers(stackChunkOop obj) const override;
 
-#ifdef ASSERT
-  bool is_in_partial_collection(const void* p);
-#endif
-
   // Optimized nmethod scanning support routines
   void register_nmethod(nmethod* nm) override;
   void unregister_nmethod(nmethod* nm) override;

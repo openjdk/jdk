@@ -725,17 +725,6 @@ HeapWord* SerialHeap::satisfy_failed_allocation(size_t size, bool is_tlab) {
   return nullptr;
 }
 
-#ifdef ASSERT
-class AssertNonScavengableClosure: public OopClosure {
-public:
-  virtual void do_oop(oop* p) {
-    assert(!SerialHeap::heap()->is_in_partial_collection(*p),
-      "Referent should not be scavengable.");  }
-  virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
-};
-static AssertNonScavengableClosure assert_is_non_scavengable_closure;
-#endif
-
 void SerialHeap::process_roots(ScanningOption so,
                                OopClosure* strong_roots,
                                CLDClosure* strong_cld_closure,
@@ -766,10 +755,6 @@ void SerialHeap::process_roots(ScanningOption so,
     // We scan the entire code cache, since CodeCache::do_unloading is not called.
     CodeCache::blobs_do(code_roots);
   }
-  // Verify that the code cache contents are not subject to
-  // movement by a scavenging collection.
-  DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
-  DEBUG_ONLY(ScavengableNMethods::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
 }
 
 bool SerialHeap::no_allocs_since_save_marks() {
@@ -870,13 +855,6 @@ bool SerialHeap::is_in(const void* p) const {
 }
 
 #ifdef ASSERT
-// Don't implement this by using is_in_young().  This method is used
-// in some cases to check that is_in_young() is correct.
-bool SerialHeap::is_in_partial_collection(const void* p) {
-  assert(is_in_reserved(p) || p == nullptr,
-    "Does not work if address is non-null and outside of the heap");
-  return p < _young_gen->reserved().end() && p != nullptr;
-}
 #endif
 
 void SerialHeap::object_iterate(ObjectClosure* cl) {
