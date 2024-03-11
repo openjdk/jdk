@@ -77,25 +77,15 @@ public class FrameRepackTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+        PassFailJFrame.builder()
                 .title("FrameRepackTest Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(5)
                 .rows(30)
                 .columns(45)
-                .build();
-
-        EventQueue.invokeAndWait(() -> {
-            FrameRepack frame = new FrameRepack();
-
-            PassFailJFrame.addTestWindow(frame);
-            PassFailJFrame.positionTestWindow(frame,
-                    PassFailJFrame.Position.HORIZONTAL);
-
-            frame.setVisible(true);
-        });
-
-        passFailJFrame.awaitAndCheck();
+                .testUI(FrameRepack::new)
+                .build()
+                .awaitAndCheck();
     }
 
 }
