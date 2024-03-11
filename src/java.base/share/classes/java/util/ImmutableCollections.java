@@ -660,7 +660,7 @@ class ImmutableCollections {
         @Override
         @SuppressWarnings("unchecked")
         public void forEach(Consumer<? super E> action) {
-            action.accept(e0);
+            action.accept(e0); // implicit null check
             if (e1 != EMPTY) {
                 action.accept((E) e1);
             }
@@ -919,7 +919,7 @@ class ImmutableCollections {
             if (REVERSE && e1 != EMPTY) {
                 action.accept((E) e1);
             }
-            action.accept(e0);
+            action.accept(e0); // implicit null check
             if (!REVERSE && e1 != EMPTY) {
                 action.accept((E) e1);
             }
@@ -1198,7 +1198,7 @@ class ImmutableCollections {
 
         @Override
         public void forEach(BiConsumer<? super K, ? super V> action) {
-            action.accept(k0, v0);
+            action.accept(k0, v0); // implicit null check
         }
     }
 
