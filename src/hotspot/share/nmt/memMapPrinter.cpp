@@ -88,7 +88,7 @@ class CachedNMTInformation : public VirtualMemoryWalker {
   // of them fit into a cache line.
   Range* _ranges;
   MEMFLAGS* _flags;
-  uintx _count, _capacity;
+  size_t _count, _capacity;
 public:
   CachedNMTInformation() : _ranges(nullptr), _flags(nullptr), _count(0), _capacity(0) {}
 
@@ -107,12 +107,12 @@ public:
     }
     if (_count == _capacity) {
       // Enlarge if needed
-      const uintx new_capacity = MAX2((uintx)4096, 2 * _capacity);
+      const size_t new_capacity = MAX2((size_t)4096, 2 * _capacity);
       // Unfortunately, we need to allocate manually, raw, since we must prevent NMT deadlocks (ThreadCritical).
       ALLOW_C_FUNCTION(realloc, _ranges = (Range*)::realloc(_ranges, new_capacity * sizeof(Range));)
       ALLOW_C_FUNCTION(realloc, _flags = (MEMFLAGS*)::realloc(_flags, new_capacity * sizeof(MEMFLAGS));)
       if (_ranges == nullptr || _flags == nullptr) {
-        // In case of OOM lets make no fuzz. Just return.
+        // In case of OOM lets make no fuss. Just return.
         return false;
       }
       _capacity = new_capacity;
@@ -127,11 +127,21 @@ public:
   // Given a vma [from, to), find all regions that intersect with this vma and
   // return their collective flags.
   MemFlagBitmap lookup(const void* from, const void* to) const {
+    assert(from <= to, "Sanity");
+    // We optimize for sequential lookups. Since this class is used when a list
+    // of OS mappings is scanned (VirtualQuery, /proc/pid/maps), and these lists
+    // are usually sorted in order of addresses, ascending.
+    static uintx last = 0;
+    if (to <= _ranges[last].from) {
+      // the range is to the right of the given section, we need to re-start the search
+      last = 0;
+    }
     MemFlagBitmap bm;
-    for(uintx i = 0; i < _count; i++) {
+    for(uintx i = last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
-      } else if (from < _ranges[i].to) {
+      } else if (to <= _ranges[i].from) {
+        last = i;
         break;
       }
     }

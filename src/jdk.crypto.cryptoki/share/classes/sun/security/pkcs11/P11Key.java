@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1532,7 +1532,12 @@ final class NativeKeyHolder {
 
                     // destroy
                     this.keyID = 0;
-                    this.ref.removeNativeKey();
+                    try {
+                        this.ref.removeNativeKey();
+                    } finally {
+                        // prevent enqueuing SessionKeyRef until removeNativeKey is done
+                        Reference.reachabilityFence(this);
+                    }
                 } else {
                     if (cnt < 0) {
                         // should never happen as we start count at 1 and pair get/release calls

@@ -246,6 +246,7 @@ document.addEventListener("DOMContentLoaded", function(e) {
     }
     document.querySelectorAll("input.filter-input").forEach(function(input) {
         input.removeAttribute("disabled");
+        input.setAttribute("autocapitalize", "off");
         input.value = "";
         input.addEventListener("input", function(e) {
             const pattern = input.value ? input.value.trim()

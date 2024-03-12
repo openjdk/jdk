@@ -93,7 +93,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
             128L * 365 * 24 * 60 * 60 * 1000;
 
     /**
-     * Creates a new zip entry with the specified name.
+     * Creates a new ZIP entry with the specified name.
      *
      * @param  name
      *         The entry name
@@ -111,11 +111,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
     }
 
     /**
-     * Creates a new zip entry with fields taken from the specified
-     * zip entry.
+     * Creates a new ZIP entry with fields taken from the specified
+     * ZIP entry.
      *
      * @param  e
-     *         A zip Entry object
+     *         A ZIP Entry object
      *
      * @throws NullPointerException if the entry object is null
      */
@@ -150,7 +150,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is output to a ZIP file or ZIP file formatted
      * output stream the last modification time set by this method will
-     * be stored into the {@code date and time fields} of the zip file
+     * be stored into the {@code date and time fields} of the ZIP file
      * entry and encoded in standard {@code MS-DOS date and time format}.
      * The {@link java.util.TimeZone#getDefault() default TimeZone} is
      * used to convert the epoch time to the MS-DOS date and time.
@@ -183,7 +183,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is read from a ZIP file or ZIP file formatted
      * input stream, this is the last modification time from the {@code
-     * date and time fields} of the zip file entry. The
+     * date and time fields} of the ZIP file entry. The
      * {@link java.util.TimeZone#getDefault() default TimeZone} is used
      * to convert the standard MS-DOS formatted date and time to the
      * epoch time.
@@ -206,11 +206,11 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> If the entry is output to a ZIP file or ZIP file formatted
      * output stream the last modification time set by this method will
-     * be stored into the {@code date and time fields} of the zip file
+     * be stored into the {@code date and time fields} of the ZIP file
      * entry and encoded in standard {@code MS-DOS date and time format}.
      * If the date-time set is out of the range of the standard {@code
      * MS-DOS date and time format}, the time will also be stored into
-     * zip file entry's extended timestamp fields in {@code optional
+     * ZIP file entry's extended timestamp fields in {@code optional
      * extra data} in UTC time. The {@link java.time.ZoneId#systemDefault()
      * system default TimeZone} is used to convert the local date-time
      * to UTC time.
@@ -285,13 +285,13 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * <p> When output to a ZIP file or ZIP file formatted output stream
      * the last modification time set by this method will be stored into
-     * zip file entry's {@code date and time fields} in {@code standard
+     * ZIP file entry's {@code date and time fields} in {@code standard
      * MS-DOS date and time format}), and the extended timestamp fields
      * in {@code optional extra data} in UTC time.
      *
      * @param  time
      *         The last modification time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *
@@ -337,7 +337,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The last access time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *
@@ -373,7 +373,7 @@ public class ZipEntry implements ZipConstants, Cloneable {
      *
      * @param  time
      *         The creation time of the entry
-     * @return This zip entry
+     * @return This ZIP entry
      *
      * @throws NullPointerException if the {@code time} is null
      *

@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 
 extern "C" {
 
