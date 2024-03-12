@@ -52,6 +52,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/perfData.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/stack.inline.hpp"
@@ -302,17 +303,15 @@ void Klass::hash_insert(T *sec, GrowableArray<T*>* secondaries,
       return;
     }
     if (use_robin_hood) {
-      // Use Robin Hood hashing to minimize the worst case search. As
-      // long as a hash table with linear probing is less than 1/3
-      // full and the hash is behaving like a random function we don't
-      // really need to do this. However, in that case collisions are
-      // so rare that it costs very little.
+      // Use Robin Hood hashing to minimize the worst case search.
+      // Also, every permutation of the insertion sequence produces
+      // the same final Robin Hood hash table, provided that a
+      // consistent tie breaker is used
       T* existing = secondaries->at(slot);
       int existing_dist = (slot - existing->hash_slot()) & SEC_HASH_MASK;
       if (existing_dist < dist
-          // This tie-breaker ensures that the hash order is
-          // maintained, no matter what order the elements are
-          // inserted.
+          // This tie breaker ensures that the hash order is
+          // maintained.
           || ((existing_dist == dist)
               && (uintptr_t(existing) < uintptr_t(sec)))) {
         T* tmp = secondaries->at(slot);
@@ -344,8 +343,8 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
   }
 
   if (length == 1) {
-    int home_slot = secondaries->at(0)->hash_slot();
-    return uint64_t(1) << home_slot;
+    int hash_slot = secondaries->at(0)->hash_slot();
+    return uint64_t(1) << hash_slot;
   }
 
   if (length >= SEC_HASH_ENTRIES) {

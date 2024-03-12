@@ -4692,6 +4692,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register sub_klass,
   bind(L_fallthrough);
 }
 
+#ifdef _LP64
+
 // Ensure that the inline code and the stub are using the same registers.
 #define CHECK_KLASS_SUBTYPE_SLOW_REGISTERS                              \
 do {                                                                    \
@@ -4931,6 +4933,7 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
   }
 }
 
+#endif // LP64
 
 void MacroAssembler::clinit_barrier(Register klass, Register thread, Label* L_fast_path, Label* L_slow_path) {
   assert(L_fast_path != nullptr || L_slow_path != nullptr, "at least one is required");

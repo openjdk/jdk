@@ -160,7 +160,7 @@ class Klass : public Metadata {
   ClassLoaderData* _class_loader_data;
 
   // Bitmap and hash code used by hashed secondary supers.
-  uintptr_t _bitmap;
+  uint64_t _bitmap;
   juint _hash;
 
   int _vtable_len;              // vtable length. This field may be read very often when we
