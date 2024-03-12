@@ -123,7 +123,6 @@ public class ObjectMonitorUsage {
 
     static void joinThreads(Thread[] threads) {
         try {
-            Thread.sleep(400);
             for (Thread t : threads) {
                 t.join();
             }
@@ -346,10 +345,12 @@ public class ObjectMonitorUsage {
                 try {
                     ready = true;
                     lockCheck.wait();
+
+                    // identify if the wakeup was spurious
                     wokeupCount++;
                     if (!notifiedAll && notifiedCount < wokeupCount) {
                         wasSpuriousWakeup = true;
-                        log("WARNING: got spurious wakeup in WaitingTask thread: " + getName()); 
+                        log("WARNING: got spurious wakeup in WaitingTask thread: " + getName());
                     }
                 } catch (InterruptedException e) {
                     throw new Error("Unexpected " + e);

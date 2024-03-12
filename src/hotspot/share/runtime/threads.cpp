@@ -1183,7 +1183,7 @@ void Threads::metadata_handles_do(void f(Metadata*)) {
 }
 
 #if INCLUDE_JVMTI
-// Get count Java threads that are waiting to enter or re-enter the specified monitor.
+// Get count of Java threads that are waiting to enter or re-enter the specified monitor.
 GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
                                                          int count,
                                                          address monitor) {

@@ -194,21 +194,21 @@ Java_ObjectMonitorUsage_check(JNIEnv *jni, jclass cls, jobject obj, jthread owne
   print_monitor_info(jni, inf);
 
   if (!jni->IsSameObject(owner, inf.owner)) {
-    LOG("(%d) unexpected owner: 0x%p\n", check_idx, inf.owner);
+    LOG("FAILED: (%d) unexpected owner: 0x%p\n", check_idx, inf.owner);
     result = STATUS_FAILED;
   }
   if (inf.entry_count != entryCount) {
-    LOG("(%d) entry_count expected: %d, actually: %d\n",
+    LOG("FAILED: (%d) entry_count expected: %d, actually: %d\n",
         check_idx, entryCount, inf.entry_count);
     result = STATUS_FAILED;
   }
   if (inf.waiter_count != waiterCount) {
-    LOG("(%d) waiter_count expected: %d, actually: %d\n",
+    LOG("FAILED: (%d) waiter_count expected: %d, actually: %d\n",
         check_idx, waiterCount, inf.waiter_count);
     result = STATUS_FAILED;
   }
   if (inf.notify_waiter_count != notifyWaiterCount) {
-    LOG("(%d) notify_waiter_count expected: %d, actually: %d\n",
+    LOG("FAILED: (%d) notify_waiter_count expected: %d, actually: %d\n",
         check_idx, notifyWaiterCount, inf.notify_waiter_count);
     result = STATUS_FAILED;
   }

@@ -43,6 +43,6 @@
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native -agentlib:objmonusage001=printdump nsk.jvmti.GetObjectMonitorUsage.objmonusage001
+ * @run main/othervm/native -agentlib:objmonusage001 nsk.jvmti.GetObjectMonitorUsage.objmonusage001
  */
 
