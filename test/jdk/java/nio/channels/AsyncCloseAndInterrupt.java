@@ -141,10 +141,19 @@ public class AsyncCloseAndInterrupt {
         ProcessBuilder pb = new ProcessBuilder("mkfifo", fifoFile.toString());
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         oa.waitFor();
-        if (oa.getExitValue() != 0)
-            throw new IOException("Error creating fifo \"" +
-                fifoFile.getAbsolutePath() + "\"\n" +
-                ProcessTools.getProcessLog(pb, oa));
+        if (oa.getExitValue() != 0) {
+            String stderr = oa.getStderr();
+            if (stderr.contains("mkfifo") &&
+                stderr.contains("Operation not supported")) {
+                fifoFile = null;
+                log.println("WARNING: mkfifo failed - cannot completely test FileChannels");
+                return;
+            } else {
+                throw new IOException("Error creating fifo \"" +
+                    fifoFile.getAbsolutePath() + "\"\n" +
+                    ProcessTools.getProcessLog(pb, oa));
+            }
+        }
         new RandomAccessFile(fifoFile, "rw").close();
     }
 
