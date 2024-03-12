@@ -65,7 +65,6 @@ public class bug6798062 {
             If memory usage is increasing, click Fail else click Pass .  """;
 
     private static JSlider slider;
-    private static JFrame frame;
     private static JTextField tfLink;
     private static JButton btnStart;
     private static JButton btnStop;
@@ -91,7 +90,7 @@ public class bug6798062 {
         btnStart = new JButton("Start");
         btnStop = new JButton("Stop");
         btnGC = new JButton("Run System.gc()");
-        frame = new JFrame("bug6798062");
+        JFrame frame = new JFrame("bug6798062");
 
         frame.setSize(400, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
