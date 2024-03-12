@@ -300,20 +300,8 @@ Java_java_lang_ProcessImpl_init(JNIEnv *env, jclass clazz)
 #define WTERMSIG(status) ((status)&0x7F)
 #endif
 
-#ifndef VERSION_FEATURE
-#error VERSION_FEATURE must be defined
-#endif
-
-#ifndef VERSION_INTERIM
-#error VERSION_INTERIM must be defined
-#endif
-
-#ifndef VERSION_UPDATE
-#error VERSION_UPDATE must be defined
-#endif
-
-#ifndef VERSION_PATCH
-#error VERSION_PATCH must be defined
+#ifndef VERSION_STRING
+#error VERSION_STRING must be defined
 #endif
 
 static const char *
@@ -503,23 +491,23 @@ static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
-    char *buf, buf1[(7 * 11) + 7]; // "%d:%d:%d:%d:%d:%d:%d\0"
-    char *hlpargs[3];
+    char *buf, buf1[(3 * 11) + 3]; // "%d:%d:%d\0"
+    char *hlpargs[4];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
-    snprintf(buf1, sizeof(buf1), "%d:%d:%d:%d:%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1],
-             VERSION_FEATURE, VERSION_INTERIM, VERSION_UPDATE, VERSION_PATCH);
-
+    snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
     /* NULL-terminated argv array.
      * argv[0] contains path to jspawnhelper, to follow conventions.
-     * argv[1] contains the fd string as argument to jspawnhelper
+     * argv[1] contains the version string as argument to jspawnhelper
+     * argv[2] contains the fd string as argument to jspawnhelper
      */
     hlpargs[0] = (char*)helperpath;
-    hlpargs[1] = buf1;
-    hlpargs[2] = NULL;
+    hlpargs[1] = VERSION_STRING;
+    hlpargs[2] = buf1;
+    hlpargs[3] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.

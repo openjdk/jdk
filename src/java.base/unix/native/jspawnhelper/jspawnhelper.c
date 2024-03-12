@@ -29,6 +29,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -50,20 +51,8 @@ extern int errno;
 #define ERR_PIPE 2
 #define ERR_ARGS 3
 
-#ifndef VERSION_FEATURE
-#error VERSION_FEATURE must be defined
-#endif
-
-#ifndef VERSION_INTERIM
-#error VERSION_INTERIM must be defined
-#endif
-
-#ifndef VERSION_UPDATE
-#error VERSION_UPDATE must be defined
-#endif
-
-#ifndef VERSION_PATCH
-#error VERSION_PATCH must be defined
+#ifndef VERSION_STRING
+#error VERSION_STRING must be defined
 #endif
 
 void error (int fd, int err) {
@@ -155,25 +144,23 @@ int main(int argc, char *argv[]) {
     struct stat buf;
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
-    int jdk_feature, jdk_interim, jdk_update, jdk_patch;
     sigset_t unblock_signals;
 
-    if (argc != 2) {
+    if (argc != 3) {
         shutItDown();
     }
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
-    r = sscanf (argv[1], "%d:%d:%d:%d:%d:%d:%d", &fdinr, &fdinw, &fdout, &jdk_feature, &jdk_interim, &jdk_update, &jdk_patch);
-    if (r == 7 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
-        // Check that JDK version and jspawnhelper version are the same
-        if (jdk_feature != VERSION_FEATURE || jdk_interim != VERSION_INTERIM || jdk_update != VERSION_UPDATE || jdk_patch != VERSION_PATCH) {
-            fprintf(stderr, "Expected jspawnhelper for Java %d.%d.%d.%d, ", jdk_feature, jdk_interim, jdk_update, jdk_patch);
-            fprintf(stderr, "but jspawnhelper for Java %d.%d.%d.%d was found.\n", VERSION_FEATURE, VERSION_INTERIM, VERSION_UPDATE, VERSION_PATCH);
-            shutItDown();
-        }
 
+    if (strcmp(argv[1], VERSION_STRING) != 0) {
+        fprintf(stderr, "Version check failed. jspawnhelper version: %s, JDK version: %s\n", VERSION_STRING, argv[1]);
+        shutItDown();
+    }
+
+    r = sscanf (argv[2], "%d:%d:%d", &fdinr, &fdinw, &fdout);
+    if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);
         if (!S_ISFIFO(buf.st_mode))
             shutItDown();

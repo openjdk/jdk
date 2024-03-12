@@ -46,11 +46,7 @@ TARGETS += $(BUILD_LIBVERIFY)
 
 ##########################################################################################
 
-LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"' \
-    -DVERSION_FEATURE=$(VERSION_FEATURE) \
-    -DVERSION_INTERIM=$(VERSION_INTERIM) \
-    -DVERSION_UPDATE=$(VERSION_UPDATE) \
-    -DVERSION_PATCH=$(VERSION_PATCH)
+LIBJAVA_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
 ifeq ($(call isTargetOs, macosx), true)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
@@ -63,6 +59,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
+    ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     WARNINGS_AS_ERRORS_xlc := false, \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
