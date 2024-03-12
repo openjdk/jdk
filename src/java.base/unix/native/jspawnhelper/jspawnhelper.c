@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     if (strcmp(argv[1], VERSION_STRING) != 0) {
-        fprintf(stderr, "Version check failed. jspawnhelper version: %s, JDK version: %s\n", VERSION_STRING, argv[1]);
+        fprintf(stdout, "Version check failed. jspawnhelper version: %s, JDK version: %s\n", VERSION_STRING, argv[1]);
         shutItDown();
     }
 
