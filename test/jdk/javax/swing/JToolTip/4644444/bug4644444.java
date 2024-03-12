@@ -58,7 +58,6 @@ public class bug4644444 {
                 "1234567890 1234567890 1234567890 1234567890 1234567890 1234567890");
         frame.getContentPane().add(button);
         frame.setSize(200, 80);
-        //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         return frame;
     }
 }
