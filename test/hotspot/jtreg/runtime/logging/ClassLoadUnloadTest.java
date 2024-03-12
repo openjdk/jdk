@@ -49,8 +49,7 @@ public class ClassLoadUnloadTest {
     private static class ClassUnloadTestMain {
         public static void main(String... args) throws Exception {
             String className = "test.Empty";
-            String classPath = args[0];
-            ClassLoader cl = ClassUnloadCommon.newClassLoader(classPath);
+            ClassLoader cl = ClassUnloadCommon.newClassLoader();
             Class<?> c = cl.loadClass(className);
             cl = null; c = null;
             ClassUnloadCommon.triggerUnloading();
@@ -73,11 +72,12 @@ public class ClassLoadUnloadTest {
     static OutputAnalyzer exec(String... args) throws Exception {
         String classPath = System.getProperty("test.class.path", ".");
 
+        // Sub-process does not get all the properties automatically, so the test class path needs to be passed explicitly
         List<String> argsList = new ArrayList<>();
         Collections.addAll(argsList, args);
         Collections.addAll(argsList, "-Xmn8m", "-Xbootclasspath/a:.", "-XX:+UnlockDiagnosticVMOptions",
-                           "-XX:+WhiteBoxAPI", "-XX:+ClassUnloading", ClassUnloadTestMain.class.getName(), classPath);
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(argsList);
+                           "-XX:+WhiteBoxAPI", "-XX:+ClassUnloading", "-Dtest.class.path=" + classPath, ClassUnloadTestMain.class.getName());
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(argsList);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         return output;

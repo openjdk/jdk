@@ -29,8 +29,6 @@
 
 
 package jdk.test.lib.classloader;
-import jdk.test.whitebox.WhiteBox;
-
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,6 +37,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.stream.Stream;
+
+import jdk.test.whitebox.WhiteBox;
 
 public class ClassUnloadCommon {
     public static class TestFailure extends RuntimeException {
@@ -73,14 +73,6 @@ public class ClassUnloadCommon {
      */
     public static ClassLoader newClassLoader() {
         String cp = System.getProperty("test.class.path", ".");
-        return newClassLoader(cp);
-    }
-
-    /**
-     * Creates a class loader that loads classes from the provided class path
-     * before delegating to the system class loader.
-     */
-    public static ClassLoader newClassLoader(String cp) {
         URL[] urls = Stream.of(cp.split(File.pathSeparator))
                 .map(Paths::get)
                 .map(ClassUnloadCommon::toURL)
