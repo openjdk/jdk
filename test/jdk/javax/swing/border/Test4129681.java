@@ -21,11 +21,11 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
 import java.awt.event.ItemEvent;
 import javax.swing.BorderFactory;
+import javax.swing.Box;
 import javax.swing.JCheckBox;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 
 /*
@@ -51,15 +51,14 @@ public class Test4129681 {
                 .title("Test Instructions")
                 .instructions(testInstructions)
                 .rows(4)
-                .columns(35)
-                .testUI(Test4129681::init)
+                .columns(25)
+                .splitUI(Test4129681::init)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JFrame init() {
+    public static JComponent init() {
         JCheckBox check = new JCheckBox("Enable/Disable");
-        JFrame frame = new JFrame("Test Border Enable/Disable");
         check.addItemListener(event ->
                 label.setEnabled(ItemEvent.DESELECTED == event.getStateChange()));
 
@@ -67,9 +66,13 @@ public class Test4129681 {
         label.setBorder(BorderFactory.createTitledBorder("label"));
         label.setEnabled(!check.isSelected());
 
-        frame.add(BorderLayout.NORTH, check);
-        frame.add(BorderLayout.CENTER, label);
-        frame.setSize(300, 300);
-        return frame;
+        Box main = Box.createVerticalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createVerticalGlue());
+        main.add(check);
+        main.add(Box.createVerticalStrut(4));
+        main.add(label);
+        main.add(Box.createVerticalGlue());
+        return main;
     }
 }
