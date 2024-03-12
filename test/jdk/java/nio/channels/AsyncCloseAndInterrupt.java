@@ -141,7 +141,7 @@ public class AsyncCloseAndInterrupt {
         ProcessBuilder pb = new ProcessBuilder("mkfifo", fifoFile.toString());
         OutputAnalyzer oa = ProcessTools.executeProcess(pb);
         oa.waitFor();
-        if (oa.pid() != 0)
+        if (oa.getExitValue() != 0)
             throw new IOException("Error creating fifo \"" +
                 fifoFile.getAbsolutePath() + "\"\n" +
                 ProcessTools.getProcessLog(pb, oa));
