@@ -28,7 +28,7 @@
  * @run main/othervm -Xcomp
  *      -XX:CompileCommand=compileonly,compiler.loopopts.TestEmptyPreLoopForDifferentMainLoop::test
  *      compiler.loopopts.TestEmptyPreLoopForDifferentMainLoop
- * @run main/othervm compiler.loopopts.TestEmptyPreLoopForDifferentMainLoop
+ * @run main compiler.loopopts.TestEmptyPreLoopForDifferentMainLoop
  */
 
 package compiler.loopopts;
