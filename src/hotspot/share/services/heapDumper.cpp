@@ -2611,7 +2611,8 @@ void VM_HeapDumper::dump_vthread(oop vt, AbstractDumpWriter* segment_writer) {
 
 static uint dump_file_seq = 0;
 
-// helper function to create the heap dump path name; free the returned pointer
+// helper function to create the heap dump path name
+// the caller must free the returned pointer
 static char* alloc_and_create_heapdump_pathname() {
   static char base_path[JVM_MAXPATHLEN] = {'\0'};
   char* my_path;
