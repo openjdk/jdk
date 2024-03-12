@@ -343,7 +343,7 @@ public abstract class HttpRequest {
      * @param uristring the URI string to get
      * @return a HttpRequest
      * @throws IllegalArgumentException if the URI scheme is not supported
-     *         or if the uristring is invalid.
+     *         or if the provided {@code uristring} is not a valid URI.
      */
     public static HttpRequest GET(String uristring) {
         URI uri = URI.create(uristring);
