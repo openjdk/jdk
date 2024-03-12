@@ -46,11 +46,19 @@ static bool is_tested_monitor(JNIEnv *jni, jobject monitor) {
   return jni->IsSameObject(monitor, tested_monitor) == JNI_TRUE;
 }
 
+static void log_event(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread,
+                      const char* title, int counter) {
+  char* tname = get_thread_name(jvmti, jni, thread);
+  LOG(">>> %s event: %s counter: %d\n", title, tname, counter);
+  deallocate(jvmti, jni, (void*)tname);
+}
+
 JNIEXPORT void JNICALL
 MonitorContendedEnter(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor) {
   RawMonitorLocker rml(jvmti, jni, event_lock);
   if (is_tested_monitor(jni, monitor)) {
     waits_to_enter++;
+    log_event(jvmti, jni, thread, "MonitorContendedEnter", waits_to_enter);
   }
 }
 
@@ -59,6 +67,7 @@ MonitorContendedEntered(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject mo
   RawMonitorLocker rml(jvmti, jni, event_lock);
   if (is_tested_monitor(jni, monitor)) {
     waits_to_enter--;
+    log_event(jvmti, jni, thread, "MonitorContendedEntered", waits_to_enter);
   }
 }
 
@@ -67,6 +76,7 @@ MonitorWait(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor, jlong
   RawMonitorLocker rml(jvmti, jni, event_lock);
   if (is_tested_monitor(jni, monitor)) {
     waits_to_be_notified++;
+    log_event(jvmti, jni, thread, "MonitorWait", waits_to_be_notified);
   }
 }
 
@@ -75,6 +85,7 @@ MonitorWaited(jvmtiEnv *jvmti, JNIEnv *jni, jthread thread, jobject monitor, jbo
   RawMonitorLocker rml(jvmti, jni, event_lock);
   if (is_tested_monitor(jni, monitor)) {
     waits_to_be_notified--;
+    log_event(jvmti, jni, thread, "MonitorWaited", waits_to_be_notified);
   }
 }
 
@@ -215,6 +226,7 @@ Java_ObjectMonitorUsage_setTestedMonitor(JNIEnv *jni, jclass cls, jobject monito
   }
   tested_monitor = (monitor != nullptr) ? jni->NewGlobalRef(monitor) : nullptr;
   waits_to_enter = 0;
+  waits_to_be_notified = 0;
 
   err = jvmti->SetEventNotificationMode(event_mode, JVMTI_EVENT_MONITOR_CONTENDED_ENTER, nullptr);
   check_jvmti_status(jni, err, "setTestedMonitor: error in JVMTI SetEventNotificationMode #1");

@@ -52,6 +52,12 @@ public class ObjectMonitorUsage {
 
     static Object lockCheck = new Object();
 
+    // spurious wakeup detection
+    static boolean wasSpuriousWakeup;
+    static boolean notifiedAll;
+    static int notifiedCount;
+    static int wokeupCount;
+
     native static int getRes();
     native static int waitsToEnter();
     native static int waitsToBeNotified();
@@ -78,11 +84,20 @@ public class ObjectMonitorUsage {
     static Thread startTask(int idx, TestTask task, boolean isVirtual, String kind) {
         Thread thread = isVirtual ? Thread.ofVirtual().name(kind + "VT" + idx).start(task)
                                   : Thread.ofPlatform().name(kind + "PT" + idx).start(task);
+        task.setName(thread.getName());
         task.waitReady();
         return thread;
     }
 
+    static void initSpuriousWakeupDetection() {
+        wasSpuriousWakeup = false;
+        notifiedAll = false;
+        notifiedCount = 0;
+        wokeupCount = 0;
+    }
+
     static Thread[] startWaitingThreads(boolean isVirtual) {
+        initSpuriousWakeupDetection();
         Thread[] threads = new Thread[NUMBER_OF_WAITING_THREADS];
         for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
@@ -108,6 +123,7 @@ public class ObjectMonitorUsage {
 
     static void joinThreads(Thread[] threads) {
         try {
+            Thread.sleep(400);
             for (Thread t : threads) {
                 t.join();
             }
@@ -124,7 +140,7 @@ public class ObjectMonitorUsage {
      */
     static void test0(boolean isVirtual) {
         String vtag = vtag(isVirtual);
-        log("\n###test0: started " + vtag);
+        log("\n### test0: started " + vtag);
 
         setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
@@ -139,10 +155,11 @@ public class ObjectMonitorUsage {
 
         synchronized (lockCheck) {
             lockCheck.notifyAll();
+            notifiedAll = true;
         }
-        setTestedMonitor(null);
         joinThreads(wThreads);
-        log("###test0: finished " + vtag);
+        setTestedMonitor(null);
+        log("### test0: finished " + vtag);
     }
 
     /* Scenario #1:
@@ -153,7 +170,7 @@ public class ObjectMonitorUsage {
      */
     static void test1(boolean isVirtual) {
         String vtag = vtag(isVirtual);
-        log("\n###test1: started " + vtag);
+        log("\n### test1: started " + vtag);
 
         setTestedMonitor(lockCheck);
         Thread[] eThreads = null;
@@ -176,9 +193,9 @@ public class ObjectMonitorUsage {
                   0 /* count of threads waiting to be notified: 0 */);
 
         }
-        setTestedMonitor(null);
         joinThreads(eThreads);
-        log("###test1: finished " + vtag);
+        setTestedMonitor(null);
+        log("### test1: finished " + vtag);
     }
 
     /* Scenario #2:
@@ -189,7 +206,7 @@ public class ObjectMonitorUsage {
      */
     static void test2(boolean isVirtual) throws Error {
         String vtag = vtag(isVirtual);
-        log("\n###test2: started " + vtag);
+        log("\n### test2: started " + vtag);
 
         setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
@@ -207,11 +224,12 @@ public class ObjectMonitorUsage {
                   NUMBER_OF_WAITING_THREADS);
 
             lockCheck.notifyAll();
+            notifiedAll = true;
         }
-        setTestedMonitor(null);
         joinThreads(wThreads);
         joinThreads(eThreads);
-        log("###test2: finished " + vtag);
+        setTestedMonitor(null);
+        log("### test2: finished " + vtag);
     }
 
     /* Scenario #3:
@@ -228,7 +246,7 @@ public class ObjectMonitorUsage {
      */
     static void test3(boolean isVirtual) throws Error {
         String vtag = vtag(isVirtual);
-        log("\n###test3: started " + vtag);
+        log("\n### test3: started " + vtag);
 
         setTestedMonitor(lockCheck);
         Thread[] wThreads = startWaitingThreads(isVirtual);
@@ -255,6 +273,7 @@ public class ObjectMonitorUsage {
 
             for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
                 lockCheck.notify(); // notify waiting threads one by one
+                notifiedCount++;
                 // now the notified WaitingTask has to be blocked on the lockCheck re-enter
 
                 // entry count: 1
@@ -266,10 +285,10 @@ public class ObjectMonitorUsage {
                       NUMBER_OF_WAITING_THREADS  - i - 1);
             }
         }
-        setTestedMonitor(null);
         joinThreads(wThreads);
         joinThreads(eThreads);
-        log("###test3: finished " + vtag);
+        setTestedMonitor(null);
+        log("### test3: finished " + vtag);
     }
 
     static void test(boolean isVirtual) {
@@ -280,7 +299,7 @@ public class ObjectMonitorUsage {
     }
 
     public static void main(String args[]) {
-        log("\n###main: started\n");
+        log("\n### main: started\n");
         check(lockCheck, null, 0, 0, 0);
 
         test(false); // test platform threads
@@ -290,14 +309,19 @@ public class ObjectMonitorUsage {
         if (getRes() > 0) {
             throw new RuntimeException("Failed status returned from the agent");
         }
-        log("\n###main: finished\n");
+        log("\n### main: finished\n");
     }
 
     static abstract class TestTask implements Runnable {
-        public volatile boolean ready = false;
+        volatile boolean ready = false;
+        String name;
+
         public abstract void run();
 
-        public void waitReady() {
+        String getName() { return name; }
+        void setName(String name) { this.name = name; }
+
+        void waitReady() {
             try {
                 while (!ready) {
                     Thread.sleep(10);
@@ -322,6 +346,11 @@ public class ObjectMonitorUsage {
                 try {
                     ready = true;
                     lockCheck.wait();
+                    wokeupCount++;
+                    if (!notifiedAll && notifiedCount < wokeupCount) {
+                        wasSpuriousWakeup = true;
+                        log("WARNING: got spurious wakeup in WaitingTask thread: " + getName()); 
+                    }
                 } catch (InterruptedException e) {
                     throw new Error("Unexpected " + e);
                 }
