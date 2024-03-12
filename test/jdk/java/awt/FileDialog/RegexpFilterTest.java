@@ -56,18 +56,19 @@ public class RegexpFilterTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        new PassFailJFrame.Builder()
-                .title("RegexpFilterTest Instructions")
-                .instructions(INSTRUCTIONS)
-                .splitUIRight(() -> {
-                    JButton show = new JButton("show");
-                    show.addActionListener(e ->
-                            new FileDialog(new Frame()).setVisible(true));
-                    return show;
-                })
-                .rows(15)
-                .columns(40)
-                .build()
-                .awaitAndCheck();
+        PassFailJFrame
+            .builder()
+            .title("RegexpFilterTest Instructions")
+            .instructions(INSTRUCTIONS)
+            .splitUIRight(() -> {
+                JButton show = new JButton("show");
+                show.addActionListener(e ->
+                        new FileDialog((Frame) null).setVisible(true));
+                return show;
+            })
+            .rows(15)
+            .columns(40)
+            .build()
+            .awaitAndCheck();
     }
 }
