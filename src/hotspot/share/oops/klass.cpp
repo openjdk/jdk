@@ -290,7 +290,8 @@ void Klass::set_secondary_supers(Array<Klass*>* secondaries) {
   _secondary_supers = secondaries;
 }
 
-void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
+template<typename T>
+void Klass::hash_insert(T *sec, GrowableArray<T*>* secondaries,
                         uint64_t &bitmap, bool use_robin_hood) {
   int longest_probe = 0;
   int dist = 0;
@@ -306,7 +307,7 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
       // full and the hash is behaving like a random function we don't
       // really need to do this. However, in that case collisions are
       // so rare that it costs very little.
-      Klass *existing = secondaries->at(slot);
+      T* existing = secondaries->at(slot);
       int existing_dist = (slot - existing->hash_slot()) & 63;
       if (existing_dist < dist
           // This tie-breaker ensures that the hash order is
@@ -314,7 +315,7 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
           // inserted.
           || ((existing_dist == dist)
               && (uintptr_t(existing) < uintptr_t(sec)))) {
-        Klass *tmp = secondaries->at(slot);
+        T* tmp = secondaries->at(slot);
         secondaries->at_put(slot, sec);
         sec = tmp;
         dist = existing_dist;
@@ -334,7 +335,8 @@ void Klass::hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
 // a kind of Bloom filter, which in many cases allows us quickly to
 // eliminate the possibility that something is a member of a set of
 // secondaries.
-uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) {
+template<typename T>
+uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
   const int length = secondaries->length();
 
   if (length == 0) {
@@ -350,15 +352,15 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   ResourceMark rm;
   uint64_t bitmap = 0;
-  GrowableArray<Klass*>* hashed_secondaries
-    = new GrowableArray<Klass*>(64);
+  GrowableArray<T*>* hashed_secondaries
+    = new GrowableArray<T*>(64);
 
   for (int i = 0; i < hashed_secondaries->capacity(); i++) {
     hashed_secondaries->push(nullptr);
   }
 
   for (int j = 0; j < length; j++) {
-    Klass *k = secondaries->at(j);
+    T *k = secondaries->at(j);
     hash_insert(k, hashed_secondaries, bitmap, /*use_robin_hood*/true);
   }
 
@@ -394,6 +396,9 @@ uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool rewrite) 
 
   return bitmap;
 }
+
+template uint64_t Klass::hash_secondary_supers(Array<Klass*>* secondaries, bool);
+template uint64_t Klass::hash_secondary_supers(Array<InstanceKlass*>* secondaries, bool);
 
 void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interfaces, TRAPS) {
   if (k == nullptr) {
