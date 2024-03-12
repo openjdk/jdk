@@ -5931,53 +5931,7 @@ bool LibraryCallKit::inline_multiplyToLen() {
     // 'x_start' points to x array + scaled xlen
     // 'y_start' points to y array + scaled ylen
 
-    // Allocate the result array
     Node* zlen = _gvn.transform(new AddINode(xlen, ylen));
-    ciKlass* klass = ciTypeArrayKlass::make(T_INT);
-    Node* klass_node = makecon(TypeKlassPtr::make(klass));
-
-    IdealKit ideal(this);
-
-#define __ ideal.
-     Node* one = __ ConI(1);
-     Node* zero = __ ConI(0);
-     IdealVariable need_alloc(ideal), z_alloc(ideal);  __ declarations_done();
-     __ set(need_alloc, zero);
-     __ set(z_alloc, z);
-     __ if_then(z, BoolTest::eq, null()); {
-       __ increment (need_alloc, one);
-     } __ else_(); {
-       // Update graphKit memory and control from IdealKit.
-       sync_kit(ideal);
-       Node* cast = new CastPPNode(control(), z, TypePtr::NOTNULL);
-       _gvn.set_type(cast, cast->bottom_type());
-       C->record_for_igvn(cast);
-
-       Node* zlen_arg = load_array_length(cast);
-       // Update IdealKit memory and control from graphKit.
-       __ sync_kit(this);
-       __ if_then(zlen_arg, BoolTest::lt, zlen); {
-         __ increment (need_alloc, one);
-       } __ end_if();
-     } __ end_if();
-
-     __ if_then(__ value(need_alloc), BoolTest::ne, zero); {
-       // Update graphKit memory and control from IdealKit.
-       sync_kit(ideal);
-       Node * narr = new_array(klass_node, zlen, 1);
-       // Update IdealKit memory and control from graphKit.
-       __ sync_kit(this);
-       __ set(z_alloc, narr);
-     } __ end_if();
-
-     sync_kit(ideal);
-     z = __ value(z_alloc);
-     // Can't use TypeAryPtr::INTS which uses Bottom offset.
-     _gvn.set_type(z, TypeOopPtr::make_from_klass(klass));
-     // Final sync IdealKit and GraphKit.
-     final_sync(ideal);
-#undef __
-
     Node* z_start = array_element_address(z, intcon(0), T_INT);
 
     Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
