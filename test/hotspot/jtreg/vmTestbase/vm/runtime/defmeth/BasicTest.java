@@ -26,6 +26,7 @@
  *
  * @modules java.base/jdk.internal.org.objectweb.asm:+open java.base/jdk.internal.org.objectweb.asm.util:+open
  * @library /vmTestbase /test/lib
+ * @enablePreview
  *
  * @comment build retransform.jar in current dir
  * @run driver vm.runtime.defmeth.shared.BuildJar
@@ -39,6 +40,7 @@
 
 package vm.runtime.defmeth;
 
+import java.lang.classfile.ClassFile;
 import java.util.Map;
 import java.util.Set;
 
@@ -50,7 +52,7 @@ import vm.runtime.defmeth.shared.data.*;
 import vm.runtime.defmeth.shared.DefMethTest;
 import vm.runtime.defmeth.shared.executor.TestExecutor;
 
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+
 import static vm.runtime.defmeth.shared.ExecutionMode.*;
 
 /**
@@ -61,7 +63,7 @@ public class BasicTest extends DefMethTest {
     public static void main(String[] args) {
         DefMethTest.runTest(BasicTest.class,
                 /* majorVer */ Set.of(MIN_MAJOR_VER, MAX_MAJOR_VER),
-                /* flags    */ Set.of(0, ACC_SYNCHRONIZED),
+                /* flags    */ Set.of(ClassFile.ACC_SYNCHRONIZED),
                 /* redefine */ Set.of(false, true),
                 /* execMode */ Set.of(DIRECT, REFLECTION, INVOKE_EXACT, INVOKE_GENERIC, INVOKE_WITH_ARGS, INDY));
     }
@@ -207,7 +209,7 @@ public class BasicTest extends DefMethTest {
     public void testStaticInit(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
-                    .flags(ACC_STATIC)
+                    .flags(ClassFile.ACC_STATIC)
                     .throw_(RuntimeException.class)
                     .build()
 
@@ -239,12 +241,12 @@ public class BasicTest extends DefMethTest {
     public void testStaticInitPrivate(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
-                    .flags(ACC_STATIC)
+                    .flags(ClassFile.ACC_STATIC)
                     .throw_(RuntimeException.class)
                     .build()
 
                 .defaultMethod("m", "()V")
-                    .flags(ACC_PRIVATE)
+                    .flags(ClassFile.ACC_PRIVATE)
                     .emptyBody().build()
                 .build();
 
@@ -274,7 +276,7 @@ public class BasicTest extends DefMethTest {
     public void testNotStaticInitNoDefault(TestBuilder b) {
         Interface I = b.intf("I")
                 .defaultMethod("<clinit>", "()V")
-                    .flags(ACC_STATIC)
+                    .flags(ClassFile.ACC_STATIC)
                     .throw_(RuntimeException.class)
                     .build()
                  .build();
