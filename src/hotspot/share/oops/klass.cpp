@@ -343,6 +343,11 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
     return 0;
   }
 
+  if (length == 1) {
+    int home_slot = secondaries->at(0)->hash_slot();
+    return uint64_t(1) << home_slot;
+  }
+
   if (length >= 64) {
     return ~(uint64_t)0;
   }
@@ -353,11 +358,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
   ResourceMark rm;
   uint64_t bitmap = 0;
   GrowableArray<T*>* hashed_secondaries
-    = new GrowableArray<T*>(64);
-
-  for (int i = 0; i < hashed_secondaries->capacity(); i++) {
-    hashed_secondaries->push(nullptr);
-  }
+    = new GrowableArray<T*>(64, 64, nullptr);
 
   for (int j = 0; j < length; j++) {
     T *k = secondaries->at(j);
@@ -514,9 +515,6 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
   #endif
 
     set_secondary_supers(s2);
-    // if (s2->length() > 6) {
-    //   print();
-    // }
   }
 }
 
