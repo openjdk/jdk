@@ -51,8 +51,8 @@ import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 public class Test4319113
-        extends JApplet
-        implements ActionListener {
+extends JApplet
+implements ActionListener {
     private final JFrame frame = new JFrame("frame");
     private JComboBox cbPlaf;
 
