@@ -41,7 +41,7 @@ import javax.swing.border.TitledBorder;
 public class Test4243289 {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                If TiltedBorder with title "Panel Title" is overstriken with
+                If TitledBorder with title "Panel Title" is overstruck with
                 the border line, test fails, otherwise it passes.
                 """;
 
@@ -56,10 +56,10 @@ public class Test4243289 {
     }
 
     public static JComponent init() {
-        Font font = new Font("Dialog", Font.PLAIN, 12); // NON-NLS: the font name
+        Font font = new Font(Font.DIALOG, Font.PLAIN, 12);
         TitledBorder border = BorderFactory.createTitledBorder(
                 BorderFactory.createEtchedBorder(),
-                "Panel Title", // NON-NLS: the title of the border
+                "Panel Title",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 font);
@@ -69,9 +69,7 @@ public class Test4243289 {
         panel.setPreferredSize(new Dimension(100, 100));
         Box main = Box.createVerticalBox();
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createVerticalGlue());
         main.add(panel);
-        main.add(Box.createVerticalGlue());
         return main;
     }
 }
