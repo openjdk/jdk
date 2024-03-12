@@ -55,8 +55,8 @@ public class bug6798062 {
     private static final String INSTRUCTIONS = """
             The test is suitable only for Windows.
 
-            1. Create a link
-            2. Copy path to the link into TextField
+            1. Create a shortcut (.lnk) file
+            2. Copy path to the shortcut (.lnk file) into TextField
             3. Run the Windows Task Manager. Select the Processes tab and find the java process
             4. Press the Start button in the test window
             5. Wait several minutes and observe in the Windows Task Manager
