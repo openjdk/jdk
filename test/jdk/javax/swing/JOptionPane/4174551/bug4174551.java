@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,45 @@
  * @test
  * @bug 4174551
  * @summary JOptionPane should allow custom buttons
- * @author Xhipra Tyagi(xhipra.tyagi@india.sun.com) area=Swing
- * @run applet/manual=yesno bug4174551.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug4174551
  */
 import java.awt.Font;
-import javax.swing.JApplet;
-import javax.swing.UIManager;
+import javax.swing.JDialog;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
 
-public class bug4174551 extends JApplet {
+public class bug4174551 {
+    private static final String INSTRUCTIONS = """
+          Message Dialog should pop up with a button font size 10
+          and message font size 24.
+          It should be true even on OS X.
+          If it is not so press "Fail" else press "Pass". """;
 
-    public void init() {
-        try {
-            java.awt.EventQueue.invokeLater( () -> {
-                UIManager.getDefaults().put("OptionPane.buttonFont", new Font("Dialog", Font.PLAIN, 10));
-                UIManager.getDefaults().put("OptionPane.messageFont", new Font("Dialog", Font.PLAIN, 24));
-                JOptionPane.showMessageDialog(null, "HI 24!");
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+            .title("JOptionPane Instructions")
+            .instructions(INSTRUCTIONS)
+            .rows(5)
+            .columns(35)
+            .testUI(() -> createTestUI())
+            .build()
+            .awaitAndCheck();
+    }
 
-                System.out.println(UIManager.getDefaults().get("OptionPane.buttonFont"));
-                System.out.println(UIManager.getDefaults().get("OptionPane.messageFont"));
-            });
-        }catch(Exception ex) {
-            ex.printStackTrace();
-        }
+    private static JDialog createTestUI() {
+        UIManager.getDefaults().put("OptionPane.buttonFont", new Font("Dialog", Font.PLAIN, 10));
+        UIManager.getDefaults().put("OptionPane.messageFont", new Font("Dialog", Font.PLAIN, 24));
+        JOptionPane optionPane = new JOptionPane();
+        optionPane.setMessage("HI 24!");
+        optionPane.setMessageType(JOptionPane.INFORMATION_MESSAGE);
+        JDialog dialog = new JDialog();
+        dialog.setContentPane(optionPane);
+        dialog.pack();
+
+        System.out.println(UIManager.getDefaults().get("OptionPane.buttonFont"));
+        System.out.println(UIManager.getDefaults().get("OptionPane.messageFont"));
+        return dialog;
     }
 }
