@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,43 +23,55 @@
 
 /*
  * @test
- * @bug  4226191
+ * @bug 4226191
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @summary  Verify that Lightweight text components (like swing JTextField)
  *           work correctly with IM when there is an uneditable peered
  *           TextField/TextArea in the same parent Frame
- * @author xueming.shen@eng
- * @run applet/manual=yesno JTextFieldTest.html
+ * @run main JTextFieldTest
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import java.applet.*;
-import javax.swing.*;
+import java.awt.FlowLayout;
+import java.awt.TextField;
 
-public class JTextFieldTest extends Applet implements ActionListener {
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+import javax.swing.WindowConstants;
 
-    TextField  tf1;
-    JTextField tf2;
+public class JTextFieldTest {
+    private static JFrame frame;
+    private static final String INSTRUCTIONS =
+            """
+             Please run this test case under Solaris cjk locale with inputmethod
+             support, if you could input Chinese/Japanese/Korean in the swing
+             JTextField, then the test has passed!
+            """;
 
-    public JTextFieldTest() {
-        tf1 = new TextField("ABCDEFGH", 10);
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame
+            .builder()
+            .title("JTextFieldTest")
+            .instructions(INSTRUCTIONS)
+            .rows(15)
+            .columns(40)
+            .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
+            .testUI(JTextFieldTest::createAndShowGUI)
+            .build()
+            .awaitAndCheck();
+    }
+
+    public static JFrame createAndShowGUI() {
+        frame = new JFrame("Test Frame");
+        frame.setLayout(new FlowLayout());
+        TextField tf1 = new TextField("ABCDEFGH", 10);
         tf1.setEditable(false);
-        tf2 = new JTextField("12345678", 10);
-        setLayout(new FlowLayout());
-        add(tf1);
-        add(tf2);
-    }
-
-    public void actionPerformed(ActionEvent ae) {
-
-    }
-
-    public static void main(String args[]) {
-        JFrame  win = new JFrame();
-        JTextFieldTest jtf = new JTextFieldTest();
-        win.getContentPane().setLayout(new FlowLayout());
-        win.getContentPane().add(jtf);
-        win.pack();
-        win.show();
+        JTextField tf2 = new JTextField("12345678", 10);
+        frame.getContentPane().add(tf1);
+        frame.getContentPane().add(tf2);
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        frame.pack();
+        return frame;
     }
 }
