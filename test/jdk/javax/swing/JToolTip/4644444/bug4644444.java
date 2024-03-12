@@ -42,9 +42,6 @@ public class bug4644444 {
             & see if tooltip works properly everywhere.
         4. Press 'Pass' if tooltip text is fully visible else press 'Fail'. """;
 
-    private static JFrame frame;
-    private static JButton button;
-
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("JToolTip Instructions")
@@ -55,13 +52,13 @@ public class bug4644444 {
     }
 
     private static JFrame createUI() {
-        frame = new JFrame("bug4644444");
-        button = new JButton("Button");
+        JFrame frame = new JFrame("bug4644444");
+        JButton button = new JButton("Button");
         button.setToolTipText("Somthing really long 1234567890 1234567890 " +
                 "1234567890 1234567890 1234567890 1234567890 1234567890 1234567890");
         frame.getContentPane().add(button);
         frame.setSize(200, 80);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        //frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         return frame;
     }
 }
