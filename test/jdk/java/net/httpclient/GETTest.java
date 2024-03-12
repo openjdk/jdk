@@ -86,6 +86,18 @@ public class GETTest implements HttpServerAdapters {
             if (!ok)
                 throw new RuntimeException("Test failed:");
 
+            // try some invalid URIs
+            uri = "http!@://foo";
+            try {
+                req = HttpRequest.GET(uri);
+                throw new RuntimeException("Invalid URI accepted");
+            } catch (IllegalArgumentException ex1) {}
+
+            uri = "ftp://foo.com/";
+            try {
+                req = HttpRequest.GET(uri);
+                throw new RuntimeException("Invalid URI accepted");
+            } catch (IllegalArgumentException ex2) {}
         } finally {
             server.stop();
             e.shutdownNow();
