@@ -145,8 +145,8 @@ public interface HttpResponse<T> {
     public T body();
 
     /**
-     * Returns the body if the given predicate is satisfied. 
-     * 
+     * Returns the body if the given predicate is satisfied.
+     *
      * @param predicate the Predicate to test
      * @return an Optional containing the response body if the predicate returns true
      */
