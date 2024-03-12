@@ -76,6 +76,9 @@ public:
   void remove_from_package_access_cache(GrowableArray<ProtectionDomainEntry*>* delete_list);
 
   InstanceKlass* find(Thread* current, Symbol* name, Handle protection_domain);
+
+  // May make Java upcalls to ClassLoader.checkPackageAccess() when a SecurityManager
+  // is installed.
   void check_package_access(InstanceKlass* klass,
                             Handle class_loader,
                             Handle protection_domain,
@@ -99,7 +102,10 @@ class DictionaryEntry : public CHeapObj<mtClass> {
   InstanceKlass* _instance_klass;
 
   // A cache of the ProtectionDomains that have been granted
-  // access to the package of _instance_klass
+  // access to the package of _instance_klass by Java up-calls to
+  // ClassLoader.checkPackageAccess(). See Dictionary::check_package_access().
+  //
+  // We use a cache to avoid repeat Java up-calls that can be expensive.
   ProtectionDomainEntry* volatile _package_access_cache;
 
  public:
