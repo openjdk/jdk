@@ -80,12 +80,9 @@ public class GETTest implements HttpServerAdapters {
             HttpRequest req = HttpRequest.GET(uri);
 
             System.out.println("\n\nSending request: " + req);
-            HttpResponse resp = client.send(req, BodyHandlers.ofString());
-            ok = resp.statusCode() == 200 && resp.body().equals(RESPONSE);
-
-            if (!ok)
-                throw new RuntimeException("Test failed:");
-
+            String resp = client.send(req, BodyHandlers.ofString())
+                                      .bodyWhen(r -> r.statusCode() == 200)
+                                      .orElseThrow(() -> new RuntimeException("Failed"));
             // try some invalid URIs
             uri = "http!@://foo";
             try {

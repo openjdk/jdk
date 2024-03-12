@@ -88,8 +88,10 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  *   HttpClient client = HttpClient.newHttpClient();
  *
  *   HttpRequest request = HttpRequest.GET("https://www.foo.com/");
- *   String response = client.send(request, BodyHandlers.ofString()).body();
- *   System.out.println(response.body());
+ *   String response = client.send(request, BodyHandlers.ofString())
+ *                           .bodyWhen(r -> r.statusCode() == 200)
+ *                           .orElse("ERROR");
+ *   System.out.println(response);
  * }
  *
  * @since 11
@@ -341,7 +343,7 @@ public abstract class HttpRequest {
      * @param uristring the URI string to get
      * @return a HttpRequest
      * @throws IllegalArgumentException if the URI scheme is not supported
-     *         or is otherwise invalid.
+     *         or if the uristring is invalid.
      */
     public static HttpRequest GET(String uristring) {
         URI uri = URI.create(uristring);

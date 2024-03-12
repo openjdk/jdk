@@ -47,6 +47,7 @@ import java.util.concurrent.Flow.Publisher;
 import java.util.concurrent.Flow.Subscription;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import javax.net.ssl.SSLSession;
@@ -142,6 +143,14 @@ public interface HttpResponse<T> {
      * @return the body
      */
     public T body();
+
+    /**
+     * Returns the body if the given predicate is satisfied. 
+     * 
+     * @param predicate the Predicate to test
+     * @return an Optional containing the response body if the predicate returns true
+     */
+    public Optional<T> bodyWhen(Predicate<ResponseInfo> predicate) throws IOException;
 
     /**
      * Returns an {@link Optional} containing the {@link SSLSession} in effect
