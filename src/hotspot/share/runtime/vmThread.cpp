@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -337,9 +337,7 @@ void VMThread::setup_periodic_safepoint_if_needed() {
   if (!max_time_exceeded) {
     return;
   }
-  if (SafepointSynchronize::is_cleanup_needed()) {
-    _next_vm_operation = &cleanup_op;
-  } else if (SafepointALot) {
+  if (SafepointALot) {
     _next_vm_operation = &safepointALot_op;
   }
 }

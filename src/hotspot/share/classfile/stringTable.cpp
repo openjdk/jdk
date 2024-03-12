@@ -582,12 +582,10 @@ void StringTable::rehash_table() {
   assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
 
   _alt_hash_seed = AltHashing::compute_seed();
-  {
-    if (do_rehash()) {
-      _rehashed = true;
-    } else {
-      log_info(stringtable)("Resizes in progress rehashing skipped.");
-    }
+  if (do_rehash()) {
+    _rehashed = true;
+  } else {
+    log_info(stringtable)("Resizes in progress rehashing skipped.");
   }
 }
 

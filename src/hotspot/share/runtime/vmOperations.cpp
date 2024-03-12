@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -106,6 +107,10 @@ void VM_CleanClassLoaderDataMetaspaces::doit() {
 
 void VM_RehashStringTable::doit() {
   StringTable::rehash_table();
+}
+
+void VM_RehashSymbolTable::doit() {
+  SymbolTable::rehash_table();
 }
 
 VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id, int reason) {

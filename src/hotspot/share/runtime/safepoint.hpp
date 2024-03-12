@@ -71,7 +71,6 @@ class SafepointSynchronize : AllStatic {
   // The enums are listed in the order of the tasks when done serially.
   enum SafepointCleanupTasks {
     SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING,
-    SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH,
     SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP,
     // Leave this one last.
     SAFEPOINT_CLEANUP_NUM_TASKS
@@ -157,7 +156,6 @@ public:
   // Exception handling for page polling
   static void handle_polling_page_exception(JavaThread *thread);
 
-  static bool is_cleanup_needed();
   static void do_cleanup_tasks();
 
   static void set_is_at_safepoint()             { _state = _synchronized; }

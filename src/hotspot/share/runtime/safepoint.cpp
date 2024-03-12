@@ -23,7 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
@@ -508,12 +507,6 @@ void SafepointSynchronize::end() {
   post_safepoint_end_event(event, safepoint_id());
 }
 
-bool SafepointSynchronize::is_cleanup_needed() {
-  // Need a safepoint if some inline cache buffers is non-empty
-  if (SymbolTable::needs_rehashing()) return true;
-  return false;
-}
-
 class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
@@ -545,10 +538,6 @@ public:
   uint expected_num_workers() const {
     uint workers = 0;
 
-    if (SymbolTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
     if (_do_lazy_roots) {
       workers++;
     }
@@ -557,14 +546,6 @@ public:
   }
 
   void work(uint worker_id) {
-    // These tasks are ordered by relative length of time to execute so that potentially longer tasks start first.
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_SYMBOL_TABLE_REHASH)) {
-      if (SymbolTable::needs_rehashing()) {
-        Tracer t("rehashing symbol table");
-        SymbolTable::rehash_table();
-      }
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
       if (_do_lazy_roots) {
         Tracer t("lazy partial thread root processing");

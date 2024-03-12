@@ -105,6 +105,13 @@ class VM_RehashStringTable : public VM_Operation {
   void doit();
 };
 
+class VM_RehashSymbolTable : public VM_Operation {
+ public:
+  VM_RehashSymbolTable() {}
+  VMOp_Type type() const                         { return VMOp_RehashSymbolTable; }
+  void doit();
+};
+
 // Deopt helper that can deoptimize frames in threads other than the
 // current thread.  Only used through Deoptimization::deoptimize_frame.
 class VM_DeoptimizeFrame: public VM_Operation {

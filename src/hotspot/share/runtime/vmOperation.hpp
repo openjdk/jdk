@@ -107,6 +107,7 @@
   template(DumpHashtable)                         \
   template(CleanClassLoaderDataMetaspaces)        \
   template(RehashStringTable)                     \
+  template(RehashSymbolTable)                     \
   template(PrintCompileQueue)                     \
   template(PrintClassHierarchy)                   \
   template(PrintClasses)                          \
