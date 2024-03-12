@@ -490,7 +490,7 @@ accordingly. If you have not installed the `BuildTools`, but e.g.
 ### IBM Open XL C/C++
 
 The minimum accepted version of Open XL is 17.1.1.4. This is in essence clang
-13, and will be treated as such by the OpenJDK build system.
+15, and will be treated as such by the OpenJDK build system.
 
 ## Boot JDK Requirements
 
