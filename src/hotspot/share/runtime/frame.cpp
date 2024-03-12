@@ -1632,8 +1632,17 @@ void FrameValues::print_on(outputStream* st, int min_index, int max_index, intpt
       st->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
       if (*fv.description == '#' && isdigit(fv.description[1])) {
+        // The fv.description string starting with a '#' is the line for the
+        // saved frame pointer eg. "#10 method java.lang.invoke.LambdaForm..."
+        // basicaly means frame 10.
         fp = fv.location;
       }
+      // To print a fp-relative value:
+      //   1. The content of *fv.location must be such that we think it's a
+      //      fp-relative number, i.e [-100..100].
+      //   2. We must have found the frame pointer.
+      //   3. The line can not be the line for the saved frame pointer.
+      //   4. Recognize it as being part of the "fixed frame".
       if (*fv.location != 0 && *fv.location > -100 && *fv.location < 100
           && fp != nullptr && *fv.description != '#'
 #if !defined(PPC64)
