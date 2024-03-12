@@ -608,13 +608,6 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
     private class RemoteMBeanServerConnection implements MBeanServerConnection {
 
         public RemoteMBeanServerConnection() {
-            this(null);
-        }
-
-        public RemoteMBeanServerConnection(Subject delegationSubject) {
-            if (delegationSubject != null) {
-                throw new SecurityException("Subject Delegation has been removed.");
-            }
         }
 
         public ObjectInstance createMBean(String className,
@@ -1875,7 +1868,7 @@ public class RMIConnector implements JMXConnector, Serializable, JMXAddressable 
 
         if (nullSubjectConnRef == null
                 || (conn = nullSubjectConnRef.get()) == null) {
-            conn = new RemoteMBeanServerConnection(null);
+            conn = new RemoteMBeanServerConnection();
             nullSubjectConnRef = new WeakReference<MBeanServerConnection>(conn);
         }
         return conn;
