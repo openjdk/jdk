@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8087112
+ * @bug 8327796
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  * @run main/othervm GETTest
