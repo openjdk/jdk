@@ -1260,7 +1260,15 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   uint _num_workers;
   G1RemSetScanState* _scan_state;
+
+  // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
+  // G1DirtyCardQueueSet, we implement a sequential distribution phase. Here, BufferNodes are
+  // distributed to worker threads in a sequential manner utilizing the _dirty_card_buffers. By doing
+  // so, we effectively alleviate the bottleneck encountered during pop operations on the
+  // G1DirtyCardQueueSet. Importantly, this approach preserves the helping aspect among worker
+  // threads, allowing them to assist one another in case of imbalances in work distribution.
   BufferNode::Stack* _dirty_card_buffers;
+
   bool _initial_evacuation;
 
   volatile bool _fast_reclaim_handled;
