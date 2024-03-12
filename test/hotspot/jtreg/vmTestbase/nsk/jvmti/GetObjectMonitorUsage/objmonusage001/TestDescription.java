@@ -29,13 +29,20 @@
  * VM Testbase keywords: [quick, jpda, jvmti, noras]
  * VM Testbase readme:
  * DESCRIPTION
- *     The test exercises JVMTI function GetObjectMonitorUsage.
+ *     The test exercises JVMTI function GetObjectMonitorUsage. The main
+ *     thread uses a monitor to do coordinated launches of work threads.
+ *     Each worker thread verifies expected GetObjectMonitorUsage values
+ *     when it gets going and the main thread also verifies expected
+ *     GetObjectMonitorUsage values once the worker thread returns
+ *     control flow to the main thread. The test scenario is repeated
+ *     for a fixed number of threads.
+ *  
  * COMMENTS
  *     Fixed according to 4669812 bug.
  *     Ported from JVMDI test nsk/jvmdi/GetMonitorInfo/getmoninfo001.
  *
  * @library /vmTestbase
  *          /test/lib
- * @run main/othervm/native -agentlib:objmonusage001 nsk.jvmti.GetObjectMonitorUsage.objmonusage001
+ * @run main/othervm/native -agentlib:objmonusage001=printdump nsk.jvmti.GetObjectMonitorUsage.objmonusage001
  */
 
