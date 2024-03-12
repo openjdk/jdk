@@ -113,8 +113,8 @@ public class GETTest implements HttpServerAdapters {
             String method = he.getRequestMethod();
             InputStream is = he.getRequestBody();
             if (!method.equalsIgnoreCase("GET")) {
-	        he.sendResponseHeaders(500, 0);
-	        ok = false;
+                he.sendResponseHeaders(500, 0);
+                ok = false;
             } else { // GET
                 he.sendResponseHeaders(200, RESPONSE.length());
                 OutputStream os = he.getResponseBody();
