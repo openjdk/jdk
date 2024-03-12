@@ -405,7 +405,7 @@ char* LogFileOutput::make_file_name(const char* file_name,
   }
   if (hostname != nullptr) {
     if (!os::get_host_name(hostname_string, sizeof(hostname_string))) {
-      int res = jio_snprintf(hostname_string, sizeof(hostname_string), "%s", HostnameFilenamePlaceholder);
+      int res = jio_snprintf(hostname_string, sizeof(hostname_string), "unknown-host");
       assert(res > 0, "Hostname buffer too small");
     }
     result_len -= strlen(HostnameFilenamePlaceholder);
