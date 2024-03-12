@@ -57,8 +57,9 @@ public class SpanishDiacriticsTest {
           that they take several seconds to display. That is an
           expected behaviour for this test.
 
-       If the text field displays ''o, (i.e. o should be without an acute)
-       then the test passes; otherwise it fails.
+       If the text field displays the same three characters you typed: ''o
+       (i.e. two single quotes followed by o without an acute)
+       then press Pass; otherwise press Fail.
        """;
 
     public static void main(String[] args) throws Exception {
@@ -66,10 +67,9 @@ public class SpanishDiacriticsTest {
         PassFailJFrame.builder()
                       .title("Spanish Diacritics")
                       .instructions(INSTRUCTIONS)
-                      .rows(18)
+                      .rows(20)
                       .columns(50)
                       .testUI(() -> createTestUI())
-                      .testTimeOut(5)
                       .build()
                       .awaitAndCheck();
     }
