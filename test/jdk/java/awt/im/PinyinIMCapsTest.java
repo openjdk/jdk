@@ -32,10 +32,11 @@ import sun.awt.OSInfo;
  * @test
  * @bug 8154816
  * @summary Caps Lock doesn't work as expected when using Pinyin Simplified input method
+ * @requires (os.family == "mac")
  * @modules java.desktop/sun.awt
  * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException Util
- * @run main PinyinIMCapsTest
+ * @run main/manual PinyinIMCapsTest
  */
 
 public class PinyinIMCapsTest {
