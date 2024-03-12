@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,6 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classLoaderDataGraph.hpp"
-#include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
@@ -512,7 +510,6 @@ void SafepointSynchronize::end() {
 
 bool SafepointSynchronize::is_cleanup_needed() {
   // Need a safepoint if some inline cache buffers is non-empty
-  if (StringTable::needs_rehashing()) return true;
   if (SymbolTable::needs_rehashing()) return true;
   return false;
 }
@@ -552,10 +549,6 @@ public:
       workers++;
     }
 
-    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
-      workers++;
-    }
-
     if (_do_lazy_roots) {
       workers++;
     }
@@ -569,13 +562,6 @@ public:
       if (SymbolTable::needs_rehashing()) {
         Tracer t("rehashing symbol table");
         SymbolTable::rehash_table();
-      }
-    }
-
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
-      if (StringTable::needs_rehashing()) {
-        Tracer t("rehashing string table");
-        StringTable::rehash_table();
       }
     }
 
