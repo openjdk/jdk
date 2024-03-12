@@ -119,7 +119,7 @@ public class TrayIconScalingTest {
         try {
             tray.add(icon);
         } catch (AWTException e) {
-            throw new RuntimeException("Error while adding icon to system tray");
+            throw new RuntimeException("Error while adding icon to system tray", e);
         }
     }
 
