@@ -122,13 +122,13 @@ import java.util.Locale;
  * {@link System#setProperty(String, String)} is discouraged and it may not affect
  * the order.
  * JDK Reference Implementation provides the following three
- * locale providers:
+ * locale data providers:
  * <ul>
- * <li> "CLDR": A provider based on Unicode Consortium's
- * <a href="http://cldr.unicode.org/">CLDR Project</a>.
+ * <li> "CLDR": A locale data provider based on the Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>.
  * <li> "SPI": represents the locale sensitive services implementing the subclasses of
  * this {@code LocaleServiceProvider} class.
- * <li> "HOST": A provider that reflects the user's custom settings in the
+ * <li> "HOST": A locale data provider that reflects the user's custom settings in the
  * underlying operating system. This provider may not be available, depending
  * on the JDK Reference Implementation.
  * </ul>
@@ -140,18 +140,19 @@ import java.util.Locale;
  * the locale sensitive services in the SPI providers are looked up first. If the
  * desired locale sensitive service is not available, then the runtime looks for CLDR.
  * <p>
- * The default value for looking up the preferred locale providers is "CLDR",
+ * The default value for looking up the preferred locale data providers is "CLDR",
  * so specifying "CLDR" is identical to the default behavior. Applications which
  * require implementations of the locale sensitive services must explicitly specify
  * "SPI" in order for the Java runtime to load them from the classpath.
  *
- * @implNote The JDK uses locale data from the Unicode Common Locale Data Repository
- * (CLDR) to implement locale-sensitive APIs in the {@code java.util} and
+ * @implNote The JDK uses locale data from the Unicode Consortium's
+ * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>
+ * to implement locale-sensitive APIs in the {@code java.util} and
  * {@code java.text} packages. This locale data makes the set of locales
  * supported by the Java runtime environment. The following table lists the
  * version of CLDR used in each JDK release.
  * <table class="striped">
- * <caption style="display:none">Shows JDK releases and supported CLDR versions</caption>
+ * <caption style="display:none">JDK releases and supported CLDR versions</caption>
  * <thead>
  * <tr><th scope="col">JDK release</th>
  *     <th scope="col">CLDR version</th></tr>
