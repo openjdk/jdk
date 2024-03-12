@@ -77,6 +77,7 @@ public class bug6798062 {
          PassFailJFrame.builder()
                 .title("JFileChooser Instructions")
                 .instructions(INSTRUCTIONS)
+                .testTimeOut(10)
                 .rows(10)
                 .columns(35)
                 .testUI(bug6798062::createUI)
@@ -104,8 +105,16 @@ public class bug6798062 {
             return new JLabel("The test is suitable only for Windows");
         }
 
+        String tempDir = System.getProperty("java.io.tmpdir");
+
+        if (tempDir.length() == 0) { // 'java.io.tmpdir' isn't guaranteed to be defined
+            tempDir = System.getProperty("user.home");
+        }
+
+        System.out.println("Temp directory: " + tempDir);
+
         try {
-            folder = ShellFolder.getShellFolder(new File("."));
+            folder = ShellFolder.getShellFolder(new File(tempDir));
         } catch (FileNotFoundException e) {
             fail("Directory not found");
         }
@@ -173,8 +182,7 @@ public class bug6798062 {
     }
 
     private static void fail(String msg) {
-        PassFailJFrame.forceFail();
-        throw new RuntimeException(msg);
+        PassFailJFrame.forceFail(msg);
     }
 
     private class MyThread extends Thread {
