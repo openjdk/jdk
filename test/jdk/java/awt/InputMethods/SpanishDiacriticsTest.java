@@ -69,7 +69,7 @@ public class SpanishDiacriticsTest {
                       .instructions(INSTRUCTIONS)
                       .rows(20)
                       .columns(50)
-                      .testUI(SpanishDiacriticsTest::createTestUI())
+                      .testUI(SpanishDiacriticsTest::createTestUI)
                       .build()
                       .awaitAndCheck();
     }
@@ -86,7 +86,6 @@ public class SpanishDiacriticsTest {
         frame.add(textField);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.pack();
-        frame.setVisible(true);
         return frame;
     }
 }
