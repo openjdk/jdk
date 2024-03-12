@@ -38,8 +38,6 @@ import javax.swing.JLabel;
  */
 
 public class Test4129681 {
-    private static JLabel label;
-
     public static void main(String[] args) throws Exception {
         String testInstructions = """
                 Turn on the checkbox to disable the label.
@@ -58,21 +56,17 @@ public class Test4129681 {
     }
 
     public static JComponent init() {
+        JLabel label = new JLabel("message");
         JCheckBox check = new JCheckBox("Enable/Disable");
         check.addItemListener(event ->
                 label.setEnabled(ItemEvent.DESELECTED == event.getStateChange()));
-
-        label = new JLabel("message");
         label.setBorder(BorderFactory.createTitledBorder("label"));
         label.setEnabled(!check.isSelected());
 
         Box main = Box.createVerticalBox();
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createVerticalGlue());
         main.add(check);
-        main.add(Box.createVerticalStrut(4));
         main.add(label);
-        main.add(Box.createVerticalGlue());
         return main;
     }
 }
