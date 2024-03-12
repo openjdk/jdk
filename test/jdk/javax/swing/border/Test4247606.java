@@ -60,10 +60,10 @@ public class Test4247606 {
     }
 
     public static JComponent init() {
-        JButton button = new JButton("Button"); // NON-NLS: the button text
+        JButton button = new JButton("Button");
         button.setBorder(BorderFactory.createLineBorder(Color.red, 1));
 
-        TitledBorder border = new TitledBorder("Bordered Pane"); // NON-NLS: the panel title
+        TitledBorder border = new TitledBorder("Bordered Pane");
         border.setTitlePosition(TitledBorder.BELOW_BOTTOM);
 
         JPanel panel = create(button, border);
@@ -72,9 +72,7 @@ public class Test4247606 {
 
         Box main = Box.createVerticalBox();
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createVerticalGlue());
         main.add(create(panel, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-        main.add(Box.createVerticalGlue());
         return main;
     }
 
