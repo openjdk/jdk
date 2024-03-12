@@ -857,6 +857,16 @@ public class TestTypeAnnotations extends JavadocTester {
                     e in typeannos">@ArrD</a> []</code></div>
                     <div class="col-second even-row-color method-summary-table method-summary-table-tab2 metho\
                     d-summary-table-tab4"><code><a href="#manyNested()" class="member-name-link">manyNested</a\
-                    >()</code></div>""");
+                    >()</code></div>""",
+
+                """
+                    <code>(package private) void</code></div>
+                    <div class="col-second odd-row-color method-summary-table method-summary-table-tab2 method\
+                    -summary-table-tab4"><code><a href="#varargs(java.lang.String%5B%5D%5B%5D...)" class="memb\
+                    er-name-link">varargs</a><wbr>(<a href="ArrA.html" title="annotation interface in typeanno\
+                    s">@ArrA</a> java.lang.String <a href="ArrB.html" title="annotation interface in typeannos\
+                    ">@ArrB</a> [] <a href="ArrC.html" title="annotation interface in typeannos">@ArrC</a> [] \
+                    <a href="ArrD.html" title="annotation interface in typeannos">@ArrD</a> ...&nbsp;arg)</cod\
+                    e></div>""");
     }
 }

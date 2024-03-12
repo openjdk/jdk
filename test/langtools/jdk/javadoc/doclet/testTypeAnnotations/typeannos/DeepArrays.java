@@ -30,6 +30,7 @@ public class DeepArrays {
     @ArrA String @ArrB [] @ArrC [] array2() { return null; }
     String @ArrA [] @ArrB [] @ArrC [] @ArrD [] array4() { return null; }
     @ArrA ArrParameterized<@ArrC String @ArrA [] @ArrB []> @ArrC [] @ArrD [] manyNested() { return null; }
+    void varargs(@ArrA String @ArrB [] @ArrC [] @ArrD ... arg) {}
 }
 
 class ArrParameterized<T> {}
