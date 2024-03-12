@@ -552,6 +552,204 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         }
     }
 
+    private BigDecimal(CharSequence val, MathContext mc) {
+        // Use locals for all fields values until completion
+        int prec = 0;                 // record precision value
+        long scl = 0;                 // record scale value
+        long rs = 0;                  // the compact value in long
+        BigInteger rb = null;         // the inflated value in BigInteger
+        // use String bounds checking to handle too-long, len == 0,
+        try {
+            int len = val.length();
+            int offset = 0;
+            char c = val.charAt(offset);
+            boolean isneg = c == '-'; // leading minus means negative
+            if (isneg || c == '+') {
+                c = val.charAt(++offset);
+                len--;
+            }
+
+            // should now be at numeric part of the significand
+            boolean dot = false;             // true when there is a '.'
+            int digit;
+            boolean isCompact = (len <= MAX_COMPACT_DIGITS);
+            // integer significand array & idx is the index to it. The array
+            // is ONLY used when we can't use a compact representation.
+            if (isCompact) {
+                // First compact case, we need not to preserve the character
+                // and we can just compute the value in place.
+                for (; ; ) {
+                    if (c == '0') { // have zero
+                        if (prec == 0)
+                            prec = 1;
+                        else if (rs != 0) {
+                            rs *= 10;
+                            ++prec;
+                        } // else digit is a redundant leading zero
+                        if (dot)
+                            ++scl;
+                    } else if (c >= '1' && c <= '9') { // have digit
+                        if (prec != 1 || rs != 0)
+                            ++prec; // prec unchanged if preceded by 0s
+                        rs = rs * 10 + c - '0';
+                        if (dot)
+                            ++scl;
+                    } else if (c == '.') {   // have dot
+                        // have dot
+                        if (dot) // two dots
+                            throw new NumberFormatException("Character array"
+                                + " contains more than one decimal point.");
+                        dot = true;
+                    } else if (c == 'e' || c == 'E') {
+                        scl -= parseExp(val, offset, len);
+                        break; // [saves a test]
+                    } else if ((digit = Character.digit(c, 10)) != -1) { // slow path
+                        if (digit == 0) {
+                            if (prec == 0)
+                                prec = 1;
+                            else if (rs != 0) {
+                                rs *= 10;
+                                ++prec;
+                            } // else digit is a redundant leading zero
+                        } else {
+                            if (prec != 1 || rs != 0)
+                                ++prec; // prec unchanged if preceded by 0s
+                            rs = rs * 10 + digit;
+                        }
+                        if (dot)
+                            ++scl;
+                    } else
+                        throw new NumberFormatException("Character " + c
+                            + " is neither a decimal digit number, decimal point, nor"
+                            + " \"e\" notation exponential mark.");
+
+                    if (--len == 0)
+                        break;
+                    c = val.charAt(++offset);
+                }
+                if (prec == 0) // no digits found
+                    throw new NumberFormatException("No digits found.");
+                if (isneg)
+                    rs = -rs;
+                int mcp = mc.precision;
+                int drop = prec - mcp; // prec has range [1, MAX_INT], mcp has range [0, MAX_INT];
+                                       // therefore, this subtraction cannot overflow
+                if (mcp > 0 && drop > 0) {  // do rounding
+                    while (drop > 0) {
+                        scl -= drop;
+                        rs = divideAndRound(rs, LONG_TEN_POWERS_TABLE[drop], mc.roundingMode.oldMode);
+                        prec = longDigitLength(rs);
+                        drop = prec - mcp;
+                    }
+                }
+            } else {
+                int start = offset;
+                for (int idx = 0; ; ) {
+                    // have digit
+                    if (c == '0') {
+                        if (prec == 0) {
+                            start = offset;
+                            prec = 1;
+                        } else if (idx != 0) {
+                            ++idx;
+                            ++prec;
+                        } else
+                            start = offset + 1;
+                        if (dot)
+                            ++scl;
+                    } else if (c >= '1' && c <= '9') {
+                        // First compact case, we need not to preserve the character
+                        // and we can just compute the value in place.
+                        if (prec != 1 || idx != 0)
+                            ++prec; // prec unchanged if preceded by 0s
+                        ++idx;
+                        if (dot)
+                            ++scl;
+                    } else if (c == '.') {
+                        // have dot
+                        if (dot) // two dots
+                            throw new NumberFormatException("Character array"
+                                + " contains more than one decimal point.");
+                        dot = true;
+                        if (idx == 0 && prec == 1)
+                            start = offset;
+                    } else if (c == 'e' || c == 'E') {
+                        scl -= parseExp(val, offset, len);
+                        break; // [saves a test]
+                    } else if ((digit = Character.digit(c, 10)) != -1) {
+                        // First compact case, we need not to preserve the character
+                        // and we can just compute the value in place.
+                        if (digit == 0) {
+                            if (prec == 0) {
+                                start = offset;
+                                prec = 1;
+                            } else if (idx != 0) {
+                                ++idx;
+                                ++prec;
+                            } else
+                                start = offset + 1;
+                        } else {
+                            if (prec != 1 || idx != 0)
+                                ++prec; // prec unchanged if preceded by 0s
+                            ++idx;
+                        }
+                        if (dot)
+                            ++scl;
+                    } else
+                        throw new NumberFormatException("Character array"
+                            + " is missing \"e\" notation exponential mark.");
+
+                    if (--len == 0)
+                        break;
+                    c = val.charAt(++offset);
+                }
+                // here when no characters left
+                if (prec == 0) // no digits found
+                    throw new NumberFormatException("No digits found.");
+                // Remove leading zeros from precision (digits count)
+                rb = new BigInteger(val, isneg ? -1 : 1, start, prec);
+                rs = compactValFor(rb);
+                int mcp = mc.precision;
+                if (mcp > 0 && (prec > mcp)) {
+                    if (rs == INFLATED) {
+                        int drop = prec - mcp;
+                        while (drop > 0) {
+                            scl -= drop;
+                            rb = divideAndRoundByTenPow(rb, drop, mc.roundingMode.oldMode);
+                            rs = compactValFor(rb);
+                            if (rs != INFLATED) {
+                                prec = longDigitLength(rs);
+                                break;
+                            }
+                            prec = bigDigitLength(rb);
+                            drop = prec - mcp;
+                        }
+                    }
+                    if (rs != INFLATED) {
+                        int drop = prec - mcp;
+                        while (drop > 0) {
+                            scl -= drop;
+                            rs = divideAndRound(rs, LONG_TEN_POWERS_TABLE[drop], mc.roundingMode.oldMode);
+                            prec = longDigitLength(rs);
+                            drop = prec - mcp;
+                        }
+                        rb = null;
+                    }
+                }
+            }
+        } catch (IndexOutOfBoundsException e) {
+            NumberFormatException nfe = new NumberFormatException();
+            nfe.initCause(e);
+            throw nfe;
+        }
+        if ((int) scl != scl) // overflow
+            throw new NumberFormatException("Exponent overflow.");
+        this.scale = (int) scl;
+        this.precision = prec;
+        this.intCompact = rs;
+        this.intVal = rb;
+    }
+
     /*
      * parse exponent
      */
@@ -757,205 +955,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public BigDecimal(String val, MathContext mc) {
         this((CharSequence) val, mc);
-    }
-
-    private BigDecimal(CharSequence val, MathContext mc) {
-        // Use locals for all fields values until completion
-        int prec = 0;                 // record precision value
-        long scl = 0;                 // record scale value
-        long rs = 0;                  // the compact value in long
-        BigInteger rb = null;         // the inflated value in BigInteger
-        // use String bounds checking to handle too-long, len == 0,
-        try {
-            int len = val.length();
-            int offset = 0;
-            char c = val.charAt(offset);
-            boolean isneg = c == '-'; // leading minus means negative
-            if (isneg || c == '+') {
-                c = val.charAt(++offset);
-                len--;
-            }
-
-            // should now be at numeric part of the significand
-            boolean dot = false;             // true when there is a '.'
-            boolean isCompact = (len <= MAX_COMPACT_DIGITS);
-            // integer significand array & idx is the index to it. The array
-            // is ONLY used when we can't use a compact representation.
-            int digit;
-            if (isCompact) {
-                // First compact case, we need not to preserve the character
-                // and we can just compute the value in place.
-                for (; ; ) {
-                    if (c == '0') { // have zero
-                        if (prec == 0)
-                            prec = 1;
-                        else if (rs != 0) {
-                            rs *= 10;
-                            ++prec;
-                        } // else digit is a redundant leading zero
-                        if (dot)
-                            ++scl;
-                    } else if (c >= '1' && c <= '9') { // have digit
-                        if (prec != 1 || rs != 0)
-                            ++prec; // prec unchanged if preceded by 0s
-                        rs = rs * 10 + c - '0';
-                        if (dot)
-                            ++scl;
-                    } else if (c == '.') {   // have dot
-                        // have dot
-                        if (dot) // two dots
-                            throw new NumberFormatException("Character array"
-                                + " contains more than one decimal point.");
-                        dot = true;
-                    } else if (c == 'e' || c == 'E') {
-                        scl -= parseExp(val, offset, len);
-                        break; // [saves a test]
-                    } else if ((digit = Character.digit(c, 10)) != -1) { // slow path
-                        if (digit == 0) {
-                            if (prec == 0)
-                                prec = 1;
-                            else if (rs != 0) {
-                                rs *= 10;
-                                ++prec;
-                            } // else digit is a redundant leading zero
-                        } else {
-                            if (prec != 1 || rs != 0)
-                                ++prec; // prec unchanged if preceded by 0s
-                            rs = rs * 10 + digit;
-                        }
-                        if (dot)
-                            ++scl;
-                    } else
-                        throw new NumberFormatException("Character " + c
-                            + " is neither a decimal digit number, decimal point, nor"
-                            + " \"e\" notation exponential mark.");
-
-                    if (--len == 0)
-                        break;
-                    c = val.charAt(++offset);
-                }
-                if (prec == 0) // no digits found
-                    throw new NumberFormatException("No digits found.");
-                if (isneg)
-                    rs = -rs;
-                int mcp = mc.precision;
-                int drop = prec - mcp; // prec has range [1, MAX_INT], mcp has range [0, MAX_INT];
-                // therefore, this subtraction cannot overflow
-                if (mcp > 0 && drop > 0) {  // do rounding
-                    while (drop > 0) {
-                        scl -= drop;
-                        rs = divideAndRound(rs, LONG_TEN_POWERS_TABLE[drop], mc.roundingMode.oldMode);
-                        prec = longDigitLength(rs);
-                        drop = prec - mcp;
-                    }
-                }
-            } else {
-                int start = offset;
-                for (int idx = 0; ; ) {
-                    // have digit
-                    if (c == '0') {
-                        if (prec == 0) {
-                            start = offset;
-                            prec = 1;
-                        } else if (idx != 0) {
-                            ++idx;
-                            ++prec;
-                        } else
-                            start = offset + 1;
-                        if (dot)
-                            ++scl;
-                    } else if (c >= '1' && c <= '9') {
-                        // First compact case, we need not to preserve the character
-                        // and we can just compute the value in place.
-                        if (prec != 1 || idx != 0)
-                            ++prec; // prec unchanged if preceded by 0s
-                        ++idx;
-                        if (dot)
-                            ++scl;
-                    } else if (c == '.') {
-                        // have dot
-                        if (dot) // two dots
-                            throw new NumberFormatException("Character array"
-                                + " contains more than one decimal point.");
-                        dot = true;
-                        if (idx == 0 && prec == 1)
-                            start = offset;
-                    } else if (c == 'e' || c == 'E') {
-                        scl -= parseExp(val, offset, len);
-                        break; // [saves a test]
-                    } else if ((digit = Character.digit(c, 10)) != -1) {
-                        // First compact case, we need not to preserve the character
-                        // and we can just compute the value in place.
-                        if (digit == 0) {
-                            if (prec == 0) {
-                                start = offset;
-                                prec = 1;
-                            } else if (idx != 0) {
-                                ++idx;
-                                ++prec;
-                            } else
-                                start = offset + 1;
-                        } else {
-                            if (prec != 1 || idx != 0)
-                                ++prec; // prec unchanged if preceded by 0s
-                            ++idx;
-                        }
-                        if (dot)
-                            ++scl;
-                    } else
-                        throw new NumberFormatException("Character array"
-                            + " is missing \"e\" notation exponential mark.");
-
-                    if (--len == 0)
-                        break;
-                    c = val.charAt(++offset);
-                }
-                // here when no characters left
-                if (prec == 0) // no digits found
-                    throw new NumberFormatException("No digits found.");
-
-                // Remove leading zeros from precision (digits count)
-                rb = new BigInteger(val, isneg ? -1 : 1, start, prec);
-                rs = compactValFor(rb);
-                int mcp = mc.precision;
-                if (mcp > 0 && (prec > mcp)) {
-                    if (rs == INFLATED) {
-                        int drop = prec - mcp;
-                        while (drop > 0) {
-                            scl -= drop;
-                            rb = divideAndRoundByTenPow(rb, drop, mc.roundingMode.oldMode);
-                            rs = compactValFor(rb);
-                            if (rs != INFLATED) {
-                                prec = longDigitLength(rs);
-                                break;
-                            }
-                            prec = bigDigitLength(rb);
-                            drop = prec - mcp;
-                        }
-                    }
-                    if (rs != INFLATED) {
-                        int drop = prec - mcp;
-                        while (drop > 0) {
-                            scl -= drop;
-                            rs = divideAndRound(rs, LONG_TEN_POWERS_TABLE[drop], mc.roundingMode.oldMode);
-                            prec = longDigitLength(rs);
-                            drop = prec - mcp;
-                        }
-                        rb = null;
-                    }
-                }
-            }
-        } catch (IndexOutOfBoundsException e) {
-            NumberFormatException nfe = new NumberFormatException();
-            nfe.initCause(e);
-            throw nfe;
-        }
-        if ((int) scl != scl) // overflow
-            throw new NumberFormatException("Exponent overflow.");
-        this.scale = (int) scl;
-        this.precision = prec;
-        this.intCompact = rs;
-        this.intVal = rb;
     }
 
     /**
