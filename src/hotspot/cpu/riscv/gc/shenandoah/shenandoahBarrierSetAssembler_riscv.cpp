@@ -300,7 +300,7 @@ void ShenandoahBarrierSetAssembler::load_reference_barrier(MacroAssembler* masm,
     assert(!is_narrow, "phantom access cannot be narrow");
     target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_weak);
   }
-  __ call(target);
+  __ rt_call(target);
   __ mv(t0, x10);
   __ pop_call_clobbered_registers();
   __ mv(x10, t0);
@@ -703,7 +703,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
     assert(is_native, "phantom must only be called off-heap");
     target = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
-  __ call(target);
+  __ rt_call(target);
   __ mv(t0, x10);
   __ pop_call_clobbered_registers();
   __ mv(x10, t0);

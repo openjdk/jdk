@@ -592,14 +592,40 @@ class MacroAssembler: public Assembler {
   void bltz(Register Rs, const address dest);
   void bgtz(Register Rs, const address dest);
 
-  void j(Label &l, Register temp = t0);
+ private:
+  void jump_link(const address dest, Register temp);
+  void jump_link(const Address &adr, Register temp);
+ public:
+  // We try to follow risc-v asm menomics.
+  // But as we don't layout a reachable GOT,
+  // we often need to resort to movptr, li <48imm>.
+  // https://github.com/riscv-non-isa/riscv-asm-manual/blob/master/riscv-asm.md
+
+  // jump: jal x0, offset
+  // For long reach uses temp register for:
+  // la + jr
   void j(const address dest, Register temp = t0);
   void j(const Address &adr, Register temp = t0);
-  void jal(Label &l, Register temp = t0);
-  void jal(const address dest, Register temp = t0);
-  void jal(const Address &adr, Register temp = t0);
-  void jal(Register Rd, Label &L, Register temp = t0);
-  void jal(Register Rd, const address dest, Register temp = t0);
+  void j(Label &l, Register temp = t0);
+
+  // jump register: jalr x0, offset(rs)
+  void jr(Register Rd, int32_t offset = 0);
+
+  // call: la + jalr x1
+  void call(const address dest, Register temp = t0);
+
+  // jalr: jalr x1, offset(rs)
+  void jalr(Register Rs, int32_t offset = 0);
+
+  // Emit a runtime call. Only invalidates the tmp register which
+  // is used to keep the entry address for jalr/movptr.
+  // Uses call() for intra code cache, else movptr + jalr.
+  void rt_call(address dest, Register tmp = t0);
+
+  // ret: jalr x0, 0(x1)
+  inline void ret() {
+    Assembler::jalr(x0, x1, 0);
+  }
 
   //label
   void beqz(Register Rs, Label &l, bool is_far = false);
@@ -689,6 +715,12 @@ private:
     return x < (twoG - twoK) && x >= (-twoG - twoK);
   }
 
+  bool is_32bit_offset_from_codeache(int64_t x) {
+    int64_t low  = (int64_t)CodeCache::low_bound();
+    int64_t high = (int64_t)CodeCache::high_bound();
+    return is_valid_32bit_offset(x - low) && is_valid_32bit_offset(x - high);
+  }
+
 public:
   void push_reg(Register Rs);
   void pop_reg(Register Rd);
@@ -735,12 +767,12 @@ public:
   typedef void (MacroAssembler::* jal_jalr_insn)(Register Rt, address dest);
   typedef void (MacroAssembler::* load_insn_by_temp)(Register Rt, address dest, Register temp);
 
-  void wrap_label(Register r, Label &L, Register t, load_insn_by_temp insn);
   void wrap_label(Register r, Label &L, jal_jalr_insn insn);
   void wrap_label(Register r1, Register r2, Label &L,
                   compare_and_branch_insn insn,
                   compare_and_branch_label_insn neg_insn, bool is_far = false);
 
+  // la will use movptr instead of GOT when not in reach for auipc.
   void la(Register Rd, Label &label);
   void la(Register Rd, const address addr);
   void la(Register Rd, const address addr, int32_t &offset);
@@ -1476,21 +1508,6 @@ public:
                    VMRegPair dst,
                    bool is_receiver,
                    int* receiver_offset);
-  // Emit a runtime call. Only invalidates the tmp register which
-  // is used to keep the entry address for jalr/movptr.
-  void rt_call(address dest, Register tmp = t0);
-
-  void call(const address dest, Register temp = t0) {
-    assert_cond(dest != nullptr);
-    assert(temp != noreg, "expecting a register");
-    int32_t offset = 0;
-    mv(temp, dest, offset);
-    jalr(x1, temp, offset);
-  }
-
-  inline void ret() {
-    jalr(x0, x1, 0);
-  }
 
 #ifdef ASSERT
   // Template short-hand support to clean-up after a failed call to trampoline

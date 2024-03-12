@@ -1206,7 +1206,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
     // hand.
     //
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
+    __ rt_call(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans));
     __ get_method(xmethod);
     __ reinit_heapbase();
     __ bind(Continue);
@@ -1255,7 +1255,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
     __ push_call_clobbered_registers();
     __ mv(c_rarg0, xthread);
-    __ call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
+    __ rt_call(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages));
     __ pop_call_clobbered_registers();
     __ bind(no_reguard);
   }
@@ -1815,7 +1815,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // the tosca in-state for the given template.
 
   assert(Interpreter::trace_code(t->tos_in()) != nullptr, "entry must have been generated");
-  __ jal(Interpreter::trace_code(t->tos_in()));
+  __ call(Interpreter::trace_code(t->tos_in()));
   __ reinit_heapbase();
 }
 
