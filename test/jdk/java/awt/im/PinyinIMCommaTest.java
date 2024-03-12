@@ -36,7 +36,7 @@ import sun.awt.OSInfo;
  * @requires (os.family == "mac")
  * @modules java.desktop/sun.awt
  * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException Util
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual PinyinIMCommaTest
  */
 
