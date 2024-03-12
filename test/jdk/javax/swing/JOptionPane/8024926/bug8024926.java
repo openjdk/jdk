@@ -47,14 +47,14 @@ public class bug8024926 {
                  and select the screen resolution with (HiDPI) label.
                 "2) Check that the error icon on the JOptionPane is smooth.
                 "If so, press PASS, else press FAIL.""";
-            
+
     public static void main(String[] args) throws Exception {
          PassFailJFrame.builder()
                 .title("AquaIcon HIDPI Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(35)
-                .testUI(() -> createTestUI())
+                .testUI(bug8024926::createTestUI)
                 .build()
                 .awaitAndCheck();
     }
