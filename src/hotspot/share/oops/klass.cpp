@@ -371,7 +371,10 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
     int maxprobe = 0;
     for (int slot = 0; slot < SEC_HASH_ENTRIES; slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
-        secondaries->at_put(i, hashed_secondaries->at(slot));
+        T** secondary = secondaries->adr_at(i);
+        if (*secondary != hashed_secondaries->at(slot)) {
+          *secondary = hashed_secondaries->at(slot);
+        }
         i++;
       }
     }
