@@ -604,6 +604,8 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     /*
      * Constructs a new BigInteger using a String with radix=10.
+     * Sign is precalculated outside and not allowed in the val. The {@code val}
+     * array is assumed to be unchanged for the duration of the constructor
      * dot is allowed in the val.
      */
     BigInteger(CharSequence val, int sign, int off, int numDigits) {
