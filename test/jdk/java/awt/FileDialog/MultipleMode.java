@@ -44,7 +44,7 @@ public class MultipleMode {
 
     private static final String INSTRUCTIONS =
             """
-             1. Turn the 'multiple' checkbox off and press the 'open' button
+             1. Verify that the 'multiple' checkbox is off and press the 'open' button
              2. Verify that the file dialog doesn't allow the multiple file selection
              3. Select any file and close the file dialog
              4. The results will be displayed, verify the results
@@ -61,6 +61,7 @@ public class MultipleMode {
             .instructions(INSTRUCTIONS)
             .rows(15)
             .columns(40)
+            .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
             .testUI(MultipleMode::init)
             .build()
             .awaitAndCheck();
@@ -68,10 +69,10 @@ public class MultipleMode {
 
     private static Frame init() {
         Frame frame = new Frame("MultipleMode");
-        TextArea sysout = new TextArea("", 20, 80);
+        TextArea sysout = new TextArea("", 20, 70);
         sysout.setEditable(false);
 
-        final Checkbox mode = new Checkbox("multiple", true);
+        final Checkbox mode = new Checkbox("multiple", false);
 
         Button open = new Button("open");
         open.addActionListener(e -> {
