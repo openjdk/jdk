@@ -69,7 +69,7 @@ public class SpanishDiacriticsTest {
                       .instructions(INSTRUCTIONS)
                       .rows(20)
                       .columns(50)
-                      .testUI(() -> createTestUI())
+                      .testUI(SpanishDiacriticsTest::createTestUI())
                       .build()
                       .awaitAndCheck();
     }
