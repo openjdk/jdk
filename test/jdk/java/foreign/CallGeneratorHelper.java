@@ -201,38 +201,25 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     /* this can be used to generate the test header/implementation */
     public static void main(String[] args) {
-        boolean header = args.length > 0 && args[0].equals("header");
-        boolean upcall = args.length > 1 && args[1].equals("upcall");
+        boolean upcall = args.length > 0 && args[0].equals("upcall");
         if (upcall) {
-            generateUpcalls(header);
+            generateUpcalls();
         } else {
-            generateDowncalls(header);
+            generateDowncalls();
         }
     }
 
-    static void generateDowncalls(boolean header) {
-        if (header) {
-            System.out.println(
-                "#include \"export.h\"\n"
-            );
-
-            for (int j = 1; j <= MAX_FIELDS; j++) {
-                for (List<StructFieldType> fields : StructFieldType.perms(j)) {
-                    generateStructDecl(fields);
-                }
-            }
-        } else {
-            System.out.println(
-                "#include \"libh\"\n" +
-                "#ifdef __clang__\n" +
-                "#pragma clang optimize off\n" +
-                "#elif defined __GNUC__\n" +
-                "#pragma GCC optimize (\"O0\")\n" +
-                "#elif defined _MSC_BUILD\n" +
-                "#pragma optimize( \"\", off )\n" +
-                "#endif\n"
-            );
-        }
+    static void generateDowncalls() {
+        System.out.println(
+            "#include \"libh\"\n" +
+            "#ifdef __clang__\n" +
+            "#pragma clang optimize off\n" +
+            "#elif defined __GNUC__\n" +
+            "#pragma GCC optimize (\"O0\")\n" +
+            "#elif defined _MSC_BUILD\n" +
+            "#pragma optimize( \"\", off )\n" +
+            "#endif\n"
+        );
 
         for (Object[] downcall : functions()) {
             String fName = (String)downcall[0];
@@ -241,11 +228,11 @@ public class CallGeneratorHelper extends NativeTestHelper {
             List<ParamType> ptypes = (List<ParamType>)downcall[2];
             @SuppressWarnings("unchecked")
             List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateDowncallFunction(fName, r, ptypes, fields, header);
+            generateDowncallFunction(fName, r, ptypes, fields);
         }
     }
 
-    static void generateDowncallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean declOnly) {
+    static void generateDowncallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
         for (int i = 0 ; i < params.size() ; i++) {
@@ -256,14 +243,18 @@ public class CallGeneratorHelper extends NativeTestHelper {
                 paramDecls.stream().collect(Collectors.joining(", "));
         String body = ret == Ret.VOID ? "{ }" : "{ return p0; }";
         String res = String.format("EXPORT %s f%s(%s) %s", retType, fName,
-                sig, declOnly ? ";" : body);
+                sig, body);
         System.out.println(res);
     }
 
     static void generateUpcalls(boolean header) {
         if (header) {
             System.out.println(
-                "#include \"export.h\"\n"
+                "#ifdef _WIN64\n" +
+                "#define EXPORT __declspec(dllexport)\n" +
+                "#else\n" +
+                "#define EXPORT\n" +
+                "#endif\n"
             );
 
             for (int j = 1; j <= MAX_FIELDS; j++) {
@@ -291,11 +282,11 @@ public class CallGeneratorHelper extends NativeTestHelper {
             List<ParamType> ptypes = (List<ParamType>)downcall[2];
             @SuppressWarnings("unchecked")
             List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateUpcallFunction(fName, r, ptypes, fields, header);
+            generateUpcallFunction(fName, r, ptypes, fields);
         }
     }
 
-    static void generateUpcallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean declOnly) {
+    static void generateUpcallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
         for (int i = 0 ; i < params.size() ; i++) {
@@ -316,7 +307,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
                 retType, cbSig);
 
         String res = String.format("EXPORT %s %s(%s %s) %s", retType, fName,
-                sig, cbParam, declOnly ? ";" : body);
+                sig, cbParam, body);
         System.out.println(res);
     }
 
