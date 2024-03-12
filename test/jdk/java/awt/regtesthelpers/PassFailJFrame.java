@@ -47,6 +47,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -639,7 +640,8 @@ public final class PassFailJFrame {
             long hours = leftTime / 3_600_000;
             long minutes = (leftTime - hours * 3_600_000) / 60_000;
             long seconds = (leftTime - hours * 3_600_000 - minutes * 60_000) / 1_000;
-            label.setText(String.format("Test timeout: %02d:%02d:%02d",
+            label.setText(String.format(Locale.ENGLISH,
+                                        "Test timeout: %02d:%02d:%02d",
                                         hours, minutes, seconds));
         }
 

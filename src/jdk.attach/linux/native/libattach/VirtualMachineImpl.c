@@ -38,12 +38,6 @@
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
 
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 #define ROOT_UID 0
 
 /*

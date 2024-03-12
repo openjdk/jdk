@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -306,22 +306,22 @@ void IR::eliminate_null_checks() {
   }
 }
 
-
-static int sort_pairs(BlockPair** a, BlockPair** b) {
-  if ((*a)->from() == (*b)->from()) {
-    return (*a)->to()->block_id() - (*b)->to()->block_id();
-  } else {
-    return (*a)->from()->block_id() - (*b)->from()->block_id();
-  }
-}
-
-
+// The functionality of this class is to insert a new block between
+// the 'from' and 'to' block of a critical edge.
+// It first collects the block pairs, and then processes them.
+//
+// Some instructions may introduce more than one edge between two blocks.
+// By checking if the current 'to' block sets critical_edge_split_flag
+// (all new blocks set this flag) we can avoid repeated processing.
+// This is why BlockPair contains the index rather than the original 'to' block.
 class CriticalEdgeFinder: public BlockClosure {
   BlockPairList blocks;
-  IR*       _ir;
 
  public:
-  CriticalEdgeFinder(IR* ir): _ir(ir) {}
+  CriticalEdgeFinder(IR* ir) {
+    ir->iterate_preorder(this);
+  }
+
   void block_do(BlockBegin* bb) {
     BlockEnd* be = bb->end();
     int nos = be->number_of_sux();
@@ -329,20 +329,22 @@ class CriticalEdgeFinder: public BlockClosure {
       for (int i = 0; i < nos; i++) {
         BlockBegin* sux = be->sux_at(i);
         if (sux->number_of_preds() >= 2) {
-          blocks.append(new BlockPair(bb, sux));
+          blocks.append(new BlockPair(bb, i));
         }
       }
     }
   }
 
   void split_edges() {
-    BlockPair* last_pair = nullptr;
-    blocks.sort(sort_pairs);
     for (int i = 0; i < blocks.length(); i++) {
       BlockPair* pair = blocks.at(i);
-      if (last_pair != nullptr && pair->is_same(last_pair)) continue;
       BlockBegin* from = pair->from();
-      BlockBegin* to = pair->to();
+      int index = pair->index();
+      BlockBegin* to = from->end()->sux_at(index);
+      if (to->is_set(BlockBegin::critical_edge_split_flag)) {
+        // inserted
+        continue;
+      }
       BlockBegin* split = from->insert_block_between(to);
 #ifndef PRODUCT
       if ((PrintIR || PrintIR1) && Verbose) {
@@ -350,15 +352,12 @@ class CriticalEdgeFinder: public BlockClosure {
                       from->block_id(), to->block_id(), split->block_id());
       }
 #endif
-      last_pair = pair;
     }
   }
 };
 
 void IR::split_critical_edges() {
   CriticalEdgeFinder cef(this);
-
-  iterate_preorder(&cef);
   cef.split_edges();
 }
 

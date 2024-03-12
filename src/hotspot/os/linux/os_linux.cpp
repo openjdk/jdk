@@ -304,18 +304,41 @@ jlong os::total_swap_space() {
   return  (jlong)(si.totalswap * si.mem_unit);
 }
 
-jlong os::free_swap_space() {
-  if (OSContainer::is_containerized()) {
-    // TODO add a good implementation
+static jlong host_free_swap() {
+  struct sysinfo si;
+  int ret = sysinfo(&si);
+  if (ret != 0) {
     return -1;
-  } else {
-    struct sysinfo si;
-    int ret = sysinfo(&si);
-    if (ret != 0) {
-      return -1;
-    }
-    return (jlong)(si.freeswap * si.mem_unit);
   }
+  return (jlong)(si.freeswap * si.mem_unit);
+}
+
+jlong os::free_swap_space() {
+  jlong host_free_swap_val = host_free_swap();
+  if (OSContainer::is_containerized()) {
+    jlong mem_swap_limit = OSContainer::memory_and_swap_limit_in_bytes();
+    jlong mem_limit = OSContainer::memory_limit_in_bytes();
+    if (mem_swap_limit >= 0 && mem_limit >= 0) {
+      jlong delta_limit = mem_swap_limit - mem_limit;
+      if (delta_limit <= 0) {
+        return 0;
+      }
+      jlong mem_swap_usage = OSContainer::memory_and_swap_usage_in_bytes();
+      jlong mem_usage = OSContainer::memory_usage_in_bytes();
+      if (mem_swap_usage > 0 && mem_usage > 0) {
+        jlong delta_usage = mem_swap_usage - mem_usage;
+        if (delta_usage >= 0) {
+          jlong free_swap = delta_limit - delta_usage;
+          return free_swap >= 0 ? free_swap : 0;
+        }
+      }
+    }
+    // unlimited or not supported. Fall through to return host value
+    log_trace(os,container)("os::free_swap_space: container_swap_limit=" JLONG_FORMAT
+                            " container_mem_limit=" JLONG_FORMAT " returning host value: " JLONG_FORMAT,
+                            mem_swap_limit, mem_limit, host_free_swap_val);
+  }
+  return host_free_swap_val;
 }
 
 julong os::physical_memory() {
@@ -2270,6 +2293,8 @@ void os::Linux::print_proc_sys_info(outputStream* st) {
                       "/proc/sys/kernel/threads-max", st);
   _print_ascii_file_h("/proc/sys/vm/max_map_count (maximum number of memory map areas a process may have)",
                       "/proc/sys/vm/max_map_count", st);
+  _print_ascii_file_h("/proc/sys/vm/swappiness (control to define how aggressively the kernel swaps out anonymous memory)",
+                      "/proc/sys/vm/swappiness", st);
   _print_ascii_file_h("/proc/sys/kernel/pid_max (system-wide limit on number of process identifiers)",
                       "/proc/sys/kernel/pid_max", st);
 }

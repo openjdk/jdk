@@ -50,10 +50,10 @@ TOOLCHAIN_DESCRIPTION_microsoft="Microsoft Visual Studio"
 TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 
 # Minimum supported versions, empty means unspecified
-TOOLCHAIN_MINIMUM_VERSION_clang="3.5"
-TOOLCHAIN_MINIMUM_VERSION_gcc="6.0"
+TOOLCHAIN_MINIMUM_VERSION_clang="13.0"
+TOOLCHAIN_MINIMUM_VERSION_gcc="10.0"
 TOOLCHAIN_MINIMUM_VERSION_microsoft="19.28.0.0" # VS2019 16.8, aka MSVC 14.28
-TOOLCHAIN_MINIMUM_VERSION_xlc="16.1.0.0011"
+TOOLCHAIN_MINIMUM_VERSION_xlc="17.1.1.4"
 
 # Minimum supported linker versions, empty means unspecified
 TOOLCHAIN_MINIMUM_LD_VERSION_gcc="2.18"
@@ -732,11 +732,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   AC_SUBST(AS)
 
   #
-  # Setup the archiver (AR)
+  # Setup tools for creating static libraries (AR/LIB)
   #
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # The corresponding ar tool is lib.exe (used to create static libraries)
-    UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, lib)
+    UTIL_LOOKUP_TOOLCHAIN_PROGS(LIB, lib)
   elif test "x$TOOLCHAIN_TYPE" = xgcc; then
     UTIL_LOOKUP_TOOLCHAIN_PROGS(AR, ar gcc-ar)
   else
