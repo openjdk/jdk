@@ -105,7 +105,7 @@ public class HtmlLinkFactory {
                 public Content visitArray(ArrayType type, HtmlLinkInfo linkInfo) {
                     // int @A [] @B [] has @A on int[][] and @B on int[],
                     // encounter order is @A @B so print in FIFO order
-                    var deque = new ArrayDeque<ArrayType>();
+                    var deque = new ArrayDeque<ArrayType>(1);
                     while (true) {
                         deque.add(type);
                         var component = type.getComponentType();
@@ -121,7 +121,7 @@ public class HtmlLinkFactory {
                         var currentType = deque.remove();
                         if (utils.isAnnotated(currentType)) {
                             link.add(" ");
-                            link.add(getTypeAnnotationLinks(linkInfo));
+                            link.add(getTypeAnnotationLinks(linkInfo.forType(currentType)));
                         }
 
                         // use vararg if required
