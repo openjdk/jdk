@@ -610,12 +610,13 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         signum = sign;
         // Pre-allocate array of expected size
         int numWords;
-        if (numDigits < 10)
+        if (numDigits < 10) {
             numWords = 1;
-        else {
+        } else {
             long numBits = ((numDigits * bitsPerDigit[10]) >>> 10) + 1;
-            if (numBits + 31 >= (1L << 32))
+            if (numBits + 31 >= (1L << 32)) {
                 reportOverflow();
+            }
             numWords = (int) (numBits + 31) >>> 5;
         }
         int[] magnitude = new int[numWords];
