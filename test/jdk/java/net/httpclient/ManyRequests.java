@@ -187,7 +187,7 @@ public class ManyRequests {
 
         URI baseURI = URIBuilder.newBuilder()
                 .scheme("https")
-                .host(InetAddress.getLoopbackAddress())
+                .loopback()
                 .port(port)
                 .path("/foo/x").build();
         server.createContext("/foo", new TestEchoHandler());
