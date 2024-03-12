@@ -830,25 +830,24 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         this(in, 0, in.length, mc);
     }
 
-    private record CharArraySequence(char[] array, int start, int end) implements CharSequence {
+    private record CharArraySequence(char[] array, int offset, int length) implements CharSequence {
         CharArraySequence {
-            if (start < 0 || start > end) {
+            if ((offset | length) < 0 || offset + length > array.length)
                 throw new NumberFormatException();
-            }
         }
 
         @Override
         public int length() {
-            return end - start;
+            return length;
         }
 
         @Override
-        public char charAt(int index) {
-            return array[start + index];
+        public char charAt(int offset) {
+            return array[offset];
         }
 
         @Override
-        public CharSequence subSequence(int start, int end) {
+        public CharSequence subSequence(int offset, int length) {
             throw new UnsupportedOperationException();
         }
     }
