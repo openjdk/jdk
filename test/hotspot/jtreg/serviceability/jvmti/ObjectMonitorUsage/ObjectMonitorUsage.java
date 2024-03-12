@@ -52,12 +52,6 @@ public class ObjectMonitorUsage {
 
     static Object lockCheck = new Object();
 
-    // spurious wakeup detection
-    static boolean wasSpuriousWakeup;
-    static boolean notifiedAll;
-    static int notifiedCount;
-    static int wokeupCount;
-
     native static int getRes();
     native static int waitsToEnter();
     native static int waitsToBeNotified();
@@ -89,15 +83,7 @@ public class ObjectMonitorUsage {
         return thread;
     }
 
-    static void initSpuriousWakeupDetection() {
-        wasSpuriousWakeup = false;
-        notifiedAll = false;
-        notifiedCount = 0;
-        wokeupCount = 0;
-    }
-
     static Thread[] startWaitingThreads(boolean isVirtual) {
-        initSpuriousWakeupDetection();
         Thread[] threads = new Thread[NUMBER_OF_WAITING_THREADS];
         for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
             // the WaitingTask has to wait to be notified in lockCheck.wait()
@@ -154,7 +140,6 @@ public class ObjectMonitorUsage {
 
         synchronized (lockCheck) {
             lockCheck.notifyAll();
-            notifiedAll = true;
         }
         joinThreads(wThreads);
         setTestedMonitor(null);
@@ -223,7 +208,6 @@ public class ObjectMonitorUsage {
                   NUMBER_OF_WAITING_THREADS);
 
             lockCheck.notifyAll();
-            notifiedAll = true;
         }
         joinThreads(wThreads);
         joinThreads(eThreads);
@@ -272,7 +256,6 @@ public class ObjectMonitorUsage {
 
             for (int i = 0; i < NUMBER_OF_WAITING_THREADS; i++) {
                 lockCheck.notify(); // notify waiting threads one by one
-                notifiedCount++;
                 // now the notified WaitingTask has to be blocked on the lockCheck re-enter
 
                 // entry count: 1
@@ -344,14 +327,8 @@ public class ObjectMonitorUsage {
             synchronized (lockCheck) {
                 try {
                     ready = true;
+                    // no protection against spurious wakeups here
                     lockCheck.wait();
-
-                    // identify if the wakeup was spurious
-                    wokeupCount++;
-                    if (!notifiedAll && notifiedCount < wokeupCount) {
-                        wasSpuriousWakeup = true;
-                        log("WARNING: got spurious wakeup in WaitingTask thread: " + getName());
-                    }
                 } catch (InterruptedException e) {
                     throw new Error("Unexpected " + e);
                 }
