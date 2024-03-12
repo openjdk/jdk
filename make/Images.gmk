@@ -87,6 +87,7 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
 JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
+  RL_INTERMEDIATE_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-initial-jdk
   JDK_LINK_OUTPUT_DIR := $(RL_INTERMEDIATE_IMAGE_DIR)
 else
   JDK_LINK_OUTPUT_DIR := $(JDK_IMAGE_DIR)
@@ -94,11 +95,9 @@ endif
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
   ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-    JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(RL_INTERMEDIATE_IMAGE_DIR)/jmods
     JLINK_RUNTIME_CREATE_EXTRA := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
-  else
-    JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_IMAGE_DIR)/jmods
   endif
+  JLINK_JDK_EXTRA_OPTS := --keep-packaged-modules $(JDK_LINK_OUTPUT_DIR)/jmods
 endif
 
 
@@ -123,32 +122,42 @@ JLINK_JDK_TARGETS := $(jlink_jdk)
 
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
-  JDK_RUN_TIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jlink-run-time
-  JDK_JMODS_DIFF := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR)/jimage_packaged_modules_diff.data
-  JLINK_RUNTIME_CREATE_EXTRA += --create-linkable-runtime=$(JDK_JMODS_DIFF)
+  RL_BUILD_MODULE_NAME := jdk.jlink_build_runlink
+  RL_CREATE_PLUGIN_MOD_OUTPUT := $(SUPPORT_OUTPUTDIR)/$(RL_BUILD_MODULE_NAME)
+  JDK_RUN_TIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
 
-  $(eval $(call SetupExecute, generate_jimage_diff, \
-      WARN := Generating the jimage to packaged modules diff, \
-      DEPS := $(jlink_jdk), \
-      OUTPUT_FILE := $(JDK_JMODS_DIFF), \
-      SUPPORT_DIR := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR), \
-      COMMAND := $(TOOL_JIMAGE_DIFF_TO_JMODS) $(IMAGES_OUTPUTDIR)/jmods \
-          $(JDK_LINK_OUTPUT_DIR)/lib/modules $(JDK_JMODS_DIFF), \
+  JLINK_RUNTIME_CREATE_ARG := -J--module-path=$(RL_CREATE_PLUGIN_MOD_OUTPUT)
+  JLINK_RUNTIME_CREATE_ARG += -J--add-exports=java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME)
+  JLINK_RUNTIME_CREATE_ARG += -J--add-exports=java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME)
+  JLINK_RUNTIME_CREATE_ARG += --create-linkable-runtime jimage=$(JDK_LINK_OUTPUT_DIR)/lib/modules:module-path=$(IMAGES_OUTPUTDIR)/jmods
+
+  # Compile jdk.jlink_build_runlink.jar with the 'buildjdk' compiler, as it
+  # uses classes from the just built jdk.jlink module
+  $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
+      COMPILER := buildjdk, \
+      DISABLED_WARNINGS := try, \
+      SRC := $(TOPDIR)/src/jdk.jlink/build/classes, \
+      BIN := $(RL_CREATE_PLUGIN_MOD_OUTPUT), \
+      JAVAC_FLAGS := \
+          --add-modules jdk.jlink \
+          --add-exports jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME) \
+          --add-exports java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME) \
+          --add-exports java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME) \
   ))
 
   $(eval $(call SetupExecute, jlink_runtime_jdk, \
       WARN := Creating jdk image for runtime linking, \
-      DEPS := $(generate_jimage_diff), \
+      DEPS := $(BUILD_JDK_RUNLINK_CLASSES), \
       OUTPUT_DIR := $(JDK_IMAGE_DIR), \
       SUPPORT_DIR := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR), \
       PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
-      COMMAND := $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
+      COMMAND := $(JLINK_TOOL) $(JLINK_RUNTIME_CREATE_ARG) \
+          --add-modules $(JDK_MODULES_LIST) \
           $(JLINK_RUNTIME_CREATE_EXTRA) \
           --output $(JDK_IMAGE_DIR) \
           $(JLINK_DISABLE_WARNINGS), \
   ))
 
-  JLINK_JDK_TARGETS += $(generate_jimage_diff)
   JLINK_JDK_TARGETS += $(jlink_runtime_jdk)
 
 endif

@@ -54,11 +54,15 @@ import jdk.internal.javac.ParticipatesInPreview;
  * @since 9
  */
 @ParticipatesInPreview
+@SuppressWarnings("module")
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
 
     uses jdk.tools.jlink.plugin.Plugin;
+    exports jdk.tools.jlink.plugin to jdk.jlink_build_runlink;
+    exports jdk.tools.jlink.internal to jdk.jlink_build_runlink;
+    exports jdk.tools.jlink.internal.plugins to jdk.jlink_build_runlink;
 
     provides java.util.spi.ToolProvider with
         jdk.tools.jmod.Main.JmodToolProvider,
@@ -84,6 +88,5 @@ module jdk.jlink {
         jdk.tools.jlink.internal.plugins.VendorVMBugURLPlugin,
         jdk.tools.jlink.internal.plugins.VendorVersionPlugin,
         jdk.tools.jlink.internal.plugins.CDSPlugin,
-        jdk.tools.jlink.internal.plugins.CreateLinkableRuntimePlugin,
         jdk.tools.jlink.internal.plugins.SaveJlinkArgfilesPlugin;
 }

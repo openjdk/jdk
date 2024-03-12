@@ -59,10 +59,7 @@ $(eval $(call SetupJavaCompilation, BUILD_TOOLS_JDK, \
         --add-exports java.base/sun.text=ALL-UNNAMED \
         --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --add-exports jdk.internal.opt/jdk.internal.opt=jdk.compiler.interim \
-        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim \
-        --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.jimage=ALL-UNNAMED \
-        , \
+        --add-exports jdk.internal.opt/jdk.internal.opt=jdk.javadoc.interim, \
 ))
 
 TARGETS += $(BUILD_TOOLS_JDK)

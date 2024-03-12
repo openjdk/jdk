@@ -23,16 +23,15 @@
  * questions.
  */
 
-package jdk.tools.jlink.internal.plugins;
+package build.tools.runtimelink;
 
 import static jdk.tools.jlink.internal.JlinkTask.DIFF_PATTERN;
 import static jdk.tools.jlink.internal.JlinkTask.RESPATH_PATTERN;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -44,9 +43,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import build.tools.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.internal.JRTArchive;
 import jdk.tools.jlink.internal.Platform;
 import jdk.tools.jlink.internal.ResourceDiff;
+import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
@@ -54,12 +55,18 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
 
 
 /**
- * Plugin to produce a runtime-linkable JDK image. It does the following:
+ * Build-only jlink plugin to produce a runtime-linkable JDK image.
+ * It does the following:
  *
  * <ul>
  * <li>
  * It tracks resources per module and saves the list in 'fs_$M_files' in the
  * jdk.jlink module.
+ * </li>
+ * <li>
+ * It generates a resource diff of the packaged modules (as determined by the
+ * module path) as compared to a default JDK's jimage - "lib/modules" - generated
+ * by jlink during the default JDK build.
  * </li>
  * <li>
  * It adds a serialized resource diff to the jdk.jlink module so as to be able
@@ -68,7 +75,7 @@ import jdk.tools.jlink.plugin.ResourcePoolModule;
  * </li>
  * </ul>
  */
-public final class CreateLinkableRuntimePlugin extends AbstractPlugin {
+public final class CreateLinkableRuntimePlugin implements Plugin {
     private static final String PLUGIN_NAME = "create-linkable-runtime";
     private static final String JLINK_MOD_NAME = "jdk.jlink";
     // This resource is being used in JLinkTask which passes its contents to
@@ -76,21 +83,88 @@ public final class CreateLinkableRuntimePlugin extends AbstractPlugin {
     private static final String RESPATH = "/" + JLINK_MOD_NAME + "/" + RESPATH_PATTERN;
     private static final String DIFF_PATH = "/" + JLINK_MOD_NAME + "/" + DIFF_PATTERN;
     private static final byte[] EMPTY_RESOURCE_BYTES = new byte[] {};
+    private static final String JIMAGE_PATH_NAME = "jimage";
+    private static final String MODULE_PATH_NAME = "module-path";
 
     private final Map<String, List<String>> nonClassResEntries;
-    private String diffFile;
+    private String jimagePath;
+    private String modulePath;
 
     public CreateLinkableRuntimePlugin() {
-        super(PLUGIN_NAME);
         this.nonClassResEntries = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public String getArgumentsDescription() {
+        return "jimage=path/to/jimage:module-path=/path/to/packaged/modules";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Create a linkable run-time image given a path to the optimized\n" +
+               "jimage and a path to the packaged modules\n";
+    }
+
+    @Override
+    public String getUsage() {
+        return "--create-linkable-runtime jimage=/path/to/jimage:module-path=/path/to-packaged/modules\n"
+                + "                         Creates a linkable run-time image so that\n"
+                + "                         the current jimage (which includes jdk.jlink)\n"
+                + "                         together with natives from the filesystem\n"
+                + "                         can be used to create derivative images.\n";
+    }
+
+    @Override
+    public String getName() {
+        return PLUGIN_NAME;
     }
 
     @Override
     public void configure(Map<String, String> config) {
         String v = config.get(PLUGIN_NAME);
-        if (v == null)
+        if (v == null) {
             throw new AssertionError();
-        diffFile = v;
+        }
+        // This will get called with configuration maps such as:
+        // {
+        //   { --create-linkable-runtime: jimage=/path/tojimage },
+        //   { module-path: "/path/to/packaged/modules" }
+        // }
+        //
+        // Example: jimage=/path/to/foo/bar:module-path=foo,bar
+        // .. will end up with one call to configure with the following map:
+        // {
+        //   { --create-linkable-runtime: jimage=/path/tojimage },
+        //   { module-path: "foo,bar" }
+        // }
+        // and one for 'module-path=...'
+        if (v.startsWith(JIMAGE_PATH_NAME + "=")) {
+            // Case: --create-linkable-runtime jimage=/path:module-path=/mpath
+            String[] tokens = v.split("=");
+            if (jimagePath != null) {
+                throw new IllegalArgumentException(JIMAGE_PATH_NAME + " specified multiple times!");
+            }
+            jimagePath = tokens[1];
+            String modPath = config.get(MODULE_PATH_NAME);
+            if (modPath == null) {
+                throw new IllegalArgumentException("'module-path' argument missing!");
+            }
+            modulePath = modPath;
+        } else if (v.startsWith(MODULE_PATH_NAME + "=")) {
+            // Case: --create-linkable-runtime module-path=/path:jimage=/path2
+            String[] tokens = v.split("=");
+            if (modulePath != null) {
+                throw new IllegalArgumentException(MODULE_PATH_NAME + " specified multiple times!");
+            }
+            modulePath = tokens[1];
+            String jPath = config.get(JIMAGE_PATH_NAME);
+            if (jPath == null) {
+                throw new IllegalArgumentException("'jimage' argument missing!");
+            }
+            jimagePath = jPath;
+        } else {
+            throw new IllegalArgumentException("Unrecognized option for " + PLUGIN_NAME + ": '" + v + "'");
+        }
     }
 
     @Override
@@ -131,11 +205,13 @@ public final class CreateLinkableRuntimePlugin extends AbstractPlugin {
     }
 
     private Map<String, List<ResourceDiff>> readResourceDiffs() {
-        List<ResourceDiff> resDiffs = null;
-        try (FileInputStream fin = new FileInputStream(new File(diffFile))) {
-            resDiffs = ResourceDiff.read(fin);
-        } catch (IOException e) {
-            throw new IllegalStateException("Failed to read resource diff file: " + diffFile);
+        List<ResourceDiff> resDiffs;
+        try (ImageResource base = new JmodsReader(Path.of(modulePath));
+             ImageResource opt = new ImageReader(Path.of(jimagePath));) {
+            JimageDiffGenerator diffGen = new JimageDiffGenerator();
+            resDiffs = diffGen.generateDiff(base, opt);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate diff to jimage", e);
         }
         Map<String, List<ResourceDiff>> modToDiff = new HashMap<>();
         resDiffs.forEach(d -> {

@@ -82,11 +82,6 @@ TOOL_GENERATEEXTRAPROPERTIES = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_too
 TOOL_MAKEZIPREPRODUCIBLE = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
     build.tools.makezipreproducible.MakeZipReproducible
 
-TOOL_JIMAGE_DIFF_TO_JMODS = $(BUILD_JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes \
-    --add-modules=jdk.jlink --add-exports=java.base/jdk.internal.module=ALL-UNNAMED \
-    --add-exports=java.base/jdk.internal.jimage=ALL-UNNAMED \
-    build.tools.runtimelink.JimageDiffGenerator
-
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
 TOOL_JDWPGEN = $(JAVA_SMALL) -cp $(BUILDTOOLS_OUTPUTDIR)/jdk_tools_classes build.tools.jdwpgen.Main

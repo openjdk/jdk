@@ -32,6 +32,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import jdk.tools.jlink.internal.ResourceDiff;
+
 public class JimageDiffGenerator {
 
     private static final boolean DEBUG = false;
