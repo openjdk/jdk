@@ -22,11 +22,12 @@
  */
 
 import java.awt.Font;
+import java.awt.Dimension;
 import javax.swing.BorderFactory;
-import javax.swing.JFrame;
+import javax.swing.Box;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.border.TitledBorder;
-import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -38,29 +39,23 @@ import javax.swing.SwingUtilities;
  */
 
 public class Test4243289 {
-    private static JFrame frame;
-
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                When frame starts, you'll see a panel with a TitledBorder
-                with title "Panel Title". If this title is overstriken with
+                If TiltedBorder with title "Panel Title" is overstriken with
                 the border line, test fails, otherwise it passes.
                 """;
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
-                .title("JInternalFrame Instructions")
-                .instructions(testInstructions)
-                .testTimeOut(5)
-                .rows(4)
-                .columns(35)
-                .build();
 
-        SwingUtilities.invokeAndWait(() -> {
-            init();
-        });
-        passFailJFrame.awaitAndCheck();
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(3)
+                .columns(35)
+                .splitUI(Test4243289::init)
+                .build()
+                .awaitAndCheck();
     }
-    public static void init() {
-        frame = new JFrame("Test TitledBorder");
+
+    public static JComponent init() {
         Font font = new Font("Dialog", Font.PLAIN, 12); // NON-NLS: the font name
         TitledBorder border = BorderFactory.createTitledBorder(
                 BorderFactory.createEtchedBorder(),
@@ -71,10 +66,12 @@ public class Test4243289 {
 
         JPanel panel = new JPanel();
         panel.setBorder(border);
-        frame.add(panel);
-        frame.setSize(300, 300);
-        PassFailJFrame.addTestWindow(frame);
-        PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
-        frame.setVisible(true);
+        panel.setPreferredSize(new Dimension(100, 100));
+        Box main = Box.createVerticalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(Box.createVerticalGlue());
+        main.add(panel);
+        main.add(Box.createVerticalGlue());
+        return main;
     }
 }
