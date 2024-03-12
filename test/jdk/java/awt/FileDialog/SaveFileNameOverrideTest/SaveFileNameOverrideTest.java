@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,69 +21,71 @@
  * questions.
  */
 
-/*
-  test
-  @bug 6998877 8022531
-  @summary After double-click on the folder names, FileNameOverrideTest FAILED
-  @author Sergey.Bylokhov@oracle.com area=awt.filedialog
-  @library ../../regtesthelpers
-  @build Sysout
-  @run applet/manual=yesno SaveFileNameOverrideTest.html
-*/
-
-import test.java.awt.regtesthelpers.Sysout;
-
-import java.applet.Applet;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import javax.swing.JButton;
+import java.awt.FileDialog;
+import java.awt.Frame;
 import java.io.File;
 
-public class SaveFileNameOverrideTest extends Applet implements ActionListener {
+/*
+ * @test
+ * @bug 6998877 8022531
+ * @summary After double-click on the folder names, FileNameOverrideTest FAILED
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual SaveFileNameOverrideTest
+ */
+
+public class SaveFileNameOverrideTest {
+
     private final static String clickDirName = "Directory for double click";
+    private static final String INSTRUCTIONS =
+            """
+            1) Click on the 'Show File Dialog' button. A file dialog will appear.
+            2) Double-click on '%s'
+            3) Click on a confirmation button.
+            (It can be 'OK', 'Save' or any other name depending on the platform).
+            3) The test will automatically pass or fail.
+            """
+            .formatted(clickDirName);
     private final static String dirPath = ".";
-    private Button showBtn;
-    private FileDialog fd;
 
-    public void init() {
-        this.setLayout(new GridLayout(1, 1));
-
-        fd = new FileDialog(new Frame(), "Save", FileDialog.SAVE);
-
-        showBtn = new Button("Show File Dialog");
-        showBtn.addActionListener(this);
-        add(showBtn);
-
+    public static void main(String[] args) throws Exception {
+        System.out.println(System.getProperties());
+        System.out.println(new File(dirPath).getAbsolutePath());
         File tmpDir = new File(dirPath + File.separator + clickDirName);
-        tmpDir.mkdir();
+        if (!tmpDir.mkdir()) {
+            throw new RuntimeException("Cannot create directory.");
+        }
+        tmpDir.deleteOnExit();
 
-        String[] instructions = {
-                "1) Click on 'Show File Dialog' button. A file dialog will come up.",
-                "2) Double-click on '" + clickDirName + "' and click a confirmation",
-                "   button, it can be 'OK', 'Save' or any other platform-dependent name.",
-                "3) See result of the test below"
-        };
+        PassFailJFrame
+                .builder()
+                .title("SaveFileNameOverrideTest Instructions")
+                .instructions(INSTRUCTIONS)
+                .splitUIRight(SaveFileNameOverrideTest::getButton)
+                .rows(8)
+                .columns(40)
+                .build()
+                .awaitAndCheck();
+    }
 
-        Sysout.createDialogWithInstructions(instructions);
+    public static JButton getButton() {
+        JButton showBtn = new JButton("Show File Dialog");
+        showBtn.addActionListener(e -> {
+            FileDialog fd =
+                    new FileDialog((Frame) null, "Save", FileDialog.SAVE);
 
-    }//End  init()
-
-    public void start() {
-        setSize(200, 200);
-        show();
-    }// start()
-
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == showBtn) {
             fd.setFile("input");
-            fd.setDirectory(dirPath);
+            fd.setDirectory(new File(dirPath).getAbsolutePath());
             fd.setVisible(true);
+
             String output = fd.getFile();
             if ("input".equals(output)) {
-                Sysout.println("TEST PASSED");
+                PassFailJFrame.forcePass();
             } else {
-                Sysout.println("TEST FAILED (output file - " + output + ")");
+                PassFailJFrame.forceFail("TEST FAILED (output file - " + output + ")");
             }
-        }
+        });
+        return showBtn;
     }
-}// class ManualYesNoTest
+}
