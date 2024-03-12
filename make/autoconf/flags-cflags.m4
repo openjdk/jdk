@@ -641,7 +641,11 @@ AC_DEFUN([FLAGS_SETUP_CFLAGS_HELPER],
     PICFLAG=""
   fi
 
-  JVM_PICFLAG="$PICFLAG"
+  if test "x$TOOLCHAIN_TYPE" = xclang && test "x$OPENJDK_TARGET_OS" = xaix; then
+    JVM_PICFLAG="-fpic -mcmodel=large"
+  else
+    JVM_PICFLAG="$PICFLAG"
+  fi
   JDK_PICFLAG="$PICFLAG"
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
