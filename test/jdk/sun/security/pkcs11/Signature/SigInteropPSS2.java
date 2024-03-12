@@ -53,7 +53,6 @@ public class SigInteropPSS2 extends PKCS11Test {
 
         Provider sunRsaSign = Security.getProvider("SunRsaSign");
         Security.removeProvider("SunRsaSign");
-        Security.insertProviderAt(p, 1);
 
         Signature sigPkcs11;
         Signature sigSunRsaSign =
