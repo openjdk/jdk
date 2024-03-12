@@ -38,7 +38,7 @@ public class bug4644444 {
     private static final String INSTRUCTIONS = """
         1. Move the mouse on the button, so that the tooltip is visible.
         2. Tooltip should get adjusted itself to show its full length of text.
-        3. Similarly, move the frame to different locations of the screen 
+        3. Similarly, move the frame to different locations of the screen
             & see if tooltip works properly everywhere.
         4. Press 'Pass' if tooltip text is fully visible else press 'Fail'. """;
 
