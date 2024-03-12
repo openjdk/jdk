@@ -51,6 +51,7 @@ public final class FileFilterDescription {
                 .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(35)
+                .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
                 .build();
 
         final UIManager.LookAndFeelInfo[] infos = UIManager
