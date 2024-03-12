@@ -35,7 +35,7 @@ import javax.swing.JPanel;
  * @test
  * @bug 4427483
  * @summary Arabic text followed by newline should have no missing glyphs
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ArabicBox
  */
