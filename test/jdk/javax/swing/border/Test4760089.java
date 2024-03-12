@@ -42,7 +42,7 @@ import javax.swing.border.TitledBorder;
 public class Test4760089 {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                If one of its titles is overstriken with the border's
+                If one of its titles is overstruck with the border's
                 line then test fails. Otherwise test passes.""";
 
         PassFailJFrame.builder()
@@ -65,9 +65,7 @@ public class Test4760089 {
         panel.setPreferredSize(new Dimension(200, 100));
         Box main = Box.createVerticalBox();
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createVerticalGlue());
         main.add(panel);
-        main.add(Box.createVerticalGlue());
         return main;
     }
 }
