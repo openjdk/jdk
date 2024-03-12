@@ -296,8 +296,8 @@ void LoaderConstraintTable::purge_loader_constraints() {
   _loader_constraint_table->unlink(&purge);
 }
 
-void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
-                        ClassLoaderData* loader1, ClassLoaderData* loader2) {
+static void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
+                                   ClassLoaderData* loader1, ClassLoaderData* loader2) {
   LogTarget(Info, class, loader, constraints) lt;
   if (lt.is_enabled()) {
     ResourceMark rm;

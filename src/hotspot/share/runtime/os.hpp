@@ -217,9 +217,6 @@ class os: AllStatic {
   static char*  pd_map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false);
-  static char*  pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
   static bool   pd_unmap_memory(char *addr, size_t bytes);
   static void   pd_free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   pd_realign_memory(char *addr, size_t bytes, size_t alignment_hint);
@@ -507,9 +504,6 @@ class os: AllStatic {
   static char*  map_memory(int fd, const char* file_name, size_t file_offset,
                            char *addr, size_t bytes, bool read_only = false,
                            bool allow_exec = false, MEMFLAGS flags = mtNone);
-  static char*  remap_memory(int fd, const char* file_name, size_t file_offset,
-                             char *addr, size_t bytes, bool read_only,
-                             bool allow_exec);
   static bool   unmap_memory(char *addr, size_t bytes);
   static void   free_memory(char *addr, size_t bytes, size_t alignment_hint);
   static void   realign_memory(char *addr, size_t bytes, size_t alignment_hint);

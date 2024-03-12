@@ -31,7 +31,6 @@ import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -84,13 +83,11 @@ import com.sun.source.util.SimpleDocTreeVisitor;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.Head;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlAttr;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlDocument;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.formats.html.markup.ListBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
@@ -116,6 +113,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
+import static com.sun.source.doctree.DocTree.Kind.START_ELEMENT;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 
@@ -635,6 +633,29 @@ public abstract class HtmlDocletWriter {
     }
 
     /**
+     * {@return a content element containing a breadcrumb navigtation link for {@code elem}}
+     * Only module, package and type elements can appear in breadcrumb navigation.
+     *
+     * @param elem the element
+     * @param selected whether to use the style for current page element
+     */
+    protected Content getBreadcrumbLink(Element elem, boolean selected) {
+        HtmlTree link = switch (elem) {
+            case ModuleElement mdle -> links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
+                    Text.of(mdle.getQualifiedName()));
+            case PackageElement pkg -> links.createLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
+                    getLocalizedPackageName(pkg));
+            case TypeElement type -> links.createLink(pathString(type, docPaths.forName(type)),
+                    utils.getSimpleName(type));
+            default -> throw new IllegalArgumentException(Objects.toString(elem));
+        };
+        if (selected) {
+            link.setStyle(HtmlStyle.currentSelection);
+        }
+        return link;
+    }
+
+    /**
      * {@return the link to the given package}
      *
      * @param packageElement the package to link to
@@ -1151,21 +1172,28 @@ public abstract class HtmlDocletWriter {
         }
     }
 
-    boolean ignoreNonInlineTag(DocTree dtree) {
+    boolean ignoreNonInlineTag(DocTree dtree, List<Name> openTags) {
         Name name = null;
-        if (dtree.getKind() == Kind.START_ELEMENT) {
-            StartElementTree setree = (StartElementTree)dtree;
-            name = setree.getName();
-        } else if (dtree.getKind() == Kind.END_ELEMENT) {
-            EndElementTree eetree = (EndElementTree)dtree;
-            name = eetree.getName();
+        Kind kind = dtree.getKind();
+        if (kind == Kind.START_ELEMENT) {
+            name = ((StartElementTree)dtree).getName();
+        } else if (kind == Kind.END_ELEMENT) {
+            name = ((EndElementTree)dtree).getName();
         }
 
         if (name != null) {
             HtmlTag htmlTag = HtmlTag.get(name);
-            if (htmlTag != null &&
-                    htmlTag.blockType != jdk.javadoc.internal.doclint.HtmlTag.BlockType.INLINE) {
-                return true;
+            if (htmlTag != null) {
+                if (htmlTag.blockType != HtmlTag.BlockType.INLINE) {
+                    return true;
+                }
+                // Keep track of open inline tags that need to be closed, see 8326332
+                if (kind == START_ELEMENT && htmlTag.endKind == HtmlTag.EndKind.REQUIRED) {
+                    openTags.add(name);
+                } else if (kind == Kind.END_ELEMENT && !openTags.isEmpty()
+                        && openTags.getLast().equals(name)) {
+                    openTags.removeLast();
+                }
             }
         }
         return false;
@@ -1237,6 +1265,7 @@ public abstract class HtmlDocletWriter {
         CommentHelper ch = utils.getCommentHelper(element);
         configuration.tagletManager.checkTags(element, trees);
         commentRemoved = false;
+        List<Name> openTags = new ArrayList<>();
 
         for (ListIterator<? extends DocTree> iterator = trees.listIterator(); iterator.hasNext();) {
             boolean isFirstNode = !iterator.hasPrevious();
@@ -1245,14 +1274,16 @@ public abstract class HtmlDocletWriter {
 
             if (context.isFirstSentence) {
                 // Ignore block tags
-                if (ignoreNonInlineTag(tag))
+                if (ignoreNonInlineTag(tag, openTags)) {
                     continue;
+                }
 
                 // Ignore any trailing whitespace OR whitespace after removed html comment
                 if ((isLastNode || commentRemoved)
                         && tag.getKind() == TEXT
-                        && ((tag instanceof TextTree tt) && tt.getBody().isBlank()))
+                        && ((tag instanceof TextTree tt) && tt.getBody().isBlank())) {
                     continue;
+                }
 
                 // Ignore any leading html comments
                 if ((isFirstNode || commentRemoved) && tag.getKind() == COMMENT) {
@@ -1445,6 +1476,10 @@ public abstract class HtmlDocletWriter {
 
             if (allDone)
                 break;
+        }
+        // Close any open inline tags
+        while (!openTags.isEmpty()) {
+            result.add(RawHtml.endElement(openTags.removeLast()));
         }
         return result;
     }

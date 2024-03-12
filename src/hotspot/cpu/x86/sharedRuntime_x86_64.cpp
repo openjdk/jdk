@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
 #include "code/debugInfoRec.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nativeInst.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/oopMap.hpp"
@@ -42,7 +41,6 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "prims/methodHandles.hpp"
@@ -1000,20 +998,14 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
 
   address c2i_unverified_entry = __ pc();
   Label skip_fixup;
-  Label ok;
 
-  Register holder = rax;
+  Register data = rax;
   Register receiver = j_rarg0;
   Register temp = rbx;
 
   {
-    __ load_klass(temp, receiver, rscratch1);
-    __ cmpptr(temp, Address(holder, CompiledICHolder::holder_klass_offset()));
-    __ movptr(rbx, Address(holder, CompiledICHolder::holder_metadata_offset()));
-    __ jcc(Assembler::equal, ok);
-    __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-    __ bind(ok);
+    __ ic_check(1 /* end_alignment */);
+    __ movptr(rbx, Address(data, CompiledICData::speculated_method_offset()));
     // Method might have been compiled since the call site was patched to
     // interpreted if that is the case treat it as a miss so we can get
     // the call site corrected.
@@ -1450,7 +1442,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
     __ align(BytesPerWord, __ offset() + NativeCall::displacement_offset);
     // Emit stub for static call
     CodeBuffer* cbuf = masm->code_section()->outer();
-    address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, __ pc());
+    address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
     if (stub == nullptr) {
       fatal("CodeCache is full at gen_continuation_enter");
     }
@@ -1487,7 +1479,7 @@ static void gen_continuation_enter(MacroAssembler* masm,
 
   // Emit stub for static call
   CodeBuffer* cbuf = masm->code_section()->outer();
-  address stub = CompiledStaticCall::emit_to_interp_stub(*cbuf, __ pc());
+  address stub = CompiledDirectCall::emit_to_interp_stub(*cbuf, __ pc());
   if (stub == nullptr) {
     fatal("CodeCache is full at gen_continuation_enter");
   }
@@ -1744,6 +1736,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
                                               in_ByteSize(-1),
                                               oop_maps,
                                               exception_offset);
+    if (nm == nullptr) return nm;
     if (method->is_continuation_enter_intrinsic()) {
       ContinuationEntry::set_enter_code(nm, interpreted_entry_offset);
     } else if (method->is_continuation_yield_intrinsic()) {
@@ -1882,25 +1875,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // restoring them except rbp. rbp is the only callee save register
   // as far as the interpreter and the compiler(s) are concerned.
 
-
-  const Register ic_reg = rax;
   const Register receiver = j_rarg0;
 
-  Label hit;
   Label exception_pending;
 
-  assert_different_registers(ic_reg, receiver, rscratch1, rscratch2);
+  assert_different_registers(receiver, rscratch1, rscratch2);
   __ verify_oop(receiver);
-  __ load_klass(rscratch1, receiver, rscratch2);
-  __ cmpq(ic_reg, rscratch1);
-  __ jcc(Assembler::equal, hit);
-
-  __ jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-
-  // Verified entry point must be aligned
-  __ align(8);
-
-  __ bind(hit);
+  __ ic_check(8 /* end_alignment */);
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
@@ -2189,8 +2170,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ jcc(Assembler::notEqual, slow_path_lock);
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      // Load object header
-      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
       __ lightweight_lock(obj_reg, swap_reg, r15_thread, rscratch1, slow_path_lock);
     }
     __ bind(count_mon);
@@ -2333,9 +2312,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
       __ dec_held_monitor_count();
     } else {
       assert(LockingMode == LM_LIGHTWEIGHT, "must be");
-      __ movptr(swap_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-      __ andptr(swap_reg, ~(int32_t)markWord::lock_mask_in_place);
-      __ lightweight_unlock(obj_reg, swap_reg, lock_reg, slow_path_unlock);
+      __ lightweight_unlock(obj_reg, swap_reg, r15_thread, lock_reg, slow_path_unlock);
       __ dec_held_monitor_count();
     }
 

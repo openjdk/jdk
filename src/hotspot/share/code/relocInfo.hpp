@@ -862,7 +862,7 @@ class Relocation {
   // all relocations are able to reassert their values
   virtual void set_value(address x);
 
-  virtual bool clear_inline_cache()              { return true; }
+  virtual void clear_inline_cache() {}
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
@@ -1141,7 +1141,7 @@ class virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 };
 
 
@@ -1170,7 +1170,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1202,7 +1202,7 @@ class static_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1227,7 +1227,7 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
 
  public:
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   address static_call() { return _static_call; }
 

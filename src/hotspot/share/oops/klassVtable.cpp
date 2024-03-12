@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1442,7 +1442,7 @@ class InterfaceVisiterClosure : public StackObj {
 };
 
 // Visit all interfaces with at least one itable method
-void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
+static void visit_all_interfaces(Array<InstanceKlass*>* transitive_intf, InterfaceVisiterClosure *blk) {
   // Handle array argument
   for(int i = 0; i < transitive_intf->length(); i++) {
     InstanceKlass* intf = transitive_intf->at(i);
