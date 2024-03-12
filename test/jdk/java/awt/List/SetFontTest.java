@@ -58,7 +58,7 @@ public class SetFontTest {
                        .awaitAndCheck();
     }
 
-    static Frame createFontTest() { 
+    static Frame createFontTest() {
 
         Frame frame = new Frame("List Font Test");
         List list = new List(8, false);
