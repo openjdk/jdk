@@ -31,6 +31,7 @@ public class DeepArrays {
     String @ArrA [] @ArrB [] @ArrC [] @ArrD [] array4() { return null; }
     @ArrA ArrParameterized<@ArrC String @ArrA [] @ArrB []> @ArrC [] @ArrD [] manyNested() { return null; }
     void varargs(@ArrA String @ArrB [] @ArrC [] @ArrD ... arg) {}
+    int @ArrA [] mixedStyles(int @ArrB [] @ArrA [] arg) @ArrB [] { return null; } // JLS example 10.2-2
 }
 
 class ArrParameterized<T> {}

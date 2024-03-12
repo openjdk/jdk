@@ -901,6 +901,14 @@ public class TestTypeAnnotations extends JavadocTester {
                     s">@ArrA</a> java.lang.String <a href="ArrB.html" title="annotation interface in typeannos\
                     ">@ArrB</a> [] <a href="ArrC.html" title="annotation interface in typeannos">@ArrC</a> [] \
                     <a href="ArrD.html" title="annotation interface in typeannos">@ArrD</a> ...&nbsp;arg)</cod\
-                    e></div>""");
+                    e></div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">int <a href="ArrB.html" title="ann\
+                    otation interface in typeannos">@ArrB</a> [] <a href="ArrA.html" title="annotation interfa\
+                    ce in typeannos">@ArrA</a> []</span>&nbsp;<span class="element-name">mixedStyles</span><wb\
+                    r><span class="parameters">(int <a href="ArrB.html" title="annotation interface in typeann\
+                    os">@ArrB</a> [] <a href="ArrA.html" title="annotation interface in typeannos">@ArrA</a> [\
+                    ]&nbsp;arg)</span></div>""");
     }
 }
