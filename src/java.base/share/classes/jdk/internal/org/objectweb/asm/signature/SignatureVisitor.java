@@ -211,7 +211,8 @@ public abstract class SignatureVisitor {
     /**
       * Starts the visit of a signature corresponding to a class or interface type.
       *
-      * @param name the internal name of the class or interface.
+      * @param name the internal name of the class or interface (see {@link
+      *     jdk.internal.org.objectweb.asm.Type#getInternalName()}).
       */
     public void visitClassType(final String name) {}
 
@@ -238,4 +239,3 @@ public abstract class SignatureVisitor {
     /** Ends the visit of a signature corresponding to a class or interface type. */
     public void visitEnd() {}
 }
-

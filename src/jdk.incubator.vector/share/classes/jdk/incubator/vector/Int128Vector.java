@@ -655,14 +655,6 @@ final class Int128Vector extends IntVector {
 
         @Override
         @ForceInline
-        public Int128Mask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            Int128Mask m = (Int128Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Int128Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Int128Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -709,9 +701,9 @@ final class Int128Vector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Int128Mask xor(VectorMask<Integer> mask) {
+        public Int128Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int128Mask m = (Int128Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Int128Mask.class, null, int.class, VLENGTH,
@@ -750,6 +742,16 @@ final class Int128Vector extends IntVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Int128Mask.class, int.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Int128Mask.class, int.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions

@@ -68,7 +68,7 @@ class Handle {
 
  protected:
   oop     obj() const                            { return _handle == nullptr ? (oop)nullptr : *_handle; }
-  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving nullptr handle"); return *_handle; }
+  oop     non_null_obj() const                   { assert(_handle != nullptr, "resolving null handle"); return *_handle; }
 
  public:
   // Constructors
@@ -144,7 +144,7 @@ DEF_HANDLE(typeArray        , is_typeArray_noinline        )
     Thread*   _thread;                           \
    protected:                                    \
     type*        obj() const                     { return _value; } \
-    type*        non_null_obj() const            { assert(_value != nullptr, "resolving nullptr _value"); return _value; } \
+    type*        non_null_obj() const            { assert(_value != nullptr, "resolving null _value"); return _value; } \
                                                  \
    public:                                       \
     /* Constructors */                           \
@@ -187,7 +187,7 @@ class HandleArea: public Arena {
   HandleArea* _prev;          // link to outer (older) area
  public:
   // Constructor
-  HandleArea(HandleArea* prev) : Arena(mtThread, Chunk::tiny_size) {
+  HandleArea(HandleArea* prev) : Arena(mtThread, Tag::tag_ha, Chunk::tiny_size) {
     debug_only(_handle_mark_nesting    = 0);
     debug_only(_no_handle_mark_nesting = 0);
     _prev = prev;

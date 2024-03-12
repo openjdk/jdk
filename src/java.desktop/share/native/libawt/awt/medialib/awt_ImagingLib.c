@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -187,8 +187,8 @@ static int setPackedICRdefault(JNIEnv *env, RasterS_t *rasterP,
                                int component, unsigned char *outDataP,
                                int supportsAlpha);
 
-mlib_start_timer start_timer = NULL;
-mlib_stop_timer stop_timer = NULL;
+static mlib_start_timer start_timer = NULL;
+static mlib_stop_timer stop_timer = NULL;
 
 /***************************************************************************
  *                          Debugging Definitions                          *
@@ -1801,49 +1801,6 @@ Java_sun_awt_image_ImagingLib_init(JNIEnv *env, jclass thisClass) {
     return JNI_TRUE;
 }
 
-/* REMIND: How to specify border? */
-static void extendEdge(JNIEnv *env, BufImageS_t *imageP,
-                       int *widthP, int *heightP) {
-    RasterS_t *rasterP = &imageP->raster;
-    int width;
-    int height;
-    /* Useful for convolution? */
-
-    jobject jbaseraster = (*env)->GetObjectField(env, rasterP->jraster,
-                                                 g_RasterBaseRasterID);
-    width = rasterP->width;
-    height = rasterP->height;
-#ifdef WORKING
-    if (! JNU_IsNull(env, jbaseraster) &&
-        !(*env)->IsSameObject(env, rasterP->jraster, jbaseraster)) {
-        int xOff;
-        int yOff;
-        int baseWidth;
-        int baseHeight;
-        int baseXoff;
-        int baseYoff;
-        /* Not the same object so get the width and height */
-        xOff = (*env)->GetIntField(env, rasterP->jraster, g_RasterXOffsetID);
-        yOff = (*env)->GetIntField(env, rasterP->jraster, g_RasterYOffsetID);
-        baseWidth  = (*env)->GetIntField(env, jbaseraster, g_RasterWidthID);
-        baseHeight = (*env)->GetIntField(env, jbaseraster, g_RasterHeightID);
-        baseXoff   = (*env)->GetIntField(env, jbaseraster, g_RasterXOffsetID);
-        baseYoff   = (*env)->GetIntField(env, jbaseraster, g_RasterYOffsetID);
-
-        if (xOff + rasterP->width < baseXoff + baseWidth) {
-            /* Can use edge */
-            width++;
-        }
-        if (yOff + rasterP->height < baseYoff + baseHeight) {
-            /* Can use edge */
-            height++;
-        }
-
-    }
-#endif
-
-}
-
 static int
 setImageHints(JNIEnv *env, BufImageS_t *srcP, BufImageS_t *dstP,
               int expandICM, int useAlpha,
@@ -2014,47 +1971,6 @@ setImageHints(JNIEnv *env, BufImageS_t *srcP, BufImageS_t *dstP,
     }
 
     return nbands;
-}
-
-
-static int
-expandPacked(JNIEnv *env, BufImageS_t *img, ColorModelS_t *cmP,
-             RasterS_t *rasterP, int component, unsigned char *bdataP) {
-
-    if (rasterP->rasterType == COMPONENT_RASTER_TYPE) {
-        switch (rasterP->dataType) {
-        case BYTE_DATA_TYPE:
-            if (expandPackedBCR(env, rasterP, component, bdataP) < 0) {
-                /* Must have been an error */
-                return -1;
-            }
-            break;
-
-        case SHORT_DATA_TYPE:
-            if (expandPackedICR(env, rasterP, component, bdataP) < 0) {
-                /* Must have been an error */
-                return -1;
-            }
-            break;
-
-        case INT_DATA_TYPE:
-            if (expandPackedICR(env, rasterP, component, bdataP) < 0) {
-                /* Must have been an error */
-                return -1;
-            }
-            break;
-
-        default:
-            /* REMIND: Return some sort of error */
-            return -1;
-        }
-    }
-    else {
-        /* REMIND: Return some sort of error */
-        return -1;
-    }
-
-    return 0;
 }
 
 #define NUM_LINES    10
@@ -2445,8 +2361,8 @@ allocateRasterArray(JNIEnv *env, RasterS_t *rasterP,
         *dataPP = dataP;
         return 0;
     case sun_awt_image_IntegerComponentRaster_TYPE_BYTE_SAMPLES:
-        if (!(SAFE_TO_ALLOC_2(width, rasterP->numBands) &&
-              SAFE_TO_ALLOC_2(rasterP->scanlineStride, height)))
+        if (!(SAFE_TO_ALLOC_3(width, rasterP->numBands, 1) &&
+              SAFE_TO_ALLOC_3(rasterP->scanlineStride, height, 1)))
         {
             return -1;
         }

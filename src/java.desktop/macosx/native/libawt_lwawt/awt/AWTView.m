@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,9 +354,9 @@ static BOOL shouldUsePressAndHold() {
     NSEventType type = [event type];
 
     // check synthesized mouse entered/exited events
-    if ((type == NSMouseEntered && mouseIsOver) || (type == NSMouseExited && !mouseIsOver)) {
+    if ((type == NSEventTypeMouseEntered && mouseIsOver) || (type == NSEventTypeMouseExited && !mouseIsOver)) {
         return;
-    }else if ((type == NSMouseEntered && !mouseIsOver) || (type == NSMouseExited && mouseIsOver)) {
+    }else if ((type == NSEventTypeMouseEntered && !mouseIsOver) || (type == NSEventTypeMouseExited && mouseIsOver)) {
         mouseIsOver = !mouseIsOver;
     }
 
@@ -376,10 +376,10 @@ static BOOL shouldUsePressAndHold() {
     absP.y = screenRect.size.height - absP.y;
     jint clickCount;
 
-    if (type == NSMouseEntered ||
-        type == NSMouseExited ||
-        type == NSScrollWheel ||
-        type == NSMouseMoved) {
+    if (type == NSEventTypeMouseEntered ||
+        type == NSEventTypeMouseExited  ||
+        type == NSEventTypeScrollWheel  ||
+        type == NSEventTypeMouseMoved)  {
         clickCount = 0;
     } else {
         clickCount = [event clickCount];
@@ -458,7 +458,7 @@ static BOOL shouldUsePressAndHold() {
 
     jstring characters = NULL;
     jstring charactersIgnoringModifiers = NULL;
-    if ([event type] != NSFlagsChanged) {
+    if ([event type] != NSEventTypeFlagsChanged) {
         characters = NSStringToJavaString(env, [event characters]);
         charactersIgnoringModifiers = NSStringToJavaString(env, [event charactersIgnoringModifiers]);
     }

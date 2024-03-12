@@ -25,30 +25,29 @@
  * @test
  * @bug 8015927
  * @summary Class reference duplicates in constant pool
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
  * @clean ClassRefDupInConstantPoolTest$Duplicates
  * @run main ClassRefDupInConstantPoolTest
  */
 
 import java.util.TreeSet;
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
+import java.lang.classfile.*;
+import java.lang.classfile.constantpool.*;
 
 public class ClassRefDupInConstantPoolTest {
     public static void main(String[] args) throws Exception {
-        ClassFile cls = ClassFile.read(ClassRefDupInConstantPoolTest.class.
-                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class"));
-        ConstantPool pool = cls.constant_pool;
+        ClassModel cls = ClassFile.of().parse(ClassRefDupInConstantPoolTest.class.
+                                       getResourceAsStream("ClassRefDupInConstantPoolTest$Duplicates.class").readAllBytes());
+        ConstantPool pool = cls.constantPool();
 
         int duplicates = 0;
-        TreeSet<Integer> set = new TreeSet<>();
-        for (CPInfo i : pool.entries()) {
-            if (i.getTag() == ConstantPool.CONSTANT_Class) {
-                CONSTANT_Class_info ci = (CONSTANT_Class_info)i;
-                if (!set.add(ci.name_index)) {
+        TreeSet<String> set = new TreeSet<>();
+        for (PoolEntry pe : pool) {
+            if (pe instanceof ClassEntry ce) {
+                if (!set.add(ce.asInternalName())) {
                     duplicates++;
-                    System.out.println("DUPLICATE CLASS REF " + ci.getName());
+                    System.out.println("DUPLICATE CLASS REF " + ce.asInternalName());
                 }
             }
         }

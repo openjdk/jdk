@@ -29,18 +29,11 @@
 
 class GenMarkSweep : public MarkSweep {
  public:
-  static void invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_softrefs);
+  static void invoke_at_safepoint(bool clear_all_softrefs);
 
  private:
-
   // Mark live objects
-  static void mark_sweep_phase1(bool clear_all_softrefs);
-  // Calculate new addresses
-  static void mark_sweep_phase2();
-  // Update pointers
-  static void mark_sweep_phase3();
-  // Move objects to new positions
-  static void mark_sweep_phase4();
+  static void phase1_mark(bool clear_all_softrefs);
 
   // Temporary data structures for traversal and storing/restoring marks
   static void allocate_stacks();

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,9 +42,9 @@ UnifiedOopRef DFSClosure::_reference_stack[max_dfs_depth];
 void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
                                       JFRBitSet* mark_bits,
                                       const Edge* start_edge) {
-  assert(edge_store != NULL, "invariant");
-  assert(mark_bits != NULL," invariant");
-  assert(start_edge != NULL, "invariant");
+  assert(edge_store != nullptr, "invariant");
+  assert(mark_bits != nullptr," invariant");
+  assert(start_edge != nullptr, "invariant");
 
   // Depth-first search, starting from a BFS edge
   DFSClosure dfs(edge_store, mark_bits, start_edge);
@@ -53,11 +53,11 @@ void DFSClosure::find_leaks_from_edge(EdgeStore* edge_store,
 
 void DFSClosure::find_leaks_from_root_set(EdgeStore* edge_store,
                                           JFRBitSet* mark_bits) {
-  assert(edge_store != NULL, "invariant");
-  assert(mark_bits != NULL, "invariant");
+  assert(edge_store != nullptr, "invariant");
+  assert(mark_bits != nullptr, "invariant");
 
   // Mark root set, to avoid going sideways
-  DFSClosure dfs(edge_store, mark_bits, NULL);
+  DFSClosure dfs(edge_store, mark_bits, nullptr);
   dfs._max_depth = 1;
   RootSetClosure<DFSClosure> rs(&dfs);
   rs.process();
@@ -74,7 +74,7 @@ DFSClosure::DFSClosure(EdgeStore* edge_store, JFRBitSet* mark_bits, const Edge* 
 }
 
 void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
-  assert(pointee != NULL, "invariant");
+  assert(pointee != nullptr, "invariant");
   assert(!reference.is_null(), "invariant");
 
   if (GranularTimer::is_finished()) {
@@ -123,28 +123,28 @@ void DFSClosure::add_chain() {
   assert(array_length == idx + 1, "invariant");
 
   // aggregate from breadth-first search
-  if (_start_edge != NULL) {
+  if (_start_edge != nullptr) {
     chain[idx++] = *_start_edge;
   } else {
-    chain[idx - 1] = Edge(NULL, chain[idx - 1].reference());
+    chain[idx - 1] = Edge(nullptr, chain[idx - 1].reference());
   }
-  _edge_store->put_chain(chain, idx + (_start_edge != NULL ? _start_edge->distance_to_root() : 0));
+  _edge_store->put_chain(chain, idx + (_start_edge != nullptr ? _start_edge->distance_to_root() : 0));
 }
 
 void DFSClosure::do_oop(oop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, HeapWordSize), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != NULL) {
+  if (pointee != nullptr) {
     closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
 
 void DFSClosure::do_oop(narrowOop* ref) {
-  assert(ref != NULL, "invariant");
+  assert(ref != nullptr, "invariant");
   assert(is_aligned(ref, sizeof(narrowOop)), "invariant");
   const oop pointee = HeapAccess<AS_NO_KEEPALIVE>::oop_load(ref);
-  if (pointee != NULL) {
+  if (pointee != nullptr) {
     closure_impl(UnifiedOopRef::encode_in_heap(ref), pointee);
   }
 }
@@ -152,6 +152,6 @@ void DFSClosure::do_oop(narrowOop* ref) {
 void DFSClosure::do_root(UnifiedOopRef ref) {
   assert(!ref.is_null(), "invariant");
   const oop pointee = ref.dereference();
-  assert(pointee != NULL, "invariant");
+  assert(pointee != nullptr, "invariant");
   closure_impl(ref, pointee);
 }

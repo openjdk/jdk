@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ extern "C" {
   extern OM_uint32 getGSSTime(jint);
   extern void checkStatus(JNIEnv *, jobject, OM_uint32, OM_uint32, char*);
   extern jint checkTime(OM_uint32);
-  extern void throwOutOfMemoryError(JNIEnv *, const char*);
+  extern void gssThrowOutOfMemoryError(JNIEnv *, const char*);
   extern void initGSSBuffer(JNIEnv *, jbyteArray, gss_buffer_t);
   extern void resetGSSBuffer(gss_buffer_t);
 

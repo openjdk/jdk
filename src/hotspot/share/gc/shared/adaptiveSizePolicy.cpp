@@ -25,7 +25,7 @@
 #include "precompiled.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcCause.hpp"
-#include "gc/shared/gcUtil.inline.hpp"
+#include "gc/shared/gcUtil.hpp"
 #include "logging/log.hpp"
 #include "runtime/timer.hpp"
 

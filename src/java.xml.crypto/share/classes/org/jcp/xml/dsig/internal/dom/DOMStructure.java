@@ -25,12 +25,13 @@
  */
 package org.jcp.xml.dsig.internal.dom;
 
+import java.util.List;
+
 import javax.xml.crypto.MarshalException;
 import javax.xml.crypto.XMLStructure;
 import javax.xml.crypto.dom.DOMCryptoContext;
-import org.w3c.dom.Node;
 
-import java.util.List;
+import org.w3c.dom.Node;
 
 /**
  * DOM-based abstract implementation of XMLStructure.
@@ -38,6 +39,7 @@ import java.util.List;
  */
 public abstract class DOMStructure implements XMLStructure {
 
+    @Override
     public final boolean isFeatureSupported(String feature) {
         if (feature == null) {
             throw new NullPointerException();

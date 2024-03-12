@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,6 +103,7 @@ class InterpreterRuntime: AllStatic {
  public:
   // Synchronization
   static void    monitorenter(JavaThread* current, BasicObjectLock* elem);
+  static void    monitorenter_obj(JavaThread* current, oopDesc* obj);
   static void    monitorexit (BasicObjectLock* elem);
 
   static void    throw_illegal_monitor_state_exception(JavaThread* current);
@@ -119,9 +120,9 @@ class InterpreterRuntime: AllStatic {
 
   // Debugger support
   static void post_field_access(JavaThread* current, oopDesc* obj,
-    ConstantPoolCacheEntry *cp_entry);
+    ResolvedFieldEntry* entry);
   static void post_field_modification(JavaThread* current, oopDesc* obj,
-    ConstantPoolCacheEntry *cp_entry, jvalue *value);
+    ResolvedFieldEntry* entry, jvalue *value);
   static void post_method_entry(JavaThread* current);
   static void post_method_exit (JavaThread* current);
   static int  interpreter_contains(address pc);

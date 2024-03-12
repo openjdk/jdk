@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,6 @@
 interface I { }
 
 public class InterfaceObj implements I {
-    static void f(I intf) throws Throwable {
-        I.finalize();
-    }
-    public static void testFinalize() throws Throwable {
-        f(new InterfaceObj());
-    }
     static void c(I intf) throws Throwable {
         I.clone();
     }
@@ -50,20 +44,6 @@ super public class InterfaceObj implements I version 60:0 {
     public Method "<init>":"()V" stack 1 locals 1 {
         aload_0;
         invokespecial    Method java/lang/Object."<init>":"()V";
-        return;
-    }
-
-    static Method f:"(LI;)V" throws java/lang/Throwable stack 1 locals 1 {
-        aload_0;
-        invokeinterface    InterfaceMethod I.finalize:"()V", 1;
-        return;
-    }
-
-    public static Method testFinalize:"()V" throws java/lang/Throwable stack 2 locals 1 {
-        new    class InterfaceObj;
-        dup;
-        invokespecial   Method "<init>":"()V";
-        invokestatic    Method f:"(LI;)V";
         return;
     }
 

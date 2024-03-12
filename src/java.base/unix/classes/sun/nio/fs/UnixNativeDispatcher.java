@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -597,34 +597,17 @@ class UnixNativeDispatcher {
     /**
      * access(const char* path, int amode);
      */
-    static void access(UnixPath path, int amode) throws UnixException {
+    static int access(UnixPath path, int amode) {
         try (NativeBuffer buffer = copyToNativeBuffer(path)) {
             long comp = Blocker.begin();
             try {
-                access0(buffer.address(), amode);
+                return access0(buffer.address(), amode);
             } finally {
                 Blocker.end(comp);
             }
         }
     }
-    private static native void access0(long pathAddress, int amode) throws UnixException;
-
-    /**
-     * access(constant char* path, F_OK)
-     *
-     * @return true if the file exists, false otherwise
-     */
-    static boolean exists(UnixPath path) {
-        try (NativeBuffer buffer = copyToNativeBuffer(path)) {
-            long comp = Blocker.begin();
-            try {
-                return exists0(buffer.address());
-            } finally {
-                Blocker.end(comp);
-            }
-        }
-    }
-    private static native boolean exists0(long pathAddress);
+    private static native int access0(long pathAddress, int amode);
 
     /**
      * struct passwd *getpwuid(uid_t uid);

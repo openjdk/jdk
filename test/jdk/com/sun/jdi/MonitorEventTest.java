@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ class MonitorEventTestTarg {
         endingMonitor = new Object();
         startingMonitor = new Object();
 
-        myThread t1 = new myThread();
+        Thread t1 = DebuggeeWrapper.newThread(new MyTask());
         foo();
         aboutEnterLock = false;
 
@@ -96,7 +96,7 @@ class MonitorEventTestTarg {
     }
 }
 
-class myThread extends Thread {
+class MyTask implements Runnable {
     public void run() {
         synchronized(MonitorEventTestTarg.startingMonitor) {
             MonitorEventTestTarg.startingMonitor.notify();

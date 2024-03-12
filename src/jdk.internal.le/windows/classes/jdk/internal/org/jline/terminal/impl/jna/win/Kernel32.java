@@ -22,6 +22,7 @@ package jdk.internal.org.jline.terminal.impl.jna.win;
 //import com.sun.jna.ptr.IntByReference;
 //import com.sun.jna.win32.StdCallLibrary;
 //import com.sun.jna.win32.W32APIOptions;
+import jdk.internal.org.jline.terminal.impl.jna.LastErrorException;
 
 interface Kernel32 {//extends StdCallLibrary {
 

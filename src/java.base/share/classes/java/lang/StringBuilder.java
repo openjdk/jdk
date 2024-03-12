@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -90,7 +90,7 @@ import java.io.StreamCorruptedException;
  */
 public final class StringBuilder
     extends AbstractStringBuilder
-    implements java.io.Serializable, Comparable<StringBuilder>, CharSequence
+    implements Appendable, java.io.Serializable, Comparable<StringBuilder>, CharSequence
 {
 
     /** use serialVersionUID for interoperability */
@@ -446,11 +446,36 @@ public final class StringBuilder
         return this;
     }
 
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public StringBuilder repeat(int codePoint, int count) {
+        super.repeat(codePoint, count);
+        return this;
+    }
+
+    /**
+     * @throws IllegalArgumentException {@inheritDoc}
+     *
+     * @since 21
+     */
+    @Override
+    public StringBuilder repeat(CharSequence cs, int count) {
+        super.repeat(cs, count);
+        return this;
+    }
+
     @Override
     @IntrinsicCandidate
     public String toString() {
+        if (length() == 0) {
+            return "";
+        }
         // Create a copy, don't share the array
-        return new String(this);
+        return new String(this, null);
     }
 
     /**

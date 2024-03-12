@@ -26,6 +26,7 @@
 #define SHARE_GC_PARALLEL_OBJECTSTARTARRAY_HPP
 
 #include "gc/parallel/psVirtualspace.hpp"
+#include "gc/shared/blockOffsetTable.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "oops/oop.hpp"
@@ -36,141 +37,65 @@
 //
 
 class ObjectStartArray : public CHeapObj<mtGC> {
- friend class VerifyObjectStartArrayClosure;
-
- private:
-  PSVirtualSpace  _virtual_space;
-  MemRegion       _reserved_region;
   // The committed (old-gen heap) virtual space this object-start-array covers.
-  MemRegion       _covered_region;
-  MemRegion       _blocks_region;
-  jbyte*          _raw_base;
-  jbyte*          _offset_base;
+  DEBUG_ONLY(MemRegion  _covered_region;)
 
-  static uint _card_shift;
-  static uint _card_size;
-  static uint _card_size_in_words;
+  // BOT array
+  PSVirtualSpace  _virtual_space;
 
- public:
-
-  enum BlockValueConstants {
-    clean_block                  = -1
-  };
-
-  // Maximum size an offset table entry can cover. This maximum is derived from that
-  // we need an extra bit for possible offsets in the byte for backskip values, leaving 2^7 possible offsets.
-  // Minimum object alignment is 8 bytes (2^3), so we can at most represent 2^10 offsets within a BOT value.
-  static const uint MaxBlockSize = 1024;
-
-  // Initialize block size based on card size
-  static void initialize_block_size(uint card_shift);
-
-  static uint card_shift() {
-    return _card_shift;
-  }
-
-  static uint card_size() {
-    return _card_size;
-  }
-  static uint card_size_in_words() {
-    return _card_size_in_words;
-  }
-
- protected:
+  // Biased array-start of BOT array for fast heap-addr / BOT entry translation
+  uint8_t*        _offset_base;
 
   // Mapping from address to object start array entry
-  jbyte* block_for_addr(void* p) const {
+  uint8_t* entry_for_addr(const void* const p) const {
     assert(_covered_region.contains(p),
            "out of bounds access to object start array");
-    jbyte* result = &_offset_base[uintptr_t(p) >> _card_shift];
-    assert(_blocks_region.contains(result),
-           "out of bounds result in byte_for");
+    uint8_t* result = &_offset_base[uintptr_t(p) >> BOTConstants::log_card_size()];
     return result;
   }
 
   // Mapping from object start array entry to address of first word
-  HeapWord* addr_for_block(jbyte* p) {
-    assert(_blocks_region.contains(p),
-           "out of bounds access to object start array");
-    size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << _card_shift);
+  HeapWord* addr_for_entry(const uint8_t* const p) const {
+    size_t delta = pointer_delta(p, _offset_base, sizeof(uint8_t));
+    HeapWord* result = (HeapWord*) (delta << BOTConstants::log_card_size());
     assert(_covered_region.contains(result),
            "out of bounds accessor from card marking array");
     return result;
   }
 
-  // Mapping that includes the derived offset.
-  // If the block is clean, returns the last address in the covered region.
-  // If the block is < index 0, returns the start of the covered region.
-  HeapWord* offset_addr_for_block(jbyte* p) const {
-    // We have to do this before the assert
-    if (p < _raw_base) {
-      return _covered_region.start();
-    }
-
-    assert(_blocks_region.contains(p),
-           "out of bounds access to object start array");
-
-    if (*p == clean_block) {
-      return _covered_region.end();
-    }
-
-    size_t delta = pointer_delta(p, _offset_base, sizeof(jbyte));
-    HeapWord* result = (HeapWord*) (delta << _card_shift);
-    result += *p;
-
-    assert(_covered_region.contains(result),
-           "out of bounds accessor from card marking array");
-
-    return result;
+  static HeapWord* align_up_by_card_size(HeapWord* const addr) {
+    return align_up(addr, BOTConstants::card_size());
   }
+
+  void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
+
+  void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
 
  public:
-
-  // This method is in lieu of a constructor, so that this class can be
-  // embedded inline in other classes.
   void initialize(MemRegion reserved_region);
 
+  // Heap old-gen resizing
   void set_covered_region(MemRegion mr);
 
-  void reset();
-
-  MemRegion covered_region() { return _covered_region; }
-
-#define assert_covered_region_contains(addr)                                                                 \
-        assert(_covered_region.contains(addr),                                                               \
-               #addr " (" PTR_FORMAT ") is not in covered region [" PTR_FORMAT ", " PTR_FORMAT "]",          \
-               p2i(addr), p2i(_covered_region.start()), p2i(_covered_region.end()))
-
-  void allocate_block(HeapWord* p) {
-    assert_covered_region_contains(p);
-    jbyte* block = block_for_addr(p);
-    HeapWord* block_base = addr_for_block(block);
-    size_t offset = pointer_delta(p, block_base, sizeof(HeapWord*));
-    assert(offset < 128, "Sanity");
-    // When doing MT offsets, we can't assert this.
-    //assert(offset > *block, "Found backwards allocation");
-    *block = (jbyte)offset;
+  static bool is_crossing_card_boundary(HeapWord* const blk_start,
+                                        HeapWord* const blk_end) {
+    HeapWord* cur_card_boundary = align_up_by_card_size(blk_start);
+    // Strictly greater-than, since we check if this block *crosses* card boundary.
+    return blk_end > cur_card_boundary;
   }
 
-  // Optimized for finding the first object that crosses into
-  // a given block. The blocks contain the offset of the last
-  // object in that block. Scroll backwards by one, and the first
-  // object hit should be at the beginning of the block
-  inline HeapWord* object_start(HeapWord* addr) const;
+  // Returns the address of the start of the block reaching into the card containing
+  // "addr".
+  inline HeapWord* block_start_reaching_into_card(HeapWord* const addr) const;
 
-  bool is_block_allocated(HeapWord* addr) {
-    assert_covered_region_contains(addr);
-    jbyte* block = block_for_addr(addr);
-    return *block != clean_block;
+  // [blk_start, blk_end) representing a block of memory in the heap.
+  void update_for_block(HeapWord* blk_start, HeapWord* blk_end) {
+    if (is_crossing_card_boundary(blk_start, blk_end)) {
+      update_for_block_work(blk_start, blk_end);
+    }
   }
 
-  // Return true iff an object starts in
-  //   [start_addr, end_addr_aligned_up)
-  // where
-  //   end_addr_aligned_up = align_up(end_addr, _card_size)
-  // Precondition: start_addr is card-size aligned
-  bool object_starts_in_range(HeapWord* start_addr, HeapWord* end_addr) const;
+  inline HeapWord* object_start(HeapWord* const addr) const;
 };
 
 #endif // SHARE_GC_PARALLEL_OBJECTSTARTARRAY_HPP

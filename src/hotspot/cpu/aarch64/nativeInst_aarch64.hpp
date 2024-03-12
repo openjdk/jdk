@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2108, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,11 @@
 #include "asm/assembler.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"
+#include "runtime/os.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciExceptions.hpp"
+#endif
+
 
 // We have interfaces for the following instructions:
 // - NativeInstruction
@@ -251,7 +256,9 @@ public:
   void set_destination_mt_safe(address dest, bool assert_lock = true);
 
   address get_trampoline();
-  address trampoline_jump(CodeBuffer &cbuf, address dest);
+#if INCLUDE_JVMCI
+  void trampoline_jump(CodeBuffer &cbuf, address dest, JVMCI_TRAPS);
+#endif
 };
 
 inline NativeCall* nativeCall_at(address address) {
@@ -287,7 +294,7 @@ public:
     else if (is_ldr_literal_at(instruction_address()))
       return(addr_at(4));
     assert(false, "Unknown instruction in NativeMovConstReg");
-    return NULL;
+    return nullptr;
   }
 
   intptr_t data() const;
@@ -582,7 +589,7 @@ public:
     next_instruction_offset     =    4 * 4
   };
 
-  address destination(nmethod* nm = NULL) const;
+  address destination(nmethod* nm = nullptr) const;
   void set_destination(address new_destination);
   ptrdiff_t destination_offset() const;
 };
@@ -684,16 +691,20 @@ public:
     return (insns & 0xffe0001fffffffff) == 0xf280001fd503201f;
   }
 
-  jint displacement() const {
+  bool decode(int32_t& oopmap_slot, int32_t& cb_offset) const {
     uint64_t movk_insns = *(uint64_t*)addr_at(4);
     uint32_t lo = (movk_insns >> 5) & 0xffff;
     uint32_t hi = (movk_insns >> (5 + 32)) & 0xffff;
-    uint32_t result = (hi << 16) | lo;
-
-    return (jint)result;
+    uint32_t data = (hi << 16) | lo;
+    if (data == 0) {
+      return false; // no information encoded
+    }
+    cb_offset = (data & 0xffffff);
+    oopmap_slot = (data >> 24) & 0xff;
+    return true; // decoding succeeded
   }
 
-  void patch(jint diff);
+  bool patch(int32_t oopmap_slot, int32_t cb_offset);
   void make_deopt();
 };
 
@@ -702,7 +713,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 inline NativePostCallNop* nativePostCallNop_unsafe_at(address address) {
@@ -724,7 +735,7 @@ class NativeDeoptInstruction: public NativeInstruction {
   void  verify();
 
   static bool is_deopt_at(address instr) {
-    assert(instr != NULL, "");
+    assert(instr != nullptr, "");
     uint32_t value = *(uint32_t *) instr;
     return value == 0xd4ade001;
   }

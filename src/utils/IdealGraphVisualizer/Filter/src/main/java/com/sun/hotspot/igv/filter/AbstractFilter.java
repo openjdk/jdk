@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package com.sun.hotspot.igv.filter;
 
 import com.sun.hotspot.igv.data.ChangedEvent;
 import com.sun.hotspot.igv.data.Properties;
+import com.sun.hotspot.igv.graph.Figure;
 import org.openide.cookies.OpenCookie;
 
 /**
@@ -59,5 +60,15 @@ public abstract class AbstractFilter implements Filter {
 
     protected void fireChangedEvent() {
         changedEvent.fire();
+    }
+
+    protected static String getFirstMatchingProperty(Figure figure, String[] propertyNames) {
+        for (String propertyName : propertyNames) {
+            String s = figure.getProperties().resolveString(propertyName);
+            if (s != null && !s.isEmpty()) {
+                return s;
+            }
+        }
+        return null;
     }
 }

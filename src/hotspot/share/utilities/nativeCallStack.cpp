@@ -82,18 +82,33 @@ void NativeCallStack::print_on(outputStream* out, int indent) const {
   char    buf[1024];
   int     offset;
   if (is_empty()) {
-    for (int index = 0; index < indent; index ++) out->print(" ");
+    out->fill_to(indent);
     out->print("[BOOTSTRAP]");
   } else {
     for (int frame = 0; frame < NMT_TrackingStackDepth; frame ++) {
       pc = get_frame(frame);
       if (pc == nullptr) break;
-      // Print indent
-      for (int index = 0; index < indent; index ++) out->print(" ");
+      out->fill_to(indent);
+      out->print("[" PTR_FORMAT "]", p2i(pc));
+      // Print function and library; shorten library name to just its last component
+      // for brevity, and omit it completely for libjvm.so
+      bool function_printed = false;
       if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-        out->print("[" PTR_FORMAT "] %s+0x%x", p2i(pc), buf, offset);
-      } else {
-        out->print("[" PTR_FORMAT "]", p2i(pc));
+        out->print("%s+0x%x", buf, offset);
+        function_printed = true;
+      }
+      if ((!function_printed || !os::address_is_in_vm(pc)) &&
+          os::dll_address_to_library_name(pc, buf, sizeof(buf), &offset)) {
+        const char* libname = strrchr(buf, os::file_separator()[0]);
+        if (libname != nullptr) {
+          libname++;
+        } else {
+          libname = buf;
+        }
+        out->print(" in %s", libname);
+        if (!function_printed) {
+          out->print("+0x%x", offset);
+        }
       }
 
       // Note: we deliberately omit printing source information here. NativeCallStack::print_on()

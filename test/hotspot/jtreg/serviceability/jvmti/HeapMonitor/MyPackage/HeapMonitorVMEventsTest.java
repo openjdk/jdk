@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -47,9 +47,8 @@ import java.util.concurrent.ThreadFactory;
  * @requires vm.jvmti
  * @requires !vm.graal.enabled
  * @build Frame HeapMonitor
- * @compile --enable-preview -source ${jdk.version} HeapMonitorVMEventsTest.java
- * @run main/othervm/native --enable-preview
- *                          -XX:+UnlockDiagnosticVMOptions
+ * @compile HeapMonitorVMEventsTest.java
+ * @run main/othervm/native -XX:+UnlockDiagnosticVMOptions
  *                          -XX:DisableIntrinsic=_clone
  *                          -agentlib:HeapMonitorTest MyPackage.HeapMonitorVMEventsTest virtual
  */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ void LinearScan::allocate_fpu_stack() {
   // (To minimize the amount of work we have to do if we have to merge FPU stacks)
   if (ComputeExactFPURegisterUsage) {
     Interval* intervals_in_register, *intervals_in_memory;
-    create_unhandled_lists(&intervals_in_register, &intervals_in_memory, is_in_fpu_register, NULL);
+    create_unhandled_lists(&intervals_in_register, &intervals_in_memory, is_in_fpu_register, nullptr);
 
     // ignore memory intervals by overwriting intervals_in_memory
     // the dummy interval is needed to enforce the walker to walk until the given id:
@@ -109,14 +109,14 @@ void LinearScan::allocate_fpu_stack() {
   FpuStackAllocator alloc(ir()->compilation(), this);
   _fpu_stack_allocator = &alloc;
   alloc.allocate();
-  _fpu_stack_allocator = NULL;
+  _fpu_stack_allocator = nullptr;
 }
 
 
 FpuStackAllocator::FpuStackAllocator(Compilation* compilation, LinearScan* allocator)
   : _compilation(compilation)
   , _allocator(allocator)
-  , _lir(NULL)
+  , _lir(nullptr)
   , _pos(-1)
   , _sim(compilation)
   , _temp_sim(compilation)
@@ -136,14 +136,14 @@ void FpuStackAllocator::allocate() {
     }
 #endif
 
-    assert(fpu_stack_state != NULL ||
-           block->end()->as_Base() != NULL ||
+    assert(fpu_stack_state != nullptr ||
+           block->end()->as_Base() != nullptr ||
            block->is_set(BlockBegin::exception_entry_flag),
            "FPU stack state must be present due to linear-scan order for FPU stack allocation");
     // note: exception handler entries always start with an empty fpu stack
     //       because stack merging would be too complicated
 
-    if (fpu_stack_state != NULL) {
+    if (fpu_stack_state != nullptr) {
       sim()->read_state(fpu_stack_state);
     } else {
       sim()->clear();
@@ -186,7 +186,7 @@ void FpuStackAllocator::allocate_block(BlockBegin* block) {
     LIR_Op2* op2 = op->as_Op2();
     LIR_OpCall* opCall = op->as_OpCall();
 
-    if (branch != NULL && branch->block() != NULL) {
+    if (branch != nullptr && branch->block() != nullptr) {
       if (!processed_merge) {
         // propagate stack at first branch to a successor
         processed_merge = true;
@@ -195,11 +195,11 @@ void FpuStackAllocator::allocate_block(BlockBegin* block) {
         assert(!required_merge || branch->cond() == lir_cond_always, "splitting of critical edges should prevent FPU stack mismatches at cond branches");
       }
 
-    } else if (op1 != NULL) {
+    } else if (op1 != nullptr) {
       handle_op1(op1);
-    } else if (op2 != NULL) {
+    } else if (op2 != nullptr) {
       handle_op2(op2);
-    } else if (opCall != NULL) {
+    } else if (opCall != nullptr) {
       handle_opCall(opCall);
     }
 
@@ -256,7 +256,7 @@ void FpuStackAllocator::allocate_exception_handler(XHandler* xhandler) {
     }
 #endif
 
-    if (xhandler->entry_code() == NULL) {
+    if (xhandler->entry_code() == nullptr) {
       // need entry code to clear FPU stack
       LIR_List* entry_code = new LIR_List(_compilation);
       entry_code->jump(xhandler->entry_block());
@@ -280,7 +280,7 @@ void FpuStackAllocator::allocate_exception_handler(XHandler* xhandler) {
 
       switch (op->code()) {
         case lir_move:
-          assert(op->as_Op1() != NULL, "must be LIR_Op1");
+          assert(op->as_Op1() != nullptr, "must be LIR_Op1");
           assert(pos() != insts->length() - 1, "must not be last operation");
 
           handle_op1((LIR_Op1*)op);
@@ -1042,7 +1042,7 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
     intArray* state = sux->fpu_stack_state();
     LIR_List* instrs = new LIR_List(_compilation);
 
-    if (state != NULL) {
+    if (state != nullptr) {
       // Merge with a successors that already has a FPU stack state
       // the block must only have one successor because critical edges must been split
       FpuStackSim* cur_sim = sim();
@@ -1088,7 +1088,7 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
       }
 
       // check if new state is same
-      if (sux->fpu_stack_state() != NULL) {
+      if (sux->fpu_stack_state() != nullptr) {
         intArray* sux_state = sux->fpu_stack_state();
         assert(state->length() == sux_state->length(), "overwriting existing stack state");
         for (int j = 0; j < state->length(); j++) {
@@ -1114,7 +1114,7 @@ bool FpuStackAllocator::merge_fpu_stack_with_successors(BlockBegin* block) {
     BlockBegin* sux = block->sux_at(i);
     intArray* sux_state = sux->fpu_stack_state();
 
-    assert(sux_state != NULL, "no fpu state");
+    assert(sux_state != nullptr, "no fpu state");
     assert(cur_state->length() == sux_state->length(), "incorrect length");
     for (int i = 0; i < cur_state->length(); i++) {
       assert(cur_state->at(i) == sux_state->at(i), "element not equal");

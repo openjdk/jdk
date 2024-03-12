@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -928,7 +928,7 @@ class Parser implements DTDConstants {
 
     /**
      * Parse identifier. Uppercase characters are folded
-     * to lowercase when lower is true. Returns falsed if
+     * to lowercase when lower is true. Returns false if
      * no identifier is found. [55] 346:17
      */
     boolean parseIdentifier(boolean lower) throws IOException {

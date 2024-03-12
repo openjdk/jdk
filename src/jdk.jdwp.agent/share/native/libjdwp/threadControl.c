@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -253,16 +253,23 @@ findThread(ThreadList *list, jthread thread)
          * Otherwise the thread should not be on the runningThreads.
          */
         if ( !gdata->jvmtiCallBacksCleared ) {
-            /* The thread better not be on runningThreads if the TLS lookup failed. */
+            /* The thread better not be on either list if the TLS lookup failed. */
             JDI_ASSERT(!nonTlsSearch(getEnv(), &runningThreads, thread));
+            JDI_ASSERT(!nonTlsSearch(getEnv(), &runningVThreads, thread));
         } else {
             /*
-             * Search the runningThreads list. The TLS lookup may have failed because the
-             * thread has terminated, but we never got the THREAD_END event.
+             * Search the runningThreads and runningVThreads lists. The TLS lookup may have
+             * failed because the thread has terminated, but we never got the THREAD_END event.
+             * The big comment above explains why this can happen.
              */
             if ( node == NULL ) {
                 if ( list == NULL || list == &runningThreads ) {
                     node = nonTlsSearch(getEnv(), &runningThreads, thread);
+                }
+                if ( node == NULL ) {
+                    if ( list == NULL || list == &runningVThreads ) {
+                        node = nonTlsSearch(getEnv(), &runningVThreads, thread);
+                    }
                 }
             }
         }
@@ -2616,15 +2623,58 @@ dumpThreadList(ThreadList *list)
     }
 }
 
+#ifdef DEBUG_THREADNAME
+static void
+setThreadName(ThreadNode *node)
+{
+    /*
+     * Sometimes the debuggee changes the thread name, so we need to fetch
+     * and set it again.
+     */
+    jvmtiThreadInfo info;
+    jvmtiError error;
+
+    memset(&info, 0, sizeof(info));
+    error = JVMTI_FUNC_PTR(gdata->jvmti,GetThreadInfo)
+        (gdata->jvmti, node->thread, &info);
+    if (info.name != NULL) {
+        strncpy(node->name, info.name, sizeof(node->name) - 1);
+        jvmtiDeallocate(info.name);
+    }
+}
+#endif
+
+#if 0
+static jint
+getThreadState(ThreadNode *node)
+{
+    jint state = 0;
+    jvmtiError error = FUNC_PTR(gdata->jvmti,GetThreadState)
+        (gdata->jvmti, node->thread, &state);
+    return state;
+}
+#endif
+
 static void
 dumpThread(ThreadNode *node) {
-    tty_message("  Thread: node = %p, jthread = %p", node, node->thread);
+    tty_message("Thread: node = %p, jthread = %p", node, node->thread);
 #ifdef DEBUG_THREADNAME
+    setThreadName(node);
     tty_message("\tname: %s", node->name);
 #endif
     // More fields can be printed here when needed. The amount of output is intentionally
     // kept small so it doesn't generate too much output.
     tty_message("\tsuspendCount: %d", node->suspendCount);
+#if 0
+    tty_message("\tsuspendAllCount: %d", suspendAllCount);
+    tty_message("\tthreadState: 0x%x", getThreadState(node));
+    tty_message("\ttoBeResumed: %d", node->toBeResumed);
+    tty_message("\tis_vthread: %d", node->is_vthread);
+    tty_message("\tcurrentInvoke.pending: %d", node->currentInvoke.pending);
+    tty_message("\tcurrentInvoke.started: %d", node->currentInvoke.started);
+    tty_message("\tcurrentInvoke.available: %d", node->currentInvoke.available);
+    tty_message("\tobjID: %d", commonRef_refToID(getEnv(), node->thread));
+#endif
 }
 
 #endif /* DEBUG */

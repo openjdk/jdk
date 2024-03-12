@@ -134,7 +134,6 @@ class PSYoungGen : public CHeapObj<mtGC> {
   }
 
   // Iteration.
-  void oop_iterate(OopIterateClosure* cl);
   void object_iterate(ObjectClosure* cl);
 
   void reset_survivors_after_shrink();

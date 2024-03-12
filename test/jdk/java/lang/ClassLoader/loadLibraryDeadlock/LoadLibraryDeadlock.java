@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, BELLSOFT. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,16 +33,19 @@
  * triggered from JNI.
  */
 import java.lang.*;
+import java.net.URISyntaxException;
 
 public class LoadLibraryDeadlock {
 
     public static void main(String[] args) {
+        System.out.println("LoadLibraryDeadlock test started");
         Thread t1 = new Thread() {
             public void run() {
                 try {
                     // an instance of unsigned class that loads a native library
                     Class<?> c1 = Class.forName("Class1");
                     Object o = c1.newInstance();
+                    System.out.println("Class1 loaded from " + getLocation(c1));
                 } catch (ClassNotFoundException |
                          InstantiationException |
                          IllegalAccessException e) {
@@ -56,7 +59,7 @@ public class LoadLibraryDeadlock {
                 try {
                     // load a class from a signed jar, which locks the JarFile
                     Class<?> c2 = Class.forName("p.Class2");
-                    System.out.println("Signed jar loaded.");
+                    System.out.println("Class2 loaded from " + getLocation(c2));
                 } catch (ClassNotFoundException e) {
                     System.out.println("Class Class2 not found.");
                     throw new RuntimeException(e);
@@ -68,7 +71,19 @@ public class LoadLibraryDeadlock {
         try {
             t1.join();
             t2.join();
-        } catch (InterruptedException ignore) {
+        } catch (InterruptedException ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    private static String getLocation(Class<?> c) {
+        var pd = c.getProtectionDomain();
+        var cs = pd != null ? pd.getCodeSource() : null;
+        try {
+            // same format as returned by TestLoadLibraryDeadlock::getLocation
+            return cs != null ? cs.getLocation().toURI().getPath() : null;
+        } catch (URISyntaxException ex) {
+            throw new RuntimeException(ex);
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,8 +48,11 @@ import jdk.jfr.internal.Logger;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
+import jdk.jfr.internal.util.ValueParser;
 import jdk.jfr.internal.WriteableUserPath;
 import jdk.jfr.internal.consumer.AbstractEventStream;
 import jdk.jfr.internal.consumer.EventDirectoryStream;
@@ -81,7 +84,7 @@ public final class ManagementSupport {
     //
     public static List<EventType> getEventTypes() {
         // would normally be checked when a Flight Recorder instance is created
-        Utils.checkAccessFlightRecorder();
+        SecuritySupport.checkAccessFlightRecorder();
         if (JVMSupport.isNotAvailable()) {
             return List.of();
         }
@@ -91,7 +94,7 @@ public final class ManagementSupport {
 
     // Reuse internal code for parsing a timespan
     public static long parseTimespan(String s) {
-        return Utils.parseTimespan(s);
+        return ValueParser.parseTimespan(s);
     }
 
     // Reuse internal code for converting nanoseconds since epoch to Instant
@@ -101,7 +104,7 @@ public final class ManagementSupport {
 
     // Reuse internal code for formatting settings
     public static final String formatTimespan(Duration dValue, String separation) {
-        return Utils.formatTimespan(dValue, separation);
+        return ValueFormatter.formatTimespan(dValue, separation);
     }
 
     // Reuse internal logging mechanism

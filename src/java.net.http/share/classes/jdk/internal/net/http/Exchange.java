@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -142,6 +142,7 @@ final class Exchange<T> {
     static final class ConnectionAborter {
         private volatile HttpConnection connection;
         private volatile boolean closeRequested;
+        private volatile Throwable cause;
 
         void connection(HttpConnection connection) {
             boolean closeRequested;
@@ -156,20 +157,27 @@ final class Exchange<T> {
                     this.closeRequested = false;
                 }
             }
-            if (closeRequested) closeConnection(connection);
+            if (closeRequested) closeConnection(connection, cause);
         }
 
-        void closeConnection() {
+        void closeConnection(Throwable error) {
             HttpConnection connection;
+            Throwable cause;
             synchronized (this) {
+                cause = this.cause;
+                if (cause == null) {
+                    cause = error;
+                }
                 connection = this.connection;
                 if (connection == null) {
                     closeRequested = true;
+                    this.cause = cause;
                 } else {
                     this.connection = null;
+                    this.cause = null;
                 }
             }
-            closeConnection(connection);
+            closeConnection(connection, cause);
         }
 
         HttpConnection disable() {
@@ -178,14 +186,15 @@ final class Exchange<T> {
                 connection = this.connection;
                 this.connection = null;
                 this.closeRequested = false;
+                this.cause = null;
             }
             return connection;
         }
 
-        private static void closeConnection(HttpConnection connection) {
+        private static void closeConnection(HttpConnection connection, Throwable cause) {
             if (connection != null) {
                 try {
-                    connection.close();
+                    connection.close(cause);
                 } catch (Throwable t) {
                     // ignore
                 }
@@ -264,11 +273,19 @@ final class Exchange<T> {
             impl.cancel(cause);
         } else {
             // no impl yet. record the exception
-            failed = cause;
+            IOException failed = this.failed;
+            if (failed == null) {
+                synchronized (this) {
+                    failed = this.failed;
+                    if (failed == null) {
+                        failed = this.failed = cause;
+                    }
+                }
+            }
 
             // abort/close the connection if setting up the exchange. This can
             // be important when setting up HTTP/2
-            connectionAborter.closeConnection();
+            connectionAborter.closeConnection(failed);
 
             // now call checkCancelled to recheck the impl.
             // if the failed state is set and the impl is not null, reset
@@ -288,7 +305,7 @@ final class Exchange<T> {
         IOException cause = null;
         CompletableFuture<? extends ExchangeImpl<T>> cf = null;
         if (failed != null) {
-            synchronized(this) {
+            synchronized (this) {
                 cause = failed;
                 impl = exchImpl;
                 cf = exchangeCF;
@@ -371,7 +388,7 @@ final class Exchange<T> {
         // instead - as we need CAS semantics.
         synchronized (this) { exchangeCF = cf; };
         res = cf.whenComplete((r,x) -> {
-            synchronized(Exchange.this) {
+            synchronized (Exchange.this) {
                 if (exchangeCF == cf) exchangeCF = null;
             }
         });
@@ -533,7 +550,7 @@ final class Exchange<T> {
         Function<ExchangeImpl<T>, CompletableFuture<Response>> after407Check;
         bodyIgnored = null;
         if (request.expectContinue()) {
-            request.addSystemHeader("Expect", "100-Continue");
+            request.setSystemHeader("Expect", "100-Continue");
             Log.logTrace("Sending Expect: 100-Continue");
             // wait for 100-Continue before sending body
             after407Check = this::expectContinue;
@@ -630,7 +647,7 @@ final class Exchange<T> {
                             if (!cached && connection != null) {
                                 connectionAborter.connection(connection);
                             }
-                            Stream<T> s = c.getStream(1);
+                            Stream<T> s = c.getInitialStream();
 
                             if (s == null) {
                                 // s can be null if an exception occurred

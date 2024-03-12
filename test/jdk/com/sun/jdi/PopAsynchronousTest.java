@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,7 +101,7 @@ public class PopAsynchronousTest extends TestScaffold {
     /********** test assist **********/
 
 
-    class HarassThread extends Thread {
+    class HarassThread implements Runnable {
         public void run() {
             int harassCount = 0;
             try {
@@ -186,7 +186,7 @@ public class PopAsynchronousTest extends TestScaffold {
         /*
          * start popping wildly away
          */
-        (new HarassThread()).start();
+        DebuggeeWrapper.newThread(new HarassThread()).start();
 
         /*
          * resume the target listening for events

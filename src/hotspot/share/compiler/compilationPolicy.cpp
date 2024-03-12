@@ -306,7 +306,7 @@ double CompilationPolicy::threshold_scale(CompLevel level, int feedback_k) {
   int comp_count = compiler_count(level);
   if (comp_count > 0) {
     double queue_size = CompileBroker::queue_size(level);
-    double k = queue_size / (feedback_k * comp_count) + 1;
+    double k = (double)queue_size / ((double)feedback_k * (double)comp_count) + 1;
 
     // Increase C1 compile threshold when the code cache is filled more
     // than specified by IncreaseFirstTierCompileThresholdAt percentage.

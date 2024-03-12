@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 #include "classfile/classPrinter.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
@@ -37,6 +36,9 @@
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "nmt/mallocTracker.hpp"
+#include "nmt/memTracker.hpp"
+#include "nmt/virtualMemoryTracker.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -54,9 +56,6 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/heapDumper.hpp"
-#include "services/mallocTracker.hpp"
-#include "services/memTracker.hpp"
-#include "services/virtualMemoryTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -68,6 +67,9 @@
 #include <stdio.h>
 #include <stdarg.h>
 
+// These functions needs to be exported on Windows only
+#define DEBUGEXPORT WINDOWS_ONLY(JNIEXPORT)
+
 // Support for showing register content on asserts/guarantees.
 #ifdef CAN_SHOW_REGISTERS_ON_ASSERT
 static char g_dummy;
@@ -76,8 +78,19 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
+
+DebuggingContext::DebuggingContext() {
+  _enabled += 1;                // Increase nesting count.
+}
+
+DebuggingContext::~DebuggingContext() {
+  if (is_enabled()) {
+    _enabled -= 1;              // Decrease nesting count.
+  } else {
+    fatal("Debugging nesting confusion");
+  }
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -166,7 +179,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -188,7 +200,6 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -208,7 +219,6 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
@@ -278,13 +288,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -292,27 +300,26 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
 
 int Command::level = 0;
 
-extern "C" JNIEXPORT void blob(CodeBlob* cb) {
+extern "C" DEBUGEXPORT void blob(CodeBlob* cb) {
   Command c("blob");
   cb->print();
 }
 
 
-extern "C" JNIEXPORT void dump_vtable(address p) {
+extern "C" DEBUGEXPORT void dump_vtable(address p) {
   Command c("dump_vtable");
   Klass* k = (Klass*)p;
   k->vtable().print();
 }
 
 
-extern "C" JNIEXPORT void nm(intptr_t p) {
+extern "C" DEBUGEXPORT void nm(intptr_t p) {
   // Actually we look through all CodeBlobs (the nm name has been kept for backwards compatibility)
   Command c("nm");
   CodeBlob* cb = CodeCache::find_blob((address)p);
@@ -324,7 +331,7 @@ extern "C" JNIEXPORT void nm(intptr_t p) {
 }
 
 
-extern "C" JNIEXPORT void disnm(intptr_t p) {
+extern "C" DEBUGEXPORT void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
   if (cb != nullptr) {
@@ -339,7 +346,7 @@ extern "C" JNIEXPORT void disnm(intptr_t p) {
 }
 
 
-extern "C" JNIEXPORT void printnm(intptr_t p) {
+extern "C" DEBUGEXPORT void printnm(intptr_t p) {
   char buffer[256];
   os::snprintf_checked(buffer, sizeof(buffer), "printnm: " INTPTR_FORMAT, p);
   Command c(buffer);
@@ -353,13 +360,13 @@ extern "C" JNIEXPORT void printnm(intptr_t p) {
 }
 
 
-extern "C" JNIEXPORT void universe() {
+extern "C" DEBUGEXPORT void universe() {
   Command c("universe");
   Universe::print_on(tty);
 }
 
 
-extern "C" JNIEXPORT void verify() {
+extern "C" DEBUGEXPORT void verify() {
   // try to run a verify on the entire system
   // note: this may not be safe if we're not at a safepoint; for debugging,
   // this manipulates the safepoint settings to avoid assertion failures
@@ -376,7 +383,7 @@ extern "C" JNIEXPORT void verify() {
 }
 
 
-extern "C" JNIEXPORT void pp(void* p) {
+extern "C" DEBUGEXPORT void pp(void* p) {
   Command c("pp");
   FlagSetting fl(DisplayVMOutput, true);
   if (p == nullptr) {
@@ -393,24 +400,17 @@ extern "C" JNIEXPORT void pp(void* p) {
     // catch the signal and disable the pp() command for further use.
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
-    if (MemTracker::enabled()) {
-      // Does it point into a known mmapped region?
-      if (VirtualMemoryTracker::print_containing_region(p, tty)) {
-        return;
-      }
-      // Does it look like the start of a malloced block?
-      if (MallocTracker::print_pointer_information(p, tty)) {
-        return;
-      }
+    if (MemTracker::print_containing_region(p, tty)) {
+      return;
     }
     tty->print_cr(PTR_FORMAT, p2i(p));
   }
 }
 
 
-extern "C" JNIEXPORT void findpc(intptr_t x);
+extern "C" DEBUGEXPORT void findpc(intptr_t x);
 
-extern "C" JNIEXPORT void ps() { // print stack
+extern "C" DEBUGEXPORT void ps() { // print stack
   if (Thread::current_or_null() == nullptr) return;
   Command c("ps");
 
@@ -439,7 +439,7 @@ extern "C" JNIEXPORT void ps() { // print stack
   }
 }
 
-extern "C" JNIEXPORT void pfl() {
+extern "C" DEBUGEXPORT void pfl() {
   // print frame layout
   Command c("pfl");
   JavaThread* p = JavaThread::active();
@@ -451,7 +451,7 @@ extern "C" JNIEXPORT void pfl() {
   }
 }
 
-extern "C" JNIEXPORT void psf() { // print stack frames
+extern "C" DEBUGEXPORT void psf() { // print stack frames
   {
     Command c("psf");
     JavaThread* p = JavaThread::active();
@@ -465,19 +465,19 @@ extern "C" JNIEXPORT void psf() { // print stack frames
 }
 
 
-extern "C" JNIEXPORT void threads() {
+extern "C" DEBUGEXPORT void threads() {
   Command c("threads");
   Threads::print(false, true);
 }
 
 
-extern "C" JNIEXPORT void psd() {
+extern "C" DEBUGEXPORT void psd() {
   Command c("psd");
   SystemDictionary::print();
 }
 
 
-extern "C" JNIEXPORT void pss() { // print all stacks
+extern "C" DEBUGEXPORT void pss() { // print all stacks
   if (Thread::current_or_null() == nullptr) return;
   Command c("pss");
   Threads::print(true, PRODUCT_ONLY(false) NOT_PRODUCT(true));
@@ -485,7 +485,7 @@ extern "C" JNIEXPORT void pss() { // print all stacks
 
 // #ifndef PRODUCT
 
-extern "C" JNIEXPORT void debug() {               // to set things up for compiler debugging
+extern "C" DEBUGEXPORT void debug() {               // to set things up for compiler debugging
   Command c("debug");
   NOT_PRODUCT(WizardMode = true;)
   PrintCompilation = true;
@@ -494,7 +494,7 @@ extern "C" JNIEXPORT void debug() {               // to set things up for compil
 }
 
 
-extern "C" JNIEXPORT void ndebug() {              // undo debug()
+extern "C" DEBUGEXPORT void ndebug() {              // undo debug()
   Command c("ndebug");
   PrintCompilation = false;
   PrintInlining = PrintAssembly = false;
@@ -502,55 +502,52 @@ extern "C" JNIEXPORT void ndebug() {              // undo debug()
 }
 
 
-extern "C" JNIEXPORT void flush()  {
+extern "C" DEBUGEXPORT void flush()  {
   Command c("flush");
   tty->flush();
 }
 
-extern "C" JNIEXPORT void events() {
+extern "C" DEBUGEXPORT void events() {
   Command c("events");
   Events::print();
 }
 
-extern "C" JNIEXPORT Method* findm(intptr_t pc) {
+extern "C" DEBUGEXPORT Method* findm(intptr_t pc) {
   Command c("findm");
   nmethod* nm = CodeCache::find_nmethod((address)pc);
   return (nm == nullptr) ? (Method*)nullptr : nm->method();
 }
 
 
-extern "C" JNIEXPORT nmethod* findnm(intptr_t addr) {
+extern "C" DEBUGEXPORT nmethod* findnm(intptr_t addr) {
   Command c("findnm");
   return  CodeCache::find_nmethod((address)addr);
 }
 
-extern "C" JNIEXPORT void find(intptr_t x) {
+extern "C" DEBUGEXPORT void find(intptr_t x) {
   Command c("find");
   os::print_location(tty, x, false);
 }
 
 
-extern "C" JNIEXPORT void findpc(intptr_t x) {
+extern "C" DEBUGEXPORT void findpc(intptr_t x) {
   Command c("findpc");
   os::print_location(tty, x, true);
 }
 
 // For findmethod() and findclass():
-// - The patterns are matched by StringUtils::is_star_match()
-// - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
-// - method_pattern may optionally the signature. E.g., "wait", "wait:()V" or "*ai*t:(*)V"
-// - flags must be OR'ed from ClassPrinter::Mode for findclass/findmethod
+//   See comments in classPrinter.hpp about the meanings of class_name_pattern, method_pattern and flags.
 // Examples (in gdb):
 //   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
 //   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
 //   call findmethod("*ang/Object*", "wait:(*J*)V", 0x1) -> list all "wait" methods in j.l.Object that have a long parameter
-extern "C" JNIEXPORT void findclass(const char* class_name_pattern, int flags) {
+extern "C" DEBUGEXPORT void findclass(const char* class_name_pattern, int flags) {
   Command c("findclass");
   ClassPrinter::print_flags_help(tty);
   ClassPrinter::print_classes(class_name_pattern, flags, tty);
 }
 
-extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
+extern "C" DEBUGEXPORT void findmethod(const char* class_name_pattern,
                                      const char* method_pattern, int flags) {
   Command c("findmethod");
   ClassPrinter::print_flags_help(tty);
@@ -558,7 +555,7 @@ extern "C" JNIEXPORT void findmethod(const char* class_name_pattern,
 }
 
 // Need method pointer to find bcp
-extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
+extern "C" DEBUGEXPORT void findbcp(intptr_t method, intptr_t bcp) {
   Command c("findbcp");
   Method* mh = (Method*)method;
   if (!mh->is_native()) {
@@ -569,7 +566,7 @@ extern "C" JNIEXPORT void findbcp(intptr_t method, intptr_t bcp) {
 }
 
 // check and decode a single u5 value
-extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
+extern "C" DEBUGEXPORT u4 u5decode(intptr_t addr) {
   Command c("u5decode");
   u1* arr = (u1*)addr;
   size_t off = 0, lim = 5;
@@ -586,7 +583,7 @@ extern "C" JNIEXPORT u4 u5decode(intptr_t addr) {
 // there is no limit on the count of items printed; the
 // printing stops when an null is printed or at limit.
 // See documentation for UNSIGNED5::Reader::print(count).
-extern "C" JNIEXPORT intptr_t u5p(intptr_t addr,
+extern "C" DEBUGEXPORT intptr_t u5p(intptr_t addr,
                                   intptr_t limit,
                                   int count) {
   Command c("u5p");
@@ -636,7 +633,7 @@ void help() {
 }
 
 #ifndef PRODUCT
-extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
+extern "C" DEBUGEXPORT void pns(void* sp, void* fp, void* pc) { // print native stack
   Command c("pns");
   static char buf[O_BUFLEN];
   Thread* t = Thread::current_or_null();
@@ -653,10 +650,11 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
 // WARNING: Only intended for use when debugging. Do not leave calls to
 // pns2() in committed source (product or debug).
 //
-extern "C" JNIEXPORT void pns2() { // print native stack
+extern "C" DEBUGEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
-  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf))) {
+  address lastpc = nullptr;
+  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf), lastpc)) {
     // We have printed the native stack in platform-specific code,
     // so nothing else to do in this case.
   } else {

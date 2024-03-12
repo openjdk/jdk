@@ -98,9 +98,9 @@ abstract class Cleaner extends WeakReference<Object> {
     /**
      * Performs the cleanup action now that this object's referent has become weakly reachable.
      *
-     * @returns true if the clean up action cleared the referent of an oop handle and requires a
-     *          subsequent call to {@link CompilerToVM#releaseClearedOopHandles()} to reclaim the
-     *          resources of the handle itself
+     * @return true if the clean up action cleared the referent of an oop handle and requires a
+     *         subsequent call to {@link CompilerToVM#releaseClearedOopHandles()} to reclaim the
+     *         resources of the handle itself
      */
     abstract boolean doCleanup();
 

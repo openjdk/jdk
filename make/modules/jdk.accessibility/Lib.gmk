@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ ifeq ($(call isTargetOs, windows), true)
         DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
         CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT \
             -DACCESSBRIDGE_ARCH_$2, \
+        CXXFLAGS := $(filter-out -MD, $(CXXFLAGS_JDKLIB)) -MT \
+            -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
@@ -69,6 +71,8 @@ ifeq ($(call isTargetOs, windows), true)
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft_WinAccessBridge.cpp := 4302 4311, \
         CFLAGS := $(CFLAGS_JDKLIB) \
+            -DACCESSBRIDGE_ARCH_$2, \
+        CXXFLAGS := $(CXXFLAGS_JDKLIB) \
             -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge, \

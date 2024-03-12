@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,7 @@ abstract class P11Key implements Key, Length {
         this.tokenObject = tokenObject;
         this.sensitive = sensitive;
         this.extractable = extractable;
-        char[] tokenLabel = this.token.tokenInfo.label;
-        isNSS = (tokenLabel[0] == 'N' && tokenLabel[1] == 'S'
-                && tokenLabel[2] == 'S');
+        isNSS = P11Util.isNSS(this.token);
         boolean extractKeyInfo = (!DISABLE_NATIVE_KEYS_EXTRACTION && isNSS &&
                 extractable && !tokenObject);
         this.keyIDHolder = new NativeKeyHolder(this, keyID, session,
@@ -184,6 +182,7 @@ abstract class P11Key implements Key, Length {
 
     abstract byte[] getEncodedInternal();
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
@@ -214,20 +213,13 @@ abstract class P11Key implements Key, Length {
         return MessageDigest.isEqual(thisEnc, otherEnc);
     }
 
+    @Override
     public int hashCode() {
         // hashCode() should never throw exceptions
         if (!token.isValid()) {
             return 0;
         }
-        byte[] b1 = getEncodedInternal();
-        if (b1 == null) {
-            return 0;
-        }
-        int r = b1.length;
-        for (int i = 0; i < b1.length; i++) {
-            r += (b1[i] & 0xff) * 37;
-        }
-        return r;
+        return Arrays.hashCode(getEncodedInternal());
     }
 
     protected Object writeReplace() throws ObjectStreamException {
@@ -354,6 +346,18 @@ abstract class P11Key implements Key, Length {
         return new P11SecretKey(session, keyID, algorithm, keyLength, attrs);
     }
 
+    static SecretKey pbeKey(Session session, long keyID, String algorithm,
+            int keyLength, CK_ATTRIBUTE[] attrs, char[] password, byte[] salt,
+            int iterationCount) {
+        attrs = getAttributes(session, keyID, attrs, new CK_ATTRIBUTE[] {
+            new CK_ATTRIBUTE(CKA_TOKEN),
+            new CK_ATTRIBUTE(CKA_SENSITIVE),
+            new CK_ATTRIBUTE(CKA_EXTRACTABLE),
+        });
+        return new P11PBEKey(session, keyID, algorithm, keyLength,
+                attrs, password, salt, iterationCount);
+    }
+
     static SecretKey masterSecretKey(Session session, long keyID,
             String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
             int major, int minor) {
@@ -391,8 +395,9 @@ abstract class P11Key implements Key, Length {
                     new CK_ATTRIBUTE(CKA_EXTRACTABLE),
         });
 
-        boolean keySensitive = (attrs[0].getBoolean() ||
-                attrs[1].getBoolean() || !attrs[2].getBoolean());
+        boolean keySensitive =
+                (attrs[0].getBoolean() && P11Util.isNSS(session.token)) ||
+                attrs[1].getBoolean() || !attrs[2].getBoolean();
 
         return switch (algorithm) {
             case "RSA" -> P11RSAPrivateKeyInternal.of(session, keyID, algorithm,
@@ -409,7 +414,7 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 private keys
-    private static abstract class P11PrivateKey extends P11Key implements
+    private abstract static class P11PrivateKey extends P11Key implements
             PrivateKey {
         @Serial
         private static final long serialVersionUID = -2138581185214187615L;
@@ -474,7 +479,7 @@ abstract class P11Key implements Key, Length {
     }
 
     // base class for all PKCS11 public keys
-    private static abstract class P11PublicKey extends P11Key implements
+    private abstract static class P11PublicKey extends P11Key implements
             PublicKey {
         @Serial
         private static final long serialVersionUID = 1L;
@@ -484,6 +489,45 @@ abstract class P11Key implements Key, Length {
         P11PublicKey(Session session, long keyID, String algorithm,
                 int keyLength, CK_ATTRIBUTE[] attrs) {
             super(PUBLIC, session, keyID, algorithm, keyLength, attrs);
+        }
+    }
+
+    static final class P11PBEKey extends P11SecretKey
+            implements PBEKey {
+        private static final long serialVersionUID = 6847576994253634876L;
+        private char[] password;
+        private final byte[] salt;
+        private final int iterationCount;
+        P11PBEKey(Session session, long keyID, String algorithm,
+                int keyLength, CK_ATTRIBUTE[] attributes,
+                char[] password, byte[] salt, int iterationCount) {
+            super(session, keyID, algorithm, keyLength, attributes);
+            this.password = password.clone();
+            this.salt = salt.clone();
+            this.iterationCount = iterationCount;
+        }
+
+        @Override
+        public char[] getPassword() {
+            if (password == null) {
+                throw new IllegalStateException("password has been cleared");
+            }
+            return password.clone();
+        }
+
+        @Override
+        public byte[] getSalt() {
+            return salt.clone();
+        }
+
+        @Override
+        public int getIterationCount() {
+            return iterationCount;
+        }
+
+        void clearPassword() {
+            Arrays.fill(password, '\0');
+            password = null;
         }
     }
 
@@ -856,7 +900,8 @@ abstract class P11Key implements Key, Length {
             params = new DSAParameterSpec(res[0], res[1], res[2]);
         }
 
-        protected DSAParams getParams() {
+        @Override
+        public DSAParams getParams() {
             fetchValues();
             return params;
         }
@@ -1159,7 +1204,8 @@ abstract class P11Key implements Key, Length {
             }
         }
 
-        protected ECParameterSpec getParams() {
+        @Override
+        public ECParameterSpec getParams() {
             fetchValues();
             return params;
         }
@@ -1486,7 +1532,12 @@ final class NativeKeyHolder {
 
                     // destroy
                     this.keyID = 0;
-                    this.ref.removeNativeKey();
+                    try {
+                        this.ref.removeNativeKey();
+                    } finally {
+                        // prevent enqueuing SessionKeyRef until removeNativeKey is done
+                        Reference.reachabilityFence(this);
+                    }
                 } else {
                     if (cnt < 0) {
                         // should never happen as we start count at 1 and pair get/release calls

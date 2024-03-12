@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,15 @@
  * @bug 4033662
  * @summary test for limit on Calendar
  * @library /java/text/testlib
- * @run main CalendarLimitTest -verbose
+ * @run junit CalendarLimitTest
  */
 
 import java.util.*;
 import java.text.*;
+
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test verifies the behavior of Calendar around the very earliest limits
@@ -42,7 +46,7 @@ import java.text.*;
  * March 17, 1998: Added code to make sure big + dates are big + AD years, and
  * big - dates are big + BC years.
  */
-public class CalendarLimitTest extends IntlTest
+public class CalendarLimitTest
 {
     // This number determined empirically; this is the old limit,
     // which we test for to make sure it isn't there anymore.
@@ -60,16 +64,6 @@ public class CalendarLimitTest extends IntlTest
     static final long ONE_YEAR   = (long)(365.2425 * ONE_DAY);
 
     static long ORIGIN; // This is the *approximate* point at which BC switches to AD
-
-    public static void main(String argv[]) throws Exception {
-        Locale locale = Locale.getDefault();
-        if (!TestUtils.usesGregorianCalendar(locale)) {
-            System.out.println("Skipping this test because locale is " + locale);
-            return;
-        }
-
-        new CalendarLimitTest().run(argv);
-    }
 
     /**
      * Converts Julian day to time as milliseconds.
@@ -108,32 +102,38 @@ public class CalendarLimitTest extends IntlTest
 
         boolean ok = true;
         if (exception != null) {
-            errln("FAIL: Exception " + s);
+            fail("FAIL: Exception " + s);
             ok = false;
         }
         if (((millis >= ORIGIN) && (era != GregorianCalendar.AD)) ||
                  ((millis < ORIGIN) && (era != GregorianCalendar.BC)) ||
                  (year < 1)) {
-            errln("FAIL: Bad year/era " + s);
+            fail("FAIL: Bad year/era " + s);
             ok = false;
         }
         if (dom<1 || dom>31) {
-            errln("FAIL: Bad DOM " + s);
+            fail("FAIL: Bad DOM " + s);
             ok = false;
         }
         if (Math.abs(millis - rt.getTime()) > ONE_DAY) {
-            errln("FAIL: RT fail " + s + " -> 0x" +
+            fail("FAIL: RT fail " + s + " -> 0x" +
                   Long.toHexString(rt.getTime()) + " " +
                   fmt.format(rt));
             ok = false;
         }
-        if (ok) logln(s);
+        if (ok) System.out.println(s);
         if (era==GregorianCalendar.BC) year = 1-year;
         return year;
     }
 
+    @Test
     public void TestCalendarLimit()
     {
+        Locale locale = Locale.getDefault();
+        if (!TestUtils.usesGregorianCalendar(locale)) {
+            System.out.println("Skipping this test because locale is " + locale);
+            return;
+        }
         ORIGIN = julianDayToMillis(JAN_1_1_JULIAN_DAY);
 
         Calendar cal = Calendar.getInstance();
@@ -154,7 +154,7 @@ public class CalendarLimitTest extends IntlTest
         {
             int y = test(m, cal, dateFormat);
             if (!first && y > lastYear)
-                errln("FAIL: Years should be decreasing " + lastYear + " " + y);
+                fail("FAIL: Years should be decreasing " + lastYear + " " + y);
             first = false;
             lastYear = y;
         }
@@ -165,7 +165,7 @@ public class CalendarLimitTest extends IntlTest
         {
             int y = test(m, cal, dateFormat);
             if (!first && y < lastYear)
-                errln("FAIL: Years should be increasing " + lastYear + " " + y);
+                fail("FAIL: Years should be increasing " + lastYear + " " + y);
             first = false;
             lastYear = y;
         }
@@ -188,7 +188,7 @@ public class CalendarLimitTest extends IntlTest
                     cal.set(292269055, Calendar.DECEMBER, dom, h, 0);
                     Date d = cal.getTime();
                     cal.setTime(d);
-                    logln("" + h + ":00 Dec "+dom+", 292269055 BC -> " +
+                    System.out.println("" + h + ":00 Dec "+dom+", 292269055 BC -> " +
                           Long.toHexString(d.getTime()) + " -> " +
                           dateFormat.format(cal.getTime()));
                 }
@@ -197,7 +197,7 @@ public class CalendarLimitTest extends IntlTest
             long t = 0x80000000018c5c00L; // Dec 3, 292269055 BC
             while (t<0) {
                 cal.setTime(new Date(t));
-                logln("0x" + Long.toHexString(t) + " -> " +
+                System.out.println("0x" + Long.toHexString(t) + " -> " +
                       dateFormat.format(cal.getTime()));
                 t -= ONE_HOUR;
             }

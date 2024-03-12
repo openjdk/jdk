@@ -63,7 +63,7 @@ void ServiceThread::initialize() {
   EXCEPTION_MARK;
 
   const char* name = "Service Thread";
-  Handle thread_oop = JavaThread::create_system_thread_object(name, false /* not visible */, CHECK);
+  Handle thread_oop = JavaThread::create_system_thread_object(name, CHECK);
 
   ServiceThread* thread = new ServiceThread(&service_thread_entry);
   JavaThread::vm_exit_on_osthread_failure(thread);

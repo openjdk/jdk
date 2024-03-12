@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="kaj"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="kaj" draft="contributed">Kaje</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="unconfirmed">[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, G y MMMM dd</pattern>
+							<datetimeSkeleton draft="unconfirmed">GyMMMMEEEEdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">G y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">G y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">GGGGG yy/MM/dd</pattern>
+							<datetimeSkeleton draft="unconfirmed">GGGGGyyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">A̱yr</month>
+							<month type="2" draft="unconfirmed">A̱hw</month>
+							<month type="3" draft="unconfirmed">A̱ta</month>
+							<month type="4" draft="unconfirmed">A̱na</month>
+							<month type="5" draft="unconfirmed">A̱pf</month>
+							<month type="6" draft="unconfirmed">A̱ki</month>
+							<month type="7" draft="unconfirmed">A̱ty</month>
+							<month type="8" draft="unconfirmed">A̱ni</month>
+							<month type="9" draft="unconfirmed">A̱ku</month>
+							<month type="10" draft="unconfirmed">Swa</month>
+							<month type="11" draft="unconfirmed">Sby</month>
+							<month type="12" draft="unconfirmed">Sbh</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Hywan A̱yrnig</month>
+							<month type="2" draft="unconfirmed">Hywan A̱hwa</month>
+							<month type="3" draft="unconfirmed">Hywan A̱tat</month>
+							<month type="4" draft="unconfirmed">Hywan A̱naai</month>
+							<month type="5" draft="unconfirmed">Hywan A̱pfwon</month>
+							<month type="6" draft="unconfirmed">Hywan A̱kitat</month>
+							<month type="7" draft="unconfirmed">Hywan A̱tyirin</month>
+							<month type="8" draft="unconfirmed">Hywan A̱ninai</month>
+							<month type="9" draft="unconfirmed">Hywan A̱kumviriyin</month>
+							<month type="10" draft="unconfirmed">Hywan Swak</month>
+							<month type="11" draft="unconfirmed">Hywan Swak B’a̱yrnig</month>
+							<month type="12" draft="unconfirmed">Hywan Swak B’a̱hwa</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Lad</day>
+							<day type="mon" draft="unconfirmed">Lin</day>
+							<day type="tue" draft="unconfirmed">Tal</day>
+							<day type="wed" draft="unconfirmed">Lar</day>
+							<day type="thu" draft="unconfirmed">Lam</day>
+							<day type="fri" draft="unconfirmed">Jum</day>
+							<day type="sat" draft="unconfirmed">Asa</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Ladi</day>
+							<day type="mon" draft="unconfirmed">Lintani</day>
+							<day type="tue" draft="unconfirmed">Talata</day>
+							<day type="wed" draft="unconfirmed">Larba</day>
+							<day type="thu" draft="unconfirmed">Lamit</day>
+							<day type="fri" draft="unconfirmed">Juma</day>
+							<day type="sat" draft="unconfirmed">Asabar</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="abbreviated">
+							<dayPeriod type="am" draft="unconfirmed">A.M.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">P.M.</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="unconfirmed">Gabanin Miladi</era>
+						<era type="1" draft="unconfirmed">Miladi</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="unconfirmed">G.M.</era>
+						<era type="1" draft="unconfirmed">M.</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="unconfirmed">EEEE, y MMMM dd</pattern>
+							<datetimeSkeleton draft="unconfirmed">yMMMMEEEEdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="unconfirmed">y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="unconfirmed">yy/MM/dd</pattern>
+							<datetimeSkeleton draft="unconfirmed">yyMMdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>HH:mm:ss zzzz</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>HH:mm:ss z</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>HH:mm:ss</pattern>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>HH:mm</pattern>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="NGN">
+				<displayName draft="unconfirmed">A̱naira</displayName>
+				<symbol>₦</symbol>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

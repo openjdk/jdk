@@ -385,21 +385,28 @@ class Eval {
                 subkind = SubKind.VAR_DECLARATION_SUBKIND;
             }
             Wrap wname;
-            int nameStart = compileSource.lastIndexOf(name, nameMax);
-            if (nameStart < 0) {
-                // the name has been transformed (e.g. unicode).
-                // Use it directly
-                wname = Wrap.identityWrap(name);
+            String fieldName;
+            if (name.isEmpty()) {
+                fieldName = "$UNNAMED";
+                wname = Wrap.simpleWrap(fieldName);
             } else {
-                int nameEnd = nameStart + name.length();
-                Range rname = new Range(nameStart, nameEnd);
-                wname = new Wrap.RangeWrap(compileSource, rname);
+                fieldName = name;
+                int nameStart = compileSource.lastIndexOf(name, nameMax);
+                if (nameStart < 0) {
+                    // the name has been transformed (e.g. unicode).
+                    // Use it directly
+                    wname = Wrap.identityWrap(name);
+                } else {
+                    int nameEnd = nameStart + name.length();
+                    Range rname = new Range(nameStart, nameEnd);
+                    wname = new Wrap.RangeWrap(compileSource, rname);
+                }
             }
             Wrap guts = Wrap.varWrap(compileSource, typeWrap, sbBrackets.toString(), wname,
                                      winit, enhancedDesugaring, anonDeclareWrap);
             DiagList modDiag = modifierDiagnostics(vt.getModifiers(), dis, true);
             Snippet snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                    name, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
+                    name, fieldName, subkind, displayType, hasEnhancedType ? fullTypeName : null, anonymousClasses,
                     tds.declareReferences(), modDiag);
             snippets.add(snip);
         }
@@ -659,7 +666,7 @@ class Eval {
                 }
                 Collection<String> declareReferences = null; //TODO
                 snip = new VarSnippet(state.keyMap.keyForVariable(name), userSource, guts,
-                        name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
+                        name, name, SubKind.TEMP_VAR_EXPRESSION_SUBKIND, displayTypeName, fullTypeName, anonymousClasses, declareReferences, null);
             } else {
                 guts = Wrap.methodReturnWrap(compileSource);
                 snip = new ExpressionSnippet(state.keyMap.keyForExpression(name, typeName), userSource, guts,

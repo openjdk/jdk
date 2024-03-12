@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, 2019, Red Hat Inc.
- * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2021, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@ public class RISCV64Frame extends Frame {
   // Native frames
   private static final int NATIVE_FRAME_INITIAL_PARAM_OFFSET =  2;
 
-  private static VMReg fp = new VMReg(8);
+  private static VMReg fp = new VMReg(8 << 1);
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -322,24 +322,17 @@ public class RISCV64Frame extends Frame {
   //------------------------------------------------------------------------------
   // frame::adjust_unextended_sp
   private void adjustUnextendedSP() {
-    // If we are returning to a compiled MethodHandle call site, the
-    // saved_fp will in fact be a saved value of the unextended SP.  The
-    // simplest way to tell whether we are returning to such a call site
-    // is as follows:
+    // Sites calling method handle intrinsics and lambda forms are
+    // treated as any other call site. Therefore, no special action is
+    // needed when we are returning to any of these call sites.
 
     CodeBlob cb = cb();
     NMethod senderNm = (cb == null) ? null : cb.asNMethodOrNull();
     if (senderNm != null) {
-      // If the sender PC is a deoptimization point, get the original
-      // PC.  For MethodHandle call site the unextended_sp is stored in
-      // saved_fp.
-      if (senderNm.isDeoptMhEntry(getPC())) {
-        raw_unextendedSP = getFP();
-      }
-      else if (senderNm.isDeoptEntry(getPC())) {
-      }
-      else if (senderNm.isMethodHandleReturn(getPC())) {
-        raw_unextendedSP = getFP();
+      // If the sender PC is a deoptimization point, get the original PC.
+      if (senderNm.isDeoptEntry(getPC()) ||
+          senderNm.isDeoptMhEntry(getPC())) {
+        // DEBUG_ONLY(verifyDeoptriginalPc(senderNm, raw_unextendedSp));
       }
     }
   }
@@ -503,7 +496,8 @@ public class RISCV64Frame extends Frame {
   }
 
   public BasicObjectLock interpreterFrameMonitorEnd() {
-    Address result = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getAddressAt(0);
+    long n = addressOfStackSlot(INTERPRETER_FRAME_MONITOR_BLOCK_TOP_OFFSET).getCIntegerAt(0, VM.getVM().getAddressSize(), false);
+    Address result = getFP().addOffsetTo(n * VM.getVM().getAddressSize());
     if (Assert.ASSERTS_ENABLED) {
       // make sure the pointer points inside the frame
       Assert.that(AddressOps.gt(getFP(), result), "result must <  than frame pointer");

@@ -120,7 +120,7 @@ class PSOldPromotionLAB : public PSPromotionLAB {
       set_top(new_top);
       assert(is_object_aligned(obj) && is_object_aligned(new_top),
              "checking alignment");
-      _start_array->allocate_block(obj);
+      _start_array->update_for_block(obj, obj + size);
       return obj;
     }
 

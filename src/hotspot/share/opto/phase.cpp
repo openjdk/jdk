@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ elapsedTimer Phase::_t_stubCompilation;
 elapsedTimer Phase::timers[max_phase_timers];
 
 //------------------------------Phase------------------------------------------
-Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? NULL : Compile::current()) {
+Phase::Phase( PhaseNumber pnum ) : _pnum(pnum), C( pnum == Compiler ? nullptr : Compile::current()) {
   // Poll for requests from shutdown mechanism to quiesce compiler (4448539, 4448544).
   // This is an effective place to poll, since the compiler is full of phases.
   // In particular, every inlining site uses a recursively created Parse phase.
@@ -81,6 +81,7 @@ void Phase::print_timers() {
     tty->print_cr ("             Prune Useless:   %7.3f s", timers[_t_vector_pru].seconds());
     tty->print_cr ("         Renumber Live:       %7.3f s", timers[_t_renumberLive].seconds());
     tty->print_cr ("         IdealLoop:           %7.3f s", timers[_t_idealLoop].seconds());
+    tty->print_cr ("           AutoVectorize:     %7.3f s", timers[_t_autoVectorize].seconds());
     tty->print_cr ("         IdealLoop Verify:    %7.3f s", timers[_t_idealLoopVerify].seconds());
     tty->print_cr ("         Cond Const Prop:     %7.3f s", timers[_t_ccp].seconds());
     tty->print_cr ("         GVN 2:               %7.3f s", timers[_t_iterGVN2].seconds());

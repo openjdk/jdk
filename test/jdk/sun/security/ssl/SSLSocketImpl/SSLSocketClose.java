@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,123 +37,79 @@
 import javax.net.ssl.*;
 import java.io.*;
 import java.net.InetAddress;
+import java.net.SocketException;
 
-public class SSLSocketClose implements SSLContextTemplate {
+public class SSLSocketClose extends SSLSocketTemplate {
 
     public static void main(String[] args) throws Exception {
         for (int i = 0; i<= 10; i++) {
-            System.err.println("===================================");
-            System.err.println("loop " + i);
-            System.err.println("===================================");
-            new SSLSocketClose().test();
+            System.out.println("===================================");
+            System.out.println("loop " + i);
+            System.out.println("===================================");
+            new SSLSocketClose().run();
         }
     }
 
-    private void test() throws Exception {
-        SSLServerSocket listenSocket = null;
-        SSLSocket serverSocket = null;
-        ClientSocket clientSocket = null;
+    @Override
+    protected void configureServerSocket(SSLServerSocket socket) {
+        socket.setNeedClientAuth(false);
+        socket.setEnableSessionCreation(true);
+        socket.setUseClientMode(false);
+    }
+
+    @Override
+    protected void runServerApplication(SSLSocket socket) throws Exception {
+        System.out.println("Reading data from client");
+        BufferedReader serverReader = new BufferedReader(
+                new InputStreamReader(socket.getInputStream()));
+        String data = serverReader.readLine();
+        System.out.println("Received data from client: " + data);
+
+        System.out.println("Sending data to client ...");
+        String serverData = "Hi, I am server";
+        BufferedWriter os = new BufferedWriter(
+                new OutputStreamWriter(socket.getOutputStream()));
+        os.write(serverData, 0, serverData.length());
+        os.newLine();
+        os.flush();
+
+        System.out.println("Reading more data from client");
+        data = serverReader.readLine();
+        System.out.println("Received data from client: " + data);
+    }
+
+    @Override
+    protected void configureClientSocket(SSLSocket socket) {
         try {
-            SSLServerSocketFactory serversocketfactory =
-                    createServerSSLContext().getServerSocketFactory();
-            listenSocket =
-                    (SSLServerSocket)serversocketfactory.createServerSocket(0);
-            listenSocket.setNeedClientAuth(false);
-            listenSocket.setEnableSessionCreation(true);
-            listenSocket.setUseClientMode(false);
-
-
-            System.err.println("Starting client");
-            clientSocket = new ClientSocket(listenSocket.getLocalPort());
-            clientSocket.start();
-
-            System.err.println("Accepting client requests");
-            serverSocket = (SSLSocket) listenSocket.accept();
-
-            System.err.println("Reading data from client");
-            BufferedReader serverReader = new BufferedReader(
-                    new InputStreamReader(serverSocket.getInputStream()));
-            String data = serverReader.readLine();
-            System.err.println("Received data from client: " + data);
-
-            System.err.println("Sending data to client ...");
-            String serverData = "Hi, I am server";
-            BufferedWriter os = new BufferedWriter(
-                    new OutputStreamWriter(serverSocket.getOutputStream()));
-            os.write(serverData, 0, serverData.length());
-            os.newLine();
-            os.flush();
-
-            System.err.println("Reading more data from client");
-            data = serverReader.readLine();
-            System.err.println("Received data from client: " + data);
-        } finally {
-            if (listenSocket != null) {
-                listenSocket.close();
-            }
-
-            if (serverSocket != null) {
-                serverSocket.close();
-            }
-        }
-
-        if (clientSocket != null && clientSocket.clientException != null) {
-            throw clientSocket.clientException;
+            socket.setSoLinger(true, 3);
+        } catch (SocketException e) {
+            throw new RuntimeException("Could not configure client socket", e);
         }
     }
 
-    private class ClientSocket extends Thread{
-        int serverPort = 0;
-        Exception clientException;
+    @Override
+    protected void runClientApplication(SSLSocket socket) throws Exception {
+        String clientData = "Hi, I am client";
+        System.out.println("Sending data to server ...");
 
-        public ClientSocket(int serverPort) {
-            this.serverPort = serverPort;
-        }
+        BufferedWriter os = new BufferedWriter(
+                new OutputStreamWriter(socket.getOutputStream()));
+        os.write(clientData, 0, clientData.length());
+        os.newLine();
+        os.flush();
 
-        @Override
-        public void run() {
-            SSLSocket clientSocket = null;
-            String clientData = "Hi, I am client";
-            try {
-                System.err.println(
-                        "Connecting to server at port " + serverPort);
-                SSLSocketFactory sslSocketFactory =
-                        createClientSSLContext().getSocketFactory();
-                clientSocket = (SSLSocket)sslSocketFactory.createSocket(
-                        InetAddress.getLocalHost(), serverPort);
-                clientSocket.setSoLinger(true, 3);
+        System.out.println("Reading data from server");
+        BufferedReader is = new BufferedReader(
+                new InputStreamReader(socket.getInputStream()));
+        String data = is.readLine();
+        System.out.println("Received Data from server: " + data);
 
-                System.err.println("Sending data to server ...");
+        System.out.println("Sending more data to server ...");
+        os.write(clientData, 0, clientData.length());
+        os.newLine();
+        os.flush();
 
-                BufferedWriter os = new BufferedWriter(
-                        new OutputStreamWriter(clientSocket.getOutputStream()));
-                os.write(clientData, 0, clientData.length());
-                os.newLine();
-                os.flush();
-
-                System.err.println("Reading data from server");
-                BufferedReader is = new BufferedReader(
-                        new InputStreamReader(clientSocket.getInputStream()));
-                String data = is.readLine();
-                System.err.println("Received Data from server: " + data);
-
-                System.err.println("Sending more data to server ...");
-                os.write(clientData, 0, clientData.length());
-                os.newLine();
-                os.flush();
-            } catch (Exception e) {
-                clientException = e;
-            } finally {
-                if (clientSocket != null) {
-                    try{
-                        clientSocket.close();
-                        System.err.println("client socket closed");
-                    } catch (IOException ioe) {
-                        clientException = ioe;
-                    }
-                }
-            }
-        }
+        socket.close();
     }
 }
 

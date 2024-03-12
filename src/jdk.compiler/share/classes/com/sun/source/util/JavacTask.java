@@ -53,7 +53,7 @@ public abstract class JavacTask implements CompilationTask {
     /**
      * Constructor for subclasses to call.
      */
-    public JavacTask() {}
+    protected JavacTask() {}
 
     /**
      * Returns the {@code JavacTask} for a {@code ProcessingEnvironment}.

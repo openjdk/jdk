@@ -39,18 +39,6 @@ ShenandoahReentrantLock* ShenandoahNMethod::lock() {
   return &_lock;
 }
 
-int ShenandoahNMethod::oop_count() const {
-  return _oops_count + static_cast<int>(nm()->oops_end() - nm()->oops_begin());
-}
-
-bool ShenandoahNMethod::has_oops() const {
-  return oop_count() > 0;
-}
-
-void ShenandoahNMethod::mark_unregistered() {
-  _unregistered = true;
-}
-
 bool ShenandoahNMethod::is_unregistered() const {
   return _unregistered;
 }
@@ -80,9 +68,7 @@ void ShenandoahNMethod::heal_nmethod_metadata(ShenandoahNMethod* nmethod_data) {
 
 void ShenandoahNMethod::disarm_nmethod(nmethod* nm) {
   BarrierSetNMethod* const bs = BarrierSet::barrier_set()->barrier_set_nmethod();
-  assert(bs != nullptr || !ShenandoahNMethodBarrier,
-        "Must have nmethod barrier for concurrent GC");
-  if (bs != nullptr && bs->is_armed(nm)) {
+  if (bs->is_armed(nm)) {
     bs->disarm(nm);
   }
 }

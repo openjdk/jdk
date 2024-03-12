@@ -31,7 +31,7 @@
 
 // Note: the Posix API aims to capture functionality available on all Posix
 // compliant platforms, but in practice the implementations may depend on
-// non-Posix functionality. For example, the use of lseek64 and ftruncate64.
+// non-Posix functionality.
 // This use of non-Posix API's is made possible by compiling/linking in a mode
 // that is not restricted to being fully Posix complaint, such as by declaring
 // -D_GNU_SOURCE. But be aware that in doing so we may enable non-Posix
@@ -44,8 +44,8 @@
     _result = _cmd; \
   } while(((int)_result == OS_ERR) && (errno == EINTR))
 
-#define RESTARTABLE_RETURN_INT(_cmd) do { \
-  int _result; \
+#define RESTARTABLE_RETURN_SSIZE_T(_cmd) do { \
+  ssize_t _result; \
   RESTARTABLE(_cmd, _result); \
   return _result; \
 } while(false)

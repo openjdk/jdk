@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,17 @@
 #define BLOCK_COMMENT(str) block_comment(str)
 #endif
 #define BIND(label) bind(label); BLOCK_COMMENT(#label ":")
+
+
+void C2_MacroAssembler::fast_lock_lightweight(ConditionRegister flag, Register obj, Register box,
+                                              Register tmp1, Register tmp2, Register tmp3) {
+  compiler_fast_lock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
+}
+
+void C2_MacroAssembler::fast_unlock_lightweight(ConditionRegister flag, Register obj, Register box,
+                                                Register tmp1, Register tmp2, Register tmp3) {
+  compiler_fast_unlock_lightweight_object(flag, obj, tmp1, tmp2, tmp3);
+}
 
 // Intrinsics for CompactStrings
 
@@ -301,7 +312,7 @@ void C2_MacroAssembler::array_equals(bool is_array_equ, Register ary1, Register 
     cmpd(CCR0, ary1, ary2);
     beq(CCR0, Lskiploop);
 
-    // Return false if one of them is NULL.
+    // Return false if one of them is null.
     cmpdi(CCR0, ary1, 0);
     cmpdi(CCR1, ary2, 0);
     li(result, 0);

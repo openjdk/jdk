@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,20 +51,20 @@ public class CompressedOopsTest {
     }
 
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops=debug",
-                                                   InnerClass.class.getName());
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
+                                                                             "-Xlog:gc+heap+coops=debug",
+                                                                             InnerClass.class.getName());
         analyzeOutputOn(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops",
-                                                   InnerClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
+                                                              "-Xlog:gc+heap+coops",
+                                                              InnerClass.class.getName());
         // No coops logging on info level.
         analyzeOutputOff(pb);
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+UseCompressedOops",
-                                                   "-Xlog:gc+heap+coops=off",
-                                                   InnerClass.class.getName());
+        pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:+UseCompressedOops",
+                                                              "-Xlog:gc+heap+coops=off",
+                                                              InnerClass.class.getName());
         analyzeOutputOff(pb);
     }
 

@@ -20,6 +20,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/* @test
+ * @summary ThinLineTest: A line < 1 pixel disappears.
+ * @bug 6829673 8311666
+ */
+
 import java.awt.*;
 import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;

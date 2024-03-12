@@ -138,6 +138,10 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
   void retire();
+
+  HeapWord* top() const {
+    return _top;
+  }
 };
 
 // PLAB book-keeping.
@@ -174,11 +178,11 @@ public:
   size_t used() const { return allocated() - (wasted() + unused()); }
   size_t undo_wasted() const { return _undo_wasted; }
 
-  static const size_t min_size() {
+  static size_t min_size() {
     return PLAB::min_size();
   }
 
-  static const size_t max_size() {
+  static size_t max_size() {
     return PLAB::max_size();
   }
 

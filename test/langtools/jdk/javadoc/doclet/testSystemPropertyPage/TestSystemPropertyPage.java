@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,11 +67,9 @@ public class TestSystemPropertyPage extends JavadocTester {
 
         checkOutput("system-properties.html", true,
                 """
-                    <div class="flex-box">
-                    <header role="banner" class="flex-header">""",
+                    <header role="banner">""",
 
                 """
-                    <div class="flex-content">
                     <main role="main">
                     <div class="header">
                     <h1>System Properties</h1>

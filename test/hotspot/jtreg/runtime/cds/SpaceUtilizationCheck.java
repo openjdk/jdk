@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,27 +56,29 @@ public class SpaceUtilizationCheck {
         CDSOptions opts = new CDSOptions();
         opts.addSuffix(extra_options);
         OutputAnalyzer output = CDSTestUtils.createArchiveAndCheck(opts);
-        Pattern pattern = Pattern.compile("(..)  space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
+        Pattern pattern = Pattern.compile("(..) space: *([0-9]+).* out of *([0-9]+) bytes .* at 0x([0-9a0-f]+)");
         WhiteBox wb = WhiteBox.getWhiteBox();
         long reserve_alignment = wb.metaspaceSharedRegionAlignment();
         System.out.println("MetaspaceShared::core_region_alignment() = " + reserve_alignment);
 
         // Look for output like this. The pattern will only match the first 2 regions, which is what we need to check
         //
-        // [4.682s][debug][cds] rw  space:   4391632 [ 33.7% of total] out of   4395008 bytes [ 99.9% used] at 0x0000000800007000
-        // [4.682s][debug][cds] ro  space:   7570632 [ 58.0% of total] out of   7573504 bytes [100.0% used] at 0x0000000800438000
-        // [4.682s][debug][cds] bm  space:    213528 [  1.6% of total] out of    213528 bytes [100.0% used]
-        // [4.682s][debug][cds] ca0 space:    507904 [  3.9% of total] out of    507904 bytes [100.0% used] at 0x00000000fff00000
-        // [4.682s][debug][cds] oa0 space:    327680 [  2.5% of total] out of    327680 bytes [100.0% used] at 0x00000000ffe00000
-        // [4.682s][debug][cds] total    :  13036288 [100.0% of total] out of  13049856 bytes [ 99.9% used]
+        // [0.938s][debug][cds] rw space:   5253952 [ 35.2% of total] out of   5255168 bytes [100.0% used] at 0x0000000800000000
+        // [0.938s][debug][cds] ro space:   8353976 [ 55.9% of total] out of   8355840 bytes [100.0% used] at 0x0000000800503000
+        // [0.938s][debug][cds] bm space:    262232 [  1.8% of total] out of    262232 bytes [100.0% used]
+        // [0.938s][debug][cds] hp space:   1057712 [  7.1% of total] out of   1057712 bytes [100.0% used] at 0x00007fa24c180090
+        // [0.938s][debug][cds] total   :  14927872 [100.0% of total] out of  14934960 bytes [100.0% used]
 
         long last_region = -1;
         Hashtable<String,String> checked = new Hashtable<>();
         for (String line : output.getStdout().split("\n")) {
-            if (line.contains(" space:") && !line.contains("st space:")) {
+            if (line.contains(" space:")) {
                 Matcher matcher = pattern.matcher(line);
                 if (matcher.find()) {
                     String name = matcher.group(1);
+                    if (!name.equals("rw") && ! name.equals("ro")) {
+                        continue;
+                    }
                     System.out.println("Checking " + name + " in : " + line);
                     checked.put(name, name);
                     long used = Long.parseLong(matcher.group(2));

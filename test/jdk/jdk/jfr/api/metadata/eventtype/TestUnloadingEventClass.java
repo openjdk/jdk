@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,6 @@ public class TestUnloadingEventClass {
         }
     }
 
-    private static final JVM jvm = JVM.getJVM();
     public static ClassLoader myClassLoader;
 
     public static void main(String[] args) throws Throwable {
@@ -134,7 +133,7 @@ public class TestUnloadingEventClass {
     }
 
     private static void unLoadEventClass() throws Exception {
-        long firstCount = jvm.getUnloadedEventClassCount();
+        long firstCount = JVM.getUnloadedEventClassCount();
         System.out.println("Initial unloaded count: " + firstCount);
         myClassLoader = null;
         System.out.println("Cleared reference to MyClassLoader");
@@ -143,12 +142,12 @@ public class TestUnloadingEventClass {
             System.out.println("GC triggered");
             System.gc();
             Thread.sleep(1000);
-            newCount = jvm.getUnloadedEventClassCount();
+            newCount = JVM.getUnloadedEventClassCount();
             System.out.println("Unloaded count: " + newCount);
         } while (firstCount + 1 != newCount);
         System.out.println("Event class unloaded!");
         System.out.println("Event classes currently on the heap:");
-        for (Class<?> eventClass : JVM.getJVM().getAllEventClasses()) {
+        for (Class<?> eventClass : JVM.getAllEventClasses()) {
             System.out.println(eventClass + " " + (eventClass.getClassLoader() != null ? eventClass.getClassLoader().getName() : null));
         }
 

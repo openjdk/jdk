@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class CheckForProperDetailStackTrace {
         // If modules in the system image have been archived in CDS, they will not be
         // created again at run time. Explicitly use an external module to make sure
         // we have a runtime-defined ModuleEntry
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
             "-XX:+UnlockDiagnosticVMOptions",
             "-XX:NativeMemoryTracking=detail",
             "-XX:+PrintNMTStatistics",
@@ -121,7 +121,7 @@ public class CheckForProperDetailStackTrace {
             // It's ok for ARM not to have symbols, because it does not support NMT detail
             // when targeting thumb2. It's also ok for Windows not to have symbols, because
             // they are only available if the symbols file is included with the build.
-            if (Platform.isWindows() || Platform.isARM() || Platform.isRISCV64()) {
+            if (Platform.isWindows() || Platform.isARM()) {
                 return; // we are done
             }
             output.reportDiagnosticSummary();

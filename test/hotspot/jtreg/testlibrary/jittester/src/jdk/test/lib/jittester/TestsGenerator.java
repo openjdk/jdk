@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
     protected static final String JAVAC = Paths.get(JAVA_BIN, "javac").toString();
     protected static final String JAVA = Paths.get(JAVA_BIN, "java").toString();
     protected final Path generatorDir;
-    protected final Path tmpDir;
+    protected final TempDir tmpDir;
     protected final Function<String, String[]> preRunActions;
     protected final String jtDriverOptions;
     private static final String DISABLE_WARNINGS = "-XX:-PrintWarnings";
@@ -54,17 +54,13 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
     protected TestsGenerator(String suffix, Function<String, String[]> preRunActions,
             String jtDriverOptions) {
         generatorDir = getRoot().resolve(suffix).toAbsolutePath();
-        try {
-            tmpDir = Files.createTempDirectory(suffix).toAbsolutePath();
-        } catch (IOException e) {
-            throw new Error("Can't get a tmp dir for " + suffix, e);
-        }
+        tmpDir = new TempDir(suffix);
         this.preRunActions = preRunActions;
         this.jtDriverOptions = jtDriverOptions;
     }
 
     protected void generateGoldenOut(String mainClassName) {
-        String classPath = tmpDir.toString() + File.pathSeparator
+        String classPath = tmpDir.path.toString() + File.pathSeparator
                 + generatorDir.toString();
         ProcessBuilder pb = new ProcessBuilder(JAVA, "-Xint", DISABLE_WARNINGS, "-Xverify",
                 "-cp", classPath, mainClassName);
@@ -97,7 +93,7 @@ public abstract class TestsGenerator implements BiConsumer<IRNode, IRNode> {
     protected void compilePrinter() {
         Path root = getRoot();
         ProcessBuilder pbPrinter = new ProcessBuilder(JAVAC,
-                "-d", tmpDir.toString(),
+                "-d", tmpDir.path.toString(),
                 root.resolve("jdk")
                     .resolve("test")
                     .resolve("lib")

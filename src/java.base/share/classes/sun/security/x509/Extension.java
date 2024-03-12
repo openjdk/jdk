@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -242,20 +242,13 @@ public class Extension implements java.security.cert.Extension, DerEncoder {
     private static final int hashMagic = 31;
 
     /**
-     * Returns a hashcode value for this Extension.
-     *
-     * @return the hashcode value.
+     * {@return a hashcode value for this Extension}
      */
+    @Override
     public int hashCode() {
-        int h = 0;
-        if (extensionValue != null) {
-            byte[] val = extensionValue;
-            int len = val.length;
-            while (len > 0)
-                h += len * val[--len];
-        }
+        int h = Arrays.hashCode(extensionValue);
         h = h * hashMagic + extensionId.hashCode();
-        h = h * hashMagic + (critical?1231:1237);
+        h = h * hashMagic + Boolean.hashCode(critical);
         return h;
     }
 
@@ -271,6 +264,7 @@ public class Extension implements java.security.cert.Extension, DerEncoder {
      * criticality flag, object identifier and encoded extension value of
      * the two Extensions match, false otherwise.
      */
+    @Override
     public boolean equals(Object other) {
         if (this == other)
             return true;

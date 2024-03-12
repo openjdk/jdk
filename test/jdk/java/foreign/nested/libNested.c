@@ -26,6 +26,9 @@
 #else
 #define EXPORT
 #endif
+#ifdef _AIX
+#pragma align (natural)
+#endif
 
 struct S1{ double f0; long long f1; double f2; int f3; };
 union U1{ short f0; long long f1; short f2; char f3[4][3]; };
@@ -92,3 +95,7 @@ EXPORT struct S13 test_S13(struct S13 arg, struct S13(*cb)(struct S13)) { return
 EXPORT struct S14 test_S14(struct S14 arg, struct S14(*cb)(struct S14)) { return cb(arg); }
 EXPORT union U16 test_U16(union U16 arg, union U16(*cb)(union U16)) { return cb(arg); }
 EXPORT struct S15 test_S15(struct S15 arg, struct S15(*cb)(struct S15)) { return cb(arg); }
+
+#ifdef _AIX
+#pragma align (reset)
+#endif

@@ -37,17 +37,19 @@ grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/li
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.hpack";
     permission java.lang.RuntimePermission "accessClassInPackage.sun.net.www.http";
 
-    permission java.net.SocketPermission "localhost:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "listen,accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "listen,accept,resolve";
     permission java.lang.RuntimePermission "modifyThread";
 };
 
 grant codeBase "file:${test.classes}/-" {
 
     // test issues HTTP GET requests
-    permission java.net.URLPermission "http://localhost:*/-",   "GET";
-    permission java.net.URLPermission "https://localhost:*/-", "GET";
-    permission java.net.URLPermission "http://localhost:*/-",   "GET";
-    permission java.net.URLPermission "https://localhost:*/-", "GET";
+    permission java.net.URLPermission "http://127.0.0.1:*/-",   "GET";
+    permission java.net.URLPermission "https://127.0.0.1:*/-", "GET";
+    // ipv6
+    permission java.net.URLPermission "http://[::1]:*/-",   "GET";
+    permission java.net.URLPermission "https://[::1]:*/-", "GET";
 
     // needed to grant permission to the HTTP/2 server
     permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
@@ -59,7 +61,8 @@ grant codeBase "file:${test.classes}/-" {
     permission java.util.logging.LoggingPermission "control";
 
     // needed to grant the HTTP servers
-    permission java.net.SocketPermission "localhost:*", "accept,resolve";
+    permission java.net.SocketPermission "127.0.0.1:*", "accept,resolve";
+    permission java.net.SocketPermission "[::1]:*", "accept,resolve";
 
     permission java.util.PropertyPermission "*", "read";
     permission java.lang.RuntimePermission "modifyThread";

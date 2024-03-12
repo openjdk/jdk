@@ -157,6 +157,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      * Create a JavacFileManager using a given context, optionally registering
      * it as the JavaFileManager for that context.
      */
+    @SuppressWarnings("this-escape")
     public JavacFileManager(Context context, boolean register, Charset charset) {
         super(charset);
         if (register)
@@ -192,7 +193,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     }
 
     /**
-     * Set whether or not to use ct.sym as an alternate to rt.jar.
+     * Set whether or not to use ct.sym as an alternate to the current runtime.
      */
     public void setSymbolFileEnabled(boolean b) {
         symbolFileEnabled = b;
@@ -737,6 +738,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         pathsAndContainersByLocationAndRelativeDirectory.clear();
         nonIndexingContainersByLocation.clear();
         contentCache.clear();
+        resetOutputFilesWritten();
     }
 
     @Override @DefinedBy(Api.COMPILER)

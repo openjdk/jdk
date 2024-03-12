@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,16 +31,16 @@
  *
  * @run main/othervm/timeout=600 -XX:-TieredCompilation -Xbatch
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestShift::main
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstr,DisableIntrinsic,_bigIntegerLeftShiftWorker
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstr,DisableIntrinsic,_bigIntegerRightShiftWorker
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstrlist,DisableIntrinsic,_bigIntegerLeftShiftWorker
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstrlist,DisableIntrinsic,_bigIntegerRightShiftWorker
  *      -XX:CompileCommand=inline,java.math.BigInteger::shiftLeft
  *      -XX:CompileCommand=inline,java.math.BigInteger::shiftRight
  *      compiler.intrinsics.bigInteger.TestShift
  *
  * @run main/othervm/timeout=600
  *      -XX:CompileCommand=exclude,compiler.intrinsics.bigInteger.TestShift::main
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstr,DisableIntrinsic,_bigIntegerLeftShiftWorker
- *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstr,DisableIntrinsic,_bigIntegerRightShiftWorker
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_left_shift,ccstrlist,DisableIntrinsic,_bigIntegerLeftShiftWorker
+ *      -XX:CompileCommand=option,compiler.intrinsics.bigInteger.TestShift::base_right_shift,ccstrlist,DisableIntrinsic,_bigIntegerRightShiftWorker
  *      -XX:CompileCommand=inline,java.math.BigInteger::shiftLeft
  *      -XX:CompileCommand=inline,java.math.BigInteger::shiftRight
  *      compiler.intrinsics.bigInteger.TestShift

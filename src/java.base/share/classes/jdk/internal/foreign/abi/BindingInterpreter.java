@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,36 +24,38 @@
  */
 package jdk.internal.foreign.abi;
 
+import java.lang.foreign.SegmentAllocator;
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 public class BindingInterpreter {
 
-    static void unbox(Object arg, List<Binding> bindings, StoreFunc storeFunc, Binding.Context context) {
-        Deque<Object> stack = new ArrayDeque<>();
+    static void unbox(Object arg, List<Binding> bindings, StoreFunc storeFunc, SegmentAllocator allocator) {
+        Deque<Object> stack = new LinkedList<>(); // Use LinkedList as a null-friendly Deque for null segment bases
 
         stack.push(arg);
         for (Binding b : bindings) {
-            b.interpret(stack, storeFunc, null, context);
+            b.interpret(stack, storeFunc, null, allocator);
         }
     }
 
-    static Object box(List<Binding> bindings, LoadFunc loadFunc, Binding.Context context) {
+    static Object box(List<Binding> bindings, LoadFunc loadFunc, SegmentAllocator allocator) {
         Deque<Object> stack = new ArrayDeque<>();
         for (Binding b : bindings) {
-            b.interpret(stack, null, loadFunc, context);
+            b.interpret(stack, null, loadFunc, allocator);
         }
        return stack.pop();
     }
 
     @FunctionalInterface
-    interface StoreFunc {
-        void store(VMStorage storage, Class<?> type, Object o);
+    public interface StoreFunc {
+        void store(VMStorage storage, Object o);
     }
 
     @FunctionalInterface
-    interface LoadFunc {
+    public interface LoadFunc {
         Object load(VMStorage storage, Class<?> type);
     }
 }

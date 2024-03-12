@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -451,18 +451,12 @@ jint getJavaErrorCode(int cNonCallingErr) {
   return GSS_S_COMPLETE;
 }
 
-
-/* Throws a Java Exception by name */
-void throwByName(JNIEnv *env, const char *name, const char *msg) {
-    jclass cls = (*env)->FindClass(env, name);
+void gssThrowOutOfMemoryError(JNIEnv *env, const char *message) {
+    jclass cls = (*env)->FindClass(env, "java/lang/OutOfMemoryError");
 
     if (cls != NULL) {
-        (*env)->ThrowNew(env, cls, msg);
+        (*env)->ThrowNew(env, cls, message);
     }
-}
-
-void throwOutOfMemoryError(JNIEnv *env, const char *message) {
-    throwByName(env, "java/lang/OutOfMemoryError", message);
 }
 
 /*
@@ -602,7 +596,7 @@ void initGSSBuffer(JNIEnv *env, jbyteArray jbytes,
     len = (*env)->GetArrayLength(env, jbytes);
     value = malloc(len);
     if (value == NULL) {
-      throwOutOfMemoryError(env, NULL);
+      gssThrowOutOfMemoryError(env, NULL);
       return;
     } else {
       (*env)->GetByteArrayRegion(env, jbytes, 0, len, value);
@@ -677,13 +671,13 @@ gss_OID newGSSOID(JNIEnv *env, jobject jOid) {
     }
     cOid = malloc(sizeof(struct gss_OID_desc_struct));
     if (cOid == NULL) {
-      throwOutOfMemoryError(env,NULL);
+      gssThrowOutOfMemoryError(env,NULL);
       return GSS_C_NO_OID;
     }
     cOid->length = (*env)->GetArrayLength(env, jbytes) - 2;
     cOid->elements = malloc(cOid->length);
     if (cOid->elements == NULL) {
-      throwOutOfMemoryError(env,NULL);
+      gssThrowOutOfMemoryError(env,NULL);
       goto cleanup;
     }
     (*env)->GetByteArrayRegion(env, jbytes, 2, cOid->length,

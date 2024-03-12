@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package sun.tools.attach;
 
-import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
@@ -58,13 +57,8 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
         super(provider, vmid);
 
         // This provider only understands pids
-        int pid;
-        try {
-            pid = Integer.parseInt(vmid);
-            if (pid < 1) {
-                throw new NumberFormatException();
-            }
-        } catch (NumberFormatException x) {
+        int pid = Integer.parseInt(vmid);
+        if (pid < 1) {
             throw new AttachNotSupportedException("Invalid process identifier: " + vmid);
         }
 
@@ -141,14 +135,12 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // protocol version
     private static final String PROTOCOL_VERSION = "1";
 
-    // known errors
-    private static final int ATTACH_ERROR_BADVERSION = 101;
-
     /**
      * Execute the given command in the target VM.
      */
     InputStream execute(String cmd, Object ... args) throws AgentLoadException, IOException {
         assert args.length <= 3;                // includes null
+        checkNulls(args);
 
         // did we detach?
         synchronized (this) {
@@ -189,46 +181,10 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
 
         // Create an input stream to read reply
-        SocketInputStream sis = new SocketInputStream(s);
+        SocketInputStreamImpl sis = new SocketInputStreamImpl(s);
 
-        // Read the command completion status
-        int completionStatus;
-        try {
-            completionStatus = readInt(sis);
-        } catch (IOException x) {
-            sis.close();
-            if (ioe != null) {
-                throw ioe;
-            } else {
-                throw x;
-            }
-        }
-
-        if (completionStatus != 0) {
-            // read from the stream and use that as the error message
-            String message = readErrorMessage(sis);
-            sis.close();
-
-            // In the event of a protocol mismatch then the target VM
-            // returns a known error so that we can throw a reasonable
-            // error.
-            if (completionStatus == ATTACH_ERROR_BADVERSION) {
-                throw new IOException("Protocol mismatch with target VM");
-            }
-
-            // Special-case the "load" command so that the right exception is
-            // thrown.
-            if (cmd.equals("load")) {
-                String msg = "Failed to load agent library";
-                if (!message.isEmpty())
-                    msg += ": " + message;
-                throw new AgentLoadException(msg);
-            } else {
-                if (message.isEmpty())
-                    message = "Command failed in target VM";
-                throw new AttachOperationFailedException(message);
-            }
-        }
+        // Process the command completion status
+        processCompletionStatus(ioe, cmd, sis);
 
         // Return the input stream so that the command output can be read
         return sis;
@@ -237,49 +193,25 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
     /*
      * InputStream for the socket connection to get target VM
      */
-    private static class SocketInputStream extends InputStream {
-        int s = -1;
-
-        public SocketInputStream(int s) {
-            this.s = s;
+    private static class SocketInputStreamImpl extends SocketInputStream {
+        public SocketInputStreamImpl(long fd) {
+            super(fd);
         }
 
-        public synchronized int read() throws IOException {
-            byte b[] = new byte[1];
-            int n = this.read(b, 0, 1);
-            if (n == 1) {
-                return b[0] & 0xff;
-            } else {
-                return -1;
-            }
+        @Override
+        protected int read(long fd, byte[] bs, int off, int len) throws IOException {
+            return VirtualMachineImpl.read((int)fd, bs, off, len);
         }
 
-        public synchronized int read(byte[] bs, int off, int len) throws IOException {
-            if ((off < 0) || (off > bs.length) || (len < 0) ||
-                ((off + len) > bs.length) || ((off + len) < 0)) {
-                throw new IndexOutOfBoundsException();
-            } else if (len == 0) {
-                return 0;
-            }
-
-            return VirtualMachineImpl.read(s, bs, off, len);
-        }
-
-        public synchronized void close() throws IOException {
-            if (s != -1) {
-                int toClose = s;
-                s = -1;
-                VirtualMachineImpl.close(toClose);
-            }
+        @Override
+        protected void close(long fd) throws IOException {
+            VirtualMachineImpl.close((int)fd);
         }
     }
 
     // Return the socket file for the given process.
-    private File findSocketFile(int pid, int ns_pid) {
-        // A process may not exist in the same mount namespace as the caller.
-        // Instead, attach relative to the target root filesystem as exposed by
-        // procfs regardless of namespaces.
-        String root = "/proc/" + pid + "/root/" + tmpdir;
+    private File findSocketFile(int pid, int ns_pid) throws IOException {
+        String root = findTargetProcessTmpDirectory(pid, ns_pid);
         return new File(root, ".java_pid" + ns_pid);
     }
 
@@ -295,19 +227,32 @@ public class VirtualMachineImpl extends HotSpotVirtualMachine {
             // Do not canonicalize the file path, or we will fail to attach to a VM in a container.
             f.createNewFile();
         } catch (IOException x) {
-            String root;
-            if (pid != ns_pid) {
-                // A process may not exist in the same mount namespace as the caller.
-                // Instead, attach relative to the target root filesystem as exposed by
-                // procfs regardless of namespaces.
-                root = "/proc/" + pid + "/root/" + tmpdir;
-            } else {
-                root = tmpdir;
-            }
+            String root = findTargetProcessTmpDirectory(pid, ns_pid);
             f = new File(root, fn);
             f.createNewFile();
         }
         return f;
+    }
+
+    private String findTargetProcessTmpDirectory(int pid, int ns_pid) throws IOException {
+        String root;
+        if (pid != ns_pid) {
+            // A process may not exist in the same mount namespace as the caller, e.g.
+            // if we are trying to attach to a JVM process inside a container.
+            // Instead, attach relative to the target root filesystem as exposed by
+            // procfs regardless of namespaces.
+            String procRootDirectory = "/proc/" + pid + "/root";
+            if (!Files.isReadable(Path.of(procRootDirectory))) {
+                throw new IOException(
+                        String.format("Unable to access root directory %s " +
+                          "of target process %d", procRootDirectory, pid));
+            }
+
+            root = procRootDirectory + "/" + tmpdir;
+        } else {
+            root = tmpdir;
+        }
+        return root;
     }
 
     /*

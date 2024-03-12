@@ -70,12 +70,15 @@ public class T6917288 {
         }
 
         switch (k) {
+            case NONE:
+                check(classesDir, "Test.class", "Test$Inner.class");
+                break;
             case ALWAYS:
             case TRUE:
                 check(classesDir, "Test.class", "Test$Inner.class", "Test$1.class");
                 break;
             default:
-                check(classesDir, "Test.class", "Test$Inner.class");
+                check(classesDir, "Test.class", "Test$Inner.class", "Test$1.class");
         }
     }
 

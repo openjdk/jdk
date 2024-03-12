@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,8 @@
  *     Ported from JVMDI test /nsk/regression/b4248826.
  *
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} mentry02.java
- * @run main/othervm/native --enable-preview -agentlib:mentry02 mentry02
+ * @compile mentry02.java
+ * @run main/othervm/native -agentlib:mentry02 mentry02
  */
 
 

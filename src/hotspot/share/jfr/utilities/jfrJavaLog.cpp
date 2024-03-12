@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,7 +56,7 @@ static jfrLogSubscriber log_tag_sets[JFR_LOG_TAG_SET_COUNT];
 
 static void log_cfg_update(LogLevelType llt, JfrLogTagSetType jflt, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  if (log_tag_sets[jflt].log_tag_enum_ref == NULL) {
+  if (log_tag_sets[jflt].log_tag_enum_ref == nullptr) {
     return;
   }
   jobject lt = log_tag_sets[jflt].log_tag_enum_ref;
@@ -89,7 +89,7 @@ static void log_config_change_internal(bool init, TRAPS) {
   if (init) { \
     JfrLogTagSetType tagSetType = \
       EXPAND_VARARGS(JFR_LOG_TAGS_CONCATED(__VA_ARGS__, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG)); \
-    assert(NULL == log_tag_sets[tagSetType].log_tag_set, "Init JFR LogTagSets twice"); \
+    assert(nullptr == log_tag_sets[tagSetType].log_tag_set, "Init JFR LogTagSets twice"); \
     log_tag_sets[tagSetType].log_tag_set = lts; \
   } \
   llt = highest_level(*lts); \
@@ -110,7 +110,7 @@ void JfrJavaLog::subscribe_log_level(jobject log_tag, jint id, TRAPS) {
   static bool subscribed_updates = true;
   assert(id < JFR_LOG_TAG_SET_COUNT,
     "LogTag id, java and native not in synch, %d < %d", id, JFR_LOG_TAG_SET_COUNT);
-  assert(NULL == log_tag_sets[id].log_tag_enum_ref, "Subscribing twice");
+  assert(nullptr == log_tag_sets[id].log_tag_enum_ref, "Subscribing twice");
   log_tag_sets[id].log_tag_enum_ref = JfrJavaSupport::global_jni_handle(log_tag, THREAD);
   if (subscribed_updates) {
     LogConfiguration::register_update_listener(&log_config_change);
@@ -123,7 +123,7 @@ void JfrJavaLog::subscribe_log_level(jobject log_tag, jint id, TRAPS) {
 
 void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool system, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  if (lines == NULL) {
+  if (lines == nullptr) {
     return;
   }
   if (level < (jint)LogLevel::First || level > (jint)LogLevel::Last) {
@@ -132,7 +132,7 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
   }
 
   objArrayOop the_lines = objArrayOop(JfrJavaSupport::resolve_non_null(lines));
-  assert(the_lines != NULL, "invariant");
+  assert(the_lines != nullptr, "invariant");
   assert(the_lines->is_array(), "must be array");
   const int length = the_lines->length();
 
@@ -141,7 +141,7 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
   LogMessage(jfr, system, event) jfr_event_system;
   for (int i = 0; i < length; ++i) {
     const char* text = JfrJavaSupport::c_str(the_lines->obj_at(i), THREAD);
-    if (text == NULL) {
+    if (text == nullptr) {
       // An oome has been thrown and is pending.
       return;
     }
@@ -155,7 +155,7 @@ void JfrJavaLog::log_event(JNIEnv* env, jint level, jobjectArray lines, bool sys
 
 void JfrJavaLog::log(jint tag_set, jint level, jstring message, TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
-  if (message == NULL) {
+  if (message == nullptr) {
     return;
   }
   if (level < (jint)LogLevel::First || level > (jint)LogLevel::Last) {
@@ -168,7 +168,7 @@ void JfrJavaLog::log(jint tag_set, jint level, jstring message, TRAPS) {
   }
   ResourceMark rm(THREAD);
   const char* const s = JfrJavaSupport::c_str(message, CHECK);
-  assert(s != NULL, "invariant");
-  assert(log_tag_sets[tag_set].log_tag_set != NULL, "LogTagSet is not init");
+  assert(s != nullptr, "invariant");
+  assert(log_tag_sets[tag_set].log_tag_set != nullptr, "LogTagSet is not init");
   log_tag_sets[tag_set].log_tag_set->log((LogLevelType)level, s);
 }

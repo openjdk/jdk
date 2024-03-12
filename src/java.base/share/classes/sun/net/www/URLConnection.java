@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,13 +261,13 @@ public abstract class URLConnection extends java.net.URLConnection {
         url = null;
     }
 
-    private static HashMap<String,Void> proxiedHosts = new HashMap<>();
+    private static final HashMap<String,Void> proxiedHosts = new HashMap<>();
 
     public static synchronized void setProxiedHost(String host) {
-        proxiedHosts.put(host.toLowerCase(), null);
+        proxiedHosts.put(host.toLowerCase(Locale.ROOT), null);
     }
 
     public static synchronized boolean isProxiedHost(String host) {
-        return proxiedHosts.containsKey(host.toLowerCase());
+        return proxiedHosts.containsKey(host.toLowerCase(Locale.ROOT));
     }
 }

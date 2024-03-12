@@ -27,6 +27,7 @@
  * @summary Tests how CDS works when critical library classes are replaced with JVMTI ClassFileLoadHook
  * @library /test/lib
  * @requires vm.cds.write.archived.java.heap
+ * @requires !vm.jvmci.enabled
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
  * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
@@ -46,7 +47,8 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
 
             // CDS should not be disabled -- these critical classes cannot be replaced because
             // JvmtiExport::early_class_hook_env() is false.
-            "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
+            "-subgraph java/lang/module/Configuration java.lang.module.Configuration",
+            "-subgraph java/lang/ModuleLayer java.lang.ModuleLayer",
             "-subgraph java/lang/Integer java.lang.Integer$IntegerCache",
 
             // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.

@@ -55,6 +55,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import jdk.internal.event.SerializationMisdeclarationEvent;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
@@ -73,6 +75,7 @@ import sun.reflect.misc.ReflectUtil;
  * <a href="{@docRoot}/../specs/serialization/class.html#stream-unique-identifiers">
  *    <cite>Java Object Serialization Specification,</cite> Section 4.6, "Stream Unique Identifiers"</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see ObjectStreamField
@@ -458,6 +461,10 @@ public final class ObjectStreamClass implements Serializable {
             }
         }
         initialized = true;
+
+        if (SerializationMisdeclarationEvent.enabled() && serializable) {
+            SerializationMisdeclarationChecker.checkMisdeclarations(cl);
+        }
     }
 
     /**
@@ -1033,12 +1040,12 @@ public final class ObjectStreamClass implements Serializable {
                                    new AccessControlContext(domains));
                     } catch (UndeclaredThrowableException x) {
                         Throwable cause = x.getCause();
-                        if (cause instanceof InstantiationException)
-                            throw (InstantiationException) cause;
-                        if (cause instanceof InvocationTargetException)
-                            throw (InvocationTargetException) cause;
-                        if (cause instanceof IllegalAccessException)
-                            throw (IllegalAccessException) cause;
+                        if (cause instanceof InstantiationException ie)
+                            throw ie;
+                        if (cause instanceof InvocationTargetException ite)
+                            throw ite;
+                        if (cause instanceof IllegalAccessException iae)
+                            throw iae;
                         // not supposed to happen
                         throw x;
                     }
@@ -1046,6 +1053,12 @@ public final class ObjectStreamClass implements Serializable {
             } catch (IllegalAccessException ex) {
                 // should not occur, as access checks have been suppressed
                 throw new InternalError(ex);
+            } catch (InvocationTargetException ex) {
+                Throwable cause = ex.getCause();
+                if (cause instanceof Error err)
+                    throw err;
+                else
+                    throw ex;
             } catch (InstantiationError err) {
                 var ex = new InstantiationException();
                 ex.initCause(err);

@@ -644,14 +644,6 @@ final class Double256Vector extends DoubleVector {
 
         @Override
         @ForceInline
-        public Double256Mask eq(VectorMask<Double> mask) {
-            Objects.requireNonNull(mask);
-            Double256Mask m = (Double256Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Double256Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Double256Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -698,9 +690,9 @@ final class Double256Vector extends DoubleVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Double256Mask xor(VectorMask<Double> mask) {
+        public Double256Mask xor(VectorMask<Double> mask) {
             Objects.requireNonNull(mask);
             Double256Mask m = (Double256Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Double256Mask.class, null, long.class, VLENGTH,
@@ -739,6 +731,16 @@ final class Double256Vector extends DoubleVector {
             }
             return VectorSupport.maskReductionCoerced(VECTOR_OP_MASK_TOLONG, Double256Mask.class, long.class, VLENGTH, this,
                                                       (m) -> toLongHelper(m.getBits()));
+        }
+
+        // laneIsSet
+
+        @Override
+        @ForceInline
+        public boolean laneIsSet(int i) {
+            Objects.checkIndex(i, length());
+            return VectorSupport.extract(Double256Mask.class, double.class, VLENGTH,
+                                         this, i, (m, idx) -> (m.getBits()[idx] ? 1L : 0L)) == 1L;
         }
 
         // Reductions

@@ -71,6 +71,7 @@ public abstract class Metadata extends VMObject {
     metadataConstructor.addMapping("ConstMethod", ConstMethod.class);
     metadataConstructor.addMapping("ConstantPool", ConstantPool.class);
     metadataConstructor.addMapping("ConstantPoolCache", ConstantPoolCache.class);
+    metadataConstructor.addMapping("Annotations", Annotations.class);
   }
 
   public static Metadata instantiateWrapperFor(Address addr) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,7 +267,7 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -306,7 +306,7 @@ public class ThreadImpl implements ThreadMXBean {
 
         int length = ids.length;
         long[] times = new long[length];
-        java.util.Arrays.fill(times, -1);
+        Arrays.fill(times, -1);
 
         if (verified) {
             if (length == 1) {
@@ -340,6 +340,13 @@ public class ThreadImpl implements ThreadMXBean {
                 cpuTimeEnabled = enable;
             }
         }
+    }
+
+    protected long getTotalThreadAllocatedBytes() {
+        if (isThreadAllocatedMemoryEnabled()) {
+            return getTotalThreadAllocatedMemory();
+        }
+        return -1;
     }
 
     protected long getCurrentThreadAllocatedBytes() {
@@ -383,7 +390,7 @@ public class ThreadImpl implements ThreadMXBean {
         boolean verified = verifyThreadAllocatedMemory(ids);
 
         long[] sizes = new long[ids.length];
-        java.util.Arrays.fill(sizes, -1);
+        Arrays.fill(sizes, -1);
 
         if (verified) {
             getThreadAllocatedMemory1(ids, sizes);
@@ -525,6 +532,7 @@ public class ThreadImpl implements ThreadMXBean {
     private static native void getThreadUserCpuTime1(long[] ids, long[] result);
     private static native long getThreadAllocatedMemory0(long id);
     private static native void getThreadAllocatedMemory1(long[] ids, long[] result);
+    private static native long getTotalThreadAllocatedMemory();
     private static native void setThreadCpuTimeEnabled0(boolean enable);
     private static native void setThreadAllocatedMemoryEnabled0(boolean enable);
     private static native void setThreadContentionMonitoringEnabled0(boolean enable);

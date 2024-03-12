@@ -25,16 +25,20 @@
 
 package com.sun.tools.javac.jvm;
 
+import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.ModuleSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.jvm.PoolConstant.NameAndType;
+import com.sun.tools.javac.resources.CompilerProperties.Fragments;
+import com.sun.tools.javac.resources.CompilerProperties.Warnings;
 import com.sun.tools.javac.util.ByteBuffer;
 import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
+import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.InvalidUtfException;
 import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Name.NameMapper;
 import com.sun.tools.javac.util.Names;
 
 import java.util.Arrays;
@@ -74,6 +78,7 @@ public class PoolReader {
     private final ByteBuffer buf;
     private final Names names;
     private final Symtab syms;
+    private final Convert.Validation utf8validation;
 
     private ImmutablePoolHelper pool;
 
@@ -90,6 +95,7 @@ public class PoolReader {
         this.buf = buf;
         this.names = names;
         this.syms = syms;
+        this.utf8validation = reader != null ? reader.utf8validation : Convert.Validation.NONE;
     }
 
     private static final BitSet classCP = new BitSet();
@@ -118,29 +124,29 @@ public class PoolReader {
     /**
      * Get class name without resolving
      */
-    <Z> Z peekClassName(int index, NameMapper<Z> mapper) {
+    <Z> Z peekClassName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);
     }
 
     /**
      * Get package name without resolving
      */
-    <Z> Z peekPackageName(int index, NameMapper<Z> mapper) {
+    <Z> Z peekPackageName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);
     }
 
     /**
      * Get module name without resolving
      */
-    <Z> Z peekModuleName(int index, NameMapper<Z> mapper) {
+    <Z> Z peekModuleName(int index, Utf8Mapper<Z> mapper) {
         return peekItemName(index, mapper);
     }
 
-    private <Z> Z peekItemName(int index, NameMapper<Z> mapper) {
+    private <Z> Z peekItemName(int index, Utf8Mapper<Z> mapper) {
         try {
             index = buf.getChar(pool.offset(index));
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
         return peekName(index, mapper);
     }
@@ -162,11 +168,13 @@ public class PoolReader {
     /**
      * Peek a name from the pool at given index without resolving.
      */
-    <Z> Z peekName(int index, Name.NameMapper<Z> mapper) {
+    <Z> Z peekName(int index, Utf8Mapper<Z> mapper) {
         try {
             return getUtf8(index, mapper);
+        } catch (InvalidUtfException e) {
+            throw reader.badClassFile(Fragments.BadUtf8ByteSequenceAt(e.getOffset()));
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
     }
 
@@ -202,12 +210,14 @@ public class PoolReader {
         return pool.tag(index) == tag;
     }
 
-    private <Z> Z getUtf8(int index, NameMapper<Z> mapper) throws UnderflowException {
+    private <Z> Z getUtf8(int index, Utf8Mapper<Z> mapper) throws InvalidUtfException, UnderflowException {
         int tag = pool.tag(index);
         int offset = pool.offset(index);
         if (tag == CONSTANT_Utf8) {
-            int len = pool.poolbuf.getChar(offset);
-            return mapper.map(pool.poolbuf.elems, offset + 2, len);
+            int utf8len = pool.poolbuf.getChar(offset);
+            int utf8off = offset + 2;
+            pool.poolbuf.verifyRange(utf8off, utf8len);
+            return mapper.map(pool.poolbuf.elems, utf8off, utf8len);
         } else {
             throw reader.badClassFile("unexpected.const.pool.tag.at",
                                 Integer.toString(tag),
@@ -215,15 +225,26 @@ public class PoolReader {
         }
     }
 
-    private Object resolve(ByteBuffer poolbuf, int tag, int offset) throws UnderflowException {
+    private Object resolve(ByteBuffer poolbuf, int tag, int offset) throws InvalidUtfException, UnderflowException {
         switch (tag) {
             case CONSTANT_Utf8: {
                 int len = poolbuf.getChar(offset);
-                return names.fromUtf(poolbuf.elems, offset + 2, len);
+                try {
+                    return names.fromUtf(poolbuf.elems, offset + 2, len, utf8validation);
+                } catch (InvalidUtfException e) {
+                    if (reader == null || reader.warnOnIllegalUtf8) {
+                        if (reader != null) {
+                            reader.log.warning(Warnings.InvalidUtf8InClassfile(
+                                reader.currentClassFile, Fragments.BadUtf8ByteSequenceAt(e.getOffset())));
+                        }
+                        return names.fromUtfLax(poolbuf.elems, offset + 2, len);
+                    }
+                    throw e;
+                }
             }
             case CONSTANT_Class: {
                 int index = poolbuf.getChar(offset);
-                Name name = names.fromUtf(getName(index).map(ClassFile::internalize));
+                Name name = internalize(getName(index));
                 return syms.enterClass(reader.currentModule, name);
             }
             case CONSTANT_NameandType: {
@@ -243,7 +264,7 @@ public class PoolReader {
                 return getName(poolbuf.getChar(offset)).toString();
             case CONSTANT_Package: {
                 Name name = getName(poolbuf.getChar(offset));
-                return syms.enterPackage(reader.currentModule, names.fromUtf(internalize(name)));
+                return syms.enterPackage(reader.currentModule, internalize(name));
             }
             case CONSTANT_Module: {
                 Name name = getName(poolbuf.getChar(offset));
@@ -261,13 +282,13 @@ public class PoolReader {
      * reasons, it would be unwise to eagerly turn all pool entries into corresponding javac
      * entities. First, not all entries are actually going to be read/used by javac; secondly,
      * there are cases where creating a symbol too early might result in issues (hence methods like
-     * {@link PoolReader#peekClassName(int, NameMapper)}.
+     * {@link PoolReader#peekClassName(int, Utf8Mapper)}.
      */
     int readPool(ByteBuffer poolbuf, int offset) {
         try {
             return readPoolInternal(poolbuf, offset);
         } catch (UnderflowException e) {
-            throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+            throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
         }
     }
 
@@ -367,9 +388,11 @@ public class PoolReader {
                 }
                 P p;
                 try {
-                    p = (P)resolve(poolbuf, tag(index), offset(index));
+                    p = (P)resolve(poolbuf, currentTag, offset(index));
+                } catch (InvalidUtfException e) {
+                    throw reader.badClassFile(Fragments.BadUtf8ByteSequenceAt(e.getOffset()));
                 } catch (UnderflowException e) {
-                    throw reader.badClassFile("bad.class.truncated.at.offset", Integer.toString(e.getLength()));
+                    throw reader.badClassFile(Fragments.BadClassTruncatedAtOffset(e.getLength()));
                 }
                 values[index] = p;
                 return p;
@@ -379,5 +402,11 @@ public class PoolReader {
         int tag(int index) {
             return poolbuf.elems[offset(index) - 1];
         }
+    }
+
+// Utf8Mapper
+
+    public interface Utf8Mapper<X> {
+        X map(byte[] bytes, int offset, int len) throws InvalidUtfException;
     }
 }

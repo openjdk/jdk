@@ -2937,7 +2937,7 @@ public class CompletableFuture<T> implements Future<T>, CompletionStage<T> {
         final Future<?> f;
         Canceller(Future<?> f) { this.f = f; }
         public void accept(Object ignore, Throwable ex) {
-            if (ex == null && f != null && !f.isDone())
+            if (f != null && !f.isDone())
                 f.cancel(false);
         }
     }

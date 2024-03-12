@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -191,7 +190,7 @@ class Invokers {
 
     private boolean checkInvoker(MethodHandle invoker) {
         assert(targetType.invokerType().equals(invoker.type()))
-                : java.util.Arrays.asList(targetType, targetType.invokerType(), invoker);
+                : Arrays.asList(targetType, targetType.invokerType(), invoker);
         assert(invoker.internalMemberName() == null ||
                invoker.internalMemberName().getMethodType().equals(targetType));
         assert(!invoker.isVarargsCollector());
@@ -201,7 +200,7 @@ class Invokers {
     private boolean checkVarHandleInvoker(MethodHandle invoker) {
         MethodType invokerType = targetType.insertParameterTypes(0, VarHandle.class);
         assert(invokerType.equals(invoker.type()))
-                : java.util.Arrays.asList(targetType, invokerType, invoker);
+                : Arrays.asList(targetType, invokerType, invoker);
         assert(invoker.internalMemberName() == null ||
                invoker.internalMemberName().getMethodType().equals(targetType));
         assert(!invoker.isVarargsCollector());
@@ -244,7 +243,7 @@ class Invokers {
                 throw newIllegalArgumentException("need homogeneous rest arguments", restargType);
         }
         if (argType == Object.class)  return Object[].class;
-        return Array.newInstance(argType, 0).getClass();
+        return argType.arrayType();
     }
 
     public String toString() {

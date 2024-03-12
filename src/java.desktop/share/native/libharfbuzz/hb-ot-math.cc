@@ -56,7 +56,7 @@
  *
  * Tests whether a face has a `MATH` table.
  *
- * Return value: %true if the table is found, %false otherwise
+ * Return value: `true` if the table is found, `false` otherwise
  *
  * Since: 1.3.3
  **/
@@ -76,7 +76,7 @@ hb_ot_math_has_data (hb_face_t *face)
  *
  * However, if the requested constant is #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN,
  * #HB_OT_MATH_CONSTANT_SCRIPT_SCRIPT_PERCENT_SCALE_DOWN or
- * #HB_OT_MATH_CONSTANT_SCRIPT_PERCENT_SCALE_DOWN, then the return value is
+ * #HB_OT_MATH_CONSTANT_RADICAL_DEGREE_BOTTOM_RAISE_PERCENT, then the return value is
  * an integer between 0 and 100 representing that percentage.
  *
  * Return value: the requested constant or zero
@@ -142,7 +142,7 @@ hb_ot_math_get_glyph_top_accent_attachment (hb_font_t *font,
  *
  * Tests whether the given glyph index is an extended shape in the face.
  *
- * Return value: %true if the glyph is an extended shape, %false otherwise
+ * Return value: `true` if the glyph is an extended shape, `false` otherwise
  *
  * Since: 1.3.3
  **/

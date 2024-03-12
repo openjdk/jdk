@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1266,7 +1266,7 @@ static netif *enumIPv6Interfaces(JNIEnv *env, int sock, netif *ifs) {
             char addr6[40];
             struct sockaddr_in6 addr;
 
-            sprintf(addr6, "%s:%s:%s:%s:%s:%s:%s:%s",
+            snprintf(addr6, sizeof(addr6), "%s:%s:%s:%s:%s:%s:%s:%s",
                     addr6p[0], addr6p[1], addr6p[2], addr6p[3],
                     addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
 

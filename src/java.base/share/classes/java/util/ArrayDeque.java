@@ -74,9 +74,8 @@ import jdk.internal.access.SharedSecrets;
  * exception for its correctness: <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.
+ * <p>This class and its iterator implement all of the <em>optional</em> methods of the
+ * {@link Collection}, {@link SequencedCollection}, and {@link Iterator} interfaces.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
@@ -205,6 +204,7 @@ public class ArrayDeque<E> extends AbstractCollection<E>
      * @param c the collection whose elements are to be placed into the deque
      * @throws NullPointerException if the specified collection is null
      */
+    @SuppressWarnings("this-escape")
     public ArrayDeque(Collection<? extends E> c) {
         this(c.size());
         copyElements(c);

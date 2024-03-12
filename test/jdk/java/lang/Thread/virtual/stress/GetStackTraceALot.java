@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
  * @summary Stress test asynchronous Thread.getStackTrace
  * @requires vm.debug != true & vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @compile GetStackTraceALot.java ../ThreadBuilders.java
  * @run main GetStackTraceALot
  */
@@ -35,7 +34,6 @@
  * @test
  * @requires vm.debug == true & vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @compile GetStackTraceALot.java ../ThreadBuilders.java
  * @run main/timeout=300 GetStackTraceALot 1000
  */

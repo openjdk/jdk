@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,11 +153,11 @@ public interface BasicFileAttributeView
      *
      * <p> <b>Usage Example:</b>
      * Suppose we want to change a file's last access time.
-     * <pre>
-     *    Path path = ...
-     *    FileTime time = ...
-     *    Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(null, time, null);
-     * </pre>
+     * {@snippet lang=java :
+     *     Path path = ...
+     *     FileTime time = ...
+     *     Files.getFileAttributeView(path, BasicFileAttributeView.class).setTimes(null, time, null);
+     * }
      *
      * @param   lastModifiedTime
      *          the new last modified time, or {@code null} to not change the

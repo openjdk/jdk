@@ -26,6 +26,8 @@
 // key: compiler.misc.no.conforming.assignment.exists
 // key: compiler.misc.cant.apply.symbol
 // key: compiler.misc.invalid.mref
+// key: compiler.misc.cant.apply.array.ctor
+// key: compiler.misc.arg.length.mismatch
 
 class CantApplySymbolFragment {
 
@@ -37,5 +39,9 @@ class CantApplySymbolFragment {
 
     void test() {
         SAM s = CantApplySymbolFragment::f;
+    }
+
+    void test2() {
+        Runnable x = String[]::new;
     }
 }

@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="el"/>
+		<variant type="POLYTON"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ar">Ἀραβικά</language>
+			<language type="arc">Ἀραμαϊκά</language>
+			<language type="cy">Οὐαλικά</language>
+			<language type="egy">Αἰγυπτιακὰ (ἀρχαῖα)</language>
+			<language type="el">Ἑλληνικά</language>
+			<language type="en">Ἀγγλικά</language>
+			<language type="es">Ἱσπανικά</language>
+			<language type="et">Ἐσθονικά</language>
+			<language type="ga">Ἰρλανδικά</language>
+			<language type="gd">Σκωτικὰ κελτικά</language>
+			<language type="grc" draft="contributed">Ἀρχαῖα Ἑλληνικά</language>
+			<language type="he">Ἑβραϊκά</language>
+			<language type="hu">Οὑγγρικά</language>
+			<language type="hy">Ἀρμενικά</language>
+			<language type="id">Ἰνδονησιακά</language>
+			<language type="is">Ἰσλανδικά</language>
+			<language type="it">Ἰταλικά</language>
+			<language type="ja">Ἰαπωνικά</language>
+			<language type="mul">Πολλαπλές γλῶσσες</language>
+			<language type="nl">Ὁλλανδικά</language>
+			<language type="ota">Τουρκικά, ὀθωμανικὰ</language>
+			<language type="peo">Ἀρχαῖα περσικὰ</language>
+			<language type="sq">Ἀλβανικά</language>
+			<language type="uk">Οὐκρανικά</language>
+			<language type="yi">Ἰουδαϊκά</language>
+		</languages>
+		<scripts>
+			<script type="Arab">Ἀραβικό</script>
+			<script type="Armn">Ἀρμενικό</script>
+			<script type="Ethi">Αἰθιοπικό</script>
+			<script type="Grek">Ἑλληνικό</script>
+			<script type="Hebr">Ἑβραϊκό</script>
+		</scripts>
+		<territories>
+			<territory type="AD">Ἀνδόρα</territory>
+			<territory type="AE">Ἠνωμένα Ἀραβικὰ Ἐμιράτα</territory>
+			<territory type="AF">Ἀφγανιστάν</territory>
+			<territory type="AG">Ἀντίγκουα καὶ Μπαρμπούντα</territory>
+			<territory type="AI">Ἀνγκουίλα</territory>
+			<territory type="AL">Ἀλβανία</territory>
+			<territory type="AM">Ἀρμενία</territory>
+			<territory type="AO">Ἀνγκόλα</territory>
+			<territory type="AQ">Ἀνταρκτική</territory>
+			<territory type="AR">Ἀργεντινή</territory>
+			<territory type="AS">Ἀμερικανικὴ Σαμόα</territory>
+			<territory type="AT">Αὐστρία</territory>
+			<territory type="AU">Αὐστραλία</territory>
+			<territory type="AW">Ἀρούμπα</territory>
+			<territory type="AZ">Ἀζερμπαϊτζάν</territory>
+			<territory type="BA">Βοσνία - Ἐρζεγοβίνη</territory>
+			<territory type="BM">Βερμοῦδες</territory>
+			<territory type="BV">Νῆσος Μπουβέ</territory>
+			<territory type="CC">Νῆσοι Κόκος (Κήλινγκ)</territory>
+			<territory type="CD">Κονγκό, Λαϊκὴ Δημοκρατία τοῦ</territory>
+			<territory type="CF">Κεντροαφρικανικὴ Δημοκρατία</territory>
+			<territory type="CH">Ἑλβετία</territory>
+			<territory type="CI" draft="unconfirmed">Ἀκτὴ Ἐλεφαντοστού</territory>
+			<territory type="CI" alt="variant">Ακτή Ελεφαντοστού</territory>
+			<territory type="CK">Νῆσοι Κούκ</territory>
+			<territory type="CV" draft="unconfirmed">Πράσινο Ἀκρωτήριο</territory>
+			<territory type="CX">Νῆσος Χριστουγέννων</territory>
+			<territory type="DO">Δομινικανὴ Δημοκρατία</territory>
+			<territory type="DZ">Ἀλγερία</territory>
+			<territory type="EC">Ἰσημερινός</territory>
+			<territory type="EE">Ἐσθονία</territory>
+			<territory type="EG">Αἴγυπτος</territory>
+			<territory type="EH">Δυτικὴ Σαχάρα</territory>
+			<territory type="ER">Ἐρυθραία</territory>
+			<territory type="ES">Ἱσπανία</territory>
+			<territory type="ET">Αἰθιοπία</territory>
+			<territory type="EU" draft="provisional">Εὐρωπαϊκὴ ᾿Ένωση</territory>
+			<territory type="FM">Μικρονησία, Ὁμόσπονδες Πολιτεῖες τῆς</territory>
+			<territory type="FO">Νῆσοι Φερόες</territory>
+			<territory type="GB">Ἡνωμένο Βασίλειο</territory>
+			<territory type="GF">Γαλλικὴ Γουιάνα</territory>
+			<territory type="GQ">Ἰσημερινὴ Γουινέα</territory>
+			<territory type="GR">Ἑλλάδα</territory>
+			<territory type="GS" draft="unconfirmed">Νότια Γεωργία καὶ Νότιες Νήσοι Σάντουιτς</territory>
+			<territory type="HK">Χὸνγκ Κόνγκ, Εἰδικὴ Διοικητικὴ Περιφέρεια τῆς Κίνας</territory>
+			<territory type="HM">Νῆσοι Χὲρντ καὶ Μακντόναλντ</territory>
+			<territory type="HN">Ὁνδούρα</territory>
+			<territory type="HT">Ἁϊτή</territory>
+			<territory type="HU">Οὑγγαρία</territory>
+			<territory type="ID">Ἰνδονησία</territory>
+			<territory type="IE">Ἰρλανδία</territory>
+			<territory type="IL">Ἰσραήλ</territory>
+			<territory type="IN">Ἰνδία</territory>
+			<territory type="IO" draft="provisional">Βρετανικὰ Ἐδάφη Ἰνδικοῦ Ὠκεανοῦ</territory>
+			<territory type="IQ">Ἰράκ</territory>
+			<territory type="IR">Ἰράν, Ἰσλαμικὴ Δημοκρατία τοῦ</territory>
+			<territory type="IS">Ἰσλανδία</territory>
+			<territory type="IT">Ἰταλία</territory>
+			<territory type="JO">Ἰορδανία</territory>
+			<territory type="JP">Ἰαπωνία</territory>
+			<territory type="KN">Σαὶντ Κὶτς καὶ Νέβις</territory>
+			<territory type="KY">Νῆσοι Κέιμαν</territory>
+			<territory type="LA">Λατινικὴ Ἀμερική</territory>
+			<territory type="LC">Ἁγία Λουκία</territory>
+			<territory type="LK">Σρὶ Λάνκα</territory>
+			<territory type="LU">Λουξεμβοῦργο</territory>
+			<territory type="MD">Μολδαβία, Δημοκρατία τῆς</territory>
+			<territory type="MH">Νῆσοι Μάρσαλ</territory>
+			<territory type="ML">Μαλί</territory>
+			<territory type="MO">Μακάο, Εἰδικὴ Διοικητικὴ Περιφέρεια τῆς Κίνας</territory>
+			<territory type="MP">Νῆσοι Βόρειες Μαριάνες</territory>
+			<territory type="NF">Νῆσος Νόρφολκ</territory>
+			<territory type="NL">Ὁλλανδία</territory>
+			<territory type="OM">Ὀμάν</territory>
+			<territory type="PF">Γαλλικὴ Πολυνησία</territory>
+			<territory type="PM">Σαὶντ Πιὲρ καὶ Μικελόν</territory>
+			<territory type="PS">Παλαιστινιακὰ Ἐδάφη</territory>
+			<territory type="SA">Σαουδικὴ Ἀραβία</territory>
+			<territory type="SB">Νῆσοι Σολομῶντος</territory>
+			<territory type="SH">Ἁγία Ἑλένη</territory>
+			<territory type="SJ">Νῆσοι Σβάλμπαρ καὶ Γιὰν Μαγιέν</territory>
+			<territory type="SM">Ἅγιος Μαρίνος</territory>
+			<territory type="ST">Σάο Τομὲ καὶ Πρίνσιπε</territory>
+			<territory type="SV">Ἒλ Σαλβαδόρ</territory>
+			<territory type="SY">Συρία, Ἀραβικὴ Δημοκρατία τῆς</territory>
+			<territory type="TC">Νῆσοι Τὲρκς καὶ Κάικος</territory>
+			<territory type="TD">Τσάντ</territory>
+			<territory type="TF">Γαλλικὰ Νότια Ἐδάφη</territory>
+			<territory type="TL">Ἀνατολικὸ Τιμόρ</territory>
+			<territory type="TT">Τρινιδὰδ καὶ Τομπάγκο</territory>
+			<territory type="UA">Οὐκρανία</territory>
+			<territory type="UG">Οὐγκάντα</territory>
+			<territory type="UM">Ἀπομακρυσμένες Νησίδες τῶν Ἡνωμένων Πολιτειῶν</territory>
+			<territory type="US">Ἡνωμένες Πολιτεῖες</territory>
+			<territory type="UY">Οὐρουγουάη</territory>
+			<territory type="UZ">Οὐζμπεκιστάν</territory>
+			<territory type="VA">Ἁγία Ἕδρα (Βατικανό)</territory>
+			<territory type="VC">Ἅγιος Βικέντιος καὶ Γρεναδίνες</territory>
+			<territory type="VG">Βρετανικὲς Παρθένοι Νῆσοι</territory>
+			<territory type="VI">Ἀμερικανικὲς Παρθένοι Νῆσοι</territory>
+			<territory type="WF">Νῆσοι Οὐάλλις καὶ Φουτουνά</territory>
+			<territory type="YE">Ὑεμένη</territory>
+			<territory type="ZA">Νότια Ἀφρική</territory>
+		</territories>
+		<keys>
+			<key type="calendar">Ἡμερολόγιο</key>
+		</keys>
+		<types>
+			<type key="calendar" type="buddhist">Βουδιστικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="chinese">Κινεζικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="gregorian">Γρηγοριανὸ ἡμερολόγιο</type>
+			<type key="calendar" type="hebrew">Ἑβραϊκὸ ἡμερολόγιο</type>
+			<type key="calendar" type="islamic" draft="provisional">Ἰσλαμικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Ἰσλαμικὸ ἀστικὸ ἡμερολόγιο</type>
+			<type key="calendar" type="japanese">Ἰαπωνικὸ ἡμερολόγιο</type>
+			<type key="collation" type="phonebook">Σειρὰ τηλεφωνικοῦ καταλόγου</type>
+			<type key="collation" type="pinyin">Σειρὰ Πίνγιν</type>
+			<type key="collation" type="stroke">Σειρὰ Stroke</type>
+		</types>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[αἀἄἂἆἁἅἃἇάὰᾶ β γ δ εἐἔἒἑἕἓέὲ ζ ηἠἤἢἦἡἥἣἧήὴῆ θ ιἰἴἲἶἱἵἳἷίὶῖϊΐῒῗ κ λ μ ν ξ οὄὂὃόὸ π ρ σς τ υὐὔὒὖὑὕὓὗύὺῦϋΰῢῧ φ χ ψ ωὤὢὦὥὣὧώὼῶ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
+	</characters>
+	<delimiters>
+		<alternateQuotationStart>‘</alternateQuotationStart>
+		<alternateQuotationEnd>’</alternateQuotationEnd>
+	</delimiters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1">Ιαν</month>
+							<month type="2">Φεβ</month>
+							<month type="3">Μαρ</month>
+							<month type="4">Απρ</month>
+							<month type="5">Μαΐ</month>
+							<month type="6">Ιουν</month>
+							<month type="7">Ιουλ</month>
+							<month type="8">Αὐγ</month>
+							<month type="9">Σεπ</month>
+							<month type="10">Ὀκτ</month>
+							<month type="11">Νοε</month>
+							<month type="12">Δεκ</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1">Ιανουαρίου</month>
+							<month type="2">Φεβρουαρίου</month>
+							<month type="3">Μαρτίου</month>
+							<month type="4">Απριλίου</month>
+							<month type="5">Μαΐου</month>
+							<month type="6">Ιουνίου</month>
+							<month type="7">Ιουλίου</month>
+							<month type="8">Αὐγούστου</month>
+							<month type="9">Σεπτεμβρίου</month>
+							<month type="10">Ὀκτωβρίου</month>
+							<month type="11">Νοεμβρίου</month>
+							<month type="12">Δεκεμβρίου</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="wide">
+							<month type="1">Ιανουάριος</month>
+							<month type="2">Φεβρουάριος</month>
+							<month type="3">Μάρτιος</month>
+							<month type="4">Απρίλιος</month>
+							<month type="5">Μάιος</month>
+							<month type="6">Ιούνιος</month>
+							<month type="7">Ιούλιος</month>
+							<month type="8">Αὔγουστος</month>
+							<month type="9">Σεπτέμβριος</month>
+							<month type="10">Ὀκτώβριος</month>
+							<month type="11">Νοέμβριος</month>
+							<month type="12">Δεκέμβριος</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="ADP">
+				<displayName>Πεσέτα Ἀνδόρας</displayName>
+			</currency>
+			<currency type="AED">
+				<displayName>Ντιρὰμ Ἡνωμένων Ἀραβικῶν Ἐμιράτων</displayName>
+			</currency>
+			<currency type="ALL">
+				<displayName>Λὲκ Ἀλβανίας</displayName>
+			</currency>
+			<currency type="AMD">
+				<displayName>Dram Ἀρμενίας</displayName>
+			</currency>
+			<currency type="ANG">
+				<displayName>Γκίλντα Ὁλλανδικῶν Ἀντιλλῶν</displayName>
+			</currency>
+			<currency type="AOA">
+				<displayName>Kwanza Ἀνγκόλας</displayName>
+			</currency>
+			<currency type="AOK">
+				<displayName>Kwanza Ἀνγκόλας (1977–1990)</displayName>
+			</currency>
+			<currency type="AON">
+				<displayName>Νέα Kwanza Ἀνγκόλας (1990–2000)</displayName>
+			</currency>
+			<currency type="AOR">
+				<displayName>Kwanza Reajustado Ἀνγκόλας (1995–1999)</displayName>
+			</currency>
+			<currency type="ARA">
+				<displayName>Austral Ἀργεντινῆς</displayName>
+			</currency>
+			<currency type="ARP">
+				<displayName>Πέσο Ἀργεντινῆς (1983–1985)</displayName>
+			</currency>
+			<currency type="ARS">
+				<displayName>Πέσο Ἀργεντινῆς</displayName>
+			</currency>
+			<currency type="ATS">
+				<displayName>Σελίνι Αὐστρίας</displayName>
+			</currency>
+			<currency type="AUD">
+				<displayName>Δολάριο Αὐστραλίας</displayName>
+			</currency>
+			<currency type="AWG">
+				<displayName>Γκίλντα Ἀρούμπα</displayName>
+			</currency>
+			<currency type="AZM">
+				<displayName>Μανὰτ Ἀζερμπαϊτζάν</displayName>
+			</currency>
+			<currency type="BAD">
+				<displayName>Δηνάριο Βοσνίας-Ἑρζεγοβίνης</displayName>
+			</currency>
+			<currency type="BAM">
+				<displayName>Μάρκο Βοσνίας-Ἑρζεγοβίνης</displayName>
+			</currency>
+			<currency type="BEL">
+				<displayName>Φράγκο Βελγίου (οἰκονομικό)</displayName>
+			</currency>
+			<currency type="BGL">
+				<displayName>Μεταλλικὸ Λὲβ Βουλγαρίας</displayName>
+			</currency>
+			<currency type="BGN">
+				<displayName>Νέο Λὲβ Βουλγαρίας</displayName>
+			</currency>
+			<currency type="CAD">
+				<displayName>Δολάριο Καναδᾶ</displayName>
+			</currency>
+			<currency type="CHF">
+				<displayName>Φράγκο Ἑλβετίας</displayName>
+			</currency>
+			<currency type="CLF">
+				<displayName>Unidades de Fomento Χιλῆς</displayName>
+			</currency>
+			<currency type="CLP">
+				<displayName>Πέσο Χιλῆς</displayName>
+			</currency>
+			<currency type="CSK">
+				<displayName>Σκληρὴ Κορόνα Τσεχοσλοβακίας</displayName>
+			</currency>
+			<currency type="CVE">
+				<displayName>Ἐσκούδο Πράσινου Ἀκρωτηρίου</displayName>
+			</currency>
+			<currency type="DDM">
+				<displayName>Ostmark Ἀνατολικῆς Γερμανίας</displayName>
+			</currency>
+			<currency type="DZD">
+				<displayName>Δηνάριο Ἀλγερίας</displayName>
+			</currency>
+			<currency type="ECS">
+				<displayName>Sucre Ἰσημερινοῦ</displayName>
+			</currency>
+			<currency type="ECV">
+				<displayName>Unidad de Valor Constante (UVC) Ἰσημερινοῦ</displayName>
+			</currency>
+			<currency type="EEK">
+				<displayName>Κορόνα Ἐστονίας</displayName>
+			</currency>
+			<currency type="EGP">
+				<displayName>Λίρα Αἰγύπτου</displayName>
+			</currency>
+			<currency type="ERN">
+				<displayName>Nakfa Ἐρυθραίας</displayName>
+			</currency>
+			<currency type="ESP">
+				<displayName>Πεσέτα Ἱσπανίας</displayName>
+			</currency>
+			<currency type="ETB">
+				<displayName>Birr Αἰθιοπίας</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName>Εὐρώ</displayName>
+			</currency>
+			<currency type="FKP">
+				<displayName>Λίρα Νήσων Φώλκλαντ</displayName>
+			</currency>
+			<currency type="GMD">
+				<displayName>Dalasi Γκάμπιας</displayName>
+			</currency>
+			<currency type="GQE">
+				<displayName>Ekwele Guineana Ἰσημερινῆς Γουινέας</displayName>
+			</currency>
+			<currency type="GTQ">
+				<displayName>Quetzal Γουατεμάλας</displayName>
+			</currency>
+			<currency type="GWE">
+				<displayName>Γκινέα Ἐσκούδο Πορτογαλίας</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName>Δολάριο Χὸνγκ Κόνγκ</displayName>
+			</currency>
+			<currency type="HTG">
+				<displayName>Gourde Ἁϊτῆς</displayName>
+			</currency>
+			<currency type="HUF">
+				<displayName>Φιορίνι Οὑγγαρίας</displayName>
+			</currency>
+			<currency type="IDR">
+				<displayName>Ρούπια Ἰνδονησίας</displayName>
+			</currency>
+			<currency type="IEP">
+				<displayName>Λίρα Ἰρλανδίας</displayName>
+			</currency>
+			<currency type="ILP">
+				<displayName>Λίρα Ἰσραήλ</displayName>
+			</currency>
+			<currency type="ILS">
+				<displayName>Νέο Sheqel Ἰσραήλ</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName>Ρούπια Ἰνδίας</displayName>
+			</currency>
+			<currency type="IQD">
+				<displayName>Δηνάριο Ἰράκ</displayName>
+			</currency>
+			<currency type="IRR">
+				<displayName>Rial Ἰράκ</displayName>
+			</currency>
+			<currency type="ISK">
+				<displayName>Κορόνα Ἰσλανδίας</displayName>
+			</currency>
+			<currency type="ITL">
+				<displayName>Λιρέτα Ἰταλίας</displayName>
+			</currency>
+			<currency type="JOD">
+				<displayName>Δηνάριο Ἰορδανίας</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName>Γιὲν Ἰαπωνίας</displayName>
+			</currency>
+			<currency type="LKR">
+				<displayName>Ρούπια Σρὶ Λάνκας</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName>Pataca Μακάου</displayName>
+			</currency>
+			<currency type="MXN">
+				<displayName>Πέσο Μεξικοῦ</displayName>
+			</currency>
+			<currency type="MXP">
+				<displayName>Ἀσημένιο Πέσο Μεξικοῦ (1861–1992)</displayName>
+			</currency>
+			<currency type="MXV">
+				<displayName>Unidad de Inversion (UDI) Μεξικοῦ</displayName>
+			</currency>
+			<currency type="MZE">
+				<displayName>Ἐσκούδο Μοζαμβίκης</displayName>
+			</currency>
+			<currency type="NIO">
+				<displayName>Χρυσὴ Κόρδοβα Νικαράγουας</displayName>
+			</currency>
+			<currency type="NLG">
+				<displayName>Γκίλντα Ὁλλανδίας</displayName>
+			</currency>
+			<currency type="PAB">
+				<displayName>Μπαλμπόα Παναμᾶ</displayName>
+			</currency>
+			<currency type="PGK">
+				<displayName>Kina Παπούα Νέα Γουινέας</displayName>
+			</currency>
+			<currency type="PTE">
+				<displayName>Ἐσκούδο Πορτογαλίας</displayName>
+			</currency>
+			<currency type="PYG">
+				<displayName>Γκουαρανὶ Παραγουάης</displayName>
+			</currency>
+			<currency type="SBD">
+				<displayName>Δολάριο Νήσων Σολομῶντος</displayName>
+			</currency>
+			<currency type="SCR">
+				<displayName>Ρούπια Σεϋχελῶν</displayName>
+			</currency>
+			<currency type="SHP">
+				<displayName>Λίρα Ἀγίας Ἑλένης</displayName>
+			</currency>
+			<currency type="SUR">
+				<displayName>Σοβιετικὸ Ρούβλι</displayName>
+			</currency>
+			<currency type="SVC">
+				<displayName>Colon Ἒλ Σαλβαδόρ</displayName>
+			</currency>
+			<currency type="SZL">
+				<displayName>Lilangeni Ζουαζιλάνδης</displayName>
+			</currency>
+			<currency type="THB">
+				<displayName>Μπὰτ Ταϊλάνδης</displayName>
+			</currency>
+			<currency type="TMM">
+				<displayName>Μανὰτ Τουρκμενιστάν</displayName>
+			</currency>
+			<currency type="TPE">
+				<displayName>Ἐσκούδο Τιμόρ</displayName>
+			</currency>
+			<currency type="TTD">
+				<displayName>Δολάριο Τρινιδὰδ καὶ Τομπάγκο</displayName>
+			</currency>
+			<currency type="UAH">
+				<displayName>Hryvnia Οὐκρανίας</displayName>
+			</currency>
+			<currency type="UAK">
+				<displayName>Karbovanetz Οὐκρανίας</displayName>
+			</currency>
+			<currency type="UGS">
+				<displayName>Σελίνι Οὐγκάντας (1966–1987)</displayName>
+			</currency>
+			<currency type="UGX">
+				<displayName>Σελίνι Οὐγκάντας</displayName>
+			</currency>
+			<currency type="USN">
+				<displayName>Δολάριο ΗΠΑ (Ἑπόμενη ἡμέρα)</displayName>
+			</currency>
+			<currency type="USS">
+				<displayName>Δολάριο ΗΠΑ (Ἴδια ἡμέρα)</displayName>
+			</currency>
+			<currency type="UYP">
+				<displayName>Πέσο Οὐρουγουάης (1975–1993)</displayName>
+			</currency>
+			<currency type="UYU">
+				<displayName>Πέσο Uruguayo Οὐρουγουάης</displayName>
+			</currency>
+			<currency type="UZS">
+				<displayName>Sum Οὐζμπεκιστάν</displayName>
+			</currency>
+			<currency type="VEB">
+				<displayName>Μπολιβὰλ Βενεζουέλας</displayName>
+			</currency>
+			<currency type="WST">
+				<displayName>Tala Δυτικῆς Σαμόας</displayName>
+			</currency>
+			<currency type="XBA">
+				<displayName>Εὐρωπαϊκὴ Σύνθετη Μονάδα</displayName>
+			</currency>
+			<currency type="XBB">
+				<displayName>Εὐρωπαϊκὴ Νομισματικὴ Μονάδα</displayName>
+			</currency>
+			<currency type="XBC">
+				<displayName>Εὐρωπαϊκὴ Μονάδα Λογαριασμοῦ (XBC)</displayName>
+			</currency>
+			<currency type="XBD">
+				<displayName>Εὐρωπαϊκὴ Μονάδα Λογαριασμοῦ (XBD)</displayName>
+			</currency>
+			<currency type="XCD">
+				<displayName>Δολάριο Ἀνατολικῆς Καραϊβικῆς</displayName>
+			</currency>
+			<currency type="XDR">
+				<displayName>Εἰδικὰ Δικαιώματα Ἀνάληψης</displayName>
+			</currency>
+			<currency type="XEU">
+				<displayName>Εὐρωπαϊκὴ Συναλλαγματικὴ Μονάδα</displayName>
+			</currency>
+			<currency type="XFO">
+				<displayName>Χρυσὸ Φράγκο Γαλλίας</displayName>
+			</currency>
+			<currency type="YDD">
+				<displayName>Δηνάριο Ὑεμένης</displayName>
+			</currency>
+			<currency type="YER">
+				<displayName>Rial Ὑεμένης</displayName>
+			</currency>
+			<currency type="YUD">
+				<displayName>Μεταλλικὸ Δηνάριο Γιουγκοσλαβίας</displayName>
+			</currency>
+			<currency type="ZAL">
+				<displayName>Ραντ Νότιας Ἀφρικῆς (οἰκονομικό)</displayName>
+			</currency>
+			<currency type="ZAR">
+				<displayName>Ρὰντ Νότιας Ἀφρικῆς</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<posix>
+		<messages>
+			<yesstr>Ναί</yesstr>
+			<nostr>Ὄχι</nostr>
+		</messages>
+	</posix>
+</ldml>

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "services/lowMemoryDetector.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 class MemAllocator::Allocation: StackObj {
   friend class MemAllocator;
@@ -56,12 +57,11 @@ class MemAllocator::Allocation: StackObj {
   bool check_out_of_memory();
   void verify_before();
   void verify_after();
-  void notify_allocation(JavaThread* thread);
+  void notify_allocation();
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
-  void notify_allocation_dtrace_sampler(JavaThread* thread);
-  void check_for_bad_heap_word_value() const;
+  void notify_allocation_dtrace_sampler();
 #ifdef ASSERT
   void check_for_valid_allocation_state() const;
 #endif
@@ -71,20 +71,20 @@ class MemAllocator::Allocation: StackObj {
 public:
   Allocation(const MemAllocator& allocator, oop* obj_ptr)
     : _allocator(allocator),
-      _thread(JavaThread::current()),
+      _thread(JavaThread::cast(allocator._thread)), // Do not use Allocation in non-JavaThreads.
       _obj_ptr(obj_ptr),
       _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),
       _allocated_tlab_size(0),
       _tlab_end_reset_for_sample(false)
   {
+    assert(Thread::current() == allocator._thread, "do not pass MemAllocator across threads");
     verify_before();
   }
 
   ~Allocation() {
     if (!check_out_of_memory()) {
-      verify_after();
-      notify_allocation(_thread);
+      notify_allocation();
     }
   }
 
@@ -150,22 +150,6 @@ void MemAllocator::Allocation::verify_before() {
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
 }
 
-void MemAllocator::Allocation::verify_after() {
-  NOT_PRODUCT(check_for_bad_heap_word_value();)
-}
-
-void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
-  MemRegion obj_range = _allocator.obj_memory_range(obj());
-  HeapWord* addr = obj_range.start();
-  size_t size = obj_range.word_size();
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    for (size_t slot = 0; slot < size; slot += 1) {
-      assert((*(intptr_t*) (addr + slot)) != ((intptr_t) badHeapWordVal),
-             "Found badHeapWordValue in post-allocation check");
-    }
-  }
-}
-
 #ifdef ASSERT
 void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   // How to choose between a pending exception and a potential
@@ -174,7 +158,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
-  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
+  _thread->check_for_valid_safepoint_state();
 }
 #endif
 
@@ -235,21 +219,21 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
   }
 }
 
-void MemAllocator::Allocation::notify_allocation_dtrace_sampler(JavaThread* thread) {
+void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
   if (DTraceAllocProbes) {
     // support for Dtrace object alloc event (no-op most of the time)
     Klass* klass = obj()->klass();
     size_t word_size = _allocator._word_size;
     if (klass != nullptr && klass->name() != nullptr) {
-      SharedRuntime::dtrace_object_alloc(thread, obj(), word_size);
+      SharedRuntime::dtrace_object_alloc(_thread, obj(), word_size);
     }
   }
 }
 
-void MemAllocator::Allocation::notify_allocation(JavaThread* thread) {
+void MemAllocator::Allocation::notify_allocation() {
   notify_allocation_low_memory_detector();
   notify_allocation_jfr_sampler();
-  notify_allocation_dtrace_sampler(thread);
+  notify_allocation_dtrace_sampler();
   notify_allocation_jvmti_sampler();
 }
 
@@ -260,7 +244,6 @@ HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const 
     return mem;
   }
 
-  NOT_PRODUCT(Universe::heap()->check_for_non_bad_heap_word_value(mem, _word_size));
   size_t size_in_bytes = _word_size * HeapWordSize;
   _thread->incr_allocated_bytes(size_in_bytes);
 
@@ -354,7 +337,7 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
 
 HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   // Allocation of an oop can always invoke a safepoint.
-  debug_only(JavaThread::cast(_thread)->check_for_valid_safepoint_state());
+  debug_only(allocation._thread->check_for_valid_safepoint_state());
 
   if (UseTLAB) {
     // Try refilling the TLAB and allocating the object in it.
@@ -419,15 +402,6 @@ oop ObjAllocator::initialize(HeapWord* mem) const {
   return finish(mem);
 }
 
-MemRegion ObjArrayAllocator::obj_memory_range(oop obj) const {
-  if (_do_zero) {
-    return MemAllocator::obj_memory_range(obj);
-  }
-  ArrayKlass* array_klass = ArrayKlass::cast(_klass);
-  const size_t hs = arrayOopDesc::header_size(array_klass->element_type());
-  return MemRegion(cast_from_oop<HeapWord*>(obj) + hs, _word_size - hs);
-}
-
 oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   // Set array length before setting the _klass field because a
   // non-null klass field indicates that the object is parsable by
@@ -435,10 +409,29 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
     mem_clear(mem);
+    mem_zap_end_padding(mem);
   }
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
 }
+
+#ifndef PRODUCT
+void ObjArrayAllocator::mem_zap_end_padding(HeapWord* mem) const {
+  const size_t length_in_bytes = static_cast<size_t>(_length) << ArrayKlass::cast(_klass)->log2_element_size();
+  const BasicType element_type = ArrayKlass::cast(_klass)->element_type();
+  const size_t base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(element_type);
+  const size_t size_in_bytes = _word_size * BytesPerWord;
+
+  const address obj_end = reinterpret_cast<address>(mem) + size_in_bytes;
+  const address base = reinterpret_cast<address>(mem) + base_offset_in_bytes;
+  const address elements_end = base + length_in_bytes;
+  assert(elements_end <= obj_end, "payload must fit in object");
+  if (elements_end < obj_end) {
+    const size_t padding_in_bytes = obj_end - elements_end;
+    Copy::fill_to_bytes(elements_end, padding_in_bytes, heapPaddingByteVal);
+  }
+}
+#endif
 
 oop ClassAllocator::initialize(HeapWord* mem) const {
   // Set oop_size field before setting the _klass field because a

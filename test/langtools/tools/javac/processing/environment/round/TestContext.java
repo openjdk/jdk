@@ -31,7 +31,7 @@
  *          jdk.compiler/com.sun.tools.javac.processing
  *          jdk.compiler/com.sun.tools.javac.util
  * @build JavacTestingAbstractProcessor TestContext
- * @compile/process -processor TestContext -XprintRounds TestContext
+ * @compile/process -processor TestContext -XprintRounds -proc:full TestContext
  */
 
 import java.io.*;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -255,15 +255,6 @@ public class Helper {
             jLinkTask.option(option);
         }
         return jLinkTask.call();
-    }
-
-    public Result postProcessImage(Path root, String[] options) {
-        JLinkTask jLinkTask = JImageGenerator.getJLinkTask()
-                .existing(root);
-        for (String option : options) {
-            jLinkTask.option(option);
-        }
-        return jLinkTask.callPostProcess();
     }
 
     private List<String> getDefaultClasses(String module) {

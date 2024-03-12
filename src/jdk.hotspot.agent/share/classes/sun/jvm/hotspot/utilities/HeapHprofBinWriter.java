@@ -35,7 +35,6 @@ import sun.jvm.hotspot.memory.*;
 import sun.jvm.hotspot.oops.*;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.classfile.*;
-import sun.jvm.hotspot.gc.z.ZCollectedHeap;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

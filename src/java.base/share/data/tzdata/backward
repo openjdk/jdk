@@ -228,7 +228,6 @@ Link	America/Puerto_Rico	America/Tortola
 Link	Pacific/Port_Moresby	Antarctica/DumontDUrville
 Link	Pacific/Auckland	Antarctica/McMurdo
 Link	Asia/Riyadh		Antarctica/Syowa
-Link	Asia/Urumqi		Antarctica/Vostok
 Link	Europe/Berlin		Arctic/Longyearbyen
 Link	Asia/Riyadh		Asia/Aden
 Link	Asia/Qatar		Asia/Bahrain
@@ -297,6 +296,7 @@ Link	America/Argentina/Cordoba	America/Rosario
 Link	America/Tijuana		America/Santa_Isabel
 Link	America/Denver		America/Shiprock
 Link	America/Toronto		America/Thunder_Bay
+Link	America/Edmonton	America/Yellowknife
 Link	Pacific/Auckland	Antarctica/South_Pole
 Link	Asia/Shanghai		Asia/Chongqing
 Link	Asia/Shanghai		Asia/Harbin

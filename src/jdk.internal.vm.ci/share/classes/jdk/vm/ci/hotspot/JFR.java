@@ -31,7 +31,7 @@ import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Helper methods for interacting with the Java Flight Recorder (JFR) to register events and notify
- * it when events occur. The JFR events are defined in {see @code
+ * it when events occur. The JFR events are defined in {@code
  * src/share/jfr/metadata/metadata.xml}.
  */
 public final class JFR {
@@ -50,7 +50,7 @@ public final class JFR {
     }
 
     /**
-     * Helper methods for managing JFR CompilerPhase events. The events are defined in {see @code
+     * Helper methods for managing JFR CompilerPhase events. The events are defined in {@code
      * src/share/jfr/metadata/metadata.xml}.
      */
     public static final class CompilerPhaseEvent {
@@ -75,7 +75,7 @@ public final class JFR {
     }
 
     /**
-     * Helper methods for managing JFR CompilerInlining events. The events are defined in {see @code
+     * Helper methods for managing JFR CompilerInlining events. The events are defined in {@code
      * src/share/jfr/metadata/metadata.xml}.
      */
     public static final class CompilerInliningEvent {

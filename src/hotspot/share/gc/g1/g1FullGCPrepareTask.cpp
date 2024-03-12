@@ -30,7 +30,7 @@
 #include "gc/g1/g1FullGCMarker.hpp"
 #include "gc/g1/g1FullGCOopClosures.inline.hpp"
 #include "gc/g1/g1FullGCPrepareTask.inline.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "logging/log.hpp"
@@ -47,9 +47,7 @@ bool G1FullGCPrepareTask::G1CalculatePointersClosure::do_heap_region(HeapRegion*
   uint region_idx = hr->hrm_index();
   assert(_collector->is_compaction_target(region_idx), "must be");
 
-  assert(!hr->is_pinned(), "must be");
-  assert(!hr->is_closed_archive(), "must be");
-  assert(!hr->is_open_archive(), "must be");
+  assert(!hr->is_humongous(), "must be");
 
   prepare_for_compaction(hr);
 

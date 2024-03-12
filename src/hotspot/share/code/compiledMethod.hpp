@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class ExceptionHandlerTable;
 class ImplicitExceptionTable;
 class AbstractCompiler;
 class xmlStream;
-class CompiledStaticCall;
+class CompiledDirectCall;
 class NativeCallWrapper;
 class ScopeDesc;
 class CompiledIC;
@@ -140,17 +140,19 @@ public:
 
 class CompiledMethod : public CodeBlob {
   friend class VMStructs;
-
+  friend class DeoptimizationScope;
   void init_defaults();
 protected:
-  enum MarkForDeoptimizationStatus : u1 {
+  enum DeoptimizationStatus : u1 {
     not_marked,
     deoptimize,
     deoptimize_noupdate,
     deoptimize_done
   };
 
-  MarkForDeoptimizationStatus _mark_for_deoptimization_status; // Used for stack deoptimization
+  volatile DeoptimizationStatus _deoptimization_status; // Used for stack deoptimization
+  // Used to track in which deoptimize handshake this method will be deoptimized.
+  uint64_t                      _deoptimization_generation;
 
   // set during construction
   unsigned int _has_unsafe_access:1;         // May fault due to unsafe access.
@@ -172,7 +174,12 @@ protected:
 
   void* _gc_data;
 
-  virtual void flush() = 0;
+  virtual void purge(bool free_code_cache_data, bool unregister_nmethod) = 0;
+
+private:
+  DeoptimizationStatus deoptimization_status() const {
+    return Atomic::load(&_deoptimization_status);
+  }
 
 protected:
   CompiledMethod(Method* method, const char* name, CompilerType type, const CodeBlobLayout& layout, int frame_complete_offset, int frame_size, ImmutableOopMapSet* oop_maps, bool caller_must_gc_arguments, bool compiled);
@@ -199,11 +206,11 @@ public:
   bool  has_wide_vectors() const                  { return _has_wide_vectors; }
   void  set_has_wide_vectors(bool z)              { _has_wide_vectors = z; }
 
-  enum { not_installed = -1, // in construction, only the owner doing the construction is
-                             // allowed to advance state
-         in_use        = 0,  // executable nmethod
-         not_used      = 1,  // not entrant, but revivable
-         not_entrant   = 2,  // marked for deoptimization but activations may still exist
+  enum : signed char { not_installed = -1, // in construction, only the owner doing the construction is
+                                           // allowed to advance state
+                       in_use        = 0,  // executable nmethod
+                       not_used      = 1,  // not entrant, but revivable
+                       not_entrant   = 2,  // marked for deoptimization but activations may still exist
   };
 
   virtual bool  is_in_use() const = 0;
@@ -220,7 +227,7 @@ public:
   virtual bool is_osr_method() const = 0;
   virtual int osr_entry_bci() const = 0;
   Method* method() const                          { return _method; }
-  virtual void print_pcs() = 0;
+  virtual void print_pcs_on(outputStream* st) = 0;
   bool is_native_method() const { return _method != nullptr && _method->is_native(); }
   bool is_java_method() const { return _method != nullptr && !_method->is_native(); }
 
@@ -236,11 +243,9 @@ public:
   bool is_at_poll_return(address pc);
   bool is_at_poll_or_poll_return(address pc);
 
-  bool  is_marked_for_deoptimization() const { return _mark_for_deoptimization_status != not_marked; }
-  void  mark_for_deoptimization(bool inc_recompile_counts = true);
-
-  bool  has_been_deoptimized() const { return _mark_for_deoptimization_status == deoptimize_done; }
-  void  mark_deoptimized() { _mark_for_deoptimization_status = deoptimize_done; }
+  bool  is_marked_for_deoptimization() const { return deoptimization_status() != not_marked; }
+  bool  has_been_deoptimized() const { return deoptimization_status() == deoptimize_done; }
+  void  set_deoptimized_done();
 
   virtual void  make_deoptimized() { assert(false, "not supported"); };
 
@@ -248,8 +253,8 @@ public:
     // Update recompile counts when either the update is explicitly requested (deoptimize)
     // or the nmethod is not marked for deoptimization at all (not_marked).
     // The latter happens during uncommon traps when deoptimized nmethod is made not entrant.
-    return _mark_for_deoptimization_status != deoptimize_noupdate &&
-           _mark_for_deoptimization_status != deoptimize_done;
+    DeoptimizationStatus status = deoptimization_status();
+    return status != deoptimize_noupdate && status != deoptimize_done;
   }
 
   // tells whether frames described by this nmethod can be deoptimized
@@ -261,11 +266,11 @@ public:
 
   address scopes_data_begin() const { return _scopes_data_begin; }
   virtual address scopes_data_end() const = 0;
-  int scopes_data_size() const { return scopes_data_end() - scopes_data_begin(); }
+  int scopes_data_size() const { return int(scopes_data_end() - scopes_data_begin()); }
 
   virtual PcDesc* scopes_pcs_begin() const = 0;
   virtual PcDesc* scopes_pcs_end() const = 0;
-  int scopes_pcs_size() const { return (intptr_t) scopes_pcs_end() - (intptr_t) scopes_pcs_begin(); }
+  int scopes_pcs_size() const { return int((intptr_t) scopes_pcs_end() - (intptr_t) scopes_pcs_begin()); }
 
   address insts_begin() const { return code_begin(); }
   address insts_end() const { return stub_begin(); }
@@ -274,31 +279,31 @@ public:
   bool insts_contains(address addr) const { return insts_begin() <= addr && addr < insts_end(); }
   bool insts_contains_inclusive(address addr) const { return insts_begin() <= addr && addr <= insts_end(); }
 
-  int insts_size() const { return insts_end() - insts_begin(); }
+  int insts_size() const { return int(insts_end() - insts_begin()); }
 
   virtual address consts_begin() const = 0;
   virtual address consts_end() const = 0;
   bool consts_contains(address addr) const { return consts_begin() <= addr && addr < consts_end(); }
-  int consts_size() const { return consts_end() - consts_begin(); }
+  int consts_size() const { return int(consts_end() - consts_begin()); }
 
   virtual int skipped_instructions_size() const = 0;
 
   virtual address stub_begin() const = 0;
   virtual address stub_end() const = 0;
   bool stub_contains(address addr) const { return stub_begin() <= addr && addr < stub_end(); }
-  int stub_size() const { return stub_end() - stub_begin(); }
+  int stub_size() const { return int(stub_end() - stub_begin()); }
 
   virtual address handler_table_begin() const = 0;
   virtual address handler_table_end() const = 0;
   bool handler_table_contains(address addr) const { return handler_table_begin() <= addr && addr < handler_table_end(); }
-  int handler_table_size() const { return handler_table_end() - handler_table_begin(); }
+  int handler_table_size() const { return int(handler_table_end() - handler_table_begin()); }
 
   virtual address exception_begin() const = 0;
 
   virtual address nul_chk_table_begin() const = 0;
   virtual address nul_chk_table_end() const = 0;
   bool nul_chk_table_contains(address addr) const { return nul_chk_table_begin() <= addr && addr < nul_chk_table_end(); }
-  int nul_chk_table_size() const { return nul_chk_table_end() - nul_chk_table_begin(); }
+  int nul_chk_table_size() const { return int(nul_chk_table_end() - nul_chk_table_begin()); }
 
   virtual oop* oop_addr_at(int index) const = 0;
   virtual Metadata** metadata_addr_at(int index) const = 0;
@@ -359,7 +364,7 @@ public:
 
   // Inline cache support for class unloading and nmethod unloading
  private:
-  bool cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
+  void cleanup_inline_caches_impl(bool unloading_occurred, bool clean_all);
 
   address continuation_for_implicit_exception(address pc, bool for_div0_check);
 
@@ -368,13 +373,10 @@ public:
   void cleanup_inline_caches_whitebox();
 
   virtual void clear_inline_caches();
-  void clear_ic_callsites();
 
   // Execute nmethod barrier code, as if entering through nmethod call.
   void run_nmethod_entry_barrier();
 
-  // Verify and count cached icholder relocations.
-  int  verify_icholder_relocations();
   void verify_oop_relocations();
 
   bool has_evol_metadata();
@@ -384,13 +386,7 @@ public:
   // corresponds to the given method as well.
   virtual bool is_dependent_on_method(Method* dependee) = 0;
 
-  virtual NativeCallWrapper* call_wrapper_at(address call) const = 0;
-  virtual NativeCallWrapper* call_wrapper_before(address return_pc) const = 0;
   virtual address call_instruction_address(address pc) const = 0;
-
-  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const = 0;
-  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const = 0;
-  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const = 0;
 
   Method* attached_method(address call_pc);
   Method* attached_method_before_pc(address pc);
@@ -401,16 +397,13 @@ public:
  protected:
   address oops_reloc_begin() const;
 
- private:
-  bool static clean_ic_if_metadata_is_dead(CompiledIC *ic);
-
  public:
   // GC unloading support
   // Cleans unloaded klasses and unloaded nmethods in inline caches
 
   virtual bool is_unloading() = 0;
 
-  bool unload_nmethod_caches(bool class_unloading_occurred);
+  void unload_nmethod_caches(bool class_unloading_occurred);
   virtual void do_unloading(bool unloading_occurred) = 0;
 
 private:

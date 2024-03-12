@@ -94,6 +94,7 @@ public class RichDiagnosticFormatter extends
         return instance;
     }
 
+    @SuppressWarnings("this-escape")
     protected RichDiagnosticFormatter(Context context) {
         super((AbstractDiagnosticFormatter)Log.instance(context).getDiagnosticFormatter());
         setRichPrinter(new RichPrinter());

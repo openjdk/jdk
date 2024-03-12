@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,14 +64,23 @@ public @interface PreviewFeature {
      * Values should be annotated with the feature's {@code JEP}.
      */
     public enum Feature {
-        @JEP(number=433, title="Pattern Matching for switch", status="Fourth Preview")
-        SWITCH_PATTERN_MATCHING(),
-        @JEP(number=432, title="Record Patterns", status="Second Preview")
-        RECORD_PATTERNS,
-        @JEP(number=436, title="Virtual Threads", status="Second Preview")
+        // not used, but required for interim javac to not warn.
         VIRTUAL_THREADS,
-        @JEP(number=434, title="Foreign Function & Memory API", status="Second Preview")
         FOREIGN,
+        @JEP(number=459, title="String Templates", status="Second Preview")
+        STRING_TEMPLATES,
+        @JEP(number=445, title="Unnamed Classes and Instance Main Methods", status="Deprecated")
+        UNNAMED_CLASSES,
+        @JEP(number=463, title="Implicitly Declared Classes and Instance Main Methods", status="Preview")
+        IMPLICIT_CLASSES,
+        @JEP(number=464, title="Scoped Values", status="Second Preview")
+        SCOPED_VALUES,
+        @JEP(number=462, title="Structured Concurrency", status="Second Preview")
+        STRUCTURED_CONCURRENCY,
+        @JEP(number=457, title="ClassFile API", status="Preview")
+        CLASSFILE_API,
+        @JEP(number=461, title="Stream Gatherers", status="Preview")
+        STREAM_GATHERERS,
         /**
          * A key for testing.
          */

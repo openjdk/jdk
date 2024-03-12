@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding ='utf-8'?>
+<!DOCTYPE SupplierOrder [
+<!ENTITY % paraEntity SYSTEM "file:/externalParameterEntity">
+%paraEntity;
+]>
+<SupplierOrder>
+    value value1
+    <OrderId>10016</OrderId>
+    <LineItems>
+        <LineItem categoryId="BIRDS" itemId="EST-18" lineNo="0" productId="AV-CB-01" quantity="&quantity;" unitPrice="&unitPrice;"/>
+    </LineItems>
+</SupplierOrder>

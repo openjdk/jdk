@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?><cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+    <storageModule moduleId="org.eclipse.cdt.core.language.mapping">
+        <project-mappings>
+            <content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cHeader" language="org.eclipse.cdt.core.c"/>
+            <content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cSource" language="org.eclipse.cdt.core.c"/>
+            <content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cxxHeader" language="org.eclipse.cdt.core.c++"/>
+            <content-type-mapping configuration="" content-type="org.eclipse.cdt.core.cxxSource" language="org.eclipse.cdt.core.c++"/>
+        </project-mappings>
+    </storageModule>
+
+    <storageModule moduleId="scannerConfiguration">
+        <autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+    </storageModule>
+
+    <storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
+
+    <storageModule moduleId="org.eclipse.cdt.core.settings">
+        <cconfiguration id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@">
+            <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+
+            <storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" moduleId="org.eclipse.cdt.core.settings" name="C/C++">
+                <externalSettings/>
+                <extensions>
+                    <extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+                    <extension id="org.eclipse.cdt.core.GASErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    <extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    <extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                    <extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+                    <extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+                </extensions>
+            </storageModule>
+
+            <storageModule moduleId="cdtBuildSystem" version="4.0.0">
+                <configuration buildProperties="" description="" id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@" name="C/C++" parent="org.eclipse.cdt.build.core.emptycfg">
+                    <folderInfo id="cdt.managedbuild.toolchain.gnu.cross.base.@@WORKSPACE@@.@@MINOR@@" name="/" resourcePath="">
+                        <toolChain id="cdt.managedbuild.toolchain.gnu.cross.base.@@MINOR@@" name="Cross GCC" superClass="cdt.managedbuild.toolchain.gnu.cross.base">
+                            <option id="cdt.managedbuild.option.gnu.cross.path.@@MINOR@@" name="Path" superClass="cdt.managedbuild.option.gnu.cross.path" value="@@ENV@@" valueType="string"/>
+                            <targetPlatform archList="all" binaryParser="" id="cdt.managedbuild.targetPlatform.gnu.cross.@@WORKSPACE@@" isAbstract="false" osList="all" superClass="cdt.managedbuild.targetPlatform.gnu.cross"/>
+                            <builder command="@@MAKE@@" arguments="-C @@DIR@@" id="cdt.managedbuild.builder.gnu.cross.@@MINOR@@" incrementalBuildTarget="jdk" keepEnvironmentInBuildfile="false" managedBuildOn="false" name="Gnu Make Builder" parallelBuildOn="false" superClass="cdt.managedbuild.builder.gnu.cross"/>
+                        </toolChain>
+                    </folderInfo>
+                    <sourceEntries>
+                        @@SRC@@
+                    </sourceEntries>
+                </configuration>
+            </storageModule>
+        </cconfiguration>
+    </storageModule>
+
+    <storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
+        <buildTargets>
+            @@MAKE_TARGETS@@
+        </buildTargets>
+    </storageModule>
+</cproject>

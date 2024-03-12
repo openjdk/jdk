@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +45,9 @@ public class TestSuperwordFailsUnrolling {
     public static void main(String[] args) {
         Object avx = wb.getVMFlag("UseAVX");
         if (avx != null && ((Long)avx) > 2) {
-            TestFramework.runWithFlags("-XX:UseAVX=2", "-XX:LoopMaxUnroll=8");
+            TestFramework.runWithFlags("-XX:UseAVX=2", "-XX:LoopMaxUnroll=8", "-XX:-SuperWordReductions");
         }
-        TestFramework.runWithFlags("-XX:LoopMaxUnroll=8");
+        TestFramework.runWithFlags("-XX:LoopMaxUnroll=8", "-XX:-SuperWordReductions");
     }
 
     @Test

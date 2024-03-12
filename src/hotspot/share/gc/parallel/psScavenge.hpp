@@ -33,12 +33,10 @@
 #include "oops/oop.hpp"
 #include "utilities/stack.hpp"
 
-class OopStack;
 class ReferenceProcessor;
 class ParallelScavengeHeap;
 class ParallelScavengeTracer;
 class PSIsAliveClosure;
-class PSRefProcTaskExecutor;
 class STWGCTimer;
 
 class PSScavenge: AllStatic {
@@ -77,7 +75,7 @@ class PSScavenge: AllStatic {
   static bool should_attempt_scavenge();
 
   // Private accessors
-  static PSCardTable* const card_table()           { assert(_card_table != nullptr, "Sanity"); return _card_table; }
+  static PSCardTable* card_table()                 { assert(_card_table != nullptr, "Sanity"); return _card_table; }
   static const ParallelScavengeTracer* gc_tracer() { return &_gc_tracer; }
 
  public:
@@ -92,7 +90,7 @@ class PSScavenge: AllStatic {
     _span_based_discoverer.set_span(mr);
   }
   // Used by scavenge_contents
-  static ReferenceProcessor* const reference_processor() {
+  static ReferenceProcessor* reference_processor() {
     assert(_ref_processor != nullptr, "Sanity");
     return _ref_processor;
   }

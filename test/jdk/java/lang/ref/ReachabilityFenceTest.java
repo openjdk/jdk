@@ -27,11 +27,11 @@
  *
  * @requires vm.opt.DeoptimizeALot != true
  *
- * @run main/othervm -Xint                   -Dpremature=false ReachabilityFenceTest
- * @run main/othervm -XX:TieredStopAtLevel=1 -Dpremature=true  ReachabilityFenceTest
- * @run main/othervm -XX:TieredStopAtLevel=2 -Dpremature=true  ReachabilityFenceTest
- * @run main/othervm -XX:TieredStopAtLevel=3 -Dpremature=true  ReachabilityFenceTest
- * @run main/othervm -XX:TieredStopAtLevel=4 -Dpremature=true  ReachabilityFenceTest
+ * @run main/othervm -Xint                           -Dpremature=false ReachabilityFenceTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=1 -Dpremature=true  ReachabilityFenceTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=2 -Dpremature=true  ReachabilityFenceTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=3 -Dpremature=true  ReachabilityFenceTest
+ * @run main/othervm -Xbatch -XX:TieredStopAtLevel=4 -Dpremature=true  ReachabilityFenceTest
  */
 
 import java.lang.ref.Reference;
@@ -54,7 +54,7 @@ public class ReachabilityFenceTest {
      * the object cannot be finalized. There is no sense running a positive test when premature finalization
      * is not expected. It is a job for negative test to verify that invariant.
      *
-     * The test methods should be appropriately compiled, therefore we do several iterations.
+     * The test methods should be appropriately compiled, therefore we do several iterations and run with -Xbatch.
      */
 
     // Enough to OSR and compile

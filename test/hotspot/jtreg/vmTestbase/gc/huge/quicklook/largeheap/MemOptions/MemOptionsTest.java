@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() != 0) {
             output.reportDiagnosticSummary();
@@ -106,7 +106,7 @@ public class MemOptionsTest {
         var cmd = new ArrayList<String>();
         Collections.addAll(cmd, opts);
         cmd.add(MemStat.class.getName());
-        var pb = ProcessTools.createTestJvm(cmd);
+        var pb = ProcessTools.createTestJavaProcessBuilder(cmd);
         var output = new OutputAnalyzer(pb.start());
         if (output.getExitValue() == 0) {
             output.reportDiagnosticSummary();

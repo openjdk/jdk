@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -53,7 +53,7 @@ address Relocation::pd_call_destination(address orig_addr) {
   intptr_t adj = 0;
   address inst_loc = addr();
 
-  if (orig_addr != NULL) {
+  if (orig_addr != nullptr) {
     // We just moved this call instruction from orig_addr to addr().
     // This means its target will appear to have grown by addr() - orig_addr.
     adj = -(inst_loc - orig_addr);
@@ -69,7 +69,7 @@ address Relocation::pd_call_destination(address orig_addr) {
     return branch->branch_destination();
   } else {
     orig_addr = nativeCall_at(inst_loc)->get_trampoline();
-    if (orig_addr == NULL) {
+    if (orig_addr == nullptr) {
       return (address) -1;
     } else {
       return ((NativeCallTrampolineStub*)orig_addr)->destination();

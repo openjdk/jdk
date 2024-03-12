@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ public class attach001 {
         String java = argHandler.getLaunchExecPath()
                         + " " + argHandler.getLaunchOptions();
         String cmd = java
-                + " -Xdebug -Xnoagent -Xrunjdwp:transport=dt_socket,server=y,address=0"
+                + " -Xrunjdwp:transport=dt_socket,server=y,address=0"
                 + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

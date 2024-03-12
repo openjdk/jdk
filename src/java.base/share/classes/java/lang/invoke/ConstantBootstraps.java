@@ -422,8 +422,7 @@ public final class ConstantBootstraps {
 
     private static <T> Class<T> validateClassAccess(MethodHandles.Lookup lookup, Class<T> type) {
         try {
-            lookup.accessClass(type);
-            return type;
+            return lookup.accessClass(type);
         }
         catch (ReflectiveOperationException ex) {
             throw mapLookupExceptionToError(ex);

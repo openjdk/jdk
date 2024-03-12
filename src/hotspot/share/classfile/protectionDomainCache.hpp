@@ -39,6 +39,7 @@ class ProtectionDomainCacheTable : public AllStatic {
   static int _total_oops_removed;
 
 public:
+  static void initialize();
   static unsigned int compute_hash(const WeakHandle& protection_domain);
   static bool equals(const WeakHandle& protection_domain1, const WeakHandle& protection_domain2);
 

@@ -529,7 +529,7 @@ public class SSLTube implements FlowTube {
         public void onComplete() {
             assert !finished && !onCompleteReceived;
             DelegateWrapper subscriberImpl;
-            synchronized(this) {
+            synchronized (this) {
                 subscriberImpl = subscribed;
             }
 

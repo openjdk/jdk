@@ -77,7 +77,8 @@ import static java.lang.invoke.MethodHandleStatics.newInternalError;
               || pType == int.class
               || pType == float.class
               || pType == double.class
-              || pType == void.class);
+              || pType == void.class
+              || pType == Object.class);
     }
 
     private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();

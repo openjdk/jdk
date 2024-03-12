@@ -155,6 +155,7 @@ import sun.reflect.misc.ReflectUtil;
  * <p>Records are serialized differently than ordinary serializable or externalizable
  * objects, see <a href="ObjectInputStream.html#record-serialization">record serialization</a>.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataOutput
@@ -245,6 +246,7 @@ public class ObjectOutputStream
      * @see     ObjectOutputStream#putFields()
      * @see     ObjectInputStream#ObjectInputStream(InputStream)
      */
+    @SuppressWarnings("this-escape")
     public ObjectOutputStream(OutputStream out) throws IOException {
         verifySubclass();
         bout = new BlockDataOutputStream(out);
@@ -584,7 +586,7 @@ public class ObjectOutputStream
      * substituted or the original object.
      *
      * <p>Null can be returned as the object to be substituted, but may cause
-     * NullReferenceException in classes that contain references to the
+     * {@link NullPointerException} in classes that contain references to the
      * original object since they may be expecting an object instead of
      * null.
      *
@@ -670,6 +672,7 @@ public class ObjectOutputStream
      *
      * @param   desc class descriptor to write to the stream
      * @throws  IOException If an I/O error has occurred.
+     * @spec serialization/index.html Java Object Serialization Specification
      * @see java.io.ObjectInputStream#readClassDescriptor()
      * @see #useProtocolVersion(int)
      * @see java.io.ObjectStreamConstants#PROTOCOL_VERSION_1

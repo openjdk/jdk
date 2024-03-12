@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2014, 2021, Red Hat, Inc. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -664,11 +664,6 @@ reg_class method_reg(
     R12, R12_H
 );
 
-// Class for heapbase register
-reg_class heapbase_reg(
-    R27, R27_H
-);
-
 // Class for thread register
 reg_class thread_reg(
     R28, R28_H
@@ -1242,17 +1237,17 @@ source %{
 
     // r27 is not allocatable when compressed oops is on and heapbase is not
     // zero, compressed klass pointers doesn't use r27 after JDK-8234794
-    if (UseCompressedOops && (CompressedOops::ptrs_base() != NULL)) {
+    if (UseCompressedOops && (CompressedOops::ptrs_base() != nullptr)) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
-      _NO_SPECIAL_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
-      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_HEAPBASE_REG_mask);
+      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r27->as_VMReg()));
     }
 
     // r29 is not allocatable when PreserveFramePointer is on
     if (PreserveFramePointer) {
       _NO_SPECIAL_REG32_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
-      _NO_SPECIAL_REG_mask.SUBTRACT(_FP_REG_mask);
-      _NO_SPECIAL_PTR_REG_mask.SUBTRACT(_FP_REG_mask);
+      _NO_SPECIAL_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
+      _NO_SPECIAL_PTR_REG_mask.Remove(OptoReg::as_OptoReg(r29->as_VMReg()));
     }
   }
 
@@ -1586,7 +1581,7 @@ bool needs_releasing_store(const Node *n)
 {
   // assert n->is_Store();
   StoreNode *st = n->as_Store();
-  return st->trailing_membar() != NULL;
+  return st->trailing_membar() != nullptr;
 }
 
 // predicate controlling translation of CAS
@@ -1598,9 +1593,9 @@ bool needs_acquiring_load_exclusive(const Node *n)
   assert(is_CAS(n->Opcode(), true), "expecting a compare and swap");
   LoadStoreNode* ldst = n->as_LoadStore();
   if (is_CAS(n->Opcode(), false)) {
-    assert(ldst->trailing_membar() != NULL, "expected trailing membar");
+    assert(ldst->trailing_membar() != nullptr, "expected trailing membar");
   } else {
-    return ldst->trailing_membar() != NULL;
+    return ldst->trailing_membar() != nullptr;
   }
 
   // so we can just return true here
@@ -1726,8 +1721,8 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("# stack bang size=%d\n\t", framesize);
 
   if (VM_Version::use_rop_protection()) {
-    st->print("ldr zr, [lr]\n\t");
-    st->print("pacia  lr, rfp\n\t");
+    st->print("ldr  zr, [lr]\n\t");
+    st->print("paciaz\n\t");
   }
   if (framesize < ((1 << 9) + 2 * wordSize)) {
     st->print("sub  sp, sp, #%d\n\t", framesize);
@@ -1739,7 +1734,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("mov  rscratch1, #%d\n\t", framesize - 2 * wordSize);
     st->print("sub  sp, sp, rscratch1");
   }
-  if (C->stub_function() == NULL && BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+  if (C->stub_function() == nullptr && BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
     st->print("\n\t");
     st->print("ldr  rscratch1, [guard]\n\t");
     st->print("dmb ishld\n\t");
@@ -1788,9 +1783,9 @@ void MachPrologNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
 
   __ build_frame(framesize);
 
-  if (C->stub_function() == NULL) {
+  if (C->stub_function() == nullptr) {
     BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-    if (BarrierSet::barrier_set()->barrier_set_nmethod() != NULL) {
+    if (BarrierSet::barrier_set()->barrier_set_nmethod() != nullptr) {
       // Dummy labels for just measuring the code size
       Label dummy_slow_path;
       Label dummy_continuation;
@@ -1856,8 +1851,8 @@ void MachEpilogNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
     st->print("ldp  lr, rfp, [sp],#%d\n\t", (2 * wordSize));
   }
   if (VM_Version::use_rop_protection()) {
-    st->print("autia lr, rfp\n\t");
-    st->print("ldr zr, [lr]\n\t");
+    st->print("autiaz\n\t");
+    st->print("ldr  zr, [lr]\n\t");
   }
 
   if (do_polling() && C->is_method_compilation()) {
@@ -2158,12 +2153,12 @@ void MachSpillCopyNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
   if (!ra_)
     st->print("N%d = SpillCopy(N%d)", _idx, in(1)->_idx);
   else
-    implementation(NULL, ra_, false, st);
+    implementation(nullptr, ra_, false, st);
 }
 #endif
 
 void MachSpillCopyNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
-  implementation(&cbuf, ra_, false, NULL);
+  implementation(&cbuf, ra_, false, nullptr);
 }
 
 uint MachSpillCopyNode::size(PhaseRegAlloc *ra_) const {
@@ -2210,14 +2205,14 @@ void MachUEPNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 {
   st->print_cr("# MachUEPNode");
   if (UseCompressedClassPointers) {
-    st->print_cr("\tldrw rscratch1, j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
-    if (CompressedKlassPointers::shift() != 0) {
-      st->print_cr("\tdecode_klass_not_null rscratch1, rscratch1");
-    }
+    st->print_cr("\tldrw rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldrw r10, [rscratch2 + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tcmpw rscratch1, r10");
   } else {
-   st->print_cr("\tldr rscratch1, j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldr rscratch1, [j_rarg0 + oopDesc::klass_offset_in_bytes()]\t# compressed klass");
+    st->print_cr("\tldr r10, [rscratch2 + CompiledICData::speculated_klass_offset()]\t# compressed klass");
+    st->print_cr("\tcmp rscratch1, r10");
   }
-  st->print_cr("\tcmp r0, rscratch1\t # Inline cache check");
   st->print_cr("\tbne, SharedRuntime::_ic_miss_stub");
 }
 #endif
@@ -2226,14 +2221,7 @@ void MachUEPNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
-
-  __ cmp_klass(j_rarg0, rscratch2, rscratch1);
-  Label skip;
-  // TODO
-  // can we avoid this skip and still use a reloc?
-  __ br(Assembler::EQ, skip);
-  __ far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  __ bind(skip);
+  __ ic_check(InteriorEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc* ra_) const
@@ -2254,7 +2242,7 @@ int HandlerImpl::emit_exception_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_exception_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2272,7 +2260,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
   // That's why we must use the macroassembler to generate a handler.
   C2_MacroAssembler _masm(&cbuf);
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == NULL) {
+  if (base == nullptr) {
     ciEnv::current()->record_failure("CodeCache is full");
     return 0;  // CodeBuffer::expand failed
   }
@@ -2290,11 +2278,10 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
-  bool ret_value = true;
   switch (opcode) {
     case Op_OnSpinWait:
       return VM_Version::supports_on_spin_wait();
@@ -2302,18 +2289,26 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       if (!VM_Version::supports_data_cache_line_flush()) {
-        ret_value = false;
+        return false;
       }
       break;
     case Op_ExpandBits:
     case Op_CompressBits:
-      if (!(UseSVE > 1 && VM_Version::supports_svebitperm())) {
-        ret_value = false;
+      if (!VM_Version::supports_svebitperm()) {
+        return false;
+      }
+      break;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      if (!UseFMA) {
+        return false;
       }
       break;
   }
 
-  return ret_value; // Per default match rules are supported.
+  return true; // Per default match rules are supported.
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {
@@ -2325,7 +2320,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2345,7 +2340,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   // The MaxVectorSize should have been set by detecting SVE max vector register size.
   int size = MIN2((UseSVE > 0) ? 256 : 16, (int)MaxVectorSize);
   // Minimum 2 values in vector
@@ -2356,11 +2351,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
@@ -2375,13 +2370,17 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
+int Matcher::max_vector_size_auto_vectorization(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
+}
+
 // Actual max scalable vector register length.
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   if (UseSVE > 0 && 16 < len && len <= 256) {
     return Op_VecA;
   }
@@ -2404,7 +2403,7 @@ MachOper* Matcher::pd_specialize_generic_vector_operand(MachOper* generic_opnd, 
     case Op_VecX: return new vecXOper();
   }
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 }
 
 bool Matcher::is_reg2reg_move(MachNode* m) {
@@ -2576,12 +2575,12 @@ Assembler::Condition to_assembler_cond(BoolTest::mask cond) {
 }
 
 // Binary src (Replicate con)
-bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
-  if (n == NULL || m == NULL) {
+static bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
+  if (n == nullptr || m == nullptr) {
     return false;
   }
 
-  if (UseSVE == 0 || !VectorNode::is_invariant_vector(m)) {
+  if (UseSVE == 0 || m->Opcode() != Op_Replicate) {
     return false;
   }
 
@@ -2617,8 +2616,8 @@ bool is_valid_sve_arith_imm_pattern(Node* n, Node* m) {
 
 // (XorV src (Replicate m1))
 // (XorVMask src (MaskAll m1))
-bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
-  if (n != NULL && m != NULL) {
+static bool is_vector_bitwise_not_pattern(Node* n, Node* m) {
+  if (n != nullptr && m != nullptr) {
     return (n->Opcode() == Op_XorV || n->Opcode() == Op_XorVMask) &&
            VectorNode::is_all_ones_vector(m);
   }
@@ -2730,10 +2729,6 @@ typedef void (MacroAssembler::* mem_vector_insn)(FloatRegister Rt,
   {
     Address addr = mem2address(opcode, base, index, scale, disp);
     if (addr.getMode() == Address::base_plus_offset) {
-      /* If we get an out-of-range offset it is a bug in the compiler,
-         so we assert here. */
-      assert(Address::offset_ok_for_immed(addr.offset(), exact_log2(size_in_memory)),
-             "c2 compiler bug");
       /* Fix up any out-of-range offsets. */
       assert_different_registers(rscratch1, base);
       assert_different_registers(rscratch1, reg);
@@ -3424,7 +3419,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL || con == (address)1) {
+    if (con == nullptr || con == (address)1) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3467,7 +3462,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3486,7 +3481,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     Register dst_reg = as_Register($dst$$reg);
     address con = (address)$src$$constant;
-    if (con == NULL) {
+    if (con == nullptr) {
       ShouldNotReachHere();
     } else {
       relocInfo::relocType rtype = $src->constant_reloc();
@@ -3669,7 +3664,7 @@ encode %{
      Label miss;
      C2_MacroAssembler _masm(&cbuf);
      __ check_klass_subtype_slow_path(sub_reg, super_reg, temp_reg, result_reg,
-                                     NULL, &miss,
+                                     nullptr, &miss,
                                      /*set_cond_codes:*/ true);
      if ($primary) {
        __ mov(result_reg, zr);
@@ -3685,7 +3680,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3699,7 +3694,7 @@ encode %{
       RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
                                                   : static_call_Relocation::spec(method_index);
       call = __ trampoline_call(Address(addr, rspec));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3709,8 +3704,8 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, call - cbuf.insts_begin());
       } else {
         // Emit stub for static call
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, call);
-        if (stub == NULL) {
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, call);
+        if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
         }
@@ -3729,7 +3724,7 @@ encode %{
     C2_MacroAssembler _masm(&cbuf);
     int method_index = resolved_method_index(cbuf);
     address call = __ ic_call((address)$meth$$method, method_index);
-    if (call == NULL) {
+    if (call == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -3758,7 +3753,7 @@ encode %{
     CodeBlob *cb = CodeCache::find_blob(entry);
     if (cb) {
       address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
-      if (call == NULL) {
+      if (call == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
@@ -3808,175 +3803,6 @@ encode %{
     // callee expects it in r3
     __ mov(r3, lr);
     __ br(target_reg);
-  %}
-
-  enc_class aarch64_enc_fast_lock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr);
-
-    // Load markWord from object into displaced_header.
-    __ ldr(disp_hdr, Address(oop, oopDesc::mark_offset_in_bytes()));
-
-    if (DiagnoseSyncOnValueBasedClasses != 0) {
-      __ load_klass(tmp, oop);
-      __ ldrw(tmp, Address(tmp, Klass::access_flags_offset()));
-      __ tstw(tmp, JVM_ACC_IS_VALUE_BASED_CLASS);
-      __ br(Assembler::NE, cont);
-    }
-
-    // Check for existing monitor
-    __ tbnz(disp_hdr, exact_log2(markWord::monitor_value), object_has_monitor);
-
-    if (!UseHeavyMonitors) {
-      // Set tmp to be (markWord of object | UNLOCK_VALUE).
-      __ orr(tmp, disp_hdr, markWord::unlocked_value);
-
-      // Initialize the box. (Must happen before we update the object mark!)
-      __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // Compare object markWord with an unlocked value (tmp) and if
-      // equal exchange the stack address of our box with object markWord.
-      // On failure disp_hdr contains the possibly locked markWord.
-      __ cmpxchg(oop, tmp, box, Assembler::xword, /*acquire*/ true,
-                 /*release*/ true, /*weak*/ false, disp_hdr);
-      __ br(Assembler::EQ, cont);
-
-      assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-      // If the compare-and-exchange succeeded, then we found an unlocked
-      // object, will have now locked it will continue at label cont
-
-      // Check if the owner is self by comparing the value in the
-      // markWord of object (disp_hdr) with the stack pointer.
-      __ mov(rscratch1, sp);
-      __ sub(disp_hdr, disp_hdr, rscratch1);
-      __ mov(tmp, (address) (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-      // If condition is true we are cont and hence we can store 0 as the
-      // displaced header in the box, which indicates that it is a recursive lock.
-      __ ands(tmp/*==0?*/, disp_hdr, tmp);   // Sets flags for result
-      __ str(tmp/*==0, perhaps*/, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-    } else {
-      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    }
-    __ b(cont);
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-
-    // The object's monitor m is unlocked iff m->owner == NULL,
-    // otherwise m->owner may contain a thread or a stack address.
-    //
-    // Try to CAS m->owner from NULL to current thread.
-    __ add(tmp, disp_hdr, (ObjectMonitor::owner_offset_in_bytes()-markWord::monitor_value));
-    __ cmpxchg(tmp, zr, rthread, Assembler::xword, /*acquire*/ true,
-               /*release*/ true, /*weak*/ false, rscratch1); // Sets flags for result
-
-    // Store a non-null value into the box to avoid looking like a re-entrant
-    // lock. The fast-path monitor unlock code checks for
-    // markWord::monitor_value so use markWord::unused_mark which has the
-    // relevant bit set, and also matches ObjectSynchronizer::enter.
-    __ mov(tmp, (address)markWord::unused_mark().value());
-    __ str(tmp, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-    __ br(Assembler::EQ, cont); // CAS success means locking succeeded
-
-    __ cmp(rscratch1, rthread);
-    __ br(Assembler::NE, cont); // Check for recursive locking
-
-    // Recursive lock case
-    __ increment(Address(disp_hdr, ObjectMonitor::recursions_offset_in_bytes() - markWord::monitor_value), 1);
-    // flag == EQ still from the cmp above, checking if this is a reentrant lock
-
-    __ bind(cont);
-    // flag == EQ indicates success
-    // flag == NE indicates failure
-    __ br(Assembler::NE, no_count);
-
-    __ increment(Address(rthread, JavaThread::held_monitor_count_offset()));
-
-    __ bind(no_count);
-  %}
-
-  enc_class aarch64_enc_fast_unlock(iRegP object, iRegP box, iRegP tmp, iRegP tmp2) %{
-    C2_MacroAssembler _masm(&cbuf);
-    Register oop = as_Register($object$$reg);
-    Register box = as_Register($box$$reg);
-    Register disp_hdr = as_Register($tmp$$reg);
-    Register tmp = as_Register($tmp2$$reg);
-    Label cont;
-    Label object_has_monitor;
-    Label no_count;
-
-    assert_different_registers(oop, box, tmp, disp_hdr);
-
-    if (!UseHeavyMonitors) {
-      // Find the lock address and load the displaced header from the stack.
-      __ ldr(disp_hdr, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-
-      // If the displaced header is 0, we have a recursive unlock.
-      __ cmp(disp_hdr, zr);
-      __ br(Assembler::EQ, cont);
-    }
-
-    // Handle existing monitor.
-    __ ldr(tmp, Address(oop, oopDesc::mark_offset_in_bytes()));
-    __ tbnz(tmp, exact_log2(markWord::monitor_value), object_has_monitor);
-
-    if (!UseHeavyMonitors) {
-      // Check if it is still a light weight lock, this is is true if we
-      // see the stack address of the basicLock in the markWord of the
-      // object.
-
-      __ cmpxchg(oop, box, disp_hdr, Assembler::xword, /*acquire*/ false,
-                 /*release*/ true, /*weak*/ false, tmp);
-    } else {
-      __ tst(oop, oop); // Set NE to indicate 'failure' -> take slow-path. We know that oop != 0.
-    }
-    __ b(cont);
-
-    assert(oopDesc::mark_offset_in_bytes() == 0, "offset of _mark is not 0");
-
-    // Handle existing monitor.
-    __ bind(object_has_monitor);
-    STATIC_ASSERT(markWord::monitor_value <= INT_MAX);
-    __ add(tmp, tmp, -(int)markWord::monitor_value); // monitor
-    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-
-    Label notRecursive;
-    __ cbz(disp_hdr, notRecursive);
-
-    // Recursive lock
-    __ sub(disp_hdr, disp_hdr, 1u);
-    __ str(disp_hdr, Address(tmp, ObjectMonitor::recursions_offset_in_bytes()));
-    __ cmp(disp_hdr, disp_hdr); // Sets flags for result
-    __ b(cont);
-
-    __ bind(notRecursive);
-    __ ldr(rscratch1, Address(tmp, ObjectMonitor::EntryList_offset_in_bytes()));
-    __ ldr(disp_hdr, Address(tmp, ObjectMonitor::cxq_offset_in_bytes()));
-    __ orr(rscratch1, rscratch1, disp_hdr); // Will be 0 if both are 0.
-    __ cmp(rscratch1, zr); // Sets flags for result
-    __ cbnz(rscratch1, cont);
-    // need a release store here
-    __ lea(tmp, Address(tmp, ObjectMonitor::owner_offset_in_bytes()));
-    __ stlr(zr, tmp); // set unowned
-
-    __ bind(cont);
-    // flag == EQ indicates success
-    // flag == NE indicates failure
-    __ br(Assembler::NE, no_count);
-
-    __ decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
-
-    __ bind(no_count);
   %}
 
 %}
@@ -4261,26 +4087,6 @@ operand immI_56()
   interface(CONST_INTER);
 %}
 
-operand immI_63()
-%{
-  predicate(n->get_int() == 63);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immI_64()
-%{
-  predicate(n->get_int() == 64);
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 operand immI_255()
 %{
   predicate(n->get_int() == 255);
@@ -4314,7 +4120,18 @@ operand immI_positive()
 // BoolTest condition for signed compare
 operand immI_cmp_cond()
 %{
-  predicate(n->get_int() < (int)(BoolTest::unsigned_compare));
+  predicate(!Matcher::is_unsigned_booltest_pred(n->get_int()));
+  match(ConI);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// BoolTest condition for unsigned compare
+operand immI_cmpU_cond()
+%{
+  predicate(Matcher::is_unsigned_booltest_pred(n->get_int()));
   match(ConI);
 
   op_cost(0);
@@ -4399,10 +4216,10 @@ operand immIScale()
   interface(CONST_INTER);
 %}
 
-// 26 bit signed offset -- for pc-relative branches
-operand immI26()
+// 5 bit signed integer
+operand immI5()
 %{
-  predicate(((-(1 << 25)) <= n->get_int()) && (n->get_int() < (1 << 25)));
+  predicate(Assembler::is_simm(n->get_int(), 5));
   match(ConI);
 
   op_cost(0);
@@ -4410,32 +4227,11 @@ operand immI26()
   interface(CONST_INTER);
 %}
 
-// 19 bit signed offset -- for pc-relative loads
-operand immI19()
+// 7 bit unsigned integer
+operand immIU7()
 %{
-  predicate(((-(1 << 18)) <= n->get_int()) && (n->get_int() < (1 << 18)));
+  predicate(Assembler::is_uimm(n->get_int(), 7));
   match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 12 bit unsigned offset -- for base plus immediate loads
-operand immIU12()
-%{
-  predicate((0 <= n->get_int()) && (n->get_int() < (1 << 12)));
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-operand immLU12()
-%{
-  predicate((0 <= n->get_long()) && (n->get_long() < (1 << 12)));
-  match(ConL);
 
   op_cost(0);
   format %{ %}
@@ -4556,6 +4352,28 @@ operand immLoffset8()
 operand immLoffset16()
 %{
   predicate(Address::offset_ok_for_immed(n->get_long(), 4));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 5 bit signed long integer
+operand immL5()
+%{
+  predicate(Assembler::is_simm(n->get_long(), 5));
+  match(ConL);
+
+  op_cost(0);
+  format %{ %}
+  interface(CONST_INTER);
+%}
+
+// 7 bit unsigned long integer
+operand immLU7()
+%{
+  predicate(Assembler::is_uimm(n->get_long(), 7));
   match(ConL);
 
   op_cost(0);
@@ -4684,34 +4502,10 @@ operand immL0()
   interface(CONST_INTER);
 %}
 
-// 64 bit unit increment
-operand immL_1()
-%{
-  predicate(n->get_long() == 1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // 64 bit unit decrement
 operand immL_M1()
 %{
   predicate(n->get_long() == -1);
-  match(ConL);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// 32 bit offset of pc in thread anchor
-
-operand immL_pc_off()
-%{
-  predicate(n->get_long() == in_bytes(JavaThread::frame_anchor_offset()) +
-                             in_bytes(JavaFrameAnchor::last_Java_pc_offset()));
   match(ConL);
 
   op_cost(0);
@@ -4771,7 +4565,7 @@ operand immP()
   interface(CONST_INTER);
 %}
 
-// NULL Pointer Immediate
+// Null Pointer Immediate
 operand immP0()
 %{
   predicate(n->get_ptr() == 0);
@@ -4800,30 +4594,6 @@ operand immByteMapBase()
   // Get base of card map
   predicate(BarrierSet::barrier_set()->is_a(BarrierSet::CardTableBarrierSet) &&
             (CardTable::CardValue*)n->get_ptr() == ((CardTableBarrierSet*)(BarrierSet::barrier_set()))->card_table()->byte_map_base());
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate Minus One
-// this is used when we want to write the current PC to the thread anchor
-operand immP_M1()
-%{
-  predicate(n->get_ptr() == -1);
-  match(ConP);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Pointer Immediate Minus Two
-// this is used when we want to write the current PC to the thread anchor
-operand immP_M2()
-%{
-  predicate(n->get_ptr() == -2);
   match(ConP);
 
   op_cost(0);
@@ -4903,7 +4673,7 @@ operand immN()
   interface(CONST_INTER);
 %}
 
-// Narrow NULL Pointer Immediate
+// Narrow Null Pointer Immediate
 operand immN0()
 %{
   predicate(n->get_narrowcon() == 0);
@@ -5095,45 +4865,12 @@ operand iRegL_R0()
   interface(REG_INTER);
 %}
 
-// Long 64 bit Register R2 only
-operand iRegL_R2()
-%{
-  constraint(ALLOC_IN_RC(r2_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Long 64 bit Register R3 only
-operand iRegL_R3()
-%{
-  constraint(ALLOC_IN_RC(r3_reg));
-  match(RegL);
-  match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Long 64 bit Register R11 only
 operand iRegL_R11()
 %{
   constraint(ALLOC_IN_RC(r11_reg));
   match(RegL);
   match(iRegLNoSp);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// Pointer 64 bit Register FP only
-operand iRegP_FP()
-%{
-  constraint(ALLOC_IN_RC(fp_reg));
-  match(RegP);
-  // match(iRegP);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -5197,49 +4934,11 @@ operand iRegN()
   interface(REG_INTER);
 %}
 
-operand iRegN_R0()
-%{
-  constraint(ALLOC_IN_RC(r0_reg));
-  match(iRegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegN_R2()
-%{
-  constraint(ALLOC_IN_RC(r2_reg));
-  match(iRegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand iRegN_R3()
-%{
-  constraint(ALLOC_IN_RC(r3_reg));
-  match(iRegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Integer 64 bit Register not Special
 operand iRegNNoSp()
 %{
   constraint(ALLOC_IN_RC(no_special_reg32));
   match(RegN);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-// heap base register -- used for encoding immN0
-
-operand iRegIHeapbase()
-%{
-  constraint(ALLOC_IN_RC(heapbase_reg));
-  match(RegI);
   op_cost(0);
   format %{ %}
   interface(REG_INTER);
@@ -5385,222 +5084,6 @@ operand vRegD_V7()
   interface(REG_INTER);
 %}
 
-operand vRegD_V8()
-%{
-  constraint(ALLOC_IN_RC(v8_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V9()
-%{
-  constraint(ALLOC_IN_RC(v9_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V10()
-%{
-  constraint(ALLOC_IN_RC(v10_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V11()
-%{
-  constraint(ALLOC_IN_RC(v11_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V12()
-%{
-  constraint(ALLOC_IN_RC(v12_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V13()
-%{
-  constraint(ALLOC_IN_RC(v13_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V14()
-%{
-  constraint(ALLOC_IN_RC(v14_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V15()
-%{
-  constraint(ALLOC_IN_RC(v15_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V16()
-%{
-  constraint(ALLOC_IN_RC(v16_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V17()
-%{
-  constraint(ALLOC_IN_RC(v17_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V18()
-%{
-  constraint(ALLOC_IN_RC(v18_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V19()
-%{
-  constraint(ALLOC_IN_RC(v19_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V20()
-%{
-  constraint(ALLOC_IN_RC(v20_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V21()
-%{
-  constraint(ALLOC_IN_RC(v21_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V22()
-%{
-  constraint(ALLOC_IN_RC(v22_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V23()
-%{
-  constraint(ALLOC_IN_RC(v23_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V24()
-%{
-  constraint(ALLOC_IN_RC(v24_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V25()
-%{
-  constraint(ALLOC_IN_RC(v25_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V26()
-%{
-  constraint(ALLOC_IN_RC(v26_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V27()
-%{
-  constraint(ALLOC_IN_RC(v27_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V28()
-%{
-  constraint(ALLOC_IN_RC(v28_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V29()
-%{
-  constraint(ALLOC_IN_RC(v29_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V30()
-%{
-  constraint(ALLOC_IN_RC(v30_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand vRegD_V31()
-%{
-  constraint(ALLOC_IN_RC(v31_reg));
-  match(RegD);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 operand pReg()
 %{
   constraint(ALLOC_IN_RC(pr_reg));
@@ -5702,15 +5185,6 @@ operand thread_RegP(iRegP reg)
   interface(REG_INTER);
 %}
 
-operand lr_RegP(iRegP reg)
-%{
-  constraint(ALLOC_IN_RC(lr_reg)); // link_reg
-  match(reg);
-  op_cost(0);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 //----------Memory Operands----------------------------------------------------
 
 operand indirect(iRegP reg)
@@ -5785,20 +5259,6 @@ operand indIndex(iRegP reg, iRegL lreg)
   %}
 %}
 
-operand indOffI(iRegP reg, immIOffset off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
 operand indOffI1(iRegP reg, immIOffset1 off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
@@ -5856,20 +5316,6 @@ operand indOffI8(iRegP reg, immIOffset8 off)
 %}
 
 operand indOffI16(iRegP reg, immIOffset16 off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
-
-operand indOffL(iRegP reg, immLoffset off)
 %{
   constraint(ALLOC_IN_RC(ptr_reg));
   match(AddP reg off);
@@ -6058,22 +5504,6 @@ operand indOffLN(iRegN reg, immLoffset off)
   %}
 %}
 
-
-
-// AArch64 opto stubs need to write to the pc slot in the thread anchor
-operand thread_anchor_pc(thread_RegP reg, immL_pc_off off)
-%{
-  constraint(ALLOC_IN_RC(ptr_reg));
-  match(AddP reg off);
-  op_cost(0);
-  format %{ "[$reg, $off]" %}
-  interface(MEMORY_INTER) %{
-    base($reg);
-    index(0xffffffff);
-    scale(0x0);
-    disp($off);
-  %}
-%}
 
 //----------Special Memory Operands--------------------------------------------
 // Stack Slot Operand - This operand is used for loading and storing temporary
@@ -7338,7 +6768,7 @@ instruct loadConP0(iRegPNoSp dst, immP0 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# NULL ptr" %}
+  format %{ "mov  $dst, $con\t# null pointer" %}
 
   ins_encode(aarch64_enc_mov_p0(dst, con));
 
@@ -7352,7 +6782,7 @@ instruct loadConP1(iRegPNoSp dst, immP_1 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# NULL ptr" %}
+  format %{ "mov  $dst, $con\t# null pointer" %}
 
   ins_encode(aarch64_enc_mov_p1(dst, con));
 
@@ -7394,7 +6824,7 @@ instruct loadConN0(iRegNNoSp dst, immN0 con)
   match(Set dst con);
 
   ins_cost(INSN_COST);
-  format %{ "mov  $dst, $con\t# compressed NULL ptr" %}
+  format %{ "mov  $dst, $con\t# compressed null pointer" %}
 
   ins_encode(aarch64_enc_mov_n0(dst, con));
 
@@ -8354,6 +7784,24 @@ instruct popCountL_mem(iRegINoSp dst, memory8 mem, vRegD tmp) %{
   %}
 
   ins_pipe(pipe_class_default);
+%}
+
+// ============================================================================
+// VerifyVectorAlignment Instruction
+
+instruct verify_vector_alignment(iRegP addr, immL_positive_bitmaskI mask, rFlagsReg cr) %{
+  match(Set addr (VerifyVectorAlignment addr mask));
+  effect(KILL cr);
+  format %{ "verify_vector_alignment $addr $mask \t! verify alignment" %}
+  ins_encode %{
+    Label Lskip;
+    // check if masked bits of addr are zero
+    __ tst($addr$$Register, $mask$$constant);
+    __ br(Assembler::EQ, Lskip);
+    __ stop("verify_vector_alignment found a misaligned vector memory access");
+    __ bind(Lskip);
+  %}
+  ins_pipe(pipe_slow);
 %}
 
 // ============================================================================
@@ -14235,12 +13683,12 @@ instruct mulD_reg_reg(vRegD dst, vRegD src1, vRegD src2) %{
 
 // src1 * src2 + src3
 instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaF src3 (Binary src1 src2)));
 
   format %{ "fmadds   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmadds(as_FloatRegister($dst$$reg),
              as_FloatRegister($src1$$reg),
              as_FloatRegister($src2$$reg),
@@ -14252,12 +13700,12 @@ instruct maddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
 
 // src1 * src2 + src3
 instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
   match(Set dst (FmaD src3 (Binary src1 src2)));
 
   format %{ "fmaddd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmaddd(as_FloatRegister($dst$$reg),
              as_FloatRegister($src1$$reg),
              as_FloatRegister($src2$$reg),
@@ -14267,15 +13715,15 @@ instruct maddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF src3 (Binary (NegF src1) src2)));
   match(Set dst (FmaF src3 (Binary src1 (NegF src2))));
 
   format %{ "fmsubs   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubs(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),
@@ -14285,15 +13733,15 @@ instruct msubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 + src3
+// src1 * (-src2) + src3
+// "(-src1) * src2 + src3" has been idealized to "src2 * (-src1) + src3"
 instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD src3 (Binary (NegD src1) src2)));
   match(Set dst (FmaD src3 (Binary src1 (NegD src2))));
 
   format %{ "fmsubd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fmsubd(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),
@@ -14303,15 +13751,15 @@ instruct msubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaF (NegF src3) (Binary (NegF src1) src2)));
   match(Set dst (FmaF (NegF src3) (Binary src1 (NegF src2))));
 
   format %{ "fnmadds  $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmadds(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14321,15 +13769,15 @@ instruct mnaddF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3) %{
   ins_pipe(pipe_class_default);
 %}
 
-// -src1 * src2 - src3
+// src1 * (-src2) - src3
+// "(-src1) * src2 - src3" has been idealized to "src2 * (-src1) - src3"
 instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
-  predicate(UseFMA);
-  match(Set dst (FmaD (NegD src3) (Binary (NegD src1) src2)));
   match(Set dst (FmaD (NegD src3) (Binary src1 (NegD src2))));
 
   format %{ "fnmaddd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmaddd(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14341,12 +13789,12 @@ instruct mnaddD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3) %{
 
 // src1 * src2 - src3
 instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zero) %{
-  predicate(UseFMA);
   match(Set dst (FmaF (NegF src3) (Binary src1 src2)));
 
   format %{ "fnmsubs  $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
+    assert(UseFMA, "Needs FMA instructions support.");
     __ fnmsubs(as_FloatRegister($dst$$reg),
                as_FloatRegister($src1$$reg),
                as_FloatRegister($src2$$reg),
@@ -14358,13 +13806,13 @@ instruct mnsubF_reg_reg(vRegF dst, vRegF src1, vRegF src2, vRegF src3, immF0 zer
 
 // src1 * src2 - src3
 instruct mnsubD_reg_reg(vRegD dst, vRegD src1, vRegD src2, vRegD src3, immD0 zero) %{
-  predicate(UseFMA);
   match(Set dst (FmaD (NegD src3) (Binary src1 src2)));
 
   format %{ "fnmsubd   $dst, $src1, $src2, $src3" %}
 
   ins_encode %{
-  // n.b. insn name should be fnmsubd
+    assert(UseFMA, "Needs FMA instructions support.");
+    // n.b. insn name should be fnmsubd
     __ fnmsub(as_FloatRegister($dst$$reg),
               as_FloatRegister($src1$$reg),
               as_FloatRegister($src2$$reg),
@@ -14948,42 +14396,6 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct convI2B(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{
-    "cmpw $src, zr\n\t"
-    "cset $dst, ne"
-  %}
-
-  ins_encode %{
-    __ cmpw(as_Register($src$$reg), zr);
-    __ cset(as_Register($dst$$reg), Assembler::NE);
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
-instruct convP2B(iRegINoSp dst, iRegP src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{
-    "cmp  $src, zr\n\t"
-    "cset $dst, ne"
-  %}
-
-  ins_encode %{
-    __ cmp(as_Register($src$$reg), zr);
-    __ cset(as_Register($dst$$reg), Assembler::NE);
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
 instruct convD2F_reg(vRegF dst, vRegD src) %{
   match(Set dst (ConvD2F src));
 
@@ -15043,8 +14455,7 @@ instruct convF2HF_reg_reg(iRegINoSp dst, vRegF src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ fcvtsh($tmp$$FloatRegister, $src$$FloatRegister);
-      __ smov($dst$$Register, $tmp$$FloatRegister, __ H, 0);
+      __ flt_to_flt16($dst$$Register, $src$$FloatRegister, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -15056,8 +14467,7 @@ instruct convHF2F_reg_reg(vRegF dst, iRegINoSp src, vRegF tmp) %{
   %}
   effect(TEMP tmp);
   ins_encode %{
-      __ mov($tmp$$FloatRegister, __ H, 0, $src$$Register);
-      __ fcvths($dst$$FloatRegister, $tmp$$FloatRegister);
+      __ flt16_to_flt($dst$$FloatRegister, $src$$Register, $tmp$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -15395,7 +14805,7 @@ instruct clearArray_reg_reg(iRegL_R11 cnt, iRegP_R10 base, Universe dummy, rFlag
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, $cnt$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -15416,7 +14826,7 @@ instruct clearArray_imm_reg(immL cnt, iRegP_R10 base, iRegL_R11 temp, Universe d
 
   ins_encode %{
     address tpc = __ zero_words($base$$Register, (uint64_t)$cnt$$constant);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -16571,58 +15981,75 @@ instruct branchLoopEnd(cmpOp cmp, rFlagsReg cr, label lbl)
   ins_pipe(pipe_branch);
 %}
 
-// counted loop end branch near Unsigned
-instruct branchLoopEndU(cmpOpU cmp, rFlagsRegU cr, label lbl)
-%{
-  match(CountedLoopEnd cmp cr);
-
-  effect(USE lbl);
-
-  ins_cost(BRANCH_COST);
-  // short variant.
-  // ins_short_branch(1);
-  format %{ "b$cmp $lbl \t// counted loop end unsigned" %}
-
-  ins_encode(aarch64_enc_br_conU(cmp, lbl));
-
-  ins_pipe(pipe_branch);
-%}
-
 // counted loop end branch far
-// counted loop end branch far unsigned
 // TODO: fixme
 
 // ============================================================================
 // inlined locking and unlocking
 
-instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
+instruct cmpFastLock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2, iRegPNoSp tmp3)
 %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastLock object box));
-  effect(TEMP tmp, TEMP tmp2);
+  effect(TEMP tmp, TEMP tmp2, TEMP tmp3);
 
-  // TODO
-  // identify correct cost
   ins_cost(5 * INSN_COST);
-  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2" %}
+  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2,$tmp3" %}
 
-  ins_encode(aarch64_enc_fast_lock(object, box, tmp, tmp2));
+  ins_encode %{
+    __ fast_lock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register, $tmp3$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}
 
 instruct cmpFastUnlock(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
 %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, TEMP tmp2);
 
   ins_cost(5 * INSN_COST);
   format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2" %}
 
-  ins_encode(aarch64_enc_fast_unlock(object, box, tmp, tmp2));
+  ins_encode %{
+    __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register);
+  %}
 
   ins_pipe(pipe_serial);
 %}
 
+instruct cmpFastLockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
+%{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP tmp, TEMP tmp2);
+
+  ins_cost(5 * INSN_COST);
+  format %{ "fastlock $object,$box\t! kills $tmp,$tmp2" %}
+
+  ins_encode %{
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
+
+instruct cmpFastUnlockLightweight(rFlagsReg cr, iRegP object, iRegP box, iRegPNoSp tmp, iRegPNoSp tmp2)
+%{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object box));
+  effect(TEMP tmp, TEMP tmp2);
+
+  ins_cost(5 * INSN_COST);
+  format %{ "fastunlock $object,$box\t! kills $tmp, $tmp2" %}
+
+  ins_encode %{
+    __ fast_unlock_lightweight($object$$Register, $box$$Register, $tmp$$Register, $tmp2$$Register);
+  %}
+
+  ins_pipe(pipe_serial);
+%}
 
 // ============================================================================
 // Safepoint Instructions
@@ -17039,14 +16466,17 @@ instruct string_compareUU_sve(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI
 %}
 
 instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
+                          iRegINoSp tmp3, iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UU)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UU) "
+            "# KILL $str1 $cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -17060,14 +16490,17 @@ instruct string_indexofUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
+                          iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (LL)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6,
+         TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (LL) "
+            "# KILL $str1 $cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -17081,14 +16514,17 @@ instruct string_indexofLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
-       iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2, iRegINoSp tmp3,
-       iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6, rFlagsReg cr)
+                          iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,iRegINoSp tmp3,
+                          iRegINoSp tmp4, iRegINoSp tmp5, iRegINoSp tmp6,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
-         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5, TEMP tmp6, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UL)" %}
+         TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, TEMP tmp5,
+         TEMP tmp6, TEMP vtmp0, TEMP vtmp1, KILL cr);
+  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result (UL) "
+            "# KILL $str1 cnt1 $str2 $cnt2 $tmp1 $tmp2 $tmp3 $tmp4 $tmp5 $tmp6 V0-V1 cr" %}
 
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
@@ -17102,14 +16538,15 @@ instruct string_indexofUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 
 %}
 
 instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UU)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UU) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -17123,14 +16560,15 @@ instruct string_indexof_conUU(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_le_4 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (LL)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (LL) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -17144,14 +16582,15 @@ instruct string_indexof_conLL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 %}
 
 instruct string_indexof_conUL(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
-                 immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1, iRegINoSp tmp2,
-                 iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
+                              immI_1 int_cnt2, iRegI_R0 result, iRegINoSp tmp1,
+                              iRegINoSp tmp2, iRegINoSp tmp3, iRegINoSp tmp4, rFlagsReg cr)
 %{
   predicate(((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UL)" %}
+  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result (UL) "
+            "# KILL $str1 $cnt1 $str2 $tmp1 $tmp2 $tmp3 $tmp4 cr" %}
 
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
@@ -17245,41 +16684,29 @@ instruct string_equalsL(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct string_equalsU(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
-                        iRegI_R0 result, rFlagsReg cr)
-%{
-  predicate(((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
-
-  format %{ "String Equals $str1,$str2,$cnt -> $result" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals($str1$$Register, $str2$$Register,
-                     $result$$Register, $cnt$$Register, 2);
+                     $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                        iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                        iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+         TEMP vtmp6, TEMP vtmp7, KILL cr);
 
-  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  format %{ "Array Equals $ary1,ary2 -> $result # KILL $ary1 $ary2 $tmp $tmp1 $tmp2 $tmp3 V0-V7 cr" %}
   ins_encode %{
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 1);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17289,18 +16716,22 @@ instruct array_equalsB(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
 
 instruct array_equalsC(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                        iRegP_R3 tmp1, iRegP_R4 tmp2, iRegP_R5 tmp3,
+                       vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                       vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, vRegD_V7 vtmp7,
                        iRegP_R10 tmp, rFlagsReg cr)
 %{
   predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
-  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+  effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, TEMP tmp1, TEMP tmp2, TEMP tmp3,
+         TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
+         TEMP vtmp6, TEMP vtmp7, KILL cr);
 
-  format %{ "Array Equals $ary1,ary2 -> $result    // KILL $tmp" %}
+  format %{ "Array Equals $ary1,ary2 -> $result # KILL $ary1 $ary2 $tmp $tmp1 $tmp2 $tmp3 V0-V7 cr" %}
   ins_encode %{
     address tpc = __ arrays_equals($ary1$$Register, $ary2$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
                                    $result$$Register, $tmp$$Register, 2);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17315,7 +16746,7 @@ instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg
   format %{ "count positives byte[] $ary1,$len -> $result" %}
   ins_encode %{
     address tpc = __ count_positives($ary1$$Register, $len$$Register, $result$$Register);
-    if (tpc == NULL) {
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17325,37 +16756,40 @@ instruct count_positives(iRegP_R1 ary1, iRegI_R2 len, iRegI_R0 result, rFlagsReg
 
 // fast char[] to byte[] compression
 instruct string_compress(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                         vRegD_V0 tmp1, vRegD_V1 tmp2,
-                         vRegD_V2 tmp3, vRegD_V3 tmp4,
+                         vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                         vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
                          iRegI_R0 result, rFlagsReg cr)
 %{
   match(Set result (StrCompressedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4,
+  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3, TEMP vtmp4, TEMP vtmp5,
          USE_KILL src, USE_KILL dst, USE len, KILL cr);
 
-  format %{ "String Compress $src,$dst,$len -> $result  // KILL $src,$dst" %}
+  format %{ "String Compress $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
   ins_encode %{
     __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
-                           $result$$Register,
-                           $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                           $tmp3$$FloatRegister, $tmp4$$FloatRegister);
+                           $result$$Register, $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                           $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                           $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
   %}
   ins_pipe(pipe_slow);
 %}
 
 // fast byte[] to char[] inflation
-instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len,
-                        vRegD_V0 tmp1, vRegD_V1 tmp2, vRegD_V2 tmp3, iRegP_R3 tmp4, rFlagsReg cr)
+instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len, iRegP_R3 tmp,
+                        vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                        vRegD_V4 vtmp4, vRegD_V5 vtmp5, vRegD_V6 vtmp6, rFlagsReg cr)
 %{
   match(Set dummy (StrInflatedCopy src (Binary dst len)));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+  effect(TEMP vtmp0, TEMP vtmp1, TEMP vtmp2, TEMP vtmp3,
+         TEMP vtmp4, TEMP vtmp5, TEMP vtmp6, TEMP tmp,
+         USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
 
-  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  format %{ "String Inflate $src,$dst # KILL $tmp $src $dst $len V0-V6 cr" %}
   ins_encode %{
     address tpc = __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
-                                        $tmp1$$FloatRegister, $tmp2$$FloatRegister,
-                                        $tmp3$$FloatRegister, $tmp4$$Register);
-    if (tpc == NULL) {
+                                        $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
+                                        $vtmp2$$FloatRegister, $tmp$$Register);
+    if (tpc == nullptr) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
@@ -17365,41 +16799,43 @@ instruct string_inflate(Universe dummy, iRegP_R0 src, iRegP_R1 dst, iRegI_R2 len
 
 // encode char[] to byte[] in ISO_8859_1
 instruct encode_iso_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                          vRegD_V0 vtmp0, vRegD_V1 vtmp1,
-                          vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                          vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                          vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
                           iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(!((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL dst, USE len,
-         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
+  effect(USE_KILL src, USE_KILL dst, USE len, KILL vtmp0, KILL vtmp1,
+         KILL vtmp2, KILL vtmp3, KILL vtmp4, KILL vtmp5, KILL cr);
 
-  format %{ "Encode ISO array $src,$dst,$len -> $result" %}
+  format %{ "Encode ISO array $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $result$$Register, false,
                         $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
-                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                        $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
   %}
   ins_pipe(pipe_class_memory);
 %}
 
 instruct encode_ascii_array(iRegP_R2 src, iRegP_R1 dst, iRegI_R3 len,
-                            vRegD_V0 vtmp0, vRegD_V1 vtmp1,
-                            vRegD_V2 vtmp2, vRegD_V3 vtmp3,
+                            vRegD_V0 vtmp0, vRegD_V1 vtmp1, vRegD_V2 vtmp2,
+                            vRegD_V3 vtmp3, vRegD_V4 vtmp4, vRegD_V5 vtmp5,
                             iRegI_R0 result, rFlagsReg cr)
 %{
   predicate(((EncodeISOArrayNode*)n)->is_ascii());
   match(Set result (EncodeISOArray src (Binary dst len)));
-  effect(USE_KILL src, USE_KILL dst, USE len,
-         KILL vtmp0, KILL vtmp1, KILL vtmp2, KILL vtmp3, KILL cr);
+  effect(USE_KILL src, USE_KILL dst, USE len, KILL vtmp0, KILL vtmp1,
+         KILL vtmp2, KILL vtmp3, KILL vtmp4, KILL vtmp5, KILL cr);
 
-  format %{ "Encode ASCII array $src,$dst,$len -> $result" %}
+  format %{ "Encode ASCII array $src,$dst,$len -> $result # KILL $src $dst V0-V5 cr" %}
   ins_encode %{
     __ encode_iso_array($src$$Register, $dst$$Register, $len$$Register,
                         $result$$Register, true,
                         $vtmp0$$FloatRegister, $vtmp1$$FloatRegister,
-                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister);
+                        $vtmp2$$FloatRegister, $vtmp3$$FloatRegister,
+                        $vtmp4$$FloatRegister, $vtmp5$$FloatRegister);
   %}
   ins_pipe(pipe_class_memory);
 %}

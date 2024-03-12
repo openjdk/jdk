@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,6 +185,10 @@ public final class SunEntries {
                 "sun.security.provider.DSA$SHA3_384withDSAinP1363Format");
         add(p, "Signature", "SHA3-512withDSAinP1363Format",
                 "sun.security.provider.DSA$SHA3_512withDSAinP1363Format");
+
+        attrs.clear();
+        attrs.put("ImplementedIn", "Software");
+        addWithAlias(p, "Signature", "HSS/LMS", "sun.security.provider.HSS", attrs);
         /*
          *  Key Pair Generator engines
          */
@@ -214,6 +218,8 @@ public final class SunEntries {
          */
         addWithAlias(p, "KeyFactory", "DSA",
                 "sun.security.provider.DSAKeyFactory", attrs);
+        addWithAlias(p, "KeyFactory", "HSS/LMS",
+                "sun.security.provider.HSS$KeyFactoryImpl", attrs);
 
         /*
          * Digest engines

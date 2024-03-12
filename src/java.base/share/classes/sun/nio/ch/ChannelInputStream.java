@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -251,6 +251,20 @@ class ChannelInputStream extends InputStream {
             }
         }
 
+        if (out instanceof ChannelOutputStream cos && cos.channel() instanceof FileChannel fc) {
+            ReadableByteChannel rbc = ch;
+
+            if (rbc instanceof SelectableChannel sc) {
+                synchronized (sc.blockingLock()) {
+                    if (!sc.isBlocking())
+                        throw new IllegalBlockingModeException();
+                    return transfer(rbc, fc);
+                }
+            }
+
+            return transfer(rbc, fc);
+        }
+
         return super.transferTo(out);
     }
 
@@ -270,6 +284,25 @@ class ChannelInputStream extends InputStream {
             }
         } finally {
             fc.position(pos);
+        }
+        return pos - initialPos;
+    }
+
+    /**
+     * Transfers all bytes from a readable byte channel to a target channel's file.
+     * If the readable byte channel is a selectable channel then it must be in
+     * blocking mode.
+     */
+    private static long transfer(ReadableByteChannel src, FileChannel dst) throws IOException {
+        long initialPos = dst.position();
+        long pos = initialPos;
+        try {
+            long n;
+            while ((n = dst.transferFrom(src, pos, Long.MAX_VALUE)) > 0) {
+                pos += n;
+            }
+        } finally {
+            dst.position(pos);
         }
         return pos - initialPos;
     }

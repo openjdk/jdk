@@ -51,7 +51,7 @@ import java.nio.ByteBuffer;
  * (wrap/unwrap) pass before any application data is consumed or
  * produced.
  */
-public class SSLEngineTemplate implements SSLContextTemplate {
+public class SSLEngineTemplate extends SSLContextTemplate {
     protected final SSLEngine clientEngine;     // client Engine
     protected final ByteBuffer clientOut;       // write side of clientEngine
     protected final ByteBuffer clientIn;        // read side of clientEngine
@@ -92,13 +92,21 @@ public class SSLEngineTemplate implements SSLContextTemplate {
         cTOs = ByteBuffer.allocateDirect(netBufferMax);
         sTOc = ByteBuffer.allocateDirect(netBufferMax);
 
-        clientOut = ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
-        serverOut = ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
+        clientOut = createClientOutputBuffer();
+        serverOut = createServerOutputBuffer();
+    }
+
+    protected ByteBuffer createServerOutputBuffer() {
+        return ByteBuffer.wrap("Hello Client, I'm Server".getBytes());
     }
 
     //
     // Protected methods could be used to customize the test case.
     //
+
+    protected ByteBuffer createClientOutputBuffer() {
+        return ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+    }
 
     /*
      * Configure the client side engine.

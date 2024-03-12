@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/packageEntry.hpp"
@@ -48,7 +49,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -448,21 +448,15 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
       is_same_class_package(current_class, new_class)) {
     return ACCESS_OK;
   }
-  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
   // succeed trivially.
-  if (vmClasses::reflect_MagicAccessorImpl_klass_is_loaded() &&
-      current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
+  if (vmClasses::reflect_SerializationConstructorAccessorImpl_klass_is_loaded() &&
+      current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
     return ACCESS_OK;
   }
 
   // module boundaries
   if (new_class->is_public()) {
-    // Ignore modules for DumpSharedSpaces because we do not have any package
-    // or module information for modules other than java.base.
-    if (DumpSharedSpaces) {
-      return ACCESS_OK;
-    }
-
     // Find the module entry for current_class, the accessor
     ModuleEntry* module_from = current_class->module();
     // Find the module entry for new_class, the accessee
@@ -664,9 +658,9 @@ bool Reflection::verify_member_access(const Klass* current_class,
     }
   }
 
-  // Allow all accesses from jdk/internal/reflect/MagicAccessorImpl subclasses to
+  // Allow all accesses from jdk/internal/reflect/SerializationConstructorAccessorImpl subclasses to
   // succeed trivially.
-  if (current_class->is_subclass_of(vmClasses::reflect_MagicAccessorImpl_klass())) {
+  if (current_class->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
     return true;
   }
 

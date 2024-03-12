@@ -1045,9 +1045,9 @@ public class PrintWriter extends Writer {
      * {@code out.printf(format, args)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(format, args)
-     * }</pre>
+     * }
      *
      * @param  format
      *         A format string as described in <a
@@ -1093,9 +1093,9 @@ public class PrintWriter extends Writer {
      * {@code out.printf(l, format, args)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.format(l, format, args)
-     * }</pre>
+     * }
      *
      * @param  l
      *         The {@linkplain java.util.Locale locale} to apply during
@@ -1289,9 +1289,9 @@ public class PrintWriter extends Writer {
      * <p> An invocation of this method of the form {@code out.append(csq)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.toString())
-     * }</pre>
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -1321,9 +1321,9 @@ public class PrintWriter extends Writer {
      * when {@code csq} is not {@code null}, behaves in
      * exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(csq.subSequence(start, end).toString())
-     * }</pre>
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -1358,9 +1358,9 @@ public class PrintWriter extends Writer {
      * <p> An invocation of this method of the form {@code out.append(c)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     out.write(c)
-     * }</pre>
+     * }
      *
      * @param  c
      *         The 16-bit character to append

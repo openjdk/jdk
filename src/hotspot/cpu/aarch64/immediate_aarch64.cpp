@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,8 +27,9 @@
 #include <stdint.h>
 
 #include "precompiled.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "immediate_aarch64.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // there are at most 2^13 possible logical immediate encodings
 // however, some combinations of immr and imms are invalid
@@ -51,7 +53,7 @@ struct li_pair {
 static struct li_pair InverseLITable[LI_TABLE_SIZE];
 
 // comparator to sort entries in the inverse table
-int compare_immediate_pair(const void *i1, const void *i2)
+static int compare_immediate_pair(const void *i1, const void *i2)
 {
   struct li_pair *li1 = (struct li_pair *)i1;
   struct li_pair *li2 = (struct li_pair *)i2;
@@ -140,7 +142,7 @@ static inline uint32_t uimm(uint32_t val, int hi, int lo)
 // result
 // a bit string containing count copies of input bit string
 //
-uint64_t replicate(uint64_t bits, int nbits, int count)
+static uint64_t replicate(uint64_t bits, int nbits, int count)
 {
   assert(count > 0, "must be");
   assert(nbits > 0, "must be");
@@ -229,8 +231,8 @@ uint64_t replicate(uint64_t bits, int nbits, int count)
 // For historical reasons the implementation of this function is much
 // more convoluted than is really necessary.
 
-int expandLogicalImmediate(uint32_t immN, uint32_t immr,
-                            uint32_t imms, uint64_t &bimm)
+static int expandLogicalImmediate(uint32_t immN, uint32_t immr,
+                                  uint32_t imms, uint64_t &bimm)
 {
   int len;                 // ought to be <= 6
   uint32_t levels;         // 6 bits
@@ -431,11 +433,7 @@ uint32_t encoding_for_fp_immediate(float immediate)
   // return the imm8 result [s:r:f]
   //
 
-  union {
-    float fpval;
-    uint32_t val;
-  };
-  fpval = immediate;
+  uint32_t val = PrimitiveConversions::cast<uint32_t>(immediate);
   uint32_t s, r, f, res;
   // sign bit is 31
   s = (val >> 31) & 0x1;
@@ -448,4 +446,3 @@ uint32_t encoding_for_fp_immediate(float immediate)
   res = (s << 7) | (r << 4) | f;
   return res;
 }
-

@@ -66,6 +66,11 @@ public class TestOrdered {
                 e.printStackTrace();
                 throw new Error("Unexpected exception in barrier");
             }
+            Instant timestamp = Instant.now();
+            // Wait for clock to increment
+            while (Instant.now().equals(timestamp)) {
+                ;
+            }
             OrderedEvent e2 = new OrderedEvent();
             e2.commit();
         }
@@ -108,6 +113,7 @@ public class TestOrdered {
                 es.setOrdered(false);
                 es.onEvent(e -> {
                     Instant endTime = e.getEndTime();
+                    System.out.println("testSetOrderedFalse: endTime: " + endTime);
                     if (endTime.isBefore(timestamp.get())) {
                         unoreded.set(true);
                         es.close();

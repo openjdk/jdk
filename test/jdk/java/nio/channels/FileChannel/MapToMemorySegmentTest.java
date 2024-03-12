@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @enablePreview
  * @bug 8281412
  * @summary Test FileChannel::map to MemorySegment with custom file channel
  * @run testng/othervm MapToMemorySegmentTest
@@ -32,7 +31,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -62,21 +60,21 @@ public class MapToMemorySegmentTest {
 
     @Test(expectedExceptions = UnsupportedOperationException.class)
     public void testCustomFileChannel() throws IOException {
-        var arena = Arena.openConfined();
+        var arena = Arena.ofConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannel(fc);
         try (arena; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.scope());
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena);
         }
     }
 
     @Test
     public void testCustomFileChannelOverride() throws IOException {
-        var arena = Arena.openConfined();
+        var arena = Arena.ofConfined();
         var fc = FileChannel.open(tempPath, StandardOpenOption.WRITE, StandardOpenOption.READ);
         var fileChannel = new CustomFileChannelOverride(fc);
         try (arena; fileChannel){
-            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena.scope());
+            fileChannel.map(FileChannel.MapMode.READ_WRITE, 1L, 10L, arena);
         }
     }
 
@@ -161,10 +159,10 @@ public class MapToMemorySegmentTest {
         public CustomFileChannelOverride(FileChannel fc) { super(fc); }
 
         @Override
-        public MemorySegment map(MapMode mode, long offset, long size, SegmentScope scope)
+        public MemorySegment map(MapMode mode, long offset, long size, Arena arena)
                 throws IOException, UnsupportedOperationException
         {
-            return fc.map(mode, offset, size, scope);
+            return fc.map(mode, offset, size, arena);
         }
     }
 }

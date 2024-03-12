@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Head;
 import java.io.IOException;
 import java.io.LineNumberReader;
 import java.io.Reader;
+import java.util.List;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -43,7 +44,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -233,41 +233,11 @@ public class SourceToHTMLConverter {
                 .setDescription(HtmlDocletWriter.getDescription("source", te))
                 .setGenerator(HtmlDocletWriter.getGenerator(getClass()))
                 .addDefaultScript(false)
-                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets());
+                .setStylesheets(configuration.getMainStylesheet(), configuration.getAdditionalStylesheets(), List.of());
         var html = HtmlTree.HTML(configuration.getLocale().getLanguage(), head, body);
         HtmlDocument document = new HtmlDocument(html);
         messages.notice("doclet.Generating_0", path.getPath());
         document.write(DocFile.createFileForOutput(configuration, path));
-    }
-
-    /**
-     * Returns a link to the stylesheet file.
-     *
-     * @param head the content to which the stylesheet links will be added
-     */
-    public void addStyleSheetProperties(Content head) {
-        String filename = options.stylesheetFile();
-        DocPath stylesheet;
-        if (filename.length() > 0) {
-            DocFile file = DocFile.createFileForInput(configuration, filename);
-            stylesheet = DocPath.create(file.getName());
-        } else {
-            stylesheet = DocPaths.STYLESHEET;
-        }
-        DocPath p = relativePath.resolve(stylesheet);
-        var link = HtmlTree.LINK("stylesheet", "text/css", p.getPath(), "Style");
-        head.add(link);
-        addStylesheets(head);
-    }
-
-    protected void addStylesheets(Content head) {
-        options.additionalStylesheets().forEach(css -> {
-            DocFile file = DocFile.createFileForInput(configuration, css);
-            DocPath cssPath = DocPath.create(file.getName());
-            var slink = HtmlTree.LINK("stylesheet", "text/css", relativePath.resolve(cssPath).getPath(),
-                                      "Style");
-            head.add(slink);
-        });
     }
 
     /**

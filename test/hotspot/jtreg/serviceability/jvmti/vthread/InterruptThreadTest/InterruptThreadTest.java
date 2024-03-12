@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 /*
  * @test id=default
  * @summary Verifies JVMTI InterruptThread works for virtual threads.
- * @compile --enable-preview -source ${jdk.version} InterruptThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:InterruptThreadTest InterruptThreadTest
+ * @compile InterruptThreadTest.java
+ * @run main/othervm/native -agentlib:InterruptThreadTest InterruptThreadTest
  */
 
 /*
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} InterruptThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:InterruptThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations InterruptThreadTest
+ * @compile InterruptThreadTest.java
+ * @run main/othervm/native -agentlib:InterruptThreadTest -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations InterruptThreadTest
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;

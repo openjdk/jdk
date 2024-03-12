@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,16 @@ _MAINSUPPORT_GMK := 1
 #   TARGET the makefile target
 #   ARGS arguments to the makefile
 #   DEPS the target(s) this new rule depends on
+#   DIR the directory of the makefile (defaults to $(TOPDIR)/make)
 #
 SetupTarget = $(NamedParamsMacroTemplate)
 define SetupTargetBody
+  ifeq ($$($1_DIR), )
+    $1_DIR := $(TOPDIR)/make
+  endif
+
   $1:
-	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f $$($1_MAKEFILE).gmk $$($1_TARGET) $$($1_ARGS))
+	+($(CD) $$($1_DIR) && $(MAKE) $(MAKE_ARGS) -f $$($1_MAKEFILE).gmk $$($1_TARGET) $$($1_ARGS))
 
   ALL_TARGETS += $1
 

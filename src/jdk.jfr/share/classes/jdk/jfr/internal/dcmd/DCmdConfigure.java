@@ -51,9 +51,9 @@ final class DCmdConfigure extends AbstractDCmd {
      * @param globalBufferCount number of global buffers
      * @param globalBufferSize size of global buffers
      * @param threadBufferSize size of thread buffer for events
+     * @param memorySize Size of in memory buffer
      * @param maxChunkSize threshold at which a new chunk is created in the disk repository
-     * @param sampleThreads if thread sampling should be enabled
-     *
+     * @param preserveRepository if files in the repository should be deleted on exit.
      * @return result
 
      * @throws DCmdException
@@ -69,7 +69,8 @@ final class DCmdConfigure extends AbstractDCmd {
             Long globalBufferSize,
             Long threadBufferSize,
             Long memorySize,
-            Long maxChunkSize
+            Long maxChunkSize,
+            Boolean preserveRepository
 
     ) throws DCmdException {
         if (Logger.shouldLog(LogTag.JFR_DCMD, LogLevel.DEBUG)) {
@@ -80,7 +81,8 @@ final class DCmdConfigure extends AbstractDCmd {
                     ", globalbuffersize=" + globalBufferSize +
                     ", thread_buffer_size=" + threadBufferSize +
                     ", memorysize=" + memorySize +
-                    ", maxchunksize=" + maxChunkSize);
+                    ", maxchunksize=" + maxChunkSize +
+                    ", preserveRepository=" + preserveRepository);
         }
 
 
@@ -99,6 +101,14 @@ final class DCmdConfigure extends AbstractDCmd {
             }
             if (verbose) {
                 printRepositoryPath();
+            }
+            updated = true;
+        }
+
+        if (preserveRepository != null) {
+            Options.setPreserveRepository(preserveRepository.booleanValue());
+            if (verbose) {
+                printPreserveRepository();
             }
             updated = true;
         }
@@ -176,6 +186,7 @@ final class DCmdConfigure extends AbstractDCmd {
         if (!updated) {
             println("Current configuration:");
             println();
+            printPreserveRepository();
             printRepositoryPath();
             printDumpPath();
             printStackDepth();
@@ -192,6 +203,10 @@ final class DCmdConfigure extends AbstractDCmd {
         print("Repository path: ");
         printPath(Repository.getRepository().getRepositoryPath());
         println();
+    }
+
+    private void printPreserveRepository() {
+        println("Preserve repository: " + Options.getPreserveRepository());
     }
 
     private void printDumpPath() {

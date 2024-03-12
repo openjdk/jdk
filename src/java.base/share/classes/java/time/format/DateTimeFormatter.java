@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -760,6 +760,8 @@ public final class DateTimeFormatter {
      * @param requestedTemplate the requested template, not null
      * @return the formatter based on the {@code requestedTemplate} pattern, not null
      * @throws IllegalArgumentException if {@code requestedTemplate} is invalid
+     *
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language (LDML)
      * @see #ofPattern(String)
      * @since 19
      */
@@ -780,10 +782,10 @@ public final class DateTimeFormatter {
      * <li>Four digits or more for the {@link ChronoField#YEAR year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
-     * <li>A dash
+     * <li>A hyphen ('HYPHEN-MINUS', U+002D)
      * <li>Two digits for the {@link ChronoField#MONTH_OF_YEAR month-of-year}.
      *  This is pre-padded by zero to ensure two digits.
-     * <li>A dash
+     * <li>A hyphen ('HYPHEN-MINUS', U+002D)
      * <li>Two digits for the {@link ChronoField#DAY_OF_MONTH day-of-month}.
      *  This is pre-padded by zero to ensure two digits.
      * </ul>
@@ -1113,7 +1115,7 @@ public final class DateTimeFormatter {
      * <li>Four digits or more for the {@link ChronoField#YEAR year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
-     * <li>A dash
+     * <li>A hyphen ('HYPHEN-MINUS', U+002D)
      * <li>Three digits for the {@link ChronoField#DAY_OF_YEAR day-of-year}.
      *  This is pre-padded by zero to ensure three digits.
      * <li>If the offset is not available to format or parse then the format is complete.
@@ -1153,11 +1155,11 @@ public final class DateTimeFormatter {
      * <li>Four digits or more for the {@link IsoFields#WEEK_BASED_YEAR week-based-year}.
      * Years in the range 0000 to 9999 will be pre-padded by zero to ensure four digits.
      * Years outside that range will have a prefixed positive or negative symbol.
-     * <li>A dash
+     * <li>A hyphen ('HYPHEN-MINUS', U+002D)
      * <li>The letter 'W'. Parsing is case insensitive.
      * <li>Two digits for the {@link IsoFields#WEEK_OF_WEEK_BASED_YEAR week-of-week-based-year}.
      *  This is pre-padded by zero to ensure three digits.
-     * <li>A dash
+     * <li>A hyphen ('HYPHEN-MINUS', U+002D)
      * <li>One digit for the {@link ChronoField#DAY_OF_WEEK day-of-week}.
      *  The value run from Monday (1) to Sunday (7).
      * <li>If the offset is not available to format or parse then the format is complete.
@@ -2294,29 +2296,23 @@ public final class DateTimeFormatter {
             DateTimeParseContext context;
             try {
                 context = formatter.parseUnresolved0(text, pos);
-            } catch (IndexOutOfBoundsException ex) {
-                if (pos.getErrorIndex() < 0) {
-                    pos.setErrorIndex(0);
+                if (context == null) {
+                    if (pos.getErrorIndex() < 0) {
+                        pos.setErrorIndex(0);
+                    }
+                    return null;
                 }
-                return null;
-            }
-            if (context == null) {
-                if (pos.getErrorIndex() < 0) {
-                    pos.setErrorIndex(0);
-                }
-                return null;
-            }
-            try {
                 TemporalAccessor resolved = context.toResolved(formatter.resolverStyle, formatter.resolverFields);
                 if (parseType == null) {
                     return resolved;
                 }
                 return resolved.query(parseType);
             } catch (RuntimeException ex) {
-                pos.setErrorIndex(0);
+                if (pos.getErrorIndex() < 0) {
+                    pos.setErrorIndex(0);
+                }
                 return null;
             }
         }
     }
-
 }

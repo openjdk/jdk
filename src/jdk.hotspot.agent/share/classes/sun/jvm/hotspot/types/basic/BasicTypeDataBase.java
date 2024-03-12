@@ -156,9 +156,9 @@ public class BasicTypeDataBase implements TypeDataBase {
     return VM.getVM().getOopSize();
   }
 
-  Map<Type, Address> typeToVtbl = new HashMap<>();
+  private Map<Type, Address> typeToVtbl = new HashMap<>();
 
-  private Address vtblForType(Type type) {
+  public Address vtblForType(Type type) {
     Address vtblAddr = typeToVtbl.get(type);
     if (vtblAddr == null) {
       vtblAddr = vtblAccess.getVtblForType(type);

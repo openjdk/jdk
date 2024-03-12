@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,10 @@ public:
   CodeBlobClosure* weak_codeblobs()        { return &_weak._codeblobs; }
 };
 
-G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
-  G1EvacuationRootClosures* res = NULL;
+G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1CollectedHeap* g1h,
+                                                                         G1ParScanThreadState* pss,
+                                                                         bool process_only_dirty_klasses) {
+  G1EvacuationRootClosures* res = nullptr;
   if (g1h->collector_state()->in_concurrent_start_gc()) {
     if (ClassUnloadingWithConcurrentMark) {
       res = new G1ConcurrentStartMarkClosures<false>(g1h, pss);
@@ -78,7 +80,7 @@ G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParSc
       res = new G1ConcurrentStartMarkClosures<true>(g1h, pss);
     }
   } else {
-    res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->in_young_only_phase());
+    res = new G1EvacuationClosures(g1h, pss, process_only_dirty_klasses);
   }
   return res;
 }

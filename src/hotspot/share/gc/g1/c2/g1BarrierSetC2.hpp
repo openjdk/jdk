@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,13 +55,13 @@ protected:
                             bool use_precise) const;
 
   bool g1_can_remove_pre_barrier(GraphKit* kit,
-                                 PhaseTransform* phase,
+                                 PhaseValues* phase,
                                  Node* adr,
                                  BasicType bt,
                                  uint adr_idx) const;
 
   bool g1_can_remove_post_barrier(GraphKit* kit,
-                                  PhaseTransform* phase, Node* store,
+                                  PhaseValues* phase, Node* store,
                                   Node* adr) const;
 
   void g1_mark_card(GraphKit* kit,

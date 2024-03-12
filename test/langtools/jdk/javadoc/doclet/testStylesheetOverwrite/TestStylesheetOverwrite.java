@@ -1,4 +1,4 @@
-/* * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+/* * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,9 +58,10 @@ public class TestStylesheetOverwrite extends JavadocTester {
         createTestClass(srcDir);
 
         Path outDir = base.resolve("out");
+        Path resourceDir = outDir.resolve("resource-files");
+        Files.createDirectories(resourceDir);
 
-        Files.createDirectory(outDir);
-        Path stylesheet = outDir.resolve("stylesheet.css");
+        Path stylesheet = resourceDir.resolve("stylesheet.css");
         Files.createFile(stylesheet);
         Files.write(stylesheet, List.of("/* custom stylesheet */"));
 
@@ -71,7 +72,7 @@ public class TestStylesheetOverwrite extends JavadocTester {
                 "pkg");
 
         checkExit(Exit.OK);
-        checkOutput("stylesheet.css", true, "Javadoc style sheet");
+        checkOutput("resource-files/stylesheet.css", true, "Javadoc style sheet");
     }
 
     void createTestClass(Path srcDir) throws Exception {

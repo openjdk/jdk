@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public interface  XMSelectionListener {
     * This method is for selection change notification
     *
     * This method will only get called if you use the default constructor
-    * or expilicitly specify PropertyChangeMask.
+    * or explicitly specify PropertyChangeMask.
     */
 
    public void selectionChanged(int screen, XMSelection sel, long owner, XPropertyEvent event);

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -81,30 +81,16 @@ endif
 ifneq ($(CMDS_DIR), )
   DEPS += $(call FindFiles, $(CMDS_DIR))
   ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+public)
-    # For public debug symbols on Windows, we have to use stripped pdbs, rename them
-    # and filter out a few launcher pdbs where there's a lib that goes by the same name
+    # For public debug symbols on Windows, we have to use stripped pdbs and rename them
     rename_stripped = $(patsubst %.stripped.pdb,%.pdb,$1)
     CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
     FILES_CMDS := $(filter-out %.pdb, $(call FindFiles, $(CMDS_DIR))) \
-        $(filter-out %jimage.stripped.pdb %jpackage.stripped.pdb %java.stripped.pdb, \
-            $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR))))
+        $(filter %.stripped.pdb, $(call FindFiles, $(CMDS_DIR)))
     $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
         SRC := $(CMDS_DIR), \
         DEST := $(CMDS_DIR_FILTERED), \
         FILES := $(FILES_CMDS), \
         NAME_MACRO := rename_stripped, \
-    ))
-    DEPS += $(COPY_FILTERED_CMDS)
-    JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
-  else ifeq ($(call isTargetOs, windows)+$(SHIP_DEBUG_SYMBOLS), true+full)
-    # For full debug symbols on Windows, we have to filter out a few launcher pdbs
-    # where there's a lib that goes by the same name
-    CMDS_DIR_FILTERED := $(subst modules_cmds,modules_cmds_filtered, $(CMDS_DIR))
-    $(eval $(call SetupCopyFiles, COPY_FILTERED_CMDS, \
-        SRC := $(CMDS_DIR), \
-        DEST := $(CMDS_DIR_FILTERED), \
-        FILES := $(filter-out %jimage.pdb %jpackage.pdb %java.pdb, \
-            $(call FindFiles, $(CMDS_DIR))), \
     ))
     DEPS += $(COPY_FILTERED_CMDS)
     JMOD_FLAGS += --cmds $(CMDS_DIR_FILTERED)
@@ -196,9 +182,14 @@ else # not java.base
   endif
 endif
 
-# Set main class of jdk.httpserver module
-ifeq ($(MODULE), jdk.httpserver)
-    JMOD_FLAGS += --main-class sun.net.httpserver.simpleserver.Main
+################################################################################
+# Include module specific build settings
+
+-include Jmod.gmk
+
+# Set main class
+ifneq ($(JMOD_FLAGS_main_class), )
+  JMOD_FLAGS += $(JMOD_FLAGS_main_class)
 endif
 
 # Changes to the jmod tool itself should also trigger a rebuild of all jmods.

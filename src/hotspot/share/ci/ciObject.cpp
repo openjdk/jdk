@@ -144,7 +144,7 @@ bool ciObject::equals(ciObject* obj) {
 //
 // Implementation note: we use the address of the ciObject as the
 // basis for the hash.  Use the _ident field, which is well-behaved.
-int ciObject::hash() {
+uint ciObject::hash() {
   return ident() * 31;
 }
 

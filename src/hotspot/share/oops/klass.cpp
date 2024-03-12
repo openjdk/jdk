@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
@@ -48,7 +49,6 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
 #include "prims/jvmtiExport.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "utilities/macros.hpp"
@@ -59,10 +59,6 @@ void Klass::set_java_mirror(Handle m) {
   assert(!m.is_null(), "New mirror should never be null.");
   assert(_java_mirror.is_empty(), "should only be used to initialize mirror");
   _java_mirror = class_loader_data()->add_handle(m);
-}
-
-oop Klass::java_mirror_no_keepalive() const {
-  return _java_mirror.peek();
 }
 
 bool Klass::is_cloneable() const {
@@ -85,7 +81,7 @@ void Klass::set_name(Symbol* n) {
   _name = n;
   if (_name != nullptr) _name->increment_refcount();
 
-  if (Arguments::is_dumping_archive() && is_instance_klass()) {
+  if (CDSConfig::is_dumping_archive() && is_instance_klass()) {
     SystemDictionaryShared::init_dumptime_info(InstanceKlass::cast(this));
   }
 }
@@ -195,6 +191,10 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
+Klass::Klass() : _kind(UnknownKlassKind) {
+  assert(CDSConfig::is_dumping_static_archive() || UseSharedSpaces, "only for cds");
+}
+
 // "Normal" instantiation is preceded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,
@@ -261,7 +261,7 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       // Overflow of the primary_supers array forces me to be secondary.
       super_check_cell = &_secondary_super_cache;
     }
-    set_super_check_offset((address)super_check_cell - (address) this);
+    set_super_check_offset(u4((address)super_check_cell - (address) this));
 
 #ifdef ASSERT
     {
@@ -520,7 +520,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
     it->push(&_primary_supers[i]);
   }
   it->push(&_super);
-  if (!Arguments::is_dumping_archive()) {
+  if (!CDSConfig::is_dumping_archive()) {
     // If dumping archive, these may point to excluded classes. There's no need
     // to follow these pointers anyway, as they will be set to null in
     // remove_unshareable_info().
@@ -537,7 +537,7 @@ void Klass::metaspace_pointers_do(MetaspaceClosure* it) {
 
 #if INCLUDE_CDS
 void Klass::remove_unshareable_info() {
-  assert (Arguments::is_dumping_archive(),
+  assert(CDSConfig::is_dumping_archive(),
           "only called during CDS dump time");
   JFR_ONLY(REMOVE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
@@ -555,7 +555,7 @@ void Klass::remove_unshareable_info() {
 }
 
 void Klass::remove_java_mirror() {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm;
     log_trace(cds, unshareable)("remove java_mirror: %s", external_name());
@@ -570,7 +570,9 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   JFR_ONLY(RESTORE_ID(this);)
   if (log_is_enabled(Trace, cds, unshareable)) {
     ResourceMark rm(THREAD);
-    log_trace(cds, unshareable)("restore: %s", external_name());
+    oop class_loader = loader_data->class_loader();
+    log_trace(cds, unshareable)("restore: %s with class loader: %s", external_name(),
+      class_loader != nullptr ? class_loader->klass()->external_name() : "boot");
   }
 
   // If an exception happened during CDS restore, some of these fields may already be
@@ -603,7 +605,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::is_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);
@@ -643,7 +645,7 @@ void Klass::clear_archived_mirror_index() {
 
 // No GC barrier
 void Klass::set_archived_java_mirror(int mirror_index) {
-  assert(DumpSharedSpaces, "called only during dumptime");
+  assert(CDSConfig::is_dumping_heap(), "sanity");
   _archived_mirror_index = mirror_index;
 }
 #endif // INCLUDE_CDS_JAVA_HEAP

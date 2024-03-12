@@ -102,15 +102,11 @@ HB_INTERNAL void
 hb_ot_layout_substitute_start (hb_font_t    *font,
                                hb_buffer_t  *buffer);
 
-HB_INTERNAL void
-hb_ot_layout_delete_glyphs_inplace (hb_buffer_t *buffer,
-                                    bool (*filter) (const hb_glyph_info_t *info));
-
 namespace OT {
   struct hb_ot_apply_context_t;
   struct hb_ot_layout_lookup_accelerator_t;
 namespace Layout {
-namespace GSUB {
+namespace GSUB_impl {
   struct SubstLookup;
 }
 }
@@ -118,7 +114,7 @@ namespace GSUB {
 
 HB_INTERNAL void
 hb_ot_layout_substitute_lookup (OT::hb_ot_apply_context_t *c,
-                                const OT::Layout::GSUB::SubstLookup &lookup,
+                                const OT::Layout::GSUB_impl::SubstLookup &lookup,
                                 const OT::hb_ot_layout_lookup_accelerator_t &accel);
 
 
@@ -452,7 +448,7 @@ _hb_glyph_info_get_lig_id (const hb_glyph_info_t *info)
 static inline bool
 _hb_glyph_info_ligated_internal (const hb_glyph_info_t *info)
 {
-  return !!(info->lig_props() & IS_LIG_BASE);
+  return info->lig_props() & IS_LIG_BASE;
 }
 
 static inline unsigned int
@@ -500,37 +496,37 @@ _hb_glyph_info_get_glyph_props (const hb_glyph_info_t *info)
 static inline bool
 _hb_glyph_info_is_base_glyph (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_BASE_GLYPH;
 }
 
 static inline bool
 _hb_glyph_info_is_ligature (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_LIGATURE;
 }
 
 static inline bool
 _hb_glyph_info_is_mark (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_MARK);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_MARK;
 }
 
 static inline bool
 _hb_glyph_info_substituted (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED;
 }
 
 static inline bool
 _hb_glyph_info_ligated (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_LIGATED);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_LIGATED;
 }
 
 static inline bool
 _hb_glyph_info_multiplied (const hb_glyph_info_t *info)
 {
-  return !!(info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED);
+  return info->glyph_props() & HB_OT_LAYOUT_GLYPH_PROPS_MULTIPLIED;
 }
 
 static inline bool
@@ -552,7 +548,7 @@ _hb_glyph_info_clear_substituted (hb_glyph_info_t *info)
   info->glyph_props() &= ~(HB_OT_LAYOUT_GLYPH_PROPS_SUBSTITUTED);
 }
 
-static inline void
+static inline bool
 _hb_clear_substitution_flags (const hb_ot_shape_plan_t *plan HB_UNUSED,
                               hb_font_t *font HB_UNUSED,
                               hb_buffer_t *buffer)
@@ -561,6 +557,7 @@ _hb_clear_substitution_flags (const hb_ot_shape_plan_t *plan HB_UNUSED,
   unsigned int count = buffer->len;
   for (unsigned int i = 0; i < count; i++)
     _hb_glyph_info_clear_substituted (&info[i]);
+  return false;
 }
 
 

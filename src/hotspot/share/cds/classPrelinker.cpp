@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/cdsConfig.hpp"
 #include "cds/classPrelinker.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmClasses.hpp"
@@ -142,6 +143,7 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
 }
 
 Klass* ClassPrelinker::find_loaded_class(JavaThread* THREAD, oop class_loader, Symbol* name) {
+  HandleMark hm(THREAD);
   Handle h_loader(THREAD, class_loader);
   Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, name,
                                                             h_loader,
@@ -181,13 +183,10 @@ Klass* ClassPrelinker::maybe_resolve_class(constantPoolHandle cp, int cp_index, 
 
 #if INCLUDE_CDS_JAVA_HEAP
 void ClassPrelinker::resolve_string(constantPoolHandle cp, int cp_index, TRAPS) {
-  if (!DumpSharedSpaces) {
-    // The archive heap is not supported for the dynamic archive.
-    return;
+  if (CDSConfig::is_dumping_heap()) {
+    int cache_index = cp->cp_to_object_index(cp_index);
+    ConstantPool::string_at_impl(cp, cp_index, cache_index, CHECK);
   }
-
-  int cache_index = cp->cp_to_object_index(cp_index);
-  ConstantPool::string_at_impl(cp, cp_index, cache_index, CHECK);
 }
 #endif
 

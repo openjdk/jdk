@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,10 +137,6 @@ public:
   // Record the cleanup complete and cleanup state.
   // precondition: a cleanup is in progress.
   static void cleanup_end();
-
-  // Return the phase kind for the cleanup being performed.
-  // precondition: a cleanup is in progress.
-  static Stat::Phase cleanup_phase();
 
   static void verify();
   static void log_statistics();

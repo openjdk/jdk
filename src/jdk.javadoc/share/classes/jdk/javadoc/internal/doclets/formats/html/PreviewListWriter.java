@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,9 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
-import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.PreviewAPIListBuilder;
 
@@ -54,26 +51,29 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
      * Constructor.
      *
      * @param configuration the configuration for this doclet
-     * @param filename the file to be generated
      */
-    public PreviewListWriter(HtmlConfiguration configuration, DocPath filename) {
-        super(configuration, filename, configuration.previewAPIListBuilder);
+    public PreviewListWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.PREVIEW_LIST, configuration.previewAPIListBuilder);
     }
 
-    /**
-     * Get list of all the preview elements.
-     * Then instantiate PreviewListWriter and generate File.
-     *
-     * @param configuration the current configuration of the doclet.
-     * @throws DocFileIOException if there is a problem writing the preview list
-     */
-    public static void generate(HtmlConfiguration configuration) throws DocFileIOException {
-        if (configuration.conditionalPages.contains(HtmlConfiguration.ConditionalPage.PREVIEW)) {
-            DocPath filename = DocPaths.PREVIEW_LIST;
-            PreviewListWriter depr = new PreviewListWriter(configuration, filename);
-            depr.generateSummaryListFile(PageMode.PREVIEW, "preview elements",
-                    configuration.contents.previewAPI, "doclet.Window_Preview_List");
-        }
+    @Override
+    protected PageMode getPageMode() {
+        return PageMode.PREVIEW;
+    }
+
+    @Override
+    protected String getDescription() {
+        return "preview elements";
+    }
+
+    @Override
+    protected Content getHeadContent() {
+        return configuration.contents.previewAPI;
+    }
+
+    @Override
+    protected String getTitleKey() {
+        return "doclet.Window_Preview_List";
     }
 
     @Override
@@ -88,7 +88,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
                 HtmlId htmlId = HtmlId.of("feature-" + index);
                 String jepUrl = resources.getText("doclet.Preview_JEP_URL", jep.number());
                 list.add(HtmlTree.LI(HtmlTree.LABEL(htmlId.name(),
-                                HtmlTree.INPUT("checkbox", htmlId)
+                                HtmlTree.INPUT(HtmlAttr.InputType.CHECKBOX, htmlId)
                                         .put(HtmlAttr.CHECKED, "")
                                         .put(HtmlAttr.ONCLICK,
                                                 "toggleGlobal(this, '" + index + "', 3)"))

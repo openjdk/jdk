@@ -25,12 +25,11 @@
  * @test
  * @bug 7192246
  * @summary  check that javac does not generate bridge methods for defaults
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @enablePreview
+ * @modules java.base/jdk.internal.classfile.impl
  */
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ConstantPool.*;
-import com.sun.tools.classfile.Method;
+import java.lang.classfile.*;
 
 import java.io.*;
 
@@ -71,9 +70,9 @@ public class TestNoBridgeOnDefaults {
     void checkNoBridgeOnDefaults(File f) {
         System.err.println("check: " + f);
         try {
-            ClassFile cf = ClassFile.read(f);
-            for (Method m : cf.methods) {
-                String mname = m.getName(cf.constant_pool);
+            ClassModel cf = ClassFile.of().parse(f.toPath());
+            for (MethodModel m : cf.methods()) {
+                String mname = m.methodName().stringValue();
                 if (mname.equals(TEST_METHOD_NAME)) {
                     throw new Error("unexpected bridge method found " + m);
                 }

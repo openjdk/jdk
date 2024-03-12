@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,13 @@
 
 #include "runtime/javaThread.hpp"
 
-// this utility could be useful for non cx8 platforms
-
 class JfrSpinlockHelper {
  private:
   volatile int* const _lock;
 
  public:
   JfrSpinlockHelper(volatile int* lock) : _lock(lock) {
-    Thread::SpinAcquire(_lock, NULL);
+    Thread::SpinAcquire(_lock, nullptr);
   }
 
   JfrSpinlockHelper(volatile int* const lock, const char* name) : _lock(lock) {

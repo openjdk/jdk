@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -163,32 +163,32 @@ There are several problems with Drag and Drop - notably, the mismatch between Ja
 // Mouse and key modifiers mapping:
 + (NSUInteger)mapJavaExtModifiersToNSMouseDownButtons:(jint)modifiers
 {
-    NSUInteger result = NSLeftMouseDown;
+    NSUInteger result = NSEventTypeLeftMouseDown;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON1_DOWN_MASK) != 0)
-        result = NSLeftMouseDown;
+        result = NSEventTypeLeftMouseDown;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON2_DOWN_MASK) != 0)
-        result = NSOtherMouseDown;
+        result = NSEventTypeOtherMouseDown;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON3_DOWN_MASK) != 0)
-        result = NSRightMouseDown;
+        result = NSEventTypeRightMouseDown;
 
     return result;
 }
 
 + (NSUInteger)mapJavaExtModifiersToNSMouseUpButtons:(jint)modifiers
 {
-    NSUInteger result = NSLeftMouseUp;
+    NSUInteger result = NSEventTypeLeftMouseUp;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON1_DOWN_MASK) != 0)
-        result = NSLeftMouseUp;
+        result = NSEventTypeLeftMouseUp;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON2_DOWN_MASK) != 0)
-        result = NSOtherMouseUp;
+        result = NSEventTypeOtherMouseUp;
 
     if ((modifiers & java_awt_event_InputEvent_BUTTON3_DOWN_MASK) != 0)
-        result = NSRightMouseUp;
+        result = NSEventTypeRightMouseUp;
 
     return result;
 }

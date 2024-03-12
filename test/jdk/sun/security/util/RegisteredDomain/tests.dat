@@ -84,6 +84,10 @@ foo.fj                  fj              foo.fj
 www.foo.ie              ie              foo.ie
 www.foo.gov.ie          gov.ie          foo.gov.ie
 
+# in
+5g.in                   5g.in           null
+www.5g.in               5g.in           www.5g.in
+
 # it has a large number of entries
 www.gr.it               gr.it           www.gr.it
 www.blahblahblah.it     it              blahblahblah.it
@@ -148,9 +152,17 @@ s.k12.oh.us             k12.oh.us       s.k12.oh.us
 s.pvt.k12.ma.us         pvt.k12.ma.us   s.pvt.k12.ma.us
 w.s.pvt.k12.ma.us       pvt.k12.ma.us   s.pvt.k12.ma.us
 
+# vn
+site.com.vn             com.vn          site.com.vn
+site.ai.vn              ai.vn           site.ai.vn
+
 # السعودية
 السعودية                السعودية        null
 foo.السعودية            السعودية        foo.السعودية
 w.foo.السعودية          السعودية        foo.السعودية
+
+# Microsoft
+1.azurestaticapps.net         1.azurestaticapps.net       null
+app.1.azurestaticapps.net     1.azurestaticapps.net       app.1.azurestaticapps.net
 
 ## END

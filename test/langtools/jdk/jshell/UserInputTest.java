@@ -98,4 +98,8 @@ public class UserInputTest extends KullaTesting {
         assertEval("System.in.read();", "2");
         assertEval("System.in.read();", "-1");
     }
+
+    public void testNoConsole() {
+        assertEval("System.console()", "null");
+    }
 }

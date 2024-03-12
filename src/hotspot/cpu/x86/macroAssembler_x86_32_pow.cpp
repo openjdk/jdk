@@ -85,7 +85,7 @@
 /******************************************************************************/
 
 // The 32 bit code is at most SSE2 compliant
-ATTRIBUTE_ALIGNED(16) juint _static_const_table_pow[] =
+ATTRIBUTE_ALIGNED(16) static const juint _static_const_table_pow[] =
 {
     0x00000000UL, 0xbfd61a00UL, 0x00000000UL, 0xbf5dabe1UL, 0xf8000000UL,
     0xffffffffUL, 0x00000000UL, 0xfffff800UL, 0x00000000UL, 0x3ff00000UL,
@@ -719,9 +719,9 @@ ATTRIBUTE_ALIGNED(16) juint _static_const_table_pow[] =
 
 };
 
-ATTRIBUTE_ALIGNED(8) double _DOUBLE2 = 2.0;
-ATTRIBUTE_ALIGNED(8) double _DOUBLE0 = 0.0;
-ATTRIBUTE_ALIGNED(8) double _DOUBLE0DOT5 = 0.5;
+ATTRIBUTE_ALIGNED(8) static const double _DOUBLE2 = 2.0;
+ATTRIBUTE_ALIGNED(8) static const double _DOUBLE0 = 0.0;
+ATTRIBUTE_ALIGNED(8) static const double _DOUBLE0DOT5 = 0.5;
 
 //registers,
 // input: xmm0, xmm1

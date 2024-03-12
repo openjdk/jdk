@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 import jdk.jfr.internal.JVM;
+import jdk.jfr.internal.JVMSupport;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
 import jdk.test.whitebox.code.NMethod;
@@ -64,7 +65,7 @@ public class TestJFRIntrinsic {
     }
 
     public static void main(String... args) throws Exception {
-        JVM.getJVM().createNativeJFR();
+        JVMSupport.createJFR();
         TestJFRIntrinsic ti = new TestJFRIntrinsic();
         Method classid = TestJFRIntrinsic.class.getDeclaredMethod("getClassIdIntrinsic",  Class.class);
         ti.runIntrinsicTest(classid);

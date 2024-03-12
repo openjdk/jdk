@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,12 +136,6 @@ public class TestSerialGCWithCDS {
                               "-Xlog:cds,cds+heap",
                               "-XX:ArchiveRelocationMode=1", // always relocate shared metadata
                               "Hello");
-        if (out.getOutput().contains("Trying to map heap") || out.getOutput().contains("Loaded heap")) {
-            // The native data in the RO/RW regions have been relocated. If the CDS heap is
-            // mapped/loaded, we must patch all the native pointers. (CDS heap is
-            // not supported on all platforms)
-            out.shouldContain("Patching native pointers in heap region");
-        }
         checkExecOutput(dumpWithSerial, execWithSerial, out);
 
         int n = 2;

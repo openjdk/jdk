@@ -564,7 +564,7 @@ public abstract class AccessibleContext {
      * not be treated as the component's accessible parent and is a method that
      * should only be called by the parent of the accessible child.
      *
-     * @param  a - {@code Accessible} to be set as the parent
+     * @param  a {@code Accessible} to be set as the parent
      */
     public void setAccessibleParent(Accessible a) {
         accessibleParent = a;

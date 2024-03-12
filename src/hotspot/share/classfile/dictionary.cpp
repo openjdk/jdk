@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/cdsConfig.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/javaClasses.hpp"
@@ -39,7 +40,6 @@
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oopHandle.inline.hpp"
-#include "runtime/arguments.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -211,7 +211,7 @@ void Dictionary::all_entries_do(KlassClosure* closure) {
 
 // Used to scan and relocate the classes during CDS archive dump.
 void Dictionary::classes_do(MetaspaceClosure* it) {
-  Arguments::assert_is_dumping_archive();
+  assert(CDSConfig::is_dumping_archive(), "sanity");
 
   auto push = [&] (DictionaryEntry** value) {
     InstanceKlass** k = (*value)->instance_klass_addr();
@@ -229,10 +229,12 @@ public:
   uintx get_hash() const {
     return _name->identity_hash();
   }
-  bool equals(DictionaryEntry** value, bool* is_dead) {
+  bool equals(DictionaryEntry** value) {
     DictionaryEntry *entry = *value;
-    *is_dead = false;
     return (entry->instance_klass()->name() == _name);
+  }
+  bool is_dead(DictionaryEntry** value) {
+    return false;
   }
 };
 

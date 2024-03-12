@@ -23,13 +23,13 @@
  * questions.
  */
 
+#include <cmath>
+#include <cfloat>
 #include "awt_Component.h"
 #include "awt_PrintControl.h"
 #include "awt.h"
 #include "awt_PrintDialog.h"
 #include <winspool.h>
-#include <float.h>
-#include <math.h>
 
 #define ROUNDTOINT(x) ((int)((x)+0.5))
 static const int DEFAULT_RES = 72;

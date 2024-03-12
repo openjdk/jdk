@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -52,6 +52,12 @@
 #include <inttypes.h>
 #include <string.h>
 
+/* Undefine macro to avoid generating invalid C code.
+   Capstone refactored cs_detail for AArch64 architecture
+   from `cs_arm64 arm64` to `cs_aarch64 aarch64`
+   and that causes invalid macro expansion.
+*/
+#undef aarch64
 #include <capstone.h>
 
 #include "hsdis.h"
@@ -149,6 +155,11 @@ void* decode_instructions_virtual(uintptr_t start_va, uintptr_t end_va,
 
   Options ops = parse_options(options, printf_callback, printf_stream);
   cs_option(cs_handle, CS_OPT_SYNTAX, ops.intel_syntax ? CS_OPT_SYNTAX_INTEL : CS_OPT_SYNTAX_ATT);
+
+  // Turn on SKIPDATA mode to skip broken instructions. HotSpot often
+  // has embedded data in method bodies, and we need disassembly to
+  // continue when such non-instructions are not recognized.
+  cs_option(cs_handle, CS_OPT_SKIPDATA, CS_OPT_ON);
 
   cs_insn *insn;
   size_t count = cs_disasm(cs_handle, buffer, length, (uintptr_t) buffer, 0 , &insn);

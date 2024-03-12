@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ int Assembler::patched_branch(int dest_pos, int inst, int inst_pos) {
   case bc_op: m = bd(-1); v = bd(disp(dest_pos, inst_pos)); break;
     default: ShouldNotReachHere();
   }
-  return inst & ~m | v;
+  return (inst & ~m) | v;
 }
 
 // Return the offset, relative to _code_begin, of the destination of

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,10 @@
 
 /**
  * @test
+ * @enablePreview
  * @modules java.base/jdk.internal.module
+ * @library /test/lib
+ * @build jdk.test.lib.util.ModuleInfoWriter
  * @run testng ClassFileVersionsTest
  * @summary Test parsing of module-info.class with different class file versions
  */
@@ -36,7 +39,7 @@ import java.util.Set;
 
 import static java.lang.module.ModuleDescriptor.Requires.Modifier.*;
 
-import jdk.internal.module.ModuleInfoWriter;
+import jdk.test.lib.util.ModuleInfoWriter;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;

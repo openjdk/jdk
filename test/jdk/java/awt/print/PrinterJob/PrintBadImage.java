@@ -25,7 +25,7 @@
  * @test
  * @bug 4398853
  * @summary Printing shouldn't hang on bad images
- * @author prr
+ * @key printer
  * @run main/manual PrintBadImage
  */
 

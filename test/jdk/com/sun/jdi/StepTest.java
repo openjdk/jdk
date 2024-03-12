@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ public class StepTest extends TestScaffold {
     int maxDepth;
     String granularity;
     int expectedCount;
+    String debuggeeClassName;
     int workaroundCount = 0;
     boolean lastStepNeeded = true;
     public static void main(String args[]) throws Exception {
@@ -110,6 +111,7 @@ public class StepTest extends TestScaffold {
         maxDepth = Integer.decode(args[0]).intValue();
         granularity = args[1];
         expectedCount = Integer.decode(args[2]).intValue();
+        debuggeeClassName = args[3];
         if (args.length == 5) {
             workaroundCount = Integer.decode(args[4]).intValue();
         }
@@ -123,15 +125,20 @@ public class StepTest extends TestScaffold {
         connect(args2);
         ThreadReference thread = waitForVMStart();
 
-        StepEvent stepEvent = stepIntoLine(thread);
+        System.out.println("\n\n-------Running test for class: " + debuggeeClassName);
 
-        String className = thread.frame(0).location().declaringType().name();
-        System.out.println("\n\n-------Running test for class: " + className);
-
-        BreakpointEvent bpEvent = resumeTo(className, "go", "()V");
+        BreakpointEvent bpEvent = resumeTo(debuggeeClassName, "go", "()V");
         thread = bpEvent.thread();
 
+        int numFrames = thread.frameCount();
+
+        // maxDepth is based on the assumption that there are just two frames when we
+        // enter the go() method. When using the virtual thread wrapper, there are many
+        // more than that. So we need to adjust maxDepth. If we aren't using the virtual
+        // thread wrapper, then this adjustment becomes a no-op because numFrames == 2.
+        maxDepth = maxDepth - 2 + numFrames;
         for (int i = 0; i < expectedCount; i++) {
+            StepEvent stepEvent;
             if (thread.frameCount() < maxDepth) {
                 if (granularity.equals("line")) {
                     stepEvent = stepIntoLine(thread);
@@ -145,12 +152,12 @@ public class StepTest extends TestScaffold {
                     stepEvent = stepOverInstruction(thread);
                 }
             }
-            System.out.println("Step #" + (i+1) + "complete at " +
+            System.out.println("Step #" + (i+1) + " complete at " +
                                stepEvent.location().method().name() + ":" +
                                stepEvent.location().lineNumber() + " (" +
                                stepEvent.location().codeIndex() + "), frameCount = " +
                                thread.frameCount());
-            if (thread.frameCount() < 2) {
+            if (thread.frameCount() < numFrames) {
                 // We have stepped one step too far.  If we did exactly
                 // the 'workaround' number of steps, then this is in all
                 // likelihood the non IA64 VM.  So, stop.
@@ -163,7 +170,7 @@ public class StepTest extends TestScaffold {
             }
         }
 
-        if (thread.frameCount() > 2) {
+        if (thread.frameCount() > numFrames) {
             // Not far enough
             throw new Exception("Didn't step far enough (" + thread.frame(0) + ")");
         }
@@ -172,7 +179,7 @@ public class StepTest extends TestScaffold {
             // One last step takes us out of go()
             stepIntoLine(thread);
         }
-        if (thread.frameCount() != 1) {
+        if (thread.frameCount() != numFrames - 1) {
             // Gone too far
             throw new Exception("Didn't step far enough (" + thread.frame(0) + ")");
         }

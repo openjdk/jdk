@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,9 @@ abstract public class DebugeeProcess extends FinalizableObject {
     protected DebugeeProcess (DebugeeBinder binder) {
         this.binder = binder;
         this.log = binder.getLog();
+
+        // Register the cleanup() method to be called when this instance becomes unreachable.
+        registerCleanup();
     }
 
     /**
@@ -460,8 +463,7 @@ abstract public class DebugeeProcess extends FinalizableObject {
      *
      * @throws Throwable if any throwable exception is thrown during finalization
      */
-    protected void finalize() throws Throwable {
+    public void cleanup() {
         close();
-        super.finalize();
     }
 }

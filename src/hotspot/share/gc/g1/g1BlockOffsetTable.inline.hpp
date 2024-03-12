@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1BlockOffsetTable.hpp"
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "runtime/atomic.hpp"
 #include "oops/oop.inline.hpp"
@@ -46,7 +46,7 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
 
   size_t index = _bot->index_for(addr);
 
-  uint offset = _bot->offset_array(index);
+  u_char offset = _bot->offset_array(index);
   while (offset >= BOTConstants::card_size_in_words()) {
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.

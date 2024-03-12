@@ -22,15 +22,14 @@
  *
  */
 
-#include "opto/addnode.hpp"
-#include "opto/node.hpp"
 #include "precompiled.hpp"
 #include "memory/allocation.inline.hpp"
+#include "opto/addnode.hpp"
 #include "opto/callnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/movenode.hpp"
+#include "opto/node.hpp"
 #include "opto/opaquenode.hpp"
-
 
 //------------------------------split_thru_region------------------------------
 // Split Node 'n' through merge point.
@@ -101,8 +100,8 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     for (uint i = 0; i < wq.size(); i++) {
       Node* m = wq.at(i);
       if (m->is_If()) {
-        assert(skeleton_predicate_has_opaque(m->as_If()), "opaque node not reachable from if?");
-        Node* bol = clone_skeleton_predicate_bool(m, NULL, NULL, m->in(0));
+        assert(assertion_predicate_has_loop_opaque_node(m->as_If()), "opaque node not reachable from if?");
+        Node* bol = create_bool_from_template_assertion_predicate(m, nullptr, nullptr, m->in(0));
         _igvn.replace_input_of(m, 1, bol);
       } else {
         assert(!m->is_CFG(), "not CFG expected");
@@ -164,7 +163,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   // ConvI2L may have type information on it which becomes invalid if
   // it moves up in the graph so change any clones so widen the type
   // to TypeLong::INT when pushing it up.
-  const Type* rtype = NULL;
+  const Type* rtype = nullptr;
   if (n->Opcode() == Op_ConvI2L && n->bottom_type() != TypeLong::INT) {
     rtype = TypeLong::INT;
   }
@@ -174,7 +173,7 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
   for( uint j = 1; j < blk1->req(); j++ ) {
     Node *x = n->clone();
     // Widen the type of the ConvI2L when pushing up.
-    if (rtype != NULL) x->as_Type()->set_type(rtype);
+    if (rtype != nullptr) x->as_Type()->set_type(rtype);
     if( n->in(0) && n->in(0) == blk1 )
       x->set_req( 0, blk1->in(j) );
     for( uint i = 1; i < n->req(); i++ ) {
@@ -550,7 +549,7 @@ Node *PhaseIdealLoop::find_use_block( Node *use, Node *def, Node *old_false, Nod
     set_ctrl(use, new_true);
   }
 
-  if (use_blk == NULL) {        // He's dead, Jim
+  if (use_blk == nullptr) {        // He's dead, Jim
     _igvn.replace_node(use, C->top());
   }
 
@@ -591,12 +590,6 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, RegionNode** new_true_region) {
-  if (PrintOpto && VerifyLoopOptimizations) {
-    tty->print_cr("Split-if");
-  }
-  if (TraceLoopOpts) {
-    tty->print_cr("SplitIf");
-  }
 
   C->set_major_progress();
   RegionNode *region = iff->in(0)->as_Region();
@@ -628,7 +621,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       for (j = n->outs(); n->has_out(j); j++) {
         Node* m = n->out(j);
         // If m is dead, throw it away, and declare progress
-        if (_nodes[m->_idx] == NULL) {
+        if (_loop_or_ctrl[m->_idx] == nullptr) {
           _igvn.remove_dead_node(m);
           // fall through
         }
@@ -652,9 +645,9 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
 
   // Replace both uses of 'new_iff' with Regions merging True/False
   // paths.  This makes 'new_iff' go dead.
-  Node *old_false = NULL, *old_true = NULL;
-  RegionNode* new_false = NULL;
-  RegionNode* new_true = NULL;
+  Node *old_false = nullptr, *old_true = nullptr;
+  RegionNode* new_false = nullptr;
+  RegionNode* new_true = nullptr;
   for (DUIterator_Last j2min, j2 = iff->last_outs(j2min); j2 >= j2min; --j2) {
     Node *ifp = iff->last_out(j2);
     assert( ifp->Opcode() == Op_IfFalse || ifp->Opcode() == Op_IfTrue, "" );
@@ -690,7 +683,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   // Lazy replace IDOM info with the region's dominator
   lazy_replace(iff, region_dom);
   lazy_update(region, region_dom); // idom must be update before handle_uses
-  region->set_req(0, NULL);        // Break the self-cycle. Required for lazy_update to work on region
+  region->set_req(0, nullptr);        // Break the self-cycle. Required for lazy_update to work on region
 
   // Now make the original merge point go dead, by handling all its uses.
   small_cache region_cache;
@@ -734,15 +727,36 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
   } // End of while merge point has phis
 
   _igvn.remove_dead_node(region);
+  if (iff->Opcode() == Op_RangeCheck) {
+    // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+    // into the region is left, an array load could become dependent on a condition that's not a range check for
+    // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+    // floating above its range check.
+    pin_array_access_nodes_dependent_on(new_true);
+    pin_array_access_nodes_dependent_on(new_false);
+  }
 
-  if (new_false_region != NULL) {
+  if (new_false_region != nullptr) {
     *new_false_region = new_false;
   }
-  if (new_true_region != NULL) {
+  if (new_true_region != nullptr) {
     *new_true_region = new_true;
   }
 
-#ifndef PRODUCT
-  if( VerifyLoopOptimizations ) verify();
-#endif
+  DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
+}
+
+void PhaseIdealLoop::pin_array_access_nodes_dependent_on(Node* ctrl) {
+  for (DUIterator i = ctrl->outs(); ctrl->has_out(i); i++) {
+    Node* use = ctrl->out(i);
+    if (!use->depends_only_on_test()) {
+      continue;
+    }
+    Node* pinned_clone = use->pin_array_access_node();
+    if (pinned_clone != nullptr) {
+      register_new_node(pinned_clone, get_ctrl(use));
+      _igvn.replace_node(use, pinned_clone);
+      --i;
+    }
+  }
 }

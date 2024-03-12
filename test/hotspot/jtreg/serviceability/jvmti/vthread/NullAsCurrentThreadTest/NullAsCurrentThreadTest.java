@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
 /*
  * @test id=default
  * @summary Verifies specific JVMTI functions work with current virtual thread passed as NULL.
- * @compile --enable-preview -source ${jdk.version} NullAsCurrentThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport NullAsCurrentThreadTest
+ * @compile NullAsCurrentThreadTest.java
+ * @run main/othervm/native -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport NullAsCurrentThreadTest
  */
 
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} NullAsCurrentThreadTest.java
- * @run main/othervm/native --enable-preview -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations NullAsCurrentThreadTest
+ * @compile NullAsCurrentThreadTest.java
+ * @run main/othervm/native -agentlib:NullAsCurrentThreadTest=EnableVirtualThreadSupport -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations NullAsCurrentThreadTest
  */
 
 public class NullAsCurrentThreadTest {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,7 +157,7 @@ public class StressAllocationGCEvents {
         List<RecordedFrame> frames = stackTrace.getFrames();
         //String[] stacktrace = StackTraceHelper.buildStackTraceFromFrames(frames);
 
-        if (!(frames.get(0).getMethod().getName().equals(DIVER_FRAME_NAME))) {
+        if (!(frames.getFirst().getMethod().getName().equals(DIVER_FRAME_NAME))) {
             System.out.println("Skip stacktrace check for: \n"
                     + String.join("\n", threadName));
             return;

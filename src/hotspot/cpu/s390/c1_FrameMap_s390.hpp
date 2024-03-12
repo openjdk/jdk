@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2016, 2019, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 
   enum {
     nof_reg_args = 5,   // Registers Z_ARG1 - Z_ARG5 are available for parameter passing.
-    first_available_sp_in_frame = frame::z_abi_16_size,
+    first_available_sp_in_frame = frame::z_common_abi_size,
     frame_pad_in_bytes = 0
   };
 

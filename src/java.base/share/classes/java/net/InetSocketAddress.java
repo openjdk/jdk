@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamException;
 import java.io.ObjectStreamField;
+import java.util.Locale;
 
 /**
  *
@@ -137,7 +138,7 @@ public class InetSocketAddress
             if (addr != null)
                 return addr.hashCode() + port;
             if (hostname != null)
-                return hostname.toLowerCase().hashCode() + port;
+                return hostname.toLowerCase(Locale.ROOT).hashCode() + port;
             return port;
         }
     }

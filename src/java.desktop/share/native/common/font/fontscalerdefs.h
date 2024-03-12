@@ -103,7 +103,7 @@ typedef struct GlyphInfo {
  * FileFontStrike logic - presence of context is used as marker to
  * free the memory.
 */
-JNIEXPORT int isNullScalerContext(void *context);
+int isNullScalerContext(void *context);
 
 #ifdef  __cplusplus
 }

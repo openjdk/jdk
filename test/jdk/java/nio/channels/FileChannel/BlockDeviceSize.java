@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,10 @@
  */
 
 /* @test
- * @bug 8054029
+ * @bug 8054029 8313368
  * @requires (os.family == "linux")
  * @summary Block devices should not report size=0 on Linux
+ * @run main/manual BlockDeviceSize
  */
 
 import java.io.RandomAccessFile;
@@ -56,8 +57,8 @@ public class BlockDeviceSize {
             System.err.println("File " + BLK_FNAME + " not found." +
                     " Skipping test");
         } catch (AccessDeniedException ade) {
-            System.err.println("Access to " + BLK_FNAME + " is denied." +
-                    " Run test as root.");
+            throw new RuntimeException("Access to " + BLK_FNAME + " is denied."
+                    + " Run test as root.", ade);
         }
     }
 }

@@ -102,7 +102,7 @@ inline int g_isfinite(jfloat  f)                 { return _finite(f); }
 inline int g_isfinite(jdouble f)                 { return _finite(f); }
 
 // Formatting.
-#define FORMAT64_MODIFIER "I64"
+#define FORMAT64_MODIFIER "ll"
 
 #define offset_of(klass,field) offsetof(klass,field)
 
@@ -114,9 +114,6 @@ inline int g_isfinite(jdouble f)                 { return _finite(f); }
 // that it also works for freestanding functions.
 #define NOINLINE     __declspec(noinline)
 #define ALWAYSINLINE __forceinline
-
-// Alignment
-#define ATTRIBUTE_ALIGNED(x) __declspec(align(x))
 
 #ifdef _M_ARM64
 #define USE_VECTORED_EXCEPTION_HANDLING

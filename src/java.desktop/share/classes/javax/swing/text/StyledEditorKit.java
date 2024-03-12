@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class StyledEditorKit extends DefaultEditorKit {
             currentParagraph = doc.getParagraphElement(start);
             if (currentParagraph.getStartOffset() == start || dot != mark) {
                 // Get the attributes from the character at the selection
-                // if in a different paragrah!
+                // if in a different paragraph!
                 run = doc.getCharacterElement(start);
             }
             else {

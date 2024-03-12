@@ -189,7 +189,7 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
-        tree.varOrRecordPattern = translate(tree.varOrRecordPattern);
+        tree.var = translate(tree.var);
         tree.expr = translate(tree.expr);
         tree.body = translate(tree.body);
         result = tree;
@@ -208,6 +208,7 @@ public class TreeTranslator extends JCTree.Visitor {
 
     public void visitCase(JCCase tree) {
         tree.labels = translate(tree.labels);
+        tree.guard = translate(tree.guard);
         tree.stats = translate(tree.stats);
         result = tree;
     }
@@ -363,6 +364,10 @@ public class TreeTranslator extends JCTree.Visitor {
         result = tree;
     }
 
+    public void visitAnyPattern(JCAnyPattern tree) {
+        result = tree;
+    }
+
     @Override
     public void visitDefaultCaseLabel(JCDefaultCaseLabel tree) {
         result = tree;
@@ -377,13 +382,6 @@ public class TreeTranslator extends JCTree.Visitor {
     @Override
     public void visitPatternCaseLabel(JCPatternCaseLabel tree) {
         tree.pat = translate(tree.pat);
-        tree.guard = translate(tree.guard);
-        result = tree;
-    }
-
-    @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        tree.pattern = translate(tree.pattern);
         result = tree;
     }
 
@@ -408,6 +406,13 @@ public class TreeTranslator extends JCTree.Visitor {
     }
 
     public void visitLiteral(JCLiteral tree) {
+        result = tree;
+    }
+
+    public void visitStringTemplate(JCStringTemplate tree) {
+        tree.processor = translate(tree.processor);
+        tree.expressions = translate(tree.expressions);
+
         result = tree;
     }
 

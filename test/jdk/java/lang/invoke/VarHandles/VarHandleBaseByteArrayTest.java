@@ -159,8 +159,11 @@ public abstract class VarHandleBaseByteArrayTest extends VarHandleBaseTest {
     }
 
     static class VarHandleSource extends Source<VarHandle> {
-        VarHandleSource(VarHandle vh, MemoryMode... modes) {
+        final boolean supportsAtomicAccess;
+
+        VarHandleSource(VarHandle vh, boolean supportsAtomicAccess, MemoryMode... modes) {
             super(vh, modes);
+            this.supportsAtomicAccess = supportsAtomicAccess;
         }
 
         boolean matches(ByteArrayViewSource<?> bav) {

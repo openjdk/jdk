@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package sun.tools.attach;
 
+import com.sun.tools.attach.AttachOperationFailedException;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.AgentLoadException;
@@ -70,7 +71,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         try {
             pid = Integer.parseInt(id);
         } catch (NumberFormatException e) {
-            throw new AttachNotSupportedException("Invalid process identifier");
+            throw new AttachNotSupportedException("Invalid process identifier: " + id);
         }
 
         // The tool should be a different VM to the target. This check will
@@ -95,13 +96,14 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         }
 
         String msgPrefix = "return code: ";
-        InputStream in = execute("load",
-                                 agentLibrary,
-                                 isAbsolute ? "true" : "false",
-                                 options);
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-            String result = reader.readLine();
-            if (result == null) {
+        String errorMsg = "Failed to load agent library";
+        try {
+            InputStream in = execute("load",
+                                     agentLibrary,
+                                     isAbsolute ? "true" : "false",
+                                     options);
+            String result = readErrorMessage(in);
+            if (result.isEmpty()) {
                 throw new AgentLoadException("Target VM did not respond");
             } else if (result.startsWith(msgPrefix)) {
                 int retCode = Integer.parseInt(result.substring(msgPrefix.length()));
@@ -109,8 +111,15 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
                     throw new AgentInitializationException("Agent_OnAttach failed", retCode);
                 }
             } else {
-                throw new AgentLoadException(result);
+                if (!result.isEmpty()) {
+                    errorMsg += ": " + result;
+                }
+                throw new AgentLoadException(errorMsg);
             }
+        } catch (AttachOperationFailedException ex) {
+            // execute() throws AttachOperationFailedException if attach agent reported error.
+            // Convert it to AgentLoadException.
+            throw new AgentLoadException(errorMsg + ": " + ex.getMessage());
         }
     }
 
@@ -183,6 +192,8 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
     private static final int ATTACH_ERROR_NOTONCP       = 101;
     private static final int ATTACH_ERROR_STARTFAIL     = 102;
 
+    // known error
+    private static final int ATTACH_ERROR_BADVERSION = 101;
 
     /*
      * Send "properties" command to target VM
@@ -361,11 +372,92 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
         StringBuilder message = new StringBuilder();
         BufferedReader br = new BufferedReader(new InputStreamReader(in));
         while ((s = br.readLine()) != null) {
+            if (message.length() > 0) {
+                message.append(' ');
+            }
             message.append(s);
         }
         return message.toString();
     }
 
+    /*
+     * Utility method to process the completion status after command execution.
+     * If we get IOE during previous command execution, delay throwing it until
+     * completion status has been read.
+     */
+    void processCompletionStatus(IOException ioe, String cmd, InputStream sis) throws AgentLoadException, IOException {
+        // Read the command completion status
+        int completionStatus;
+        try {
+            completionStatus = readInt(sis);
+        } catch (IOException x) {
+            sis.close();
+            if (ioe != null) {
+                throw ioe;
+            } else {
+                throw x;
+            }
+        }
+        if (completionStatus != 0) {
+            // read from the stream and use that as the error message
+            String message = readErrorMessage(sis);
+            sis.close();
+
+            // In the event of a protocol mismatch then the target VM
+            // returns a known error so that we can throw a reasonable
+            // error.
+            if (completionStatus == ATTACH_ERROR_BADVERSION) {
+                throw new IOException("Protocol mismatch with target VM");
+            }
+
+            if (message.isEmpty()) {
+                message = "Command failed in target VM";
+            }
+            throw new AttachOperationFailedException(message);
+        }
+    }
+
+    /*
+     * InputStream for the socket connection to get target VM
+     */
+    abstract static class SocketInputStream extends InputStream {
+        private long fd;
+
+        public SocketInputStream(long fd) {
+            this.fd = fd;
+        }
+
+        protected abstract int read(long fd, byte[] bs, int off, int len) throws IOException;
+        protected abstract void close(long fd) throws IOException;
+
+        public synchronized int read() throws IOException {
+            byte b[] = new byte[1];
+            int n = this.read(b, 0, 1);
+            if (n == 1) {
+                return b[0] & 0xff;
+            } else {
+                return -1;
+            }
+        }
+
+        public synchronized int read(byte[] bs, int off, int len) throws IOException {
+            if ((off < 0) || (off > bs.length) || (len < 0) ||
+                ((off + len) > bs.length) || ((off + len) < 0)) {
+                throw new IndexOutOfBoundsException();
+            } else if (len == 0) {
+                return 0;
+            }
+            return read(fd, bs, off, len);
+        }
+
+        public synchronized void close() throws IOException {
+            if (fd != -1) {
+                long toClose = fd;
+                fd = -1;
+                close(toClose);
+            }
+        }
+    }
 
     // -- attach timeout support
 
@@ -395,5 +487,15 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             }
         }
         return attachTimeout;
+    }
+
+    protected static void checkNulls(Object... args) {
+        for (Object arg : args) {
+            if (arg instanceof String s) {
+                if (s.indexOf(0) >= 0) {
+                    throw new IllegalArgumentException("illegal null character in command");
+                }
+            }
+        }
     }
 }

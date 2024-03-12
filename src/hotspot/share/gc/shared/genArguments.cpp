@@ -23,9 +23,9 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/serial/generation.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/genArguments.hpp"
-#include "gc/shared/generation.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"

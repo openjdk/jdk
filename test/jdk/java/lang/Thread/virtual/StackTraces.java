@@ -23,12 +23,11 @@
 
 /**
  * @test
- * @summary Test stack traces in exceptions and stack frames waslked by the StackWalker
+ * @summary Test stack traces in exceptions and stack frames walked by the StackWalker
  *     API do not include the carrier stack frames
  * @requires vm.continuations
  * @modules java.management
  * @library /test/lib
- * @enablePreview
  * @run junit StackTraces
  * @run junit/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowCarrierFrames StackTraces
  */

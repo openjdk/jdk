@@ -81,7 +81,7 @@ public class UIBuilder {
         /**
          * Returns this {@code DialogBuilder} setting the dialog's title to a new value.
          * @param title a string value
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setTitle(String title) {
             dialog.setTitle(title);
@@ -92,7 +92,7 @@ public class UIBuilder {
          * Returns this {@code DialogBuilder} setting the instruction text to a new
          * value.
          * @param instruction a string value
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setInstruction(String instruction) {
             instructionsText.setText("Test instructions:\n" + instruction);
@@ -102,7 +102,7 @@ public class UIBuilder {
         /**
          * Returns this {@code DialogBuilder} setting the message text to a new value.
          * @param message a string value
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setMessage(String message) {
             messageText.setText(message);
@@ -113,7 +113,7 @@ public class UIBuilder {
          * Returns this {@code DialogBuilder} setting pass button action to
          * {@link java.awt.event.ActionListener}.
          * @param action an action to perform on button click
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setPassAction(ActionListener action) {
             pass.addActionListener(action);
@@ -124,7 +124,7 @@ public class UIBuilder {
          * Returns this {@code DialogBuilder} setting fail button action to
          * {@link java.awt.event.ActionListener}.
          * @param action an action to perform on button click
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setFailAction(ActionListener action) {
             fail.addActionListener(action);
@@ -135,7 +135,7 @@ public class UIBuilder {
          * Returns this {@code DialogBuilder} setting window-closing action to
          * {@link java.lang.Runnable}.
          * @param action a runnerable action to perform on window close
-         * @returns this DialogBuilder
+         * @return this DialogBuilder
          */
         public DialogBuilder setCloseAction(Runnable action) {
             dialog.addWindowListener(new WindowAdapter() {
@@ -150,7 +150,7 @@ public class UIBuilder {
 
         /**
          * Returns a {@link javax.swing.JDialog} window.
-         * @returns a JDialog
+         * @return a JDialog
          */
         public JDialog build() {
             dialog.pack();

@@ -119,14 +119,6 @@ void GrowableCache::recache() {
   _listener_fun(_this_obj,_cache);
 }
 
-bool GrowableCache::equals(void* v, GrowableElement *e2) {
-  GrowableElement *e1 = (GrowableElement *) v;
-  assert(e1 != nullptr, "e1 != nullptr");
-  assert(e2 != nullptr, "e2 != nullptr");
-
-  return e1->equals(e2);
-}
-
 //
 // class GrowableCache - public methods
 //
@@ -163,8 +155,8 @@ GrowableElement* GrowableCache::at(int index) {
   return e;
 }
 
-int GrowableCache::find(GrowableElement* e) {
-  return _elements->find(e, GrowableCache::equals);
+int GrowableCache::find(const GrowableElement* e) const {
+  return _elements->find_if([&](const GrowableElement* other_e) { return e->equals(other_e); });
 }
 
 // append a copy of the element to the end of the collection
@@ -216,7 +208,7 @@ void JvmtiBreakpoint::copy(JvmtiBreakpoint& bp) {
   _class_holder = OopHandle(JvmtiExport::jvmti_oop_storage(), bp._class_holder.resolve());
 }
 
-bool JvmtiBreakpoint::equals(JvmtiBreakpoint& bp) {
+bool JvmtiBreakpoint::equals(const JvmtiBreakpoint& bp) const {
   return _method   == bp._method
     &&   _bci      == bp._bci;
 }

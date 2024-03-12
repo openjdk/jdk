@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssVersionCheck
     FPTR_VersionCheck versionCheck;
     const char *requiredVersion;
 
-    versionCheck = (FPTR_VersionCheck)findFunction(env, jHandle,
+    versionCheck = (FPTR_VersionCheck)p11FindFunction(env, jHandle,
         "NSS_VersionCheck");
     if (versionCheck == NULL) {
         return JNI_FALSE;
@@ -68,10 +68,10 @@ JNIEXPORT jboolean JNICALL Java_sun_security_pkcs11_Secmod_nssInitialize
 {
     int res = 0;
     FPTR_Initialize initialize =
-        (FPTR_Initialize)findFunction(env, jHandle, "NSS_Initialize");
+        (FPTR_Initialize)p11FindFunction(env, jHandle, "NSS_Initialize");
     #ifdef SECMOD_DEBUG
     FPTR_GetError getError =
-        (FPTR_GetError)findFunction(env, jHandle, "PORT_GetError");
+        (FPTR_GetError)p11FindFunction(env, jHandle, "PORT_GetError");
     #endif // SECMOD_DEBUG
     unsigned int flags = 0x00;
     const char *configDir = NULL;
@@ -162,7 +162,7 @@ JNIEXPORT jobject JNICALL Java_sun_security_pkcs11_Secmod_nssGetModuleList
   (JNIEnv *env, jclass thisClass, jlong jHandle, jstring jLibDir)
 {
     FPTR_GetDBModuleList getModuleList =
-        (FPTR_GetDBModuleList)findFunction(env, jHandle, "SECMOD_GetDefaultModuleList");
+        (FPTR_GetDBModuleList)p11FindFunction(env, jHandle, "SECMOD_GetDefaultModuleList");
 
     SECMODModuleList *list;
     SECMODModule *module;

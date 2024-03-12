@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
 #include "runtime/osInfo.hpp"
+#include "utilities/checkedCast.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -275,6 +276,7 @@ class relocInfo {
     data_prefix_tag         = 15, // tag for a prefix (carries data arguments)
     post_call_nop_type      = 16, // A tag for post call nop relocations
     entry_guard_type        = 17, // A tag for an nmethod entry barrier guard value
+    barrier_type            = 18, // GC barrier data
     type_mask               = 31  // A mask which selects only the above values
   };
 
@@ -284,7 +286,7 @@ class relocInfo {
   static const enum class RawBitsToken {} RAW_BITS{};
 
   relocInfo(relocType type, RawBitsToken, int bits)
-    : _value((type << nontype_width) + bits) { }
+    : _value(checked_cast<unsigned short>((type << nontype_width) + bits)) { }
 
   static relocType check_relocType(relocType type) NOT_DEBUG({ return type; });
 
@@ -316,10 +318,11 @@ class relocInfo {
     visitor(trampoline_stub) \
     visitor(post_call_nop) \
     visitor(entry_guard) \
+    visitor(barrier) \
 
 
  public:
-  enum {
+  enum : unsigned short{
     value_width             = sizeof(unsigned short) * BitsPerByte,
     type_width              = 5,   // == log2(type_mask+1)
     nontype_width           = value_width - type_width,
@@ -338,11 +341,11 @@ class relocInfo {
                                   return (_value & offset_mask)*offset_unit; }
 
  protected:
-  const short* data()     const { assert(is_datalen(), "must have data");
-                                  return (const short*)(this + 1); }
-  int          datalen()  const { assert(is_datalen(), "must have data");
+  const short* data()       const { assert(is_datalen(), "must have data");
+                                    return (const short*)(this + 1); }
+  unsigned short datalen()  const { assert(is_datalen(), "must have data");
                                   return (_value & datalen_mask); }
-  int         immediate() const { assert(is_immediate(), "must have immed");
+  unsigned short immediate() const { assert(is_immediate(), "must have immed");
                                   return (_value & datalen_mask); }
  public:
   static int addr_unit()        { return offset_unit; }
@@ -412,8 +415,8 @@ class relocInfo {
   // As it happens, the bytes within the shorts are ordered natively,
   // but the shorts within the word are ordered big-endian.
   // This is an arbitrary choice, made this way mainly to ease debugging.
-  static int data0_from_int(jint x)         { return x >> value_width; }
-  static int data1_from_int(jint x)         { return (short)x; }
+  static short data0_from_int(jint x)         { return (short)(x >> value_width); }
+  static short data1_from_int(jint x)         { return (short)x; }
   static jint jint_from_data(short* data) {
     return (data[0] << value_width) + (unsigned short)data[1];
   }
@@ -733,13 +736,13 @@ class Relocation {
   // Most relocation records are quite simple, containing at most two ints.
 
   static bool is_short(jint x) { return x == (short)x; }
-  static short* add_short(short* p, int x)  { *p++ = x; return p; }
+  static short* add_short(short* p, short x)  { *p++ = x; return p; }
   static short* add_jint (short* p, jint x) {
     *p++ = relocInfo::data0_from_int(x); *p++ = relocInfo::data1_from_int(x);
     return p;
   }
   static short* add_var_int(short* p, jint x) {   // add a variable-width int
-    if (is_short(x))  p = add_short(p, x);
+    if (is_short(x))  p = add_short(p, (short)x);
     else              p = add_jint (p, x);
     return p;
   }
@@ -761,7 +764,7 @@ class Relocation {
       // no halfwords needed to store zeroes
     } else if (is_short(x0) && is_short(x1)) {
       // 1-2 halfwords needed to store shorts
-      p = add_short(p, x0); if (x1!=0) p = add_short(p, x1);
+      p = add_short(p, (short)x0); if (x1!=0) p = add_short(p, (short)x1);
     } else {
       // 3-4 halfwords needed to store jints
       p = add_jint(p, x0);             p = add_var_int(p, x1);
@@ -799,7 +802,7 @@ class Relocation {
 
   // these convert from byte offsets, to scaled offsets, to addresses
   static jint scaled_offset(address x, address base) {
-    int byte_offset = x - base;
+    int byte_offset = checked_cast<int>(x - base);
     int offset = -byte_offset / relocInfo::addr_unit();
     assert(address_from_scaled_offset(offset, base) == x, "just checkin'");
     return offset;
@@ -829,7 +832,6 @@ class Relocation {
  protected:
   short*   data()         const { return binding()->data(); }
   int      datalen()      const { return binding()->datalen(); }
-  int      format()       const { return binding()->format(); }
 
  public:
   // Make a filler relocation.
@@ -840,6 +842,8 @@ class Relocation {
   // RelocationHolder depends on the destructor for all relocation types being
   // trivial, so this must not be virtual (and hence non-trivial).
   ~Relocation() = default;
+
+  int      format()       const { return binding()->format(); }
 
   relocInfo::relocType type()              const { return _rtype; }
 
@@ -858,7 +862,7 @@ class Relocation {
   // all relocations are able to reassert their values
   virtual void set_value(address x);
 
-  virtual bool clear_inline_cache()              { return true; }
+  virtual void clear_inline_cache() {}
 
   // This method assumes that all virtual/static (inline) caches are cleared (since for static_call_type and
   // ic_call_type is not always position dependent (depending on the state of the cache)). However, this is
@@ -1078,6 +1082,26 @@ class metadata_Relocation : public DataRelocation {
 };
 
 
+class barrier_Relocation : public Relocation {
+
+ public:
+  // The uninitialized value used before the relocation has been patched.
+  // Code assumes that the unpatched value is zero.
+  static const int16_t unpatched = 0;
+
+  static RelocationHolder spec() {
+    return RelocationHolder::construct<barrier_Relocation>();
+  }
+
+  void copy_into(RelocationHolder& holder) const override;
+
+ private:
+  friend class RelocIterator;
+  friend class RelocationHolder;
+  barrier_Relocation() : Relocation(relocInfo::barrier_type) { }
+};
+
+
 class virtual_call_Relocation : public CallRelocation {
 
  public:
@@ -1117,7 +1141,7 @@ class virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 };
 
 
@@ -1146,7 +1170,7 @@ class opt_virtual_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1178,7 +1202,7 @@ class static_call_Relocation : public CallRelocation {
   void pack_data_to(CodeSection* dest) override;
   void unpack_data() override;
 
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   // find the matching static_stub
   address static_stub();
@@ -1203,7 +1227,7 @@ class static_stub_Relocation : public Relocation {
   static_stub_Relocation() : Relocation(relocInfo::static_stub_type) { }
 
  public:
-  bool clear_inline_cache() override;
+  void clear_inline_cache() override;
 
   address static_call() { return _static_call; }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,20 +81,20 @@ public class CommandGenerator {
      * @param type    a type of the command, or null to generate any
      * @return the generated compile command
      */
-    public CompileCommand generateCompileCommand(Command command,
+    public CompileCommand generateCompileCommand(Command command, boolean isValid,
             MethodDescriptor md, Scenario.Type type) {
         if (type == null) {
             type = Utils.getRandomElement(Scenario.Type.values());
         }
-        return type.createCompileCommand(command, md, generateCompiler());
+        return type.createCompileCommand(command, isValid, md, generateCompiler());
     }
 
-    public CompileCommand generateCompileCommand(Command command,
+    public CompileCommand generateCompileCommand(Command command, boolean isValid,
             MethodDescriptor md, Scenario.Type type, String argument) {
         if (type == null) {
             type = Utils.getRandomElement(Scenario.Type.values());
         }
-        return type.createCompileCommand(command, md, generateCompiler(), argument);
+        return type.createCompileCommand(command, isValid, md, generateCompiler(), argument);
     }
 
 

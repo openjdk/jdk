@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7150368 8003412 8000407
+ * @bug 7150368 8003412 8000407 7016187
  * @summary javac should include basic ability to generate native headers
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -147,6 +147,32 @@ public class NativeHeaderTest {
         if (gk == GenKind.FULL) expect.add("C.h");
 
         test(rk, gk, files, expect);
+    }
+
+    @Test
+    void conflictTest(RunKind rk, GenKind gk) throws Exception {
+
+        // These two classes will generate the same header file "Foo_Bar.h"
+        List<File> files = new ArrayList<File>();
+        files.add(createFile("p/Foo.java", """
+            public class Foo {
+                public static class Bar {
+                    public static native void method1();
+                }
+            }
+        """));
+        files.add(createFile("p/Foo_Bar.java", """
+            public class Foo_Bar {
+                public static native void method2();
+            }
+        """));
+
+        try {
+            test(rk, gk, files, null);
+            throw new AssertionError("expected failure");
+        } catch (Exception e) {
+            // expected
+        }
     }
 
     /**

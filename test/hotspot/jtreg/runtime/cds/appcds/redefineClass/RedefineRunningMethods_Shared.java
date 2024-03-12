@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * @library /test/lib /test/hotspot/jtreg/serviceability/jvmti/RedefineClasses /test/hotspot/jtreg/runtime/cds/appcds
  * @run driver RedefineClassHelper
  * @build jdk.test.whitebox.WhiteBox
- * @compile --enable-preview -source ${jdk.version} RedefineRunningMethods_SharedHelper.java
+ * @compile RedefineRunningMethods_SharedHelper.java
  * @run driver RedefineRunningMethods_Shared
  */
 
@@ -59,8 +59,7 @@ public class RedefineRunningMethods_Shared {
         OutputAnalyzer output;
         TestCommon.testDump(appJar, shared_classes,
                             // command-line arguments ...
-                            use_whitebox_jar,
-                            "--enable-preview");
+                            use_whitebox_jar);
 
         // RedefineRunningMethods.java contained this:
         // @run main/othervm -javaagent:redefineagent.jar -Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace RedefineRunningMethods
@@ -69,7 +68,6 @@ public class RedefineRunningMethods_Shared {
                                  use_whitebox_jar,
                                  "-XX:+UnlockDiagnosticVMOptions",
                                  "-XX:+WhiteBoxAPI",
-                                 "--enable-preview",
                                  // These arguments are expected by RedefineRunningMethods
                                  "-javaagent:redefineagent.jar",
                                  "-Xlog:redefine+class+iklass+add=trace,redefine+class+iklass+purge=trace",

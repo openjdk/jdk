@@ -20,9 +20,8 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 
 import javax.net.ssl.SSLContext;
@@ -51,7 +50,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import jdk.httpclient.test.lib.common.HttpServerAdapters;
-import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.net.http.HttpClient.Version.HTTP_1_1;
 import static java.net.http.HttpClient.Version.HTTP_2;
 
@@ -62,6 +60,7 @@ import static java.net.http.HttpClient.Version.HTTP_2;
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.common.HttpServerAdapters jdk.test.lib.net.SimpleSSLContext
  *        DigestEchoServer HttpSlowServerTest
+ *        jdk.httpclient.test.lib.common.TestServerConfigurator
  * @run main/othervm -Dtest.requiresHost=true
  *                   -Djdk.httpclient.HttpClient.log=headers
  *                   -Djdk.internal.httpclient.debug=false
@@ -138,7 +137,7 @@ public class HttpSlowServerTest implements HttpServerAdapters {
             // HTTPS/1.1
             HttpsServer sserver1 = HttpsServer.create(sa, 100);
             sserver1.setExecutor(executor);
-            sserver1.setHttpsConfigurator(new HttpsConfigurator(context));
+            sserver1.setHttpsConfigurator(new TestServerConfigurator(sa.getAddress(), context));
             https1Server = HttpTestServer.of(sserver1);
             https1Server.addHandler(new HttpTestSlowHandler(), "/HttpSlowServerTest/https1/");
             https1Server.start();

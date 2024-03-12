@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,8 @@ import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.management.EventSettingsModifier;
 
 /**
@@ -221,7 +221,7 @@ public final class FlightRecorderPermission extends java.security.BasicPermissio
      */
     public FlightRecorderPermission(String name) {
         super(Objects.requireNonNull(name, "name"));
-        if (!name.equals(Utils.ACCESS_FLIGHT_RECORDER) && !name.equals(Utils.REGISTER_EVENT)) {
+        if (!name.equals(SecuritySupport.ACCESS_FLIGHT_RECORDER) && !name.equals(SecuritySupport.REGISTER_EVENT)) {
             throw new IllegalArgumentException("name: " + name);
         }
     }

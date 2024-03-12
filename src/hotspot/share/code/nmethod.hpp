@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "code/compiledMethod.hpp"
 
+class CompiledICData;
 class CompileTask;
 class DepChange;
 class DirectiveSet;
@@ -196,7 +197,8 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
-  nmethod* _unlinked_next;
+  CompiledICData* _compiled_ic_data;
+  bool _is_unlinked;
 
   // Shared fields for all nmethod's
   int _entry_bci;      // != InvocationEntryBci if this nmethod is an on-stack replacement method
@@ -221,7 +223,7 @@ class nmethod : public CompiledMethod {
 #endif
   int _nmethod_end_offset;
 
-  int code_offset() const { return (address) code_begin() - header_begin(); }
+  int code_offset() const { return int(code_begin() - header_begin()); }
 
   // location in frame (offset for sp) that deopt can store the original
   // pc during a deopt.
@@ -292,9 +294,9 @@ class nmethod : public CompiledMethod {
           AbstractCompiler* compiler,
           CompLevel comp_level
 #if INCLUDE_JVMCI
-          , char* speculations,
-          int speculations_len,
-          int jvmci_data_size
+          , char* speculations = nullptr,
+          int speculations_len = 0,
+          JVMCINMethodData* jvmci_data = nullptr
 #endif
           );
 
@@ -307,7 +309,7 @@ class nmethod : public CompiledMethod {
 
   const char* reloc_string_for(u_char* begin, u_char* end);
 
-  bool try_transition(int new_state);
+  bool try_transition(signed char new_state);
 
   // Returns true if this thread changed the state of the nmethod or
   // false if another thread performed the transition.
@@ -321,7 +323,7 @@ class nmethod : public CompiledMethod {
   void init_defaults();
 
   // Offsets
-  int content_offset() const                  { return content_begin() - header_begin(); }
+  int content_offset() const                  { return int(content_begin() - header_begin()); }
   int data_offset() const                     { return _data_offset; }
 
   address header_end() const                  { return (address)    header_begin() + header_size(); }
@@ -345,9 +347,7 @@ class nmethod : public CompiledMethod {
 #if INCLUDE_JVMCI
                               , char* speculations = nullptr,
                               int speculations_len = 0,
-                              int nmethod_mirror_index = -1,
-                              const char* nmethod_mirror_name = nullptr,
-                              FailedSpeculation** failed_speculations = nullptr
+                              JVMCINMethodData* jvmci_data = nullptr
 #endif
   );
 
@@ -409,12 +409,12 @@ class nmethod : public CompiledMethod {
 #endif
 
   // Sizes
-  int oops_size         () const                  { return (address)  oops_end         () - (address)  oops_begin         (); }
-  int metadata_size     () const                  { return (address)  metadata_end     () - (address)  metadata_begin     (); }
-  int dependencies_size () const                  { return            dependencies_end () -            dependencies_begin (); }
+  int oops_size         () const                  { return int((address)  oops_end         () - (address)  oops_begin         ()); }
+  int metadata_size     () const                  { return int((address)  metadata_end     () - (address)  metadata_begin     ()); }
+  int dependencies_size () const                  { return int(           dependencies_end () -            dependencies_begin ()); }
 #if INCLUDE_JVMCI
-  int speculations_size () const                  { return            speculations_end () -            speculations_begin (); }
-  int jvmci_data_size   () const                  { return            jvmci_data_end   () -            jvmci_data_begin   (); }
+  int speculations_size () const                  { return int(           speculations_end () -            speculations_begin ()); }
+  int jvmci_data_size   () const                  { return int(           jvmci_data_end   () -            jvmci_data_begin   ()); }
 #endif
 
   int     oops_count() const { assert(oops_size() % oopSize == 0, "");  return (oops_size() / oopSize) + 1; }
@@ -443,8 +443,8 @@ class nmethod : public CompiledMethod {
   virtual bool is_unloading();
   virtual void do_unloading(bool unloading_occurred);
 
-  nmethod* unlinked_next() const                  { return _unlinked_next; }
-  void set_unlinked_next(nmethod* next)           { _unlinked_next = next; }
+  bool is_unlinked() const                        { return _is_unlinked; }
+  void set_is_unlinked()                          { assert(!_is_unlinked, "already unlinked"); _is_unlinked = true; }
 
 #if INCLUDE_RTM_OPT
   // rtm state accessing and manipulating
@@ -467,7 +467,7 @@ class nmethod : public CompiledMethod {
   }
 
   bool has_dependencies()                         { return dependencies_size() != 0; }
-  void print_dependencies()                       PRODUCT_RETURN;
+  void print_dependencies_on(outputStream* out) PRODUCT_RETURN;
   void flush_dependencies();
   bool has_flushed_dependencies()                 { return _has_flushed_dependencies; }
   void set_has_flushed_dependencies()             {
@@ -524,7 +524,7 @@ public:
   void unlink();
 
   // Deallocate this nmethod - called by the GC
-  void flush();
+  void purge(bool free_code_cache_data, bool unregister_nmethod);
 
   // See comment at definition of _last_seen_on_stack
   void mark_as_maybe_on_stack();
@@ -606,7 +606,7 @@ public:
   // verify operations
   void verify();
   void verify_scopes();
-  void verify_interrupt_point(address interrupt_point);
+  void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
   // Disassemble this nmethod with additional debug information, e.g. information about blocks.
   void decode2(outputStream* st) const;
@@ -623,7 +623,6 @@ public:
 #if defined(SUPPORT_DATA_STRUCTS)
   // print output in opt build for disassembler library
   void print_relocations()                        PRODUCT_RETURN;
-  void print_pcs() { print_pcs_on(tty); }
   void print_pcs_on(outputStream* st);
   void print_scopes() { print_scopes_on(tty); }
   void print_scopes_on(outputStream* st)          PRODUCT_RETURN;
@@ -637,8 +636,7 @@ public:
   void print_oops(outputStream* st);     // oops from the underlying CodeBlob.
   void print_metadata(outputStream* st); // metadata in metadata pool.
 #else
-  // void print_pcs()                             PRODUCT_RETURN;
-  void print_pcs()                                { return; }
+  void print_pcs_on(outputStream* st) { return; }
 #endif
 
   void print_calls(outputStream* st)              PRODUCT_RETURN;
@@ -679,10 +677,6 @@ public:
   virtual int compile_id() const { return _compile_id; }
   const char* compile_kind() const;
 
-  // tells if any of this method's dependencies have been invalidated
-  // (this is expensive!)
-  static void check_all_dependencies(DepChange& changes);
-
   // tells if this compiled method is dependent on the given changes,
   // and the changes have invalidated it
   bool check_dependency_on(DepChange& changes);
@@ -701,19 +695,13 @@ public:
   }
 
   // support for code generation
-  static int verified_entry_point_offset()        { return offset_of(nmethod, _verified_entry_point); }
-  static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
-  static int state_offset()                       { return offset_of(nmethod, _state); }
+  static ByteSize verified_entry_point_offset() { return byte_offset_of(nmethod, _verified_entry_point); }
+  static ByteSize osr_entry_point_offset()      { return byte_offset_of(nmethod, _osr_entry_point); }
+  static ByteSize state_offset()                { return byte_offset_of(nmethod, _state); }
 
   virtual void metadata_do(MetadataClosure* f);
 
-  NativeCallWrapper* call_wrapper_at(address call) const;
-  NativeCallWrapper* call_wrapper_before(address return_pc) const;
   address call_instruction_address(address pc) const;
-
-  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
-  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
-  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
 
   virtual void  make_deoptimized();
   void finalize_relocations();

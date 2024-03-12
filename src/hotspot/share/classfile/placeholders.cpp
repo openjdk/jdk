@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,9 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
-                  PlaceholderKey::hash, PlaceholderKey::equals> _placeholders;
+using InternalPlaceholderTable = ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
+                  PlaceholderKey::hash, PlaceholderKey::equals>;
+static InternalPlaceholderTable* _placeholders;
 
 // SeenThread objects represent list of threads that are
 // currently performing a load action on a class.
@@ -79,8 +80,7 @@ public:
    void set_next(SeenThread* seen) { _stnext = seen; }
    void set_prev(SeenThread* seen) { _stprev = seen; }
 
-  void print_action_queue(outputStream* st) {
-    SeenThread* seen = this;
+  static void print_action_queue(SeenThread* seen, outputStream* st) {
     while (seen != nullptr) {
       seen->thread()->print_value_on(st);
       st->print(", ");
@@ -131,9 +131,6 @@ void PlaceholderEntry::add_seen_thread(JavaThread* thread, PlaceholderTable::cla
   assert_lock_strong(SystemDictionary_lock);
   SeenThread* threadEntry = new SeenThread(thread);
   SeenThread* seen = actionToQueue(action);
-
-  assert(action != PlaceholderTable::LOAD_INSTANCE || !EnableWaitForParallelLoad || seen == nullptr,
-         "Only one LOAD_INSTANCE allowed at a time");
 
   if (seen == nullptr) {
     set_threadQ(threadEntry, action);
@@ -201,8 +198,8 @@ void PlaceholderEntry::set_supername(Symbol* supername) {
 // All threads examining the placeholder table must hold the
 // SystemDictionary_lock, so we don't need special precautions
 // on store ordering here.
-PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
-                            Symbol* supername){
+static PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
+                                   Symbol* supername){
   assert_locked_or_safepoint(SystemDictionary_lock);
   assert(class_name != nullptr, "adding nullptr obj");
 
@@ -210,24 +207,24 @@ PlaceholderEntry* add_entry(Symbol* class_name, ClassLoaderData* loader_data,
   entry.set_supername(supername);
   PlaceholderKey key(class_name, loader_data);
   bool created;
-  PlaceholderEntry* table_copy = _placeholders.put_if_absent(key, entry, &created);
+  PlaceholderEntry* table_copy = _placeholders->put_if_absent(key, entry, &created);
   assert(created, "better be absent");
   return table_copy;
 }
 
 // Remove a placeholder object.
-void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
+static void remove_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
 
   PlaceholderKey key(class_name, loader_data);
-  _placeholders.remove(key);
+  _placeholders->remove(key);
 }
 
 
 PlaceholderEntry* PlaceholderTable::get_entry(Symbol* class_name, ClassLoaderData* loader_data) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   PlaceholderKey key(class_name, loader_data);
-  return _placeholders.get(key);
+  return _placeholders->get(key);
 }
 
 static const char* action_to_string(PlaceholderTable::classloadAction action) {
@@ -272,6 +269,10 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
   probe->add_seen_thread(thread, action);
   log(name, probe, "find_and_add", action);
   return probe;
+}
+
+void PlaceholderTable::initialize(){
+  _placeholders = new (mtClass) InternalPlaceholderTable();
 }
 
 
@@ -325,13 +326,13 @@ void PlaceholderEntry::print_on(outputStream* st) const {
   }
   st->cr();
   st->print("loadInstanceThreadQ threads:");
-  loadInstanceThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(loadInstanceThreadQ(), st);
   st->cr();
   st->print("superThreadQ threads:");
-  superThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(superThreadQ(), st);
   st->cr();
   st->print("defineThreadQ threads:");
-  defineThreadQ()->print_action_queue(st);
+  SeenThread::print_action_queue(defineThreadQ(), st);
   st->cr();
 }
 
@@ -343,8 +344,8 @@ void PlaceholderTable::print_on(outputStream* st) {
       return true;
   };
   st->print_cr("Placeholder table (table_size=%d, placeholders=%d)",
-                _placeholders.table_size(), _placeholders.number_of_entries());
-  _placeholders.iterate(printer);
+                _placeholders->table_size(), _placeholders->number_of_entries());
+  _placeholders->iterate(printer);
 }
 
 void PlaceholderTable::print() { return print_on(tty); }

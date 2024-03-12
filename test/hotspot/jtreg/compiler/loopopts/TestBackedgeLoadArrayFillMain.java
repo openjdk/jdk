@@ -28,6 +28,7 @@
  * @summary ArrayFill: if store is on backedge, last iteration is not to be executed.
  * @library /test/lib
  * @compile TestBackedgeLoadArrayFill.jasm
+ * @requires vm.compiler2.enabled
  * @run main/othervm
  *      -XX:CompileCommand=compileonly,TestBackedgeLoadArrayFill*::test*
  *      -XX:-TieredCompilation -Xcomp -XX:+OptimizeFill

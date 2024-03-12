@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 package jdk.jpackage.internal;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -45,7 +46,16 @@ public final class RetryExecutor {
         return this;
     }
 
-    RetryExecutor setWriteOutputToFile(boolean v) {
+    public RetryExecutor saveOutput(boolean v) {
+        saveOutput = v;
+        return this;
+    }
+
+    public List<String> getOutput() {
+        return output;
+    }
+
+    public RetryExecutor setWriteOutputToFile(boolean v) {
         writeOutputToFile = v;
         return this;
     }
@@ -92,11 +102,14 @@ public final class RetryExecutor {
             }
 
             try {
-                Executor exec = execSupplier.get();
+                Executor exec = execSupplier.get().saveOutput(saveOutput);
                 if (executorInitializer != null) {
                     executorInitializer.accept(exec);
                 }
                 exec.executeExpectSuccess();
+                if (saveOutput) {
+                    output = exec.getOutput();
+                }
                 break;
             } catch (IOException ex) {
                 if (aborted || (--attempts) <= 0) {
@@ -117,5 +130,7 @@ public final class RetryExecutor {
     private boolean aborted;
     private int attempts;
     private int timeoutMillis;
+    private boolean saveOutput;
+    private List<String> output;
     private boolean writeOutputToFile;
 }

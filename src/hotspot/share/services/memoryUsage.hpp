@@ -63,7 +63,7 @@ public:
   size_t committed() const { return _committed; }
   size_t max_size()  const { return _maxSize; }
 
-  static size_t undefined_size() { return (size_t) -1; }
+  static size_t undefined_size() { return SIZE_MAX; }
 
   inline static jlong convert_to_jlong(size_t val) {
     // In the 64-bit vm, a size_t can overflow a jlong (which is signed).

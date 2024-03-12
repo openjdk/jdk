@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class attach002 extends Log {
         String java = argHandler.getLaunchExecPath()
                           + " " + argHandler.getLaunchOptions();
         String cmd = java +
-            " -Xdebug -Xnoagent -Xrunjdwp:transport=dt_shmem,server=y,address=" +
+            " -Xrunjdwp:transport=dt_shmem,server=y,address=" +
             name + " " + DEBUGEE_CLASS;
 
         Binder binder = new Binder(argHandler, log);

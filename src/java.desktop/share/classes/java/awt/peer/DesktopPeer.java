@@ -99,10 +99,13 @@ public interface DesktopPeer {
      *
      * @param mailtoURL represents a mailto URL with specified values of the message.
      *        The syntax of mailto URL is defined by
-     *        <a href="http://www.ietf.org/rfc/rfc2368.txt">RFC2368: The mailto
+     *        <a href="https://www.rfc-editor.org/info/rfc2368">RFC2368: The mailto
      *        URL scheme</a>
      * @throws IOException If the user default mail client is not found,
      *         or it fails to be launched.
+     *
+     * @spec https://www.rfc-editor.org/info/rfc2368
+     *      RFC 2368: The mailto URL scheme
      */
     void mail(URI mailtoURL) throws IOException;
 

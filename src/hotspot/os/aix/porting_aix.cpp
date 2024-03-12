@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,12 @@
  * questions.
  *
  */
+// needs to be defined first, so that the implicit loaded xcoff.h header defines
+// the right structures to analyze the loader header of 64 Bit executable files
+// this is needed for rtv_linkedin_libpath() to get the linked (burned) in library
+// search path of an XCOFF executable
+#define __XCOFF64__
+#include <xcoff.h>
 
 #include "asm/assembler.hpp"
 #include "compiler/disassembler.hpp"
@@ -33,16 +39,7 @@
 #include "runtime/os.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
-
-// distinguish old xlc and xlclang++, where
-// <ibmdemangle.h> is suggested but not found in GA release (might come with a fix)
-#if defined(__clang__)
-#define DISABLE_DEMANGLE
-// #include <ibmdemangle.h>
-#else
-#include <demangle.h>
-#endif
-
+#include <cxxabi.h>
 #include <sys/debug.h>
 #include <pthread.h>
 #include <ucontext.h>
@@ -111,7 +108,7 @@ bool AixSymbols::get_function_name (
     char* p_name, size_t namelen,    // [out] optional: function name ("" if not available)
     int* p_displacement,             // [out] optional: displacement (-1 if not available)
     const struct tbtable** p_tb,     // [out] optional: ptr to traceback table to get further
-                                     //                 information (NULL if not available)
+                                     //                 information (null if not available)
     bool demangle                    // [in] whether to demangle the name
   ) {
   struct tbtable* tb = 0;
@@ -125,7 +122,7 @@ bool AixSymbols::get_function_name (
     *p_displacement = -1;
   }
   if (p_tb) {
-    *p_tb = NULL;
+    *p_tb = nullptr;
   }
 
   codeptr_t pc = (codeptr_t)pc0;
@@ -141,7 +138,7 @@ bool AixSymbols::get_function_name (
   // we read it (?).
   // As the pc cannot be trusted to be anything sensible lets make all reads via SafeFetch. Also
   // bail if this is not a text address right now.
-  if (!LoadedLibraries::find_for_text_address(pc, NULL)) {
+  if (!LoadedLibraries::find_for_text_address(pc, nullptr)) {
     trcVerbose("not a text address");
     return false;
   }
@@ -163,7 +160,7 @@ bool AixSymbols::get_function_name (
 
   // Find start of traceback table.
   // (starts after code, is marked by word-aligned (32bit) zeros)
-  while ((*pc2 != NULL) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
+  while ((*pc2 != 0) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
     CHECK_POINTER_READABLE(pc2)
     pc2++;
   }
@@ -244,21 +241,18 @@ bool AixSymbols::get_function_name (
       }
       p_name[i] = '\0';
 
-      // If it is a C++ name, try and demangle it using the Demangle interface (see demangle.h).
-#ifndef DISABLE_DEMANGLE
+      // If it is a C++ name, try and demangle it using the __cxa_demangle interface(see demangle.h).
       if (demangle) {
-        char* rest;
-        Name* const name = Demangle(p_name, rest);
-        if (name) {
-          const char* const demangled_name = name->Text();
-          if (demangled_name) {
-            strncpy(p_name, demangled_name, namelen-1);
-            p_name[namelen-1] = '\0';
-          }
-          delete name;
+        int status;
+        char *demangled_name = abi::__cxa_demangle(p_name, nullptr, nullptr, &status);
+        if ((demangled_name != nullptr) && (status == 0)) {
+          strncpy(p_name, demangled_name, namelen-1);
+          p_name[namelen-1] = '\0';
+        }
+        if (demangled_name != nullptr) {
+          ALLOW_C_FUNCTION(::free, ::free(demangled_name));
         }
       }
-#endif
     } else {
       strncpy(p_name, "<nameless function>", namelen-1);
       p_name[namelen-1] = '\0';
@@ -280,9 +274,27 @@ bool AixSymbols::get_module_name(address pc,
   if (p_name && namelen > 0) {
     p_name[0] = '\0';
     loaded_module_t lm;
-    if (LoadedLibraries::find_for_text_address(pc, &lm) != NULL) {
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
       strncpy(p_name, lm.shortname, namelen);
       p_name[namelen - 1] = '\0';
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool AixSymbols::get_module_name_and_base(address pc,
+                         char* p_name, size_t namelen,
+                         address* p_base) {
+
+  if (p_base && p_name && namelen > 0) {
+    p_name[0] = '\0';
+    loaded_module_t lm;
+    if (LoadedLibraries::find_for_text_address(pc, &lm)) {
+      strncpy(p_name, lm.shortname, namelen);
+      p_name[namelen - 1] = '\0';
+      *p_base = (address) lm.text;
       return true;
     }
   }
@@ -310,10 +322,10 @@ int dladdr(void* addr, Dl_info* info) {
   const char* const ZEROSTRING = "";
 
   // Always return a string, even if a "" one. Linux dladdr manpage
-  // does not say anything about returning NULL
+  // does not say anything about returning null
   info->dli_fname = ZEROSTRING;
   info->dli_sname = ZEROSTRING;
-  info->dli_saddr = NULL;
+  info->dli_saddr = nullptr;
 
   address p = (address) addr;
   loaded_module_t lm;
@@ -368,7 +380,7 @@ int dladdr(void* addr, Dl_info* info) {
       int displacement = 0;
 
       if (AixSymbols::get_function_name(p, funcname, sizeof(funcname),
-                      &displacement, NULL, true)) {
+                      &displacement, nullptr, true)) {
         if (funcname[0] != '\0') {
           const char* const interned = dladdr_fixed_strings.intern(funcname);
           info->dli_sname = interned;
@@ -418,7 +430,7 @@ int dladdr(void* addr, Dl_info* info) {
 // Print the traceback table for one stack frame.
 static void print_tbtable (outputStream* st, const struct tbtable* p_tb) {
 
-  if (p_tb == NULL) {
+  if (p_tb == nullptr) {
     st->print("<null>");
     return;
   }
@@ -496,7 +508,7 @@ static void print_tbtable (outputStream* st, const struct tbtable* p_tb) {
 // on one line.
 static void print_info_for_pc (outputStream* st, codeptr_t pc, char* buf,
                                size_t buf_size, bool demangle) {
-  const struct tbtable* tb = NULL;
+  const struct tbtable* tb = nullptr;
   int displacement = -1;
 
   if (!os::is_readable_pointer(pc)) {
@@ -547,7 +559,7 @@ static void print_stackframe(outputStream* st, stackptr_t sp, char* buf,
   codeptr_t lrsave = (codeptr_t) *(sp2);
   st->print (PTR_FORMAT " - " PTR_FORMAT " ", p2i(sp2), p2i(lrsave));
 
-  if (lrsave != NULL) {
+  if (lrsave != nullptr) {
     print_info_for_pc(st, lrsave, buf, buf_size, demangle);
   }
 
@@ -575,10 +587,7 @@ static bool is_valid_codepointer(codeptr_t p) {
   if (((uintptr_t)p) & 0x3) {
     return false;
   }
-  if (LoadedLibraries::find_for_text_address(p, NULL) == NULL) {
-    return false;
-  }
-  return true;
+  return LoadedLibraries::find_for_text_address(p, nullptr);
 }
 
 // Function tries to guess if the given combination of stack pointer, stack base
@@ -608,7 +617,7 @@ static stackptr_t try_find_backchain (stackptr_t last_known_good_frame,
                                       stackptr_t stack_base, size_t stack_size)
 {
   if (!is_valid_stackpointer(last_known_good_frame, stack_base, stack_size)) {
-    return NULL;
+    return nullptr;
   }
 
   stackptr_t sp = last_known_good_frame;
@@ -621,7 +630,7 @@ static stackptr_t try_find_backchain (stackptr_t last_known_good_frame,
     sp ++;
   }
 
-  return NULL;
+  return nullptr;
 }
 
 static void decode_instructions_at_pc(const char* header,
@@ -690,8 +699,8 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // Retrieve current stack base, size from the current thread. If there is none,
   // retrieve it from the OS.
-  stackptr_t stack_base = NULL;
-  size_t stack_size = NULL;
+  stackptr_t stack_base = nullptr;
+  size_t stack_size = 0;
   {
     AixMisc::stackbounds_t stackbounds;
     if (!AixMisc::query_stack_bounds_for_current_thread(&stackbounds)) {
@@ -738,7 +747,7 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
   // Check and print rtoc.
   st->print("rtoc: "  PTR_FORMAT " ", p2i(cur_rtoc));
-  if (cur_rtoc == NULL || cur_rtoc == (codeptr_t)-1 ||
+  if (cur_rtoc == nullptr || cur_rtoc == (codeptr_t)-1 ||
       !os::is_readable_pointer(cur_rtoc)) {
     st->print("(invalid)");
   } else if (((uintptr_t)cur_rtoc) & 0x7) {
@@ -761,14 +770,14 @@ void AixNativeCallstack::print_callstack_for_context(outputStream* st, const uco
 
     // Check sp.
     bool retry = false;
-    if (sp == NULL) {
-      // The backchain pointer was NULL. This normally means the end of the chain. But the
+    if (sp == nullptr) {
+      // The backchain pointer was null. This normally means the end of the chain. But the
       // stack might be corrupted, and it may be worth looking for the stack chain.
       if (is_valid_stackpointer(sp_last, stack_base, stack_size) && (stack_base - 0x10) > sp_last) {
         // If we are not within <guess> 0x10 stackslots of the stack base, we assume that this
         // is indeed not the end of the chain but that the stack was corrupted. So lets try to
         // find the end of the chain.
-        st->print_cr("*** back chain pointer is NULL - end of stack or broken backchain ? ***");
+        st->print_cr("*** back chain pointer is null - end of stack or broken backchain ? ***");
         retry = true;
       } else {
         st->print_cr("*** end of backchain ***");
@@ -853,7 +862,7 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
   // running on a user provided stack (when handing down a stack to pthread
   // create, see pthread_attr_setstackaddr).
   // Not sure what to do then.
-  if (pinfo.__pi_stackend == NULL || pinfo.__pi_stackaddr == NULL) {
+  if (pinfo.__pi_stackend == nullptr || pinfo.__pi_stackaddr == nullptr) {
     fprintf(stderr, "pthread_getthrds_np - invalid values\n");
     fflush(stdout);
     return false;
@@ -888,3 +897,275 @@ bool AixMisc::query_stack_bounds_for_current_thread(stackbounds_t* out) {
   return true;
 
 }
+
+// variables needed to emulate linux behavior in os::dll_load() if library is loaded twice
+static pthread_mutex_t g_handletable_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct TableLocker {
+  TableLocker() { pthread_mutex_lock(&g_handletable_mutex); }
+  ~TableLocker() { pthread_mutex_unlock(&g_handletable_mutex); }
+};
+struct handletableentry{
+    void*   handle;
+    ino64_t inode;
+    dev64_t devid;
+    uint    refcount;
+};
+constexpr unsigned init_num_handles = 128;
+static unsigned max_handletable = 0;
+static unsigned g_handletable_used = 0;
+// We start with an empty array. At first use we will dynamically allocate memory for 128 entries.
+// If this table is full we dynamically reallocate a memory reagion of double size, and so on.
+static struct handletableentry* p_handletable = nullptr;
+
+// get the library search path burned in to the executable file during linking
+// If the libpath cannot be retrieved return an empty path
+static const char* rtv_linkedin_libpath() {
+  constexpr int bufsize = 4096;
+  static char buffer[bufsize];
+  static const char* libpath = 0;
+
+  // we only try to retrieve the libpath once. After that try we
+  // let libpath point to buffer, which then contains a valid libpath
+  // or an empty string
+  if (libpath != nullptr) {
+    return libpath;
+  }
+
+  // retrieve the path to the currently running executable binary
+  // to open it
+  snprintf(buffer, 100, "/proc/%ld/object/a.out", (long)getpid());
+  FILE* f = nullptr;
+  struct xcoffhdr the_xcoff;
+  struct scnhdr the_scn;
+  struct ldhdr the_ldr;
+  constexpr size_t xcoffsz = FILHSZ + _AOUTHSZ_EXEC;
+  STATIC_ASSERT(sizeof(the_xcoff) == xcoffsz);
+  STATIC_ASSERT(sizeof(the_scn) == SCNHSZ);
+  STATIC_ASSERT(sizeof(the_ldr) == LDHDRSZ);
+  // read the generic XCOFF header and analyze the substructures
+  // to find the burned in libpath. In any case of error perform the assert
+  if (nullptr == (f = fopen(buffer, "r")) ||
+      xcoffsz != fread(&the_xcoff, 1, xcoffsz, f) ||
+      the_xcoff.filehdr.f_magic != U64_TOCMAGIC ||
+      0 != fseek(f, (FILHSZ + the_xcoff.filehdr.f_opthdr + (the_xcoff.aouthdr.o_snloader -1)*SCNHSZ), SEEK_SET) ||
+      SCNHSZ != fread(&the_scn, 1, SCNHSZ, f) ||
+      0 != strcmp(the_scn.s_name, ".loader") ||
+      0 != fseek(f, the_scn.s_scnptr, SEEK_SET) ||
+      LDHDRSZ != fread(&the_ldr, 1, LDHDRSZ, f) ||
+      0 != fseek(f, the_scn.s_scnptr + the_ldr.l_impoff, SEEK_SET) ||
+      0 == fread(buffer, 1, bufsize, f)) {
+    buffer[0] = 0;
+    assert(false, "could not retrieve burned in library path from executables loader section");
+  }
+
+  if (f) {
+    fclose(f);
+  }
+  libpath = buffer;
+
+  return libpath;
+}
+
+// Simulate the library search algorithm of dlopen() (in os::dll_load)
+static bool search_file_in_LIBPATH(const char* path, struct stat64x* stat) {
+  if (path == nullptr)
+    return false;
+
+  char* path2 = os::strdup(path);
+  // if exist, strip off trailing (shr_64.o) or similar
+  char* substr;
+  if (path2[strlen(path2) - 1] == ')' && (substr = strrchr(path2, '('))) {
+    *substr = 0;
+  }
+
+  bool ret = false;
+  // If FilePath contains a slash character, FilePath is used directly,
+  // and no directories are searched.
+  // But if FilePath does not start with / or . we have to prepend it with ./
+  if (strchr(path2, '/')) {
+    stringStream combined;
+    if (*path2 == '/' || *path2 == '.') {
+      combined.print("%s", path2);
+    } else {
+      combined.print("./%s", path2);
+    }
+    ret = (0 == stat64x(combined.base(), stat));
+    os::free(path2);
+    return ret;
+  }
+
+  const char* env = getenv("LIBPATH");
+  if (env == nullptr) {
+    // no LIBPATH, try with LD_LIBRARY_PATH
+    env = getenv("LD_LIBRARY_PATH");
+  }
+
+  stringStream Libpath;
+  if (env == nullptr) {
+    // no LIBPATH or LD_LIBRARY_PATH given -> try only with burned in libpath
+    Libpath.print("%s", rtv_linkedin_libpath());
+  } else if (*env == 0) {
+    // LIBPATH or LD_LIBRARY_PATH given but empty -> try first with burned
+    //  in libpath and with current working directory second
+    Libpath.print("%s:.", rtv_linkedin_libpath());
+  } else {
+    // LIBPATH or LD_LIBRARY_PATH given with content -> try first with
+    // LIBPATH or LD_LIBRARY_PATH and second with burned in libpath.
+    // No check against current working directory
+    Libpath.print("%s:%s", env, rtv_linkedin_libpath());
+  }
+
+  char* libpath = os::strdup(Libpath.base());
+
+  char *saveptr, *token;
+  for (token = strtok_r(libpath, ":", &saveptr); token != nullptr; token = strtok_r(nullptr, ":", &saveptr)) {
+    stringStream combined;
+    combined.print("%s/%s", token, path2);
+    if ((ret = (0 == stat64x(combined.base(), stat))))
+      break;
+  }
+
+  os::free(libpath);
+  os::free(path2);
+  return ret;
+}
+
+// specific AIX versions for ::dlopen() and ::dlclose(), which handles the struct g_handletable
+// This way we mimic dl handle equality for a library
+// opened a second time, as it is implemented on other platforms.
+void* Aix_dlopen(const char* filename, int Flags, const char** error_report) {
+  assert(error_report != nullptr, "error_report is nullptr");
+  void* result;
+  struct stat64x libstat;
+
+  if (false == search_file_in_LIBPATH(filename, &libstat)) {
+    // file with filename does not exist
+  #ifdef ASSERT
+    result = ::dlopen(filename, Flags);
+    assert(result == nullptr, "dll_load: Could not stat() file %s, but dlopen() worked; Have to improve stat()", filename);
+  #endif
+    *error_report = "Could not load module .\nSystem error: No such file or directory";
+    return nullptr;
+  }
+  else {
+    unsigned i = 0;
+    TableLocker lock;
+    // check if library belonging to filename is already loaded.
+    // If yes use stored handle from previous ::dlopen() and increase refcount
+    for (i = 0; i < g_handletable_used; i++) {
+      if ((p_handletable + i)->handle &&
+          (p_handletable + i)->inode == libstat.st_ino &&
+          (p_handletable + i)->devid == libstat.st_dev) {
+        (p_handletable + i)->refcount++;
+        result = (p_handletable + i)->handle;
+        break;
+      }
+    }
+    if (i == g_handletable_used) {
+      // library not yet loaded. Check if there is space left in array
+      // to store new ::dlopen() handle
+      if (g_handletable_used == max_handletable) {
+        // No place in array anymore; increase array.
+        unsigned new_max = MAX2(max_handletable * 2, init_num_handles);
+        struct handletableentry* new_tab = (struct handletableentry*)::realloc(p_handletable, new_max * sizeof(struct handletableentry));
+        assert(new_tab != nullptr, "no more memory for handletable");
+        if (new_tab == nullptr) {
+          *error_report = "dlopen: no more memory for handletable";
+          return nullptr;
+        }
+        max_handletable = new_max;
+        p_handletable = new_tab;
+      }
+      // Library not yet loaded; load it, then store its handle in handle table
+      result = ::dlopen(filename, Flags);
+      if (result != nullptr) {
+        g_handletable_used++;
+        (p_handletable + i)->handle = result;
+        (p_handletable + i)->inode = libstat.st_ino;
+        (p_handletable + i)->devid = libstat.st_dev;
+        (p_handletable + i)->refcount = 1;
+      }
+      else {
+        // error analysis when dlopen fails
+        *error_report = ::dlerror();
+        if (*error_report == nullptr) {
+          *error_report = "dlerror returned no error description";
+        }
+      }
+    }
+  }
+  return result;
+}
+
+bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
+  unsigned i = 0;
+  bool res = false;
+
+  if (ebuf && ebuflen > 0) {
+    ebuf[0] = '\0';
+    ebuf[ebuflen - 1] = '\0';
+  }
+
+  {
+    TableLocker lock;
+    // try to find handle in array, which means library was loaded by os::dll_load() call
+    for (i = 0; i < g_handletable_used; i++) {
+      if ((p_handletable + i)->handle == libhandle) {
+        // handle found, decrease refcount
+        assert((p_handletable + i)->refcount > 0, "Sanity");
+        (p_handletable + i)->refcount--;
+        if ((p_handletable + i)->refcount > 0) {
+          // if refcount is still >0 then we have to keep library and just return true
+          return true;
+        }
+        // refcount == 0, so we have to ::dlclose() the lib
+        // and delete the entry from the array.
+        break;
+      }
+    }
+
+    // If we reach this point either the libhandle was found with refcount == 0, or the libhandle
+    // was not found in the array at all. In both cases we have to ::dlclose the lib and perform
+    // the error handling. In the first case we then also have to delete the entry from the array
+    // while in the second case we simply have to nag.
+    res = (0 == ::dlclose(libhandle));
+    if (!res) {
+      // error analysis when dlopen fails
+      const char* error_report = ::dlerror();
+      if (error_report == nullptr) {
+        error_report = "dlerror returned no error description";
+      }
+      if (ebuf != nullptr && ebuflen > 0) {
+        snprintf(ebuf, ebuflen - 1, "%s", error_report);
+      }
+      assert(false, "os::pd_dll_unload() ::dlclose() failed");
+    }
+
+    if (i < g_handletable_used) {
+      if (res) {
+        // First case: libhandle was found (with refcount == 0) and ::dlclose successful,
+        // so delete entry from array
+        g_handletable_used--;
+        // If the entry was the last one of the array, the previous g_handletable_used--
+        // is sufficient to remove the entry from the array, otherwise we move the last
+        // entry of the array to the place of the entry we want to remove and overwrite it
+        if (i < g_handletable_used) {
+          *(p_handletable + i) = *(p_handletable + g_handletable_used);
+          (p_handletable + g_handletable_used)->handle = nullptr;
+        }
+      }
+    }
+    else {
+      // Second case: libhandle was not found (library was not loaded by os::dll_load())
+      // therefore nag
+      assert(false, "os::pd_dll_unload() library was not loaded by os::dll_load()");
+    }
+  }
+
+  // Update the dll cache
+  LoadedLibraries::reload();
+
+  return res;
+} // end: os::pd_dll_unload()
+

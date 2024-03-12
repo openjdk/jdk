@@ -52,18 +52,15 @@
 // int com.sun.security.provider.MD5.implCompress0(byte[] b, int ofs)
 void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address limit, bool multi_block) {
 
-  Label start, done_hash, loop0;
+  Label done_hash, loop0;
 
-  bind(start);
-
-  bind(loop0);
-
-  // Save hash values for addition after rounds
   movptr(rdi, state);
   movl(rax, Address(rdi,  0));
   movl(rbx, Address(rdi,  4));
   movl(rcx, Address(rdi,  8));
   movl(rdx, Address(rdi, 12));
+
+  bind(loop0);
 
 #define FF(r1, r2, r3, r4, k, s, t)              \
   addl(r1, t);                                   \
@@ -189,10 +186,14 @@ void MacroAssembler::fast_md5(Register buf, Address state, Address ofs, Address 
 
   // write hash values back in the correct order
   movptr(rdi, state);
-  addl(Address(rdi,  0), rax);
-  addl(Address(rdi,  4), rbx);
-  addl(Address(rdi,  8), rcx);
-  addl(Address(rdi, 12), rdx);
+  addl(rax, Address(rdi,  0));
+  movl(Address(rdi,  0), rax);
+  addl(rbx, Address(rdi,  4));
+  movl(Address(rdi,  4), rbx);
+  addl(rcx, Address(rdi,  8));
+  movl(Address(rdi,  8), rcx);
+  addl(rdx, Address(rdi, 12));
+  movl(Address(rdi, 12), rdx);
 
   if (multi_block) {
     // increment data pointer and loop if more to process

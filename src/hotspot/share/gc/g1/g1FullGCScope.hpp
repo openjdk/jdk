@@ -47,7 +47,6 @@ public:
 // Class used to group scoped objects used in the Full GC together.
 class G1FullGCScope : public StackObj {
   ResourceMark            _rm;
-  bool                    _explicit_gc;
   bool                    _do_maximal_compaction;
   G1CollectedHeap*        _g1h;
   SvcGCMarker             _svc_marker;
@@ -62,12 +61,10 @@ class G1FullGCScope : public StackObj {
 
 public:
   G1FullGCScope(G1MonitoringSupport* monitoring_support,
-                bool explicit_gc,
                 bool clear_soft,
                 bool do_maximal_compaction,
                 G1FullGCTracer* tracer);
 
-  bool is_explicit_gc();
   bool should_clear_soft_refs();
   bool do_maximal_compaction() { return _do_maximal_compaction; }
 

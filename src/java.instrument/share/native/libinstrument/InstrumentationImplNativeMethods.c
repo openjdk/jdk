@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,22 @@
  */
 DEF_STATIC_JNI_OnLoad
 
+
+/*
+ * Class:     sun_instrument_InstrumentationImpl
+ * Method:    jarFile
+ * Signature: (J)Ljava/lang/String;
+ */
+JNIEXPORT jstring JNICALL
+Java_sun_instrument_InstrumentationImpl_jarFile
+  (JNIEnv * jnienv, jobject implThis, jlong agent) {
+    return jarFile(jnienv, (JPLISAgent*)(intptr_t)agent);
+}
+
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    isModifiableClass0
- * Signature: (Ljava/lang/Class;)Z
+ * Signature: (JLjava/lang/Class;)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_instrument_InstrumentationImpl_isModifiableClass0
@@ -68,7 +80,7 @@ Java_sun_instrument_InstrumentationImpl_isModifiableClass0
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    isRetransformClassesSupported0
- * Signature: ()Z
+ * Signature: (J)Z
  */
 JNIEXPORT jboolean JNICALL
 Java_sun_instrument_InstrumentationImpl_isRetransformClassesSupported0
@@ -79,7 +91,7 @@ Java_sun_instrument_InstrumentationImpl_isRetransformClassesSupported0
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    setHasTransformers
- * Signature: (Z)V
+ * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
 Java_sun_instrument_InstrumentationImpl_setHasTransformers
@@ -90,7 +102,7 @@ Java_sun_instrument_InstrumentationImpl_setHasTransformers
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    setHasRetransformableTransformers
- * Signature: (Z)V
+ * Signature: (JZ)V
  */
 JNIEXPORT void JNICALL
 Java_sun_instrument_InstrumentationImpl_setHasRetransformableTransformers
@@ -101,7 +113,7 @@ Java_sun_instrument_InstrumentationImpl_setHasRetransformableTransformers
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    retransformClasses0
- * Signature: ([Ljava/lang/Class;)V
+ * Signature: (J[Ljava/lang/Class;)V
  */
 JNIEXPORT void JNICALL
 Java_sun_instrument_InstrumentationImpl_retransformClasses0
@@ -112,7 +124,7 @@ Java_sun_instrument_InstrumentationImpl_retransformClasses0
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    redefineClasses0
- * Signature: ([Ljava/lang/instrument/ClassDefinition;)V
+ * Signature: (J[Ljava/lang/instrument/ClassDefinition;)V
  */
 JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_redefineClasses0
   (JNIEnv * jnienv, jobject implThis, jlong agent, jobjectArray classDefinitions) {
@@ -122,7 +134,7 @@ JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_redefineClasses0
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    getAllLoadedClasses0
- * Signature: ()[Ljava/lang/Class;
+ * Signature: (J)[Ljava/lang/Class;
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_instrument_InstrumentationImpl_getAllLoadedClasses0
   (JNIEnv * jnienv, jobject implThis, jlong agent) {
@@ -132,7 +144,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_instrument_InstrumentationImpl_getAllLoa
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    getInitiatedClasses0
- * Signature: (Ljava/lang/ClassLoader;)[Ljava/lang/Class;
+ * Signature: (JLjava/lang/ClassLoader;)[Ljava/lang/Class;
  */
 JNIEXPORT jobjectArray JNICALL Java_sun_instrument_InstrumentationImpl_getInitiatedClasses0
   (JNIEnv * jnienv, jobject implThis, jlong agent, jobject classLoader) {
@@ -142,7 +154,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_instrument_InstrumentationImpl_getInitia
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    getObjectSize0
- * Signature: (Ljava/lang/Object;)J
+ * Signature: (JLjava/lang/Object;)J
  */
 JNIEXPORT jlong JNICALL Java_sun_instrument_InstrumentationImpl_getObjectSize0
   (JNIEnv * jnienv, jobject implThis, jlong agent, jobject objectToSize) {
@@ -153,7 +165,7 @@ JNIEXPORT jlong JNICALL Java_sun_instrument_InstrumentationImpl_getObjectSize0
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    appendToClassLoaderSearch0
- * Signature: (Ljava/lang/String;Z)V
+ * Signature: (JLjava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_appendToClassLoaderSearch0
   (JNIEnv * jnienv, jobject implThis, jlong agent, jstring jarFile, jboolean isBootLoader) {
@@ -164,7 +176,7 @@ JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_appendToClassLoad
 /*
  * Class:     sun_instrument_InstrumentationImpl
  * Method:    setNativeMethodPrefixes
- * Signature: ([Ljava/lang/String;Z)V
+ * Signature: (J[Ljava/lang/String;Z)V
  */
 JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_setNativeMethodPrefixes
   (JNIEnv * jnienv, jobject implThis, jlong agent, jobjectArray prefixArray, jboolean isRetransformable) {

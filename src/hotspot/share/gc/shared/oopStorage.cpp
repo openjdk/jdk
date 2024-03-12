@@ -28,6 +28,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
+#include "nmt/memTracker.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/handles.inline.hpp"
@@ -39,7 +40,6 @@
 #include "runtime/os.hpp"
 #include "runtime/safefetch.hpp"
 #include "runtime/safepoint.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/count_trailing_zeros.hpp"
 #include "utilities/debug.hpp"
@@ -766,7 +766,7 @@ bool OopStorage::reduce_deferred_updates() {
 
 static inline void check_release_entry(const oop* entry) {
   assert(entry != nullptr, "Releasing null");
-  assert(*entry == nullptr, "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
+  assert(Universe::heap()->contains_null(entry), "Releasing uncleared entry: " PTR_FORMAT, p2i(entry));
 }
 
 void OopStorage::release(const oop* ptr) {

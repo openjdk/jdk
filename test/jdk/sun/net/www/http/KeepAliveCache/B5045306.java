@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
@@ -40,7 +40,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -169,18 +168,18 @@ class SimpleHttpTransactionHandler implements HttpHandler
         try {
             String path = trans.getRequestURI().getPath();
             if (path.equals("/firstCall")) {
-                port1 = trans.getLocalAddress().getPort();
+                port1 = trans.getRemoteAddress().getPort();
                 System.out.println("First connection on client port = " + port1);
 
                 byte[] responseBody = new byte[RESPONSE_DATA_LENGTH];
                 for (int i=0; i<responseBody.length; i++)
                     responseBody[i] = 0x41;
-                trans.sendResponseHeaders(200, 0);
-                try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
-                    pw.print(responseBody);
+                trans.sendResponseHeaders(200, responseBody.length);
+                try (OutputStream os = trans.getResponseBody()) {
+                    os.write(responseBody);
                 }
             } else if (path.equals("/secondCall")) {
-                int port2 = trans.getLocalAddress().getPort();
+                int port2 = trans.getRemoteAddress().getPort();
                 System.out.println("Second connection on client port = " + port2);
 
                 if (port1 != port2)
@@ -200,10 +199,10 @@ class SimpleHttpTransactionHandler implements HttpHandler
                     responseBody[i] = 0x41;
                 // override the Content-length header to be greater than the actual response body
                 trans.sendResponseHeaders(200, responseBody.length+1);
-                try(PrintWriter pw = new PrintWriter(trans.getResponseBody(), false, Charset.forName("UTF-8"))) {
-                    pw.print(responseBody);
-                }
+                OutputStream os = trans.getResponseBody();
+                os.write(responseBody);
                 // now close the socket
+                // closing the stream here would throw; close the exchange instead
                 trans.close();
             }
         } catch (Exception e) {

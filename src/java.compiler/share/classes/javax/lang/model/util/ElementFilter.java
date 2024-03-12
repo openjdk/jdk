@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,13 +45,13 @@ import javax.lang.model.element.ModuleElement.UsesDirective;
 /**
  * Filters for selecting just the elements of interest from a
  * collection of elements.  The returned sets and lists are new
- * collections and do use the argument as a backing store.  The
+ * collections that do <em>not</em> use the argument collection as a backing store.  The
  * methods in this class do not make any attempts to guard against
  * concurrent modifications of the arguments.  The returned sets and
- * lists are mutable but unsafe for concurrent access.  A returned set
- * has the same iteration order as the argument set to a method.
+ * lists are mutable and unsafe for concurrent access.  A returned set
+ * from a method has the same iteration order as the argument set to the method.
  *
- * <p>If iterables and sets containing {@code null} are passed as
+ * <p>If iterables or sets containing {@code null} are passed as
  * arguments to methods in this class, a {@code NullPointerException}
  * will be thrown.
  *
@@ -169,7 +169,7 @@ public class ElementFilter {
     }
 
     /**
-     * {@return a set of types in {@code elements}}
+     * {@return a set of classes and interfaces in {@code elements}}
      * @param elements the elements to filter
      */
     public static Set<TypeElement>

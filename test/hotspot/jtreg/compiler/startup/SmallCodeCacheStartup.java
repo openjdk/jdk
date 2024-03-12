@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,10 +44,10 @@ import static jdk.test.lib.Asserts.assertTrue;
 
 public class SmallCodeCacheStartup {
     public static void main(String[] args) throws Exception {
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
-                                                                  "-XX:CICompilerCount=64",
-                                                                  "-Xcomp",
-                                                                  "-version");
+        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder("-XX:ReservedCodeCacheSize=3m",
+                                                                             "-XX:CICompilerCount=64",
+                                                                             "-Xcomp",
+                                                                             "-version");
         OutputAnalyzer analyzer = new OutputAnalyzer(pb.start());
         try {
             analyzer.shouldHaveExitValue(0);

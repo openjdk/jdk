@@ -41,12 +41,11 @@
   void store_parameter(jint     c, int param_num);
 
   void check_reserved_argument_area(int bytes) {
-    assert(bytes + FrameMap::first_available_sp_in_frame <= frame_map()->reserved_argument_area_size(),
-           "reserved_argument_area too small");
+    assert(bytes <= frame_map()->reserved_argument_area_size(), "reserved_argument_area too small");
   }
 
   enum {
-    _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledStaticCall::emit_to_interp_stub.
+    _call_stub_size = 512, // See Compile::MAX_stubs_size and CompiledDirectCall::emit_to_interp_stub.
     _exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(128),
     _deopt_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(64)
   };

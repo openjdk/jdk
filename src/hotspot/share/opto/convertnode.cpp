@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,14 @@
 #include "precompiled.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
+#include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
 #include "opto/matcher.hpp"
+#include "opto/movenode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/subnode.hpp"
-#include "runtime/sharedRuntime.hpp"
+#include "runtime/stubRoutines.hpp"
+#include "utilities/checkedCast.hpp"
 
 //=============================================================================
 //------------------------------Identity---------------------------------------
@@ -49,7 +52,7 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   if( t == TypeInt::ZERO ) return TypeInt::ZERO;
   if( t == TypePtr::NULL_PTR ) return TypeInt::ZERO;
   const TypePtr *tp = t->isa_ptr();
-  if( tp != NULL ) {
+  if(tp != nullptr) {
     if( tp->ptr() == TypePtr::AnyNull ) return Type::TOP;
     if( tp->ptr() == TypePtr::Constant) return TypeInt::ONE;
     if (tp->ptr() == TypePtr::NotNull)  return TypeInt::ONE;
@@ -61,6 +64,78 @@ const Type* Conv2BNode::Value(PhaseGVN* phase) const {
   return TypeInt::BOOL;
 }
 
+Node* Conv2BNode::Ideal(PhaseGVN* phase, bool can_reshape) {
+  if (!Matcher::match_rule_supported(Op_Conv2B)) {
+    if (phase->C->post_loop_opts_phase()) {
+      // Get type of comparison to make
+      const Type* t = phase->type(in(1));
+      Node* cmp = nullptr;
+      if (t->isa_int()) {
+        cmp = phase->transform(new CmpINode(in(1), phase->intcon(0)));
+      } else if (t->isa_ptr()) {
+        cmp = phase->transform(new CmpPNode(in(1), phase->zerocon(BasicType::T_OBJECT)));
+      } else {
+        assert(false, "Unrecognized comparison for Conv2B: %s", NodeClassNames[in(1)->Opcode()]);
+      }
+
+      // Replace Conv2B with the cmove
+      Node* bol = phase->transform(new BoolNode(cmp, BoolTest::eq));
+      return new CMoveINode(bol, phase->intcon(1), phase->intcon(0), TypeInt::BOOL);
+    } else {
+      phase->C->record_for_post_loop_opts_igvn(this);
+    }
+  }
+  return nullptr;
+}
+
+uint ConvertNode::ideal_reg() const {
+  return _type->ideal_reg();
+}
+
+Node* ConvertNode::create_convert(BasicType source, BasicType target, Node* input) {
+  if (source == T_INT) {
+    if (target == T_LONG) {
+      return new ConvI2LNode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvI2FNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvI2DNode(input);
+    }
+  } else if (source == T_LONG) {
+    if (target == T_INT) {
+      return new ConvL2INode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvL2FNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvL2DNode(input);
+    }
+  } else if (source == T_FLOAT) {
+    if (target == T_INT) {
+      return new ConvF2INode(input);
+    } else if (target == T_LONG) {
+      return new ConvF2LNode(input);
+    } else if (target == T_DOUBLE) {
+      return new ConvF2DNode(input);
+    } else if (target == T_SHORT) {
+      return new ConvF2HFNode(input);
+    }
+  } else if (source == T_DOUBLE) {
+    if (target == T_INT) {
+      return new ConvD2INode(input);
+    } else if (target == T_LONG) {
+      return new ConvD2LNode(input);
+    } else if (target == T_FLOAT) {
+      return new ConvD2FNode(input);
+    }
+  } else if (source == T_SHORT) {
+    if (target == T_FLOAT) {
+      return new ConvHF2FNode(input);
+    }
+  }
+
+  assert(false, "Couldn't create conversion for type %s to %s", type2name(source), type2name(target));
+  return nullptr;
+}
 
 // The conversions operations are all Alpha sorted.  Please keep it that way!
 //=============================================================================
@@ -85,7 +160,7 @@ Node *ConvD2FNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -112,7 +187,7 @@ Node *ConvD2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(1, in(1)->in(1));
     return this;
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Identity---------------------------------------
@@ -148,7 +223,7 @@ Node *ConvD2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(1, in(1)->in(1));
     return this;
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -165,15 +240,13 @@ const Type* ConvF2DNode::Value(PhaseGVN* phase) const {
 //------------------------------Value------------------------------------------
 const Type* ConvF2HFNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
-  if( t == Type::FLOAT ) return TypeInt::SHORT;
-  const TypeF *tf = t->is_float_constant();
-  return TypeInt::make( SharedRuntime::f2hf( tf->getf() ) );
-}
+  if (t == Type::TOP) return Type::TOP;
+  if (t == Type::FLOAT || StubRoutines::f2hf_adr() == nullptr) {
+    return TypeInt::SHORT;
+  }
 
-//------------------------------Identity---------------------------------------
-Node* ConvF2HFNode::Identity(PhaseGVN* phase) {
-  return (in(1)->Opcode() == Op_ConvHF2F) ? in(1)->in(1) : this;
+  const TypeF *tf = t->is_float_constant();
+  return TypeInt::make( StubRoutines::f2hf(tf->getf()) );
 }
 
 //=============================================================================
@@ -202,7 +275,7 @@ Node *ConvF2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(1, in(1)->in(1));
     return this;
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -231,19 +304,23 @@ Node *ConvF2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     set_req(1, in(1)->in(1));
     return this;
   }
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
 //------------------------------Value------------------------------------------
 const Type* ConvHF2FNode::Value(PhaseGVN* phase) const {
   const Type *t = phase->type( in(1) );
-  if( t == Type::TOP ) return Type::TOP;
-  if( t == TypeInt::SHORT ) return Type::FLOAT;
-  const TypeInt *ti = t->is_int();
-  if ( ti->is_con() ) return TypeF::make( SharedRuntime::hf2f( ti->get_con() ) );
+  if (t == Type::TOP) return Type::TOP;
+  if (t == TypeInt::SHORT || StubRoutines::hf2f_adr() == nullptr) {
+    return Type::FLOAT;
+  }
 
-  return bottom_type();
+  const TypeInt *ti = t->is_int();
+  if (ti->is_con()) {
+    return TypeF::make( StubRoutines::hf2f(ti->get_con()) );
+  }
+  return Type::FLOAT;
 }
 
 //=============================================================================
@@ -253,7 +330,7 @@ const Type* ConvI2DNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeInt *ti = t->is_int();
   if( ti->is_con() ) return TypeD::make( (double)ti->get_con() );
-  return bottom_type();
+  return Type::DOUBLE;
 }
 
 //=============================================================================
@@ -263,7 +340,7 @@ const Type* ConvI2FNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeInt *ti = t->is_int();
   if( ti->is_con() ) return TypeF::make( (float)ti->get_con() );
-  return bottom_type();
+  return Type::FLOAT;
 }
 
 //------------------------------Identity---------------------------------------
@@ -293,7 +370,7 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
   // Do NOT remove this node's type assertion until no more loop ops can happen.
   if (phase->C->post_loop_opts_phase()) {
     const TypeInt* in_type = phase->type(in(1))->isa_int();
-    if (in_type != NULL &&
+    if (in_type != nullptr &&
         (in_type->_lo != this_type->_lo ||
          in_type->_hi != this_type->_hi)) {
       // Although this WORSENS the type, it increases GVN opportunities,
@@ -320,6 +397,20 @@ const Type* ConvI2LNode::Value(PhaseGVN* phase) const {
     }
   }
   return this_type;
+}
+
+Node* ConvI2LNode::Identity(PhaseGVN* phase) {
+  // If type is in "int" sub-range, we can
+  // convert I2L(L2I(x)) => x
+  // since the conversions have no effect.
+  if (in(1)->Opcode() == Op_ConvL2I) {
+    Node* x = in(1)->in(1);
+    const TypeLong* t = phase->type(x)->isa_long();
+    if (t != nullptr && t->_lo >= min_jint && t->_hi <= max_jint) {
+      return x;
+    }
+  }
+  return this;
 }
 
 #ifdef ASSERT
@@ -571,7 +662,7 @@ static Node* find_or_make_convI2L(PhaseIterGVN* igvn, Node* parent,
                                   const TypeLong* type) {
   Node* n = new ConvI2LNode(parent, type);
   Node* existing = igvn->hash_find_insert(n);
-  if (existing != NULL) {
+  if (existing != nullptr) {
     n->destruct(igvn);
     return existing;
   }
@@ -636,14 +727,14 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Addressing arithmetic will not absorb it as part of a 64-bit AddL.
   PhaseIterGVN* igvn = phase->is_IterGVN();
   Node* z = in(1);
-  const TypeInteger* rx = NULL;
-  const TypeInteger* ry = NULL;
+  const TypeInteger* rx = nullptr;
+  const TypeInteger* ry = nullptr;
   if (Compile::push_thru_add(phase, z, this_type, rx, ry, T_INT, T_LONG)) {
-    if (igvn == NULL) {
+    if (igvn == nullptr) {
       // Postpone this optimization to iterative GVN, where we can handle deep
       // AddI chains without an exponential number of recursive Ideal() calls.
       phase->record_for_igvn(this);
-      return NULL;
+      return nullptr;
     }
     int op = z->Opcode();
     Node* x = z->in(1);
@@ -659,7 +750,7 @@ Node *ConvI2LNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
 #endif //_LP64
 
-  return NULL;
+  return nullptr;
 }
 
 //=============================================================================
@@ -669,7 +760,7 @@ const Type* ConvL2DNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
   if( tl->is_con() ) return TypeD::make( (double)tl->get_con() );
-  return bottom_type();
+  return Type::DOUBLE;
 }
 
 //=============================================================================
@@ -679,7 +770,7 @@ const Type* ConvL2FNode::Value(PhaseGVN* phase) const {
   if( t == Type::TOP ) return Type::TOP;
   const TypeLong *tl = t->is_long();
   if( tl->is_con() ) return TypeF::make( (float)tl->get_con() );
-  return bottom_type();
+  return Type::FLOAT;
 }
 
 //=============================================================================
@@ -724,13 +815,13 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( andl_op == Op_AddL ) {
     // Don't do this for nodes which have more than one user since
     // we'll end up computing the long add anyway.
-    if (andl->outcnt() > 1) return NULL;
+    if (andl->outcnt() > 1) return nullptr;
 
     Node* x = andl->in(1);
     Node* y = andl->in(2);
     assert( x != andl && y != andl, "dead loop in ConvL2INode::Ideal" );
-    if (phase->type(x) == Type::TOP)  return NULL;
-    if (phase->type(y) == Type::TOP)  return NULL;
+    if (phase->type(x) == Type::TOP)  return nullptr;
+    if (phase->type(y) == Type::TOP)  return nullptr;
     Node *add1 = phase->transform(new ConvL2INode(x));
     Node *add2 = phase->transform(new ConvL2INode(y));
     return new AddINode(add1,add2);
@@ -739,7 +830,7 @@ Node *ConvL2INode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Disable optimization: LoadL->ConvL2I ==> LoadI.
   // It causes problems (sizes of Load and Store nodes do not match)
   // in objects initialization code and Escape Analysis.
-  return NULL;
+  return nullptr;
 }
 
 

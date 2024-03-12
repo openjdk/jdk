@@ -27,5 +27,7 @@ package com.sun.source.tree;
 
 /**
  * A super-type for all the directives in a ModuleTree.
+ *
+ * @since 9
  */
 public interface DirectiveTree extends Tree { }

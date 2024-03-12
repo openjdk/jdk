@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -196,6 +196,12 @@ class CharPredicates {
             case "ALPHABETIC" -> ALPHABETIC();
             case "ASSIGNED" -> ASSIGNED();
             case "CONTROL" -> CONTROL();
+            case "EMOJI" -> EMOJI();
+            case "EMOJI_PRESENTATION" -> EMOJI_PRESENTATION();
+            case "EMOJI_MODIFIER" -> EMOJI_MODIFIER();
+            case "EMOJI_MODIFIER_BASE" -> EMOJI_MODIFIER_BASE();
+            case "EMOJI_COMPONENT" -> EMOJI_COMPONENT();
+            case "EXTENDED_PICTOGRAPHIC" -> EXTENDED_PICTOGRAPHIC();
             case "HEXDIGIT", "HEX_DIGIT" -> HEX_DIGIT();
             case "IDEOGRAPHIC" -> IDEOGRAPHIC();
             case "JOINCONTROL", "JOIN_CONTROL" -> JOIN_CONTROL();
@@ -421,4 +427,27 @@ class CharPredicates {
         return ch -> ch < 128 && ASCII.isSpace(ch);
     }
 
+    /////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Emoji related binary properties
+     */
+    static final CharPredicate EMOJI() {
+        return Character::isEmoji;
+    }
+    static final CharPredicate EMOJI_PRESENTATION() {
+        return Character::isEmojiPresentation;
+    }
+    static final CharPredicate EMOJI_MODIFIER() {
+        return Character::isEmojiModifier;
+    }
+    static final CharPredicate EMOJI_MODIFIER_BASE() {
+        return Character::isEmojiModifierBase;
+    }
+    static final CharPredicate EMOJI_COMPONENT() {
+        return Character::isEmojiComponent;
+    }
+    static final CharPredicate EXTENDED_PICTOGRAPHIC() {
+        return Character::isExtendedPictographic;
+    }
 }

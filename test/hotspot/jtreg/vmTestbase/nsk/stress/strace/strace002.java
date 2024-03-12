@@ -50,11 +50,6 @@
 
 package nsk.stress.strace;
 
-import nsk.share.ArgumentParser;
-import nsk.share.Failure;
-import nsk.share.Log;
-
-import java.io.PrintStream;
 import java.util.Map;
 
 /**
@@ -73,28 +68,15 @@ public class strace002 extends StraceBase {
     static final int REPEAT_COUNT = 10;
 
     static volatile boolean isLocked = false;
-    static PrintStream out;
-    static long waitTime = 2;
 
     static Object waitStart = new Object();
 
     static strace002Thread[] threads;
     static StackTraceElement[][] snapshots = new StackTraceElement[THRD_COUNT][];
-    static Log log;
-
-    public static void main(String[] args) {
-        out = System.out;
-        int exitCode = run(args);
-        System.exit(exitCode + 95);
-    }
 
     volatile int achivedCount = 0;
 
-    public static int run(String[] args) {
-
-        ArgumentParser argHandler = new ArgumentParser(args);
-        log = new Log(out, argHandler);
-        waitTime = argHandler.getWaitTime() * 60000;
+    public static void main(String[] args) {
 
         strace002 test = new strace002();
         boolean res = true;
@@ -109,11 +91,9 @@ public class strace002 extends StraceBase {
         }
 
         if (!res) {
-            complain("***>>>Test failed<<<***");
-            return 2;
+            new RuntimeException("***>>>Test failed<<<***");
         }
 
-        return 0;
     }
 
     void startThreads() {
@@ -159,9 +139,9 @@ public class strace002 extends StraceBase {
 
     boolean makeSnapshot(int repeat_number) {
 
-        Map traces = Thread.getAllStackTraces();
+        Map<Thread, StackTraceElement[]> traces = Thread.getAllStackTraces();
         for (int i = 0; i < threads.length; i++) {
-            snapshots[i] = (StackTraceElement[]) traces.get(threads[i]);
+            snapshots[i] = traces.get(threads[i]);
         }
 
         return checkTraces(repeat_number);
@@ -225,15 +205,6 @@ public class strace002 extends StraceBase {
         isLocked = false;
     }
 
-    static void display(String message) {
-        log.display(message);
-    }
-
-    static void complain(String message) {
-        log.complain(message);
-    }
-
-
 }
 
 class strace002Thread extends Thread {
@@ -275,7 +246,7 @@ class strace002Thread extends Thread {
                         strace002.complain("" + e);
                     }
                     if (alltime > strace002.waitTime) {
-                        throw new Failure("out of wait time");
+                        throw new RuntimeException("out of wait time");
                     }
                 }
             }

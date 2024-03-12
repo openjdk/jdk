@@ -200,6 +200,12 @@ class CFileDialog implements FileDialogPeer {
     }
 
     @Override
+    public GraphicsConfiguration getAppropriateGraphicsConfiguration(
+            GraphicsConfiguration gc) {
+        return gc;
+    }
+
+    @Override
     public void updateAlwaysOnTopState() {
     }
 

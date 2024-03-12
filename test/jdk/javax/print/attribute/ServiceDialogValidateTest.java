@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 5049012 8163922
+ * @key printer
  * @summary Verify if PrintToFile option is disabled for flavors that do not
  *          support Destination
  * @requires (os.family == "linux")

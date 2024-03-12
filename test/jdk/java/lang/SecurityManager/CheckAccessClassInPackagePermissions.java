@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,6 @@ import java.util.stream.Stream;
 
 public class CheckAccessClassInPackagePermissions {
 
-    private static final String[] deployModules = {
-        "jdk.javaws", "jdk.plugin", "jdk.plugin.server", "jdk.deploy" };
-
     public static void main(String[] args) throws Exception {
 
         // Get the modules in the boot layer loaded by the boot or platform
@@ -91,15 +88,8 @@ public class CheckAccessClassInPackagePermissions {
         // Check if each target module has the right permissions to access
         // its qualified exports
         Policy policy = Policy.getPolicy();
-        List<String> deployMods = Arrays.asList(deployModules);
         for (Map.Entry<String, List<String>> me : map.entrySet()) {
             String moduleName = me.getKey();
-
-            // skip deploy modules since they are granted permissions in
-            // deployment policy file
-            if (deployMods.contains(moduleName)) {
-                continue;
-            }
 
             // is this a module loaded by the platform loader?
             Optional<Module> module = bootLayer.findModule(moduleName);

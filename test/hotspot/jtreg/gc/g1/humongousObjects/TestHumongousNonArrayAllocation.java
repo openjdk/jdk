@@ -82,8 +82,7 @@ public class TestHumongousNonArrayAllocation {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final String CLASS_NAME_PREFIX = TestHumongousNonArrayAllocation.class.getSimpleName() + "_";
 
-    public static void main(String[] args) throws ClassNotFoundException, InstantiationException,
-            IllegalAccessException, IOException {
+    public static void main(String[] args) throws Exception {
 
         if (args.length != 1) {
             throw new Error("Test Bug: Expected class name wasn't provided as command line argument");

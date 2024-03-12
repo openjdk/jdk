@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2351,7 +2351,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          * Recreates <code>toDuplicate</code>. This is called when an
          * element needs to be created as the result of an insertion. This
          * will recurse and create all the children. This is similar to
-         * <code>clone</code>, but deteremines the offsets differently.
+         * <code>clone</code>, but determines the offsets differently.
          */
         Element recreateFracturedElement(Element parent, Element toDuplicate) {
             if(toDuplicate.isLeaf()) {

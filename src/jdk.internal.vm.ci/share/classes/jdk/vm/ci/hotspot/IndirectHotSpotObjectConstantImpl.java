@@ -40,7 +40,7 @@ import jdk.vm.ci.meta.JavaConstant;
  */
 final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl {
     /**
-     * An object handle in {@code JVMCI::_object_handles}.
+     * An object handle in {@code JVMCIRuntime::_oop_handles}.
      */
     private long objectHandle;
 
@@ -155,10 +155,11 @@ final class IndirectHotSpotObjectConstantImpl extends HotSpotObjectConstantImpl 
 
     /**
      * Sets the referent of {@code handle} to 0 so that it will be reclaimed when calling
-     * {@link CompilerToVM#releaseClearedOopHandles}.
+     * {@link CompilerToVM#releaseClearedOopHandles}. This must be done with a VM call so
+     * that the JNI handle is cleared at a safepoint.
      */
     static void clearHandle(long handle) {
-        UNSAFE.putLong(handle, 0);
+        runtime().compilerToVm.clearOopHandle(handle);
     }
 
     @Override

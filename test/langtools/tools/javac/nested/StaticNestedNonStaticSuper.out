@@ -1,0 +1,2 @@
+StaticNestedNonStaticSuper.java:10:23: compiler.err.no.encl.instance.of.type.in.scope: StaticNestedNonStaticSuper
+1 error

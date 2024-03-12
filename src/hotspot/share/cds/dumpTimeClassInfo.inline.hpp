@@ -1,6 +1,6 @@
 
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
  *
  */
 
-#ifndef SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
-#define SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#ifndef SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
+#define SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP
 
 #include "cds/dumpTimeClassInfo.hpp"
 
@@ -68,4 +68,4 @@ void DumpTimeSharedClassTable::iterate_all_live_classes(ITER* iter) const {
 
 #endif // INCLUDE_CDS
 
-#endif // SHARED_CDS_DUMPTIMESHAREDCLASSINFO_INLINE_HPP
+#endif // SHARE_CDS_DUMPTIMECLASSINFO_INLINE_HPP

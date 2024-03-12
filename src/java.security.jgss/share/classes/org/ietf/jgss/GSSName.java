@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,13 +198,13 @@ public interface GSSName {
      * @param another the object to compare this name to
      * @see #equals(GSSName)
      */
+    @Override
     boolean equals(Object another);
 
     /**
-     * Returns a hashcode value for this GSSName.
-     *
-     * @return a hashCode value
+     * {@return a hashcode value for this GSSName}
      */
+    @Override
     int hashCode();
 
     /**

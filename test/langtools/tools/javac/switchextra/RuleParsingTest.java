@@ -95,7 +95,7 @@ public class RuleParsingTest {
         String version = System.getProperty("java.specification.version");
         StringWriter out = new StringWriter();
         JavacTask ct = (JavacTask) tool.getTask(out, null, noErrors,
-            List.of("--enable-preview", "-source", version), null,
+            List.of(), null,
             Arrays.asList(new MyFileObject(code.toString())));
         CompilationUnitTree cut = ct.parse().iterator().next();
         Trees trees = Trees.instance(ct);

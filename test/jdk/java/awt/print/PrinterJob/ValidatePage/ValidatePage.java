@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 4252108 6229507
+ * @key printer
  * @summary PrinterJob.validatePage() is unimplemented.
- * @author prr
  * @run main/manual ValidatePage
  */
 

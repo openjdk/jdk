@@ -82,7 +82,7 @@
     // Entry frames
 #ifdef AMD64
 #ifdef _WIN64
-    entry_frame_after_call_words                     =  60,
+    entry_frame_after_call_words                     =  28,
     entry_frame_call_wrapper_offset                  =  2,
 
     arg_reg_save_area_bytes                          = 32, // Register argument save area
@@ -148,8 +148,6 @@
   // Used in frame::sender_for_{interpreter,compiled}_frame
   static void verify_deopt_original_pc(CompiledMethod* nm, intptr_t* unextended_sp);
 #endif
-
-  const ImmutableOopMap* get_oop_map() const;
 
  public:
   // Constructors

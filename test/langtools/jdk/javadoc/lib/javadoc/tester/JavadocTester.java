@@ -29,7 +29,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.SoftReference;
@@ -59,7 +58,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 import javax.tools.StandardJavaFileManager;
+
+//import jdk.lang.classfile.Classfile;
 
 
 /**
@@ -292,14 +294,73 @@ public abstract class JavadocTester {
      * @throws Exception if any errors occurred while executing a test method
      */
     public void runTests(Function<Method, Object[]> f) throws Exception {
-        for (Method m : getClass().getDeclaredMethods()) {
-            Annotation a = m.getAnnotation(Test.class);
-            if (a != null) {
-                runTest(m, f);
-                out.println();
-            }
+        var methods = List.of(getClass().getDeclaredMethods()).stream()
+                .filter(m -> m.isAnnotationPresent(Test.class))
+                .collect(Collectors.toCollection(() -> new ArrayList<>()));
+        var methodOrderComparator = getMethodComparator();
+        if (methodOrderComparator != null) {
+            methods.sort(methodOrderComparator);
+        }
+        for (Method m : methods) {
+            runTest(m, f);
+            out.println();
         }
         printSummary();
+    }
+
+// The following is for when the Classfile library is generally available.
+//    private Comparator<Method> getClassOrderMethodComparator(Class<?> c) {
+//        try {
+//            var url = c.getProtectionDomain().getCodeSource().getLocation();
+//            var path = Path.of(url.toURI()).resolve(c.getName().replace(".", "/") + ".class");
+//            var cf = Classfile.of().parse(path);
+//            var map = new HashMap<String, Integer>();
+//            var index = 0;
+//            for (var m : cf.methods()) {
+//                map.putIfAbsent(m.methodName().stringValue(), index++);
+//            }
+//            return Comparator.<Method>comparingInt(m -> map.getOrDefault(m.getName(), -1));
+//        } catch (URISyntaxException | IOException e) {
+//            throw new Error("Cannot sort methods: " + e, e);
+//        }
+//    }
+
+    /**
+     * {@return the comparator used to sort the default set of methods to be executed,
+     *   or {@code null} if the methods should not be sorted }
+     *
+     * @implSpec This implementation returns a source-order comparator.
+     */
+    public Comparator<Method> getMethodComparator() {
+        return getSourceOrderMethodComparator(getClass());
+    }
+
+    /**
+     * {@return the source-order method comparator for methods in the given class}
+     * @param c the class
+     */
+    public static Comparator<Method> getSourceOrderMethodComparator(Class<?> c) {
+        var path = Path.of(testSrc)
+                .resolve(c.getName()
+                        .replace(".", "/")
+                        .replaceAll("\\$.*", "")
+                        + ".java");
+        try {
+            var src = Files.readString(path);
+            // Fuzzy match for test method declarations.
+            // It doesn't matter if there are false positives, as long as the true positives are in the correct order.
+            // It doesn't matter too much if there are false negatives: they'll just be executed first.
+            var isMethodDecl = Pattern.compile("public +void +(?<name>[A-Za-z][A-Za-z0-9_]*)\\(");
+            var matcher = isMethodDecl.matcher(src);
+            var map = new HashMap<String, Integer>();
+            var index = 0;
+            while (matcher.find()) {
+                map.putIfAbsent(matcher.group("name"), index++);
+            }
+            return Comparator.<Method>comparingInt(m -> map.getOrDefault(m.getName(), -1));
+        } catch (IOException e) {
+            throw new Error("Cannot sort methods: " + e, e);
+        }
     }
 
     /**
@@ -424,12 +485,14 @@ public abstract class JavadocTester {
         String charsetArg = null;
         String docencodingArg = null;
         String encodingArg = null;
+        boolean haveSourcePath = false;
         for (int i = 0; i < args.length - 2; i++) {
             switch (args[i]) {
                 case "-d" -> outputDir = Path.of(args[++i]);
                 case "-charset" -> charsetArg = args[++i];
                 case "-docencoding" -> docencodingArg = args[++i];
                 case "-encoding" -> encodingArg = args[++i];
+                case "-sourcepath", "--source-path", "--module-source-path" -> haveSourcePath = true;
             }
         }
 
@@ -449,6 +512,16 @@ public abstract class JavadocTester {
             charset = Charset.forName(cs);
         } catch (UnsupportedCharsetException e) {
             charset = Charset.defaultCharset();
+        }
+
+        // explicitly set the source path if none specified
+        // to override the javadoc tool default to use the classpath
+        if (!haveSourcePath) {
+            var newArgs = new String[args.length + 2];
+            newArgs[0] = "-sourcepath";
+            newArgs[1] = testSrc;
+            System.arraycopy(args, 0, newArgs, 2, args.length);
+            args = newArgs;
         }
 
         out.println("args: " + Arrays.toString(args));
@@ -815,9 +888,9 @@ public abstract class JavadocTester {
             Path file = outputDir.resolve(path);
             boolean isFound = Files.exists(file);
             if (isFound == expectedFound) {
-                passed(file, "file " + (isFound ? "found:" : "not found:") + "\n");
+                passed(file, "file " + (isFound ? "found:" : "not found:"));
             } else {
-                failed(file, "file " + (isFound ? "found:" : "not found:") + "\n");
+                failed(file, "file " + (isFound ? "found:" : "not found:"));
             }
         }
     }
@@ -934,9 +1007,10 @@ public abstract class JavadocTester {
      *
      * @param file the file that was the focus of the check
      * @param message a short description of the outcome
+     * @param details optional additional details
      */
-    protected void passed(Path file, String message) {
-        passed(file + ": " + message);
+    protected void passed(Path file, String message, String... details) {
+        passed(file + ": " + message, details);
     }
 
     /**
@@ -945,10 +1019,14 @@ public abstract class JavadocTester {
      * <p>This method should be called after previously calling {@code checking(...)}.
      *
      * @param message a short description of the outcome
+     * @param details optional additional details
      */
-    protected void passed(String message) {
+    protected void passed(String message, String... details) {
         numTestsPassed++;
         print("Passed", message);
+        for (var detail: details) {
+            detail.lines().forEachOrdered(out::println);
+        }
         out.println();
     }
 
@@ -959,9 +1037,10 @@ public abstract class JavadocTester {
      *
      * @param file the file that was the focus of the check
      * @param message a short description of the outcome
+     * @param details optional additional details
      */
-    protected void failed(Path file, String message) {
-        failed(file + ": " + message);
+    protected void failed(Path file, String message, String... details) {
+        failed(file + ": " + message, details);
     }
 
     /**
@@ -970,8 +1049,9 @@ public abstract class JavadocTester {
      * <p>This method should be called after previously calling {@code checking(...)}.
      *
      * @param message a short description of the outcome
+     * @param details optional additional details
      */
-    protected void failed(String message) {
+    protected void failed(String message, String... details) {
         print("FAILED", message);
         StackWalker.getInstance().walk(s -> {
             s.dropWhile(f -> f.getMethodName().equals("failed"))
@@ -981,6 +1061,9 @@ public abstract class JavadocTester {
                             + "(" + f.getFileName() + ":" + f.getLineNumber() + ")"));
             return null;
         });
+        for (var detail: details) {
+            detail.lines().forEachOrdered(out::println);
+        }
         out.println();
     }
 
@@ -990,10 +1073,7 @@ public abstract class JavadocTester {
         else {
             out.print(prefix);
             out.print(": ");
-            out.print(message.replace("\n", NL));
-            if (!(message.endsWith("\n") || message.endsWith(NL))) {
-                out.println();
-            }
+            message.lines().forEachOrdered(out::println);
         }
     }
 
@@ -1207,25 +1287,28 @@ public abstract class JavadocTester {
             boolean isFound = r != null;
             if (isFound == expectFound) {
                 matches.add(lastMatch = r);
-                passed(name + ": following " + kind + " " + (isFound ? "found:" : "not found:") + "\n"
-                        + s);
+                passed(name + ": the following " + kind + " was " + (isFound ? "found:" : "not found:"),
+                        s);
             } else {
                 // item not found in order, so check if the item is found out of order, to determine the best message
                 if (expectFound && expectOrdered && start > 0) {
                     Range r2 = finder.apply(0);
                     if (r2 != null) {
-                        failed(name + ": following " + kind + " was found on line "
+                        failed(name + ": output not as expected",
+                                ">> the following " + kind + " was found on line "
                                 + getLineNumber(r2.start)
                                 + ", but not in order as expected, on or after line "
-                                + getLineNumber(start)
-                                + ":\n"
-                                + s);
+                                + getLineNumber(start),
+                                ">> " + kind + ":",
+                                s);
                         return;
                     }
                 }
-                failed(name + ": following " + kind + " "
-                        + (isFound ? "found:" : "not found:") + "\n"
-                        + s + '\n' + "found \n" + content);
+                failed(name + ": output not as expected",
+                        ">> the following " + kind + " was " + (isFound ? "found:" : "not found:"),
+                        s,
+                        ">> found",
+                        content);
             }
 
         }
@@ -1362,8 +1445,9 @@ public abstract class JavadocTester {
             if (uncovered.isEmpty()) {
                 passed("All output matched");
             } else {
-                failed("The following output was not matched: "
-                    + uncovered.stream()
+                failed("Output not as expected",
+                        ">> The following output was not matched",
+                    uncovered.stream()
                         .map(Range::toIntervalString)
                         .collect(Collectors.joining(", ")));
             }
@@ -1383,8 +1467,9 @@ public abstract class JavadocTester {
             if (content == null || content.isEmpty()) {
                 passed(name + " is empty, as expected");
             } else {
-                failed(name + " is not empty; contains:\n"
-                        + content);
+                failed(name + " is not empty",
+                        ">> found:",
+                        content);
             }
             return this;
         }
@@ -1432,7 +1517,8 @@ public abstract class JavadocTester {
             if (count == 0) {
                 failed("no match found for any " + kind);
             } else {
-                passed(count + " matches found; earliest is " + earliest.toIntervalString());
+                passed(count + " matches found",
+                        ">>  the earliest is: " + earliest.toIntervalString());
             }
             return this;
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 // Fills current line up to requested position.
 // Should the current position already be past the requested position,
 // one separator blank is enforced.
-void fill_to_pos(outputStream* st, unsigned int req_pos) {
+static void fill_to_pos(outputStream* st, unsigned int req_pos) {
   if ((unsigned int)st->position() < req_pos) {
     st->fill_to(req_pos);  // need to fill with blanks to reach req_pos
   } else {
@@ -275,7 +275,6 @@ void JVMFlag::print_on(outputStream* st, bool withComments, bool printRanges) co
     //
     //  Sample output:
     //       intx MinPassesBeforeFlush                               [ 0                         ...       9223372036854775807 ]                         {diagnostic} {default}
-    //      uintx MinRAMFraction                                     [ 1                         ...      18446744073709551615 ]                            {product} {default}
     //     double MinRAMPercentage                                   [ 0.000                     ...                   100.000 ]                            {product} {default}
     //      uintx MinSurvivorRatio                                   [ 3                         ...      18446744073709551615 ]                            {product} {default}
     //     size_t MinTLABSize                                        [ 1                         ...       9223372036854775807 ]                            {product} {default}
@@ -450,20 +449,6 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   }
 }
 
-const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
-  switch (error) {
-    case JVMFlag::MISSING_NAME: return "MISSING_NAME";
-    case JVMFlag::MISSING_VALUE: return "MISSING_VALUE";
-    case JVMFlag::NON_WRITABLE: return "NON_WRITABLE";
-    case JVMFlag::OUT_OF_BOUNDS: return "OUT_OF_BOUNDS";
-    case JVMFlag::VIOLATES_CONSTRAINT: return "VIOLATES_CONSTRAINT";
-    case JVMFlag::INVALID_FLAG: return "INVALID_FLAG";
-    case JVMFlag::ERR_OTHER: return "ERR_OTHER";
-    case JVMFlag::SUCCESS: return "SUCCESS";
-    default: ShouldNotReachHere(); return "nullptr";
-  }
-}
-
 //----------------------------------------------------------------------
 // Build flagTable[]
 
@@ -593,10 +578,10 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
 }
 
 JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
-  float VMOptionsFuzzyMatchSimilarity = 0.7f;
+  double VMOptionsFuzzyMatchSimilarity = 0.7;
   JVMFlag* match = nullptr;
-  float score;
-  float max_score = -1;
+  double score;
+  double max_score = -1;
 
   for (JVMFlag* current = &flagTable[0]; current->_name != nullptr; current++) {
     score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);

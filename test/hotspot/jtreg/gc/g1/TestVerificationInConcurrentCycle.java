@@ -35,7 +35,7 @@ package gc.g1;
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
- *   -XX:+G1VerifyHeapRegionCodeRoots
+ *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
  *   -XX:+G1VerifyBitmaps
  *   gc.g1.TestVerificationInConcurrentCycle
@@ -54,7 +54,7 @@ package gc.g1;
  *   -Xbootclasspath/a:.
  *   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *   -XX:+VerifyBeforeGC -XX:+VerifyDuringGC -XX:+VerifyAfterGC
- *   -XX:+G1VerifyHeapRegionCodeRoots
+ *   -XX:+UseG1GC -XX:+G1VerifyHeapRegionCodeRoots
  *   -XX:+VerifyRememberedSets -XX:+VerifyObjectStartArray
  *   gc.g1.TestVerificationInConcurrentCycle
  */

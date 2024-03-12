@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,7 +203,7 @@ class XMap {
                 // Since we don't support surrogates in any X11 encoding, skip
                 // the surrogate area, otherwise the sequence of "Oxdbff0xdc00"
                 // will accidentally cause the surrogate-aware nio charset to treat
-                // them as a legal pair and then undesirablly skip 2 "chars"
+                // them as a legal pair and then undesirably skip 2 "chars"
                 // for one "unmappable character"
                 if (startCharIndex < SURR_MIN && startCharIndex + count >SURR_MAX) {
                     cbLen = SURR_MIN - startCharIndex;

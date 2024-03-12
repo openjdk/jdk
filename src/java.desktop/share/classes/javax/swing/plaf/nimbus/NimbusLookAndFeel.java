@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ import javax.swing.plaf.synth.SynthLookAndFeel;
 import javax.swing.plaf.synth.SynthStyle;
 import javax.swing.plaf.synth.SynthStyleFactory;
 import javax.swing.plaf.UIResource;
-import java.security.AccessController;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Graphics2D;
@@ -49,11 +48,12 @@ import javax.swing.JToolBar;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ColorUIResource;
+
+import sun.awt.OSInfo;
 import sun.swing.ImageIconUIResource;
 import javax.swing.plaf.synth.SynthIcon;
 import sun.swing.plaf.GTKKeybindings;
 import sun.swing.plaf.WindowsKeybindings;
-import sun.security.action.GetPropertyAction;
 
 /**
  * <p>The NimbusLookAndFeel class.</p>
@@ -130,8 +130,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     @Override public UIDefaults getDefaults() {
         if (uiDefaults == null){
             // Detect platform
-            String osName = getSystemProperty("os.name");
-            boolean isWindows = osName != null && osName.contains("Windows");
+            boolean isWindows = OSInfo.getOSType() == OSInfo.OSType.WINDOWS;
 
             // We need to call super for basic's properties file.
             uiDefaults = super.getDefaults();
@@ -349,14 +348,6 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
         defaults.register(region, prefix);
     }
 
-    /**
-     * Simple utility method that reads system keys.
-     */
-    @SuppressWarnings("removal")
-    private String getSystemProperty(String key) {
-        return AccessController.doPrivileged(new GetPropertyAction(key));
-    }
-
     @Override
     public Icon getDisabledIcon(JComponent component, Icon icon) {
         if (icon instanceof SynthIcon) {
@@ -493,7 +484,7 @@ public class NimbusLookAndFeel extends SynthLookAndFeel {
     }
 
     /**
-     * Simple Symbolic Link style UIDefalts Property
+     * Simple Symbolic Link style UIDefaults Property
      */
     private static class LinkProperty implements UIDefaults.ActiveValue, UIResource{
         private String dstPropName;

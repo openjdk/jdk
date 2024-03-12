@@ -33,4 +33,3 @@
  *          /test/lib
  * @run main/othervm gc.vector.SimpleGC.SimpleGC -ms high -gp linearList(high)
  */
-

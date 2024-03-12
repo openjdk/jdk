@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,10 @@ public class TestLookForUntestedEvents {
 
     private static final Set<String> hardToTestEvents = new HashSet<>(
         Arrays.asList(
-            "DataLoss", "IntFlag", "ReservedStackActivation",
+            "DataLoss", "IntFlag", "ReservedStackActivation", "NativeLibraryUnload",
             "DoubleFlag", "UnsignedLongFlagChanged", "IntFlagChanged",
-            "UnsignedIntFlag", "UnsignedIntFlagChanged", "DoubleFlagChanged")
+            "UnsignedIntFlag", "UnsignedIntFlagChanged", "DoubleFlagChanged",
+            "SafepointCleanupTask")
     );
 
     // GC uses specific framework to test the events, instead of using event names literally.
@@ -77,6 +78,9 @@ public class TestLookForUntestedEvents {
             "ContainerConfiguration", "ContainerCPUUsage", "ContainerCPUThrottling",
             "ContainerMemoryUsage", "ContainerIOUsage")
     );
+    // These events are tested in test/jdk/java/lang/Thread/virtual/JfrEvents.java
+    private static final Set<String> coveredVirtualThreadEvents = Set.of(
+        "VirtualThreadPinned", "VirtualThreadSubmitFailed");
 
     // This is a "known failure list" for this test.
     // NOTE: if the event is not covered, a bug should be open, and bug number
@@ -85,16 +89,8 @@ public class TestLookForUntestedEvents {
     );
 
     // Experimental events
-    private static final Set<String> experimentalEvents = new HashSet<>(
-        Arrays.asList(
-            "Flush",
-            "SyncOnValueBasedClass",
-            "VirtualThreadStart",
-            "VirtualThreadEnd",
-            "VirtualThreadPinned",
-            "VirtualThreadSubmitFailed")
-    );
-
+    private static final Set<String> experimentalEvents = Set.of(
+        "Flush", "SyncOnValueBasedClass");
 
     public static void main(String[] args) throws Exception {
         for (EventType type : FlightRecorder.getFlightRecorder().getEventTypes()) {
@@ -127,6 +123,7 @@ public class TestLookForUntestedEvents {
         // Account for hard-to-test, experimental and GC tested events
         eventsNotCoveredByTest.removeAll(hardToTestEvents);
         eventsNotCoveredByTest.removeAll(coveredGcEvents);
+        eventsNotCoveredByTest.removeAll(coveredVirtualThreadEvents);
         eventsNotCoveredByTest.removeAll(coveredContainerEvents);
         eventsNotCoveredByTest.removeAll(knownNotCoveredEvents);
 

@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8202056
  * @compile/ref=EnumSerial.out -XDrawDiagnostics -Xlint:serial EnumSerial.java
+ * @compile/ref=empty.out      -XDrawDiagnostics               EnumSerial.java
  */
 
 import java.io.*;

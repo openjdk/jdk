@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ public class TestDelegated {
     }
 
     // The assumption here is that the following methods don't
-    // need t be tested fully since they all delegate to the
+    // need to be tested fully since they all delegate to the
     // same implementation class that is tested elsewhere.
 
     public static void main(String[] args) throws Exception {
@@ -70,12 +70,8 @@ public class TestDelegated {
 
     private static void testSetMaxAge() throws Exception {
         try (RemoteRecordingStream stream = new RemoteRecordingStream(CONNECTION)) {
-            try {
+                stream.setMaxAge(Duration.ofHours(1));
                 stream.setMaxAge(null);
-                throw new Exception("Expected NullPointerException");
-            } catch (NullPointerException npe) {
-                // As expected
-            }
         }
     }
 

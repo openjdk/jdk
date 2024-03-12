@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@
 #define DEFAULT_DEVICE_HEIGHT 768
 #define DEFAULT_DEVICE_DPI 72
 
+static NSInteger architecture = -1;
 /*
  * Convert the mode string to the more convenient bits per pixel value
  */
@@ -58,7 +59,17 @@ static int getBPPFromModeString(CFStringRef mode)
     return 0;
 }
 
-static BOOL isValidDisplayMode(CGDisplayModeRef mode){
+static BOOL isValidDisplayMode(CGDisplayModeRef mode) {
+    // Workaround for apple bug FB13261205, since it only affects arm based macs
+    // and arm support started with macOS 11 ignore the workaround for previous versions
+    if (@available(macOS 11, *)) {
+        if (architecture == -1) {
+            architecture = [[NSRunningApplication currentApplication] executableArchitecture];
+        }
+        if (architecture == NSBundleExecutableArchitectureARM64) {
+            return (CGDisplayModeGetPixelWidth(mode) >= 800);
+        }
+    }
     return (1 < CGDisplayModeGetWidth(mode) && 1 < CGDisplayModeGetHeight(mode));
 }
 

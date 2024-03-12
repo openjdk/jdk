@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2004, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_FLOAT:   name = "jni_fast_GetFloatField";   break;
     case T_DOUBLE:  name = "jni_fast_GetDoubleField";  break;
     default:        ShouldNotReachHere();
-      name = NULL;  // unreachable
+      name = nullptr;  // unreachable
   }
   ResourceMark rm;
   BufferBlob* blob = BufferBlob::create(name, BUFFER_SIZE);
@@ -76,7 +76,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address target(SafepointSynchronize::safepoint_counter_addr());
   __ relocate(target.rspec(), [&] {
     int32_t offset;
-    __ la_patchable(rcounter_addr, target, offset);
+    __ la(rcounter_addr, target.target(), offset);
     __ addi(rcounter_addr, rcounter_addr, offset);
   });
 
@@ -84,7 +84,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
   Address safepoint_counter_addr(rcounter_addr, 0);
   __ lwu(rcounter, safepoint_counter_addr);
   // An even value means there are no ongoing safepoint operations
-  __ andi(t0, rcounter, 1);
+  __ test_bit(t0, rcounter, 0);
   __ bnez(t0, slow);
 
   if (JvmtiExport::can_post_field_access()) {
@@ -96,7 +96,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(result, target, offset);
+      __ la(result, target.target(), offset);
       __ lwu(result, Address(result, offset));
     });
     __ bnez(result, slow);
@@ -112,7 +112,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
 
   // Both robj and t0 are clobbered by try_resolve_jobject_in_native.
   BarrierSetAssembler* bs = BarrierSet::barrier_set()->barrier_set_assembler();
-  assert_cond(bs != NULL);
+  assert_cond(bs != nullptr);
   bs->try_resolve_jobject_in_native(masm, c_rarg0, robj, t0, slow);
 
   __ srli(roffset, c_rarg2, 2);                // offset
@@ -168,7 +168,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     case T_FLOAT:   slow_case_addr = jni_GetFloatField_addr();   break;
     case T_DOUBLE:  slow_case_addr = jni_GetDoubleField_addr();  break;
     default:        ShouldNotReachHere();
-      slow_case_addr = NULL;  // unreachable
+      slow_case_addr = nullptr;  // unreachable
   }
 
   {
@@ -176,7 +176,7 @@ address JNI_FastGetField::generate_fast_get_int_field0(BasicType type) {
     ExternalAddress target(slow_case_addr);
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ jalr(x1, t0, offset);
     });
     __ leave();

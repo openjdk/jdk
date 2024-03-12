@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8151590
+ * @key printer
  * @summary  All radio button should be selected when we call
  *            setDefaultSelection(JobAttributes.DefaultSelectionType.ALL);
  * @run main/manual PrintTest

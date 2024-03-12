@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,17 +173,6 @@ public class NetworkConfiguration {
     private boolean supportsIp4Multicast(NetworkInterface nif) {
         try {
             if (!nif.supportsMulticast()) {
-                return false;
-            }
-
-            // On AIX there is a bug:
-            // When IPv6 is enabled on the system, the JDK opens sockets as AF_INET6.
-            // If there's an interface configured with IPv4 addresses only, it should
-            // be able to become the network interface for a multicast socket (that
-            // could be in both, IPv4 or IPv6 space). But both possible setsockopt
-            // calls for either IPV6_MULTICAST_IF or IP_MULTICAST_IF return
-            // EADDRNOTAVAIL. So we must skip such interfaces here.
-            if (Platform.isAix() && isIPv6Available() && !hasIp6Addresses(nif)) {
                 return false;
             }
 

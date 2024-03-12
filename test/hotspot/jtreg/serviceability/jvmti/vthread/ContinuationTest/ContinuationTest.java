@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @requires vm.continuations
  * @compile ContinuationTest.java
  * @modules java.base/jdk.internal.vm
- * @run main/othervm/native --enable-preview -agentlib:ContinuationTest ContinuationTest
+ * @run main/othervm/native -agentlib:ContinuationTest ContinuationTest
  */
 
 import jdk.internal.vm.Continuation;

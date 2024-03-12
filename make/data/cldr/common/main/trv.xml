@@ -1,0 +1,570 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="trv"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="bn" draft="provisional">patas Monchiara</language>
+			<language type="de" draft="provisional">patas Towjih</language>
+			<language type="en" draft="provisional">patas Ingrisi</language>
+			<language type="es" draft="provisional">patas Espanniu</language>
+			<language type="fr" draft="provisional">patas Bosey</language>
+			<language type="hi" draft="provisional">patas Heyti</language>
+			<language type="it" draft="provisional">patas Itariya</language>
+			<language type="ja" draft="provisional">patas Nihong</language>
+			<language type="pt" draft="provisional">patas Bowdu</language>
+			<language type="pt_BR" draft="provisional">patas Pajey</language>
+			<language type="ru" draft="provisional">patas Ruski</language>
+			<language type="sr" draft="provisional">patas Srpian</language>
+			<language type="trv" draft="contributed">patas Taroko</language>
+			<language type="und" draft="provisional">Ini klayna patas ni</language>
+			<language type="ur" draft="provisional">patas Yurtu</language>
+			<language type="zh" draft="provisional">patas Ipaw</language>
+			<language type="zh_Hans" draft="provisional">Qantan Ipaw patas</language>
+			<language type="zh_Hant" draft="provisional">Baday Ipaw patas</language>
+		</languages>
+		<scripts>
+			<script type="Arab" draft="provisional">tasan Arapit</script>
+			<script type="Cyrl" draft="provisional">tasan Sirorik</script>
+			<script type="Hans" draft="provisional">Qantan tasan Ipaw</script>
+			<script type="Hant" draft="provisional">Baday tasan Ipaw</script>
+			<script type="Latn" draft="provisional">tasan Ratin</script>
+			<script type="Zxxx" draft="provisional">Unat tasan</script>
+			<script type="Zzzz" draft="provisional">ini klayi tasan ni</script>
+		</scripts>
+		<territories>
+			<territory type="AQ" draft="provisional">alang Nanci</territory>
+			<territory type="BA" draft="provisional">alang Posniya</territory>
+			<territory type="BR" draft="provisional">alang Pajey</territory>
+			<territory type="BV" draft="provisional">alang Puwei</territory>
+			<territory type="CH" draft="provisional">alang Switjrrant</territory>
+			<territory type="CN" draft="provisional">alang Ipaw</territory>
+			<territory type="DE" draft="provisional">alang Towjih</territory>
+			<territory type="FR" draft="provisional">alang Posey</territory>
+			<territory type="GB" draft="provisional">alang Inglis</territory>
+			<territory type="GS" draft="provisional">alang Nanjiouya ni Nansanminji</territory>
+			<territory type="HM" draft="provisional">alang Htee ni Mayktan</territory>
+			<territory type="HR" draft="provisional">alang Krowtia</territory>
+			<territory type="IN" draft="provisional">alang Intu</territory>
+			<territory type="IO" draft="provisional">alang Inglis niq Intu</territory>
+			<territory type="IT" draft="provisional">alang Itariya</territory>
+			<territory type="JP" draft="provisional">alang Nihong</territory>
+			<territory type="ME" draft="provisional">alang Mondineygrw</territory>
+			<territory type="RS" draft="provisional">alang Srbia</territory>
+			<territory type="RU" draft="provisional">alang Ruski</territory>
+			<territory type="SM" draft="provisional">alang Snmarinow</territory>
+			<territory type="TF" draft="provisional">alang Posey niq Nan</territory>
+			<territory type="US" draft="provisional">alang Amarika</territory>
+			<territory type="ZZ" draft="provisional">ini klayi na alang ni</territory>
+		</territories>
+		<types>
+			<type key="calendar" type="gregorian" draft="provisional">Jiyax Yisu Thulang</type>
+		</types>
+		<measurementSystemNames>
+			<measurementSystemName type="metric" draft="provisional">Snamrika</measurementSystemName>
+			<measurementSystemName type="US" draft="provisional">Snyunaydi</measurementSystemName>
+		</measurementSystemNames>
+		<codePatterns>
+			<codePattern type="language" draft="provisional">Kari: {0}</codePattern>
+			<codePattern type="script" draft="provisional">Patas: {0}</codePattern>
+			<codePattern type="territory" draft="provisional">Alang: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters draft="provisional">[a b c d e g h i j k l m n {ng} o p q r s t u w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="provisional">[ḏ f ɨ ḻ ṟ ṯ ʉ v z ʼ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="generic">
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="provisional">EEEE, G y MMMM dd</pattern>
+							<datetimeSkeleton draft="provisional">GyMMMMEEEEdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="provisional">G y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="provisional">G y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">GGGGG y-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Hm" draft="provisional">H:mm</dateFormatItem>
+						<dateFormatItem id="Md" draft="provisional">M-d</dateFormatItem>
+						<dateFormatItem id="MEd" draft="provisional">E, M-d</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="provisional">E MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E MMMM d</dateFormatItem>
+						<dateFormatItem id="y" draft="provisional">y</dateFormatItem>
+						<dateFormatItem id="yM" draft="provisional">y-M</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="provisional">E, y-M-d</dateFormatItem>
+						<dateFormatItem id="yMMM" draft="provisional">y MMM</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="provisional">E, y MMM d</dateFormatItem>
+						<dateFormatItem id="yMMMM" draft="provisional">y MMMM</dateFormatItem>
+						<dateFormatItem id="yQ" draft="provisional">y Q</dateFormatItem>
+						<dateFormatItem id="yQQQ" draft="provisional">y QQQ</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="provisional">Kii</month>
+							<month type="2" draft="provisional">Dhi</month>
+							<month type="3" draft="provisional">Tri</month>
+							<month type="4" draft="provisional">Spi</month>
+							<month type="5" draft="provisional">Rii</month>
+							<month type="6" draft="provisional">Mti</month>
+							<month type="7" draft="provisional">Emi</month>
+							<month type="8" draft="provisional">Mai</month>
+							<month type="9" draft="provisional">Mni</month>
+							<month type="10" draft="provisional">Mxi</month>
+							<month type="11" draft="provisional">Mxk</month>
+							<month type="12" draft="provisional">Mxd</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="provisional">Kingal idas</month>
+							<month type="2" draft="provisional">Dha idas</month>
+							<month type="3" draft="provisional">Tru idas</month>
+							<month type="4" draft="provisional">Spat idas</month>
+							<month type="5" draft="provisional">Rima idas</month>
+							<month type="6" draft="provisional">Mataru idas</month>
+							<month type="7" draft="provisional">Empitu idas</month>
+							<month type="8" draft="provisional">Maspat idas</month>
+							<month type="9" draft="provisional">Mngari idas</month>
+							<month type="10" draft="provisional">Maxal idas</month>
+							<month type="11" draft="provisional">Maxal kingal idas</month>
+							<month type="12" draft="provisional">Maxal dha idas</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
+						<monthWidth type="narrow">
+							<month type="1" draft="provisional">K</month>
+							<month type="2" draft="provisional">D</month>
+							<month type="3" draft="provisional">T</month>
+							<month type="4" draft="provisional">S</month>
+							<month type="5" draft="provisional">R</month>
+							<month type="6" draft="provisional">M</month>
+							<month type="7" draft="provisional">E</month>
+							<month type="8" draft="provisional">P</month>
+							<month type="9" draft="provisional">A</month>
+							<month type="10" draft="provisional">M</month>
+							<month type="11" draft="provisional">K</month>
+							<month type="12" draft="provisional">D</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="provisional">Emp</day>
+							<day type="mon" draft="provisional">Kin</day>
+							<day type="tue" draft="provisional">Dha</day>
+							<day type="wed" draft="provisional">Tru</day>
+							<day type="thu" draft="provisional">Spa</day>
+							<day type="fri" draft="provisional">Rim</day>
+							<day type="sat" draft="provisional">Mat</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="provisional">Jiyax sngayan</day>
+							<day type="mon" draft="provisional">tgKingal jiyax iyax sngayan</day>
+							<day type="tue" draft="provisional">tgDha jiyax iyax sngayan</day>
+							<day type="wed" draft="provisional">tgTru jiyax iyax sngayan</day>
+							<day type="thu" draft="provisional">tgSpac jiyax iyax sngayan</day>
+							<day type="fri" draft="provisional">tgRima jiyax iyax sngayan</day>
+							<day type="sat" draft="provisional">tgMataru jiyax iyax sngayan</day>
+						</dayWidth>
+					</dayContext>
+					<dayContext type="stand-alone">
+						<dayWidth type="narrow">
+							<day type="sun" draft="provisional">E</day>
+							<day type="mon" draft="provisional">K</day>
+							<day type="tue" draft="provisional">D</day>
+							<day type="wed" draft="provisional">T</day>
+							<day type="thu" draft="provisional">S</day>
+							<day type="fri" draft="provisional">R</day>
+							<day type="sat" draft="provisional">M</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<quarters>
+					<quarterContext type="format">
+						<quarterWidth type="abbreviated">
+							<quarter type="1" draft="provisional">mn1</quarter>
+							<quarter type="2" draft="provisional">mn2</quarter>
+							<quarter type="3" draft="provisional">mn3</quarter>
+							<quarter type="4" draft="provisional">mn4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1" draft="provisional">mnprxan</quarter>
+							<quarter type="2" draft="provisional">mndha</quarter>
+							<quarter type="3" draft="provisional">mntru</quarter>
+							<quarter type="4" draft="provisional">mnspat</quarter>
+						</quarterWidth>
+					</quarterContext>
+				</quarters>
+				<dayPeriods>
+					<dayPeriodContext type="format">
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="provisional">Brax kndaax</dayPeriod>
+							<dayPeriod type="pm" draft="provisional">Baubau kndaax</dayPeriod>
+						</dayPeriodWidth>
+					</dayPeriodContext>
+				</dayPeriods>
+				<eras>
+					<eraNames>
+						<era type="0" draft="provisional">Brah jikan Yisu Thulang</era>
+						<era type="1" draft="provisional">Bukuy jikan Yisu Thulang</era>
+					</eraNames>
+					<eraAbbr>
+						<era type="0" draft="provisional">BRY</era>
+						<era type="1" draft="provisional">BUY</era>
+					</eraAbbr>
+				</eras>
+				<dateFormats>
+					<dateFormatLength type="full">
+						<dateFormat>
+							<pattern draft="provisional">EEEE, y MMMM dd</pattern>
+							<datetimeSkeleton draft="provisional">yMMMMEEEEdd</datetimeSkeleton>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="long">
+						<dateFormat>
+							<pattern draft="provisional">y MMMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="medium">
+						<dateFormat>
+							<pattern draft="provisional">y MMM d</pattern>
+						</dateFormat>
+					</dateFormatLength>
+					<dateFormatLength type="short">
+						<dateFormat>
+							<pattern draft="provisional">y-MM-dd</pattern>
+						</dateFormat>
+					</dateFormatLength>
+				</dateFormats>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern draft="provisional">h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton draft="provisional">ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern draft="provisional">h:mm:ss a z</pattern>
+							<datetimeSkeleton draft="provisional">ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern draft="provisional">h:mm:ss a</pattern>
+							<datetimeSkeleton draft="provisional">ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern draft="provisional">h:mm a</pattern>
+							<datetimeSkeleton draft="provisional">ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+				<dateTimeFormats>
+					<availableFormats>
+						<dateFormatItem id="Hm" draft="provisional">H:mm</dateFormatItem>
+						<dateFormatItem id="Md" draft="provisional">M-d</dateFormatItem>
+						<dateFormatItem id="MEd" draft="provisional">E, M-d</dateFormatItem>
+						<dateFormatItem id="MMMEd" draft="provisional">E MMM d</dateFormatItem>
+						<dateFormatItem id="MMMMEd" draft="provisional">E MMMM d</dateFormatItem>
+						<dateFormatItem id="yM" draft="provisional">y-M</dateFormatItem>
+						<dateFormatItem id="yMEd" draft="provisional">E, y-M-d</dateFormatItem>
+						<dateFormatItem id="yMMMEd" draft="provisional">E, y MMM d</dateFormatItem>
+						<dateFormatItem id="yQ" draft="provisional">y Q</dateFormatItem>
+					</availableFormats>
+				</dateTimeFormats>
+			</calendar>
+		</calendars>
+		<fields>
+			<field type="era">
+				<displayName draft="provisional">Hngkawas</displayName>
+			</field>
+			<field type="year">
+				<displayName draft="provisional">hngkawas</displayName>
+			</field>
+			<field type="month">
+				<displayName draft="provisional">Idas</displayName>
+			</field>
+			<field type="week">
+				<displayName draft="provisional">Jiyax iyax sngayan</displayName>
+			</field>
+			<field type="day">
+				<displayName draft="provisional">Jiyax</displayName>
+				<relative type="-1" draft="provisional">Shiga</relative>
+				<relative type="0" draft="provisional">Jiyax sayang</relative>
+				<relative type="1" draft="provisional">Saman</relative>
+			</field>
+			<field type="weekday">
+				<displayName draft="provisional">Jiyax quri jiyax iyax sngayan</displayName>
+			</field>
+			<field type="dayperiod">
+				<displayName draft="provisional">Jikan</displayName>
+			</field>
+			<field type="hour">
+				<displayName draft="provisional">Tuki</displayName>
+			</field>
+			<field type="minute">
+				<displayName draft="provisional">Spngan</displayName>
+			</field>
+			<field type="second">
+				<displayName draft="provisional">Seykn</displayName>
+			</field>
+			<field type="zone">
+				<displayName draft="provisional">Alang</displayName>
+			</field>
+		</fields>
+		<timeZoneNames>
+			<gmtFormat draft="provisional">JQG{0}</gmtFormat>
+			<regionFormat draft="provisional">Jikan {0}</regionFormat>
+			<zone type="Etc/Unknown">
+				<exemplarCity draft="provisional">Ini klayi ka Jikan hini</exemplarCity>
+			</zone>
+			<zone type="America/Rio_Branco">
+				<exemplarCity draft="provisional">Jikan alang Purank</exemplarCity>
+			</zone>
+			<zone type="America/Campo_Grande">
+				<exemplarCity draft="provisional">Jikan alang Grad</exemplarCity>
+			</zone>
+			<zone type="America/Sao_Paulo">
+				<exemplarCity draft="provisional">Jikan alang Snpaurow</exemplarCity>
+			</zone>
+			<zone type="Pacific/Honolulu">
+				<exemplarCity draft="provisional">Jikan alang Honoruru</exemplarCity>
+			</zone>
+			<zone type="America/Anchorage">
+				<exemplarCity draft="provisional">Jikan alang Ankriji</exemplarCity>
+			</zone>
+			<zone type="America/Los_Angeles">
+				<exemplarCity draft="provisional">Jikan alang Rosanci</exemplarCity>
+			</zone>
+			<zone type="America/Phoenix">
+				<exemplarCity draft="provisional">Jikan alang Bonhuan</exemplarCity>
+			</zone>
+			<zone type="America/Denver">
+				<exemplarCity draft="provisional">Jikan alang Tanbo</exemplarCity>
+			</zone>
+			<zone type="America/Chicago">
+				<exemplarCity draft="provisional">Jikan alang Jiciak</exemplarCity>
+			</zone>
+			<zone type="America/Indianapolis">
+				<exemplarCity draft="provisional">Jikan alang Intiannaporis</exemplarCity>
+			</zone>
+			<zone type="America/New_York">
+				<exemplarCity draft="provisional">Jikan alang Niuyue</exemplarCity>
+			</zone>
+			<metazone type="America_Central">
+				<long>
+					<generic draft="provisional">Jikan Con-Amarika</generic>
+					<standard draft="provisional">Snegun Jikan Con-Amarika</standard>
+					<daylight draft="provisional">Jikan Con-Amarika o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JCA</generic>
+					<standard draft="provisional">SJCA</standard>
+					<daylight draft="provisional">JCAKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Eastern">
+				<long>
+					<generic draft="provisional">Jikan Ton-Amarika</generic>
+					<standard draft="provisional">Snegun Jikan Ton-Amarika</standard>
+					<daylight draft="provisional">Jikan Ton-Amarika o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JTA</generic>
+					<standard draft="provisional">SJTA</standard>
+					<daylight draft="provisional">JTAKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Mountain">
+				<long>
+					<generic draft="provisional">Jikan Yama-Amarika</generic>
+					<standard draft="provisional">Snegun Jikan Yama-Amarika</standard>
+					<daylight draft="provisional">Jikan Hidaw niq Yama-Amarika</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JYA</generic>
+					<standard draft="provisional">SJYA</standard>
+					<daylight draft="provisional">JHYA</daylight>
+				</short>
+			</metazone>
+			<metazone type="America_Pacific">
+				<long>
+					<generic draft="provisional">Jikan Daybinyan</generic>
+					<standard draft="provisional">Snegun Jikan Amarika-Daybinyan</standard>
+					<daylight draft="provisional">Jikan Amarika-Daybinyan o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JD</generic>
+					<standard draft="provisional">SJAD</standard>
+					<daylight draft="provisional">JADKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="Atlantic">
+				<long>
+					<generic draft="provisional">Jikan Yayun Tasiyan</generic>
+					<standard draft="provisional">Snegun Jikan Yayun Tasiyan</standard>
+					<daylight draft="provisional">Jikan Yayun Tasiyan o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JYT</generic>
+					<standard draft="provisional">SJYT</standard>
+					<daylight draft="provisional">JYTKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Central">
+				<long>
+					<generic draft="provisional">Jikan Conow</generic>
+					<standard draft="provisional">Snegun Jikan Conow</standard>
+					<daylight draft="provisional">Jikan Conow o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JC</generic>
+					<standard draft="provisional">JC</standard>
+					<daylight draft="provisional">JCKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Eastern">
+				<long>
+					<generic draft="provisional">Jikan Tonow</generic>
+					<standard draft="provisional">Snegun Jikan Tonow</standard>
+					<daylight draft="provisional">Jikan Tonow o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JT</generic>
+					<standard draft="provisional">JT</standard>
+					<daylight draft="provisional">JTKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="Europe_Western">
+				<long>
+					<generic draft="provisional">Jikan Siow</generic>
+					<standard draft="provisional">Snegun Jikan Siow</standard>
+					<daylight draft="provisional">Jikan Siow o Karat Rbagan</daylight>
+				</long>
+				<short>
+					<generic draft="provisional">JS</generic>
+					<standard draft="provisional">JS</standard>
+					<daylight draft="provisional">JSKR</daylight>
+				</short>
+			</metazone>
+			<metazone type="GMT">
+				<long>
+					<standard draft="provisional">Jikan Quri Grinweyji</standard>
+				</long>
+				<short>
+					<standard draft="provisional">JQG</standard>
+				</short>
+			</metazone>
+		</timeZoneNames>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="AUD">
+				<displayName draft="provisional">pila Autaria</displayName>
+			</currency>
+			<currency type="BRL">
+				<displayName draft="provisional">pila Pajey</displayName>
+			</currency>
+			<currency type="CNY">
+				<displayName draft="provisional">pila Ipaw</displayName>
+			</currency>
+			<currency type="EUR">
+				<displayName draft="provisional">pila Irow</displayName>
+			</currency>
+			<currency type="GBP">
+				<displayName draft="provisional">pila Inglis</displayName>
+			</currency>
+			<currency type="HKD">
+				<displayName draft="provisional">pila Hong Kong</displayName>
+			</currency>
+			<currency type="INR">
+				<displayName draft="provisional">pila Intia</displayName>
+			</currency>
+			<currency type="JPY">
+				<displayName draft="provisional">pila Nihong</displayName>
+			</currency>
+			<currency type="MOP">
+				<displayName draft="provisional">pila Macao</displayName>
+			</currency>
+			<currency type="NOK">
+				<displayName draft="provisional">pila Nowey</displayName>
+			</currency>
+			<currency type="RUB">
+				<displayName draft="provisional">pila Ruski</displayName>
+			</currency>
+			<currency type="TWD">
+				<displayName draft="provisional">pila Taiwan</displayName>
+			</currency>
+			<currency type="USD">
+				<displayName draft="provisional">pila America</displayName>
+			</currency>
+			<currency type="XXX">
+				<displayName draft="provisional">ini klayi pila ni</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+	<units>
+		<unitLength type="long">
+			<unit type="duration-year">
+				<unitPattern count="other">{0} Hnkawas</unitPattern>
+			</unit>
+			<unit type="duration-month">
+				<unitPattern count="other">{0} Idas</unitPattern>
+			</unit>
+			<unit type="duration-week">
+				<unitPattern count="other">{0} Jiyax iyax sngayan</unitPattern>
+			</unit>
+			<unit type="duration-day">
+				<unitPattern count="other">{0} Jiyax</unitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<unitPattern count="other">{0} Tuki</unitPattern>
+			</unit>
+			<unit type="duration-minute">
+				<unitPattern count="other">{0} spngan</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<unitPattern count="other">{0} Seykn</unitPattern>
+			</unit>
+		</unitLength>
+	</units>
+	<posix>
+		<messages>
+			<yesstr draft="provisional">yiru:y</yesstr>
+			<nostr draft="provisional">mnan:m</nostr>
+		</messages>
+	</posix>
+</ldml>

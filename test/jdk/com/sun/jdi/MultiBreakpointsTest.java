@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,8 +60,16 @@ import java.text.*;
 class MultiBreakpointsTarg {
 
     MultiBreakpointsTarg(int numThreads, int numHits) {
+        Thread threads[] = new Thread[numThreads];
         for (int ii = 0; ii < numThreads; ii++) {
-            console(ii, numHits);
+            threads[ii] = console(ii, numHits);
+        }
+        for (int ii = 0; ii < numThreads; ii++) {
+            try {
+                threads[ii].join();
+            } catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
         }
     }
 
@@ -127,7 +135,7 @@ class MultiBreakpointsTarg {
     void bkpt28() {}
     void bkpt29() {}
 
-    void console(final int num, final int nhits) {
+    Thread console(final int num, final int nhits) {
         final InputStreamReader isr = new InputStreamReader(System.in);
         final BufferedReader    br  = new BufferedReader(isr);
 
@@ -135,8 +143,7 @@ class MultiBreakpointsTarg {
         //
         //final String threadName = "DebuggeeThread: " + num;
         final String threadName = "" + num;
-        Thread thrd = new Thread( threadName ) {
-                public void run() {
+        Thread thrd = DebuggeeWrapper.newThread(() -> {
                     synchronized( isr ) {
                         boolean done = false;
                         try {
@@ -188,9 +195,11 @@ class MultiBreakpointsTarg {
                         }
                     }
                 }
-            };
+            );
+        thrd.setName(threadName);
         thrd.setPriority(Thread.MAX_PRIORITY-1);
         thrd.start();
+        return thrd;
     }
 }
 
@@ -230,7 +239,7 @@ public class MultiBreakpointsTest extends TestScaffold {
             nhits = Integer.parseInt(countStr);
         }
 
-        args = new String[] { "-J-Dnthreads=" + nthreads, "-J-Dnhits=" + nhits} ;
+        args = new String[] { "-Dnthreads=" + nthreads, "-Dnhits=" + nhits} ;
         new MultiBreakpointsTest(args).startTests();
     }
 

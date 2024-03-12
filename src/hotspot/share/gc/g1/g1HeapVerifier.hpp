@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_G1_G1HEAPVERIFIER_HPP
 #define SHARE_GC_G1_G1HEAPVERIFIER_HPP
 
-#include "gc/g1/heapRegionSet.hpp"
+#include "gc/g1/g1HeapRegionSet.hpp"
 #include "gc/shared/verifyOption.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
@@ -66,9 +66,12 @@ public:
   void verify_region_sets_optional() { DEBUG_ONLY(verify_region_sets();) }
 
   void prepare_for_verify();
-  void verify(G1VerifyType type, VerifyOption vo, const char* msg);
-  void verify_before_gc(G1VerifyType type);
-  void verify_after_gc(G1VerifyType type);
+  void verify(VerifyOption vo, const char* msg);
+  void verify_before_gc();
+  void verify_after_gc();
+
+  // Verify that marking state is set up correctly after a concurrent start pause.
+  void verify_marking_state();
 
   void verify_bitmap_clear(bool above_tams_only);
 
@@ -80,8 +83,6 @@ public:
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
-
-  static void verify_archive_regions();
 };
 
 #endif // SHARE_GC_G1_G1HEAPVERIFIER_HPP

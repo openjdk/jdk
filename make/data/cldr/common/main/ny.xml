@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="ny"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ny" draft="contributed">Nyanja</language>
+		</languages>
+	</localeDisplayNames>
+	<characters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p r s t u wŵ y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[q v x]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
+	</characters>
+	<dates>
+		<calendars>
+			<calendar type="gregorian">
+				<months>
+					<monthContext type="format">
+						<monthWidth type="abbreviated">
+							<month type="1" draft="unconfirmed">Jan</month>
+							<month type="2" draft="unconfirmed">Feb</month>
+							<month type="3" draft="unconfirmed">Mal</month>
+							<month type="4" draft="unconfirmed">Epu</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Jun</month>
+							<month type="7" draft="unconfirmed">Jul</month>
+							<month type="8" draft="unconfirmed">Oga</month>
+							<month type="9" draft="unconfirmed">Sep</month>
+							<month type="10" draft="unconfirmed">Oku</month>
+							<month type="11" draft="unconfirmed">Nov</month>
+							<month type="12" draft="unconfirmed">Dis</month>
+						</monthWidth>
+						<monthWidth type="wide">
+							<month type="1" draft="unconfirmed">Januwale</month>
+							<month type="2" draft="unconfirmed">Febuluwale</month>
+							<month type="3" draft="unconfirmed">Malichi</month>
+							<month type="4" draft="unconfirmed">Epulo</month>
+							<month type="5" draft="unconfirmed">Mei</month>
+							<month type="6" draft="unconfirmed">Juni</month>
+							<month type="7" draft="unconfirmed">Julai</month>
+							<month type="8" draft="unconfirmed">Ogasiti</month>
+							<month type="9" draft="unconfirmed">Seputemba</month>
+							<month type="10" draft="unconfirmed">Okutoba</month>
+							<month type="11" draft="unconfirmed">Novemba</month>
+							<month type="12" draft="unconfirmed">Disemba</month>
+						</monthWidth>
+					</monthContext>
+				</months>
+				<days>
+					<dayContext type="format">
+						<dayWidth type="abbreviated">
+							<day type="sun" draft="unconfirmed">Mul</day>
+							<day type="mon" draft="unconfirmed">Lem</day>
+							<day type="tue" draft="unconfirmed">Wir</day>
+							<day type="wed" draft="unconfirmed">Tat</day>
+							<day type="thu" draft="unconfirmed">Nai</day>
+							<day type="fri" draft="unconfirmed">San</day>
+							<day type="sat" draft="unconfirmed">Wer</day>
+						</dayWidth>
+						<dayWidth type="wide">
+							<day type="sun" draft="unconfirmed">Lamulungu</day>
+							<day type="mon" draft="unconfirmed">Lolemba</day>
+							<day type="tue" draft="unconfirmed">Lachiwiri</day>
+							<day type="wed" draft="unconfirmed">Lachitatu</day>
+							<day type="thu" draft="unconfirmed">Lachinayi</day>
+							<day type="fri" draft="unconfirmed">Lachisanu</day>
+							<day type="sat" draft="unconfirmed">Loweruka</day>
+						</dayWidth>
+					</dayContext>
+				</days>
+				<timeFormats>
+					<timeFormatLength type="full">
+						<timeFormat>
+							<pattern>h:mm:ss a zzzz</pattern>
+							<datetimeSkeleton>ahmmsszzzz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="long">
+						<timeFormat>
+							<pattern>h:mm:ss a z</pattern>
+							<datetimeSkeleton>ahmmssz</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="medium">
+						<timeFormat>
+							<pattern>h:mm:ss a</pattern>
+							<datetimeSkeleton>ahmmss</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+					<timeFormatLength type="short">
+						<timeFormat>
+							<pattern>h:mm a</pattern>
+							<datetimeSkeleton>ahmm</datetimeSkeleton>
+						</timeFormat>
+					</timeFormatLength>
+				</timeFormats>
+			</calendar>
+		</calendars>
+	</dates>
+	<numbers>
+		<currencies>
+			<currency type="MWK">
+				<displayName draft="unconfirmed">Malawian Kwacha</displayName>
+			</currency>
+		</currencies>
+	</numbers>
+</ldml>

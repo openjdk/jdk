@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -636,20 +636,7 @@ final class ZipPath implements Path {
     @Override
     public int compareTo(Path other) {
         final ZipPath o = checkPath(other);
-        int len1 = this.path.length;
-        int len2 = o.path.length;
-
-        int n = Math.min(len1, len2);
-
-        int k = 0;
-        while (k < n) {
-            int c1 = this.path[k] & 0xff;
-            int c2 = o.path[k] & 0xff;
-            if (c1 != c2)
-                return c1 - c2;
-            k++;
-        }
-        return len1 - len2;
+        return Arrays.compareUnsigned(this.path, o.path);
     }
 
     public WatchKey register(

@@ -70,10 +70,6 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
   return frame();
 }
 
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  Unimplemented();
-}
-
 inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, const frame& f) {
   Unimplemented();
 }

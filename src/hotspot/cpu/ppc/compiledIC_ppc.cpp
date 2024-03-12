@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +26,6 @@
 #include "precompiled.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -37,7 +36,7 @@
 
 // ----------------------------------------------------------------------------
 
-// A PPC CompiledDirectStaticCall looks like this:
+// A PPC CompiledDirectCall looks like this:
 //
 // >>>> consts
 //
@@ -79,9 +78,9 @@
 
 const int IC_pos_in_java_to_interp_stub = 8;
 #define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = NULL*/) {
+address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = nullptr*/) {
 #ifdef COMPILER2
-  if (mark == NULL) {
+  if (mark == nullptr) {
     // Get the mark within main instrs section which is set to the address of the call.
     mark = cbuf.insts_mark();
   }
@@ -91,9 +90,9 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   MacroAssembler _masm(&cbuf);
 
   // Start the stub.
-  address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
-  if (stub == NULL) {
-    return NULL; // CodeCache is full
+  address stub = __ start_a_stub(CompiledDirectCall::to_interp_stub_size());
+  if (stub == nullptr) {
+    return nullptr; // CodeCache is full
   }
 
   // For java_to_interp stubs we use R11_scratch1 as scratch register
@@ -113,11 +112,11 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   // - load the call target from the constant pool
   // - call
   __ calculate_address_from_global_toc(reg_scratch, __ method_toc());
-  AddressLiteral ic = __ allocate_metadata_address((Metadata *)NULL);
+  AddressLiteral ic = __ allocate_metadata_address((Metadata *)nullptr);
   bool success = __ load_const_from_method_toc(as_Register(Matcher::inline_cache_reg_encode()),
                                                ic, reg_scratch, /*fixed_size*/ true);
   if (!success) {
-    return NULL; // CodeCache is full
+    return nullptr; // CodeCache is full
   }
 
   if (ReoptimizeCallSequences) {
@@ -126,7 +125,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
     AddressLiteral a((address)-1);
     success = __ load_const_from_method_toc(reg_scratch, a, reg_scratch, /*fixed_size*/ true);
     if (!success) {
-      return NULL; // CodeCache is full
+      return nullptr; // CodeCache is full
     }
     __ mtctr(reg_scratch);
     __ bctr();
@@ -135,7 +134,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   // FIXME: Assert that the stub can be identified and patched.
 
   // Java_to_interp_stub_size should be good.
-  assert((__ offset() - stub_start_offset) <= CompiledStaticCall::to_interp_stub_size(),
+  assert((__ offset() - stub_start_offset) <= CompiledDirectCall::to_interp_stub_size(),
          "should be good size");
   assert(!is_NativeCallTrampolineStub_at(__ addr_at(stub_start_offset)),
          "must not confuse java_to_interp with trampoline stubs");
@@ -145,7 +144,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
   return stub;
 #else
   ShouldNotReachHere();
-  return NULL;
+  return nullptr;
 #endif
 }
 #undef __
@@ -153,26 +152,19 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/*
 // Size of java_to_interp stub, this doesn't need to be accurate but it must
 // be larger or equal to the real size of the stub.
 // Used for optimization in Compile::Shorten_branches.
-int CompiledStaticCall::to_interp_stub_size() {
+int CompiledDirectCall::to_interp_stub_size() {
   return 12 * BytesPerInstWord;
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
 // Used for optimization in Compile::Shorten_branches.
-int CompiledStaticCall::reloc_to_interp_stub() {
+int CompiledDirectCall::reloc_to_interp_stub() {
   return 5;
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
-  guarantee(stub != NULL, "stub not found");
-
-  if (TraceICs) {
-    ResourceMark rm;
-    tty->print_cr("CompiledDirectStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  p2i(instruction_address()),
-                  callee->name_and_sig_as_C_string());
-  }
+  guarantee(stub != nullptr, "stub not found");
 
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);
@@ -188,10 +180,10 @@ void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, ad
   set_destination_mt_safe(stub);
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   // Reset stub.
   address stub = static_stub->addr();
-  assert(stub != NULL, "stub not found");
+  assert(stub != nullptr, "stub not found");
   assert(CompiledICLocker::is_safe(stub), "mt unsafe call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);
@@ -204,14 +196,14 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 // Non-product mode code
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledDirectCall::verify() {
   // Verify call.
   _call->verify();
   _call->verify_alignment();
 
   // Verify stub.
   address stub = find_stub();
-  assert(stub != NULL, "no stub found for static call");
+  assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub + IC_pos_in_java_to_interp_stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());

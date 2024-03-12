@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 
 -class name jdk/incubator/foreign/FunctionDescriptor
 
+-class name jdk/incubator/foreign/FunctionDescriptor$VariadicFunction
+
 -class name jdk/incubator/foreign/GroupLayout
 
 -class name jdk/incubator/foreign/MemoryAddress
@@ -49,6 +51,8 @@
 -class name jdk/incubator/foreign/MemorySegment
 
 -class name jdk/incubator/foreign/NativeSymbol
+
+-class name jdk/incubator/foreign/PaddingLayout
 
 -class name jdk/incubator/foreign/ResourceScope
 
@@ -81,4 +85,674 @@
 -class name jdk/incubator/foreign/ValueLayout$OfLong
 
 -class name jdk/incubator/foreign/ValueLayout$OfShort
+
+class name jdk/internal/foreign/AbstractMemorySegmentImpl
+header extends java/lang/Object implements java/lang/foreign/MemorySegment,java/lang/foreign/SegmentAllocator,jdk/internal/foreign/Scoped,java/util/function/BiFunction flags 421 signature Ljava/lang/Object;Ljava/lang/foreign/MemorySegment;Ljava/lang/foreign/SegmentAllocator;Ljdk/internal/foreign/Scoped;Ljava/util/function/BiFunction<Ljava/lang/String;Ljava/util/List<Ljava/lang/Number;>;Ljava/lang/RuntimeException;>;
+innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfChar outerClass java/lang/foreign/ValueLayout innerClassName OfChar flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang/foreign/ValueLayout innerClassName OfFloat flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name spliterator descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/Spliterator;
+-method name elements descriptor (Ljdk/incubator/foreign/MemoryLayout;)Ljava/util/stream/Stream;
+-method name fill descriptor (B)Ljdk/incubator/foreign/MemorySegment;
+-method name mismatch descriptor (Ljdk/incubator/foreign/MemorySegment;)J
+-method name isAlive descriptor ()Z
+-method name ownerThread descriptor ()Ljava/lang/Thread;
+-method name isSmall descriptor ()Z
+-method name checkAccess descriptor (JJZ)V
+-method name unsafeGetOffset descriptor ()J
+-method name unsafeGetBase descriptor ()Ljava/lang/Object;
+-method name scope descriptor ()Ljdk/internal/foreign/ResourceScopeImpl;
+-method name ofBuffer descriptor (Ljava/nio/ByteBuffer;)Ljdk/internal/foreign/AbstractMemorySegmentImpl;
+-method name scope descriptor ()Ljdk/internal/misc/ScopedMemoryAccess$Scope;
+-method name asReadOnly descriptor ()Ljdk/incubator/foreign/MemorySegment;
+-method name asSlice descriptor (J)Ljdk/incubator/foreign/MemorySegment;
+-method name asSlice descriptor (JJ)Ljdk/incubator/foreign/MemorySegment;
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name allocate descriptor (JJ)Ljdk/incubator/foreign/MemorySegment;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name asOverlappingSlice descriptor (Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/MemorySegment;
+-method name segmentOffset descriptor (Ljdk/incubator/foreign/MemorySegment;)J
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfByte;)[B
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfShort;)[S
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfChar;)[C
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)[I
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfFloat;)[F
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)[J
+-method name toArray descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)[D
+-method name isAlignedForElement descriptor (JLjdk/incubator/foreign/MemoryLayout;)Z
+method name spliterator descriptor (Ljava/lang/foreign/MemoryLayout;)Ljava/util/Spliterator; flags 1 signature (Ljava/lang/foreign/MemoryLayout;)Ljava/util/Spliterator<Ljava/lang/foreign/MemorySegment;>;
+method name elements descriptor (Ljava/lang/foreign/MemoryLayout;)Ljava/util/stream/Stream; flags 1 signature (Ljava/lang/foreign/MemoryLayout;)Ljava/util/stream/Stream<Ljava/lang/foreign/MemorySegment;>;
+method name fill descriptor (B)Ljava/lang/foreign/MemorySegment; flags 11
+method name allocate descriptor (JJ)Ljava/lang/foreign/MemorySegment; flags 1
+method name mismatch descriptor (Ljava/lang/foreign/MemorySegment;)J flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+method name asOverlappingSlice descriptor (Ljava/lang/foreign/MemorySegment;)Ljava/util/Optional; flags 11 signature (Ljava/lang/foreign/MemorySegment;)Ljava/util/Optional<Ljava/lang/foreign/MemorySegment;>;
+method name segmentOffset descriptor (Ljava/lang/foreign/MemorySegment;)J flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfByte;)[B flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfShort;)[S flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfChar;)[C flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)[I flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfFloat;)[F flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)[J flags 11
+method name toArray descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)[D flags 11
+method name checkAccess descriptor (JJZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name checkValidState descriptor ()V flags 1
+method name unsafeGetOffset descriptor ()J flags 401
+method name unsafeGetBase descriptor ()Ljava/lang/Object; flags 401
+method name maxAlignMask descriptor ()J flags 401
+method name isAlignedForElement descriptor (JLjava/lang/foreign/MemoryLayout;)Z flags 11 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name apply descriptor (Ljava/lang/String;Ljava/util/List;)Ljava/lang/RuntimeException; flags 1 signature (Ljava/lang/String;Ljava/util/List<Ljava/lang/Number;>;)Ljava/lang/RuntimeException;
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name ofBuffer descriptor (Ljava/nio/Buffer;)Ljdk/internal/foreign/AbstractMemorySegmentImpl; flags 9
+method name asReadOnly descriptor ()Ljava/lang/foreign/MemorySegment; flags 1041
+method name asSlice descriptor (J)Ljava/lang/foreign/MemorySegment; flags 1041
+method name asSlice descriptor (JJ)Ljava/lang/foreign/MemorySegment; flags 1041
+method name apply descriptor (Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object; flags 1041
+
+class name jdk/internal/foreign/LayoutPath
+-method name layout descriptor ()Ljdk/incubator/foreign/MemoryLayout;
+-method name map descriptor (Ljava/util/function/UnaryOperator;)Ljdk/incubator/foreign/MemoryLayout;
+-method name rootPath descriptor (Ljdk/incubator/foreign/MemoryLayout;Ljava/util/function/ToLongFunction;)Ljdk/internal/foreign/LayoutPath;
+method name layout descriptor ()Ljava/lang/foreign/MemoryLayout; flags 1
+method name rootPath descriptor (Ljava/lang/foreign/MemoryLayout;)Ljdk/internal/foreign/LayoutPath; flags 9
+
+class name jdk/internal/foreign/LayoutPath$PathElementImpl
+header extends java/lang/Object implements java/lang/foreign/MemoryLayout$PathElement,java/util/function/UnaryOperator nestHost jdk/internal/foreign/LayoutPath flags 31 signature Ljava/lang/Object;Ljava/lang/foreign/MemoryLayout$PathElement;Ljava/util/function/UnaryOperator<Ljdk/internal/foreign/LayoutPath;>;
+innerclass innerClass jdk/internal/foreign/LayoutPath$PathElementImpl outerClass jdk/internal/foreign/LayoutPath innerClassName PathElementImpl flags 19
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+
+class name jdk/internal/foreign/MemoryAddressImpl
+header extends java/lang/Object implements java/lang/foreign/MemoryAddress,jdk/internal/foreign/Scoped flags 31
+innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfBoolean outerClass java/lang/foreign/ValueLayout innerClassName OfBoolean flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfChar outerClass java/lang/foreign/ValueLayout innerClassName OfChar flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang/foreign/ValueLayout innerClassName OfFloat flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name addOffset descriptor (J)Ljdk/incubator/foreign/MemoryAddress;
+-method name ofLongUnchecked descriptor (J)Ljdk/incubator/foreign/MemorySegment;
+-method name ofLongUnchecked descriptor (JJLjdk/internal/foreign/ResourceScopeImpl;)Ljdk/incubator/foreign/MemorySegment;
+-method name ofLongUnchecked descriptor (JJ)Ljdk/incubator/foreign/MemorySegment;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfByte;J)B
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfByte;JB)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfBoolean;J)Z
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfBoolean;JZ)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfChar;J)C
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfChar;JC)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfShort;J)S
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfShort;JS)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;J)I
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;JI)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfFloat;J)F
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfFloat;JF)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)J
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;JJ)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;J)D
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;JD)V
+-method name get descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;J)Ljdk/incubator/foreign/MemoryAddress;
+-method name set descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;JLjdk/incubator/foreign/Addressable;)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfChar;J)C
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfChar;JC)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfShort;J)S
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfShort;JS)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;J)I
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;JI)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfFloat;J)F
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfFloat;JF)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)J
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;JJ)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;J)D
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;JD)V
+-method name getAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;J)Ljdk/incubator/foreign/MemoryAddress;
+-method name setAtIndex descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;JLjdk/incubator/foreign/Addressable;)V
+method name addOffset descriptor (J)Ljava/lang/foreign/MemoryAddress; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 11
+method name ofLongUnchecked descriptor (J)Ljava/lang/foreign/MemorySegment; flags 9
+method name ofLongUnchecked descriptor (JJLjava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 9
+method name ofLongUnchecked descriptor (JJ)Ljava/lang/foreign/MemorySegment; flags 9
+method name session descriptor ()Ljdk/internal/foreign/MemorySessionImpl; flags 1
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfByte;J)B flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfByte;JB)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfBoolean;J)Z flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfBoolean;JZ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfChar;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfChar;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfShort;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfShort;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfInt;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfInt;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfFloat;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfFloat;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfLong;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name get descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;J)Ljava/lang/foreign/MemoryAddress; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name set descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;JLjava/lang/foreign/Addressable;)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfChar;J)C flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfChar;JC)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfShort;J)S flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfShort;JS)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfInt;J)I flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfInt;JI)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfFloat;J)F flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfFloat;JF)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)J flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfLong;JJ)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;J)D flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;JD)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name getAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;J)Ljava/lang/foreign/MemoryAddress; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name setAtIndex descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;JLjava/lang/foreign/Addressable;)V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;@Ljdk/internal/reflect/CallerSensitive;
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1041
+
+class name jdk/internal/foreign/MemorySessionImpl
+header extends java/lang/Object implements java/lang/foreign/MemorySession,java/lang/foreign/SegmentAllocator nestMembers jdk/internal/foreign/MemorySessionImpl$ResourceList,jdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup,jdk/internal/foreign/MemorySessionImpl$NonCloseableView flags 421
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList outerClass jdk/internal/foreign/MemorySessionImpl innerClassName ResourceList flags 409
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup outerClass jdk/internal/foreign/MemorySessionImpl$ResourceList innerClassName ResourceCleanup flags 409
+innerclass innerClass java/lang/ref/Cleaner$Cleanable outerClass java/lang/ref/Cleaner innerClassName Cleanable flags 609
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$NonCloseableView outerClass jdk/internal/foreign/MemorySessionImpl innerClassName NonCloseableView flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+field name GLOBAL descriptor Ljdk/internal/foreign/MemorySessionImpl; flags 19
+method name addCloseAction descriptor (Ljava/lang/Runnable;)V flags 1
+method name addOrCleanupIfFail descriptor (Ljdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup;)V flags 1
+method name <init> descriptor (Ljava/lang/Thread;Ljdk/internal/foreign/MemorySessionImpl$ResourceList;Ljava/lang/ref/Cleaner;)V flags 4
+method name createConfined descriptor (Ljava/lang/Thread;Ljava/lang/ref/Cleaner;)Ljava/lang/foreign/MemorySession; flags 9
+method name createShared descriptor (Ljava/lang/ref/Cleaner;)Ljava/lang/foreign/MemorySession; flags 9
+method name createImplicit descriptor ()Ljdk/internal/foreign/MemorySessionImpl; flags 9
+method name allocate descriptor (JJ)Ljava/lang/foreign/MemorySegment; flags 1
+method name release0 descriptor ()V flags 401
+method name acquire0 descriptor ()V flags 401
+method name equals descriptor (Ljava/lang/Object;)Z flags 11
+method name hashCode descriptor ()I flags 11
+method name whileAlive descriptor (Ljava/lang/Runnable;)V flags 1
+method name ownerThread descriptor ()Ljava/lang/Thread; flags 11
+method name isAlive descriptor ()Z flags 1
+method name asNonCloseable descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name toSessionImpl descriptor (Ljava/lang/foreign/MemorySession;)Ljdk/internal/foreign/MemorySessionImpl; flags 9 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name checkValidStateRaw descriptor ()V flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name checkValidState descriptor ()V flags 1
+method name clone descriptor ()Ljava/lang/Object; thrownTypes java/lang/CloneNotSupportedException flags 4
+method name isCloseable descriptor ()Z flags 1
+method name close descriptor ()V flags 1
+method name heapSession descriptor (Ljava/lang/Object;)Ljdk/internal/foreign/MemorySessionImpl; flags 9
+
+class name jdk/internal/foreign/MemorySessionImpl$NonCloseableView
+header extends java/lang/Object implements java/lang/foreign/MemorySession nestHost jdk/internal/foreign/MemorySessionImpl flags 31
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$NonCloseableView outerClass jdk/internal/foreign/MemorySessionImpl innerClassName NonCloseableView flags 19
+method name <init> descriptor (Ljdk/internal/foreign/MemorySessionImpl;)V flags 1
+method name isAlive descriptor ()Z flags 1
+method name isCloseable descriptor ()Z flags 1
+method name ownerThread descriptor ()Ljava/lang/Thread; flags 1
+method name equals descriptor (Ljava/lang/Object;)Z flags 1
+method name hashCode descriptor ()I flags 1
+method name whileAlive descriptor (Ljava/lang/Runnable;)V flags 1
+method name asNonCloseable descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name addCloseAction descriptor (Ljava/lang/Runnable;)V flags 1
+method name close descriptor ()V flags 1
+
+class name jdk/internal/foreign/MemorySessionImpl$ResourceList
+header extends java/lang/Object implements java/lang/Runnable nestHost jdk/internal/foreign/MemorySessionImpl flags 421
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList outerClass jdk/internal/foreign/MemorySessionImpl innerClassName ResourceList flags 409
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup outerClass jdk/internal/foreign/MemorySessionImpl$ResourceList innerClassName ResourceCleanup flags 409
+method name <init> descriptor ()V flags 1
+method name run descriptor ()V flags 11
+
+class name jdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup
+header extends java/lang/Object nestHost jdk/internal/foreign/MemorySessionImpl flags 421
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList outerClass jdk/internal/foreign/MemorySessionImpl innerClassName ResourceList flags 409
+innerclass innerClass jdk/internal/foreign/MemorySessionImpl$ResourceList$ResourceCleanup outerClass jdk/internal/foreign/MemorySessionImpl$ResourceList innerClassName ResourceCleanup flags 409
+method name <init> descriptor ()V flags 1
+method name cleanup descriptor ()V flags 401
+
+-class name jdk/internal/foreign/NativeSymbolImpl
+
+-class name jdk/internal/foreign/ResourceScopeImpl
+
+-class name jdk/internal/foreign/ResourceScopeImpl$ResourceList
+
+-class name jdk/internal/foreign/ResourceScopeImpl$ResourceList$ResourceCleanup
+
+class name jdk/internal/foreign/Scoped
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+method name sessionImpl descriptor ()Ljdk/internal/foreign/MemorySessionImpl; flags 1 runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 401
+
+class name jdk/internal/foreign/abi/AbstractLinker
+header extends java/lang/Object implements java/lang/foreign/Linker sealed true permittedSubclasses jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64Linker,jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64Linker,jdk/internal/foreign/abi/x64/sysv/SysVx64Linker,jdk/internal/foreign/abi/x64/windows/Windowsx64Linker flags 421
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name <init> descriptor ()V flags 1
+method name downcallHandle descriptor (Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 1
+method name arrangeDowncall descriptor (Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 404
+method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 1
+method name arrangeUpcall descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 404
+method name defaultLookup descriptor ()Ljdk/internal/foreign/SystemLookup; flags 1
+method name defaultLookup descriptor ()Ljava/lang/foreign/SymbolLookup; flags 1041
+
+class name jdk/internal/foreign/abi/SharedUtils
+header extends java/lang/Object nestMembers jdk/internal/foreign/abi/SharedUtils$EmptyVaList flags 21
+innerclass innerClass java/lang/foreign/ValueLayout$OfByte outerClass java/lang/foreign/ValueLayout innerClassName OfByte flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfFloat outerClass java/lang/foreign/ValueLayout innerClassName OfFloat flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfShort outerClass java/lang/foreign/ValueLayout innerClassName OfShort flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfChar outerClass java/lang/foreign/ValueLayout innerClassName OfChar flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfBoolean outerClass java/lang/foreign/ValueLayout innerClassName OfBoolean flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-field name THROWING_ALLOCATOR descriptor Ljdk/incubator/foreign/SegmentAllocator;
+-method name align descriptor (Ljdk/incubator/foreign/MemoryLayout;ZJ)J
+-method name alignment descriptor (Ljdk/incubator/foreign/MemoryLayout;Z)J
+-method name adaptDowncallForIMR descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name getSystemLinker descriptor ()Ljdk/incubator/foreign/CLinker;
+-method name toJavaStringInternal descriptor (Ljdk/incubator/foreign/MemorySegment;J)Ljava/lang/String;
+-method name allocateMemoryInternal descriptor (J)Ljdk/incubator/foreign/MemoryAddress;
+-method name freeMemoryInternal descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
+-method name isTrivial descriptor (Ljdk/incubator/foreign/FunctionDescriptor;)Z
+-method name acquire descriptor ([Ljdk/internal/foreign/Scoped;)V
+-method name release descriptor ([Ljdk/internal/foreign/Scoped;)V
+-method name wrapDowncall descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name checkSymbol descriptor (Ljdk/incubator/foreign/NativeSymbol;)V
+-method name checkAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
+-method name newVaList descriptor (Ljava/util/function/Consumer;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name newVaListOfAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name emptyVaList descriptor ()Ljdk/incubator/foreign/VaList;
+-method name isVarargsIndex descriptor (Ljdk/incubator/foreign/FunctionDescriptor;I)Z
+-method name inferMethodType descriptor (Ljdk/incubator/foreign/FunctionDescriptor;Z)Ljava/lang/invoke/MethodType;
+field name THROWING_ALLOCATOR descriptor Ljava/lang/foreign/SegmentAllocator; flags 19
+field name JAVA_SHORT_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfShort; flags 19
+field name JAVA_CHAR_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfChar; flags 19
+field name JAVA_INT_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfInt; flags 19
+field name JAVA_LONG_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfLong; flags 19
+field name JAVA_FLOAT_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfFloat; flags 19
+field name JAVA_DOUBLE_UNALIGNED descriptor Ljava/lang/foreign/ValueLayout$OfDouble; flags 19
+method name align descriptor (Ljava/lang/foreign/MemoryLayout;ZJ)J flags 9
+method name alignment descriptor (Ljava/lang/foreign/MemoryLayout;Z)J flags 9
+method name adaptDowncallForIMR descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 9
+method name getSystemLinker descriptor ()Ljava/lang/foreign/Linker; flags 9
+method name toJavaStringInternal descriptor (Ljava/lang/foreign/MemorySegment;J)Ljava/lang/String; flags 9
+method name maybeInsertAllocator descriptor (Ljava/lang/invoke/MethodHandle;)Ljava/lang/invoke/MethodHandle; flags 9
+method name checkSymbol descriptor (Ljava/lang/foreign/Addressable;)V flags 9
+method name checkAddress descriptor (Ljava/lang/foreign/MemoryAddress;)V flags 9
+method name newVaList descriptor (Ljava/util/function/Consumer;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9 signature (Ljava/util/function/Consumer<Ljava/lang/foreign/VaList$Builder;>;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList;
+method name newVaListOfAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name emptyVaList descriptor ()Ljava/lang/foreign/VaList; flags 9
+method name isVarargsIndex descriptor (Ljava/lang/foreign/FunctionDescriptor;I)Z flags 9
+method name newVaListNSEE descriptor (Ljava/lang/foreign/MemoryLayout;)Ljava/util/NoSuchElementException; flags 9
+method name inferMethodType descriptor (Ljava/lang/foreign/FunctionDescriptor;Z)Ljava/lang/invoke/MethodType; flags 9
+
+class name jdk/internal/foreign/abi/SharedUtils$EmptyVaList
+header extends java/lang/Object implements java/lang/foreign/VaList,jdk/internal/foreign/Scoped nestHost jdk/internal/foreign/abi/SharedUtils flags 21
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+-method name <init> descriptor (Ljdk/incubator/foreign/MemoryAddress;)V
+-method name skip descriptor ([Ljdk/incubator/foreign/MemoryLayout;)V
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)I
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)J
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)D
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;)Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment;
+-method name copy descriptor ()Ljdk/incubator/foreign/VaList;
+method name <init> descriptor (Ljava/lang/foreign/MemoryAddress;)V flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)I flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)J flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)D flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;)Ljava/lang/foreign/MemoryAddress; flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/SegmentAllocator;)Ljava/lang/foreign/MemorySegment; flags 1
+method name skip descriptor ([Ljava/lang/foreign/MemoryLayout;)V flags 81
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name copy descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+
+class name jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64Linker
+header extends jdk/internal/foreign/abi/AbstractLinker flags 31
+innerclass innerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-method name downcallHandle descriptor (Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/NativeSymbol;
+-method name newVaList descriptor (Ljava/util/function/Consumer;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name newVaListOfAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name emptyVaList descriptor ()Ljdk/incubator/foreign/VaList;
+method name arrangeDowncall descriptor (Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 4
+method name arrangeUpcall descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 4
+method name newVaList descriptor (Ljava/util/function/Consumer;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9 signature (Ljava/util/function/Consumer<Ljava/lang/foreign/VaList$Builder;>;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList;
+method name newVaListOfAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name emptyVaList descriptor ()Ljava/lang/foreign/VaList; flags 9
+
+class name jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList
+header extends java/lang/Object implements java/lang/foreign/VaList,jdk/internal/foreign/Scoped nestMembers jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder flags 21
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name skip descriptor ([Ljdk/incubator/foreign/MemoryLayout;)V
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name empty descriptor ()Ljdk/incubator/foreign/VaList;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)I
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)J
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)D
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;)Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment;
+-method name ofAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name copy descriptor ()Ljdk/incubator/foreign/VaList;
+method name empty descriptor ()Ljava/lang/foreign/VaList; flags 9
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)I flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)J flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)D flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;)Ljava/lang/foreign/MemoryAddress; flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/SegmentAllocator;)Ljava/lang/foreign/MemorySegment; flags 1
+method name skip descriptor ([Ljava/lang/foreign/MemoryLayout;)V flags 81
+method name ofAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name copy descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+
+class name jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder
+header extends java/lang/Object implements java/lang/foreign/VaList$Builder nestHost jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList flags 21
+innerclass innerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder;
+-method name build descriptor ()Ljdk/incubator/foreign/VaList;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/incubator/foreign/VaList$Builder;
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljdk/internal/foreign/abi/aarch64/linux/LinuxAArch64VaList$Builder; flags 1
+method name build descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljava/lang/foreign/VaList$Builder; flags 1041
+
+class name jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64Linker
+header extends jdk/internal/foreign/abi/AbstractLinker flags 31
+innerclass innerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-method name downcallHandle descriptor (Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/NativeSymbol;
+-method name newVaList descriptor (Ljava/util/function/Consumer;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name newVaListOfAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name emptyVaList descriptor ()Ljdk/incubator/foreign/VaList;
+method name arrangeDowncall descriptor (Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 4
+method name arrangeUpcall descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 4
+method name newVaList descriptor (Ljava/util/function/Consumer;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9 signature (Ljava/util/function/Consumer<Ljava/lang/foreign/VaList$Builder;>;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList;
+method name newVaListOfAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name emptyVaList descriptor ()Ljava/lang/foreign/VaList; flags 9
+
+class name jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList
+header extends java/lang/Object implements java/lang/foreign/VaList,jdk/internal/foreign/Scoped nestMembers jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder flags 21
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+-field name CARRIER descriptor Ljava/lang/Class;
+-method name skip descriptor ([Ljdk/incubator/foreign/MemoryLayout;)V
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name empty descriptor ()Ljdk/incubator/foreign/VaList;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)I
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)J
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)D
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;)Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment;
+-method name copy descriptor ()Ljdk/incubator/foreign/VaList;
+method name empty descriptor ()Ljava/lang/foreign/VaList; flags 19
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)I flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)J flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)D flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;)Ljava/lang/foreign/MemoryAddress; flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/SegmentAllocator;)Ljava/lang/foreign/MemorySegment; flags 1
+method name skip descriptor ([Ljava/lang/foreign/MemoryLayout;)V flags 81
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name copy descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+
+class name jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder
+header extends java/lang/Object implements java/lang/foreign/VaList$Builder nestHost jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList flags 21
+innerclass innerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder outerClass jdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name <init> descriptor (Ljdk/incubator/foreign/ResourceScope;)V
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder;
+-method name build descriptor ()Ljdk/incubator/foreign/VaList;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/incubator/foreign/VaList$Builder;
+method name <init> descriptor (Ljava/lang/foreign/MemorySession;)V flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljdk/internal/foreign/abi/aarch64/macos/MacOsAArch64VaList$Builder; flags 1
+method name build descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljava/lang/foreign/VaList$Builder; flags 1041
+
+class name jdk/internal/foreign/abi/x64/sysv/SysVVaList
+header extends java/lang/Object implements java/lang/foreign/VaList,jdk/internal/foreign/Scoped nestMembers jdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder flags 21
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder outerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name skip descriptor ([Ljdk/incubator/foreign/MemoryLayout;)V
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name empty descriptor ()Ljdk/incubator/foreign/VaList;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)I
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)J
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)D
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;)Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment;
+-method name ofAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name copy descriptor ()Ljdk/incubator/foreign/VaList;
+method name empty descriptor ()Ljava/lang/foreign/VaList; flags 9
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)I flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)J flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)D flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;)Ljava/lang/foreign/MemoryAddress; flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/SegmentAllocator;)Ljava/lang/foreign/MemorySegment; flags 1
+method name skip descriptor ([Ljava/lang/foreign/MemoryLayout;)V flags 81
+method name ofAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name copy descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+
+class name jdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder
+header extends java/lang/Object implements java/lang/foreign/VaList$Builder nestHost jdk/internal/foreign/abi/x64/sysv/SysVVaList flags 21
+innerclass innerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder outerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+-method name <init> descriptor (Ljdk/incubator/foreign/ResourceScope;)V
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder;
+-method name build descriptor ()Ljdk/incubator/foreign/VaList;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/incubator/foreign/VaList$Builder;
+method name <init> descriptor (Ljava/lang/foreign/MemorySession;)V flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder; flags 1
+method name build descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljava/lang/foreign/VaList$Builder; flags 1041
+
+class name jdk/internal/foreign/abi/x64/sysv/SysVx64Linker
+header extends jdk/internal/foreign/abi/AbstractLinker flags 31
+innerclass innerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList$Builder outerClass jdk/internal/foreign/abi/x64/sysv/SysVVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-field name MAX_INTEGER_ARGUMENT_REGISTERS descriptor I
+-field name MAX_INTEGER_RETURN_REGISTERS descriptor I
+-field name MAX_VECTOR_ARGUMENT_REGISTERS descriptor I
+-field name MAX_VECTOR_RETURN_REGISTERS descriptor I
+-field name MAX_X87_RETURN_REGISTERS descriptor I
+-method name newVaList descriptor (Ljava/util/function/Consumer;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name downcallHandle descriptor (Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/NativeSymbol;
+-method name newVaListOfAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name emptyVaList descriptor ()Ljdk/incubator/foreign/VaList;
+method name arrangeDowncall descriptor (Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 4
+method name arrangeUpcall descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 4
+method name newVaList descriptor (Ljava/util/function/Consumer;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9 signature (Ljava/util/function/Consumer<Ljava/lang/foreign/VaList$Builder;>;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList;
+method name newVaListOfAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name emptyVaList descriptor ()Ljava/lang/foreign/VaList; flags 9
+
+class name jdk/internal/foreign/abi/x64/windows/WinVaList
+header extends java/lang/Object implements java/lang/foreign/VaList,jdk/internal/foreign/Scoped nestMembers jdk/internal/foreign/abi/x64/windows/WinVaList$Builder flags 21
+innerclass innerClass java/lang/foreign/MemoryLayout$PathElement outerClass java/lang/foreign/MemoryLayout innerClassName PathElement flags 609
+innerclass innerClass jdk/internal/foreign/abi/x64/windows/WinVaList$Builder outerClass jdk/internal/foreign/abi/x64/windows/WinVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass jdk/internal/foreign/abi/SharedUtils$EmptyVaList outerClass jdk/internal/foreign/abi/SharedUtils innerClassName EmptyVaList flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+-field name CARRIER descriptor Ljava/lang/Class;
+-method name skip descriptor ([Ljdk/incubator/foreign/MemoryLayout;)V
+-method name scope descriptor ()Ljdk/incubator/foreign/ResourceScope;
+-method name address descriptor ()Ljdk/incubator/foreign/MemoryAddress;
+-method name empty descriptor ()Ljdk/incubator/foreign/VaList;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;)I
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;)J
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;)D
+-method name nextVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;)Ljdk/incubator/foreign/MemoryAddress;
+-method name nextVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/SegmentAllocator;)Ljdk/incubator/foreign/MemorySegment;
+-method name copy descriptor ()Ljdk/incubator/foreign/VaList;
+method name empty descriptor ()Ljava/lang/foreign/VaList; flags 19
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;)I flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;)J flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;)D flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;)Ljava/lang/foreign/MemoryAddress; flags 1
+method name nextVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/SegmentAllocator;)Ljava/lang/foreign/MemorySegment; flags 1
+method name skip descriptor ([Ljava/lang/foreign/MemoryLayout;)V flags 81
+method name session descriptor ()Ljava/lang/foreign/MemorySession; flags 1
+method name copy descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name address descriptor ()Ljava/lang/foreign/MemoryAddress; flags 1
+
+class name jdk/internal/foreign/abi/x64/windows/WinVaList$Builder
+header extends java/lang/Object implements java/lang/foreign/VaList$Builder nestHost jdk/internal/foreign/abi/x64/windows/WinVaList flags 21
+innerclass innerClass jdk/internal/foreign/abi/x64/windows/WinVaList$Builder outerClass jdk/internal/foreign/abi/x64/windows/WinVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/ValueLayout$OfAddress outerClass java/lang/foreign/ValueLayout innerClassName OfAddress flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfDouble outerClass java/lang/foreign/ValueLayout innerClassName OfDouble flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfLong outerClass java/lang/foreign/ValueLayout innerClassName OfLong flags 19
+innerclass innerClass java/lang/foreign/ValueLayout$OfInt outerClass java/lang/foreign/ValueLayout innerClassName OfInt flags 19
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-method name <init> descriptor (Ljdk/incubator/foreign/ResourceScope;)V
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder;
+-method name build descriptor ()Ljdk/incubator/foreign/VaList;
+-method name addVarg descriptor (Ljdk/incubator/foreign/GroupLayout;Ljdk/incubator/foreign/MemorySegment;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfAddress;Ljdk/incubator/foreign/Addressable;)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfDouble;D)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfLong;J)Ljdk/incubator/foreign/VaList$Builder;
+-method name addVarg descriptor (Ljdk/incubator/foreign/ValueLayout$OfInt;I)Ljdk/incubator/foreign/VaList$Builder;
+method name <init> descriptor (Ljava/lang/foreign/MemorySession;)V flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljdk/internal/foreign/abi/x64/windows/WinVaList$Builder; flags 1
+method name build descriptor ()Ljava/lang/foreign/VaList; flags 1
+method name addVarg descriptor (Ljava/lang/foreign/GroupLayout;Ljava/lang/foreign/MemorySegment;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfAddress;Ljava/lang/foreign/Addressable;)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfDouble;D)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfLong;J)Ljava/lang/foreign/VaList$Builder; flags 1041
+method name addVarg descriptor (Ljava/lang/foreign/ValueLayout$OfInt;I)Ljava/lang/foreign/VaList$Builder; flags 1041
+
+class name jdk/internal/foreign/abi/x64/windows/Windowsx64Linker
+header extends jdk/internal/foreign/abi/AbstractLinker flags 31
+innerclass innerClass jdk/internal/foreign/abi/x64/windows/WinVaList$Builder outerClass jdk/internal/foreign/abi/x64/windows/WinVaList innerClassName Builder flags 9
+innerclass innerClass java/lang/foreign/VaList$Builder outerClass java/lang/foreign/VaList innerClassName Builder flags 609
+-field name MAX_INTEGER_ARGUMENT_REGISTERS descriptor I
+-field name MAX_INTEGER_RETURN_REGISTERS descriptor I
+-field name MAX_VECTOR_ARGUMENT_REGISTERS descriptor I
+-field name MAX_VECTOR_RETURN_REGISTERS descriptor I
+-field name MAX_REGISTER_ARGUMENTS descriptor I
+-field name MAX_REGISTER_RETURNS descriptor I
+-method name newVaList descriptor (Ljava/util/function/Consumer;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name downcallHandle descriptor (Ljdk/incubator/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle;
+-method name upcallStub descriptor (Ljava/lang/invoke/MethodHandle;Ljdk/incubator/foreign/FunctionDescriptor;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/NativeSymbol;
+-method name newVaListOfAddress descriptor (Ljdk/incubator/foreign/MemoryAddress;Ljdk/incubator/foreign/ResourceScope;)Ljdk/incubator/foreign/VaList;
+-method name emptyVaList descriptor ()Ljdk/incubator/foreign/VaList;
+method name arrangeDowncall descriptor (Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;)Ljava/lang/invoke/MethodHandle; flags 4
+method name arrangeUpcall descriptor (Ljava/lang/invoke/MethodHandle;Ljava/lang/invoke/MethodType;Ljava/lang/foreign/FunctionDescriptor;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/MemorySegment; flags 4
+method name newVaList descriptor (Ljava/util/function/Consumer;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9 signature (Ljava/util/function/Consumer<Ljava/lang/foreign/VaList$Builder;>;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList;
+method name newVaListOfAddress descriptor (Ljava/lang/foreign/MemoryAddress;Ljava/lang/foreign/MemorySession;)Ljava/lang/foreign/VaList; flags 9
+method name emptyVaList descriptor ()Ljava/lang/foreign/VaList; flags 9
 

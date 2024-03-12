@@ -1,9 +1,9 @@
 /**
  * @test /nodynamiccopyright/
  * @summary Verify error reports for erroneous deconstruction patterns are sensible
- * @enablePreview
  * @compile/fail/ref=DeconstructionPatternErrors.out -XDrawDiagnostics -XDshould-stop.at=FLOW -XDdev DeconstructionPatternErrors.java
  */
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,7 +12,6 @@ public class DeconstructionPatternErrors {
     public static void meth() throws Throwable {
         Object p;
         p = new P(42);
-        if (p instanceof P(_));
         if (p instanceof P3(ArrayList<Integer> l));
         if (p instanceof P4(ArrayList<Integer> l));
         if (p instanceof P5(int i));
@@ -28,13 +27,6 @@ public class DeconstructionPatternErrors {
         if (p instanceof GenRecord<String>(Integer v)); //inconsistency in types
         if (p instanceof P2(var v, var v)); //duplicated variables
         if (p instanceof P6(P2(var v1, var v2), P2(var v1, var v2))); //duplicated variables
-        if (p instanceof P7(byte b)); //incorrect pattern type
-        if (p instanceof P7(long l)); //incorrect pattern type
-        switch (p) {
-            case P7(byte b) -> {} //incorrect pattern type - no exception should occur
-            case P7(long l) -> {} //incorrect pattern type - no exception should occur
-            default -> {}
-        }
         GenRecord<String> r1 = null;
         if (r1 instanceof GenRecord(String s)) {}
         switch (r1) {

@@ -6,7 +6,7 @@
 
 namespace OT {
 namespace Layout {
-namespace GSUB {
+namespace GSUB_impl {
 
 struct SubstLookup : Lookup
 {
@@ -25,7 +25,7 @@ struct SubstLookup : Lookup
   {
     unsigned int type = get_type ();
     if (unlikely (type == SubTable::Extension))
-      return reinterpret_cast<const ExtensionSubst &> (get_subtable (0)).is_reverse ();
+      return get_subtable (0).u.extension.is_reverse ();
     return lookup_type_is_reverse (type);
   }
 
@@ -98,10 +98,15 @@ struct SubstLookup : Lookup
       return dispatch (c);
   }
 
+  template<typename Glyphs, typename Substitutes,
+           hb_requires (hb_is_sorted_source_of (Glyphs,
+                                                const hb_codepoint_t) &&
+                        hb_is_source_of (Substitutes,
+                                         const hb_codepoint_t))>
   bool serialize_single (hb_serialize_context_t *c,
                          uint32_t lookup_props,
-                         hb_sorted_array_t<const HBGlyphID16> glyphs,
-                         hb_array_t<const HBGlyphID16> substitutes)
+                         Glyphs glyphs,
+                         Substitutes substitutes)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!Lookup::serialize (c, SubTable::Single, lookup_props, 1))) return_trace (false);
@@ -114,19 +119,16 @@ struct SubstLookup : Lookup
     return_trace (false);
   }
 
-  bool serialize_multiple (hb_serialize_context_t *c,
-                           uint32_t lookup_props,
-                           hb_sorted_array_t<const HBGlyphID16> glyphs,
-                           hb_array_t<const unsigned int> substitute_len_list,
-                           hb_array_t<const HBGlyphID16> substitute_glyphs_list)
+  template<typename Iterator,
+           hb_requires (hb_is_sorted_iterator (Iterator))>
+  bool serialize (hb_serialize_context_t *c,
+                  uint32_t lookup_props,
+                  Iterator it)
   {
     TRACE_SERIALIZE (this);
     if (unlikely (!Lookup::serialize (c, SubTable::Multiple, lookup_props, 1))) return_trace (false);
     if (c->push<SubTable> ()->u.multiple.
-        serialize (c,
-                   glyphs,
-                   substitute_len_list,
-                   substitute_glyphs_list))
+        serialize (c, it))
     {
       c->add_link (get_subtables<SubTable> ()[0], c->pop_pack ());
       return_trace (true);

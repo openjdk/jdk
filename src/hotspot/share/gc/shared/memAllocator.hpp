@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,9 @@ protected:
     : _thread(thread),
       _klass(klass),
       _word_size(word_size)
-  { }
+  {
+    assert(_thread == Thread::current(), "must be");
+  }
 
   // Initialization provided by subclasses.
   virtual oop initialize(HeapWord* mem) const = 0;
@@ -77,10 +79,6 @@ protected:
   // Raw memory allocation. This will try to do a TLAB allocation, and otherwise fall
   // back to calling CollectedHeap::mem_allocate().
   HeapWord* mem_allocate(Allocation& allocation) const;
-
-  virtual MemRegion obj_memory_range(oop obj) const {
-    return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
-  }
 
 public:
   // Allocate and fully construct the object, and perform various instrumentation. Could safepoint.
@@ -100,7 +98,7 @@ protected:
   const int  _length;
   const bool _do_zero;
 
-  virtual MemRegion obj_memory_range(oop obj) const;
+  void mem_zap_end_padding(HeapWord* mem) const PRODUCT_RETURN;
 
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
