@@ -161,7 +161,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test(dataProvider="basicLayouts")
@@ -192,7 +192,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
+        assertEquals(struct.byteAlignment(), 8);
     }
 
     @Test
@@ -477,24 +477,24 @@ public class TestLayouts {
         List<Object[]> layoutsAndAlignments = new ArrayList<>();
         int i = 0;
         //add basic layouts
-        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l : basicLayouts) {
             layoutsAndAlignments.add(new Object[] { l, l.byteAlignment() });
         }
         //add basic layouts wrapped in a sequence with given size
-        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l : basicLayouts) {
             layoutsAndAlignments.add(new Object[] { MemoryLayout.sequenceLayout(4, l), l.byteAlignment() });
         }
         //add basic layouts wrapped in a struct
-        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
-            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l1 : basicLayouts) {
+            for (MemoryLayout l2 : basicLayouts) {
                 if (l1.byteSize() % l2.byteAlignment() != 0) continue; // second element is not aligned, skip
                 long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.structLayout(l1, l2), align});
             }
         }
         //add basic layouts wrapped in a union
-        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
-            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+        for (MemoryLayout l1 : basicLayouts) {
+            for (MemoryLayout l2 : basicLayouts) {
                 long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.unionLayout(l1, l2), align});
             }
@@ -543,8 +543,4 @@ public class TestLayouts {
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
     };
-
-    static MemoryLayout[] basicLayoutsNoLongDouble = Stream.of(basicLayouts)
-            .filter(l -> l.carrier() != long.class && l.carrier() != double.class)
-            .toArray(MemoryLayout[]::new);
 }
