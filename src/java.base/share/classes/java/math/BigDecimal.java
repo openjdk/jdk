@@ -541,15 +541,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(char[] in, int offset, int len, MathContext mc) {
-        this(wrap(in, offset, len), mc);
-    }
-
-    private static CharSequence wrap(char[] in, int offset, int len) {
-        try {
-            return CharBuffer.wrap(in, offset, len);
-        } catch (IndexOutOfBoundsException ignored) {
-            throw new NumberFormatException();
-        }
+        this(new CharArraySequence(in, offset, len), mc);
     }
 
     private BigDecimal(CharSequence val, MathContext mc) {
@@ -836,6 +828,29 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public BigDecimal(char[] in, MathContext mc) {
         this(in, 0, in.length, mc);
+    }
+
+    private record CharArraySequence(char[] array, int start, int end) implements CharSequence {
+        CharArraySequence {
+            if (start < 0 || start > end) {
+                throw new NumberFormatException();
+            }
+        }
+
+        @Override
+        public int length() {
+            return end - start;
+        }
+
+        @Override
+        public char charAt(int index) {
+            return array[start + index];
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     /**
