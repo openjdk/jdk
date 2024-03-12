@@ -956,7 +956,7 @@ public interface RMIConnection extends Closeable, Remote {
      * @param filters an array of marshalled representations of the
      * <code>NotificationFilters</code>.  Elements of this array can
      * be null.
-     * @param delegationSubject must be {@code null}.
+     * @param delegationSubjects must be {@code null}.
      *
      * @return an array of <code>listenerIDs</code> identifying the
      * local listeners.  This array has the same number of elements as
