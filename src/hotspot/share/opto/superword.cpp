@@ -468,10 +468,14 @@ bool SuperWord::SLP_extract() {
 
   combine_pairs_to_longer_packs();
 
-  split_packs_longer_than_max_vector_size();
+  construct_my_pack_map();
+
+  split_packs_at_use_def_boundaries();  // a first time: create natural boundaries
+  split_packs_only_implemented_with_smaller_size();
+  split_packs_to_break_mutual_dependence();
+  split_packs_at_use_def_boundaries();  // again: propagate split of other packs
 
   // Now we only remove packs:
-  construct_my_pack_map();
   filter_packs_for_power_of_2_size();
   filter_packs_for_mutual_independence();
   filter_packs_for_alignment();
@@ -835,7 +839,9 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
     return false; // No vectors for this type
   }
 
-  if (isomorphic(s1, s2)) {
+  // Forbid anything that looks like a PopulateIndex to be packed. It does not need to be packed,
+  // and will still be vectorized by SuperWord::vector_opd.
+  if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
       if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
@@ -912,6 +918,18 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
     const bool s2_ctrl_inv = (s2_ctrl == nullptr) || lpt()->is_invariant(s2_ctrl);
     return s1_ctrl_inv && s2_ctrl_inv;
   }
+}
+
+// Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
+// We skip the pack creation of these nodes. They will be vectorized by SuperWord::vector_opd.
+bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
+  return n1->is_Add() &&
+         n2->is_Add() &&
+         n1->in(1) == iv() &&
+         n2->in(1) == iv() &&
+         n1->in(2)->is_Con() &&
+         n2->in(2)->is_Con() &&
+         n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
 }
 
 // Is there no data path from s1 to s2 or s2 to s1?
@@ -1384,58 +1402,197 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
-void SuperWord::split_packs_longer_than_max_vector_size() {
-  assert(!_packset.is_empty(), "packset not empty");
-  DEBUG_ONLY( int old_packset_length = _packset.length(); )
+SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
+                                             Node_List* pack,
+                                             SplitTask task)
+{
+  uint pack_size = pack->size();
 
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    assert(pack != nullptr, "no nullptr in packset");
-    uint max_vlen = max_vector_size_in_def_use_chain(pack->at(0));
-    assert(is_power_of_2(max_vlen), "sanity");
-    uint pack_size = pack->size();
-    if (pack_size <= max_vlen) {
-      continue;
-    }
-    // Split off the "upper" nodes into new packs
-    Node_List* new_pack = new Node_List();
-    for (uint j = max_vlen; j < pack_size; j++) {
-      Node* n = pack->at(j);
-      // is new_pack full?
-      if (new_pack->size() >= max_vlen) {
-        assert(is_power_of_2(new_pack->size()), "sanity %d", new_pack->size());
-        _packset.append(new_pack);
-        new_pack = new Node_List();
-      }
-      new_pack->push(n);
-    }
-    // remaining new_pack
-    if (new_pack->size() > 1) {
-      _packset.append(new_pack);
-    } else {
+  if (task.is_unchanged()) {
+    return SplitStatus::make_unchanged(pack);
+  }
+
+  if (task.is_rejected()) {
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
-        tty->print_cr("WARNING: Node dropped out of odd size pack:");
-        new_pack->at(0)->dump();
+        tty->print_cr("WARNING: Removed pack during split: %s:", task.message());
         print_pack(pack);
       }
 #endif
+    for (uint i = 0; i < pack_size; i++) {
+      Node* n = pack->at(i);
+      set_my_pack(n, nullptr);
     }
-    // truncate
-    while (pack->size() > max_vlen) {
-      pack->pop();
-    }
+    return SplitStatus::make_rejected();
   }
 
-  assert(old_packset_length <= _packset.length(), "we only increased the number of packs");
+  uint split_size = task.split_size();
+  assert(0 < split_size && split_size < pack_size, "split_size must be in range");
+
+  // Split the size
+  uint new_size = split_size;
+  uint old_size = pack_size - new_size;
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::split_packs_longer_than_max_vector_size");
+    tty->cr();
+    tty->print_cr("INFO: splitting pack (sizes: %d %d): %s:",
+                  old_size, new_size, task.message());
+    print_pack(pack);
+  }
+#endif
+
+  // Are both sizes too small to be a pack?
+  if (old_size < 2 && new_size < 2) {
+    assert(old_size == 1 && new_size == 1, "implied");
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed size 2 pack, cannot be split: %s:", task.message());
+        print_pack(pack);
+      }
+#endif
+    for (uint i = 0; i < pack_size; i++) {
+      Node* n = pack->at(i);
+      set_my_pack(n, nullptr);
+    }
+    return SplitStatus::make_rejected();
+  }
+
+  // Just pop off a single node?
+  if (new_size < 2) {
+    assert(new_size == 1 && old_size >= 2, "implied");
+    Node* n = pack->pop();
+    set_my_pack(n, nullptr);
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
+        n->dump();
+      }
+#endif
+    return SplitStatus::make_modified(pack);
+  }
+
+  // Just remove a single node at front?
+  if (old_size < 2) {
+    assert(old_size == 1 && new_size >= 2, "implied");
+    Node* n = pack->at(0);
+    pack->remove(0);
+    set_my_pack(n, nullptr);
+#ifndef PRODUCT
+      if (is_trace_superword_rejections()) {
+        tty->cr();
+        tty->print_cr("WARNING: Removed node from pack, because of split: %s:", task.message());
+        n->dump();
+      }
+#endif
+    return SplitStatus::make_modified(pack);
+  }
+
+  // We will have two packs
+  assert(old_size >= 2 && new_size >= 2, "implied");
+  Node_List* new_pack = new Node_List(new_size);
+
+  for (uint i = 0; i < new_size; i++) {
+    Node* n = pack->at(old_size + i);
+    new_pack->push(n);
+    set_my_pack(n, new_pack);
+  }
+
+  for (uint i = 0; i < new_size; i++) {
+    pack->pop();
+  }
+
+  // We assume that new_pack is more "stable" (i.e. will have to be split less than new_pack).
+  // Put "pack" second, so that we insert it later in the list, and iterate over it again sooner.
+  return SplitStatus::make_split(new_pack, pack);
+}
+
+template <typename SplitStrategy>
+void SuperWord::split_packs(const char* split_name,
+                            SplitStrategy strategy) {
+  bool changed;
+  do {
+    changed = false;
+    int new_packset_length = 0;
+    for (int i = 0; i < _packset.length(); i++) {
+      Node_List* pack = _packset.at(i);
+      assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
+      SplitTask task = strategy(pack);
+      SplitStatus status = split_pack(split_name, pack, task);
+      changed |= !status.is_unchanged();
+      Node_List* first_pack = status.first_pack();
+      Node_List* second_pack = status.second_pack();
+      _packset.at_put(i, nullptr); // take out pack
+      if (first_pack != nullptr) {
+        // The first pack can be put at the current position
+        assert(i >= new_packset_length, "only move packs down");
+        _packset.at_put(new_packset_length++, first_pack);
+      }
+      if (second_pack != nullptr) {
+        // The second node has to be appended at the end
+        _packset.append(second_pack);
+      }
+    }
+    _packset.trunc_to(new_packset_length);
+  } while (changed);
+
+#ifndef PRODUCT
+  if (is_trace_superword_packset()) {
+    tty->print_cr("\nAfter %s", split_name);
     print_packset();
   }
 #endif
+}
+
+// Split packs at boundaries where left and right have different use or def packs.
+void SuperWord::split_packs_at_use_def_boundaries() {
+  split_packs("SuperWord::split_packs_at_use_def_boundaries",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 uint boundary = find_use_def_boundary(pack);
+                 assert(boundary < pack_size, "valid boundary %d", boundary);
+                 if (boundary != 0) {
+                   return SplitTask::make_split(pack_size - boundary, "found a use/def boundary");
+                 }
+                 return SplitTask::make_unchanged();
+               });
+}
+
+// Split packs that are only implemented with a smaller pack size. Also splits packs
+// such that they eventually have power of 2 size.
+void SuperWord::split_packs_only_implemented_with_smaller_size() {
+  split_packs("SuperWord::split_packs_only_implemented_with_smaller_size",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 uint implemented_size = max_implemented_size(pack);
+                 if (implemented_size == 0)  {
+                   return SplitTask::make_rejected("not implemented at any smaller size");
+                 }
+                 assert(is_power_of_2(implemented_size), "power of 2 size or zero: %d", implemented_size);
+                 if (implemented_size != pack_size) {
+                   return SplitTask::make_split(implemented_size, "only implemented at smaller size");
+                 }
+                 return SplitTask::make_unchanged();
+               });
+}
+
+// Split packs that have a mutual dependency, until all packs are mutually_independent.
+void SuperWord::split_packs_to_break_mutual_dependence() {
+  split_packs("SuperWord::split_packs_to_break_mutual_dependence",
+               [&](const Node_List* pack) {
+                 uint pack_size = pack->size();
+                 assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
+                 if (!is_marked_reduction(pack->at(0)) &&
+                     !mutually_independent(pack)) {
+                   // As a best guess, we split the pack in half. This way, we iteratively make the
+                   // packs smaller, until there is no dependency.
+                   return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
+                 }
+                 return SplitTask::make_unchanged();
+               });
 }
 
 template <typename FilterPredicate>
@@ -1642,7 +1799,7 @@ void SuperWord::filter_packs_for_implemented() {
   filter_packs("SuperWord::filter_packs_for_implemented",
                "Unimplemented",
                [&](const Node_List* pack) {
-                 return implemented(pack);
+                 return implemented(pack, pack->size());
                });
 }
 
@@ -1664,7 +1821,7 @@ void SuperWord::filter_packs_for_profitable() {
   while (true) {
     int old_packset_length = _packset.length();
     filter_packs(nullptr, // don't dump each time
-                 "size is not a power of 2",
+                 "not profitable",
                  [&](const Node_List* pack) {
                    return profitable(pack);
                  });
@@ -1683,14 +1840,13 @@ void SuperWord::filter_packs_for_profitable() {
 #endif
 }
 
-//------------------------------implemented---------------------------
-// Can code be generated for pack p?
-bool SuperWord::implemented(const Node_List* p) {
+// Can code be generated for the pack, restricted to size nodes?
+bool SuperWord::implemented(const Node_List* pack, uint size) {
+  assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
   bool retValue = false;
-  Node* p0 = p->at(0);
+  Node* p0 = pack->at(0);
   if (p0 != nullptr) {
     int opc = p0->Opcode();
-    uint size = p->size();
     if (is_marked_reduction(p0)) {
       const Type *arith_type = p0->bottom_type();
       // Length 2 reductions of INT/LONG do not offer performance benefits
@@ -1730,6 +1886,22 @@ bool SuperWord::implemented(const Node_List* p) {
     }
   }
   return retValue;
+}
+
+// Find the maximal implemented size smaller or equal to the packs size
+uint SuperWord::max_implemented_size(const Node_List* pack) {
+  uint size = round_down_power_of_2(pack->size());
+  if (implemented(pack, size)) {
+    return size;
+  } else {
+    // Iteratively divide size by 2, and check.
+    for (uint s = size >> 1; s >= 2; s >>= 1) {
+      if (implemented(pack, s)) {
+        return s;
+      }
+    }
+    return 0; // not implementable at all
+  }
 }
 
 bool SuperWord::requires_long_to_int_conversion(int opc) {
@@ -2762,6 +2934,94 @@ void SuperWord::verify_no_extract() {
   }
 }
 #endif
+
+// Check if n_super's pack uses are a superset of n_sub's pack uses.
+bool SuperWord::has_use_pack_superset(const Node* n_super, const Node* n_sub) const {
+  Node_List* pack = my_pack(n_super);
+  assert(pack != nullptr && pack == my_pack(n_sub), "must have the same pack");
+
+  // For all uses of n_sub that are in a pack (use_sub) ...
+  for (DUIterator_Fast jmax, j = n_sub->fast_outs(jmax); j < jmax; j++) {
+    Node* use_sub = n_sub->fast_out(j);
+    Node_List* pack_use_sub = my_pack(use_sub);
+    if (pack_use_sub == nullptr) { continue; }
+
+    // ... and all input edges: use_sub->in(i) == n_sub.
+    uint start, end;
+    VectorNode::vector_operands(use_sub, &start, &end);
+    for (uint i = start; i < end; i++) {
+      if (use_sub->in(i) != n_sub) { continue; }
+
+      // Check if n_super has any use use_super in the same pack ...
+      bool found = false;
+      for (DUIterator_Fast kmax, k = n_super->fast_outs(kmax); k < kmax; k++) {
+        Node* use_super = n_super->fast_out(k);
+        Node_List* pack_use_super = my_pack(use_super);
+        if (pack_use_sub != pack_use_super) { continue; }
+
+        // ... and where there is an edge use_super->in(i) == n_super.
+        // For MulAddS2I it is expected to have defs over different input edges.
+        if (use_super->in(i) != n_super && !VectorNode::is_muladds2i(use_super)) { continue; }
+
+        found = true;
+        break;
+      }
+      if (!found) {
+        // n_sub has a use-edge (use_sub->in(i) == n_sub) with use_sub in a packset,
+        // but n_super does not have any edge (use_super->in(i) == n_super) with
+        // use_super in the same packset. Hence, n_super does not have a use pack
+        // superset of n_sub.
+        return false;
+      }
+    }
+  }
+  // n_super has all edges that n_sub has.
+  return true;
+}
+
+// Find a boundary in the pack, where left and right have different pack uses and defs.
+// This is a natural boundary to split a pack, to ensure that use and def packs match.
+// If no boundary is found, return zero.
+uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
+  Node* p0 = pack->at(0);
+  Node* p1 = pack->at(1);
+
+  const bool is_reduction_pack = reduction(p0, p1);
+
+  // Inputs range
+  uint start, end;
+  VectorNode::vector_operands(p0, &start, &end);
+
+  for (int i = pack->size() - 2; i >= 0; i--) {
+    // For all neighbours
+    Node* n0 = pack->at(i + 0);
+    Node* n1 = pack->at(i + 1);
+
+
+    // 1. Check for matching defs
+    for (uint j = start; j < end; j++) {
+      Node* n0_in = n0->in(j);
+      Node* n1_in = n1->in(j);
+      // No boundary if:
+      // 1) the same packs OR
+      // 2) reduction edge n0->n1 or n1->n0
+      if (my_pack(n0_in) != my_pack(n1_in) &&
+          !((n0 == n1_in || n1 == n0_in) && is_reduction_pack)) {
+        return i + 1;
+      }
+    }
+
+    // 2. Check for matching uses: equal if both are superset of the other.
+    //    Reductions have no pack uses, so they match trivially on the use packs.
+    if (!is_reduction_pack &&
+        !(has_use_pack_superset(n0, n1) &&
+          has_use_pack_superset(n1, n0))) {
+      return i + 1;
+    }
+  }
+
+  return 0;
+}
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?

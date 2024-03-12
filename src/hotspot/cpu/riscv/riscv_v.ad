@@ -32,7 +32,7 @@ source %{
 
   static void loadStore(C2_MacroAssembler masm, bool is_store,
                         VectorRegister reg, BasicType bt, Register base,
-                        int vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
+                        uint vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     masm.vsetvli_helper(bt, vector_length);
 

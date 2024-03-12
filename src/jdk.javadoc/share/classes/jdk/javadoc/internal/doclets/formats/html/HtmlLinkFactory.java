@@ -97,7 +97,8 @@ public class HtmlLinkFactory {
                 // handles primitives, no types and error types
                 @Override
                 protected Content defaultAction(TypeMirror type, HtmlLinkInfo linkInfo) {
-                    link.add(utils.getTypeName(type, false));
+                    link.add(getTypeAnnotationLinks(linkInfo));
+                    link.add(utils.getTypeSignature(type, false, false));
                     return link;
                 }
 

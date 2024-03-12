@@ -245,7 +245,7 @@ class SuperWord : public ResourceObj {
 
   // my_pack
  public:
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(const Node* n)     const { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
@@ -273,6 +273,8 @@ private:
   bool are_adjacent_refs(Node* s1, Node* s2);
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
+  // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
+  bool is_populate_index(const Node* n1, const Node* n2) const;
   // For a node pair (s1, s2) which is isomorphic and independent,
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
@@ -295,7 +297,102 @@ private:
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
-  void split_packs_longer_than_max_vector_size();
+  class SplitTask {
+  private:
+    enum Kind {
+      // The lambda method for split_packs can return one of these tasks:
+      Unchanged, // The pack is left in the packset, unchanged.
+      Rejected,  // The pack is removed from the packset.
+      Split,     // Split away split_size nodes from the end of the pack.
+    };
+    const Kind _kind;
+    const uint _split_size;
+    const char* _message;
+
+    SplitTask(const Kind kind, const uint split_size, const char* message) :
+        _kind(kind), _split_size(split_size), _message(message)
+    {
+      assert(message != nullptr, "must have message");
+      assert(_kind != Unchanged || split_size == 0, "unchanged task conditions");
+      assert(_kind != Rejected  || split_size == 0, "reject task conditions");
+      assert(_kind != Split     || split_size != 0, "split task conditions");
+    }
+
+  public:
+    static SplitTask make_split(const uint split_size, const char* message) {
+      return SplitTask(Split, split_size, message);
+    }
+
+    static SplitTask make_unchanged() {
+      return SplitTask(Unchanged, 0, "unchanged");
+    }
+
+    static SplitTask make_rejected(const char* message) {
+      return SplitTask(Rejected, 0, message);
+    }
+
+    bool is_unchanged() const { return _kind == Unchanged; }
+    bool is_rejected() const { return _kind == Rejected; }
+    bool is_split() const { return _kind == Split; }
+    const char* message() const { return _message; }
+
+    uint split_size() const {
+      assert(is_split(), "only split tasks have split_size");
+      return _split_size;
+    }
+  };
+
+  class SplitStatus {
+  private:
+    enum Kind {
+      // After split_pack, we have:                              first_pack   second_pack
+      Unchanged, // The pack is left in the pack, unchanged.     old_pack     nullptr
+      Rejected,  // The pack is removed from the packset.        nullptr      nullptr
+      Modified,  // The pack had some nodes removed.             old_pack     nullptr
+      Split,     // The pack was split into two packs.           pack1        pack2
+    };
+    Kind _kind;
+    Node_List* _first_pack;
+    Node_List* _second_pack;
+
+    SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+      _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
+    {
+      assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
+      assert(_kind != Rejected  || (first_pack == nullptr && second_pack == nullptr), "rejected status conditions");
+      assert(_kind != Modified  || (first_pack != nullptr && second_pack == nullptr), "modified status conditions");
+      assert(_kind != Split     || (first_pack != nullptr && second_pack != nullptr), "split status conditions");
+    }
+
+  public:
+    static SplitStatus make_unchanged(Node_List* old_pack) {
+      return SplitStatus(Unchanged, old_pack, nullptr);
+    }
+
+    static SplitStatus make_rejected() {
+      return SplitStatus(Rejected, nullptr, nullptr);
+    }
+
+    static SplitStatus make_modified(Node_List* first_pack) {
+      return SplitStatus(Modified, first_pack, nullptr);
+    }
+
+    static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+      return SplitStatus(Split, first_pack, second_pack);
+    }
+
+    bool is_unchanged() const { return _kind == Unchanged; }
+    Node_List* first_pack() const { return _first_pack; }
+    Node_List* second_pack() const { return _second_pack; }
+  };
+
+  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+  template <typename SplitStrategy>
+  void split_packs(const char* split_name, SplitStrategy strategy);
+
+  void split_packs_at_use_def_boundaries();
+  void split_packs_only_implemented_with_smaller_size();
+  void split_packs_to_break_mutual_dependence();
 
   // Filter out packs with various filter predicates
   template <typename FilterPredicate>
@@ -328,14 +425,24 @@ private:
   bool output();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
-  // Can code be generated for pack p?
-  bool implemented(const Node_List* p);
+
+  // Can code be generated for the pack, restricted to size nodes?
+  bool implemented(const Node_List* pack, uint size);
+  // Find the maximal implemented size smaller or equal to the packs size
+  uint max_implemented_size(const Node_List* pack);
+
   // For pack p, are all operands and all uses (with in the block) vector?
   bool profitable(const Node_List* p);
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
+
+  // Check if n_super's pack uses are a superset of n_sub's pack uses.
+  bool has_use_pack_superset(const Node* n1, const Node* n2) const;
+  // Find a boundary in the pack, where left and right have different pack uses and defs.
+  uint find_use_def_boundary(const Node_List* pack) const;
   // Is use->in(u_idx) a vector use?
   bool is_vector_use(Node* use, int u_idx);
+
   // Initialize per node info
   void initialize_node_info();
   // Compute max depth for expressions from beginning of block
