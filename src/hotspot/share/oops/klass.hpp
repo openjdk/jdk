@@ -244,6 +244,9 @@ protected:
   static uint64_t hash_secondary_supers(Array<T*>* secondaries, bool rewrite);
 
   // Hash coding used by HashSecondarySupers.
+  static constexpr int SEC_HASH_ENTRIES = 64;
+  static constexpr int SEC_HASH_MASK = 64 - 1;
+
   static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
   static constexpr int secondary_shift() { return hash_size_in_bits() - 6; }
   juint hash() const { return _hash; }

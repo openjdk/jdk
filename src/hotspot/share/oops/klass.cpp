@@ -109,7 +109,7 @@ void Klass::set_name(Symbol* n) {
         // Generate many hash collisions in order to stress-test the
         // linear search fallback.
         hash_code = _hash % 3;
-        hash_code = hash_code * (64 / 3);
+        hash_code = hash_code * (SEC_HASH_ENTRIES / 3);
         _hash = hash_code << secondary_shift();
       }
     }
@@ -295,7 +295,7 @@ void Klass::hash_insert(T *sec, GrowableArray<T*>* secondaries,
                         uint64_t &bitmap, bool use_robin_hood) {
   int longest_probe = 0;
   int dist = 0;
-  for (int slot = sec->hash_slot(); true; slot = (slot + 1) & 63) {
+  for (int slot = sec->hash_slot(); true; slot = (slot + 1) & SEC_HASH_MASK) {
     if (secondaries->at(slot) == nullptr) {
       secondaries->at_put(slot, sec);
       bitmap |= uint64_t(1) << slot;
@@ -308,7 +308,7 @@ void Klass::hash_insert(T *sec, GrowableArray<T*>* secondaries,
       // really need to do this. However, in that case collisions are
       // so rare that it costs very little.
       T* existing = secondaries->at(slot);
-      int existing_dist = (slot - existing->hash_slot()) & 63;
+      int existing_dist = (slot - existing->hash_slot()) & SEC_HASH_MASK;
       if (existing_dist < dist
           // This tie-breaker ensures that the hash order is
           // maintained, no matter what order the elements are
@@ -348,7 +348,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
     return uint64_t(1) << home_slot;
   }
 
-  if (length >= 64) {
+  if (length >= SEC_HASH_ENTRIES) {
     return ~(uint64_t)0;
   }
 
@@ -358,7 +358,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
   ResourceMark rm;
   uint64_t bitmap = 0;
   GrowableArray<T*>* hashed_secondaries
-    = new GrowableArray<T*>(64, 64, nullptr);
+    = new GrowableArray<T*>(SEC_HASH_ENTRIES, SEC_HASH_ENTRIES, nullptr);
 
   for (int j = 0; j < length; j++) {
     T *k = secondaries->at(j);
@@ -370,7 +370,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
     // secondaries array, sans nulls.
     int i = 0;
     int maxprobe = 0;
-    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+    for (int slot = 0; slot < SEC_HASH_ENTRIES; slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
         secondaries->at_put(i, hashed_secondaries->at(slot));
         i++;
@@ -380,7 +380,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
 #ifdef ASSERT
     // Check that the secondary_supers array is sorted by hash order
     int i = 0;
-    for (int slot = 0; slot < hashed_secondaries->length(); slot++) {
+    for (int slot = 0; slot < SEC_HASH_ENTRIES; slot++) {
       if (hashed_secondaries->at(slot) != nullptr) {
         assert(secondaries->at(i) == hashed_secondaries->at(slot),
                "broken secondary supers hash table");

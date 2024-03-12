@@ -3717,9 +3717,9 @@ void InstanceKlass::print_on(outputStream* st) const {
     for (int i = 0; i < _secondary_supers->length(); i++) {
       unsigned home_slot = _secondary_supers->at(i)->hash_slot();
       if (home_slot > 0) {
-        home_slot = population_count(_bitmap << (64 - home_slot));
+        home_slot = population_count(_bitmap << (SEC_HASH_ENTRIES - home_slot));
       }
-      int distance = (i - home_slot) & 63;
+      int distance = (i - home_slot) & SEC_HASH_MASK;
       longest_distance = MAX2(longest_distance, distance);
       st->print_cr("  %d:  %p (home slot=%d, distance = %d)", i, _secondary_supers->at(i),
                    home_slot, distance);

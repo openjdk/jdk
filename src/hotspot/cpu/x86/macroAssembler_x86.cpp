@@ -4738,7 +4738,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
   u1 bit = super_klass->hash_slot();
-  salq(r_array_index, 63 - bit);
+  salq(r_array_index, Klass::SEC_HASH_MASK - bit);
   // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
 
@@ -4764,7 +4764,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   jcc(Assembler::equal, L_success);
 
   // Is there another entry to check? Consult the bitmap.
-  btq(r_bitmap, (bit+1) & 63);
+  btq(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK);
   jcc(Assembler::carryClear, L_failure);
 
   // Linear probe. Rotate the bitmap so that the next bit to test is
