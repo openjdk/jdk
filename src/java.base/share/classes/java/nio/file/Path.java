@@ -254,25 +254,23 @@ public interface Path
 
     /**
      * Returns the file extension of this path's file name as a {@code String}.
-     * The extension is acquired from this {@code Path} by obtaining the
-     * {@linkplain #getFileName file name element}, deriving its {@linkplain
-     * #toString string representation}, and then extracting a substring
-     * determined by the position of the last period character ('.', U+002E
-     * FULL STOP) within the file name string. If the file name element is
-     * {@code null}, or if the file name string does not contain a period
-     * character, or if the last character in the file name string is a period,
-     * or if the prefix of the file name string is a sequence of periods
-     * including the last period, then the extension is
+     * The extension is acquired from this {@code Path} by obtaining the file
+     * name element, locating the position of the last period character
+     * ('.', U+002E FULL STOP) within the file name element, and then extracting
+     * the portion of the file name element after the last period as a string.
+     * If the file name element is {@code null}, the file name does not contain
+     * a period, the last character in the file name is a period, or the content
+     * of the file name before the last period is empty, then the extension is
      * {@linkplain String#isEmpty empty}.
      *
-     * <p> A typical case is where a file name string contains a single
-     * period character followed by an extension which usually indicates
-     * the contents or purpose of the file. For example, a file named
-     * {@code "archive.zip"} has extension {@code "zip"} which signals that
-     * the file is in the <i>ZIP</i> losslessly compressed archive file format.
+     * <p> A typical case is where a file name contains a single period
+     * character followed by an extension which usually indicates the contents
+     * or purpose of the file. For example, a file named {@code "archive.zip"}
+     * has extension {@code "zip"} which signals that the file is in the
+     * <i>ZIP</i> losslessly compressed archive file format.
      *
-     * <p> A compound file name extension has two or more concatenated extension
-     * strings such as in {@code "archive.tar.gz"}, which signifies that
+     * <p> A compound file name extension has two or more concatenated
+     * extensions such as in {@code "archive.tar.gz"}, which signifies that
      * the file is an archive file ({@code "tar"}) losslessly compressed
      * according to the <i>gzip</i> format.
      *
@@ -286,7 +284,7 @@ public interface Path
      * }
      *
      * @return  the file name extension of this path, which might be the
-     *          empty string
+     *          {@linkplain String#isEmpty empty string}
      *
      * @see #withExtension
      * @see #withoutExtension
@@ -302,16 +300,6 @@ public interface Path
         int lastPeriodIndex = fileNameString.lastIndexOf('.');
 
         if (lastPeriodIndex <= 0)
-            return "";
-
-        boolean prefixIsPeriods = true;
-        for (int idx = lastPeriodIndex - 1; idx >= 0; idx--) {
-            if (fileNameString.charAt(idx) != '.') {
-                prefixIsPeriods = false;
-                break;
-            }
-        }
-        if (prefixIsPeriods)
             return "";
 
         // If lastPeriodIndex == fileNameString.length() - 1 then "" is returned
@@ -352,14 +340,6 @@ public interface Path
      *                               str.length() - ext.length() - 1));
      *     }
      * }
-     *
-     * This method must satisfy the invariant:
-     * {@snippet lang="java" :
-     *     assert toString().equals(withoutExtension().toString()
-     *         + (getExtension().isEmpty() ? "" : ("." + getExtension())));
-     * }
-     * wherein the {@code Path}-{@code String} conversions are assumed to be
-     * lossless.
      *
      * @return the resulting path or this path if it does not contain a file
      *         name extension
