@@ -312,6 +312,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     reference_processor()->set_active_mt_degree(old_active_mt_degree);
   }
 
+  {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
+    for (uint i = 0; i < workers(); i++) {
+      marker(i)->flush_mark_stats_cache();
+    }
+  }
+
   // Weak oops cleanup.
   {
     GCTraceTime(Debug, gc, phases) debug("Phase 1: Weak Processing", scope()->timer());

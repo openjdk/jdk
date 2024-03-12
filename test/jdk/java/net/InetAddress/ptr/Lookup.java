@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,18 +41,15 @@
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.List;
 import java.util.stream.Stream;
 import java.util.stream.Collectors;
 
-import jdk.test.lib.JDKToolFinder;
 import jdk.test.lib.process.OutputAnalyzer;
+import jdk.test.lib.process.ProcessTools;
 
 public class Lookup {
     private static final String HOST = "icann.org";
     private static final String SKIP = "SKIP";
-    private static final String CLASS_PATH = System.getProperty(
-            "test.class.path");
 
     public static void main(String args[]) throws IOException {
         String addr = null;
@@ -135,20 +132,16 @@ public class Lookup {
     }
 
     static String lookupWithIPv4Prefer() throws IOException {
-        String java = JDKToolFinder.getTestJDKTool("java");
         String testClz = Lookup.class.getName();
-        List<String> cmd = List.of(java, "-Djava.net.preferIPv4Stack=true",
-                "-cp", CLASS_PATH, testClz);
-        System.out.println("Executing: " + cmd);
-        return new OutputAnalyzer(new ProcessBuilder(cmd).start()).getOutput();
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-Djava.net.preferIPv4Stack=true", testClz);
+        return new OutputAnalyzer(pb.start()).getOutput();
     }
 
     static String reverseWithIPv4Prefer(String addr) throws IOException {
-        String java = JDKToolFinder.getTestJDKTool("java");
         String testClz = Lookup.class.getName();
-        List<String> cmd = List.of(java, "-Djava.net.preferIPv4Stack=true",
-                                   "-cp", CLASS_PATH, testClz, "reverse", addr);
-        System.out.println("Executing: " + cmd);
-        return new OutputAnalyzer(new ProcessBuilder(cmd).start()).getOutput();
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+                "-Djava.net.preferIPv4Stack=true", testClz, "reverse", addr);
+        return new OutputAnalyzer(pb.start()).getOutput();
     }
 }

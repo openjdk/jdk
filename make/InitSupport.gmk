@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -427,8 +427,9 @@ else # $(HAS_SPEC)=true
 
   # Cleanup after a compare build
   define CleanupCompareBuild
-        # If running with a COMPARE_BUILD patch, reverse-apply it
-	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH))
+        # If running with a COMPARE_BUILD patch, reverse-apply it, but continue
+        # even if that fails (can happen with removed files).
+	$(if $(COMPARE_BUILD_PATCH), cd $(topdir) && $(PATCH) -R -p1 < $(COMPARE_BUILD_PATCH) || true)
         # Move this build away and restore the original build
 	$(MKDIR) -p $(topdir)/build/compare-build
 	$(MV) $(OUTPUTDIR) $(COMPARE_BUILD_OUTPUTDIR)

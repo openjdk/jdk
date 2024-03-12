@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -571,8 +571,8 @@ Node* PhaseIdealLoop::remix_address_expressions(Node* n) {
   }
 
   // Replace ((I1 +p V) +p I2) with ((I1 +p I2) +p V),
-  // but not if I2 is a constant.
-  if (n_op == Op_AddP) {
+  // but not if I2 is a constant. Skip for irreducible loops.
+  if (n_op == Op_AddP && n_loop->_head->is_Loop()) {
     if (n2_loop == n_loop && n3_loop != n_loop) {
       if (n->in(2)->Opcode() == Op_AddP && !n->in(3)->is_Con()) {
         Node* n22_ctrl = get_ctrl(n->in(2)->in(2));
@@ -1490,7 +1490,16 @@ void PhaseIdealLoop::split_if_with_blocks_post(Node *n) {
           // Replace the dominated test with an obvious true or false.
           // Place it on the IGVN worklist for later cleanup.
           C->set_major_progress();
-          dominated_by(prevdom->as_IfProj(), n->as_If());
+          // Split if: pin array accesses that are control dependent on a range check and moved to a regular if,
+          // to prevent an array load from floating above its range check. There are three cases:
+          // 1. Move from RangeCheck "a" to RangeCheck "b": don't need to pin. If we ever remove b, then we pin
+          //    all its array accesses at that point.
+          // 2. We move from RangeCheck "a" to regular if "b": need to pin. If we ever remove b, then its array
+          //    accesses would start to float, since we don't pin at that point.
+          // 3. If we move from regular if: don't pin. All array accesses are already assumed to be pinned.
+          bool pin_array_access_nodes =  n->Opcode() == Op_RangeCheck &&
+                                         prevdom->in(0)->Opcode() != Op_RangeCheck;
+          dominated_by(prevdom->as_IfProj(), n->as_If(), false, pin_array_access_nodes);
           DEBUG_ONLY( if (VerifyLoopOptimizations) { verify(); } );
           return;
         }
@@ -1664,7 +1673,20 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         // n has a control input inside a loop but get_ctrl() is member of an outer loop. This could happen, for example,
         // for Div nodes inside a loop (control input inside loop) without a use except for an UCT (outside the loop).
         // Rewire control of n to right outside of the loop, regardless if its input(s) are later sunk or not.
-        _igvn.replace_input_of(n, 0, place_outside_loop(n_ctrl, loop_ctrl));
+        Node* maybe_pinned_n = n;
+        Node* outside_ctrl = place_outside_loop(n_ctrl, loop_ctrl);
+        if (n->depends_only_on_test()) {
+          Node* pinned_clone = n->pin_array_access_node();
+          if (pinned_clone != nullptr) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            register_new_node(pinned_clone, n_ctrl);
+            maybe_pinned_n = pinned_clone;
+            _igvn.replace_node(n, pinned_clone);
+          }
+        }
+        _igvn.replace_input_of(maybe_pinned_n, 0, outside_ctrl);
       }
     }
     if (n_loop != _ltree_root && n->outcnt() > 1) {
@@ -1678,7 +1700,16 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
         for (DUIterator_Last jmin, j = n->last_outs(jmin); j >= jmin;) {
           Node* u = n->last_out(j); // Clone private computation per use
           _igvn.rehash_node_delayed(u);
-          Node* x = n->clone(); // Clone computation
+          Node* x = nullptr;
+          if (n->depends_only_on_test()) {
+            // Pin array access nodes: if this is an array load, it's going to be dependent on a condition that's not a
+            // range check for that access. If that condition is replaced by an identical dominating one, then an
+            // unpinned load would risk floating above its range check.
+            x = n->pin_array_access_node();
+          }
+          if (x == nullptr) {
+            x = n->clone();
+          }
           Node* x_ctrl = nullptr;
           if (u->is_Phi()) {
             // Replace all uses of normal nodes.  Replace Phi uses
@@ -2228,6 +2259,20 @@ void PhaseIdealLoop::clone_loop_handle_data_uses(Node* old, Node_List &old_new,
       // We notify all uses of old, including use, and the indirect uses,
       // that may now be optimized because we have replaced old with phi.
       _igvn.add_users_to_worklist(old);
+      if (idx == 0 &&
+          use->depends_only_on_test()) {
+        Node* pinned_clone = use->pin_array_access_node();
+        if (pinned_clone != nullptr) {
+          // Pin array access nodes: control is updated here to a region. If, after some transformations, only one path
+          // into the region is left, an array load could become dependent on a condition that's not a range check for
+          // that access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+          // floating above its range check.
+          pinned_clone->set_req(0, phi);
+          register_new_node(pinned_clone, get_ctrl(use));
+          _igvn.replace_node(use, pinned_clone);
+          continue;
+        }
+      }
       _igvn.replace_input_of(use, idx, phi);
       if( use->_idx >= new_counter ) { // If updating new phis
         // Not needed for correctness, but prevents a weak assert
@@ -2867,8 +2912,7 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
 
   int opcode = iff->Opcode();
   assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
-  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
-    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
+  IfNode* new_if = IfNode::make_with_same_profile(iff, proj2, bol);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach
@@ -3863,6 +3907,19 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
     if (!n->is_CFG()           && n->in(0) != nullptr        &&
         not_peel.test(n->_idx) && peel.test(n->in(0)->_idx)) {
       Node* n_clone = old_new[n->_idx];
+      if (n_clone->depends_only_on_test()) {
+        // Pin array access nodes: control is updated here to the loop head. If, after some transformations, the
+        // backedge is removed, an array load could become dependent on a condition that's not a range check for that
+        // access. If that condition is replaced by an identical dominating one, then an unpinned load would risk
+        // floating above its range check.
+        Node* pinned_clone = n_clone->pin_array_access_node();
+        if (pinned_clone != nullptr) {
+          register_new_node(pinned_clone, get_ctrl(n_clone));
+          old_new.map(n->_idx, pinned_clone);
+          _igvn.replace_node(n_clone, pinned_clone);
+          n_clone = pinned_clone;
+        }
+      }
       _igvn.replace_input_of(n_clone, 0, new_head_clone);
     }
   }
@@ -4193,7 +4250,8 @@ bool PhaseIdealLoop::duplicate_loop_backedge(IdealLoopTree *loop, Node_List &old
   Node_List *split_if_set = nullptr;
   Node_List *split_bool_set = nullptr;
   Node_List *split_cex_set = nullptr;
-  fix_data_uses(wq, loop, ControlAroundStripMined, head->is_strip_mined() ? loop->_parent : loop, new_counter, old_new, worklist, split_if_set, split_bool_set, split_cex_set);
+  fix_data_uses(wq, loop, ControlAroundStripMined, loop->skip_strip_mined(), new_counter, old_new, worklist,
+                split_if_set, split_bool_set, split_cex_set);
 
   finish_clone_loop(split_if_set, split_bool_set, split_cex_set);
 
@@ -4232,7 +4290,12 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
   // Ensure the shared data is cleared before each use
   vshared.clear();
 
-  SuperWord sw(vloop, vshared);
+  const VLoopAnalyzer vloop_analyzer(vloop, vshared);
+  if (!vloop_analyzer.success()) {
+    return AutoVectorizeStatus::TriedAndFailed;
+  }
+
+  SuperWord sw(vloop_analyzer);
   if (!sw.transform_loop()) {
     return AutoVectorizeStatus::TriedAndFailed;
   }

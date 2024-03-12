@@ -3874,18 +3874,10 @@ instruct roundD_reg(legRegD dst, legRegD src, immU8 rmode) %{
   ins_cost(150);
   ins_encode %{
     assert(UseSSE >= 4, "required");
+    if ((UseAVX == 0) && ($dst$$XMMRegister != $src$$XMMRegister)) {
+      __ pxor($dst$$XMMRegister, $dst$$XMMRegister);
+    }
     __ roundsd($dst$$XMMRegister, $src$$XMMRegister, $rmode$$constant);
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct roundD_mem(legRegD dst, memory src, immU8 rmode) %{
-  match(Set dst (RoundDoubleMode (LoadD src) rmode));
-  format %{ "roundsd $dst,$src" %}
-  ins_cost(150);
-  ins_encode %{
-    assert(UseSSE >= 4, "required");
-    __ roundsd($dst$$XMMRegister, $src$$Address, $rmode$$constant);
   %}
   ins_pipe(pipe_slow);
 %}

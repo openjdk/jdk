@@ -62,7 +62,6 @@ public class TestCastMethods {
             makePair(FSPEC128, ISPEC128),
             makePair(FSPEC64, DSPEC128),
             makePair(FSPEC128, DSPEC256),
-            makePair(FSPEC128, ISPEC128),
             makePair(FSPEC128, SSPEC64),
             makePair(DSPEC128, FSPEC64),
             makePair(DSPEC256, FSPEC128),

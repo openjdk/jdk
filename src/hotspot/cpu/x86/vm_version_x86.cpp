@@ -809,7 +809,7 @@ void VM_Version::get_processor_features() {
   _stepping = cpu_stepping();
 
   if (cpu_family() > 4) { // it supports CPUID
-    _features = feature_flags(); // These can be changed by VM settings
+    _features = _cpuid_info.feature_flags(); // These can be changed by VM settings
     _cpu_features = _features;   // Preserve features
     // Logical processors are only available on P4s and above,
     // and only if hyperthreading is available.
@@ -2891,13 +2891,13 @@ int64_t VM_Version::maximum_qualified_cpu_frequency(void) {
   return _max_qualified_cpu_frequency;
 }
 
-uint64_t VM_Version::feature_flags() {
+uint64_t VM_Version::CpuidInfo::feature_flags() const {
   uint64_t result = 0;
-  if (_cpuid_info.std_cpuid1_edx.bits.cmpxchg8 != 0)
+  if (std_cpuid1_edx.bits.cmpxchg8 != 0)
     result |= CPU_CX8;
-  if (_cpuid_info.std_cpuid1_edx.bits.cmov != 0)
+  if (std_cpuid1_edx.bits.cmov != 0)
     result |= CPU_CMOV;
-  if (_cpuid_info.std_cpuid1_edx.bits.clflush != 0)
+  if (std_cpuid1_edx.bits.clflush != 0)
     result |= CPU_FLUSH;
 #ifdef _LP64
   // clflush should always be available on x86_64
@@ -2905,158 +2905,158 @@ uint64_t VM_Version::feature_flags() {
   // to flush the code cache.
   assert ((result & CPU_FLUSH) != 0, "clflush should be available");
 #endif
-  if (_cpuid_info.std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
-      _cpuid_info.ext_cpuid1_edx.bits.fxsr != 0))
+  if (std_cpuid1_edx.bits.fxsr != 0 || (is_amd_family() &&
+      ext_cpuid1_edx.bits.fxsr != 0))
     result |= CPU_FXSR;
   // HT flag is set for multi-core processors also.
   if (threads_per_core() > 1)
     result |= CPU_HT;
-  if (_cpuid_info.std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
-      _cpuid_info.ext_cpuid1_edx.bits.mmx != 0))
+  if (std_cpuid1_edx.bits.mmx != 0 || (is_amd_family() &&
+      ext_cpuid1_edx.bits.mmx != 0))
     result |= CPU_MMX;
-  if (_cpuid_info.std_cpuid1_edx.bits.sse != 0)
+  if (std_cpuid1_edx.bits.sse != 0)
     result |= CPU_SSE;
-  if (_cpuid_info.std_cpuid1_edx.bits.sse2 != 0)
+  if (std_cpuid1_edx.bits.sse2 != 0)
     result |= CPU_SSE2;
-  if (_cpuid_info.std_cpuid1_ecx.bits.sse3 != 0)
+  if (std_cpuid1_ecx.bits.sse3 != 0)
     result |= CPU_SSE3;
-  if (_cpuid_info.std_cpuid1_ecx.bits.ssse3 != 0)
+  if (std_cpuid1_ecx.bits.ssse3 != 0)
     result |= CPU_SSSE3;
-  if (_cpuid_info.std_cpuid1_ecx.bits.sse4_1 != 0)
+  if (std_cpuid1_ecx.bits.sse4_1 != 0)
     result |= CPU_SSE4_1;
-  if (_cpuid_info.std_cpuid1_ecx.bits.sse4_2 != 0)
+  if (std_cpuid1_ecx.bits.sse4_2 != 0)
     result |= CPU_SSE4_2;
-  if (_cpuid_info.std_cpuid1_ecx.bits.popcnt != 0)
+  if (std_cpuid1_ecx.bits.popcnt != 0)
     result |= CPU_POPCNT;
-  if (_cpuid_info.std_cpuid1_ecx.bits.avx != 0 &&
-      _cpuid_info.std_cpuid1_ecx.bits.osxsave != 0 &&
-      _cpuid_info.xem_xcr0_eax.bits.sse != 0 &&
-      _cpuid_info.xem_xcr0_eax.bits.ymm != 0) {
+  if (std_cpuid1_ecx.bits.avx != 0 &&
+      std_cpuid1_ecx.bits.osxsave != 0 &&
+      xem_xcr0_eax.bits.sse != 0 &&
+      xem_xcr0_eax.bits.ymm != 0) {
     result |= CPU_AVX;
     result |= CPU_VZEROUPPER;
-    if (_cpuid_info.std_cpuid1_ecx.bits.f16c != 0)
+    if (std_cpuid1_ecx.bits.f16c != 0)
       result |= CPU_F16C;
-    if (_cpuid_info.sef_cpuid7_ebx.bits.avx2 != 0)
+    if (sef_cpuid7_ebx.bits.avx2 != 0)
       result |= CPU_AVX2;
-    if (_cpuid_info.sef_cpuid7_ebx.bits.avx512f != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.opmask != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.zmm512 != 0 &&
-        _cpuid_info.xem_xcr0_eax.bits.zmm32 != 0) {
+    if (sef_cpuid7_ebx.bits.avx512f != 0 &&
+        xem_xcr0_eax.bits.opmask != 0 &&
+        xem_xcr0_eax.bits.zmm512 != 0 &&
+        xem_xcr0_eax.bits.zmm32 != 0) {
       result |= CPU_AVX512F;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512cd != 0)
+      if (sef_cpuid7_ebx.bits.avx512cd != 0)
         result |= CPU_AVX512CD;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512dq != 0)
+      if (sef_cpuid7_ebx.bits.avx512dq != 0)
         result |= CPU_AVX512DQ;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512ifma != 0)
+      if (sef_cpuid7_ebx.bits.avx512ifma != 0)
         result |= CPU_AVX512_IFMA;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512pf != 0)
+      if (sef_cpuid7_ebx.bits.avx512pf != 0)
         result |= CPU_AVX512PF;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512er != 0)
+      if (sef_cpuid7_ebx.bits.avx512er != 0)
         result |= CPU_AVX512ER;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512bw != 0)
+      if (sef_cpuid7_ebx.bits.avx512bw != 0)
         result |= CPU_AVX512BW;
-      if (_cpuid_info.sef_cpuid7_ebx.bits.avx512vl != 0)
+      if (sef_cpuid7_ebx.bits.avx512vl != 0)
         result |= CPU_AVX512VL;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
+      if (sef_cpuid7_ecx.bits.avx512_vpopcntdq != 0)
         result |= CPU_AVX512_VPOPCNTDQ;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vpclmulqdq != 0)
+      if (sef_cpuid7_ecx.bits.avx512_vpclmulqdq != 0)
         result |= CPU_AVX512_VPCLMULQDQ;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.vaes != 0)
+      if (sef_cpuid7_ecx.bits.vaes != 0)
         result |= CPU_AVX512_VAES;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.gfni != 0)
+      if (sef_cpuid7_ecx.bits.gfni != 0)
         result |= CPU_GFNI;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vnni != 0)
+      if (sef_cpuid7_ecx.bits.avx512_vnni != 0)
         result |= CPU_AVX512_VNNI;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_bitalg != 0)
+      if (sef_cpuid7_ecx.bits.avx512_bitalg != 0)
         result |= CPU_AVX512_BITALG;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi != 0)
+      if (sef_cpuid7_ecx.bits.avx512_vbmi != 0)
         result |= CPU_AVX512_VBMI;
-      if (_cpuid_info.sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
+      if (sef_cpuid7_ecx.bits.avx512_vbmi2 != 0)
         result |= CPU_AVX512_VBMI2;
     }
   }
-  if (_cpuid_info.std_cpuid1_ecx.bits.hv != 0)
+  if (std_cpuid1_ecx.bits.hv != 0)
     result |= CPU_HV;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.bmi1 != 0)
+  if (sef_cpuid7_ebx.bits.bmi1 != 0)
     result |= CPU_BMI1;
-  if (_cpuid_info.std_cpuid1_edx.bits.tsc != 0)
+  if (std_cpuid1_edx.bits.tsc != 0)
     result |= CPU_TSC;
-  if (_cpuid_info.ext_cpuid7_edx.bits.tsc_invariance != 0)
+  if (ext_cpuid7_edx.bits.tsc_invariance != 0)
     result |= CPU_TSCINV_BIT;
-  if (_cpuid_info.std_cpuid1_ecx.bits.aes != 0)
+  if (std_cpuid1_ecx.bits.aes != 0)
     result |= CPU_AES;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.erms != 0)
+  if (sef_cpuid7_ebx.bits.erms != 0)
     result |= CPU_ERMS;
-  if (_cpuid_info.sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
+  if (sef_cpuid7_edx.bits.fast_short_rep_mov != 0)
     result |= CPU_FSRM;
-  if (_cpuid_info.std_cpuid1_ecx.bits.clmul != 0)
+  if (std_cpuid1_ecx.bits.clmul != 0)
     result |= CPU_CLMUL;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.rtm != 0)
+  if (sef_cpuid7_ebx.bits.rtm != 0)
     result |= CPU_RTM;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.adx != 0)
+  if (sef_cpuid7_ebx.bits.adx != 0)
      result |= CPU_ADX;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
+  if (sef_cpuid7_ebx.bits.bmi2 != 0)
     result |= CPU_BMI2;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.sha != 0)
+  if (sef_cpuid7_ebx.bits.sha != 0)
     result |= CPU_SHA;
-  if (_cpuid_info.std_cpuid1_ecx.bits.fma != 0)
+  if (std_cpuid1_ecx.bits.fma != 0)
     result |= CPU_FMA;
-  if (_cpuid_info.sef_cpuid7_ebx.bits.clflushopt != 0)
+  if (sef_cpuid7_ebx.bits.clflushopt != 0)
     result |= CPU_FLUSHOPT;
-  if (_cpuid_info.ext_cpuid1_edx.bits.rdtscp != 0)
+  if (ext_cpuid1_edx.bits.rdtscp != 0)
     result |= CPU_RDTSCP;
-  if (_cpuid_info.sef_cpuid7_ecx.bits.rdpid != 0)
+  if (sef_cpuid7_ecx.bits.rdpid != 0)
     result |= CPU_RDPID;
 
   // AMD|Hygon features.
   if (is_amd_family()) {
-    if ((_cpuid_info.ext_cpuid1_edx.bits.tdnow != 0) ||
-        (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0))
+    if ((ext_cpuid1_edx.bits.tdnow != 0) ||
+        (ext_cpuid1_ecx.bits.prefetchw != 0))
       result |= CPU_3DNOW_PREFETCH;
-    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0)
+    if (ext_cpuid1_ecx.bits.lzcnt != 0)
       result |= CPU_LZCNT;
-    if (_cpuid_info.ext_cpuid1_ecx.bits.sse4a != 0)
+    if (ext_cpuid1_ecx.bits.sse4a != 0)
       result |= CPU_SSE4A;
   }
 
   // Intel features.
   if (is_intel()) {
-    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
+    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
       result |= CPU_LZCNT;
     }
-    if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
+    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
       result |= CPU_3DNOW_PREFETCH;
     }
-    if (_cpuid_info.sef_cpuid7_ebx.bits.clwb != 0) {
+    if (sef_cpuid7_ebx.bits.clwb != 0) {
       result |= CPU_CLWB;
     }
-    if (_cpuid_info.sef_cpuid7_edx.bits.serialize != 0)
+    if (sef_cpuid7_edx.bits.serialize != 0)
       result |= CPU_SERIALIZE;
   }
 
   // ZX features.
   if (is_zx()) {
-    if (_cpuid_info.ext_cpuid1_ecx.bits.lzcnt != 0) {
+    if (ext_cpuid1_ecx.bits.lzcnt != 0) {
       result |= CPU_LZCNT;
     }
-    if (_cpuid_info.ext_cpuid1_ecx.bits.prefetchw != 0) {
+    if (ext_cpuid1_ecx.bits.prefetchw != 0) {
       result |= CPU_3DNOW_PREFETCH;
     }
   }
 
   // Protection key features.
-  if (_cpuid_info.sef_cpuid7_ecx.bits.pku != 0) {
+  if (sef_cpuid7_ecx.bits.pku != 0) {
     result |= CPU_PKU;
   }
-  if (_cpuid_info.sef_cpuid7_ecx.bits.ospke != 0) {
+  if (sef_cpuid7_ecx.bits.ospke != 0) {
     result |= CPU_OSPKE;
   }
 
   // Control flow enforcement (CET) features.
-  if (_cpuid_info.sef_cpuid7_ecx.bits.cet_ss != 0) {
+  if (sef_cpuid7_ecx.bits.cet_ss != 0) {
     result |= CPU_CET_SS;
   }
-  if (_cpuid_info.sef_cpuid7_edx.bits.cet_ibt != 0) {
+  if (sef_cpuid7_edx.bits.cet_ibt != 0) {
     result |= CPU_CET_IBT;
   }
 

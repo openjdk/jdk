@@ -43,8 +43,6 @@
 void oopDesc::print_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     klass()->oop_print_on(cast_to_oop(this), st);
   }
@@ -58,8 +56,6 @@ void oopDesc::print_address_on(outputStream* st) const {
 void oopDesc::print_name_on(outputStream* st) const {
   if (*((juint*)this) == badHeapWordVal) {
     st->print_cr("BAD WORD");
-  } else if (*((juint*)this) == badMetaWordVal) {
-    st->print_cr("BAD META WORD");
   } else {
     st->print_cr("%s", klass()->external_name());
   }
