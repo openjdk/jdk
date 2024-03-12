@@ -57,7 +57,11 @@
 #ifdef ADDRESS_SANITIZER
 // ASAN_POISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 // ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
+#define ASAN_ONLY(code) code
+#define NOT_ASAN(code)
 #else
+#define ASAN_ONLY(code)
+#define NOT_ASAN(code)  code
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
   do {                                        \
     if (false) {                              \

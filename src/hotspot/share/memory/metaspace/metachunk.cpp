@@ -31,6 +31,7 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
+#include "sanitizers/address.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
@@ -285,9 +286,11 @@ void Metachunk::verify() const {
   const size_t required_alignment = word_size() * sizeof(MetaWord);
   assert_is_aligned(base(), required_alignment);
 
-  // Test accessing the committed area.
+  // Test accessing the committed area. But not for ASAN. We don't know which portions
+  // of the chunk are still poisoned.
+  const bool check_committed = NOT_ASAN(true) ASAN_ONLY(false);
   SOMETIMES(
-    if (_committed_words > 0) {
+    if (check_committed && _committed_words > 0) {
       for (const MetaWord* p = _base; p < _base + _committed_words; p += os::vm_page_size()) {
         dummy = *p;
       }
