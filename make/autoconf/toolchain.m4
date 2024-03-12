@@ -937,9 +937,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
   fi
   if test "x$OPENJDK_TARGET_OS" = xaix; then
     # Make sure we have the Open XL version of clang on AIX
-    CC_VERSION_OUTPUT=`$CC --version 2>&1 | $HEAD -n 1`
 
-    $ECHO "$CC_VERSION_OUTPUT" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
+    $ECHO "$CC_VERSION_STRING" | $GREP "IBM Open XL C/C++ for AIX" > /dev/null
     if test $? -ne 0; then
       AC_MSG_ERROR([ibm-clang_r version output check failed, output: $CC_VERSION_OUTPUT])
     fi
