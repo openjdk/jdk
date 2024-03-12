@@ -22,9 +22,13 @@
  *
  */
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.foreign.*;
 
 import java.lang.invoke.MethodHandle;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Stack;
@@ -188,7 +192,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
         return elems.stream().map(p -> p.name().charAt(0) + "").collect(Collectors.joining());
     }
 
-    static void generateStructDecl(List<StructFieldType> fields) {
+    private  static void generateStructDecl(PrintStream out, List<StructFieldType> fields) {
         String structCode = sigCode(fields);
         List<String> fieldDecls = new ArrayList<>();
         for (int i = 0 ; i < fields.size() ; i++) {
@@ -196,45 +200,84 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
         String res = String.format("struct S_%s { %s };", structCode,
                 fieldDecls.stream().collect(Collectors.joining(" ")));
-        System.out.println(res);
+        out.println(res);
     }
 
-    /* this can be used to generate the test header/implementation */
-    public static void main(String[] args) {
-        boolean upcall = args.length > 0 && args[0].equals("upcall");
-        if (upcall) {
-            generateUpcalls();
-        } else {
-            generateDowncalls();
+    /* this can be used to generate the test implementation */
+    public static void main(String[] args) throws IOException {
+        try (PrintStream shared = new PrintStream(Files.newOutputStream(Path.of("shared.h")));
+                PrintStream libTestDowncall = new PrintStream(Files.newOutputStream(Path.of("libTestDowncall.c")));
+                PrintStream libTestDowncallStack = new PrintStream(Files.newOutputStream(Path.of("libTestDowncallStack.c")));
+                PrintStream libTestUpcall = new PrintStream(Files.newOutputStream(Path.of("libTestUpcall.c")));
+                PrintStream libTestUpcallStack = new PrintStream(Files.newOutputStream(Path.of("libTestUpcallStack.c")))) {
+            generateShared(shared);
+            generateDowncalls(libTestDowncall, false);
+            generateDowncalls(libTestDowncallStack, true);
+            generateUpcalls(libTestUpcall, false);
+            generateUpcalls(libTestUpcallStack, true);
         }
     }
 
-    static void generateDowncalls() {
-        System.out.println(
-            "#include \"libh\"\n" +
-            "#ifdef __clang__\n" +
-            "#pragma clang optimize off\n" +
-            "#elif defined __GNUC__\n" +
-            "#pragma GCC optimize (\"O0\")\n" +
-            "#elif defined _MSC_BUILD\n" +
-            "#pragma optimize( \"\", off )\n" +
-            "#endif\n"
-        );
+    private static void generateShared(PrintStream out) {
+        out.println("""
+            #ifdef __clang__
+            #pragma clang optimize off
+            #elif defined __GNUC__
+            #pragma GCC optimize ("O0")
+            #elif defined _MSC_BUILD
+            #pragma optimize( "", off )
+            #endif
+
+            #ifdef _WIN64
+            #define EXPORT __declspec(dllexport)
+            #else
+            #define EXPORT
+            #endif
+            #ifdef _AIX
+            #pragma align (natural)
+            #endif
+             """);
+
+        for (int j = 1; j <= MAX_FIELDS; j++) {
+            for (List<StructFieldType> fields : StructFieldType.perms(j)) {
+                generateStructDecl(out, fields);
+            }
+        }
+
+        out.print("""
+
+            #ifdef _AIX
+            #pragma align (reset)
+            #endif
+            """);
+    }
+
+    private static void generateDowncalls(PrintStream out, boolean stack) {
+        out.println("#include \"shared.h\"\n");
 
         for (Object[] downcall : functions()) {
-            String fName = (String)downcall[0];
-            Ret r = (Ret)downcall[1];
+            String fName = (String)downcall[1];
+            Ret r = (Ret)downcall[2];
             @SuppressWarnings("unchecked")
-            List<ParamType> ptypes = (List<ParamType>)downcall[2];
+            List<ParamType> ptypes = (List<ParamType>)downcall[3];
             @SuppressWarnings("unchecked")
-            List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateDowncallFunction(fName, r, ptypes, fields);
+            List<StructFieldType> fields = (List<StructFieldType>)downcall[4];
+            generateDowncallFunction(out, fName, r, ptypes, fields, stack);
         }
     }
 
-    static void generateDowncallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields) {
+    private static void generateDowncallFunction(PrintStream out, String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean stack) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
+        if (stack) {
+            int i = 0;
+            for (; i < 8; i++) {
+                paramDecls.add(String.format("long long pf%d", i));
+            }
+            for (; i < 16; i++) {
+                paramDecls.add(String.format("double pf%d", i));
+            }
+        }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
         }
@@ -242,73 +285,61 @@ public class CallGeneratorHelper extends NativeTestHelper {
                 "void" :
                 paramDecls.stream().collect(Collectors.joining(", "));
         String body = ret == Ret.VOID ? "{ }" : "{ return p0; }";
-        String res = String.format("EXPORT %s f%s(%s) %s", retType, fName,
+        String res = String.format("EXPORT %s %s%s(%s) %s", retType, stack ? "s" : "", fName,
                 sig, body);
-        System.out.println(res);
+        out.println(res);
     }
 
-    static void generateUpcalls(boolean header) {
-        if (header) {
-            System.out.println(
-                "#ifdef _WIN64\n" +
-                "#define EXPORT __declspec(dllexport)\n" +
-                "#else\n" +
-                "#define EXPORT\n" +
-                "#endif\n"
-            );
-
-            for (int j = 1; j <= MAX_FIELDS; j++) {
-                for (List<StructFieldType> fields : StructFieldType.perms(j)) {
-                    generateStructDecl(fields);
-                }
-            }
-        } else {
-            System.out.println(
-                "#include \"libh\"\n" +
-                "#ifdef __clang__\n" +
-                "#pragma clang optimize off\n" +
-                "#elif defined __GNUC__\n" +
-                "#pragma GCC optimize (\"O0\")\n" +
-                "#elif defined _MSC_BUILD\n" +
-                "#pragma optimize( \"\", off )\n" +
-                "#endif\n"
-            );
-        }
+    private static void generateUpcalls(PrintStream out, boolean stack) {
+        out.println("#include \"shared.h\"\n");
 
         for (Object[] downcall : functions()) {
-            String fName = (String)downcall[0];
-            Ret r = (Ret)downcall[1];
+            String fName = (String)downcall[1];
+            Ret r = (Ret)downcall[2];
             @SuppressWarnings("unchecked")
-            List<ParamType> ptypes = (List<ParamType>)downcall[2];
+            List<ParamType> ptypes = (List<ParamType>)downcall[3];
             @SuppressWarnings("unchecked")
-            List<StructFieldType> fields = (List<StructFieldType>)downcall[3];
-            generateUpcallFunction(fName, r, ptypes, fields);
+            List<StructFieldType> fields = (List<StructFieldType>)downcall[4];
+            generateUpcallFunction(out, fName, r, ptypes, fields, stack);
         }
     }
 
-    static void generateUpcallFunction(String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields) {
+    private static void generateUpcallFunction(PrintStream out, String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean stack) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
+        if (stack) {
+            int i = 0;
+            for (; i < 8; i++) {
+                paramDecls.add(String.format("long long pf%d", i));
+            }
+            for (; i < 16; i++) {
+                paramDecls.add(String.format("double pf%d", i));
+            }
+        }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
         }
-        String paramNames = IntStream.range(0, params.size())
-                .mapToObj(i -> "p" + i)
-                .collect(Collectors.joining(","));
+        Stream<String> prefixParams = stack ? IntStream.range(0, 16).mapToObj(i -> "pf" + i) : Stream.of();
+        String paramNames = Stream.concat(prefixParams, IntStream.range(0, params.size())
+                .mapToObj(i -> "p" + i))
+                .collect(Collectors.joining(", "));
         String sig = paramDecls.isEmpty() ?
                 "" :
                 paramDecls.stream().collect(Collectors.joining(", ")) + ", ";
         String body = String.format(ret == Ret.VOID ? "{ cb(%s); }" : "{ return cb(%s); }", paramNames);
+        List<String> prefixParamTypes = stack ? Stream.concat(Stream.generate(() -> "long long").limit(8),
+                Stream.generate(() -> "double").limit(8)).toList() : List.of();
         List<String> paramTypes = params.stream().map(p -> p.type(fields)).collect(Collectors.toList());
+        paramTypes.addAll(0, prefixParamTypes);
         String cbSig = paramTypes.isEmpty() ?
                 "void" :
                 paramTypes.stream().collect(Collectors.joining(", "));
         String cbParam = String.format("%s (*cb)(%s)",
                 retType, cbSig);
 
-        String res = String.format("EXPORT %s %s(%s %s) %s", retType, fName,
+        String res = String.format("EXPORT %s %s%s(%s %s) %s", retType, stack ? "s" : "", fName,
                 sig, cbParam, body);
-        System.out.println(res);
+        out.println(res);
     }
 
     //helper methods
