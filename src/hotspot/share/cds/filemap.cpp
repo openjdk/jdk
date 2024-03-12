@@ -1581,7 +1581,7 @@ size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
   size_t new_zeros = map->find_first_set_bit(0);
 
   assert(new_zeros == 0, "Should have removed leading zeros");
-  assert(map->size_in_bytes() <= old_size, "Map size should have decreased");
+  assert(map->size_in_bytes() < old_size, "Map size should have decreased");
   return old_zeros;
 }
 

@@ -1156,6 +1156,7 @@ class WalkOopAndArchiveClosure: public BasicOopIterateClosure {
 
 WalkOopAndArchiveClosure* WalkOopAndArchiveClosure::_current = nullptr;
 
+// Checks if an oop has any non-null oop fields
 class PointsToOopsChecker : public BasicOopIterateClosure {
   bool _result;
 
