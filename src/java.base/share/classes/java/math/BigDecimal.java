@@ -559,10 +559,12 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long rs = 0;                  // the compact value in long
         BigInteger rb = null;         // the inflated value in BigInteger
         // use String bounds checking to handle too-long, len == 0,
+        // bad offset, etc.
         try {
             int len = val.length();
             int offset = 0;
             char c = val.charAt(offset);
+            // handle the sign
             boolean isneg = c == '-'; // leading minus means negative
             if (isneg || c == '+') {
                 c = val.charAt(++offset);
@@ -578,7 +580,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
             if (isCompact) {
                 // First compact case, we need not to preserve the character
                 // and we can just compute the value in place.
-                for (; ; ) {
+                for (; ; c = val.charAt(++offset)) {
                     if (c == '0') { // have zero
                         if (prec == 0)
                             prec = 1;
@@ -625,7 +627,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                     if (--len == 0)
                         break;
-                    c = val.charAt(++offset);
                 }
                 if (prec == 0) // no digits found
                     throw new NumberFormatException("No digits found.");
@@ -644,7 +645,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
                 }
             } else {
                 int start = offset;
-                for (int idx = 0; ; ) {
+                for (int idx = 0; ; c = val.charAt(++offset)) {
                     // have digit
                     if (c == '0') {
                         if (prec == 0) {
@@ -701,7 +702,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
                     if (--len == 0)
                         break;
-                    c = val.charAt(++offset);
                 }
                 // here when no characters left
                 if (prec == 0) // no digits found
