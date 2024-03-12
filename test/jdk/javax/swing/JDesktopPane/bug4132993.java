@@ -27,7 +27,6 @@
  * @run main bug4132993
  */
 
-import java.beans.PropertyVetoException;
 import javax.swing.JDesktopPane;
 import javax.swing.JInternalFrame;
 import javax.swing.JLayeredPane;
@@ -39,11 +38,7 @@ public class bug4132993 {
         JInternalFrame jif = new JInternalFrame("My Frame");
         jif.setIconifiable(true);
         mDesktop.add(jif);
-        try {
-            jif.setIcon(true);
-        } catch (PropertyVetoException ex) {
-            ex.printStackTrace();
-        }
+        jif.setIcon(true);
         JInternalFrame[] ji =
                 mDesktop.getAllFramesInLayer(JLayeredPane.DEFAULT_LAYER);
         for (int i = 0; i < ji.length; i++) {

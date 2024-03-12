@@ -25,11 +25,11 @@
  * @bug 4694598
  * @key headful
  * @summary JEditor pane throws NullPointerException on mouse movement.
- * @library ../../regtesthelpers
- * @build JRobot
  * @run main bug4694598
  */
 
+import java.awt.AWTException;
+import java.awt.Robot;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import javax.swing.JEditorPane;
@@ -65,9 +65,9 @@ public class bug4694598 {
     }
 
     public void performTest() throws InterruptedException,
-            InvocationTargetException {
-        JRobot jRobo = JRobot.getRobot();
-        jRobo.waitForIdle();
+            InvocationTargetException, AWTException {
+        Robot robo = new Robot();
+        robo.waitForIdle();
 
         final int range = 20;
         SwingUtilities.invokeAndWait(() -> {
@@ -75,9 +75,9 @@ public class bug4694598 {
                     + frame.getSize().height - range;
         });
         for (int i = 0; i < range; i++) {
-            jRobo.mouseMove(300, bottom + i);
-            jRobo.waitForIdle();
-            jRobo.delay(50);
+            robo.mouseMove(300, bottom + i);
+            robo.waitForIdle();
+            robo.delay(50);
         }
     }
 
@@ -89,7 +89,7 @@ public class bug4694598 {
     }
 
     public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+            InvocationTargetException, AWTException {
         bug4694598 app = new bug4694598();
         SwingUtilities.invokeAndWait(app::setupGUI);
         app.performTest();

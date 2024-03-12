@@ -30,6 +30,7 @@
 
 import java.awt.AWTException;
 import java.awt.BorderLayout;
+import java.awt.Point;
 import java.awt.Robot;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
@@ -80,7 +81,8 @@ public class bug4325606 {
             }
             robo.setAutoDelay(100);
             robo.delay(1000);
-            robo.mouseMove(100, 100);
+            Point p = frame.getLocationOnScreen();
+            robo.mouseMove(p.x + 50, p.y + 50);
             robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robo.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
