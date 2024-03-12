@@ -49,7 +49,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JTextField;
-import javax.swing.SwingUtilities;
 
 public class bug6798062 {
 
@@ -62,7 +61,7 @@ public class bug6798062 {
             4. Press the Start button in the test window
             5. Wait several minutes and observe in the Windows Task Manager
                that Memory Usage of java process is not increasing
-            If memory usage is increasing, click Fail else click Pass .  """;
+            If memory usage is increasing, click Fail else click Pass.""";
 
     private static JSlider slider;
     private static JTextField tfLink;
