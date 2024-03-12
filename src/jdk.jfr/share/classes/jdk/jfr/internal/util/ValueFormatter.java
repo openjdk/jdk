@@ -57,7 +57,7 @@ public final class ValueFormatter {
         }
     }
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss.SSS");
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
     private static final Duration SECOND = Duration.ofSeconds(1);
     private static final Duration MINUTE = Duration.ofMinutes(1);
