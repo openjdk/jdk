@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,148 +21,75 @@
  * questions.
  */
 
-/* @test
-   @bug 4103095
-   @summary Test for getBounds() after a Frame resize.
-   @author andrei.dmitriev : area=awt.toplevel
-   @run main/manual GetBoundsResizeTest
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import java.awt.Button;
+import java.awt.Frame;
+import java.awt.EventQueue;
+import java.awt.Robot;
+
+/*
+ * @test
+ * @bug 4103095
+ * @summary Test for getBounds() after a Frame resize.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual GetBoundsResizeTest
 */
 
-import java.applet.Applet;
-import java.lang.*;
-import java.awt.*;
-import java.awt.event.*;
+public class GetBoundsResizeTest {
+    private static final String INSTRUCTIONS = """
+            0. There is a test window with a "Press" button,
+                Its original bounds should be printed in the text area below.
+            1. Resize the test window using the upper left corner.
+            2. Press the button to print the result of getBounds() to the terminal.
+            3. If getBounds() prints the correct values for the window, click Pass,
+             otherwise click Fail.
+            """;
 
-class Globals {
-  static boolean testPassed=false;
-  static Thread mainThread=null;
-}
+    private static JTextArea textArea;
+    private static Frame frame;
 
-public class GetBoundsResizeTest extends Applet {
+    public static void main(String[] args) throws Exception {
+        Robot robot = new Robot();
 
-  public static void main(String args[]) throws Exception {
-    GetBoundsResizeTest app = new GetBoundsResizeTest();
-    app.start();
-    Globals.mainThread = Thread.currentThread();
-    try {
-      Thread.sleep(300000);
-    } catch (InterruptedException e) {
-      if (!Globals.testPassed)
-        throw new Exception("GetBoundsResizeTest failed.");
+        PassFailJFrame passFailJFrame = PassFailJFrame
+                .builder()
+                .title("GetBoundsResizeTest Instructions")
+                .instructions(INSTRUCTIONS)
+                .splitUIBottom(() -> {
+                    textArea = new JTextArea("", 8, 55);
+                    textArea.setEditable(false);
+                    return new JScrollPane(textArea);
+                })
+                .testUI(GetBoundsResizeTest::getFrame)
+                .rows(7)
+                .columns(40)
+                .build();
+
+        robot.waitForIdle();
+        robot.delay(500);
+
+        EventQueue.invokeAndWait(() ->
+                textArea
+                        .append("Original Frame.getBounds() = %s\n"
+                                .formatted(frame.getBounds())));
+
+        passFailJFrame.awaitAndCheck();
     }
-  }
 
-  public void start()
-  {
-    String[] message = {
-      "Resize the window using the upper left corner.",
-      "Press the button to print the result of getBounds() to the terminal.",
-      "If getBounds() prints the correct values for the window",
-      "then click Pass, else click Fail."
-    };
-    new TestDialog(new Frame(), "GetBoundsResizeTest", message).start();
-    new GetBoundsResizeTester("GetBoundsResizeTester").start();
-  }
-}
+    private static Frame getFrame() {
+        frame = new Frame("GetBoundsResizeTest");
 
-////////////////////////////////////////////////////////////////////////
-//  Test Dialog
-////////////////////////////////////////////////////////////////////////
+        Button button = new Button("Press");
+        button.addActionListener((e) ->
+                textArea
+                        .append("Current Frame.getBounds() = %s\n"
+                                .formatted(frame.getBounds())));
 
-class TestDialog extends Dialog
-    implements ActionListener {
+        frame.add(button);
+        frame.pack();
 
-  static TextArea output;
-  Button passButton;
-  Button failButton;
-  String name;
-
-  public TestDialog(Frame frame, String name, String[] message)
-  {
-    super(frame, name + " Pass/Fail Dialog");
-    this.name = name;
-    int maxStringLength = 0;
-    for (int i=0; i<message.length; i++) {
-      maxStringLength = Math.max(maxStringLength, message[i].length());
+        return frame;
     }
-    output = new TextArea(10, maxStringLength);
-    add("North", output);
-    for (int i=0; i<message.length; i++){
-        output.append(message[i] + "\n");
-    }
-    Panel buttonPanel = new Panel();
-    passButton = new Button("Pass");
-    failButton = new Button("Fail");
-    passButton.addActionListener(this);
-    failButton.addActionListener(this);
-    buttonPanel.add(passButton);
-    buttonPanel.add(failButton);
-    add("South", buttonPanel);
-    pack();
-  }
-
-  public void start()
-  {
-    show();
-  }
-
-  public void actionPerformed(ActionEvent event)
-  {
-    if ( event.getSource() == passButton ) {
-      Globals.testPassed = true;
-      System.err.println(name + " Passed.");
-    }
-    else if ( event.getSource() == failButton ) {
-      Globals.testPassed = false;
-      System.err.println(name + " Failed.");
-    }
-    this.dispose();
-    if (Globals.mainThread != null)
-      Globals.mainThread.interrupt();
-  }
-}
-
-
-  ////////////////////////////////////////////////////////////////////////
-  //  Test Class
-  ////////////////////////////////////////////////////////////////////////
-
-class GetBoundsResizeTester extends Frame {
-    Button b = new Button("Press");
-
-  GetBoundsResizeTester(String name)
-  {
-    super(name);
-    final Frame f = this;
-    Panel p = new Panel();
-    f.add(p);
-    p.setLayout(new BorderLayout());
-    b.addActionListener(new ActionListener() {
-      public void actionPerformed(ActionEvent be){
-        Point cp = b.getLocationOnScreen();
-        TestDialog.output.append("Current Frame.getBounds() = " + f.getBounds()+"\n");
-      }
-    });
-    p.add("Center", b);
-    f.pack();
-  }
-
-  public void start ()
-  {
-      setVisible(true);
-      Robot robot;
-      try {
-          robot = new Robot();
-          robot.waitForIdle();
-      }catch(Exception ignorex) {
-      }
-      Point cp = b.getLocationOnScreen();
-      TestDialog.output.append("Original Frame.getBounds() = " + this.getBounds()+"\n");
-  }
-
-  public static void main(String[] args)
-  {
-    new GetBoundsResizeTester("GetBoundsResizeTester").start();
-  }
-
 }
