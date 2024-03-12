@@ -541,7 +541,49 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(char[] in, int offset, int len, MathContext mc) {
-        this(new CharArraySequence(in, offset, len), mc);
+        this(offset == 0 && len == in.length
+                        ? new CharArraySequence0(in)
+                        : new CharArraySequence1(in, offset, len),
+                mc);
+    }
+
+    private record CharArraySequence0(char[] array) implements CharSequence {
+        @Override
+        public int length() {
+            return array.length;
+        }
+
+        @Override
+        public char charAt(int index) {
+            return array[index];
+        }
+
+        @Override
+        public CharSequence subSequence(int offset, int length) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private record CharArraySequence1(char[] array, int offset, int length) implements CharSequence {
+        CharArraySequence1 {
+            if ((offset | length) < 0 || length > array.length - offset)
+                throw new NumberFormatException();
+        }
+
+        @Override
+        public int length() {
+            return length;
+        }
+
+        @Override
+        public char charAt(int index) {
+            return array[offset + index];
+        }
+
+        @Override
+        public CharSequence subSequence(int offset, int length) {
+            throw new UnsupportedOperationException();
+        }
     }
 
     private BigDecimal(CharSequence val, MathContext mc) {
@@ -828,28 +870,6 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      */
     public BigDecimal(char[] in, MathContext mc) {
         this(in, 0, in.length, mc);
-    }
-
-    private record CharArraySequence(char[] array, int offset, int length) implements CharSequence {
-        CharArraySequence {
-            if ((offset | length) < 0 || offset + length > array.length)
-                throw new NumberFormatException();
-        }
-
-        @Override
-        public int length() {
-            return length;
-        }
-
-        @Override
-        public char charAt(int offset) {
-            return array[offset];
-        }
-
-        @Override
-        public CharSequence subSequence(int offset, int length) {
-            throw new UnsupportedOperationException();
-        }
     }
 
     /**
