@@ -57,11 +57,11 @@ public class bug4128979 {
     private static final String INSTRUCTIONS = """
             When the test starts, toggle buttons are visible in three rows
             two of which are toolbars.
-                        
+
             Press these buttons, their background color must change
             to half tones between the button background colors and the ToggleButton
             highlight color (it is shown in the square below).
-                        
+
             If the background color does not change correctly for at least one button,
             the test fails. """;
 
@@ -118,7 +118,7 @@ public class bug4128979 {
 
         frame.getContentPane().add(p);
         frame.getContentPane().add(label);
-        frame.setSize(600, 190);
+        frame.setSize(600, 250);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setVisible(true);
         return frame;
