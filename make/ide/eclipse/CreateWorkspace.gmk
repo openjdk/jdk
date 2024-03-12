@@ -280,7 +280,6 @@ define SetupEclipseWorkspaceBody
         <resource project-relative-path="src/hotspot/share/runtime/abstract_vm_version.cpp"> \
             <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
             <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
             <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
@@ -288,7 +287,6 @@ define SetupEclipseWorkspaceBody
         <resource project-relative-path="src/hotspot/share/runtime/arguments.cpp"> \
             <entry kind="macro" name="HOTSPOT_VERSION_STRING" value="&quot;$(VERSION_STRING)&quot;"/> \
             <entry kind="macro" name="DEBUG_LEVEL" value="&quot;$(DEBUG_LEVEL)&quot;"/> \
-            <entry kind="macro" name="HOTSPOT_BUILD_USER" value="&quot;$(USERNAME)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_VM_DISTRO" value="&quot;$(HOTSPOT_VM_DISTRO)&quot;"/> \
             <entry kind="macro" name="CPU" value="&quot;$(OPENJDK_TARGET_CPU_VM_VERSION)&quot;"/> \
             <entry kind="macro" name="HOTSPOT_BUILD_TIME" value="&quot;$(if $(HOTSPOT_BUILD_TIME),$(HOTSPOT_BUILD_TIME),$(call EpochToISO8601,$(shell $(DATE) +"%s")))&quot;"/> \
