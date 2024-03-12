@@ -33,7 +33,8 @@ import compiler.lib.ir_framework.TestFramework;
 
 /**
  * @test
- * @summary
+ * @bug 8327381
+ * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
  * @run driver compiler.c2.TestBoolNodeGvn
  */
