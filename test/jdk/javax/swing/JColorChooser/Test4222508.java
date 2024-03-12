@@ -32,7 +32,7 @@ import javax.swing.JFrame;
  * @library /test/jdk/java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame
  * @summary Tests the color chooser disabling
- * @run main Test4222508
+ * @run main/manual Test4222508
  */
 public final class Test4222508 {
     public static void main(String[] args) throws Exception {
@@ -42,9 +42,9 @@ public final class Test4222508 {
                         "and click on colors again. \n" +
                         "If the JColorChooser is disabled when the checkbox is unchecked, \n" +
                         "then pass the test.")
-                .testTimeOut(10)
                 .rows(5)
                 .columns(40)
+                .testTimeOut(10)
                 .testUI(Test4222508::test)
                 .build()
                 .awaitAndCheck();
