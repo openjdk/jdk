@@ -237,29 +237,9 @@ protected:
   Array<Klass*>* secondary_supers() const { return _secondary_supers; }
   void set_secondary_supers(Array<Klass*>* k);
   void set_secondary_supers(Array<Klass*>* k, uint64_t bitmap);
-
   inline static void hash_insert(Klass *sec, GrowableArray<Klass*>* secondaries,
                                  uint64_t &bitmap, bool use_robin_hood);
-  static void hash_secondary_supers(Array<Klass*>* secondaries,
-                             uint64_t *new_bitmap,
-                             bool *already_hashed,
-                             bool should_rewrite);
-  bool secondary_supers_already_hashed(Array<Klass*>* secondaries, uint64_t *bitmap) {
-    if (! HashSecondarySupers) {
-      return true;
-    }
-    bool result;
-    hash_secondary_supers(secondaries, bitmap, &result,
-                          /*should_rewrite*/false);
-    return result;
-  }
-  static uint64_t hash_secondary_supers(Array<Klass*>* secondaries) {
-    uint64_t bitmap;
-    bool result;
-    hash_secondary_supers(secondaries, &bitmap, &result,
-                          /*should_rewrite*/true);
-    return bitmap;
-  }
+  static uint64_t hash_secondary_supers(Array<Klass*>* k, bool rewrite = true);
 
   // Hash coding used by HashSecondarySupers.
   static constexpr size_t hash_size_in_bits() { return (sizeof _hash) * 8; }
