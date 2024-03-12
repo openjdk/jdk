@@ -78,7 +78,7 @@ private:
 public:
   static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr, address old = nullptr,
                   const NativeCallStack *stack = nullptr);
-  static void remember_thread_name(const char* name);
+  static void rememberThreadName(const char* name);
   static void printActualSizesFor(const char* list);
 };
 

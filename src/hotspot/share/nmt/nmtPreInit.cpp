@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
+#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -149,6 +150,14 @@ void NMTPreInitAllocationTable::print_map(outputStream* st) const {
   }
 }
 
+void NMTPreInitAllocationTable::record_allocations() const {
+  for (int i = 0; i < table_size; i++) {
+    for (NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
+      NMT_MemoryLogRecorder::log(mtPreInit, a->size, (address)a->payload);
+    }
+  }
+}
+
 void NMTPreInitAllocationTable::verify() const {
   // This verifies the buildup of the lookup table, including the load and the chain lengths.
   // We should see chain lens of 0-1 under normal conditions. Under artificial conditions
@@ -208,6 +217,7 @@ void NMTPreInit::pre_to_post(bool nmt_off) {
 
   assert(!MemTracker::is_initialized(), "just once");
   DEBUG_ONLY(verify();)
+  DEBUG_ONLY(_table->record_allocations();)
   if (nmt_off) {
     // NMT is disabled.
     // Since neither pre- nor post-init-allocations use headers, from now on any pre-init allocation

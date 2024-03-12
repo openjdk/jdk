@@ -218,6 +218,8 @@ public:
 
   void* operator new(size_t l);
   void  operator delete(void* p);
+
+  DEBUG_ONLY(void record_allocations() const;)
 };
 
 // NMTPreInit is the outside interface to all of NMT preinit handling.
