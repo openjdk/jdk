@@ -28,11 +28,9 @@
  * @summary Test vector intrinsic for Math.round(float) in full 32 bits range
  *
  * @requires vm.compiler2.enabled
- * @requires (vm.cpu.features ~= ".*avx.*" & os.simpleArch == "x64") |
- *           os.simpleArch == "aarch64"
  *
  * @library /test/lib /
- * @run driver compiler.vectorization.TestRoundVectorFloatRandom
+ * @run main compiler.vectorization.TestRoundVectorFloatRandom
  */
 
 package compiler.vectorization;
@@ -69,7 +67,11 @@ public class TestRoundVectorFloatRandom {
   }
 
   @Test
-  @IR(counts = {IRNode.ROUND_VF, "> 0"})
+  @IR(counts = {IRNode.ROUND_VF, "> 0"},
+      applyIfPlatform = {"x64", "true"},
+      applyIfCPUFeature = {"avx", "true"})
+  @IR(counts = {IRNode.ROUND_VF, "> 0"},
+      applyIfPlatform = {"aarch64", "true"})
   void test_round(int[] a0, float[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.round(a1[i]);
@@ -92,29 +94,29 @@ public class TestRoundVectorFloatRandom {
     }
 
     int errn = 0;
-    final int e_start = 0;
-    final int e_shift = 23;
-    final int e_width = 8;
-    final int e_bound = 1 << e_width;
-    final int f_width = e_shift;
-    final int f_bound = 1 << f_width;
-    final int f_num = 128;
+    final int eStart = 0;
+    final int eShift = 23;
+    final int eWidth = 8;
+    final int eBound = 1 << eWidth;
+    final int fWidth = eShift;
+    final int fBound = 1 << fWidth;
+    final int fNum = 128;
 
     // prepare test data
-    int fis[] = new int[f_num];
+    int fis[] = new int[fNum];
     int fidx = 0;
-    for (; fidx < f_width; fidx++) {
+    for (; fidx < fWidth; fidx++) {
       fis[fidx] = 1 << fidx;
     }
     fis[fidx++] = 0;
-    for (; fidx < f_num; fidx++) {
-      fis[fidx] = rand.nextInt(f_bound);
+    for (; fidx < fNum; fidx++) {
+      fis[fidx] = rand.nextInt(fBound);
     }
 
     // run test & verify
     for (int fi : fis) {
-      for (int ei = e_start; ei < e_bound; ei++) {
-        int bits = (ei << e_shift) + fi;
+      for (int ei = eStart; ei < eBound; ei++) {
+        int bits = (ei << eShift) + fi;
         input[ei*2] = Float.intBitsToFloat(bits);
         bits = bits | (1 << 31);
         input[ei*2+1] = Float.intBitsToFloat(bits);
@@ -124,7 +126,7 @@ public class TestRoundVectorFloatRandom {
       test_round(res, input);
 
       // verify results
-      for (int ei = e_start; ei < e_bound; ei++) {
+      for (int ei = eStart; ei < eBound; ei++) {
         for (int sign = 0; sign < 2; sign++) {
           int idx = ei * 2 + sign;
           if (res[idx] != Math.round(input[idx])) {

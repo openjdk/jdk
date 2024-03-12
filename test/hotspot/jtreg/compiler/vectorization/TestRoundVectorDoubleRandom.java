@@ -28,17 +28,14 @@
  * @summary Test vector intrinsic for Math.round(double) in full 64 bits range.
  *
  * @requires vm.compiler2.enabled
- * @requires (vm.cpu.features ~= ".*avx512dq.*" & os.simpleArch == "x64") |
- *           os.simpleArch == "aarch64"
  *
  * @library /test/lib /
- * @run driver compiler.vectorization.TestRoundVectorDoubleRandom
+ * @run main compiler.vectorization.TestRoundVectorDoubleRandom
  */
 
 package compiler.vectorization;
 
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 import compiler.lib.ir_framework.DontCompile;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.IRNode;
@@ -70,7 +67,11 @@ public class TestRoundVectorDoubleRandom {
   }
 
   @Test
-  @IR(counts = {IRNode.ROUND_VD, "> 0"})
+  @IR(counts = {IRNode.ROUND_VD, "> 0"},
+      applyIfPlatform = {"x64", "true"},
+      applyIfCPUFeature = {"avx512dq", "true"})
+  @IR(counts = {IRNode.ROUND_VD, "> 0"},
+      applyIfPlatform = {"aarch64", "true"})
   void test_round(long[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.round(a1[i]);
@@ -93,44 +94,44 @@ public class TestRoundVectorDoubleRandom {
     }
 
     int errn = 0;
-    final int e_shift = 52;
-    final int e_width = 11;
-    final int e_bound = 1 << e_width;
-    final int f_width = e_shift;
-    final long f_bound = 1 << f_width;
-    final int f_num = 256;
+    final int eShift = 52;
+    final int eWidth = 11;
+    final int eBound = 1 << eWidth;
+    final int fWidth = eShift;
+    final long fBound = 1 << fWidth;
+    final int fNum = 256;
 
     // prepare test data
-    long fis[] = new long[f_num];
+    long fis[] = new long[fNum];
     int fidx = 0;
-    for (; fidx < f_width; fidx++) {
+    for (; fidx < fWidth; fidx++) {
       fis[fidx] = 1 << fidx;
     }
     fis[fidx++] = 0;
-    for (; fidx < f_num; fidx++) {
-      fis[fidx] = ThreadLocalRandom.current().nextLong(f_bound);
+    for (; fidx < fNum; fidx++) {
+      fis[fidx] = rand.nextLong(fBound);
     }
 
     // run test & verify
     for (long fi : fis) {
-      final int e_start = rand.nextInt(9);
-      final int e_step = (1 << 3) + rand.nextInt(3);
-      for (int ei = e_start; ei < e_bound; ei += e_step) {
-        int ei_idx = ei/e_step;
-        long bits = (ei << e_shift) + fi;
-        input[ei_idx*2] = Double.longBitsToDouble(bits);
+      final int eStart = rand.nextInt(9);
+      final int eStep = (1 << 3) + rand.nextInt(3);
+      for (int ei = eStart; ei < eBound; ei += eStep) {
+        int eiIdx = ei/eStep;
+        long bits = (ei << eShift) + fi;
+        input[eiIdx*2] = Double.longBitsToDouble(bits);
         bits = bits | (1 << 63);
-        input[ei_idx*2+1] = Double.longBitsToDouble(bits);
+        input[eiIdx*2+1] = Double.longBitsToDouble(bits);
       }
 
       // test
       test_round(res, input);
 
       // verify results
-      for (int ei = e_start; ei < e_bound; ei += e_step) {
-        int ei_idx = ei/e_step;
+      for (int ei = eStart; ei < eBound; ei += eStep) {
+        int eiIdx = ei/eStep;
         for (int sign = 0; sign < 2; sign++) {
-          int idx = ei_idx * 2 + sign;
+          int idx = eiIdx * 2 + sign;
           if (res[idx] != Math.round(input[idx])) {
             errn++;
             System.err.println("round error, input: " + input[idx] +
