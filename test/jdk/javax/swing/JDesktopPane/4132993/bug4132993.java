@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,28 +34,23 @@ import javax.swing.JLayeredPane;
 
 
 public class bug4132993 {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         JDesktopPane mDesktop = new JDesktopPane();
         JInternalFrame jif = new JInternalFrame("My Frame");
         jif.setIconifiable(true);
         mDesktop.add(jif);
         try {
-            try {
-                jif.setIcon(true);
-            } catch (PropertyVetoException ex) {
-                ex.printStackTrace();
-            }
-            JInternalFrame[] ji =
-                    mDesktop.getAllFramesInLayer(JLayeredPane.DEFAULT_LAYER);
-            for (int i = 0; i < ji.length; i++) {
-                if (jif == ji[i]) {
-                    return;
-                }
-            }
-            throw new RuntimeException("JDesktopPane.getAllFramesInLayer() failed...");
-        } catch (Exception e) {
-            throw new RuntimeException("Test interrupted by "
-                    + e.getLocalizedMessage());
+            jif.setIcon(true);
+        } catch (PropertyVetoException ex) {
+            ex.printStackTrace();
         }
+        JInternalFrame[] ji =
+                mDesktop.getAllFramesInLayer(JLayeredPane.DEFAULT_LAYER);
+        for (int i = 0; i < ji.length; i++) {
+            if (jif == ji[i]) {
+                return;
+            }
+        }
+        throw new RuntimeException("JDesktopPane.getAllFramesInLayer() failed...");
     }
 }

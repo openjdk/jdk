@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,11 @@
  * @run main bug4773378
  */
 
+import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
+import java.beans.PropertyVetoException;
 import java.lang.reflect.InvocationTargetException;
 import javax.swing.DefaultDesktopManager;
 import javax.swing.JDesktopPane;
@@ -48,7 +50,7 @@ public class bug4773378 {
     JInternalFrame jif;
 
     Robot robot;
-    volatile boolean  keyTyped = false;
+    volatile boolean frameActivated = false;
 
     public void setupGUI() {
         frame = new JFrame("bug4773378");
@@ -64,7 +66,7 @@ public class bug4773378 {
         jif.addInternalFrameListener(new InternalFrameAdapter() {
                 public void internalFrameActivated(InternalFrameEvent e) {
                     synchronized (bug4773378.this) {
-                        keyTyped = true;
+                        frameActivated = true;
                         bug4773378.this.notifyAll();
                     }
                 }
@@ -80,26 +82,29 @@ public class bug4773378 {
         jif.requestFocus();
     }
 
-    public void performTest() {
-        try {
-            jif.setSelected(true);
-
-            synchronized (this) {
-                while (!keyTyped) {
-                    bug4773378.this.wait();
-                }
+    public void performTest() throws InterruptedException,
+            InvocationTargetException, AWTException {
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                jif.setSelected(true);
+            } catch (PropertyVetoException e) {
+                e.printStackTrace();
             }
+        });
 
-            robot = new Robot();
-            robot.keyPress(KeyEvent.VK_CONTROL);
-            robot.keyPress(KeyEvent.VK_F6);
-            robot.keyRelease(KeyEvent.VK_F6);
-            robot.keyRelease(KeyEvent.VK_CONTROL);
-
-            Thread.sleep(2000);
-        } catch (Throwable t) {
-            t.printStackTrace();
+        synchronized (this) {
+            while (!frameActivated) {
+                bug4773378.this.wait();
+            }
         }
+
+        robot = new Robot();
+        robot.keyPress(KeyEvent.VK_CONTROL);
+        robot.keyPress(KeyEvent.VK_F6);
+        robot.keyRelease(KeyEvent.VK_F6);
+        robot.keyRelease(KeyEvent.VK_CONTROL);
+
+        Thread.sleep(2000);
     }
 
     public void cleanupGUI() {
@@ -112,11 +117,11 @@ public class bug4773378 {
     class MyDesktopManager extends DefaultDesktopManager {
     }
 
-    public static void main(String[] args) throws InterruptedException, InvocationTargetException {
+    public static void main(String[] args) throws InterruptedException,
+            InvocationTargetException, AWTException {
         bug4773378 b = new bug4773378();
         SwingUtilities.invokeAndWait(b::setupGUI);
         b.performTest();
         SwingUtilities.invokeAndWait(b::cleanupGUI);
     }
-
 }

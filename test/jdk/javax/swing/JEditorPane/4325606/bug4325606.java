@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public class bug4325606 {
             }
             robo.setAutoDelay(100);
             robo.delay(1000);
-            robo.mouseMove(100,100);
+            robo.mouseMove(100, 100);
             robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robo.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robo.mousePress(InputEvent.BUTTON1_DOWN_MASK);
