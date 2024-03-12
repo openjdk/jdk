@@ -30,7 +30,6 @@
 package java.math;
 
 import static java.math.BigInteger.LONG_MASK;
-import java.nio.CharBuffer;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -541,31 +540,11 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
      * @since  1.5
      */
     public BigDecimal(char[] in, int offset, int len, MathContext mc) {
-        this(offset == 0 && len == in.length
-                        ? new CharArraySequence0(in)
-                        : new CharArraySequence1(in, offset, len),
-                mc);
+        this(new CharArraySequence(in, offset, len), mc);
     }
 
-    private record CharArraySequence0(char[] array) implements CharSequence {
-        @Override
-        public int length() {
-            return array.length;
-        }
-
-        @Override
-        public char charAt(int index) {
-            return array[index];
-        }
-
-        @Override
-        public CharSequence subSequence(int offset, int length) {
-            throw new UnsupportedOperationException();
-        }
-    }
-
-    private record CharArraySequence1(char[] array, int offset, int length) implements CharSequence {
-        CharArraySequence1 {
+    private record CharArraySequence(char[] array, int offset, int length) implements CharSequence {
+        CharArraySequence {
             if ((offset | length) < 0 || length > array.length - offset)
                 throw new NumberFormatException();
         }
