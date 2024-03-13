@@ -25,7 +25,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import javax.swing.BorderFactory;
-import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
@@ -44,7 +43,7 @@ import javax.swing.border.TitledBorder;
 public class Test4247606 {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                If the button do not fit into the titled border bounds
+                If the button does not fit into the titled border bounds
                 and cover the bottom border's line then test fails.
                 Otherwise test passes
                 """;
@@ -54,12 +53,12 @@ public class Test4247606 {
                 .instructions(testInstructions)
                 .rows(4)
                 .columns(35)
-                .splitUI(Test4247606::init)
+                .splitUI(Test4247606::initializeTest)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JComponent init() {
+    public static JComponent initializeTest() {
         JButton button = new JButton("Button");
         button.setBorder(BorderFactory.createLineBorder(Color.red, 1));
 
@@ -70,10 +69,7 @@ public class Test4247606 {
         panel.setBackground(Color.green);
         panel.setPreferredSize(new Dimension(200, 150));
 
-        Box main = Box.createVerticalBox();
-        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(create(panel, BorderFactory.createEmptyBorder(10, 10, 10, 10)));
-        return main;
+        return create(panel, BorderFactory.createEmptyBorder(10, 10, 10, 10));
     }
 
     private static JPanel create(JComponent component, Border border) {
