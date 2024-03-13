@@ -3212,7 +3212,7 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtUBtoX_extend(vReg dst, vReg src) %{
+instruct vcvtUBtoX(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_SHORT ||
             Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
@@ -3241,12 +3241,12 @@ instruct vcvtStoB(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtStoX_extend(vReg dst, vReg src) %{
+instruct vcvtStoX(vReg dst, vReg src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_INT ||
              Matcher::vector_element_basic_type(n) == T_LONG));
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtStoX_extend $dst, $src" %}
+  format %{ "vcvtStoX $dst, $src" %}
   ins_encode %{
     __ integer_extend_v(as_VectorRegister($dst$$reg), Matcher::vector_element_basic_type(this),
                         Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
@@ -3255,12 +3255,12 @@ instruct vcvtStoX_extend(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtStoX_fp_extend(vReg dst, vReg src) %{
+instruct vcvtStoX_fp(vReg dst, vReg src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_FLOAT ||
              Matcher::vector_element_basic_type(n) == T_DOUBLE));
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtStoX_fp_extend $dst, $src" %}
+  format %{ "vcvtStoX_fp $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ integer_extend_v(as_VectorRegister($dst$$reg), (bt == T_FLOAT ? T_INT : T_LONG),
@@ -3274,12 +3274,12 @@ instruct vcvtStoX_fp_extend(vReg dst, vReg src) %{
 %}
 
 
-instruct vcvtUStoX_extend(vReg dst, vReg src) %{
+instruct vcvtUStoX(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_INT ||
             Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorUCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtUStoX_extend $dst, $src" %}
+  format %{ "vcvtUStoX $dst, $src" %}
   ins_encode %{
     __ integer_extend_v(as_VectorRegister($dst$$reg), Matcher::vector_element_basic_type(this),
                         Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
@@ -3316,7 +3316,7 @@ instruct vcvtItoL(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtUItoL_extend(vReg dst, vReg src) %{
+instruct vcvtUItoL(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_LONG);
   match(Set dst (VectorUCastI2X src));
   effect(TEMP_DEF dst);
