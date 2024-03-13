@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2008, 2024 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,37 @@
  * questions.
  */
 
+import javax.swing.JColorChooser;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
 /*
  * @test
  * @bug 4759306
+ * @library /test/jdk/java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame
  * @summary Checks if JColorChooser.setPreviewPanel removes the old one
- * @author Konstantin Eremin
-   @run applet/manual=yesno Test4759306.html
+ * @run main/manual Test4759306
  */
+public class Test4759306 {
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                .title("Test4759306")
+                .instructions("Check that there is no preview panel in the JColorChooser.")
+                .rows(5)
+                .columns(40)
+                .testTimeOut(10)
+                .testUI(Test4759306::test)
+                .build()
+                .awaitAndCheck();
+    }
 
-import javax.swing.JApplet;
-import javax.swing.JColorChooser;
-import javax.swing.JPanel;
-
-public class Test4759306 extends JApplet {
-    public void init() {
+    private static JFrame test() {
+        JFrame frame = new JFrame();
         JColorChooser chooser = new JColorChooser();
         chooser.setPreviewPanel(new JPanel());
-        getContentPane().add(chooser);
+        frame.getContentPane().add(chooser);
+        frame.pack();
+        return frame;
     }
 }
