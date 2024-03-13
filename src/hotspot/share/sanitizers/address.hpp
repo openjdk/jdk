@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
+ *
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,12 +57,8 @@
 // being unreachable. This helps ensure developers do not accidently break ASan builds.
 #ifdef ADDRESS_SANITIZER
 #define INCLUDE_ASAN 1
-#define ASAN_ONLY(code) code
-#define NOT_ASAN(code)
 #else
 #define INCLUDE_ASAN 0
-#define ASAN_ONLY(code)
-#define NOT_ASAN(code)  code
 // ASAN_POISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 // ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 #define ASAN_POISON_MEMORY_REGION(addr, size) \

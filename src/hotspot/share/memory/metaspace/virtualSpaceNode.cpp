@@ -435,16 +435,15 @@ void VirtualSpaceNode::verify_locked() const {
   // Verify memory against commit mask.
   // Down here, from ASAN's view, this memory may be poisoned, since we only unpoison
   // way up at the ChunkManager level.
-  const bool check_committed = NOT_ASAN(true) ASAN_ONLY(false);
+#if !INCLUDE_ASAN
   SOMETIMES(
-    if (check_committed) {
-      for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
-        if (_commit_mask.is_committed_address(p)) {
-          test_access += *(uint*)p;
-        }
+    for (MetaWord* p = base(); p < base() + used_words(); p += os::vm_page_size()) {
+      if (_commit_mask.is_committed_address(p)) {
+        test_access += *(uint*)p;
       }
     }
   )
+#endif // !INCLUDE_ASAN
 
   assert(committed_words() <= word_size(), "Sanity");
   assert_is_aligned(committed_words(), Settings::commit_granule_words());

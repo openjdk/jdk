@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -288,15 +288,16 @@ void Metachunk::verify() const {
 
   // Test accessing the committed area. But not for ASAN. We don't know which portions
   // of the chunk are still poisoned.
-  const bool check_committed = NOT_ASAN(true) ASAN_ONLY(false);
+#if !INCLUDE_ASAN
   SOMETIMES(
-    if (check_committed && _committed_words > 0) {
+    if (_committed_words > 0) {
       for (const MetaWord* p = _base; p < _base + _committed_words; p += os::vm_page_size()) {
         dummy = *p;
       }
       dummy = *(_base + _committed_words - 1);
     }
   )
+#endif // !INCLUDE_ASAN
 }
 #endif // ASSERT
 
