@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,11 +20,31 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package typeannos;
 
-#include "export.h"
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-EXPORT int compar(const void* e0, const void* e1) {
-    int i0 = *((int*) e0);
-    int i1 = *((int*) e1);
-    return i0 - i1;
+public class DeepArrays {
+    @ArrA String @ArrB [] @ArrC [] array2() { return null; }
+    String @ArrA [] @ArrB [] @ArrC [] @ArrD [] array4() { return null; }
+    @ArrA ArrParameterized<@ArrC String @ArrA [] @ArrB []> @ArrC [] @ArrD [] manyNested() { return null; }
+    void varargs(@ArrA String @ArrB [] @ArrC [] @ArrD ... arg) {}
+    int @ArrA [] mixedStyles(int @ArrB [] @ArrA [] arg) @ArrB [] { return null; } // JLS example 10.2-2
 }
+
+class ArrParameterized<T> {}
+
+@Target(ElementType.TYPE_USE)
+@Documented
+@interface ArrA { }
+@Target(ElementType.TYPE_USE)
+@Documented
+@interface ArrB { }
+@Target(ElementType.TYPE_USE)
+@Documented
+@interface ArrC { }
+@Target(ElementType.TYPE_USE)
+@Documented
+@interface ArrD { }

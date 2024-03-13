@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,10 +21,15 @@
  * questions.
  */
 
-#include "export.h"
+#ifndef TEST_LIB_NATIVE_EXPORT_H
+#define TEST_LIB_NATIVE_EXPORT_H
 
-EXPORT int compar(const void* e0, const void* e1) {
-    int i0 = *((int*) e0);
-    int i1 = *((int*) e1);
-    return i0 - i1;
-}
+#ifdef _WIN64
+  #define EXPORT __declspec(dllexport)
+#elif defined(__GNUC__)
+  #define EXPORT __attribute__((visibility("default")))
+#else
+  #define EXPORT
+#endif
+
+#endif // TEST_LIB_NATIVE_EXPORT_H
