@@ -203,13 +203,17 @@ public class CallGeneratorHelper extends NativeTestHelper {
         out.println(res);
     }
 
+    private static PrintStream printStream(String first) throws IOException {
+        return new PrintStream(Files.newOutputStream(Path.of(first)));
+    }
+
     /* this can be used to generate the test implementation */
     public static void main(String[] args) throws IOException {
-        try (PrintStream shared = new PrintStream(Files.newOutputStream(Path.of("shared.h")));
-                PrintStream libTestDowncall = new PrintStream(Files.newOutputStream(Path.of("libTestDowncall.c")));
-                PrintStream libTestDowncallStack = new PrintStream(Files.newOutputStream(Path.of("libTestDowncallStack.c")));
-                PrintStream libTestUpcall = new PrintStream(Files.newOutputStream(Path.of("libTestUpcall.c")));
-                PrintStream libTestUpcallStack = new PrintStream(Files.newOutputStream(Path.of("libTestUpcallStack.c")))) {
+        try (PrintStream shared = printStream("shared.h");
+                 PrintStream libTestDowncall = printStream("libTestDowncall.c");
+                 PrintStream libTestDowncallStack = printStream("libTestDowncallStack.c");
+                 PrintStream libTestUpcall = printStream("libTestUpcall.c");
+                 PrintStream libTestUpcallStack = printStream("libTestUpcallStack.c")) {
             generateShared(shared);
             generateDowncalls(libTestDowncall, false);
             generateDowncalls(libTestDowncallStack, true);
