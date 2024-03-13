@@ -78,7 +78,7 @@ public class bug4128979 {
     }
 
     public static JFrame createAndShowUI() {
-        frame = new JFrame("Test window");
+        frame = new JFrame("JToggleButton's Background Color Test");
         frame.setLayout(new FlowLayout());
 
         JPanel p = new JPanel();
@@ -119,8 +119,6 @@ public class bug4128979 {
         frame.getContentPane().add(p);
         frame.getContentPane().add(label);
         frame.setSize(600, 250);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setVisible(true);
         return frame;
     }
 
