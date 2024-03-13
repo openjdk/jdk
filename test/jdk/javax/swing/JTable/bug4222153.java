@@ -93,7 +93,7 @@ public class bug4222153 {
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.waitForIdle();
             robot.delay(20);
-            
+
             SwingUtilities.invokeAndWait(() -> {
                 selectedRowAfterTabPress = table.getSelectedRow();
                 selectedColumnAfterTabPress = table.getSelectedColumn();
