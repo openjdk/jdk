@@ -360,9 +360,9 @@ public interface Path
     /**
      * Returns a {@code Path} with the same sequence of elements as this path,
      * but with an altered file name extension. If the specified extension is
-     * non-{@code null} and non-{@linkplain String#isEmpty empty}, then a
-     * {@code '.'} and then {@code extension} are appended to the path returned
-     * by {@linkplain #withoutExtension wihoutExtension}, otherwise the path
+     * non-{@linkplain String#isEmpty empty}, then a {@code '.'} and then
+     * {@code extension} are appended to the path returned by
+     * {@linkplain #withoutExtension wihoutExtension}, otherwise the path
      * returned by {@linkplain #withoutExtension wihoutExtension} is returned.
      *
      * <p> For example, an audio track's extension might be changed as:
@@ -399,10 +399,13 @@ public interface Path
      * }
      *
      * @param extension
-     *        the extension to add, may be {@code null}
+     *        the extension to append
      *
      * @return a {@code Path} with the requested extension replacing the
      *         existing extension, if any
+     *
+     * @throws IllegalArgumentException
+     *         if {@code extension} starts with a period character
      *
      * @see #getExtension
      * @see #withoutExtension
@@ -410,8 +413,13 @@ public interface Path
      * @since 23
      */
     default Path withExtension(String extension) {
+        Objects.requireNonNull(extension);
+
+        if (extension.startsWith("."))
+            throw new IllegalArgumentException("extension starts with '.'");
+
         Path path = withoutExtension();
-        if (extension == null || extension.isEmpty())
+        if (extension.isEmpty())
             return path;
 
         return path.resolveSibling(path.getFileName() + "." + extension);

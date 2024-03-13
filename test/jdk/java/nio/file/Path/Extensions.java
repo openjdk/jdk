@@ -96,6 +96,16 @@ public class Extensions {
         Assert.assertEquals(actual, expected);
     }
 
+    @Test (expectedExceptions = NullPointerException.class)
+    public static void withNPE() {
+        Path.of("foo.bar").withExtension(null);
+    }
+
+    @Test (expectedExceptions = IllegalArgumentException.class)
+    public static void withIAE() {
+        Path.of("foo.bar").withExtension(".gus");
+    }
+
     @Test(dataProvider = "pathExtProvider")
     public static void without(String pathname, String extension) {
         Path p = Path.of(pathname);
