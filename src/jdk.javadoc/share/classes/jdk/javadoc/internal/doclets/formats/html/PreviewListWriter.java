@@ -116,7 +116,7 @@ public class PreviewListWriter extends SummaryListWriter<PreviewAPIListBuilder> 
 
     @Override
     protected Content getExtraContent(Element element) {
-        PreviewAPIListBuilder.JEP jep = configuration.previewAPIListBuilder.getJEP(element);
+        PreviewAPIListBuilder.JEP jep = builder.getJEP(element);
         return jep == null ? Text.EMPTY : Text.of(jep.title());
     }
 

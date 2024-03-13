@@ -79,7 +79,7 @@ public class NewAPIListWriter extends SummaryListWriter<NewAPIBuilder> {
 
     @Override
     protected void addContentSelectors(Content content) {
-        List<String> releases = configuration.newAPIPageBuilder.releases;
+        List<String> releases = builder.releases;
         if (releases.size() > 1) {
             Content tabs = HtmlTree.DIV(HtmlStyle.checkboxes,
                     contents.getContent("doclet.New_API_Checkbox_Label"));
