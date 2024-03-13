@@ -71,7 +71,8 @@ import jdk.jshell.TypePrinter.AnonymousTypeKind;
  */
 class ExpressionToTypeInfo {
 
-    private static final String OBJECT_TYPE_NAME = "Object";
+     //only used in erroneous/non-standard circumstances; OK to use a FQN:
+    private static final String OBJECT_TYPE_NAME = "java.lang.Object";
 
     final AnalyzeTask at;
     final CompilationUnitTree cu;
@@ -394,8 +395,8 @@ class ExpressionToTypeInfo {
                             break;
                         case NULL:
                             ei.isNonVoid = true;
-                            ei.typeName = OBJECT_TYPE_NAME;
-                            ei.accessibleTypeName = OBJECT_TYPE_NAME;
+                            ei.typeName = varTypeName(syms.objectType, false, AnonymousTypeKind.SUPER);
+                            ei.accessibleTypeName = ei.typeName;
                             break;
                         default: {
                             ei.isNonVoid = true;
