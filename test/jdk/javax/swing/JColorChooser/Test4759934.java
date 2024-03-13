@@ -66,8 +66,13 @@ public class Test4759934 {
     };
 
     public static void main(String[] args) throws Exception {
-        String instructions = "Click on show Dialog. Then click on Show ColorChooser.\n" +
-                "If a ColorChooser is shown, then pass.";
+        String instructions = "1. Press button \"Show Dialog\" at the frame \"Test\" and\n" +
+                "   the dialog with button \"Show ColorChooser\" should appears.\n" +
+                "2. Press button \"Show ColorChooser\" at the dialog \"Dialog\" and\n" +
+                "   the colorchooser should appears.\n" +
+                "3. Press the button \"Cancel\" of colorchooser.\n" +
+                "   If the focus will come to the frame \"Test\" then test fails.\n" +
+                "   If the focus will come to the dialog \"Dialog\" then test passes.";
 
         PassFailJFrame.builder()
                 .title("Test4759934")
@@ -81,7 +86,7 @@ public class Test4759934 {
     }
 
     public static JFrame test() {
-        frame = new JFrame();
+        frame = new JFrame("ColorChooser dialog on button press test");
         show(frame, CMD_DIALOG, false);
         return frame;
     }
