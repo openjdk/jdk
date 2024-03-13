@@ -47,15 +47,15 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 // between start_idx and index value _num_bits - 1 inclusive.
 size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
-  size_t array_idx = start_idx / _bits_per_array_element;
+  size_t array_idx = start_idx / BitsPerWord;
   size_t element_bits = _bitmap[array_idx];
-  size_t bit_number = start_idx % _bits_per_array_element;
-  size_t the_bit = ((size_t) 0x01) << bit_number;
-  size_t omit_mask = the_bit - 1;
-  size_t mask = ((size_t) ((ssize_t) -1)) & ~omit_mask;
+  size_t bit_number = start_idx % BitsPerWord;
+  size_t the_bit = nth_bit(bit_number);
+  size_t omit_mask = right_n_bits(bit_number);
+  size_t mask = right_n_bits(BitsPerWord) & ~omit_mask;
 
   if ((element_bits & mask) == mask) {
-    size_t counted_ones = _bits_per_array_element - bit_number;
+    size_t counted_ones = BitsPerWord - bit_number;
     return counted_ones + count_leading_ones(start_idx - counted_ones);
   } else {
     size_t counted_ones;
@@ -70,13 +70,13 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
 // between last_idx and index value zero, inclusive.
 size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
-  size_t array_idx = last_idx / _bits_per_array_element;
+  size_t array_idx = last_idx / BitsPerWord;
   size_t element_bits = _bitmap[array_idx];
-  size_t bit_number = last_idx % _bits_per_array_element;
-  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t bit_number = last_idx % BitsPerWord;
+  size_t the_bit = nth_bit(bit_number);
 
   // All ones from bit 0 to the_bit
-  size_t mask = (the_bit * 2) - 1;
+  size_t mask = right_n_bits(bit_number + 1);
   if ((element_bits & mask) == mask) {
     size_t counted_ones = bit_number + 1;
     return counted_ones + count_trailing_ones(last_idx - counted_ones);
@@ -93,24 +93,24 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition: start_idx: " SSIZE_FORMAT ", count: " SSIZE_FORMAT,
          start_idx, count);
   assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
-  size_t array_idx = start_idx / _bits_per_array_element;
-  size_t bit_number = start_idx % _bits_per_array_element;
-  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t array_idx = start_idx / BitsPerWord;
+  size_t bit_number = start_idx % BitsPerWord;
+  size_t the_bit = nth_bit(bit_number);
   size_t element_bits = _bitmap[array_idx];
-  if ((ssize_t) (bit_number + count <= _bits_per_array_element)) {
+  if ((ssize_t) (bit_number + count <= BitsPerWord)) {
     // All relevant bits reside within this array element
-    size_t overreach_mask =
-      (bit_number + count == _bits_per_array_element)? ~((size_t) 0): ((size_t) 0x1 << (bit_number + count)) - 1;
-    size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+    size_t relevant_bits = bit_number + count;
+    size_t overreach_mask = right_n_bits(relevant_bits);
+    size_t exclude_mask = right_n_bits(bit_number);
     size_t exact_mask = overreach_mask & ~exclude_mask;
     return (element_bits & exact_mask) == exact_mask? true: false;
   } else {
     // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-    size_t overreach_mask = (size_t) (ssize_t) - 1;
-    size_t exclude_mask = ((size_t) 0x1 << bit_number) - 1;
+    size_t overreach_mask = right_n_bits(BitsPerWord);
+    size_t exclude_mask = right_n_bits(bit_number);
     size_t exact_mask = overreach_mask & ~exclude_mask;
     if ((element_bits & exact_mask) == exact_mask) {
-      size_t matched_bits = _bits_per_array_element - bit_number;
+      size_t matched_bits = BitsPerWord - bit_number;
       return is_forward_consecutive_ones(start_idx + matched_bits, count - matched_bits);
     } else {
       return false;
@@ -121,19 +121,19 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
 bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssize_t count) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   assert(last_idx - count >= -1, "precondition");
-  size_t array_idx = last_idx / _bits_per_array_element;
-  size_t bit_number = last_idx % _bits_per_array_element;
-  size_t the_bit = ((size_t) 0x01) << bit_number;
+  size_t array_idx = last_idx / BitsPerWord;
+  size_t bit_number = last_idx % BitsPerWord;
+  size_t the_bit = nth_bit(bit_number);
   size_t element_bits = _bitmap[array_idx];
   if ((ssize_t) (bit_number + 1) >= count) {
     // All relevant bits reside within this array element
-    size_t overreach_mask = (bit_number == _bits_per_array_element - 1)? ~((size_t) 0): ((size_t) 0x1 << (bit_number + 1)) - 1;
-    size_t exclude_mask = ((size_t) 0x1 << (bit_number + 1 - count)) - 1;
+    size_t overreach_mask = right_n_bits(bit_number + 1);
+    size_t exclude_mask = right_n_bits(bit_number + 1 - count);
     size_t exact_mask = overreach_mask & ~exclude_mask;
     return (element_bits & exact_mask) == exact_mask? true: false;
   } else {
     // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-    size_t exact_mask = ((size_t) 0x1 << (bit_number + 1)) - 1;
+    size_t exact_mask = right_n_bits(bit_number + 1);
     if ((element_bits & exact_mask) == exact_mask) {
       size_t matched_bits = bit_number + 1;
       return is_backward_consecutive_ones(last_idx - matched_bits, count - matched_bits);
@@ -149,18 +149,18 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t start_boundary = boundary_idx - num_bits;
-  size_t array_idx = start_idx / _bits_per_array_element;
-  size_t bit_number = start_idx % _bits_per_array_element;
+  size_t array_idx = start_idx / BitsPerWord;
+  size_t bit_number = start_idx % BitsPerWord;
   size_t element_bits = _bitmap[array_idx];
   if (bit_number > 0) {
-    size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
+    size_t mask_out = right_n_bits(bit_number);
     element_bits &= ~mask_out;
   }
 
   while (start_idx <= start_boundary) {
     if (!element_bits) {
       // move to the next element
-      start_idx += _bits_per_array_element - bit_number;
+      start_idx += BitsPerWord - bit_number;
       array_idx++;
       bit_number = 0;
       element_bits = _bitmap[array_idx];
@@ -170,11 +170,11 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
       // There is at least one zero bit in this span.  Align the next probe at the start of trailing ones for probed span.
       size_t trailing_ones = count_trailing_ones(start_idx + num_bits - 1);
       start_idx += num_bits - trailing_ones;
-      array_idx = start_idx / _bits_per_array_element;
+      array_idx = start_idx / BitsPerWord;
       element_bits = _bitmap[array_idx];
-      bit_number = start_idx % _bits_per_array_element;
+      bit_number = start_idx % BitsPerWord;
       if (bit_number > 0) {
-        size_t mask_out = (((size_t) 0x01) << bit_number) - 1;
+        size_t mask_out = right_n_bits(bit_number);
         element_bits &= ~mask_out;
       }
     }
@@ -189,11 +189,11 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t last_boundary = boundary_idx + num_bits;
-  ssize_t array_idx = last_idx / _bits_per_array_element;
-  size_t bit_number = last_idx % _bits_per_array_element;
+  ssize_t array_idx = last_idx / BitsPerWord;
+  size_t bit_number = last_idx % BitsPerWord;
   size_t element_bits = _bitmap[array_idx];
-  if (bit_number < _bits_per_array_element - 1) {
-    size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
+  if (bit_number < BitsPerWord - 1) {
+    size_t mask_in = right_n_bits(bit_number + 1);
     element_bits &= mask_in;
   }
   while (last_idx >= last_boundary) {
@@ -201,7 +201,7 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
       // move to the previous element
       last_idx -= bit_number + 1;
       array_idx--;
-      bit_number = _bits_per_array_element - 1;
+      bit_number = BitsPerWord - 1;
       element_bits = _bitmap[array_idx];
     } else if (is_backward_consecutive_ones(last_idx, num_bits)) {
       return last_idx + 1 - num_bits;
@@ -209,11 +209,11 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
       // There is at least one zero bit in this span.  Align the next probe at the end of leading ones for probed span.
       size_t leading_ones = count_leading_ones(last_idx - (num_bits - 1));
       last_idx -= num_bits - leading_ones;
-      array_idx = last_idx / _bits_per_array_element;
-      bit_number = last_idx % _bits_per_array_element;
+      array_idx = last_idx / BitsPerWord;
+      bit_number = last_idx % BitsPerWord;
       element_bits = _bitmap[array_idx];
-      if (bit_number < _bits_per_array_element - 1){
-        size_t mask_in = (((size_t) 0x1) << (bit_number + 1)) - 1;
+      if (bit_number < BitsPerWord - 1){
+        size_t mask_in = right_n_bits(bit_number + 1);
         element_bits &= mask_in;
       }
     }

@@ -43,8 +43,6 @@
 // break abstraction rules, because efficient implementation requires assumptions about superclass internals that
 // might be violatee through future software maintenance.
 class ShenandoahSimpleBitMap {
-  static const size_t _bits_per_array_element = HeapWordSize * 8;
-
   const ssize_t _num_bits;
   const size_t _num_words;
   size_t* const _bitmap;
@@ -52,7 +50,7 @@ class ShenandoahSimpleBitMap {
 public:
   ShenandoahSimpleBitMap(size_t num_bits) :
       _num_bits(num_bits),
-      _num_words((num_bits + (_bits_per_array_element - 1)) / _bits_per_array_element),
+      _num_words((num_bits + (BitsPerWord - 1)) / BitsPerWord),
       _bitmap(NEW_C_HEAP_ARRAY(size_t, _num_words, mtGC))
   {
     clear_all();
@@ -86,12 +84,12 @@ public:
 
   inline ssize_t aligned_index(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx / _bits_per_array_element;
-    return array_idx * _bits_per_array_element;
+    ssize_t array_idx = idx / BitsPerWord;
+    return array_idx * BitsPerWord;
   }
 
   inline ssize_t alignment() const {
-    return _bits_per_array_element;
+    return BitsPerWord;
   }
 
   // For testing
@@ -101,33 +99,33 @@ public:
 
   inline size_t bits_at(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx / _bits_per_array_element;
+    ssize_t array_idx = idx / BitsPerWord;
     return _bitmap[array_idx];
   }
 
   inline void set_bit(ssize_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    size_t array_idx = idx / _bits_per_array_element;
-    size_t bit_number = idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t array_idx = idx / BitsPerWord;
+    size_t bit_number = idx % BitsPerWord;
+    size_t the_bit = nth_bit(bit_number);
     _bitmap[array_idx] |= the_bit;
   }
 
   inline void clear_bit(ssize_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
-    size_t array_idx = idx / _bits_per_array_element;
-    size_t bit_number = idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t array_idx = idx / BitsPerWord;
+    size_t bit_number = idx % BitsPerWord;
+    size_t the_bit = nth_bit(bit_number);
     _bitmap[array_idx] &= ~the_bit;
   }
 
   inline bool is_set(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
-    size_t array_idx = idx / _bits_per_array_element;
-    size_t bit_number = idx % _bits_per_array_element;
-    size_t the_bit = ((size_t) 0x01) << bit_number;
+    size_t array_idx = idx / BitsPerWord;
+    size_t bit_number = idx % BitsPerWord;
+    size_t the_bit = nth_bit(bit_number);
     return (_bitmap[array_idx] & the_bit)? true: false;
   }
 
