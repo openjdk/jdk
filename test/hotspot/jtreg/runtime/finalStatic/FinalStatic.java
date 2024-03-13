@@ -76,16 +76,13 @@ public class FinalStatic {
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC + ACC_SUPER)
                                     .withSuperclass(CD_Object)
-                                    .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
-                                            mb -> mb.withCode(
-                                                    cob -> cob
-                                                            .aload(0)
-                                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
-                                                            .return_()))
-                                    .withMethod("m", MethodTypeDesc.of(CD_int), ACC_FINAL + ACC_STATIC,
-                                            mb -> mb.withCode(
-                                                    cob -> cob.ldc(FAILED)
-                                                            .ireturn()))
+                                    .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                            cob -> cob
+                                                    .aload(0)
+                                                    .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                                    .return_())
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_FINAL + ACC_STATIC,
+                                            cob -> cob.ldc(FAILED).ireturn())
                     );
                     break;
 
@@ -94,15 +91,13 @@ public class FinalStatic {
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC + ACC_SUPER)
                                     .withSuperclass(ClassDesc.ofInternalName(CLASS_NAME_A))
-                                    .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
-                                            mb -> mb.withCode(
-                                                    cob -> cob.aload(0)
-                                                            .invokespecial(ClassDesc.ofInternalName(CLASS_NAME_A), INIT_NAME, MTD_void)
-                                                            .return_()))
-                                    .withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC,
-                                            mb -> mb.withCode(
-                                                    cob -> cob.ldc(EXPECTED)
-                                                            .ireturn()))
+                                    .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                            cob -> cob
+                                                    .aload(0)
+                                                    .invokespecial(ClassDesc.ofInternalName(CLASS_NAME_A), INIT_NAME, MTD_void)
+                                                    .return_())
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC,
+                                            cob -> cob.ldc(EXPECTED).ireturn())
                     );
                     break;
                 default:
