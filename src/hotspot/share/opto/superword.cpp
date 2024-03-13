@@ -1340,38 +1340,27 @@ int SuperWord::unpack_cost(int ct) { return ct; }
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_pairs_to_longer_packs() {
 #ifdef ASSERT
-  assert(!_packset.is_empty(), "packset not empty");
-  for (int i = 0; i < _packset.length(); i++) {
-    assert(_packset.at(i) != nullptr, "no nullptr in packset");
-    assert(_packset.at(i)->size() == 2, "all packs are pairs");
-  }
+  assert(!_pairset.is_empty(), "pairset not empty");
+  assert(_packset.is_empty(), "packset not empty");
 #endif
 
-// TODO implement alternative !!!
-//  bool changed = true;
-//  // Combine packs regardless max vector size.
-//  while (changed) {
-//    changed = false;
-//    for (int i = 0; i < _packset.length(); i++) {
-//      Node_List* p1 = _packset.at(i);
-//      if (p1 == nullptr) continue;
-//      // Because of sorting we can start at i + 1
-//      for (int j = i + 1; j < _packset.length(); j++) {
-//        Node_List* p2 = _packset.at(j);
-//        if (p2 == nullptr) continue;
-//        if (p1->at(p1->size()-1) == p2->at(0)) {
-//          for (uint k = 1; k < p2->size(); k++) {
-//            p1->push(p2->at(k));
-//          }
-//          _packset.at_put(j, nullptr);
-//          changed = true;
-//        }
-//      }
-//    }
-//  }
-//
-//  // Remove all nullptr from packset
-//  compress_packset();
+  for (int i = 0; i < body().length(); i++) {
+    Node* n = body().at(i);
+    // Start at a "left-most" node:
+    if (_pairset.exists_left(n) && !_pairset.exists_right(n)) {
+      Node_List* pack = new (arena()) Node_List(arena());
+      pack->push(n);
+
+      Node* left = n;
+      // Now walk the pair-chain:
+      while (_pairset.exists_left(left)) {
+        Node* right = _pairset.get_right_for(left);
+        pack->push(right);
+        left = right;
+      }
+      _packset.append(pack);
+    }
+  }
 
   assert(!_packset.is_empty(), "must have combined some packs");
 
@@ -3843,7 +3832,7 @@ void PackSet::print() const {
 
 void PackSet::print_pack(Node_List* pack) const {
   for (uint i = 0; i < pack->size(); i++) {
-    tty->print("  %02d: ", i);
+    tty->print("  %3d: ", i);
     pack->at(i)->dump();
   }
 }
