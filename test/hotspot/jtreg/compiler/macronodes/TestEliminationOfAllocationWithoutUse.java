@@ -1,0 +1,135 @@
+/*
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+/*
+ * @test
+ * @bug 8327012
+ * @summary Revealed issue where hook_memory_on_init links some array slice to the rawptr slice.
+ *          Now that array slice depends on the rawslice. And then when the Initialize MemBar gets
+ *          removed in expand_allocate_common, the rawslice sees that it has now no effect, looks
+ *          through the MergeMem and sees the initial stae. That way, also the linked array slice
+ *          goes to the initial state, even if before the allocation there were stores on the array
+ *          slice. This leads to a messed up memory graph, and missing stores in the generated code.
+ *
+ * @run main/othervm -Xcomp -XX:-TieredCompilation
+ *                   -XX:CompileCommand=compileonly,compiler.macronodes.TestEliminationOfAllocationWithoutUse::test*
+ *                   compiler.macronodes.TestEliminationOfAllocationWithoutUse
+ */
+
+package compiler.macronodes;
+
+public class TestEliminationOfAllocationWithoutUse {
+
+    static public void main(String[] args) {
+        int failures = 0;
+        failures += run1();
+        failures += run2();
+        failures += run3();
+        if (failures != 0) {
+            throw new RuntimeException("Had test failures: " + failures);
+        }
+    }
+
+    static public int run1() {
+        int size = 10;
+        double[] arr1 = new double[size];
+        double[] arr2 = new double[size];
+        test1(arr1, arr2);
+
+        double sum = 0;
+        for(int i = 0; i < arr1.length; ++i) {
+            sum += arr1[i] - arr2[i];
+        }
+
+        if (sum != (double)(size)) {
+            System.out.println("test1: wrong result: " + sum + " vs expected: " + size);
+            return 1;
+        }
+        return 0;
+    }
+
+    // Simplified from JDK-8327012 regression test.
+    public static void test1(double[] arr1, double[] arr2) {
+        for(int i = 0; i < arr1.length; ++i) {
+            // stores on double[] slice
+            arr1[i] = (double)(i + 2);
+            arr2[i] = (double)(i + 1);
+            // Allocation without use: but Initialize MemBar tangles the rawptr and double[] slices
+            double[] tmp = new double[100];
+            // When the Initialize MemBar is removed, the rawptr slice sees that there is no effect
+            // and takes the initial state. The double[] slice is hooked on to the rawptr slice, and
+            // also thinks it has the initial state, ignoring the double[] stores above.
+        }
+    }
+
+    static public int run2() {
+        int size = 10;
+        double[] arr1 = new double[size];
+        test2(arr1);
+
+        double sum = 0;
+        for(int i = 0; i < arr1.length; ++i) {
+            sum += arr1[i];
+        }
+
+        if (sum != (double)(size)) {
+            System.out.println("test2: wrong result: " + sum + " vs expected: " + size);
+            return 1;
+        }
+        return 0;
+    }
+
+    // Simplified from test1
+    public static void test2(double[] arr1) {
+        for(int i = 0; i < arr1.length; ++i) {
+            arr1[i] = 1;
+            double[] tmp = new double[100];
+        }
+    }
+
+    static public int run3() {
+        int size = 10;
+        int[] arr1 = new int[size];
+        test3(arr1);
+
+        int sum = 0;
+        for(int i = 0; i < arr1.length; ++i) {
+            sum += arr1[i];
+        }
+
+        if (sum != size) {
+            System.out.println("test3: wrong result: " + sum + " vs expected: " + size);
+            return 1;
+        }
+        return 0;
+    }
+
+    // Modified from test2
+    public static void test3(int[] arr1) {
+        for(int i = 0; i < arr1.length; ++i) {
+            arr1[i] = 1;
+            int[] tmp = new int[100];
+        }
+    }
+
+}
