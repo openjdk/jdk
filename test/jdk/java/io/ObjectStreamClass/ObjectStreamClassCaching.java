@@ -49,7 +49,6 @@ import static org.testng.Assert.assertTrue;
  */
 
 /*
- * Disabled for ZGC Generational.
  * @test id=ZGenerational
  * @requires vm.gc.ZGenerational
  * @bug 8277072 8327180
