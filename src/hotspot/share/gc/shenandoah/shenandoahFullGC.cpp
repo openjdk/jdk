@@ -1085,6 +1085,7 @@ void ShenandoahFullGC::phase5_epilog() {
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->set_used(post_compact.get_live());
+
     heap->collection_set()->clear();
     heap->free_set()->rebuild();
     heap->clear_cancelled_gc();
