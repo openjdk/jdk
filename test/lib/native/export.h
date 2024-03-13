@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,15 @@
  * questions.
  */
 
+#ifndef TEST_LIB_NATIVE_EXPORT_H
+#define TEST_LIB_NATIVE_EXPORT_H
 
-/*
- * @test
- *
- * @summary converted from VM Testbase nsk/jvmti/GetObjectMonitorUsage/objmonusage003.
- * VM Testbase keywords: [quick, jpda, jvmti, noras]
- * VM Testbase readme:
- * DESCRIPTION
- *     The test checks if JVMTI function GetObjectMonitorUsage returns
- *     the expected values for the owner, entry_count, water_count
- *     fields of JVMTI_monitor_info. The tescases are the following:
- *       - unowned object without any waitings
- *       - owned object without any waitings
- *       - unowned object with waitings through Object.wait()
- *       - unowned object has been waiting
- * COMMENTS
- *     Fixed according to 4669812 bug.
- *     Ported from JVMDI test nsk/jvmdi/GetMonitorInfo/getmoninfo003.
- *
- * @library /vmTestbase
- *          /test/lib
- * @run main/othervm/native -agentlib:objmonusage003 nsk.jvmti.GetObjectMonitorUsage.objmonusage003
- */
+#ifdef _WIN64
+  #define EXPORT __declspec(dllexport)
+#elif defined(__GNUC__)
+  #define EXPORT __attribute__((visibility("default")))
+#else
+  #define EXPORT
+#endif
 
+#endif // TEST_LIB_NATIVE_EXPORT_H

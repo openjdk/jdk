@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      8250768 8261976 8277300 8282452 8287597 8325325
+ * @bug      8250768 8261976 8277300 8282452 8287597 8325325 8325874
  * @summary  test generated docs for items declared using preview
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -78,10 +78,13 @@ public class TestPreview extends JavadocTester {
 
         checkOutput("preview-list.html", true,
                 """
-                    <ul class="preview-feature-list">
+                    <ul class="preview-feature-list checkboxes">
                     <li><label for="feature-1">
                     <input type="checkbox" id="feature-1" disabled checked onclick="toggleGlobal(this, '1', 3)">
                     <span>0: <a href="https://openjdk.org/jeps/0">Test Feature (Preview)</a></span></label></li>
+                    <li><label for="feature-all">
+                    <input type="checkbox" id="feature-all" disabled checked onclick="toggleGlobal(this, 'all', 3)">
+                    <span>Toggle all</span></label></li>
                     </ul>
                     <h2 title="Contents">Contents</h2>
                     <ul class="contents-list">
