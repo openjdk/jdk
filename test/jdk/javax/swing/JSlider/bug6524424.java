@@ -21,7 +21,7 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 6524424
  * @requires (os.family == "windows")
