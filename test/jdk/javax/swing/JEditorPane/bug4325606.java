@@ -77,7 +77,7 @@ public class bug4325606 {
             try {
                 robo = new Robot();
             } catch (AWTException e) {
-                throw new RuntimeException("Robot could not be created");
+                throw new RuntimeException("Robot could not be created", e);
             }
             robo.setAutoDelay(100);
             robo.delay(1000);
@@ -97,7 +97,7 @@ public class bug4325606 {
             try {
                 Utilities.getRowStart(pane, pane.getCaretPosition());
             } catch (BadLocationException blex) {
-                passed = false;
+                throw new RuntimeException("Test failed.");
             }
         }
     }
@@ -110,25 +110,14 @@ public class bug4325606 {
     }
 
     public static void main(String[] args) throws InterruptedException,
-            InvocationTargetException {
+            InvocationTargetException, AWTException {
         bug4325606 b = new bug4325606();
         try {
+            Robot robot = new Robot();
             SwingUtilities.invokeAndWait(b::setupGUI);
-            safeSleep(3000);
-            if (!b.passed) {
-                throw new RuntimeException("Test failed.");
-            }
+            robot.waitForIdle();
         } finally {
             SwingUtilities.invokeAndWait(b::cleanupGUI);
         }
-    }
-
-    public static void safeSleep(long ms) {
-        long wakeup = System.currentTimeMillis() + ms;
-        do {
-            try {
-                Thread.sleep(wakeup - System.currentTimeMillis());
-            } catch (InterruptedException ie) {}
-        } while (System.currentTimeMillis() < wakeup);
     }
 }

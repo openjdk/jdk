@@ -34,6 +34,7 @@ import java.awt.Robot;
 import java.awt.event.KeyEvent;
 import java.beans.PropertyVetoException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.CountDownLatch;
 import javax.swing.DefaultDesktopManager;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
@@ -50,8 +51,7 @@ public class bug4773378 {
     JInternalFrame jif;
 
     Robot robot;
-    volatile boolean frameActivated = false;
-
+    private final CountDownLatch frameActivated = new CountDownLatch(1);
     public void setupGUI() {
         frame = new JFrame("bug4773378");
         frame.setLayout(new BorderLayout());
@@ -65,10 +65,7 @@ public class bug4773378 {
 
         jif.addInternalFrameListener(new InternalFrameAdapter() {
                 public void internalFrameActivated(InternalFrameEvent e) {
-                    synchronized (bug4773378.this) {
-                        frameActivated = true;
-                        bug4773378.this.notifyAll();
-                    }
+                    frameActivated.countDown();
                 }
             });
 
@@ -92,11 +89,7 @@ public class bug4773378 {
             }
         });
 
-        synchronized (this) {
-            while (!frameActivated) {
-                bug4773378.this.wait();
-            }
-        }
+        frameActivated.await();
 
         robot = new Robot();
         robot.keyPress(KeyEvent.VK_CONTROL);
@@ -104,7 +97,7 @@ public class bug4773378 {
         robot.keyRelease(KeyEvent.VK_F6);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        Thread.sleep(2000);
+        robot.waitForIdle();
     }
 
     public void cleanupGUI() {
@@ -114,7 +107,7 @@ public class bug4773378 {
         }
     }
 
-    class MyDesktopManager extends DefaultDesktopManager {
+    private static class MyDesktopManager extends DefaultDesktopManager {
     }
 
     public static void main(String[] args) throws InterruptedException,
