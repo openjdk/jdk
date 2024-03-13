@@ -59,15 +59,6 @@ define SetupTestFilesCompilationBody
   # Always include common test functionality
   TEST_CFLAGS := -I$(TOPDIR)/test/lib/native
 
-  ifeq ($(TOOLCHAIN_TYPE), gcc)
-    TEST_CFLAGS += -fvisibility=hidden
-    TEST_LDFLAGS += -Wl,--exclude-libs,ALL
-  else ifeq ($(TOOLCHAIN_TYPE), clang)
-    TEST_CFLAGS += -fvisibility=hidden
-  else ifeq ($(TOOLCHAIN_TYPE), xlc)
-    TEST_CFLAGS += -qvisibility=hidden
-  endif
-
   # The list to depend on starts out empty
   $1 :=
   ifeq ($$($1_TYPE), LIBRARY)
@@ -75,7 +66,7 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := lib
     $1_BASE_CFLAGS := $(CFLAGS_JDKLIB) $$(TEST_CFLAGS)
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKLIB) $$(TEST_CFLAGS)
-    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(TEST_LDFLAGS) $$(call SET_SHARED_LIBRARY_ORIGIN)
+    $1_LDFLAGS := $(LDFLAGS_JDKLIB) $$(call SET_SHARED_LIBRARY_ORIGIN)
     $1_COMPILATION_TYPE := LIBRARY
     $1_LOG_TYPE := library
   else ifeq ($$($1_TYPE), PROGRAM)
@@ -83,7 +74,7 @@ define SetupTestFilesCompilationBody
     $1_OUTPUT_SUBDIR := bin
     $1_BASE_CFLAGS := $(CFLAGS_JDKEXE) $$(TEST_CFLAGS)
     $1_BASE_CXXFLAGS := $(CXXFLAGS_JDKEXE) $$(TEST_CFLAGS)
-    $1_LDFLAGS := $(LDFLAGS_JDKEXE) $$(TEST_LDFLAGS) $(LDFLAGS_TESTEXE)
+    $1_LDFLAGS := $(LDFLAGS_JDKEXE) $(LDFLAGS_TESTEXE)
     $1_COMPILATION_TYPE := EXECUTABLE
     $1_LOG_TYPE := executable
   else
