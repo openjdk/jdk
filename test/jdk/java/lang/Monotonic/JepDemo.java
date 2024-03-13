@@ -91,8 +91,10 @@ final class JepDemo {
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier backed by the monotonic value that
         //    is pre-computed in the background
-        private static final Supplier<Logger> LOGGER =
-                Monotonics.asMemoized( () -> Logger.getLogger("com.foo.Bar") , true);
+        private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
+                        () -> Logger.getLogger("com.foo.Bar") ,
+                        true
+                );
 
         static Logger logger() {
             // 2. Access the memoized value with as-declared-final performance
