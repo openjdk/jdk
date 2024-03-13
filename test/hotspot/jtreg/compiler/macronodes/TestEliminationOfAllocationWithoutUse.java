@@ -45,6 +45,7 @@ public class TestEliminationOfAllocationWithoutUse {
         failures += run1();
         failures += run2();
         failures += run3();
+        failures += run4();
         if (failures != 0) {
             throw new RuntimeException("Had test failures: " + failures);
         }
@@ -132,4 +133,27 @@ public class TestEliminationOfAllocationWithoutUse {
         }
     }
 
+    // From TestIncorrectResult.java in JDK-8324739
+    static int test4(int l2) {
+       int[] tmp = new int[20];
+
+       for (int j = 0; j < l2; ++j) {
+           tmp[j] = 42;
+           int[] unused_but_necessary = new int[400];
+       }
+
+       return tmp[0];
+    }
+
+    public static int run4() {
+        for (int i = 0; i < 100; ++i) {
+            long res = test4(20);
+
+            if (res != 42) {
+                System.out.println("test4: wrong result: " + res + " vs expected: 42");
+                return 1;
+            }
+        }
+        return 0;
+    }
 }
