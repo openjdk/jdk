@@ -64,6 +64,7 @@ void error (int fd, int err) {
 }
 
 void shutItDown() {
+    fprintf(stdout, "jspawnhelper version %s\n", VERSION_STRING);
     fprintf(stdout, "This command is not for general use and should ");
     fprintf(stdout, "only be run as the result of a call to\n");
     fprintf(stdout, "ProcessBuilder.start() or Runtime.exec() in a java ");
@@ -146,25 +147,29 @@ int main(int argc, char *argv[]) {
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
 
-    if (argc != 3) {
-        shutItDown();
-    }
-
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);
 #endif
 
+    if (argc != 3) {
+        fprintf(stdout, "Incorrect number of arguments: %d\n", argc);
+        shutItDown();
+    }
+
     if (strcmp(argv[1], VERSION_STRING) != 0) {
-        fprintf(stdout, "Version check failed. jspawnhelper version: %s, JDK version: %s\n", VERSION_STRING, argv[1]);
+        fprintf(stdout, "Incorrect Java version: %s\n", argv[1]);
         shutItDown();
     }
 
     r = sscanf (argv[2], "%d:%d:%d", &fdinr, &fdinw, &fdout);
     if (r == 3 && fcntl(fdinr, F_GETFD) != -1 && fcntl(fdinw, F_GETFD) != -1) {
         fstat(fdinr, &buf);
-        if (!S_ISFIFO(buf.st_mode))
+        if (!S_ISFIFO(buf.st_mode)) {
+            fprintf(stdout, "Incorrect input pipe\n");
             shutItDown();
+        }
     } else {
+        fprintf(stdout, "Incorrect FD array data: %s\n", argv[2]);
         shutItDown();
     }
 

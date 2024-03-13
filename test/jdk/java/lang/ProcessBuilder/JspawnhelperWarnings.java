@@ -47,6 +47,11 @@ public class JspawnhelperWarnings {
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
         oa.shouldContain("This command is not for general use");
+        if (nArgs != 2) {
+            oa.shouldContain("Incorrect number of arguments");
+        } else {
+            oa.shouldContain("Incorrect Java version");
+        }
     }
 
     private static void testVersion() throws Exception {
@@ -57,7 +62,8 @@ public class JspawnhelperWarnings {
         Process p = ProcessTools.startProcess("jspawnhelper", new ProcessBuilder(args));
         OutputAnalyzer oa = new OutputAnalyzer(p);
         oa.shouldHaveExitValue(1);
-        oa.shouldContain("Version check failed");
+        oa.shouldContain("This command is not for general use");
+        oa.shouldContain("Incorrect Java version: wrongVersion");
     }
 
     public static void main(String[] args) throws Exception {
