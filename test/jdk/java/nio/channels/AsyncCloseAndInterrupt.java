@@ -25,7 +25,7 @@
  * @bug 4460583 4470470 4840199 6419424 6710579 6596323 6824135 6395224 7142919
  *      8151582 8068693 8153209
  * @library /test/lib
- * @run main/othervm AsyncCloseAndInterrupt
+ * @run main/othervm --enable-native-access=ALL-UNNAMED AsyncCloseAndInterrupt
  * @key intermittent
  * @summary Comprehensive test of asynchronous closing and interruption
  * @author Mark Reinhold
@@ -44,8 +44,13 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import jdk.test.lib.process.OutputAnalyzer;
-import jdk.test.lib.process.ProcessTools;
+import java.lang.foreign.Arena;
+import java.lang.foreign.FunctionDescriptor;
+import java.lang.foreign.Linker;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.SymbolLookup;
+import java.lang.foreign.ValueLayout;
+import java.lang.invoke.MethodHandle;
 
 public class AsyncCloseAndInterrupt {
 
@@ -55,6 +60,23 @@ public class AsyncCloseAndInterrupt {
         try {
             Thread.sleep(ms);
         } catch (InterruptedException x) { }
+    }
+
+    private static int mkfifo(String path) throws Throwable {
+        Linker linker = Linker.nativeLinker();
+        SymbolLookup stdlib = linker.defaultLookup();
+        MethodHandle mkfifo = linker.downcallHandle(
+            stdlib.find("mkfifo").orElseThrow(),
+            FunctionDescriptor.of(ValueLayout.JAVA_INT,
+                                  ValueLayout.ADDRESS, ValueLayout.JAVA_INT)
+        );
+
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment cString = arena.allocateFrom(path);
+            int mode = 0666;
+            int returnValue = (int)mkfifo.invokeExact(cString, mode);
+            return returnValue;
+        }
     }
 
     // Wildcard address localized to this machine -- Windoze doesn't allow
@@ -138,21 +160,14 @@ public class AsyncCloseAndInterrupt {
                 throw new IOException("Cannot delete existing fifo " + fifoFile);
         }
 
-        ProcessBuilder pb = new ProcessBuilder("mkfifo", fifoFile.toString());
-        OutputAnalyzer oa = ProcessTools.executeProcess(pb);
-        oa.waitFor();
-        if (oa.getExitValue() != 0) {
-            String stderr = oa.getStderr();
-            if (stderr.contains("mkfifo") &&
-                stderr.contains("Operation not supported")) {
+        try {
+            if (mkfifo(fifoFile.toString()) != 0) {
                 fifoFile = null;
                 log.println("WARNING: mkfifo failed - cannot completely test FileChannels");
                 return;
-            } else {
-                throw new IOException("Error creating fifo \"" +
-                    fifoFile.getAbsolutePath() + "\"\n" +
-                    ProcessTools.getProcessLog(pb, oa));
             }
+        } catch (Throwable cause) {
+            throw new IOException(cause);
         }
         new RandomAccessFile(fifoFile, "rw").close();
     }
