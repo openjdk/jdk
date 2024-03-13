@@ -267,17 +267,17 @@ public class CallGeneratorHelper extends NativeTestHelper {
         }
     }
 
+    private static final List<String> stackParamTypes = Stream.concat(Stream.generate(() -> "long long").limit(8),
+                Stream.generate(() -> "double").limit(8)).toList();
+    private static final List<String> stackParamNames = IntStream.range(0, 16).mapToObj(i -> "pf" + i).toList();
+    private static final List<String> stackParamDecls = IntStream.range(0, 16)
+            .mapToObj(i -> stackParamTypes.get(i) + " " + stackParamNames.get(i)).toList();
+
     private static void generateDowncallFunction(PrintStream out, String fName, Ret ret, List<ParamType> params, List<StructFieldType> fields, boolean stack) {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
         if (stack) {
-            int i = 0;
-            for (; i < 8; i++) {
-                paramDecls.add(String.format("long long pf%d", i));
-            }
-            for (; i < 16; i++) {
-                paramDecls.add(String.format("double pf%d", i));
-            }
+            paramDecls.addAll(stackParamDecls);
         }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
@@ -309,29 +309,23 @@ public class CallGeneratorHelper extends NativeTestHelper {
         String retType = ret == Ret.VOID ? "void" : params.get(0).type(fields);
         List<String> paramDecls = new ArrayList<>();
         if (stack) {
-            int i = 0;
-            for (; i < 8; i++) {
-                paramDecls.add(String.format("long long pf%d", i));
-            }
-            for (; i < 16; i++) {
-                paramDecls.add(String.format("double pf%d", i));
-            }
+            paramDecls.addAll(stackParamDecls);
         }
         for (int i = 0 ; i < params.size() ; i++) {
             paramDecls.add(String.format("%s p%d", params.get(i).type(fields), i));
         }
-        Stream<String> prefixParams = stack ? IntStream.range(0, 16).mapToObj(i -> "pf" + i) : Stream.of();
-        String paramNames = Stream.concat(prefixParams, IntStream.range(0, params.size())
+        Stream<String> prefixParamNames = stack ? stackParamNames.stream() : Stream.of();
+        String paramNames = Stream.concat(prefixParamNames, IntStream.range(0, params.size())
                 .mapToObj(i -> "p" + i))
                 .collect(Collectors.joining(", "));
         String sig = paramDecls.isEmpty() ?
                 "" :
                 paramDecls.stream().collect(Collectors.joining(", ")) + ", ";
         String body = String.format(ret == Ret.VOID ? "{ cb(%s); }" : "{ return cb(%s); }", paramNames);
-        List<String> prefixParamTypes = stack ? Stream.concat(Stream.generate(() -> "long long").limit(8),
-                Stream.generate(() -> "double").limit(8)).toList() : List.of();
         List<String> paramTypes = params.stream().map(p -> p.type(fields)).collect(Collectors.toList());
-        paramTypes.addAll(0, prefixParamTypes);
+        if (stack) {
+            paramTypes.addAll(0, stackParamTypes);
+        }
         String cbSig = paramTypes.isEmpty() ?
                 "void" :
                 paramTypes.stream().collect(Collectors.joining(", "));
