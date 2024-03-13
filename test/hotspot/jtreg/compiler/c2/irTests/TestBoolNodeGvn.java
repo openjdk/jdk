@@ -21,7 +21,7 @@
  * questions.
  */
 
-package compiler.c2;
+package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.Argument;
 import compiler.lib.ir_framework.Arguments;
@@ -36,7 +36,7 @@ import compiler.lib.ir_framework.TestFramework;
  * @bug 8327381
  * @summary Refactor boolean node tautology transformations
  * @library /test/lib /
- * @run driver compiler.c2.TestBoolNodeGvn
+ * @run driver compiler.c2.irTests.TestBoolNodeGvn
  */
 public class TestBoolNodeGvn {
     public static void main(String[] args) {
