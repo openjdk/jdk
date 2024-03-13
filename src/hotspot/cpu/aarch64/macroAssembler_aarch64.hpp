@@ -47,7 +47,6 @@ class MacroAssembler: public Assembler {
  public:
   using Assembler::mov;
   using Assembler::movi;
-  using Assembler::shld;
 
  protected:
 
@@ -429,10 +428,6 @@ class MacroAssembler: public Assembler {
   }
   inline void umull(Register Rd, Register Rn, Register Rm) {
     umaddl(Rd, Rn, Rm, zr);
-  }
-
-  inline void shld(FloatRegister Vd, FloatRegister Vn, int shift) {
-    if (shift != 0)   Assembler::shld(Vd, Vn, shift);
   }
 
 #define WRAP(INSN)                                                            \

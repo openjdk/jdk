@@ -4733,15 +4733,22 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
 
   CHECK_KLASS_SUBTYPE_SLOW_REGISTERS;
 
-  movptr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
-  movptr(r_array_index, r_bitmap);
+  movq(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+  movq(r_array_index, r_bitmap);
 
   // First check the bitmap to see if super_klass might be present. If
   // the bit is zero, we are certain that super_klass is not one of
   // the secondary supers.
   u1 bit = super_klass->hash_slot();
-  salq(r_array_index, Klass::SEC_HASH_MASK - bit);
-  // We test the MSB of r_array_index, i.e. its sign bit
+  {
+    // NB: If the count in x86 a shift instruction is 0, the flags are not affected.
+    int shift_count = Klass::SEC_HASH_MASK - bit;
+    if (shift_count != 0) {
+      salq(r_array_index, shift_count);
+    } else {
+      testq(r_array_index, r_array_index);
+    }
+  }  // We test the MSB of r_array_index, i.e. its sign bit
   jcc(Assembler::positive, L_failure);
 
   // Get the first array index that can contain super_klass into r_array_index.
@@ -4920,12 +4927,38 @@ void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
     cmpl(result, 0);
     jcc(Assembler::notEqual, done);  // Agree.
 
+#ifdef ASSERT
+    push(r_sub_klass);
+    push(result);
+
+    movptr(c_rarg4, (uintptr_t)"VerifySecondarySupers 1 failed");
+    pop(c_rarg3); // result
+    movptr(c_rarg2, 0);  // expected;
+    mov_metadata(c_rarg1, super_klass);
+    pop(c_rarg0);  // r_sub_klass
+
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, debug_helper)));
+#endif
+
     STOP("VerifySecondarySupers 1 failed");
 
     // Present
     bind(hit);
     cmpl(result, 0);
     jcc(Assembler::equal, done); // Agree.
+
+#ifdef ASSERT
+    push(r_sub_klass);
+    push(result);
+
+    movptr(c_rarg4, (uintptr_t)"VerifySecondarySupers 2 failed");
+    pop(c_rarg3); // result
+    movptr(c_rarg2, 0);  // expected;
+    mov_metadata(c_rarg1, super_klass);
+    pop(c_rarg0);  // r_sub_klass
+
+    call(RuntimeAddress(CAST_FROM_FN_PTR(address, debug_helper)));
+#endif
 
     STOP("VerifySecondarySupers 2 failed");
 

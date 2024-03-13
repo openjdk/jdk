@@ -5994,10 +5994,13 @@ void ClassFileParser::post_process_parsed_stream(const ClassFileStream* const st
 
   assert(_transitive_interfaces != nullptr, "invariant");
 
-  if (HashSecondarySupers) {
-    // Put the transitive interfaces into hash order
-    Klass::hash_secondary_supers(_transitive_interfaces, /*rewrite*/true);
-  }
+  // This would be very convenient, and it would allow us to save the
+  // secondary supers in hased order, but some SA tests know the order
+  // of secondary supers.
+  // if (HashSecondarySupers) {
+  //   // Put the transitive interfaces into hash order
+  //   Klass::hash_secondary_supers(_transitive_interfaces, /*rewrite*/true);
+  // }
 
   // sort methods
   _method_ordering = sort_methods(_methods);

@@ -1424,8 +1424,6 @@ bool InstanceKlass::can_be_primary_super_slow() const {
     return Klass::can_be_primary_super_slow();
 }
 
-long reused_lists, total_count;
-
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots,
                                                                Array<InstanceKlass*>* transitive_interfaces) {
   // The secondaries are the implemented interfaces.
@@ -1435,20 +1433,13 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     // Must share this for correct bootstrapping!
     set_secondary_supers(Universe::the_empty_klass_array());
     return nullptr;
-  } else if (num_extra_slots == 0) {
+  } else if (num_extra_slots == 0 && ! HashSecondarySupers) {
     // The secondary super list is exactly the same as the transitive interfaces, so
     // let's use it instead of making a copy.
     // Redefine classes has to be careful not to delete this!
     // We need the cast because Array<Klass*> is NOT a supertype of Array<InstanceKlass*>,
     // (but it's safe to do here because we won't write into _secondary_supers from this point on).
-
-    uint64_t secondaries_bitmap;
-    if (HashSecondarySupers) {
-      secondaries_bitmap = hash_secondary_supers((Array<Klass*>*)interfaces, /*rewrite*/false);
-    }
-
-    set_secondary_supers((Array<Klass*>*)(address)interfaces, secondaries_bitmap);
-    reused_lists++;
+    set_secondary_supers((Array<Klass*>*)(address)interfaces);
     return nullptr;
   } else {
     // Copy transitive interfaces to a temporary growable array to be constructed
@@ -1457,7 +1448,6 @@ GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slo
     for (int i = 0; i < interfaces->length(); i++) {
       secondaries->push(interfaces->at(i));
     }
-    total_count++;
     return secondaries;
   }
 }
