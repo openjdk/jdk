@@ -41,18 +41,21 @@ import javax.swing.UIManager;
 /*
  * @test
  * @bug 4319113
- * @library /test/jdk/java/awt/regtesthelpers /test/lib
+ * @library ../../../java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests the open JColorChooser behavior on LaF change.
  * @run main/manual Test4319113
  */
 public class Test4319113 {
+
     public static void main(String[] args) throws Exception {
+        String instructions = "Choose a LaF using the dropdown. Click on the Show JColorChooser button.\n" +
+                "Test if the JColorChooser is working normally. If it is, click the OK button\n" +
+                "and repeat for the other LaFs. If not, fail the test.";
+
         PassFailJFrame.builder()
                 .title("Test4319113")
-                .instructions("Choose a LaF using the dropdown. Click on the Show JColorChooser button.\n" +
-                        "Test if the JColorChooser is working normally. If it is, click the OK button\n" +
-                        "and repeat for the other LaFs. If not, fail the test.")
+                .instructions(instructions)
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
@@ -62,7 +65,7 @@ public class Test4319113 {
     }
 
     private static JFrame test() {
-        JFrame frame = new JFrame("Test4319113");
+        JFrame frame = new JFrame("JColorChooser behavior on LaF change");
         frame.setLayout(new GridLayout(2, 1));
 
         JButton jButton = new JButton("Show ColorChooser");
