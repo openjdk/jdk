@@ -60,7 +60,7 @@ public class Test6910490 implements Icon {
 
     public JFrame init() {
         Insets insets = new Insets(10, 10, 10, 10);
-        JFrame frame = new JFrame("Matte border test");
+        JFrame frame = new JFrame("Matte Border Test");
         frame.setSize(600, 300);
         Dimension size = new Dimension(frame.getWidth() / 2, frame.getHeight());
         JSplitPane pane = new JSplitPane(
