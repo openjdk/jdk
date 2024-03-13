@@ -86,10 +86,10 @@ public class Constructor {
                         NumberFormatException.class,
                         () -> new BigDecimal(
                                 (string + "123").toCharArray(), 0, 1));
+                assertThrows(
+                        NumberFormatException.class,
+                        () -> new BigDecimal(("12e" + string + "123").toCharArray(), 3, 1));
             }
-            assertThrows(
-                    NumberFormatException.class,
-                    () -> new BigDecimal(("12e" + string + "123").toCharArray(), 3, 1));
         }
     }
 }
