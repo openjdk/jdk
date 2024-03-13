@@ -31,10 +31,10 @@
 #include "memory/metaspace/virtualSpaceNode.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
-#include "sanitizers/address.hpp"
 #include "utilities/align.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
 
 namespace metaspace {

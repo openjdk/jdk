@@ -55,11 +55,9 @@
 // which preserves the arguments, ensuring they still compile, but ensures they are stripped due to
 // being unreachable. This helps ensure developers do not accidently break ASan builds.
 #ifdef ADDRESS_SANITIZER
-#define INCLUDE_ASAN 1
-#else
-#define INCLUDE_ASAN 0
 // ASAN_POISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 // ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
+#else
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
   do {                                        \
     if (false) {                              \
