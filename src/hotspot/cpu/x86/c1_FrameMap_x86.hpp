@@ -160,11 +160,15 @@
     return range - subtrahend;
   }
 
+  static int adjust_caller_save_reg_range(int range) {
+    return UseCompressedOops ? range - 1 : range;
+  }
+
   static int get_num_caller_save_xmms() {
     return XMMRegister::available_xmm_registers();
   }
 
-  static int nof_caller_save_cpu_regs() { return adjust_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
+  static int nof_caller_save_cpu_regs() { return adjust_caller_save_reg_range(pd_nof_caller_save_cpu_regs_frame_map); }
   static int last_cpu_reg()             { return adjust_reg_range(pd_last_cpu_reg);  }
   static int last_byte_reg()            { return adjust_reg_range(pd_last_byte_reg); }
 

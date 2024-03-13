@@ -66,8 +66,7 @@ inline bool LinearScan::requires_adjacent_regs(BasicType type) {
 
 inline bool LinearScan::is_caller_save(int assigned_reg) {
   assert(assigned_reg >= 0 && assigned_reg < nof_regs, "should call this only for registers");
-  return true; // no callee-saved registers on Intel
-
+  return assigned_reg < FrameMap::nof_caller_save_cpu_regs();
 }
 
 

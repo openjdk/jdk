@@ -49,11 +49,12 @@ enum {
   #define UNALLOCATED 2    // rsp, rbp
 #endif // LP64
 
-  pd_nof_caller_save_cpu_regs_frame_map = pd_nof_cpu_regs_frame_map - UNALLOCATED,  // number of registers killed by calls
+  // number of registers killed by calls. rbp is callee saved.
+  pd_nof_caller_save_cpu_regs_frame_map = pd_nof_cpu_regs_frame_map - UNALLOCATED LP64_ONLY(-1),
   pd_nof_caller_save_fpu_regs_frame_map = pd_nof_fpu_regs_frame_map,  // number of registers killed by calls
   pd_nof_caller_save_xmm_regs_frame_map = pd_nof_xmm_regs_frame_map,  // number of registers killed by calls
 
-  pd_nof_cpu_regs_reg_alloc = pd_nof_caller_save_cpu_regs_frame_map,  // number of registers that are visible to register allocator
+  pd_nof_cpu_regs_reg_alloc = pd_nof_cpu_regs_frame_map - UNALLOCATED,  // number of registers that are visible to register allocator
   pd_nof_fpu_regs_reg_alloc = 6,  // number of registers that are visible to register allocator
 
   pd_nof_cpu_regs_linearscan = pd_nof_cpu_regs_frame_map, // number of registers visible to linear scan

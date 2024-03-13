@@ -225,12 +225,11 @@ void FrameMap::initialize() {
   _caller_save_cpu_regs[9]  = r13_opr;
   _caller_save_cpu_regs[10] = r14_opr;
 
-  if (!PreserveFramePointer && UseCompressedOops) {
-    _caller_save_cpu_regs[11] = rbp_opr;
-    _caller_save_cpu_regs[12] = r12_opr;
-  } else {
+  if (!UseCompressedOops) {
+    assert(nof_caller_save_cpu_regs() == 12, "sanity check");
     _caller_save_cpu_regs[11] = r12_opr;
-    _caller_save_cpu_regs[12] = rbp_opr;
+  } else {
+    assert(nof_caller_save_cpu_regs() == 11, "sanity check");
   }
 #endif // _LP64
 

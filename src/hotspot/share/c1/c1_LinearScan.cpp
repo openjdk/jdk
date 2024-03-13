@@ -5752,6 +5752,7 @@ void LinearScanWalker::alloc_locked_reg(Interval* cur) {
 
 bool LinearScanWalker::no_allocation_possible(Interval* cur) {
 #ifdef X86
+#ifndef _LP64
   // fast calculation of intervals that can never get a register because the
   // the next instruction is a call that blocks all registers
   // Note: this does not work if callee-saved registers are available (e.g. on Sparc)
@@ -5770,6 +5771,7 @@ bool LinearScanWalker::no_allocation_possible(Interval* cur) {
     }
 
   }
+#endif
 #endif
   return false;
 }
