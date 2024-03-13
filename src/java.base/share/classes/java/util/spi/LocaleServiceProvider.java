@@ -141,14 +141,14 @@ import java.util.Locale;
  * desired locale sensitive service is not available, then the runtime looks for CLDR.
  * <p>
  * The default value for looking up the preferred locale data providers is "CLDR",
- * so specifying "CLDR" is identical to the default behavior. Applications which
+ * so specifying only "CLDR" is identical to the default behavior. Applications which
  * require implementations of the locale sensitive services must explicitly specify
  * "SPI" in order for the Java runtime to load them from the classpath.
  *
  * @implNote The JDK uses locale data from the Unicode Consortium's
  * <a href="http://cldr.unicode.org/">Common Locale Data Repository (CLDR)</a>
  * to implement locale-sensitive APIs in the {@code java.util} and
- * {@code java.text} packages. This locale data makes the set of locales
+ * {@code java.text} packages. This locale data derives the set of locales
  * supported by the Java runtime environment. The following table lists the
  * version of CLDR used in each JDK release.
  * <table class="striped">
