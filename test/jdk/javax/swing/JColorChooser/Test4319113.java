@@ -49,9 +49,15 @@ import javax.swing.UIManager;
 public class Test4319113 {
 
     public static void main(String[] args) throws Exception {
-        String instructions = "Choose a LaF using the dropdown. Click on the Show JColorChooser button.\n" +
-                "Test if the JColorChooser is working normally. If it is, click the OK button\n" +
-                "and repeat for the other LaFs. If not, fail the test.";
+        String instructions = "1. Press button \"Show ColorChooser\" in the frame \"frame\" and\n" +
+                "   a color chooser dialog should appear.\n" +
+                "2. Without closing the color chooser, change Look And Feel\n" +
+                "   selecting it from the combobox in the frame \"frame\".\n" +
+                "   Dialog appearance will change.\n" +
+                "3. Resize the color chooser by mouse drag.\n" +
+                "\n" +
+                "   If you see some remnants of the previous color chooser,\n" +
+                "   press \"Fail\" else press \"Pass\".";
 
         PassFailJFrame.builder()
                 .title("Test4319113")
