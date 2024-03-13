@@ -71,9 +71,8 @@ public class GetBoundsResizeTest {
         robot.delay(500);
 
         EventQueue.invokeAndWait(() ->
-                textArea
-                        .append("Original Frame.getBounds() = %s\n"
-                                .formatted(frame.getBounds())));
+                textArea.append("Original Frame.getBounds() = %s\n"
+                        .formatted(frame.getBounds())));
 
         passFailJFrame.awaitAndCheck();
     }
@@ -83,9 +82,8 @@ public class GetBoundsResizeTest {
 
         Button button = new Button("Press");
         button.addActionListener((e) ->
-                textArea
-                        .append("Current Frame.getBounds() = %s\n"
-                                .formatted(frame.getBounds())));
+                textArea.append("Current Frame.getBounds() = %s\n"
+                        .formatted(frame.getBounds())));
 
         frame.add(button);
         frame.pack();
