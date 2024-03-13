@@ -4880,6 +4880,15 @@ void MacroAssembler::klass_subtype_fallback() {
   ret(0);
 }
 
+#ifdef ASSERT
+static void debug_helper(Klass* sub, Klass* super, bool expected, bool result, const char* msg) {
+  super->print();
+  sub->print();
+  printf("%s: sub %p implements %p, expected %d actual %d\n", msg,
+        sub, super, expected, result);
+}
+#endif
+
 // Make sure that the hashed lookup and a linear scan agree.
 void MacroAssembler::verify_klass_subtype_slow_path(Register r_sub_klass,
                                                     Klass *super_klass,
