@@ -299,7 +299,7 @@ public class InfoTest {
                         // With busybox sleep is just a sym link to busybox.
                         // The busbox executable is seen as ProcessHandle.Info command.
                         expected = "busybox";
-                    } else if (Platform.isCoreutilsSingleExecutable("sleep")) {
+                    } else if (Platform.isCoreutilsSingleExecutable()) {
                         // With coreutils single executable sleep is just a script around coreutils.
                         // The coreutils executable is seen as ProcessHandle.Info command.
                         expected = "/usr/bin/coreutils";
