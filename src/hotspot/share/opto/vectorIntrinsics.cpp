@@ -2187,11 +2187,11 @@ static address get_vector_math_address(int vop, int bits, BasicType bt, char* na
     case 256: //fallthough
     case 512:
       if (bt == T_FLOAT) {
-        snprintf(name_ptr, name_len, "vector_%s_float_%dbits", VectorSupport::mathname[op], bits);
+        snprintf(name_ptr, name_len, "vector_%s_float_%dbits_fixed", VectorSupport::mathname[op], bits);
         addr = StubRoutines::_vector_f_math[exact_log2(bits/64)][op];
       } else {
         assert(bt == T_DOUBLE, "must be FP type only");
-        snprintf(name_ptr, name_len, "vector_%s_double_%dbits", VectorSupport::mathname[op], bits);
+        snprintf(name_ptr, name_len, "vector_%s_double_%dbits_fixed", VectorSupport::mathname[op], bits);
         addr = StubRoutines::_vector_d_math[exact_log2(bits/64)][op];
       }
       break;
@@ -2204,11 +2204,11 @@ static address get_vector_math_address(int vop, int bits, BasicType bt, char* na
 
   if (addr == nullptr && Matcher::supports_scalable_vector()) {
     if (bt == T_FLOAT) {
-      snprintf(name_ptr, name_len, "vector_%s_float_%dbits", VectorSupport::mathname[op], bits);
+      snprintf(name_ptr, name_len, "vector_%s_float_%dbits_scalable", VectorSupport::mathname[op], bits);
       addr = StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op];
     } else {
       assert(bt == T_DOUBLE, "must be FP type only");
-      snprintf(name_ptr, name_len, "vector_%s_double_%dbits", VectorSupport::mathname[op], bits);
+      snprintf(name_ptr, name_len, "vector_%s_double_%dbits_scalable", VectorSupport::mathname[op], bits);
       addr = StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op];
     }
   }
