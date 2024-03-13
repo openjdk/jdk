@@ -158,8 +158,6 @@ class JavaThread: public Thread {
   JNIHandleBlock* _free_handle_block;
 
  public:
-  volatile intptr_t _Stalled;
-
   // For tracking the heavyweight monitor the thread is pending on.
   ObjectMonitor* current_pending_monitor() {
     // Use Atomic::load() to prevent data race between concurrent modification and
