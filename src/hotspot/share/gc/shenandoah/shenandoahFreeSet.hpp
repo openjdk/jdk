@@ -410,6 +410,10 @@ private:
   // Precondition: req.size() > ShenandoahHeapRegion::humongous_threshold_words().
   HeapWord* allocate_contiguous(ShenandoahAllocRequest& req);
 
+  // Change region r from the Mutator partition to the GC's Collector partition.  This requires that the region is entirely empty.
+  // Typical usage: During evacuation, the GC may find it needs more memory than had been reserved at the start of evacuation to hold
+  // evacuated objects If this occurs and memory is still available in the Mutator's free set, we will flip a region from the Mutator
+  // free set into the Collector free set.
   void flip_to_gc(ShenandoahHeapRegion* r);
   void clear_internal();
   void try_recycle_trashed(ShenandoahHeapRegion *r);
