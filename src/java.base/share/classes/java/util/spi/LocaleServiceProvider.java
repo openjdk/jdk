@@ -150,7 +150,8 @@ import java.util.Locale;
  * to implement locale-sensitive APIs in the {@code java.util} and
  * {@code java.text} packages. This locale data derives the set of locales
  * supported by the Java runtime environment. The following table lists the
- * version of CLDR used in each JDK release.
+ * version of CLDR used in each JDK release. Unless otherwise specified, all
+ * update releases in a given JDK release family use the same CLDR version.
  * <table class="striped">
  * <caption style="display:none">JDK releases and supported CLDR versions</caption>
  * <thead>
