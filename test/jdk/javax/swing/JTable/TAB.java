@@ -55,10 +55,6 @@ import javax.swing.table.TableModel;
 
 public class TAB
 {
-    private static final String INSTRUCTIONS = """
-            Select a cell by double clicking it, press tab.
-            Check that the focus moves to the next cell.
-            If it does, press "pass", otherwise press "fail". """;
     private static Robot robot;
     private static JFrame frame;
     private static JTable tableView;
@@ -97,8 +93,6 @@ public class TAB
                 selectedColumnBeforeTabPress = tableView.getSelectedColumn();
             });
 
-            //System.out.println("selectedRowBeforeTabPress: " + selectedRowBeforeTabPress);
-            //System.out.println("selectedColumnBeforeTabPress: " + selectedColumnBeforeTabPress);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
             robot.delay(100);
@@ -108,8 +102,6 @@ public class TAB
                 selectedRowAfterTabPress = tableView.getSelectedRow();
                 selectedColumnAfterTabPress = tableView.getSelectedColumn();
             });
-            //System.out.println("selectedRowAfterTabPress: " + selectedRowAfterTabPress);
-            //System.out.println("selectedColumnAfterTabPress: " + selectedColumnAfterTabPress);
 
             if (selectedRowAfterTabPress != selectedRowBeforeTabPress
                && selectedColumnAfterTabPress != (selectedColumnBeforeTabPress + 1)) {
@@ -123,16 +115,6 @@ public class TAB
                 }
             });
         }
-        /*PassFailJFrame.builder()
-                .title("JTable Instructions")
-                .instructions(INSTRUCTIONS)
-                .rows(6)
-                .columns(30)
-                .testUI(TAB::createAndShowUI)
-                .build()
-                .awaitAndCheck();
-
-         */
     }
 
     static void createAndShowUI()
