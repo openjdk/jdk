@@ -1259,9 +1259,13 @@ void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
 
     if (move_to_collector) {
       // Note: In a previous implementation, regions were only placed into the survivor space (collector_is_free) if
-      // they were entirely empty.  I'm not sure I understand the rationale for that.  That alternative behavior would
-      // tend to mix survivor objects with ephemeral objects, making it more difficult to reclaim the memory for the
-      // ephemeral objects.
+      // they were entirely empty.  This has the effect of causing new Mutator allocation to reside next to objects
+      // that have already survived at least one GC, mixing ephemeral with longer-lived objects in the same region.
+      // Any objects that have survived a GC are less likely to immediately become garbage, so a region that contains
+      // survivor objects is less likely to be selected for the collection set.  This alternative implementation allows
+      // survivor regions to continue accumulating other survivor objects, and makes it more likely that ephemeral objects
+      // occupy regions comprised entirely of ephemeral objects.  These regions are highly likely to be included in the next
+      // collection set, and they are easily evacuated because they have low density of live objects.
       _partitions.move_from_partition_to_partition(idx, Mutator, Collector, ac);
       log_debug(gc)("  Shifting region " SIZE_FORMAT " from mutator_free to collector_free", idx);
     }
