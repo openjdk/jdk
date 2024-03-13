@@ -38,21 +38,18 @@ public class Test4759306 {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test4759306")
-                .instructions("Check that there is no preview panel in the JColorChooser.")
+                .instructions("Check that there is no panel titled \"Preview\" in the JColorChooser.")
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
-                .testUI(Test4759306::test)
+                .splitUIRight(Test4759306::createColorChooser)
                 .build()
                 .awaitAndCheck();
     }
 
-    private static JFrame test() {
-        JFrame frame = new JFrame();
+    private static JColorChooser createColorChooser() {
         JColorChooser chooser = new JColorChooser();
         chooser.setPreviewPanel(new JPanel());
-        frame.getContentPane().add(chooser);
-        frame.pack();
-        return frame;
+        return chooser;
     }
 }
