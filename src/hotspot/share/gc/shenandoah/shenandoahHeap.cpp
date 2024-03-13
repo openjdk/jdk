@@ -374,6 +374,7 @@ jint ShenandoahHeap::initialize() {
 
     // Initialize to complete
     _marking_context->mark_complete();
+
     _free_set->rebuild();
   }
 
