@@ -21,12 +21,12 @@
  * questions.
  */
 
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import java.awt.Button;
 import java.awt.Frame;
 import java.awt.EventQueue;
 import java.awt.Robot;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 /*
  * @test
@@ -43,8 +43,10 @@ public class GetBoundsResizeTest {
                 Its original bounds should be printed in the text area below.
             1. Resize the test window using the upper left corner.
             2. Press the button to print the result of getBounds() to the terminal.
-            3. If getBounds() prints the correct values for the window, click Pass,
-             otherwise click Fail.
+            3. Previously, a window could report an incorrect position on the
+                screen after resizing the window in this way.
+                If getBounds() prints the appropriate values for the window,
+                click Pass, otherwise click Fail.
             """;
 
     private static JTextArea textArea;
@@ -63,7 +65,7 @@ public class GetBoundsResizeTest {
                     return new JScrollPane(textArea);
                 })
                 .testUI(GetBoundsResizeTest::getFrame)
-                .rows(7)
+                .rows((int) (INSTRUCTIONS.lines().count() + 2))
                 .columns(40)
                 .build();
 
@@ -71,8 +73,7 @@ public class GetBoundsResizeTest {
         robot.delay(500);
 
         EventQueue.invokeAndWait(() ->
-                textArea.append("Original Frame.getBounds() = %s\n"
-                        .formatted(frame.getBounds())));
+                logFrameBounds("Original Frame.getBounds() = %s\n"));
 
         passFailJFrame.awaitAndCheck();
     }
@@ -82,12 +83,15 @@ public class GetBoundsResizeTest {
 
         Button button = new Button("Press");
         button.addActionListener((e) ->
-                textArea.append("Current Frame.getBounds() = %s\n"
-                        .formatted(frame.getBounds())));
+                logFrameBounds("Current Frame.getBounds() = %s\n"));
 
         frame.add(button);
         frame.pack();
 
         return frame;
+    }
+
+    private static void logFrameBounds(String format) {
+        textArea.append(format.formatted(frame.getBounds()));
     }
 }
