@@ -99,16 +99,19 @@ public class BigDecimals {
             bigDecimals[i] = new BigDecimal(value);
 
             stringInputs[i] = "" + value;
-            stringHugeInputs[i] = "" + -(i + 1) * 5434543453454355e100;
-            stringLargeInputs[i] = "" + -(i + 1) * 5434543453454355e100;
-            stringSmallInputs[i] = "" + -(i + 1) * 54345.0d;
-
+            doubleInputs[i] = value;
             charArrayInputs[i] = stringInputs[i].toCharArray();
+
+            int intVal = Math.abs(r.nextInt());
+            stringHugeInputs[i]
+                    = "" + ((long) intVal + (long) Integer.MAX_VALUE)
+                    + ((long) intVal + (long) Integer.MAX_VALUE) + ".55";
+            stringLargeInputs[i] = "" + ((long) intVal + (long) Integer.MAX_VALUE) + ".55";
+            stringSmallInputs[i] = "" + ((long) intVal / 1000) + ".55";
+
             charArrayHugeInputs[i] = stringHugeInputs[i].toCharArray();
             charArrayLargeInputs[i] = stringLargeInputs[i].toCharArray();
             charArraySmallInputs[i] = stringSmallInputs[i].toCharArray();
-
-            doubleInputs[i] = value;
         }
 
         /*
