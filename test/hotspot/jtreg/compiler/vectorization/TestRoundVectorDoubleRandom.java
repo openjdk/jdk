@@ -27,8 +27,6 @@
  * @bug 8321011
  * @summary Test vector intrinsic for Math.round(double) in full 64 bits range.
  *
- * @requires vm.compiler2.enabled
- *
  * @library /test/lib /
  * @run main compiler.vectorization.TestRoundVectorDoubleRandom
  */
@@ -94,37 +92,48 @@ public class TestRoundVectorDoubleRandom {
     }
 
     int errn = 0;
+    // a double precise float point is composed of 3 parts: sign/e(exponent)/f(signicant)
+    // e (exponent) part of a float value
     final int eShift = 52;
     final int eWidth = 11;
     final int eBound = 1 << eWidth;
+    // f (significant) part of a float value
     final int fWidth = eShift;
     final long fBound = 1 << fWidth;
     final int fNum = 256;
 
-    // prepare test data
+    // prepare for data of f (i.e. significand part)
     long fis[] = new long[fNum];
     int fidx = 0;
     for (; fidx < fWidth; fidx++) {
       fis[fidx] = 1 << fidx;
     }
-    fis[fidx++] = 0;
     for (; fidx < fNum; fidx++) {
       fis[fidx] = rand.nextLong(fBound);
     }
+    fis[rand.nextInt(fidx)] = 0;
 
-    // run test & verify
+    // generate input arrays for testing, then run tests & verify results
     for (long fi : fis) {
+      // generate test input by combining different parts:
+      //   previously generated f values,
+      //   random value in e (i.e. exponent) range,
+      //   both positive and negative of previous combined values (e+f)
       final int eStart = rand.nextInt(9);
       final int eStep = (1 << 3) + rand.nextInt(3);
       for (int ei = eStart; ei < eBound; ei += eStep) {
         int eiIdx = ei/eStep;
+        // combine e and f
         long bits = (ei << eShift) + fi;
+        // combine sign(+/-) with e and f
+        // positive values
         input[eiIdx*2] = Double.longBitsToDouble(bits);
+        // negative values
         bits = bits | (1 << 63);
         input[eiIdx*2+1] = Double.longBitsToDouble(bits);
       }
 
-      // test
+      // run tests
       test_round(res, input);
 
       // verify results

@@ -27,8 +27,6 @@
  * @bug 8321010
  * @summary Test vector intrinsic for Math.round(float) in full 32 bits range
  *
- * @requires vm.compiler2.enabled
- *
  * @library /test/lib /
  * @run main compiler.vectorization.TestRoundVectorFloatRandom
  */
@@ -94,35 +92,46 @@ public class TestRoundVectorFloatRandom {
     }
 
     int errn = 0;
+    // a single precise float point is composed of 3 parts: sign/e(exponent)/f(signicant)
+    // e (exponent) part of a float value
     final int eStart = 0;
     final int eShift = 23;
     final int eWidth = 8;
     final int eBound = 1 << eWidth;
+    // f (significant) part of a float value
     final int fWidth = eShift;
     final int fBound = 1 << fWidth;
     final int fNum = 128;
 
-    // prepare test data
+    // prepare for data of f (i.e. significand part)
     int fis[] = new int[fNum];
     int fidx = 0;
     for (; fidx < fWidth; fidx++) {
       fis[fidx] = 1 << fidx;
     }
-    fis[fidx++] = 0;
     for (; fidx < fNum; fidx++) {
       fis[fidx] = rand.nextInt(fBound);
     }
+    fis[rand.nextInt(fidx)] = 0;
 
-    // run test & verify
+    // generate input arrays for testing, then run tests & verify results
     for (int fi : fis) {
+      // generate test input by combining different parts:
+      //   previously generated f values,
+      //   all values in e (i.e. exponent) range,
+      //   both positive and negative of previous combined values (e+f)
       for (int ei = eStart; ei < eBound; ei++) {
+        // combine e and f
         int bits = (ei << eShift) + fi;
+        // combine sign(+/-) with e and f
+        // positive values
         input[ei*2] = Float.intBitsToFloat(bits);
+        // negative values
         bits = bits | (1 << 31);
         input[ei*2+1] = Float.intBitsToFloat(bits);
       }
 
-      // test
+      // run tests
       test_round(res, input);
 
       // verify results
