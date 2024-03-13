@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,26 +130,21 @@ ArrayKlass* ArrayKlass::array_klass(int n, TRAPS) {
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
 
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
+    // Ensure atomic creation of higher dimensions
+    RecursiveLocker rl(MultiArray_lock, THREAD);
 
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
-
-        // Create multi-dim klass object and link them together
-        ObjArrayKlass* ak =
+    if (higher_dimension() == nullptr) {
+      // Create multi-dim klass object and link them together
+      ObjArrayKlass* ak =
           ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
-      }
+      // use 'release' to pair with lock-free load
+      release_set_higher_dimension(ak);
+      assert(ak->lower_dimension() == this, "lower dimension mismatch");
     }
   }
 
-  ObjArrayKlass *ak = higher_dimension();
+  ObjArrayKlass* ak = higher_dimension();
+  assert(ak != nullptr, "should be set");
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }

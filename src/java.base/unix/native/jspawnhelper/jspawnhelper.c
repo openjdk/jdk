@@ -63,6 +63,7 @@ void shutItDown() {
     fprintf(stdout, "only be run as the result of a call to\n");
     fprintf(stdout, "ProcessBuilder.start() or Runtime.exec() in a java ");
     fprintf(stdout, "application\n");
+    fflush(stdout);
     _exit(1);
 }
 
@@ -139,6 +140,10 @@ int main(int argc, char *argv[]) {
     /* argv[1] contains the fd number to read all the child info */
     int r, fdinr, fdinw, fdout;
     sigset_t unblock_signals;
+
+    if (argc != 2) {
+        shutItDown();
+    }
 
 #ifdef DEBUG
     jtregSimulateCrash(0, 4);

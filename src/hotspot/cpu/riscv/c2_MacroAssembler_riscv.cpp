@@ -2064,8 +2064,8 @@ static void float16_to_float_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Fl
 void C2_MacroAssembler::float16_to_float(FloatRegister dst, Register src, Register tmp) {
   auto stub = C2CodeStub::make<FloatRegister, Register, Register>(dst, src, tmp, 20, float16_to_float_slow_path);
 
-  // in riscv, NaN needs a special process as fcvt does not work in that case.
-  // in riscv, Inf does not need a special process as fcvt can handle it correctly.
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, Inf does not need a special process as fcvt can handle it correctly.
   // but we consider to get the slow path to process NaN and Inf at the same time,
   // as both of them are rare cases, and if we try to get the slow path to handle
   // only NaN case it would sacrifise the performance for normal cases,
@@ -2112,7 +2112,7 @@ static void float_to_float16_slow_path(C2_MacroAssembler& masm, C2GeneralStub<Re
 void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatRegister ftmp, Register xtmp) {
   auto stub = C2CodeStub::make<Register, FloatRegister, Register>(dst, src, xtmp, 130, float_to_float16_slow_path);
 
-  // in riscv, NaN needs a special process as fcvt does not work in that case.
+  // On riscv, NaN needs a special process as fcvt does not work in that case.
 
   // check whether it's a NaN.
   // replace fclass with feq as performance optimization.
@@ -2123,6 +2123,117 @@ void C2_MacroAssembler::float_to_float16(Register dst, FloatRegister src, FloatR
   // non-NaN cases, just use built-in instructions.
   fcvt_h_s(ftmp, src);
   fmv_x_h(dst, ftmp);
+
+  bind(stub->continuation());
+}
+
+static void float16_to_float_v_slow_path(C2_MacroAssembler& masm, C2GeneralStub<VectorRegister, VectorRegister, uint>& stub) {
+#define __ masm.
+  VectorRegister dst = stub.data<0>();
+  VectorRegister src = stub.data<1>();
+  uint vector_length = stub.data<2>();
+  __ bind(stub.entry());
+
+  // following instructions mainly focus on NaN, as riscv does not handle
+  // NaN well with vfwcvt_f_f_v, but the code also works for Inf at the same time.
+  //
+  // construct NaN's in 32 bits from the NaN's in 16 bits,
+  // we need the payloads of non-canonical NaNs to be preserved.
+
+  // adjust vector type to 2 * SEW.
+  __ vsetvli_helper(T_FLOAT, vector_length, Assembler::m1);
+  // widen and sign-extend src data.
+  __ vsext_vf2(dst, src, Assembler::v0_t);
+  __ mv(t0, 0x7f800000);
+  // sign-bit was already set via sign-extension if necessary.
+  __ vsll_vi(dst, dst, 13, Assembler::v0_t);
+  __ vor_vx(dst, dst, t0, Assembler::v0_t);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.float16ToFloat
+void C2_MacroAssembler::float16_to_float_v(VectorRegister dst, VectorRegister src, uint vector_length) {
+  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, uint>
+              (dst, src, vector_length, 24, float16_to_float_v_slow_path);
+  assert_different_registers(dst, src);
+
+  // On riscv, NaN needs a special process as vfwcvt_f_f_v does not work in that case.
+  // On riscv, Inf does not need a special process as vfwcvt_f_f_v can handle it correctly.
+  // but we consider to get the slow path to process NaN and Inf at the same time,
+  // as both of them are rare cases, and if we try to get the slow path to handle
+  // only NaN case it would sacrifise the performance for normal cases,
+  // i.e. non-NaN and non-Inf cases.
+
+  vsetvli_helper(BasicType::T_SHORT, vector_length, Assembler::mf2);
+
+  // check whether there is a NaN or +/- Inf.
+  mv(t0, 0x7c00);
+  vand_vx(v0, src, t0);
+  // v0 will be used as mask in slow path.
+  vmseq_vx(v0, v0, t0);
+  vcpop_m(t0, v0);
+
+  // For non-NaN or non-Inf cases, just use built-in instructions.
+  vfwcvt_f_f_v(dst, src);
+
+  // jump to stub processing NaN and Inf cases if there is any of them in the vector-wide.
+  bnez(t0, stub->entry());
+
+  bind(stub->continuation());
+}
+
+static void float_to_float16_v_slow_path(C2_MacroAssembler& masm,
+                                         C2GeneralStub<VectorRegister, VectorRegister, VectorRegister>& stub) {
+#define __ masm.
+  VectorRegister dst = stub.data<0>();
+  VectorRegister src = stub.data<1>();
+  VectorRegister tmp = stub.data<2>();
+  __ bind(stub.entry());
+
+  // mul is already set to mf2 in float_to_float16_v.
+
+  // preserve the payloads of non-canonical NaNs.
+  __ vnsra_wi(dst, src, 13, Assembler::v0_t);
+
+  // preserve the sign bit.
+  __ vnsra_wi(tmp, src, 26, Assembler::v0_t);
+  __ vsll_vi(tmp, tmp, 10, Assembler::v0_t);
+  __ mv(t0, 0x3ff);
+  __ vor_vx(tmp, tmp, t0, Assembler::v0_t);
+
+  // get the result by merging sign bit and payloads of preserved non-canonical NaNs.
+  __ vand_vv(dst, dst, tmp, Assembler::v0_t);
+
+  __ j(stub.continuation());
+#undef __
+}
+
+// j.l.Float.float16ToFloat
+void C2_MacroAssembler::float_to_float16_v(VectorRegister dst, VectorRegister src, VectorRegister vtmp,
+                                           Register tmp, uint vector_length) {
+  assert_different_registers(dst, src, vtmp);
+
+  auto stub = C2CodeStub::make<VectorRegister, VectorRegister, VectorRegister>
+              (dst, src, vtmp, 28, float_to_float16_v_slow_path);
+
+  // On riscv, NaN needs a special process as vfncvt_f_f_w does not work in that case.
+
+  vsetvli_helper(BasicType::T_FLOAT, vector_length, Assembler::m1);
+
+  // check whether there is a NaN.
+  // replace v_fclass with vmseq_vv as performance optimization.
+  vmfne_vv(v0, src, src);
+  vcpop_m(t0, v0);
+
+  vsetvli_helper(BasicType::T_SHORT, vector_length, Assembler::mf2, tmp);
+
+  // For non-NaN cases, just use built-in instructions.
+  vfncvt_f_f_w(dst, src);
+
+  // jump to stub processing NaN cases.
+  bnez(t0, stub->entry());
 
   bind(stub->continuation());
 }
@@ -2510,7 +2621,7 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    BasicType bt, bool is_min, int vector_length) {
+                                    BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(dst, src1, src2);
 
   vsetvli_helper(bt, vector_length);
@@ -2529,7 +2640,7 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                                           BasicType bt, bool is_min, int vector_length) {
+                                           BasicType bt, bool is_min, uint vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
   vsetvli_helper(bt, vector_length);
 
@@ -2552,7 +2663,7 @@ void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister sr
 void C2_MacroAssembler::reduce_minmax_fp_v(FloatRegister dst,
                                            FloatRegister src1, VectorRegister src2,
                                            VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length, VectorMask vm) {
+                                           bool is_double, bool is_min, uint vector_length, VectorMask vm) {
   assert_different_registers(dst, src1);
   assert_different_registers(src2, tmp1, tmp2);
 
@@ -2597,7 +2708,7 @@ bool C2_MacroAssembler::in_scratch_emit_size() {
 
 void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
                                           VectorRegister src2, VectorRegister tmp,
-                                          int opc, BasicType bt, int vector_length, VectorMask vm) {
+                                          int opc, BasicType bt, uint vector_length, VectorMask vm) {
   assert(bt == T_BYTE || bt == T_SHORT || bt == T_INT || bt == T_LONG, "unsupported element type");
   vsetvli_helper(bt, vector_length);
   vmv_s_x(tmp, src1);
@@ -2629,7 +2740,7 @@ void C2_MacroAssembler::reduce_integral_v(Register dst, Register src1,
 
 // Set vl and vtype for full and partial vector operations.
 // (vma = mu, vta = tu, vill = false)
-void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlmul, Register tmp) {
+void C2_MacroAssembler::vsetvli_helper(BasicType bt, uint vector_length, LMUL vlmul, Register tmp) {
   Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
   if (vector_length <= 31) {
     vsetivli(tmp, vector_length, sew, vlmul);
@@ -2642,7 +2753,7 @@ void C2_MacroAssembler::vsetvli_helper(BasicType bt, int vector_length, LMUL vlm
 }
 
 void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
-                                           int cond, BasicType bt, int vector_length, VectorMask vm) {
+                                           int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_integral_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
@@ -2661,7 +2772,7 @@ void C2_MacroAssembler::compare_integral_v(VectorRegister vd, VectorRegister src
 }
 
 void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, VectorRegister src2,
-                                     int cond, BasicType bt, int vector_length, VectorMask vm) {
+                                     int cond, BasicType bt, uint vector_length, VectorMask vm) {
   assert(is_floating_point_type(bt), "unsupported element type");
   assert(vm == Assembler::v0_t ? vd != v0 : true, "should be different registers");
   vsetvli_helper(bt, vector_length);
@@ -2679,7 +2790,7 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
   }
 }
 
-void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                                          VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
@@ -2717,7 +2828,7 @@ void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, i
 
 // Vector narrow from src to dst with specified element sizes.
 // High part of dst vector will be filled with zero.
-void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, int vector_length,
+void C2_MacroAssembler::integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                                          VectorRegister src, BasicType src_bt) {
   assert(type2aelembytes(dst_bt) < type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 4 && type2aelembytes(src_bt) <= 8, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
