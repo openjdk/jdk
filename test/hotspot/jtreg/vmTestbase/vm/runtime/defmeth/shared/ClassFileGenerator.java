@@ -31,8 +31,13 @@ import nsk.share.test.TestUtils;
 import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 
+import static java.lang.classfile.ClassFile.*;
+import static jdk.internal.org.objectweb.asm.Opcodes.F_SAME1;
+import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
+import static jdk.internal.org.objectweb.asm.Opcodes.F_FULL;
+import static jdk.internal.org.objectweb.asm.Opcodes.F_APPEND;
+import static jdk.internal.org.objectweb.asm.Opcodes.TOP;
 import static java.lang.invoke.MethodHandleInfo.REF_newInvokeSpecial;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import static jdk.internal.org.objectweb.asm.ClassWriter.*;
 
@@ -42,6 +47,7 @@ import vm.runtime.defmeth.shared.data.method.body.*;
 import vm.runtime.defmeth.shared.data.method.param.*;
 import vm.runtime.defmeth.shared.data.method.result.*;
 
+import java.lang.classfile.ClassFile;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -64,6 +70,8 @@ public class ClassFileGenerator implements Visitor {
 
     /** Represent current state of class file traversal.
      * Used to avoid passing instances around. */
+    private ClassFile cf;
+    private byte[] bytes;
     private ClassWriter cw;
     private MethodVisitor mv;
     private Tester t;
