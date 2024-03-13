@@ -21,7 +21,7 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 4987336
  * @summary JSlider doesn't show label's animated icon.
@@ -49,7 +49,7 @@ import java.util.Hashtable;
 
 public class bug4987336 {
     private static final String INSTRUCTIONS = """
-            There are four Sliders. 
+            There are four Sliders.
             Each of them has a label with animated gif (a waving duke)
             and a label with static image.
             If it is rendered correctly, click Pass else click Fail.""";
