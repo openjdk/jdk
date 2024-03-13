@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1970,11 +1970,7 @@ char* os::pd_reserve_memory(size_t bytes, bool exec) {
   if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
   } else {
-    if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
-    } else {
-      return reserve_mmaped_memory(bytes, nullptr /* requested_addr */);
-    }
+    return reserve_shmated_memory(bytes, nullptr /* requested_addr */);
   }
 }
 
@@ -2183,11 +2179,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   if (os::vm_page_size() == 4*K) {
     return reserve_mmaped_memory(bytes, requested_addr);
   } else {
-    if (bytes >= Use64KPagesThreshold) {
-      return reserve_shmated_memory(bytes, requested_addr);
-    } else {
-      return reserve_mmaped_memory(bytes, requested_addr);
-    }
+    return reserve_shmated_memory(bytes, requested_addr);
   }
 
   return addr;
