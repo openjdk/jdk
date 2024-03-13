@@ -32,8 +32,8 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssiz
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   assert((boundary_idx > start_idx) && (boundary_idx <= _num_bits), "precondition");
   do {
-    size_t array_idx = start_idx / BitsPerWord;
-    size_t bit_number = start_idx % BitsPerWord;
+    size_t array_idx = start_idx >> LogBitsPerWord;
+    size_t bit_number = start_idx & right_n_bits(LogBitsPerWord);
     size_t element_bits = _bitmap[array_idx];
     if (bit_number > 0) {
       size_t mask_out = right_n_bits(bit_number);
@@ -70,8 +70,8 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   assert((boundary_idx >= -1) && (boundary_idx < last_idx), "precondition");
   do {
-    ssize_t array_idx = last_idx / BitsPerWord;
-    size_t bit_number = last_idx % BitsPerWord;
+    ssize_t array_idx = last_idx >> LogBitsPerWord;
+    size_t bit_number = last_idx & right_n_bits(LogBitsPerWord);
     size_t element_bits = _bitmap[array_idx];
     if (bit_number < BitsPerWord - 1){
       size_t mask_in = right_n_bits(bit_number + 1);

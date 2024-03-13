@@ -84,8 +84,8 @@ public:
 
   inline ssize_t aligned_index(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx / BitsPerWord;
-    return array_idx * BitsPerWord;
+    ssize_t array_idx = idx & ~right_n_bits(LogBitsPerWord);
+    return array_idx;
   }
 
   inline ssize_t alignment() const {
@@ -99,14 +99,14 @@ public:
 
   inline size_t bits_at(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    ssize_t array_idx = idx / BitsPerWord;
+    ssize_t array_idx = idx >> LogBitsPerWord;
     return _bitmap[array_idx];
   }
 
   inline void set_bit(ssize_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
-    size_t array_idx = idx / BitsPerWord;
-    size_t bit_number = idx % BitsPerWord;
+    size_t array_idx = idx >> LogBitsPerWord;
+    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
     size_t the_bit = nth_bit(bit_number);
     _bitmap[array_idx] |= the_bit;
   }
@@ -114,8 +114,8 @@ public:
   inline void clear_bit(ssize_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
-    size_t array_idx = idx / BitsPerWord;
-    size_t bit_number = idx % BitsPerWord;
+    size_t array_idx = idx >> LogBitsPerWord;
+    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
     size_t the_bit = nth_bit(bit_number);
     _bitmap[array_idx] &= ~the_bit;
   }
@@ -123,8 +123,8 @@ public:
   inline bool is_set(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
-    size_t array_idx = idx / BitsPerWord;
-    size_t bit_number = idx % BitsPerWord;
+    size_t array_idx = idx >> LogBitsPerWord;
+    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
     size_t the_bit = nth_bit(bit_number);
     return (_bitmap[array_idx] & the_bit)? true: false;
   }
