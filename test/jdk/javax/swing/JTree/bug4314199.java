@@ -31,11 +31,12 @@
  * @run main/manual bug4314199
  */
 
+import java.awt.BorderLayout;
 import javax.swing.Box;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JPanel;
 import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -45,12 +46,10 @@ import javax.swing.tree.TreePath;
 public class bug4314199 {
 
     private static final String INSTRUCTIONS = """
-            Select the last tree node (marked "Here") and click on the menu.
+            Select the last tree node (marked "Here") and click on the "Menu".
             Look at the vertical line connecting nodes "Bug" and "Here".
-            If the connecting line does not disappear when the menu drops down,
+            If the connecting line does not disappear when the "Menu" drops down,
             press 'Pass' else 'Fail'. """;
-
-    private static JFrame frame;
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
@@ -59,13 +58,12 @@ public class bug4314199 {
                 .title("JTree Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows(6)
-                .testUI(bug4314199::createAndShowGUI)
+                .splitUI(bug4314199::createAndShowGUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    private static JFrame createAndShowGUI() {
-        frame = new JFrame("bug4314199");
+    private static JPanel createAndShowGUI() {
         JMenuBar mb = new JMenuBar();
 
         // needed to exactly align left edge of menu and angled line of tree
@@ -75,7 +73,6 @@ public class bug4314199 {
         JMenuItem mi = new JMenuItem("MenuItem");
         mn.add(mi);
         mb.add(mn);
-        frame.setJMenuBar(mb);
 
         DefaultMutableTreeNode n1 = new DefaultMutableTreeNode("Root");
         DefaultMutableTreeNode n2 = new DefaultMutableTreeNode("Duke");
@@ -92,9 +89,11 @@ public class bug4314199 {
         tree.putClientProperty("JTree.lineStyle", "Angled");
         tree.expandPath(new TreePath(new Object[]{n1, n2, n3}));
 
-        frame.getContentPane().add(tree);
-        frame.setSize(200, 200);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        return frame;
+        JPanel p = new JPanel();
+        p.setLayout(new BorderLayout());
+        p.setSize(200, 200);
+        p.add(mb, BorderLayout.NORTH);
+        p.add(tree);
+        return p;
     }
 }
