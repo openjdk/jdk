@@ -54,7 +54,7 @@ public class bug4222153 {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         Robot robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(50);
         try {
             SwingUtilities.invokeAndWait(() -> {
                 frame = new JFrame("Test JTable Tab Press");
@@ -77,8 +77,8 @@ public class bug4222153 {
                     tableLoc.y + cellRect.y + cellRect.height / 2);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(20);
 
             SwingUtilities.invokeAndWait(() -> {
                 selectedRowBeforeTabPress = table.getSelectedRow();
@@ -87,13 +87,13 @@ public class bug4222153 {
 
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(20);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            robot.delay(100);
             robot.waitForIdle();
-
+            robot.delay(20);
+            
             SwingUtilities.invokeAndWait(() -> {
                 selectedRowAfterTabPress = table.getSelectedRow();
                 selectedColumnAfterTabPress = table.getSelectedColumn();
