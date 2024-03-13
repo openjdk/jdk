@@ -35,6 +35,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.*;
 
 import static java.lang.classfile.ClassFile.*;
+import static java.lang.constant.ConstantDescs.*;
 
 /*
  *  class A { static final int m() {return FAIL; } }
@@ -74,14 +75,14 @@ public class FinalStatic {
                     bytes = ClassFile.of().build(ClassDesc.of(CLASS_NAME_A),
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC | ACC_SUPER)
-                                    .withSuperclass(ClassDesc.ofInternalName("java/lang/Object"))
-                                    .withMethod("<init>", MethodTypeDesc.ofDescriptor("()V"), ACC_PUBLIC,
+                                    .withSuperclass(CD_Object)
+                                    .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
                                             mb -> mb.withCode(
                                                     cob -> cob
                                                             .aload(0)
-                                                            .invokespecial(ClassDesc.ofInternalName("java/lang/Object"), "<init>", MethodTypeDesc.ofDescriptor("()V"))
+                                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                                             .return_()))
-                                    .withMethod("m", MethodTypeDesc.ofDescriptor("()I"), ClassFile.ACC_FINAL | ClassFile.ACC_STATIC,
+                                    .withMethod("m", MethodTypeDesc.of(CD_int), ClassFile.ACC_FINAL | ClassFile.ACC_STATIC,
                                             mb -> mb.withCode(
                                                     cob -> cob.ldc(FAILED)
                                                             .ireturn()))
@@ -93,12 +94,12 @@ public class FinalStatic {
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC | ClassFile.ACC_SUPER)
                                     .withSuperclass(ClassDesc.ofInternalName(CLASS_NAME_A))
-                                    .withMethod("<init>", MethodTypeDesc.ofDescriptor("()V"), ACC_PUBLIC,
+                                    .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
                                             mb -> mb.withCode(
                                                     cob -> cob.aload(0)
-                                                            .invokespecial(ClassDesc.ofInternalName(CLASS_NAME_A), "<init>", MethodTypeDesc.ofDescriptor("()V"))
+                                                            .invokespecial(ClassDesc.ofInternalName(CLASS_NAME_A), INIT_NAME, MTD_void)
                                                             .return_()))
-                                    .withMethod("m", MethodTypeDesc.ofDescriptor("()I"), ACC_PUBLIC,
+                                    .withMethod("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC,
                                             mb -> mb.withCode(
                                                     cob -> cob.ldc(EXPECTED)
                                                             .ireturn()))
