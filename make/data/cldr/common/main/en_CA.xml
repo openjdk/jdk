@@ -1522,7 +1522,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="USD">
 				<symbol>US$</symbol>
-				<symbol alt="narrow" draft="contributed">US$</symbol>
 			</currency>
 			<currency type="XXX">
 				<displayName>unknown currency</displayName>

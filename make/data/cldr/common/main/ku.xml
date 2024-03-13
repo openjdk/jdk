@@ -2616,11 +2616,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Pasîfîka Meksîkayê</standard>
 					<daylight>Saeta Havînê ya Pasîfîka Meksîkayê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SPM</generic>
-					<standard draft="contributed">SSPM</standard>
-					<daylight draft="contributed">SHPM</daylight>
-				</short>
 			</metazone>
 			<metazone type="Mongolia">
 				<long>
@@ -2759,11 +2754,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					<standard>Saeta Standard a Saint Pierre û Miquelonê</standard>
 					<daylight>Saeta Havînê ya Saint Pierre û Miquelonê</daylight>
 				</long>
-				<short>
-					<generic draft="contributed">SSPM</generic>
-					<standard draft="contributed">SSSPM</standard>
-					<daylight draft="contributed">SHSPM</daylight>
-				</short>
 			</metazone>
 			<metazone type="Pitcairn">
 				<long>
