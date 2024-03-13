@@ -34,8 +34,8 @@ import javax.swing.JFrame;
  * @summary Tests the color chooser disabling
  * @run main/manual Test4222508
  */
-
 public final class Test4222508 {
+
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test4222508")
