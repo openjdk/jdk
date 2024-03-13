@@ -57,7 +57,9 @@
 
 class VPointer;
 
-class PairSet {
+// The PairSet is a set of pairs. These are later combined to packs,
+// and stored in the PackSet.
+class PairSet : public StackObj {
 private:
   const VLoopBody& _body;
 
@@ -75,11 +77,17 @@ public:
     _right_to_left(arena, body.body().length(), body.body().length(), -1),
     _pair_counter(0) {}
 
+  const VLoopBody& body() const { return _body; }
   bool is_empty() const { return _pair_counter == 0; }
-  bool exists_left(Node* n)  const { return _left_to_right.at(_body.bb_idx(n)) != -1; }
-  bool exists_right(Node* n) const { return _right_to_left.at(_body.bb_idx(n)) != -1; }
-  Node* get_left_for(Node* n)  const { return _body.body().at(_right_to_left.at(_body.bb_idx(n))); }
-  Node* get_right_for(Node* n) const { return _body.body().at(_left_to_right.at(_body.bb_idx(n))); }
+  bool exists_left(int i)  const { return _left_to_right.at(i) != -1; }
+  bool exists_right(int i) const { return _right_to_left.at(i) != -1; }
+  bool exists_left(Node* n)  const { return exists_left( _body.bb_idx(n)); }
+  bool exists_right(Node* n) const { return exists_right(_body.bb_idx(n)); }
+  int get_left_for(int i)  const { return _right_to_left.at(i); }
+  int get_right_for(int i) const { return _left_to_right.at(i); }
+  Node* get_left_for(Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }
+  Node* get_right_for(Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
+  bool has_pair(Node* n1, Node* n2) const { return exists_left(n1) && get_right_for(n1) == n2; }
 
   void add_pair(Node* n1, Node* n2) {
     assert(!exists_left(n1) && !exists_right(n2), "cannot be left twice, or right twice");
@@ -91,11 +99,41 @@ public:
     assert(exists_left(n1) && exists_right(n2), "must be set now");
   }
 
-  // TODO print, and in some places instead of packset!
   NOT_PRODUCT( void print() const; )
 };
 
-class PackSet {
+class PairSetIterator : public StackObj {
+private:
+  const PairSet& _pairset;
+  const VLoopBody& _body;
+
+  int _current_bb_idx;
+public:
+  PairSetIterator(const PairSet& pairset) :
+    _pairset(pairset), _body(pairset.body()), _current_bb_idx(-1)
+  {
+    next();
+  }
+
+  void next() {
+    do {
+      _current_bb_idx++;
+    } while (!done() && !_pairset.exists_left(_current_bb_idx));
+  }
+
+  bool done() const { return _current_bb_idx >= _body.body().length(); }
+
+  Node* left() const {
+    return _body.body().at(_current_bb_idx);
+  }
+
+  Node* right() const {
+    int bb_idx_2 = _pairset.get_right_for(_current_bb_idx);
+    return _body.body().at(bb_idx_2);
+  }
+};
+
+class PackSet : public StackObj {
 private:
   const VLoopBody& _body;
 
@@ -103,7 +141,7 @@ private:
   GrowableArray<Node_List*> _packs;
 
   // Mapping from nodes to their pack: bb_idx -> pack
-  GrowableArray<Node_List*> _node_to_pack;
+  GrowableArray<Node_List*> _node_to_pack; // TODO
 
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
@@ -348,7 +386,7 @@ private:
   bool have_similar_inputs(Node* s1, Node* s2);
   void set_alignment(Node* s1, Node* s2, int align);
   // Extend packset by following use->def and def->use links from pack members.
-  void extend_packset_with_more_pairs_by_following_use_and_def();
+  void extend_pairset_with_more_pairs_by_following_use_and_def();
   int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
   // Extend the packset by visiting operand definitions of nodes in pack p
   bool follow_use_defs(Node_List* p);
@@ -519,8 +557,6 @@ private:
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
-  // Are s1 and s2 in a pack pair and ordered as s1,s2?
-  bool in_packset(Node* s1, Node* s2);
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
   static LoadNode::ControlDependency control_dependency(Node_List* p);

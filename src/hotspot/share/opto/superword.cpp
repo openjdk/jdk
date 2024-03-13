@@ -465,7 +465,7 @@ bool SuperWord::SLP_extract() {
     return false;
   }
 
-  extend_packset_with_more_pairs_by_following_use_and_def();
+  extend_pairset_with_more_pairs_by_following_use_and_def();
 
   combine_pairs_to_longer_packs();
 
@@ -573,8 +573,8 @@ void SuperWord::find_adjacent_refs() {
     }
   } // while (memops.size() != 0)
 
-  assert(_packset.is_empty() || align_to_mem_ref != nullptr,
-         "packset empty or we find the alignment reference");
+  assert(_pairset.is_empty() || align_to_mem_ref != nullptr,
+         "pairset empty or we find the alignment reference");
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
@@ -1036,11 +1036,15 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 }
 
 // Extend packset by following use->def and def->use links from pack members.
-void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
+void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   bool changed;
   do {
-    packset_sort(_packset.length());
     changed = false;
+    for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
+      pair.left()->dump();
+      pair.right()->dump();
+    }
+    // TODO pairset
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p = _packset.at(i);
       changed |= follow_use_defs(p);
@@ -1049,6 +1053,7 @@ void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
   } while (changed);
 
   if (_race_possible) {
+    // TODO pairset
     for (int i = 0; i < _packset.length(); i++) {
       Node_List* p = _packset.at(i);
       order_def_uses(p);
@@ -1057,7 +1062,7 @@ void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::extend_packset_with_more_pairs_by_following_use_and_def");
+    tty->print_cr("\nAfter Superword::extend_pairset_with_more_pairs_by_following_use_and_def");
     _pairset.print();
   }
 #endif
@@ -1196,6 +1201,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
 
 //------------------------------order_def_uses---------------------------
 // For extended packsets, ordinally arrange uses packset by major component
+// TODO pairset
 void SuperWord::order_def_uses(Node_List* p) {
   Node* s1 = p->at(0);
 
@@ -1213,6 +1219,7 @@ void SuperWord::order_def_uses(Node_List* p) {
     }
 
     // Now find t1's packset
+    // TODO pairset
     Node_List* p2 = nullptr;
     for (int j = 0; j < _packset.length(); j++) {
       p2 = _packset.at(j);
@@ -1287,6 +1294,7 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
 
 //------------------------------est_savings---------------------------
 // Estimate the savings from executing s1 and s2 as a pack
+// TODO pairset
 int SuperWord::est_savings(Node* s1, Node* s2) {
   int save_in = 2 - 1; // 2 operations per instruction in packed form
 
@@ -1297,7 +1305,7 @@ int SuperWord::est_savings(Node* s1, Node* s2) {
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
         save_in += adjacent_profit(x1, x2);
-      } else if (!in_packset(x1, x2)) {
+      } else if (!_pairset.has_pair(x1, x2)) {
         save_in -= pack_cost(2);
       } else {
         save_in += unpack_cost(2);
@@ -3397,19 +3405,6 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-//------------------------------in_packset---------------------------
-// Are s1 and s2 in a pack pair and ordered as s1,s2?
-bool SuperWord::in_packset(Node* s1, Node* s2) {
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    assert(p->size() == 2, "must be");
-    if (p->at(0) == s1 && p->at(p->size()-1) == s2) {
-      return true;
-    }
-  }
-  return false;
-}
-
 //------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
 void SuperWord::remove_pack_at(int pos) {
@@ -3419,26 +3414,6 @@ void SuperWord::remove_pack_at(int pos) {
     set_my_pack(s, nullptr);
   }
   _packset.at_put(pos, nullptr);
-}
-
-void SuperWord::packset_sort(int n) {
-  // TODO remove
-  // // simple bubble sort so that we capitalize with O(n) when its already sorted
-  // do {
-  //   int max_swap_index = 0;
-  //   for (int i = 1; i < n; i++) {
-  //     Node_List* q_low = _packset.at(i-1);
-  //     Node_List* q_i = _packset.at(i);
-
-  //     // only swap when we find something to swap
-  //     if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-  //       *(_packset.adr_at(i)) = q_low;
-  //       *(_packset.adr_at(i-1)) = q_i;
-  //       max_swap_index = i;
-  //     }
-  //   }
-  //   n = max_swap_index;
-  // } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
