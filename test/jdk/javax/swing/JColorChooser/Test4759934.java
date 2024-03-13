@@ -21,15 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4759934
- * @library ../../../java/awt/regtesthelpers
- * @build PassFailJFrame
- * @summary Tests windows activation problem
- * @run main/manual Test4759934
- */
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Window;
@@ -40,6 +31,14 @@ import javax.swing.JColorChooser;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 
+/*
+ * @test
+ * @bug 4759934
+ * @library ../../../java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Tests windows activation problem
+ * @run main/manual Test4759934
+ */
 public class Test4759934 {
     private static final String CMD_DIALOG = "Show Dialog"; // NON-NLS: first button
     private static final String CMD_CHOOSER = "Show ColorChooser"; // NON-NLS: second button
