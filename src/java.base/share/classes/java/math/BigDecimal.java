@@ -556,7 +556,10 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
 
         @Override
         public char charAt(int index) {
-            return array[offset + index];
+            index += offset;
+            if (index >= length)
+                throw new IndexOutOfBoundsException();
+            return array[index];
         }
 
         @Override

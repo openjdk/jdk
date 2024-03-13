@@ -32,6 +32,8 @@
 import java.math.BigDecimal;
 import org.testng.annotations.Test;
 
+import static org.testng.Assert.assertThrows;
+
 public class Constructor {
     @Test(expectedExceptions=NumberFormatException.class)
     public void stringConstructor() {
@@ -66,5 +68,28 @@ public class Constructor {
     @Test(expectedExceptions=NumberFormatException.class)
     public void charArrayConstructorIndexOutOfBounds() {
         BigDecimal bd = new BigDecimal(new char[5], 1, 5, null);
+    }
+
+    @Test
+    public void errorInput() {
+        String[] strings = {"+", "-", "", "e", "."};
+        for (String string : strings) {
+            assertThrows(
+                    NumberFormatException.class,
+                    () -> new BigDecimal(string));
+            assertThrows(
+                    NumberFormatException.class,
+                    () -> new BigDecimal(string.toCharArray()));
+
+            if (!string.isEmpty()) {
+                assertThrows(
+                        NumberFormatException.class,
+                        () -> new BigDecimal(
+                                (string + "123").toCharArray(), 0, 1));
+            }
+            assertThrows(
+                    NumberFormatException.class,
+                    () -> new BigDecimal(("12e" + string + "123").toCharArray(), 3, 1));
+        }
     }
 }
