@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf4_ha_l9
 
 __jsvml_sinhf4_ha_l9    PROC    EXPORT
@@ -231,7 +231,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf16_ha_z0
 
 __jsvml_sinhf16_ha_z0   PROC    EXPORT
@@ -513,7 +513,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf4_ha_e9
 
 __jsvml_sinhf4_ha_e9    PROC    EXPORT
@@ -712,7 +712,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf8_ha_e9
 
 __jsvml_sinhf8_ha_e9    PROC    EXPORT
@@ -977,7 +977,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf8_ha_l9
 
 __jsvml_sinhf8_ha_l9    PROC    EXPORT
@@ -1217,7 +1217,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sinhf4_ha_ex
 
 __jsvml_sinhf4_ha_ex    PROC    EXPORT
@@ -1444,7 +1444,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_ssinh_ha_cout_rare_internal
 
 __jsvml_ssinh_ha_cout_rare_internal     PROC
@@ -3641,7 +3641,7 @@ _vmldSinhHATab  DD      0
         DD      1067178892
         DD      3875694624
         DD      1077247184
-        DD 2 DUP (0H)   
+        DD 2 DUP (0H)
 _2il0floatpacket_103    DD      000000000H,080000000H,000000000H,000000000H
 _RDATA  ENDS
 _DATA   SEGMENT      'DATA'

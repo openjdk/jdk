@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf16_ha_z0
 
 __jsvml_powf16_ha_z0    PROC    EXPORT
@@ -339,7 +339,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf8_ha_l9
 
 __jsvml_powf8_ha_l9     PROC    EXPORT
@@ -664,7 +664,7 @@ __VPACK_ODD_ind_2742_0_4        DD      1
         DD      0
         DD      0
         DD      0
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
 __VPACK_ODD_ind_2743_0_4        DD      1
         DD      3
         DD      5
@@ -684,7 +684,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf4_ha_e9
 
 __jsvml_powf4_ha_e9     PROC    EXPORT
@@ -929,7 +929,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf8_ha_e9
 
 __jsvml_powf8_ha_e9     PROC    EXPORT
@@ -1302,7 +1302,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf4_ha_l9
 
 __jsvml_powf4_ha_l9     PROC    EXPORT
@@ -1536,7 +1536,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_powf4_ha_ex
 
 __jsvml_powf4_ha_ex     PROC    EXPORT
@@ -1860,7 +1860,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_spow_ha_cout_rare_internal
 
 __jsvml_spow_ha_cout_rare_internal      PROC
@@ -2704,7 +2704,7 @@ _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
 _RDATA  SEGMENT     READ  'DATA'
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
         PUBLIC __jsvml_spow_ha_data_internal_avx512
 __jsvml_spow_ha_data_internal_avx512    DD      0
         DD      3174420480

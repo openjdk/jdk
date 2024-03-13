@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin2_ha_e9
 
 __jsvml_sin2_ha_e9      PROC    EXPORT
@@ -457,7 +457,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin4_ha_l9
 
 __jsvml_sin4_ha_l9      PROC    EXPORT
@@ -910,7 +910,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin1_ha_e9
 
 __jsvml_sin1_ha_e9      PROC    EXPORT
@@ -1256,7 +1256,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin4_ha_e9
 
 __jsvml_sin4_ha_e9      PROC    EXPORT
@@ -1835,7 +1835,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin1_ha_ex
 
 __jsvml_sin1_ha_ex      PROC    EXPORT
@@ -2239,7 +2239,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin2_ha_l9
 
 __jsvml_sin2_ha_l9      PROC    EXPORT
@@ -2641,7 +2641,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin1_ha_l9
 
 __jsvml_sin1_ha_l9      PROC    EXPORT
@@ -2970,7 +2970,7 @@ TXTST7:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin2_ha_ex
 
 __jsvml_sin2_ha_ex      PROC    EXPORT
@@ -3454,7 +3454,7 @@ TXTST8:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sin8_ha_z0
 
 __jsvml_sin8_ha_z0      PROC    EXPORT
@@ -3938,7 +3938,7 @@ TXTST9:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_dsin_ha_cout_rare_internal
 
 __jsvml_dsin_ha_cout_rare_internal      PROC
@@ -16313,7 +16313,7 @@ __jsvml_dsin_ha_reduction_data_internal DD      0
         DD      484957737
         DD      896803160
         DD      3984508030
-        DD 128 DUP (0H) 
+        DD 128 DUP (0H)
         PUBLIC __jsvml_dsin_ha_data_internal_ha
 __jsvml_dsin_ha_data_internal_ha        DD      0
         DD      0

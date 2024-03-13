@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f4_ha_e9
 
 __jsvml_expm1f4_ha_e9   PROC    EXPORT
@@ -242,7 +242,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f4_ha_ex
 
 __jsvml_expm1f4_ha_ex   PROC    EXPORT
@@ -478,7 +478,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f8_ha_l9
 
 __jsvml_expm1f8_ha_l9   PROC    EXPORT
@@ -711,7 +711,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f16_ha_z0
 
 __jsvml_expm1f16_ha_z0  PROC    EXPORT
@@ -987,7 +987,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f4_ha_l9
 
 __jsvml_expm1f4_ha_l9   PROC    EXPORT
@@ -1190,7 +1190,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm1f8_ha_e9
 
 __jsvml_expm1f8_ha_e9   PROC    EXPORT
@@ -1439,7 +1439,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sexpm1_ha_cout_rare_internal
 
 __jsvml_sexpm1_ha_cout_rare_internal    PROC
@@ -2701,7 +2701,7 @@ _vmldExpHATab   DD      0
         DD      1009778688
         DD      0
         DD      1106771968
-        DD 2 DUP (0H)   
+        DD 2 DUP (0H)
 _2il0floatpacket_29     DD      04b400000H,04b400000H,04b400000H,04b400000H
 _2il0floatpacket_88     DD      0bf800000H
 _RDATA  ENDS

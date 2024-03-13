@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan1_ha_ex
 
 __jsvml_tan1_ha_ex      PROC    EXPORT
@@ -509,7 +509,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan1_ha_e9
 
 __jsvml_tan1_ha_e9      PROC    EXPORT
@@ -917,7 +917,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan4_ha_e9
 
 __jsvml_tan4_ha_e9      PROC    EXPORT
@@ -1650,7 +1650,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan1_ha_l9
 
 __jsvml_tan1_ha_l9      PROC    EXPORT
@@ -1974,7 +1974,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan8_ha_z0
 
 __jsvml_tan8_ha_z0      PROC    EXPORT
@@ -2431,7 +2431,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan2_ha_ex
 
 __jsvml_tan2_ha_ex      PROC    EXPORT
@@ -3022,7 +3022,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan2_ha_l9
 
 __jsvml_tan2_ha_l9      PROC    EXPORT
@@ -3406,7 +3406,7 @@ TXTST7:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan2_ha_e9
 
 __jsvml_tan2_ha_e9      PROC    EXPORT
@@ -3926,7 +3926,7 @@ TXTST8:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_tan4_ha_l9
 
 __jsvml_tan4_ha_l9      PROC    EXPORT
@@ -4341,7 +4341,7 @@ __VUNPACK_EVEN_ind1_3308_0_10   DD      0
         DD      0
         DD      3
         DD      0
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
 __VUNPACK_EVEN_mask_3308_0_10   DD      -1
         DD      0
         DD      -1
@@ -4361,7 +4361,7 @@ TXTST9:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_dtan_ha_cout_rare_internal
 
 __jsvml_dtan_ha_cout_rare_internal      PROC
@@ -4444,7 +4444,7 @@ _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
 _RDATA  SEGMENT     READ  'DATA'
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
         PUBLIC __jsvml_dtan_ha_reduction_data_internal
 __jsvml_dtan_ha_reduction_data_internal DD      0
         DD      0
@@ -16734,7 +16734,7 @@ __jsvml_dtan_ha_reduction_data_internal DD      0
         DD      484957737
         DD      896803160
         DD      3984508030
-        DD 128 DUP (0H) 
+        DD 128 DUP (0H)
         PUBLIC __jsvml_dtan_ha_data_internal
 __jsvml_dtan_ha_data_internal   DD      1841940611
         DD      1075076912
@@ -23792,7 +23792,7 @@ __jsvml_dtan_ha_data_internal   DD      1841940611
         DD      1089470464
         DD      239972940
         DD      1089470464
-        DD 240 DUP (0H) 
+        DD 240 DUP (0H)
 _2il0floatpacket_46     DD      0f8000000H,0ffffffffH,0f8000000H,0ffffffffH,0f8000000H,0ffffffffH,0f8000000H,0ffffffffH
 _2il0floatpacket_47     DD      000000000H,03ff00000H,000000000H,03ff00000H,000000000H,03ff00000H,000000000H,03ff00000H
 _2il0floatpacket_48     DD      000000000H,042a80000H,000000000H,042a80000H,000000000H,042a80000H,000000000H,042a80000H

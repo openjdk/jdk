@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf4_ha_e9
 
 __jsvml_log1pf4_ha_e9   PROC    EXPORT
@@ -236,7 +236,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf8_ha_l9
 
 __jsvml_log1pf8_ha_l9   PROC    EXPORT
@@ -468,7 +468,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf4_ha_l9
 
 __jsvml_log1pf4_ha_l9   PROC    EXPORT
@@ -664,7 +664,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf4_ha_ex
 
 __jsvml_log1pf4_ha_ex   PROC    EXPORT
@@ -890,7 +890,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf16_ha_z0
 
 __jsvml_log1pf16_ha_z0  PROC    EXPORT
@@ -1165,7 +1165,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_log1pf8_ha_e9
 
 __jsvml_log1pf8_ha_e9   PROC    EXPORT
@@ -1415,7 +1415,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_slog1p_ha_cout_rare_internal
 
 __jsvml_slog1p_ha_cout_rare_internal    PROC
@@ -2860,7 +2860,7 @@ _vmldLnHATab    DD      1065353216
         DD      3190467243
         DD      1041387009
         DD      3187672480
-        DD 2 DUP (0H)   
+        DD 2 DUP (0H)
 _2il0floatpacket_23     DD      04b400000H,04b400000H,04b400000H,04b400000H
 _2il0floatpacket_92     DD      053800000H
 _2il0floatpacket_93     DD      03c200000H

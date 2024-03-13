@@ -34,7 +34,7 @@
 # -- Begin  __jsvml_powf16_ha_z0
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf16_ha_z0
 # --- __jsvml_powf16_ha_z0(__m512, __m512)
 __jsvml_powf16_ha_z0:
@@ -260,7 +260,7 @@ __jsvml_powf16_ha_z0:
 # -- Begin  __jsvml_powf8_ha_l9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf8_ha_l9
 # --- __jsvml_powf8_ha_l9(__m256, __m256)
 __jsvml_powf8_ha_l9:
@@ -557,7 +557,7 @@ __VPACK_ODD_ind.1471.0.4:
 # -- Begin  __jsvml_powf4_ha_e9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf4_ha_e9
 # --- __jsvml_powf4_ha_e9(__m128, __m128)
 __jsvml_powf4_ha_e9:
@@ -763,7 +763,7 @@ __jsvml_powf4_ha_e9:
 # -- Begin  __jsvml_powf8_ha_e9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf8_ha_e9
 # --- __jsvml_powf8_ha_e9(__m256, __m256)
 __jsvml_powf8_ha_e9:
@@ -1084,7 +1084,7 @@ __jsvml_powf8_ha_e9:
 # -- Begin  __jsvml_powf4_ha_l9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf4_ha_l9
 # --- __jsvml_powf4_ha_l9(__m128, __m128)
 __jsvml_powf4_ha_l9:
@@ -1281,7 +1281,7 @@ __jsvml_powf4_ha_l9:
 # -- Begin  __jsvml_powf4_ha_ex
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_powf4_ha_ex
 # --- __jsvml_powf4_ha_ex(__m128, __m128)
 __jsvml_powf4_ha_ex:
@@ -1545,7 +1545,7 @@ __jsvml_powf4_ha_ex:
 # -- Begin  _TestInt
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
 # --- _TestInt(float)
 _TestInt:
 # parameter 1: %xmm0
@@ -1608,7 +1608,7 @@ _TestInt:
 # -- Begin  __jsvml_spow_ha_cout_rare_internal
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .hidden __jsvml_spow_ha_cout_rare_internal
         .globl __jsvml_spow_ha_cout_rare_internal
 # --- __jsvml_spow_ha_cout_rare_internal(const float *, float *, float *)

@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf16_ha_z0
 
 __jsvml_acosf16_ha_z0   PROC    EXPORT
@@ -127,7 +127,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf4_ha_ex
 
 __jsvml_acosf4_ha_ex    PROC    EXPORT
@@ -350,7 +350,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf8_ha_e9
 
 __jsvml_acosf8_ha_e9    PROC    EXPORT
@@ -573,7 +573,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf8_ha_l9
 
 __jsvml_acosf8_ha_l9    PROC    EXPORT
@@ -780,7 +780,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf4_ha_l9
 
 __jsvml_acosf4_ha_l9    PROC    EXPORT
@@ -971,7 +971,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_acosf4_ha_e9
 
 __jsvml_acosf4_ha_e9    PROC    EXPORT
@@ -1172,7 +1172,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sacos_ha_cout_rare_internal
 
 __jsvml_sacos_ha_cout_rare_internal     PROC
@@ -3328,7 +3328,7 @@ _vmldACosHATab  DD      0
         DD      1070391296
         DD      0
         DD      3217739776
-        DD 22 DUP (0H)  
+        DD 22 DUP (0H)
 _2il0floatpacket_205    DD      000000000H,080000000H,000000000H,000000000H
 _RDATA  ENDS
 _DATA   SEGMENT      'DATA'

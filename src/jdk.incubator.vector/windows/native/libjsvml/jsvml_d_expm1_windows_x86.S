@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm14_ha_l9
 
 __jsvml_expm14_ha_l9    PROC    EXPORT
@@ -258,7 +258,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm12_ha_e9
 
 __jsvml_expm12_ha_e9    PROC    EXPORT
@@ -457,7 +457,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm12_ha_l9
 
 __jsvml_expm12_ha_l9    PROC    EXPORT
@@ -652,7 +652,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm11_ha_ex
 
 __jsvml_expm11_ha_ex    PROC    EXPORT
@@ -835,7 +835,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm12_ha_ex
 
 __jsvml_expm12_ha_ex    PROC    EXPORT
@@ -1063,7 +1063,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm11_ha_l9
 
 __jsvml_expm11_ha_l9    PROC    EXPORT
@@ -1218,7 +1218,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm14_ha_e9
 
 __jsvml_expm14_ha_e9    PROC    EXPORT
@@ -1452,7 +1452,7 @@ TXTST7:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm18_ha_z0
 
 __jsvml_expm18_ha_z0    PROC    EXPORT
@@ -1738,7 +1738,7 @@ TXTST8:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_expm11_ha_e9
 
 __jsvml_expm11_ha_e9    PROC    EXPORT
@@ -1899,7 +1899,7 @@ TXTST9:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_dexpm1_ha_cout_rare_internal
 
 __jsvml_dexpm1_ha_cout_rare_internal    PROC
@@ -3625,7 +3625,7 @@ _imldExpHATab   DD      0
         DD      1009778688
         DD      0
         DD      1106771968
-        DD 2 DUP (0H)   
+        DD 2 DUP (0H)
 _2il0floatpacket_33     DD      000000000H,043380000H,000000000H,043380000H
 _2il0floatpacket_92     DD      000000000H,0bff00000H
 _RDATA  ENDS

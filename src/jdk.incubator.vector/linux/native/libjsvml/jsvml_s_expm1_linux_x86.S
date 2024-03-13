@@ -34,7 +34,7 @@
 # -- Begin  __jsvml_expm1f4_ha_e9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f4_ha_e9
 # --- __jsvml_expm1f4_ha_e9(__m128)
 __jsvml_expm1f4_ha_e9:
@@ -214,7 +214,7 @@ __jsvml_expm1f4_ha_e9:
 # -- Begin  __jsvml_expm1f4_ha_ex
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f4_ha_ex
 # --- __jsvml_expm1f4_ha_ex(__m128)
 __jsvml_expm1f4_ha_ex:
@@ -404,7 +404,7 @@ __jsvml_expm1f4_ha_ex:
 # -- Begin  __jsvml_expm1f8_ha_l9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f8_ha_l9
 # --- __jsvml_expm1f8_ha_l9(__m256)
 __jsvml_expm1f8_ha_l9:
@@ -585,7 +585,7 @@ __jsvml_expm1f8_ha_l9:
 # -- Begin  __jsvml_expm1f16_ha_z0
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f16_ha_z0
 # --- __jsvml_expm1f16_ha_z0(__m512)
 __jsvml_expm1f16_ha_z0:
@@ -784,7 +784,7 @@ __jsvml_expm1f16_ha_z0:
 # -- Begin  __jsvml_expm1f4_ha_l9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f4_ha_l9
 # --- __jsvml_expm1f4_ha_l9(__m128)
 __jsvml_expm1f4_ha_l9:
@@ -946,7 +946,7 @@ __jsvml_expm1f4_ha_l9:
 # -- Begin  __jsvml_expm1f8_ha_e9
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .globl __jsvml_expm1f8_ha_e9
 # --- __jsvml_expm1f8_ha_e9(__m256)
 __jsvml_expm1f8_ha_e9:
@@ -1142,7 +1142,7 @@ __jsvml_expm1f8_ha_e9:
 # -- Begin  __jsvml_sexpm1_ha_cout_rare_internal
         .text
 # mark_begin;
-       .align    16,0x90
+        .align    16,0x90
         .hidden __jsvml_sexpm1_ha_cout_rare_internal
         .globl __jsvml_sexpm1_ha_cout_rare_internal
 # --- __jsvml_sexpm1_ha_cout_rare_internal(const float *, float *)

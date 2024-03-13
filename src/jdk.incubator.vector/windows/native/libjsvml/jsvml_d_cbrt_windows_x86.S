@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt1_ha_e9
 
 __jsvml_cbrt1_ha_e9     PROC    EXPORT
@@ -198,7 +198,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt4_ha_l9
 
 __jsvml_cbrt4_ha_l9     PROC    EXPORT
@@ -429,7 +429,7 @@ __VUNPACK_ODD_ind1_2671_0_2     DD      0
         DD      2
         DD      0
         DD      3
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
 __VUNPACK_ODD_mask_2671_0_2     DD      0
         DD      -1
         DD      0
@@ -449,7 +449,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt8_ha_z0
 
 __jsvml_cbrt8_ha_z0     PROC    EXPORT
@@ -531,7 +531,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt1_ha_l9
 
 __jsvml_cbrt1_ha_l9     PROC    EXPORT
@@ -686,7 +686,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt2_ha_l9
 
 __jsvml_cbrt2_ha_l9     PROC    EXPORT
@@ -885,7 +885,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt2_ha_e9
 
 __jsvml_cbrt2_ha_e9     PROC    EXPORT
@@ -1090,7 +1090,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt1_ha_ex
 
 __jsvml_cbrt1_ha_ex     PROC    EXPORT
@@ -1255,7 +1255,7 @@ TXTST7:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt4_ha_e9
 
 __jsvml_cbrt4_ha_e9     PROC    EXPORT
@@ -1496,7 +1496,7 @@ TXTST8:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_cbrt2_ha_ex
 
 __jsvml_cbrt2_ha_ex     PROC    EXPORT
@@ -1713,7 +1713,7 @@ TXTST9:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_dcbrt_ha_cout_rare_internal
 
 __jsvml_dcbrt_ha_cout_rare_internal     PROC
@@ -2064,7 +2064,7 @@ _DATA   SEGMENT      'DATA'
 _DATA   ENDS
 
 _RDATA  SEGMENT     READ  'DATA'
-        DD 8 DUP (0H)   
+        DD 8 DUP (0H)
         PUBLIC __jsvml_dcbrt_ha_data_internal_avx512
 __jsvml_dcbrt_ha_data_internal_avx512   DD      0
         DD      1072693248
@@ -3317,7 +3317,7 @@ _vmldCbrtHATab  DD      0
         DD      1072693248
         DD      0
         DD      3220176896
-        DD 2 DUP (0H)   
+        DD 2 DUP (0H)
 _2il0floatpacket_104    DD      000000000H,080000000H,000000000H,000000000H
 _RDATA  ENDS
 _DATA   SEGMENT      'DATA'

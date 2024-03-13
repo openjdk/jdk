@@ -36,7 +36,7 @@ TXTST0:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf8_ha_l9
 
 __jsvml_asinf8_ha_l9    PROC    EXPORT
@@ -241,7 +241,7 @@ TXTST1:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf16_ha_z0
 
 __jsvml_asinf16_ha_z0   PROC    EXPORT
@@ -328,7 +328,7 @@ TXTST2:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf8_ha_e9
 
 __jsvml_asinf8_ha_e9    PROC    EXPORT
@@ -548,7 +548,7 @@ TXTST3:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf4_ha_l9
 
 __jsvml_asinf4_ha_l9    PROC    EXPORT
@@ -734,7 +734,7 @@ TXTST4:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf4_ha_e9
 
 __jsvml_asinf4_ha_e9    PROC    EXPORT
@@ -932,7 +932,7 @@ TXTST5:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_asinf4_ha_ex
 
 __jsvml_asinf4_ha_ex    PROC    EXPORT
@@ -1151,7 +1151,7 @@ TXTST6:
 _TEXT   ENDS
 _TEXT   SEGMENT      'CODE'
 
-       ALIGN     16
+        ALIGN     16
         PUBLIC __jsvml_sasin_ha_cout_rare_internal
 
 __jsvml_sasin_ha_cout_rare_internal     PROC
