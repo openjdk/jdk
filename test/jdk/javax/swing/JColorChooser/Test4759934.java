@@ -34,7 +34,7 @@ import javax.swing.JFrame;
 /*
  * @test
  * @bug 4759934
- * @library ../../../java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests windows activation problem
  * @run main/manual Test4759934
