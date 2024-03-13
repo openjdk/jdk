@@ -54,11 +54,6 @@ class VM_SafepointALot: public VM_EmptyOperation {
   VMOp_Type type() const { return VMOp_SafepointALot; }
 };
 
-class VM_Cleanup: public VM_EmptyOperation {
- public:
-  VMOp_Type type() const { return VMOp_Cleanup; }
-};
-
 // empty vm op, evaluated just to force a safepoint
 class VM_ForceSafepoint: public VM_EmptyOperation {
  public:

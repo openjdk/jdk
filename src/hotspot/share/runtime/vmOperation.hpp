@@ -37,7 +37,6 @@
 #define VM_OPS_DO(template)                       \
   template(Halt)                                  \
   template(SafepointALot)                         \
-  template(Cleanup)                               \
   template(ThreadDump)                            \
   template(PrintThreads)                          \
   template(FindDeadlocks)                         \

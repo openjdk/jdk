@@ -98,14 +98,14 @@ void VMOperationTimeoutTask::disarm() {
 // Implementation of VMThread stuff
 
 static VM_SafepointALot safepointALot_op;
-static VM_Cleanup       cleanup_op;
+static VM_ForceSafepoint no_op;
 
 bool              VMThread::_should_terminate   = false;
 bool              VMThread::_terminated         = false;
 Monitor*          VMThread::_terminate_lock     = nullptr;
 VMThread*         VMThread::_vm_thread          = nullptr;
 VM_Operation*     VMThread::_cur_vm_operation   = nullptr;
-VM_Operation*     VMThread::_next_vm_operation  = &cleanup_op; // Prevent any thread from setting an operation until VM thread is ready.
+VM_Operation*     VMThread::_next_vm_operation  = &no_op; // Prevent any thread from setting an operation until VM thread is ready.
 PerfCounter*      VMThread::_perf_accumulated_vm_operation_time = nullptr;
 VMOperationTimeoutTask* VMThread::_timeout_task = nullptr;
 
@@ -497,7 +497,7 @@ void VMThread::loop() {
 
   // Need to set a calling thread for ops not passed
   // via the normal way.
-  cleanup_op.set_calling_thread(_vm_thread);
+  no_op.set_calling_thread(_vm_thread);
   safepointALot_op.set_calling_thread(_vm_thread);
 
   while (true) {
