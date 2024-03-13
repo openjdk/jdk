@@ -42,7 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @modules java.base/jdk.internal.misc
  *          java.management
  * @compile -XDignore.symbol.file OverriderMsg.java
- * @run driver OverriderMsg
+ * @run main/othervm --enable-preview OverriderMsg
  */
 
 // This test checks that the super class name is included in the message when
@@ -75,7 +75,7 @@ public class OverriderMsg {
                                                     .aload(0)
                                                     .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                                     .return_()))
-                            .withMethod("m", MethodTypeDesc.of(CD_Void, CD_String), ACC_PUBLIC + ACC_FINAL,
+                            .withMethod("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC + ACC_FINAL,
                                     mb -> mb.withCode(CodeBuilder::return_))
                 );
 
@@ -96,12 +96,17 @@ public class OverriderMsg {
                         .withSuperclass(ClassDesc.of("HasFinal"))
 
                         .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                mb -> mb.withCode(
+                                        cob -> cob
+                                                .aload(0)
+                                                .invokespecial(ClassDesc.ofInternalName("HasFinal"), INIT_NAME, MTD_void)
+                                                .return_()
+                                ))
+
+                        .withMethod("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC,
                                 mb -> mb.withCode(CodeBuilder::return_))
 
-                        .withMethod("m", MethodTypeDesc.of(CD_Void, CD_String), ACC_PUBLIC,
-                                mb -> mb.withCode(CodeBuilder::return_))
-
-                        .withMethod("main", MethodTypeDesc.of(CD_Void, CD_String.arrayType()), ACC_PUBLIC + ACC_STATIC,
+                        .withMethod("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC + ACC_STATIC,
                                 mb -> mb.withCode(CodeBuilder::return_))
         );
 
