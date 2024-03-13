@@ -28,7 +28,7 @@ import javax.swing.JPanel;
 /*
  * @test
  * @bug 4759306
- * @library ../../../java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Checks if JColorChooser.setPreviewPanel removes the old one
  * @run main/manual Test4759306
