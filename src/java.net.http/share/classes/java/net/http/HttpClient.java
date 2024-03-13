@@ -140,8 +140,9 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *  or publishing {@code BodyHandler} and {@code BodySubscriber}
  *  implementations} which allow to stream body data back to the caller.
  *  In order for the resources associated with these streams to be
- *  reclaimed, a caller must eventually {@linkplain  HttpResponse#body()
- *  obtain these streaming response body} and close, cancel, or
+ *  reclaimed, and for the HTTP request to be considered completed,
+ *  a caller must eventually {@linkplain  HttpResponse#body()
+ *  obtain the streaming response body} and close, cancel, or
  *  read the returned streams to exhaustion. Likewise, a custom
  *  {@link BodySubscriber} implementation should either {@linkplain
  *  Subscription#request(long) request} all data until {@link
@@ -156,7 +157,9 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * provide a best effort implementation. Failing to close, cancel, or
  * read {@link ##streaming streaming bodies} to exhaustion may stop
  * delivery of data and {@linkplain #awaitTermination(Duration) stall an
- * orderly shutdown}.
+ * orderly shutdown}. The {@link #shutdownNow()} method will attempt
+ * to cancel any such non-completed requests, but may cause
+ * abrupt termination of any on going operation.
  *
  * <p id="gc">
  * If not {@linkplain ##closing explicitly closed}, the JDK
