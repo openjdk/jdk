@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,51 +21,65 @@
  * questions.
  */
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.Insets;
+import java.awt.Panel;
+import java.awt.Rectangle;
+import java.awt.Shape;
+import java.awt.font.FontRenderContext;
+import java.awt.font.LineBreakMeasurer;
+import java.awt.font.TextAttribute;
+import java.awt.font.TextLayout;
+import java.awt.geom.Rectangle2D;
+import java.text.AttributedCharacterIterator;
+import java.text.AttributedString;
+import javax.swing.JFrame;
+
 /*
- *
- * See TestJustification.html for main test.
+ * @test
+ * @bug 4211728 4178140 8145542
+ * @summary Justify several lines of text and verify that the lines are the same
+   length and cursor positions are correct.
+   Bug 4211728:  TextLayout.draw() draws characters at wrong position.
+   Bug 4178140:  TextLayout does not justify
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual TestJustification
  */
 
-import java.applet.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.font.*;
-import java.awt.geom.*;
-import java.text.*;
+public class TestJustification {
+  private static final String INSTRUCTIONS = """
+            Five lines of text should appear, all justified to the same width,
+            followed by a sixth line containing only roman characters and
+            no spaces which is not justified, and instead is centered.
+            Carets should appear between all characters.
 
-public class TestJustification extends Applet {
-  JustificationPanel panel;
+            PASS the test if this is true, else press FAIL.
+            """;
 
-  public void init() {
-    setLayout(new BorderLayout());
-    panel = new JustificationPanel("Bitstream Cyberbit");
-    add("Center", panel);
+  public static void main(String[] args) throws Exception {
+
+    PassFailJFrame.builder()
+                  .title("Test Instructions")
+                  .instructions(INSTRUCTIONS)
+                  .rows((int) INSTRUCTIONS.lines().count() + 2)
+                  .columns(35)
+                  .testUI(TestJustification::createUI)
+                  .build()
+                  .awaitAndCheck();
   }
 
-  public void destroy() {
-    remove(panel);
-  }
-
-  // calls system.exit, not for use in tests.
-  public static void main(String args[]) {
-    TestJustification justificationTest = new TestJustification();
-    justificationTest.init();
-    justificationTest.start();
-
-    Frame f = new Frame("Test Justification");
-    f.addWindowListener(new WindowAdapter() {
-      public void windowClosing(WindowEvent e) {
-        System.exit(0);
-      }
-    });
-
-    f.add("Center", justificationTest);
-    f.setSize(500, 500);
-    f.show();
-  }
-
-  public String getAppletInfo() {
-    return "Test TextLayout.getJustifiedLayout()";
+  private static JFrame createUI() {
+    JFrame frame= new JFrame("Test Text Justification");
+    JustificationPanel panel = new JustificationPanel("Bitstream Cyberbit");
+    frame.add(panel);
+    frame.add("Center", panel);
+    frame.setSize(500, 450);
+    return frame;
   }
 
   static class JustificationPanel extends Panel {
@@ -84,12 +98,12 @@ public class TestJustification extends Applet {
     }
 
     private static final String[] texts = {
-      "This is an english Highlighting demo.", "Highlighting",
-      "This is an arabic \u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e demo.", "arabic \u0627\u0628\u062a\u062c",
-      "This is a hebrew \u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5 demo.", "hebrew \u05d0\u05d1\u05d2",
-      "This is a cjk \u4e00\u4e01\u4e02\uac00\uac01\uc4fa\uf900\uf901\uf902 demo.", "cjk",
-      "NoSpaceCJK:\u4e00\u4e01\u4e02and\uac00\uac01\uc4faand\uf900\uf901\uf902", "No",
-      "NoSpaceRoman", "Space"
+            "This is an english Highlighting demo.", "Highlighting",
+            "This is an arabic \u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e demo.", "arabic \u0627\u0628\u062a\u062c",
+            "This is a hebrew \u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5 demo.", "hebrew \u05d0\u05d1\u05d2",
+            "This is a cjk \u4e00\u4e01\u4e02\uac00\uac01\uc4fa\uf900\uf901\uf902 demo.", "cjk",
+            "NoSpaceCJK:\u4e00\u4e01\u4e02and\uac00\uac01\uc4faand\uf900\uf901\uf902", "No",
+            "NoSpaceRoman", "Space"
     };
 
     public void paint(Graphics g) {
@@ -141,9 +155,7 @@ public class TestJustification extends Applet {
 
       float basey = 20;
 
-      for (int i = 0; i < layouts.length; ++i) {
-        TextLayout layout = layouts[i];
-
+      for (TextLayout layout : layouts) {
         float la = layout.getAscent();
         float ld = layout.getDescent();
         float ll = layout.getLeading();
@@ -174,15 +186,15 @@ public class TestJustification extends Applet {
 
       if (lineText == null) {
         String text = "This is a long line of text that should be broken across multiple "
-          + "lines and then justified to fit the break width.  This test should pass if "
-          + "these lines are justified to the same width, and fail otherwise.  It should "
-          + "also format the hebrew (\u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5) and arabic "
-          + "(\u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e) and CJK "
-          + "(\u4e00\u4e01\u4e02\uac00\uac01\uc4fa\u67b1\u67b2\u67b3\u67b4\u67b5\u67b6\u67b7"
-          + "\u67b8\u67b9) text correctly.";
+                      + "lines and then justified to fit the break width.  This test should pass if "
+                      + "these lines are justified to the same width, and fail otherwise.  It should "
+                      + "also format the hebrew (\u05d0\u05d1\u05d2 \u05d3\u05d4\u05d5) and arabic "
+                      + "(\u0627\u0628\u062a\u062c \u062e\u0644\u0627\u062e) and CJK "
+                      + "(\u4e00\u4e01\u4e02\uac00\uac01\uc4fa\u67b1\u67b2\u67b3\u67b4\u67b5\u67b6\u67b7"
+                      + "\u67b8\u67b9) text correctly.";
 
-        Float regular = new Float(16.0);
-        Float big = new Float(24.0);
+        Float regular = 16.0F;
+        Float big = 24.0F;
         AttributedString astr = new AttributedString(text);
         astr.addAttribute(TextAttribute.SIZE, regular, 0, text.length());
         astr.addAttribute(TextAttribute.FAMILY, fontname, 0, text.length());
