@@ -53,12 +53,12 @@ public class Test6910490 implements Icon {
                 .instructions(testInstructions)
                 .rows(3)
                 .columns(35)
-                .testUI(obj.init())
+                .testUI(obj.initializeTest())
                 .build()
                 .awaitAndCheck();
     }
 
-    public JFrame init() {
+    public JFrame initializeTest() {
         Insets insets = new Insets(10, 10, 10, 10);
         JFrame frame = new JFrame("Matte Border Test");
         frame.setSize(600, 300);
