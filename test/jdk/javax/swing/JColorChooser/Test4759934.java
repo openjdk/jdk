@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 4759934
- * * @library /test/jdk/java/awt/regtesthelpers /test/lib
+ * @library ../../../java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests windows activation problem
  * @run main/manual Test4759934
@@ -67,10 +67,12 @@ public class Test4759934 {
     };
 
     public static void main(String[] args) throws Exception {
+        String instructions = "Click on show Dialog. Then click on Show ColorChooser.\n" +
+                "If a ColorChooser is shown, then pass.";
+
         PassFailJFrame.builder()
                 .title("Test4759934")
-                .instructions("Click on show Dialog. Then click on Show ColorChooser.\n" +
-                        "If a ColorChooser is shown, then pass.")
+                .instructions(instructions)
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
