@@ -224,6 +224,8 @@ public class CallGeneratorHelper extends NativeTestHelper {
 
     private static void generateShared(PrintStream out) {
         out.println("""
+            #include "export.h"
+
             #ifdef __clang__
             #pragma clang optimize off
             #elif defined __GNUC__
@@ -232,11 +234,6 @@ public class CallGeneratorHelper extends NativeTestHelper {
             #pragma optimize( "", off )
             #endif
 
-            #ifdef _WIN64
-            #define EXPORT __declspec(dllexport)
-            #else
-            #define EXPORT
-            #endif
             #ifdef _AIX
             #pragma align (natural)
             #endif
