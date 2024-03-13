@@ -84,9 +84,7 @@
 #endif
 
 // put OS-includes here (sorted alphabetically)
-#ifdef AIX_XLC_GE_17
 #include <alloca.h>
-#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>

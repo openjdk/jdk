@@ -96,8 +96,6 @@ ifneq ($(DEBUG_LEVEL), release)
   DISABLED_WARNINGS_gcc += strict-overflow
 endif
 
-DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
-
 DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127 4722
 
 ################################################################################
@@ -202,7 +200,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
-    DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
     LDFLAGS := $(JVM_LDFLAGS), \
