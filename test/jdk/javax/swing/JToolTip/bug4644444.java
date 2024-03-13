@@ -54,7 +54,7 @@ public class bug4644444 {
     private static JFrame createUI() {
         JFrame frame = new JFrame("bug4644444");
         JButton button = new JButton("Button");
-        button.setToolTipText("Somthing really long 1234567890 1234567890 " +
+        button.setToolTipText("Something really long 1234567890 1234567890 " +
                 "1234567890 1234567890 1234567890 1234567890 1234567890 1234567890");
         frame.getContentPane().add(button);
         frame.setSize(200, 80);
