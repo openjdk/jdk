@@ -42,10 +42,11 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _vloop_analyzer(vloop_analyzer),
   _vloop(vloop_analyzer.vloop()),
   _arena(mtCompiler),
-  _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
+  _pairset(&_arena, _vloop_analyzer.body()),
+  _packset(&_arena, _vloop_analyzer.body()),
   _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
@@ -454,7 +455,7 @@ bool SuperWord::SLP_extract() {
   // Attempt vectorization
   find_adjacent_refs();
 
-  if (_packset.length() == 0) {
+  if (_pairset.is_empty()) {
 #ifndef PRODUCT
     if (is_trace_superword_any()) {
       tty->print_cr("\nNo pair packs generated, abort SuperWord.");
@@ -555,11 +556,8 @@ void SuperWord::find_adjacent_refs() {
         if (alignment(s2) == top_align) continue;
         if (s1 != s2 && are_adjacent_refs(s1, s2)) {
           if (stmts_can_pack(s1, s2, align)) {
-            Node_List* pair = new Node_List();
-            pair->push(s1);
-            pair->push(s2);
             if (!_do_vector_loop || same_origin_idx(s1, s2)) {
-              _packset.append(pair);
+              _pairset.add_pair(s1, s2);
             }
           }
         }
@@ -581,7 +579,7 @@ void SuperWord::find_adjacent_refs() {
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::find_adjacent_refs");
-    print_packset();
+    _pairset.print();
   }
 #endif
 }
@@ -843,7 +841,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   // and will still be vectorized by SuperWord::vector_opd.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
-      if (!exists_at(s1, 0) && !exists_at(s2, 1)) {
+      if (!_pairset.exists_left(s1) && !_pairset.exists_right(s2)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
           int s1_align = alignment(s1);
           int s2_align = alignment(s2);
@@ -854,18 +852,6 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
           }
         }
       }
-    }
-  }
-  return false;
-}
-
-//------------------------------exists_at---------------------------
-// Does s exist in a pack at position pos?
-bool SuperWord::exists_at(Node* s, uint pos) {
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    if (p->at(pos) == s) {
-      return true;
     }
   }
   return false;
@@ -1072,7 +1058,7 @@ void SuperWord::extend_packset_with_more_pairs_by_following_use_and_def() {
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::extend_packset_with_more_pairs_by_following_use_and_def");
-    print_packset();
+    _pairset.print();
   }
 #endif
 }
@@ -1124,10 +1110,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
     align = adjust_alignment_for_type_conversion(s1, t1, align);
     if (stmts_can_pack(t1, t2, align)) {
       if (est_savings(t1, t2) >= 0) {
-        Node_List* pair = new Node_List();
-        pair->push(t1);
-        pair->push(t2);
-        _packset.append(pair);
+        _pairset.add_pair(t1, t2);
 #ifndef PRODUCT
         if (is_trace_superword_alignment()) {
           tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)",
@@ -1198,10 +1181,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     _race_possible = true;
   }
   if (savings >= 0) {
-    Node_List* pair = new Node_List();
-    pair->push(u1);
-    pair->push(u2);
-    _packset.append(pair);
+    _pairset.add_pair(u1, u2);
 #ifndef PRODUCT
     if (is_trace_superword_alignment()) {
       tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)",
@@ -1367,37 +1347,38 @@ void SuperWord::combine_pairs_to_longer_packs() {
   }
 #endif
 
-  bool changed = true;
-  // Combine packs regardless max vector size.
-  while (changed) {
-    changed = false;
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p1 = _packset.at(i);
-      if (p1 == nullptr) continue;
-      // Because of sorting we can start at i + 1
-      for (int j = i + 1; j < _packset.length(); j++) {
-        Node_List* p2 = _packset.at(j);
-        if (p2 == nullptr) continue;
-        if (p1->at(p1->size()-1) == p2->at(0)) {
-          for (uint k = 1; k < p2->size(); k++) {
-            p1->push(p2->at(k));
-          }
-          _packset.at_put(j, nullptr);
-          changed = true;
-        }
-      }
-    }
-  }
-
-  // Remove all nullptr from packset
-  compress_packset();
+// TODO implement alternative !!!
+//  bool changed = true;
+//  // Combine packs regardless max vector size.
+//  while (changed) {
+//    changed = false;
+//    for (int i = 0; i < _packset.length(); i++) {
+//      Node_List* p1 = _packset.at(i);
+//      if (p1 == nullptr) continue;
+//      // Because of sorting we can start at i + 1
+//      for (int j = i + 1; j < _packset.length(); j++) {
+//        Node_List* p2 = _packset.at(j);
+//        if (p2 == nullptr) continue;
+//        if (p1->at(p1->size()-1) == p2->at(0)) {
+//          for (uint k = 1; k < p2->size(); k++) {
+//            p1->push(p2->at(k));
+//          }
+//          _packset.at_put(j, nullptr);
+//          changed = true;
+//        }
+//      }
+//    }
+//  }
+//
+//  // Remove all nullptr from packset
+//  compress_packset();
 
   assert(!_packset.is_empty(), "must have combined some packs");
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::combine_pairs_to_longer_packs");
-    print_packset();
+    _packset.print();
   }
 #endif
 }
@@ -1417,7 +1398,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       if (is_trace_superword_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed pack during split: %s:", task.message());
-        print_pack(pack);
+        _packset.print_pack(pack);
       }
 #endif
     for (uint i = 0; i < pack_size; i++) {
@@ -1439,7 +1420,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
     tty->cr();
     tty->print_cr("INFO: splitting pack (sizes: %d %d): %s:",
                   old_size, new_size, task.message());
-    print_pack(pack);
+    _packset.print_pack(pack);
   }
 #endif
 
@@ -1450,7 +1431,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       if (is_trace_superword_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed size 2 pack, cannot be split: %s:", task.message());
-        print_pack(pack);
+        _packset.print_pack(pack);
       }
 #endif
     for (uint i = 0; i < pack_size; i++) {
@@ -1542,7 +1523,7 @@ void SuperWord::split_packs(const char* split_name,
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter %s", split_name);
-    print_packset();
+    _packset.print();
   }
 #endif
 }
@@ -1612,7 +1593,7 @@ void SuperWord::filter_packs(const char* filter_name,
       if (is_trace_superword_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed pack: %s:", error_message);
-        print_pack(pack);
+        _packset.print_pack(pack);
       }
 #endif
     }
@@ -1624,7 +1605,7 @@ void SuperWord::filter_packs(const char* filter_name,
 #ifndef PRODUCT
   if (is_trace_superword_packset() && filter_name != nullptr) {
     tty->print_cr("\nAfter %s:", filter_name);
-    print_packset();
+    _packset.print();
   }
 #endif
 }
@@ -1785,7 +1766,7 @@ void SuperWord::construct_my_pack_map() {
       if (my_pack(s) != nullptr) {
         s->dump(1);
         tty->print_cr("packs[%d]:", i);
-        print_pack(p);
+        _packset.print_pack(p);
         assert(false, "only in one pack");
       }
 #endif
@@ -1834,7 +1815,7 @@ void SuperWord::filter_packs_for_profitable() {
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter Superword::filter_packs_for_profitable");
-    print_packset();
+    _packset.print();
     tty->cr();
   }
 #endif
@@ -2037,7 +2018,7 @@ void SuperWord::verify_packs() {
     if (!is_marked_reduction(p->at(0)) &&
         !mutually_independent(p)) {
       tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
-      print_pack(p);
+      _packset.print_pack(p);
       assert(false, "pack nodes not mutually independent");
     }
   }
@@ -2141,7 +2122,7 @@ public:
 
   // Create nodes (from packs and scalar-nodes), and add edges, based on the dependency graph.
   void build() {
-    const GrowableArray<Node_List*>& packset = _slp->packset();
+    const PackSet& packset = _slp->packset();
     const GrowableArray<Node*>& body = _slp->body();
     // Map nodes in packsets
     for (int i = 0; i < packset.length(); i++) {
@@ -3452,22 +3433,23 @@ void SuperWord::remove_pack_at(int pos) {
 }
 
 void SuperWord::packset_sort(int n) {
-  // simple bubble sort so that we capitalize with O(n) when its already sorted
-  do {
-    int max_swap_index = 0;
-    for (int i = 1; i < n; i++) {
-      Node_List* q_low = _packset.at(i-1);
-      Node_List* q_i = _packset.at(i);
+  // TODO remove
+  // // simple bubble sort so that we capitalize with O(n) when its already sorted
+  // do {
+  //   int max_swap_index = 0;
+  //   for (int i = 1; i < n; i++) {
+  //     Node_List* q_low = _packset.at(i-1);
+  //     Node_List* q_i = _packset.at(i);
 
-      // only swap when we find something to swap
-      if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
-        *(_packset.adr_at(i)) = q_low;
-        *(_packset.adr_at(i-1)) = q_i;
-        max_swap_index = i;
-      }
-    }
-    n = max_swap_index;
-  } while (n > 1);
+  //     // only swap when we find something to swap
+  //     if (alignment(q_low->at(0)) > alignment(q_i->at(0))) {
+  //       *(_packset.adr_at(i)) = q_low;
+  //       *(_packset.adr_at(i-1)) = q_i;
+  //       max_swap_index = i;
+  //     }
+  //   }
+  //   n = max_swap_index;
+  // } while (n > 1);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
@@ -3822,28 +3804,50 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
   igvn().replace_input_of(pre_opaq, 1, constrained_limit);
 }
 
-//------------------------------print_packset---------------------------
-void SuperWord::print_packset() {
 #ifndef PRODUCT
-  tty->print_cr("packset");
-  for (int i = 0; i < _packset.length(); i++) {
-    tty->print_cr("Pack: %d", i);
-    Node_List* p = _packset.at(i);
-    if (p == nullptr) {
-      tty->print_cr("  nullptr");
-    } else {
-      print_pack(p);
+void PairSet::print() const {
+  tty->print_cr("\nPairSet::print: %d pairs", _pair_counter);
+  int chain = 0;
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    // Start at a "left-most" node:
+    if (exists_left(n) && !exists_right(n)) {
+      tty->print_cr(" Pair-chain %d:", chain++);
+      Node* left = n;
+      // Now walk the pair-chain:
+      while (exists_left(left)) {
+        Node* right = get_right_for(left);
+        tty->print("  ");
+        left->dump();
+        tty->print("  ");
+        right->dump();
+        tty->cr();
+        left = right;
+      }
     }
   }
-#endif
 }
 
-//------------------------------print_pack---------------------------
-void SuperWord::print_pack(Node_List* p) {
-  for (uint i = 0; i < p->size(); i++) {
-    print_stmt(p->at(i));
+void PackSet::print() const {
+  tty->print_cr("\nPackSet::print: %d packs", _packs.length());
+  for (int i = 0; i < _packs.length(); i++) {
+    tty->print_cr(" Pack: %d", i);
+    Node_List* pack = _packs.at(i);
+    if (pack == nullptr) {
+      tty->print_cr("  nullptr");
+    } else {
+      print_pack(pack);
+    }
   }
 }
+
+void PackSet::print_pack(Node_List* pack) const {
+  for (uint i = 0; i < pack->size(); i++) {
+    tty->print("  %02d: ", i);
+    pack->at(i)->dump();
+  }
+}
+#endif
 
 #ifndef PRODUCT
 void VLoopBody::print() const {
@@ -3857,14 +3861,6 @@ void VLoopBody::print() const {
   }
 }
 #endif
-
-//------------------------------print_stmt---------------------------
-void SuperWord::print_stmt(Node* s) {
-#ifndef PRODUCT
-  tty->print(" align: %d \t", alignment(s));
-  s->dump();
-#endif
-}
 
 // ========================= SWNodeInfo =====================
 

@@ -57,6 +57,75 @@
 
 class VPointer;
 
+class PairSet {
+private:
+  const VLoopBody& _body;
+
+  // Doubly-linked pairs. If not linked: -1
+  GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
+  GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
+
+  int _pair_counter;
+
+public:
+  // Initialize empty, i.e. all not linked (-1).
+  PairSet(Arena* arena, const VLoopBody& body) :
+    _body(body),
+    _left_to_right(arena, body.body().length(), body.body().length(), -1),
+    _right_to_left(arena, body.body().length(), body.body().length(), -1),
+    _pair_counter(0) {}
+
+  bool is_empty() const { return _pair_counter == 0; }
+  bool exists_left(Node* n)  const { return _left_to_right.at(_body.bb_idx(n)) != -1; }
+  bool exists_right(Node* n) const { return _right_to_left.at(_body.bb_idx(n)) != -1; }
+  Node* get_left_for(Node* n)  const { return _body.body().at(_right_to_left.at(_body.bb_idx(n))); }
+  Node* get_right_for(Node* n) const { return _body.body().at(_left_to_right.at(_body.bb_idx(n))); }
+
+  void add_pair(Node* n1, Node* n2) {
+    assert(!exists_left(n1) && !exists_right(n2), "cannot be left twice, or right twice");
+    int bb_idx_1 = _body.bb_idx(n1);
+    int bb_idx_2 = _body.bb_idx(n2);
+    _left_to_right.at_put(bb_idx_1, bb_idx_2);
+    _right_to_left.at_put(bb_idx_2, bb_idx_1);
+    _pair_counter++;
+    assert(exists_left(n1) && exists_right(n2), "must be set now");
+  }
+
+  // TODO print, and in some places instead of packset!
+  NOT_PRODUCT( void print() const; )
+};
+
+class PackSet {
+private:
+  const VLoopBody& _body;
+
+  // The "packset" proper: an array of "packs"
+  GrowableArray<Node_List*> _packs;
+
+  // Mapping from nodes to their pack: bb_idx -> pack
+  GrowableArray<Node_List*> _node_to_pack;
+
+public:
+  // Initialize empty, i.e. no packs, and unmapped (nullptr).
+  PackSet(Arena* arena, const VLoopBody& body) :
+    _body(body),
+    _packs(arena, 8, 0, nullptr),
+    _node_to_pack(arena, body.body().length(), body.body().length(), nullptr) {}
+
+  // Delegate to _packs
+  int length() const { return _packs.length(); }
+  bool is_empty() const { return _packs.is_empty(); }
+  Node_List* at(int i) const { return _packs.at(i); }
+  // TODO remove?
+  void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
+  void append(Node_List* pack) { _packs.append(pack); }
+  void trunc_to(int len) { _packs.trunc_to(len); }
+  void clear() { _packs.clear(); }
+
+  NOT_PRODUCT( void print() const; )
+  NOT_PRODUCT( void print_pack(Node_List* pack) const; )
+};
+
 // ========================= SuperWord =====================
 
 // -----------------------------SWNodeInfo---------------------------------
@@ -83,11 +152,12 @@ class SuperWord : public ResourceObj {
 
   enum consts { top_align = -1, bottom_align = -666 };
 
-  GrowableArray<Node_List*> _packset;    // Packs for the current block
-
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
   MemNode const* _align_to_ref;          // Memory reference that pre-loop will align to
+
+  PairSet _pairset;
+  PackSet _packset;
 
  public:
   SuperWord(const VLoopAnalyzer &vloop_analyzer);
@@ -219,7 +289,7 @@ class SuperWord : public ResourceObj {
 
   bool     do_vector_loop()        { return _do_vector_loop; }
 
-  const GrowableArray<Node_List*>& packset() const { return _packset; }
+  const PackSet& packset()   const { return _packset; }
  private:
   bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
@@ -267,8 +337,6 @@ private:
 
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
-  // Does s exist in a pack at position pos?
-  bool exists_at(Node* s, uint pos);
   // Is s1 immediately before s2 in memory?
   bool are_adjacent_refs(Node* s1, Node* s2);
   // Are s1 and s2 similar?
@@ -462,11 +530,6 @@ private:
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
-
-  // print methods
-  void print_packset();
-  void print_pack(Node_List* p);
-  void print_stmt(Node* s);
 
   void packset_sort(int n);
 };
