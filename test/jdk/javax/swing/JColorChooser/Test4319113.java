@@ -41,7 +41,7 @@ import javax.swing.UIManager;
 /*
  * @test
  * @bug 4319113
- * @library ../../../java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests the open JColorChooser behavior on LaF change.
  * @run main/manual Test4319113
