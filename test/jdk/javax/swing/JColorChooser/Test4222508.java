@@ -37,12 +37,14 @@ import javax.swing.JFrame;
 public final class Test4222508 {
 
     public static void main(String[] args) throws Exception {
+        String instructions = "Click on colors in the JColorChooser.\n" +
+                "Then uncheck the checkbox and click on colors again.\n" +
+                "If the JColorChooser is disabled when the checkbox is unchecked, " +
+                "then pass the test.";
+
         PassFailJFrame.builder()
                 .title("Test4222508")
-                .instructions("Click on colors in the JColorChooser.\n" +
-                        "Then uncheck the checkbox and click on colors again.\n" +
-                        "If the JColorChooser is disabled when the checkbox is unchecked, " +
-                        "then pass the test.")
+                .instructions(instructions)
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
