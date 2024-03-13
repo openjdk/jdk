@@ -45,7 +45,6 @@ import jdk.test.lib.Platform;
  */
 
 public class DisposeInActionEventTest {
-    private static JTextArea textArea;
     private static SystemTray systemTray;
     private static TrayIcon trayIcon;
 
@@ -92,7 +91,7 @@ public class DisposeInActionEventTest {
         JFrame frame = new JFrame("Event Message Display");
         frame.setLayout(new BorderLayout());
 
-        textArea = new JTextArea();
+        JTextArea textArea = new JTextArea();
         frame.getContentPane().add(new JScrollPane(textArea));
         frame.setSize(400, 200);
 
