@@ -150,6 +150,10 @@ public:
     return _vtrace.is_trace(TraceAutoVectorizationTag::TYPES);
   }
 
+  bool is_trace_dependency_graph() const {
+    return _vtrace.is_trace(TraceAutoVectorizationTag::DEPENDENCY_GRAPH);
+  }
+
   bool is_trace_pointer_analysis() const {
     return _vtrace.is_trace(TraceAutoVectorizationTag::POINTER_ANALYSIS);
   }
@@ -308,7 +312,7 @@ public:
   const GrowableArray<MemNode*>& tails() const { return _tails; }
 
   // Get all memory nodes of a slice, in reverse order
-  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<Node*>& slice) const;
+  void get_slice_in_reverse_order(PhiNode* head, MemNode* tail, GrowableArray<MemNode*>& slice) const;
 
   bool same_memory_slice(MemNode* m1, MemNode* m2) const;
 
@@ -441,6 +445,109 @@ private:
   const Type* container_type(Node* n) const;
 };
 
+// Submodule of VLoopAnalyzer.
+// The dependency graph is used to determine if nodes are independent, and can thus potentially
+// be executed in parallel. That is a prerequisite for packing nodes into vector operations.
+// The dependency graph is a combination:
+//  - Data-dependencies: they can directly be taken from the C2 node inputs.
+//  - Memory-dependencies: the edges in the C2 memory-slice are too restrictive: for example all
+//                         stores are serialized, even if their memory does not overlap. Thus,
+//                         we refine the memory-dependencies (see construct method).
+class VLoopDependencyGraph : public StackObj {
+private:
+  class DependencyNode;
+
+  Arena*                   _arena;
+  const VLoop&             _vloop;
+  const VLoopBody&         _body;
+  const VLoopMemorySlices& _memory_slices;
+
+  // bb_idx -> DependenceNode*
+  GrowableArray<DependencyNode*> _dependency_nodes;
+
+  // Node depth in DAG: bb_idx -> depth
+  GrowableArray<int> _depths;
+
+public:
+  VLoopDependencyGraph(Arena* arena,
+                       const VLoop& vloop,
+                       const VLoopBody& body,
+                       const VLoopMemorySlices& memory_slices) :
+    _arena(arena),
+    _vloop(vloop),
+    _body(body),
+    _memory_slices(memory_slices),
+    _dependency_nodes(arena,
+                      vloop.estimated_body_length(),
+                      vloop.estimated_body_length(),
+                      nullptr),
+    _depths(arena,
+            vloop.estimated_body_length(),
+            vloop.estimated_body_length(),
+            0) {}
+  NONCOPYABLE(VLoopDependencyGraph);
+
+  void construct();
+  bool independent(Node* s1, Node* s2) const;
+  bool mutually_independent(const Node_List* nodes) const;
+
+private:
+  void add_node(MemNode* n, GrowableArray<int>& memory_pred_edges);
+  int depth(const Node* n) const { return _depths.at(_body.bb_idx(n)); }
+  void set_depth(const Node* n, int d) { _depths.at_put(_body.bb_idx(n), d); }
+  void compute_depth();
+  NOT_PRODUCT( void print() const; )
+
+  const DependencyNode* dependency_node(const Node* n) const {
+    return _dependency_nodes.at(_body.bb_idx(n));
+  }
+
+  class DependencyNode : public ArenaObj {
+  private:
+    MemNode* _node; // Corresponding ideal node
+    const uint _memory_pred_edges_length;
+    int* _memory_pred_edges; // memory pred-edges, mapping to bb_idx
+  public:
+    DependencyNode(MemNode* n, GrowableArray<int>& memory_pred_edges, Arena* arena);
+    NONCOPYABLE(DependencyNode);
+    uint memory_pred_edges_length() const { return _memory_pred_edges_length; }
+
+    int memory_pred_edge(uint i) const {
+      assert(i < _memory_pred_edges_length, "bounds check");
+      return _memory_pred_edges[i];
+    }
+  };
+
+public:
+  // Iterator for dependency graph predecessors of a node.
+  class PredsIterator : public StackObj {
+  private:
+    const VLoopDependencyGraph& _dependency_graph;
+
+    const Node* _node;
+    const DependencyNode* _dependency_node;
+
+    Node* _current;
+
+    // Iterate in node->in(i)
+    int _next_pred;
+    int _end_pred;
+
+    // Iterate in dependency_node->memory_pred_edge(i)
+    int _next_memory_pred;
+    int _end_memory_pred;
+  public:
+    PredsIterator(const VLoopDependencyGraph& dependency_graph, const Node* node);
+    NONCOPYABLE(PredsIterator);
+    void next();
+    bool done() const { return _current == nullptr; }
+    Node* current() const {
+      assert(!done(), "not done yet");
+      return _current;
+    }
+  };
+};
+
 // Analyze the loop in preparation for auto-vectorization. This class is
 // deliberately structured into many submodules, which are as independent
 // as possible, though some submodules do require other submodules.
@@ -463,6 +570,7 @@ private:
   VLoopMemorySlices    _memory_slices;
   VLoopBody            _body;
   VLoopTypes           _types;
+  VLoopDependencyGraph _dependency_graph;
 
 public:
   VLoopAnalyzer(const VLoop& vloop, VSharedData& vshared) :
@@ -472,7 +580,8 @@ public:
     _reductions      (&_arena, vloop),
     _memory_slices   (&_arena, vloop),
     _body            (&_arena, vloop, vshared),
-    _types           (&_arena, vloop, _body)
+    _types           (&_arena, vloop, _body),
+    _dependency_graph(&_arena, vloop, _body, _memory_slices)
   {
     _success = setup_submodules();
   }
@@ -486,6 +595,7 @@ public:
   const VLoopMemorySlices& memory_slices()       const { return _memory_slices; }
   const VLoopBody& body()                        const { return _body; }
   const VLoopTypes& types()                      const { return _types; }
+  const VLoopDependencyGraph& dependency_graph() const { return _dependency_graph; }
 
 private:
   bool setup_submodules();
