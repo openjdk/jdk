@@ -29,18 +29,19 @@ import javax.swing.JFrame;
 /*
  * @test
  * @bug 4222508
- * @library /test/jdk/java/awt/regtesthelpers /test/lib
+ * @library ../../../java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests the color chooser disabling
  * @run main/manual Test4222508
  */
+
 public final class Test4222508 {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test4222508")
-                .instructions("Click on colors in the JColorChooser. Then uncheck the checkbox \n" +
-                        "and click on colors again. \n" +
-                        "If the JColorChooser is disabled when the checkbox is unchecked, \n" +
+                .instructions("Click on colors in the JColorChooser.\n" +
+                        "Then uncheck the checkbox and click on colors again.\n" +
+                        "If the JColorChooser is disabled when the checkbox is unchecked, " +
                         "then pass the test.")
                 .rows(5)
                 .columns(40)
@@ -51,14 +52,14 @@ public final class Test4222508 {
     }
 
     public static JFrame test() {
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("JColorChooser with enable/disable checkbox");
         frame.setLayout(new BorderLayout());
         JColorChooser chooser = new JColorChooser();
         JCheckBox checkbox = new JCheckBox("Enable the color chooser below", true);
         checkbox.addItemListener(e -> chooser.setEnabled(checkbox.isSelected()));
 
-        frame.getContentPane().add(chooser, BorderLayout.SOUTH);
-        frame.getContentPane().add(checkbox, BorderLayout.NORTH);
+        frame.add(chooser, BorderLayout.SOUTH);
+        frame.add(checkbox, BorderLayout.NORTH);
         frame.pack();
 
         return frame;
