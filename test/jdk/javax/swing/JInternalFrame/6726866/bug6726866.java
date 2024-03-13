@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,11 +21,14 @@
  * questions.
  */
 
-/* @test
-   @bug 6726866 8186617
-   @summary Repainting artifacts when resizing or dragging JInternalFrames in
+/*
+ * @test
+ * @bug 6726866 8186617
+ * @summary Repainting artifacts when resizing or dragging JInternalFrames in
             non-opaque toplevel
-   @run applet/manual=yesno bug6726866.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug6726866
 */
 
 import java.awt.Color;
@@ -36,10 +39,26 @@ import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 
-public class bug6726866 extends JApplet {
+public class bug6726866 {
 
-    public void init() {
+    private static final String INSTRUCTIONS = """
+            Drag the internal frame inside the green undecorated window,
+            if you can drag it the test passes, otherwise fails. """;
+
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                .title("JInternalFrame Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(5)
+                .columns(35)
+                .testUI(bug6726866::createUI)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static JFrame createUI() {
         JFrame frame = new JFrame("bug6726866");
         frame.setUndecorated(true);
         setWindowNonOpaque(frame);
@@ -53,10 +72,8 @@ public class bug6726866 extends JApplet {
         desktop.add(iFrame);
         frame.add(desktop);
 
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(400, 400);
-        frame.setVisible(true);
-        frame.toFront();
+        return frame;
     }
 
     public static void setWindowNonOpaque(Window window) {

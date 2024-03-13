@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -93,22 +93,8 @@
 
 // NULL vs NULL_WORD:
 // Some platform/tool-chain combinations can't assign NULL to an integer
-// type so we define NULL_WORD to use in those contexts. For xlc they are the same.
-#define NULL_WORD  NULL
-
-// AIX also needs a 64 bit NULL to work as a null address pointer.
-// Most system includes on AIX would define it as an int 0 if not already defined with one
-// exception: /usr/include/dirent.h will unconditionally redefine NULL to int 0 again.
-// In this case you need to copy the following defines to a position after #include <dirent.h>
-#include <dirent.h>
-#ifdef _LP64
-  #undef NULL
-  #define NULL 0L
-#else
-  #ifndef NULL
-    #define NULL 0
-  #endif
-#endif
+// type so we define NULL_WORD to use in those contexts.
+#define NULL_WORD  0L
 
 // checking for nanness
 inline int g_isnan(float  f) { return isnan(f); }

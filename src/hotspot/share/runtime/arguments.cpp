@@ -527,6 +527,9 @@ static SpecialFlag const special_jvm_flags[] = {
   { "InitialRAMFraction",           JDK_Version::jdk(10),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "DefaultMaxRAMFraction",        JDK_Version::jdk(8),  JDK_Version::jdk(23), JDK_Version::jdk(24) },
   { "TLABStats",                    JDK_Version::jdk(12), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "GCLockerEdenExpansionPercent", JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "NUMAPageScanRate",             JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
+  { "ProcessDistributionStride",    JDK_Version::undefined(), JDK_Version::jdk(23), JDK_Version::jdk(24) },
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
 #endif
