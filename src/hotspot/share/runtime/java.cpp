@@ -343,9 +343,6 @@ void print_statistics() {
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
   }
-#ifdef ASSERT
-  NMT_MemoryLogRecorder::log();
-#endif
 
   if (PrintMetaspaceStatisticsAtExit) {
     MetaspaceUtils::print_basic_report(tty, 0);

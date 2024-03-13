@@ -575,11 +575,11 @@ const int ObjectAlignmentInBytes = 8;
   product(bool, PrintNMTStatistics, false, DIAGNOSTIC,                      \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
-  product(int, NMTRecordMemoryAllocations, -1, DIAGNOSTIC,                  \
+  product(intx, NMTRecordMemoryAllocations, 0, DIAGNOSTIC,                  \
           "Record the specified number of memory allocations."              \
-          "-1: (the default) disables this feature."                        \
-          " 0: records until the process exits")                            \
-          range(-1, INT_MAX)                                                \
+          " 0: (the default) disables this feature."                        \
+          " max_jint (0x7FFFFFFF): keep recording until the process exits") \
+          range(0, max_jint)                                                \
                                                                             \
   product(ccstr, NMTBenchmarkRecordedMemoryAllocations, nullptr, DIAGNOSTIC,\
           "Benchmark memory allocations using provided log file name")      \

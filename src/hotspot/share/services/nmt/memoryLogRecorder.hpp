@@ -44,38 +44,9 @@ private:
     jlong flags;
   };
 
-//  static const char* recall_thread_name(intx tid);
-//
-//  static bool is_active(Entry* e)   { return (e->active == 1); };
-//  static void deactivate(Entry* e)  { e->active = 0; };
-//  static bool is_type_nmt(Entry* e) { return (e->flags == MEMFLAGS::mtNMT); };
-//  static bool is_free(Entry* e)     { return (e->requested == 0) && (e->old == nullptr); };
-//  static bool is_realloc(Entry* e)  { return (e->requested > 0)  && (e->old != nullptr); };
-//  static bool is_malloc(Entry* e)   { return (e->requested > 0)  && (e->old == nullptr); };
-//  static bool is_alloc(Entry* e)    { return is_malloc(e) || is_realloc(e); };
-//
-//  static size_t find_previous_entry(Entry* entries, size_t index, address ptr);
-//  static void print_entry(Entry* entries);
-//
-//  static void calculate_good_sizes(Entry* entries, size_t count);
-//  static void find_malloc_requests_buckets_sizes(Entry* entries, size_t count);
-//  static Entry* access_active(Entry* entries, size_t count) {
-//    Entry* e = &entries[count];
-//    if (is_active(e))
-//      return e;
-//    else
-//      return nullptr;
-//  };
-//
-//  static void print_histogram(Entry* entries, size_t count, double cutoff = 0.0);
-//  static void print_records(Entry* entries, size_t count);
-//  static void report_by_component(Entry* entries, size_t count);
-//  static void report_by_thread(Entry* entries, size_t count);
-//  static void print_summary(Entry* entries, size_t count);
-//  static void consolidate(Entry* entries, size_t count, size_t start = 0);
-//  static void dump(Entry* entries, size_t count);
-
 public:
+  static bool active(void) { return (NMTRecordMemoryAllocations>0); }
+  static void finish(void) { log(); }
   static void log(MEMFLAGS flags = mtNone, size_t requested = 0, address ptr = nullptr, address old = nullptr,
                   const NativeCallStack *stack = nullptr);
   static void rememberThreadName(const char* name);
