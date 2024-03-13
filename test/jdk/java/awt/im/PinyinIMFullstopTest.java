@@ -42,8 +42,8 @@ import sun.awt.OSInfo;
 
 public class PinyinIMFullstopTest {
     private static final String INSTRUCTIONS = """
-            This test is for OS X only. It verifies if Chinese full stop symbol can be entered
-            in JTextField with Pinyin input method (IM)
+            This test verifies if Chinese full stop symbol can be entered in JTextField
+            with Pinyin input method (IM).
 
             Test settings:
             Go to "System Preferences -> Keyboard -> Input Sources" and

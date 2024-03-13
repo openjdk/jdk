@@ -42,8 +42,8 @@ import sun.awt.OSInfo;
 
 public class PinyinIMCommaTest {
     private static final String INSTRUCTIONS = """
-            This test is for OS X only. It verifies if Chinese comma can be entered
-            in JTextField with Pinyin input method (IM).
+            This test verifies if Chinese comma can be entered in JTextField
+            with Pinyin input method (IM).
 
             Test settings:
             Go to "System Preferences -> Keyboard -> Input Sources" and
@@ -68,7 +68,7 @@ public class PinyinIMCommaTest {
                       .title("Test Comma using Pinyin Input Method")
                       .instructions(INSTRUCTIONS)
                       .rows((int) INSTRUCTIONS.lines().count() + 2)
-                      .columns(48)
+                      .columns(45)
                       .splitUIBottom(PinyinIMCommaTest::createUI)
                       .testTimeOut(10)
                       .build()
