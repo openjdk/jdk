@@ -22,8 +22,8 @@
  */
 
 import java.awt.Frame;
-import java.awt.print.PageFormat;
 import java.awt.print.PrinterJob;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
@@ -32,7 +32,7 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 
 /*
  * @test
@@ -40,7 +40,7 @@ import javax.swing.JTextArea;
  * @key printer
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/othervm/manual -Djava.security.manager=allow SecurityDialogTest
+ * @run main/manual/othervm -Djava.security.manager=allow SecurityDialogTest
  */
 public class SecurityDialogTest extends Frame {
     private static final String INSTRUCTIONS =
@@ -51,11 +51,16 @@ public class SecurityDialogTest extends Frame {
                     "If the dialog has an option to save to file, the option ought " +
                     "to be disabled if there is no read/write file permission.\n" +
                     "You should test this by trying different policy files.";
-    private static final JTextArea msg = new JTextArea("");
+    private static JLabel dialogType;
 
     public static void main(String[] args) throws Exception {
+        PrintService[] services = PrinterJob.lookupPrintServices();
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
+        }
+
+        for (int i = 0; i < services.length; i++) {
+            System.out.println("SecurityDialogTest service " + i + " : " + services[i]);
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -65,56 +70,53 @@ public class SecurityDialogTest extends Frame {
                 .columns(45)
                 .build();
 
-        new SecurityDialogTest();
+        displayDialogs();
+
         passFailJFrame.awaitAndCheck();
     }
 
-    private static JComponent createTestUI()
-    {
+    private static JComponent createTestUI() {
+        dialogType = new JLabel(" ");
+
         Box main = Box.createVerticalBox();
-        JLabel title = new JLabel("Current Dialog:");
-        msg.setEditable(false);
         main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(Box.createVerticalGlue());
-        main.add(title);
+        main.add(new JLabel("Current Dialog:"));
         main.add(Box.createVerticalStrut(4));
-        main.add(msg);
-        main.add(Box.createVerticalGlue());
+        main.add(dialogType);
         return main;
     }
 
-    public SecurityDialogTest() {
-        PrinterJob pj = PrinterJob.getPrinterJob();
+    private static void displayDialogs()
+            throws InterruptedException, InvocationTargetException {
+        final PrinterJob pj = PrinterJob.getPrinterJob();
 
         // Install a security manager which does not allow reading and
         // writing of files.
-        //PrintTestSecurityManager ptsm = new PrintTestSecurityManager();
         SecurityManager ptsm = new SecurityManager();
         System.setSecurityManager(ptsm);
 
-        PrintService[] services = PrinterJob.lookupPrintServices();
-        for (int i = 0; i < services.length; i++) {
-            System.out.println("SecurityDialogTest service " + i + " : " + services[i]);
-        }
+        System.out.println("SecurityDialogTest default service : " + pj.getPrintService());
 
-        PrintService defservice = pj.getPrintService();
-        System.out.println("SecurityDialogTest default service : " + defservice);
+        setDialogType("Native Page Dialog");
+        pj.pageDialog(pj.defaultPage());
 
-        msg.setText("Native Page Dialog");
-        pj.pageDialog(new PageFormat());
-
-        msg.setText("Swing Page Dialog ");
+        setDialogType("Swing Page Dialog");
         PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
         pj.pageDialog(attributes);
 
         // With the security manager installed, save to file should now
         // be denied.
-        msg.setText("Native Print Dialog ");
+        setDialogType("Native Print Dialog");
         pj.printDialog();
 
-        msg.setText("Swing Print Dialog ");
+        setDialogType("Swing Print Dialog");
         pj.printDialog(attributes);
 
-        msg.setText("Test completed");
+        setDialogType("Test completed");
+    }
+
+    private static void setDialogType(String type)
+            throws InterruptedException, InvocationTargetException {
+        SwingUtilities.invokeAndWait(() -> dialogType.setText(type));
     }
 }
