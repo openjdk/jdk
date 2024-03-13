@@ -29,7 +29,7 @@ import javax.swing.JFrame;
 /*
  * @test
  * @bug 4222508
- * @library ../../../java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Tests the color chooser disabling
  * @run main/manual Test4222508
