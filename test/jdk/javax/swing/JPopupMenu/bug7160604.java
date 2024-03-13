@@ -21,7 +21,7 @@
  * questions.
  */
 
-/* 
+/*
  * @test
  * @bug 7160604
  * @summary Using non-opaque windows - popups are initially not painted correctly
