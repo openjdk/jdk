@@ -69,15 +69,16 @@ public class OverriderMsg {
                             .withVersion(JAVA_7_VERSION, 0)
                             .withFlags(ACC_PUBLIC + ACC_SUPER)
                             .withSuperclass(CD_Object)
-                            .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
-                                    mb -> mb.withCode(
-                                            cob -> cob
-                                                    .aload(0)
-                                                    .invokespecial(CD_Object, INIT_NAME, MTD_void)
-                                                    .return_()))
-                            .withMethod("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC + ACC_FINAL,
-                                    mb -> mb.withCode(CodeBuilder::return_))
-                );
+
+                            .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                    cob -> cob
+                                            .aload(0)
+                                            .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                                            .return_())
+
+                            .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC + ACC_FINAL, CodeBuilder::return_)
+
+        );
 
         try (FileOutputStream fos = new FileOutputStream(new File("HasFinal.class"))) {
              fos.write(bytes);
@@ -95,19 +96,16 @@ public class OverriderMsg {
                         .withFlags(ACC_PUBLIC + ACC_SUPER)
                         .withSuperclass(ClassDesc.of("HasFinal"))
 
-                        .withMethod(INIT_NAME, MTD_void, ACC_PUBLIC,
-                                mb -> mb.withCode(
-                                        cob -> cob
-                                                .aload(0)
-                                                .invokespecial(ClassDesc.ofInternalName("HasFinal"), INIT_NAME, MTD_void)
-                                                .return_()
-                                ))
+                        .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
+                                cob -> cob
+                                        .aload(0)
+                                        .invokespecial(ClassDesc.ofInternalName("HasFinal"), INIT_NAME, MTD_void)
+                                        .return_())
 
-                        .withMethod("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC,
-                                mb -> mb.withCode(CodeBuilder::return_))
+                        .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC, CodeBuilder::return_)
 
-                        .withMethod("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC + ACC_STATIC,
-                                mb -> mb.withCode(CodeBuilder::return_))
+                        .withMethodBody("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC + ACC_STATIC, CodeBuilder::return_)
+
         );
 
         try (FileOutputStream fos = new FileOutputStream(new File("Overrider.class"))) {
