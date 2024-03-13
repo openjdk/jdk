@@ -308,7 +308,9 @@ public class HtmlDoclet extends AbstractDoclet {
             w.buildPage();
         }
 
-        copyFontResources();
+        if (!options.noFonts()) {
+            copyFontResources();
+        }
 
         // If a stylesheet file is not specified, copy the default stylesheet
         // and replace newline with platform-specific newline.
