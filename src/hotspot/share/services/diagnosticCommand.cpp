@@ -925,7 +925,7 @@ void CompilerDirectivesPrintDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _refresh("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_refresh);
@@ -942,7 +942,7 @@ void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
 CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
   _filename("filename", "Name of the directives file", "STRING", true),
-  _refresh("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_argument(&_filename);
   _dcmdparser.add_dcmd_option(&_refresh);
@@ -967,7 +967,7 @@ void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _refresh("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_option(&_refresh);
 }
@@ -984,7 +984,7 @@ void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
 
 CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, bool heap) :
                            DCmdWithParser(output, heap),
-  _refresh("-r", "Refresh affected methods.", "BOOLEAN", false, "false") {
+  _refresh("-r", "Refresh affected methods", "BOOLEAN", false, "false") {
 
   _dcmdparser.add_dcmd_option(&_refresh);
 }
