@@ -41,8 +41,8 @@ import sun.awt.OSInfo;
 
 public class PinyinIMCapsTest {
     private static final String INSTRUCTIONS = """
-            This test is for OS X only. It verifies if the Caps Lock key works properly
-            with Pinyin input method, (i.e. if Caps Lock is pressed, input should be
+            The test verifies if the Caps Lock key works properly with Pinyin
+            input method, (i.e. if Caps Lock is pressed, input should be
             switched to lowercase latin letters).
 
             Test settings:
@@ -64,7 +64,7 @@ public class PinyinIMCapsTest {
                       .title("Test Pinyin Input Method")
                       .instructions(INSTRUCTIONS)
                       .rows((int) INSTRUCTIONS.lines().count() + 2)
-                      .columns(50)
+                      .columns(45)
                       .splitUIBottom(PinyinIMCapsTest::createUI)
                       .testTimeOut(10)
                       .build()
