@@ -55,7 +55,6 @@ public class JTextFieldTest {
             .instructions(INSTRUCTIONS)
             .rows(15)
             .columns(40)
-            .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
             .testUI(JTextFieldTest::createAndShowGUI)
             .build()
             .awaitAndCheck();
@@ -70,7 +69,6 @@ public class JTextFieldTest {
         frame.getContentPane().add(tf1);
         frame.getContentPane().add(tf2);
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        frame.setVisible(true);
         frame.pack();
         return frame;
     }
