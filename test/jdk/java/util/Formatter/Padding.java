@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4906370 8299677 8326718
- * @summary Tests to excercise padding on int and double values,
+ * @bug 4906370 8299677 8326718 8328037
+ * @summary Tests to exercise padding on int and double values,
  *      with various flag combinations.
  * @run junit Padding
  */
