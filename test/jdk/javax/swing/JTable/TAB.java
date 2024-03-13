@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  */
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 import javax.swing.DefaultCellEditor;
-import javax.swing.JApplet;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -40,18 +44,100 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
-/**
+/*
  * @test
  * @bug 4128521
- * @summary
- *     Tabbing test
- * @author milne
- * @run applet/manual=yesno TAB.html
+ * @key headful
+ * @summary Verify focus changes correctly when tab is pressed while editing
+ *          a JTextField in a JTable
+ * @run main TAB
  */
-public class TAB extends JApplet
+
+public class TAB
 {
-    static void initTest(Container contentPane)
+    private static final String INSTRUCTIONS = """
+            Select a cell by double clicking it, press tab.
+            Check that the focus moves to the next cell.
+            If it does, press "pass", otherwise press "fail". """;
+    private static Robot robot;
+    private static JFrame frame;
+    private static JTable tableView;
+    private static volatile Point tableLoc;
+    private static volatile Rectangle cellRect;
+    private static volatile int selectedRowBeforeTabPress;
+    private static volatile int selectedColumnBeforeTabPress;
+    private static volatile int selectedRowAfterTabPress;
+    private static volatile int selectedColumnAfterTabPress;
+
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        robot = new Robot();
+        robot.setAutoDelay(100);
+        try {
+            SwingUtilities.invokeAndWait(TAB::createAndShowUI);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            SwingUtilities.invokeAndWait(() -> {
+                tableLoc = tableView.getLocationOnScreen();
+                cellRect = tableView.getCellRect(2, 1, true);
+            });
+
+            robot.mouseMove(tableLoc.x + cellRect.x + cellRect.width / 2,
+                    tableLoc.y + cellRect.y + cellRect.height / 2);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.delay(100);
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(() -> {
+                selectedRowBeforeTabPress = tableView.getSelectedRow();
+                selectedColumnBeforeTabPress = tableView.getSelectedColumn();
+            });
+
+            //System.out.println("selectedRowBeforeTabPress: " + selectedRowBeforeTabPress);
+            //System.out.println("selectedColumnBeforeTabPress: " + selectedColumnBeforeTabPress);
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.delay(100);
+            robot.waitForIdle();
+
+            SwingUtilities.invokeAndWait(() -> {
+                selectedRowAfterTabPress = tableView.getSelectedRow();
+                selectedColumnAfterTabPress = tableView.getSelectedColumn();
+            });
+            //System.out.println("selectedRowAfterTabPress: " + selectedRowAfterTabPress);
+            //System.out.println("selectedColumnAfterTabPress: " + selectedColumnAfterTabPress);
+
+            if (selectedRowAfterTabPress != selectedRowBeforeTabPress
+               && selectedColumnAfterTabPress != (selectedColumnBeforeTabPress + 1)) {
+                throw new RuntimeException("JTable's cell focus didn't move to next" +
+                        " cell on TAB press");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+        /*PassFailJFrame.builder()
+                .title("JTable Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(6)
+                .columns(30)
+                .testUI(TAB::createAndShowUI)
+                .build()
+                .awaitAndCheck();
+
+         */
+    }
+
+    static void createAndShowUI()
     {
+        frame = new JFrame("Test JTable's Focus Component");
         // Take the dummy data from SwingSet.
         final String[] names = {"First Name", "Last Name", "Favorite Color",
                 "Favorite Number", "Vegetarian"};
@@ -98,7 +184,7 @@ public class TAB extends JApplet
         };
 
         // Create the table
-        JTable tableView = new JTable(dataModel);
+        tableView = new JTable(dataModel);
         // Turn off auto-resizing so that we can set column sizes programmatically.
         // In this mode, all columns will get their preferred widths, as set blow.
         tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -150,20 +236,10 @@ public class TAB extends JApplet
         scrollpane.setBorder(new BevelBorder(BevelBorder.LOWERED));
         scrollpane.setPreferredSize(new Dimension(430, 200));
 
-        contentPane.add(scrollpane);
-    }
-
-
-    public void init() {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(
-                        "javax.swing.plaf.metal.MetalLookAndFeel");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            initTest(getContentPane());
-        });
+        frame.getContentPane().add(scrollpane);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
     }
 }
