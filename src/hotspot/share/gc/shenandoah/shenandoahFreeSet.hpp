@@ -236,9 +236,9 @@ public:
                            ssize_t mutator_leftmost_empty, ssize_t mutator_rightmost_empty,
                            size_t mutator_region_count, size_t mutator_used);
 
-  // Retire region idx from within partition.  Requires that region idx is in in the Mutator or Collector partitions.
-  // Hereafter, identifies this region as NotFree.  Any remnant of available memory at the time of retirement is added to the
-  // original partition's total of used bytes.
+  // Retire region idx from within partition, , leaving its capacity and used as part of the original free partition's totals.
+  // Requires that region idx is in in the Mutator or Collector partitions.  Hereafter, identifies this region as NotFree.
+  // Any remnant of available memory at the time of retirement is added to the original partition's total of used bytes.
   void retire_from_partition(ShenandoahFreeSetPartitionId p, ssize_t idx, size_t used_bytes);
 
   // Retire all regions between low_idx and high_idx inclusive from within partition.  Requires that each region idx is
@@ -414,15 +414,28 @@ private:
   void clear_internal();
   void try_recycle_trashed(ShenandoahHeapRegion *r);
 
+  // Returns true iff this region is entirely available, either because it is empty() or because it has been found to represent
+  // immediate trash and we'll be able to immediately recycle it.  Note that we cannot recycle immediate trash if
+  // concurrent weak root processing is in progress.
   inline bool can_allocate_from(ShenandoahHeapRegion *r) const;
   inline bool can_allocate_from(size_t idx) const;
 
   inline bool has_alloc_capacity(ShenandoahHeapRegion *r) const;
 
+  // This function places all regions that have allocation capacity into the mutator_partition, identifying regions
+  // that have no allocation capacity as NotFree.  Subsequently, we will move some of the mutator regions into the
+  // collector partition with the intent of packing collector memory into the highest (rightmost) addresses of the
+  // heap, with mutator memory consuming the lowest addresses of the heap.
   void find_regions_with_alloc_capacity(size_t &cset_regions);
+
+  // Having placed all regions that have allocation capacity into the mutator partition, move some of these regions from
+  // the mutator partition into the collector partition in order to assure that the memory available for allocations within
+  // the collector partition is at least to_reserve.
   void reserve_regions(size_t to_reserve);
 
+  // Overwrite arguments to represent the number of regions to be reclaimed from the cset
   void prepare_to_rebuild(size_t &cset_regions);
+
   void finish_rebuild(size_t cset_regions);
 
 public:
@@ -463,7 +476,42 @@ public:
   HeapWord* allocate(ShenandoahAllocRequest& req, bool& in_new_region);
   size_t unsafe_peek_free() const;
 
+  /*
+   * Internal fragmentation metric: describes how fragmented the heap regions are.
+   *
+   * It is derived as:
+   *
+   *               sum(used[i]^2, i=0..k)
+   *   IF = 1 - ------------------------------
+   *              C * sum(used[i], i=0..k)
+   *
+   * ...where k is the number of regions in computation, C is the region capacity, and
+   * used[i] is the used space in the region.
+   *
+   * The non-linearity causes IF to be lower for the cases where the same total heap
+   * used is densely packed. For example:
+   *   a) Heap is completely full  => IF = 0
+   *   b) Heap is half full, first 50% regions are completely full => IF = 0
+   *   c) Heap is half full, each region is 50% full => IF = 1/2
+   *   d) Heap is quarter full, first 50% regions are completely full => IF = 0
+   *   e) Heap is quarter full, each region is 25% full => IF = 3/4
+   *   f) Heap has one small object per each region => IF =~ 1
+   */
   double internal_fragmentation();
+
+  /*
+   * External fragmentation metric: describes how fragmented the heap is.
+   *
+   * It is derived as:
+   *
+   *   EF = 1 - largest_contiguous_free / total_free
+   *
+   * For example:
+   *   a) Heap is completely empty => EF = 0
+   *   b) Heap is completely full => EF = 0
+   *   c) Heap is first-half full => EF = 1/2
+   *   d) Heap is half full, full and empty regions interleave => EF =~ 1
+   */
   double external_fragmentation();
 
   void print_on(outputStream* out) const;

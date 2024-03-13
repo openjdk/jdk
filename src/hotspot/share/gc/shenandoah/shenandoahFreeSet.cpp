@@ -43,8 +43,6 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
   }
 }
 
-// Count consecutive ones in forward order, starting from start_idx.  Requires that there is at least one zero
-// between start_idx and index value _num_bits - 1 inclusive.
 size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
@@ -66,8 +64,6 @@ size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   }
 }
 
-// Count consecutive ones in reverse order, starting from last_idx.  Requires that there is at least one zero
-// between last_idx and index value zero, inclusive.
 size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   size_t array_idx = last_idx >> LogBitsPerWord;
@@ -142,7 +138,6 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
     }
   }
 }
-
 
 ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssize_t start_idx, ssize_t boundary_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
@@ -273,9 +268,6 @@ ShenandoahRegionPartitions::ShenandoahRegionPartitions(size_t max_regions, Shena
 ShenandoahRegionPartitions::~ShenandoahRegionPartitions() {
 }
 
-// Returns true iff this region is entirely available, either because it is empty() or because it has been found to represent
-// immediate trash and we'll be able to immediately recycle it.  Note that we cannot recycle immediate trash if
-// concurrent weak root processing is in progress.
 inline bool ShenandoahFreeSet::can_allocate_from(ShenandoahHeapRegion *r) const {
   return r->is_empty() || (r->is_trash() && !_heap->is_concurrent_weak_root_in_progress());
 }
@@ -398,8 +390,6 @@ inline void ShenandoahRegionPartitions::shrink_interval_if_range_modifies_either
     _leftmosts_empty[partition] = _max;
     _rightmosts_empty[partition] = -1;
   }
-
-
 }
 
 inline void ShenandoahRegionPartitions::shrink_interval_if_boundary_modified(ShenandoahFreeSetPartitionId partition, ssize_t idx) {
@@ -454,8 +444,6 @@ inline void ShenandoahRegionPartitions::expand_interval_if_boundary_modified(She
   }
 }
 
-// Remove the consecutive regions between low_idx and high_idx inclusive from partition since all of these will be subsumed
-// by a humongous object.  The entirety of each retired region is assumed to equal the region size.
 void ShenandoahRegionPartitions::retire_range_from_partition(
   ShenandoahFreeSetPartitionId partition, ssize_t low_idx, ssize_t high_idx) {
 
@@ -472,8 +460,6 @@ void ShenandoahRegionPartitions::retire_range_from_partition(
   shrink_interval_if_range_modifies_either_boundary(partition, low_idx, high_idx);
 }
 
-// Remove this region from its free partition, but leave its capacity and used as part of the original free partition's totals.
-// When retiring a region, add any remnant of available memory within the region to the used total for the original free partition.
 void ShenandoahRegionPartitions::retire_from_partition(ShenandoahFreeSetPartitionId partition, ssize_t idx, size_t used_bytes) {
 
   // Note: we may remove from free partition even if region is not entirely full, such as when available < PLAB::min_size()
@@ -565,7 +551,6 @@ inline ShenandoahFreeSetPartitionId ShenandoahRegionPartitions::membership(ssize
   return result;
 }
 
-// Returns true iff region idx is in the test_partition, which must not equal NotFree.
 inline bool ShenandoahRegionPartitions::partition_id_matches(ssize_t idx, ShenandoahFreeSetPartitionId test_partition) const {
   assert (idx < _max, "index is sane: " SIZE_FORMAT " < " SIZE_FORMAT, idx, _max);
   assert (test_partition < NotFree, "must be a valid partition");
@@ -579,7 +564,6 @@ inline bool ShenandoahRegionPartitions::is_empty(ShenandoahFreeSetPartitionId wh
   return (leftmost(which_partition) > rightmost(which_partition));
 }
 
-  // Return the index of the next available region >= start_index, or maximum_regions if not found.
 inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_region(
   ShenandoahFreeSetPartitionId which_partition, ssize_t start_index) const {
   ssize_t rightmost_idx = rightmost(which_partition);
@@ -592,7 +576,6 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_region(
   return (result > rightmost_idx)? _max: result;
 }
 
-// Return the index of the previous available region <= last_index, or -1 if not found.
 inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_region(
   ShenandoahFreeSetPartitionId which_partition, ssize_t last_index) const {
   ssize_t rightmost_idx = rightmost(which_partition);
@@ -606,7 +589,6 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_regi
   return (result < leftmost_idx)? -1: result;
 }
 
-// Return the index of the next available cluster of cluster_size regions >= start_index, or maximum_regions if not found.
 inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_of_regions(
   ShenandoahFreeSetPartitionId which_partition, ssize_t start_index, size_t cluster_size) const {
   ssize_t rightmost_idx = rightmost(which_partition);
@@ -616,7 +598,6 @@ inline ssize_t ShenandoahRegionPartitions::find_index_of_next_available_cluster_
   return (result > rightmost_idx)? _max: result;
 }
 
-// Return the index of the previous available cluster of cluster_size regions <= last_index, or -1 if not found.
 inline ssize_t ShenandoahRegionPartitions::find_index_of_previous_available_cluster_of_regions(
   ShenandoahFreeSetPartitionId which_partition, ssize_t last_index, size_t cluster_size) const {
   ssize_t leftmost_idx = leftmost(which_partition);
@@ -1118,10 +1099,6 @@ void ShenandoahFreeSet::clear_internal() {
   _partitions.make_all_regions_unavailable();
 }
 
-// This function places all regions that have allocation capacity into the mutator_partition, identifying regions
-// that have no allocation capacity as NotFree.  Subsequently, we will move some of the mutator regions into the
-// collector partition with the intent of packing collector memory into the highest (rightmost) addresses of the
-// heap, with mutator memory consuming the lowest addresses of the heap.
 void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
 
   cset_regions = 0;
@@ -1179,12 +1156,6 @@ void ShenandoahFreeSet::find_regions_with_alloc_capacity(size_t &cset_regions) {
                                   mutator_regions, mutator_used);
 }
 
-// Move no more than max_xfer_regions from the existing Collector partition to the Mutator partition.
-//
-// This is called from outside the heap lock at the start of update refs.  At this point, we no longer
-// need to reserve memory for evacuation.  (We will create a new reserve after update refs finishes,
-// setting aside some of the memory that was reclaimed by the most recent GC.  This new reserve will satisfy
-// the evacuation needs of the next GC pass.)
 void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_regions) {
   size_t region_size_bytes = ShenandoahHeapRegion::region_size_bytes();
   size_t collector_empty_xfer = 0;
@@ -1227,8 +1198,6 @@ void ShenandoahFreeSet::move_regions_from_collector_to_mutator(size_t max_xfer_r
                byte_size_in_proper_unit(collector_xfer), proper_unit_for_byte_size(collector_xfer));
 }
 
-
-// Overwrite arguments to represent the number of regions to be reclaimed from the cset
 void ShenandoahFreeSet::prepare_to_rebuild(size_t &cset_regions) {
   shenandoah_assert_heaplocked();
 
@@ -1264,9 +1233,6 @@ void ShenandoahFreeSet::rebuild() {
   finish_rebuild(cset_regions);
 }
 
-// Having placed all regions that have allocation capacity into the mutator partition, move some of these regions from
-// the mutator partition into the collector partition in order to assure that the memory available for allocations within
-// the collector partition is at least to_reserve.
 void ShenandoahFreeSet::reserve_regions(size_t to_reserve) {
   for (size_t i = _heap->num_regions(); i > 0; i--) {
     size_t idx = i - 1;
@@ -1495,27 +1461,6 @@ void ShenandoahFreeSet::print_on(outputStream* out) const {
   }
 }
 
-/*
- * Internal fragmentation metric: describes how fragmented the heap regions are.
- *
- * It is derived as:
- *
- *               sum(used[i]^2, i=0..k)
- *   IF = 1 - ------------------------------
- *              C * sum(used[i], i=0..k)
- *
- * ...where k is the number of regions in computation, C is the region capacity, and
- * used[i] is the used space in the region.
- *
- * The non-linearity causes IF to be lower for the cases where the same total heap
- * used is densely packed. For example:
- *   a) Heap is completely full  => IF = 0
- *   b) Heap is half full, first 50% regions are completely full => IF = 0
- *   c) Heap is half full, each region is 50% full => IF = 1/2
- *   d) Heap is quarter full, first 50% regions are completely full => IF = 0
- *   e) Heap is quarter full, each region is 25% full => IF = 3/4
- *   f) Heap has one small object per each region => IF =~ 1
- */
 double ShenandoahFreeSet::internal_fragmentation() {
   double squared = 0;
   double linear = 0;
@@ -1540,19 +1485,6 @@ double ShenandoahFreeSet::internal_fragmentation() {
   }
 }
 
-/*
- * External fragmentation metric: describes how fragmented the heap is.
- *
- * It is derived as:
- *
- *   EF = 1 - largest_contiguous_free / total_free
- *
- * For example:
- *   a) Heap is completely empty => EF = 0
- *   b) Heap is completely full => EF = 0
- *   c) Heap is first-half full => EF = 1/2
- *   d) Heap is half full, full and empty regions interleave => EF =~ 1
- */
 double ShenandoahFreeSet::external_fragmentation() {
   ssize_t last_idx = 0;
   size_t max_contig = 0;
