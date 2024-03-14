@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@ import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 
-import javax.swing.JApplet;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollBar;
@@ -37,22 +36,22 @@ import javax.swing.UIManager;
  * @test
  * @bug 8039464
  * @summary Tests enabling/disabling of titled border's caption
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test8039464.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test8039464
  */
 
-public class Test8039464 extends JApplet {
+public class Test8039464 {
+    private static final String INSTRUCTIONS = """
+            If the scrollbar thumb is painted correctly in system lookandfeel
+            click Pass else click Fail.  """;
+
     static {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (Exception exception) {
             throw new Error("unexpected", exception);
         }
-    }
-
-    @Override
-    public void init() {
-        init(this);
     }
 
     private static void init(Container container) {
@@ -77,16 +76,20 @@ public class Test8039464 extends JApplet {
     }
 
     public static void main(String[] args) throws Exception {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JFrame frame = new JFrame("8039464");
-                init(frame);
-                frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-                frame.pack();
-                frame.setLocationRelativeTo(null);
-                frame.setVisible(true);
-            }
-        });
+        PassFailJFrame.builder()
+                .title("JScrollBar Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(5)
+                .columns(35)
+                .testUI(Test8039464::createTestUI)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static JFrame createTestUI() {
+        JFrame frame = new JFrame("8039464");
+        init(frame);
+        frame.pack();
+        return frame;
     }
 }
