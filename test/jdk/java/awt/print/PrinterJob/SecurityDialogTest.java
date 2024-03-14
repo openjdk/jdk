@@ -46,16 +46,16 @@ import javax.swing.SwingUtilities;
 public class SecurityDialogTest extends Frame {
     private static final String INSTRUCTIONS =
             "This test brings up a native and cross-platform page and print dialogs.\n" +
-            "\n" +
-            "If the dialog has an option to save to file, the option ought " +
-            "to be disabled.\n" +
-            "\n" +
-            "Press the Pass button if the \"Print to file\" option was disabled in\n" +
-            "all the dialogs where it was present.\n" +
-            "Otherwise, press the Fail button.\n" +
-            "\n" +
-            "The dialogs should be displayed even when " +
-            "there is no queuePrintJob permission.";
+                    "\n" +
+                    "If the dialog has an option to save to file, the option ought " +
+                    "to be disabled.\n" +
+                    "\n" +
+                    "Press the Pass button if the \"Print to file\" option was disabled in\n" +
+                    "all the dialogs where it was present.\n" +
+                    "Otherwise, press the Fail button.\n" +
+                    "\n" +
+                    "The dialogs should be displayed even when " +
+                    "there is no queuePrintJob permission.";
 
     private static JLabel dialogType;
 
