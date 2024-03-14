@@ -72,14 +72,6 @@ FD getFD(JNIEnv *env, jobject cur, jfieldID fid);
  */
 #define SET_HANDLE(fd) return (jlong)-1
 
-/*
- * Retry the operation if it is interrupted
- */
-#define RESTARTABLE(_cmd, _result)                \
-    do {                                          \
-        _result = _cmd;                           \
-    } while ((_result == -1) && (errno == EINTR))
-
 void fileDescriptorClose(JNIEnv *env, jobject this);
 
 #ifdef MACOSX
