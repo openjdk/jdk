@@ -35,8 +35,8 @@
   flags(MEMORY_SLICES,        "Trace VLoopMemorySlices") \
   flags(BODY,                 "Trace VLoopBody") \
   flags(TYPES,                "Trace VLoopTypes") \
+  flags(DEPENDENCY_GRAPH,     "Trace VLoopDependencyGraph") \
   flags(SW_ALIGNMENT,         "Trace SuperWord alignment analysis") \
-  flags(SW_DEPENDENCE_GRAPH,  "Trace SuperWord::dependence_graph") \
   flags(SW_ADJACENT_MEMOPS,   "Trace SuperWord::find_adjacent_refs") \
   flags(SW_REJECTIONS,        "Trace SuperWord rejections (non vectorizations)") \
   flags(SW_PACKSET,           "Trace SuperWord packset at different stages") \
@@ -115,14 +115,12 @@ class TraceAutoVectorizationTagValidator {
         _tags.set_range(0, TRACE_AUTO_VECTORIZATION_TAG_NUM);
       } else if (SW_VERBOSE == tag) {
         _tags.at_put(SW_ALIGNMENT, set_bit);
-        _tags.at_put(SW_DEPENDENCE_GRAPH, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
         _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);
         _tags.at_put(SW_INFO, set_bit);
         _tags.at_put(SW_VERBOSE, set_bit);
       } else if (SW_INFO == tag) {
-        _tags.at_put(SW_DEPENDENCE_GRAPH, set_bit);
         _tags.at_put(SW_ADJACENT_MEMOPS, set_bit);
         _tags.at_put(SW_REJECTIONS, set_bit);
         _tags.at_put(SW_PACKSET, set_bit);

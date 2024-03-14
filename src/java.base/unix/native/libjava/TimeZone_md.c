@@ -37,18 +37,11 @@
 #include <unistd.h>
 
 #include "jvm.h"
+#include "jni_util.h"
 #include "TimeZone_md.h"
 #include "path_util.h"
 
 static char *isFileIdentical(char* buf, size_t size, char *pathname);
-
-#define SKIP_SPACE(p)   while (*p == ' ' || *p == '\t') p++;
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
 
 #define fileopen        fopen
 #define filegets        fgets

@@ -73,7 +73,6 @@ CFLAGS_VM_VERSION := \
     $(VERSION_CFLAGS) \
     -DHOTSPOT_VERSION_STRING='"$(VERSION_STRING)"' \
     -DDEBUG_LEVEL='"$(DEBUG_LEVEL)"' \
-    -DHOTSPOT_BUILD_USER='"$(USERNAME)"' \
     -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"' \
     -DCPU='"$(OPENJDK_TARGET_CPU_VM_VERSION)"' \
     -DHOTSPOT_BUILD_TIME='"$(HOTSPOT_BUILD_TIME)"' \
@@ -96,8 +95,6 @@ ifneq ($(DEBUG_LEVEL), release)
   # Some reasonable asserts produce warnings on GCC <= 7
   DISABLED_WARNINGS_gcc += strict-overflow
 endif
-
-DISABLED_WARNINGS_xlc := tautological-compare shift-negative-value
 
 DISABLED_WARNINGS_microsoft := 4624 4244 4291 4146 4127 4722
 
@@ -203,7 +200,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_debug.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_jvm.cpp := format-nonliteral, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
-    DISABLED_WARNINGS_xlc := $(DISABLED_WARNINGS_xlc), \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
     LDFLAGS := $(JVM_LDFLAGS), \
