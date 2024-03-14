@@ -593,7 +593,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JLINK_OPTIONS],
 
 ################################################################################
 #
-# jlink related.
+# Configure option for runtime image based linkable jimage.
 #
 # Determines whether or not a run-time linkable JDK image is being
 # produced from the product image.
