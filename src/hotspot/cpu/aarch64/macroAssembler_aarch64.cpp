@@ -1602,7 +1602,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
 
   // Get the first array index that can contain super_klass into r_array_index.
   if (bit != 0) {
-    shld(vtemp, vtemp, SEC_HASH_MASK - bit);
+    shld(vtemp, vtemp, Klass::SEC_HASH_MASK - bit);
     cnt(vtemp, T8B, vtemp);
     addv(vtemp, T8B, vtemp);
     fmovd(r_array_index, vtemp);
@@ -1626,7 +1626,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   cbz(result, L_fallthrough); // Found a match
 
   // Is there another entry to check? Consult the bitmap.
-  tbz(r_bitmap, (bit+1) & SEC_HASH_MASK, L_failure);
+  tbz(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK, L_failure);
 
   // Linear probe.
   if (bit != 0) {
