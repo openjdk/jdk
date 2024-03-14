@@ -59,6 +59,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
     jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
+    ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
