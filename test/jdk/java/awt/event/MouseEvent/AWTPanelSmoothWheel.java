@@ -44,13 +44,13 @@ public class AWTPanelSmoothWheel {
     public static final String INSTRUCTIONS = """
             This test is relevant for windows platforms and mouses with high-resolution wheel,
             please just press pass if this is not the case.
-            
+
             Place the mouse cursor above the green panel and rotate the mouse wheel,
             the test will print all mouse wheel event messages into the logging panel
             below the instruction window.
             Please make sure that some of the messages have non-zero 'wheelRotation' value,
             and also check if the test works OK if the mouse wheel is rotated very slow.
-            
+
             If the above is true press PASS, else FAIL.
             """;
 
