@@ -61,6 +61,7 @@ class VPointer;
 // and stored in the PackSet.
 class PairSet : public StackObj {
 private:
+  const VLoop& _vloop;
   const VLoopBody& _body;
 
   // Doubly-linked pairs. If not linked: -1
@@ -71,18 +72,19 @@ private:
 
 public:
   // Initialize empty, i.e. all not linked (-1).
-  PairSet(Arena* arena, const VLoopBody& body) :
-    _body(body),
-    _left_to_right(arena, body.body().length(), body.body().length(), -1),
-    _right_to_left(arena, body.body().length(), body.body().length(), -1),
+  PairSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
+    _vloop(vloop_analyzer.vloop()),
+    _body(vloop_analyzer.body()),
+    _left_to_right(arena, _body.body().length(), _body.body().length(), -1),
+    _right_to_left(arena, _body.body().length(), _body.body().length(), -1),
     _pair_counter(0) {}
 
   const VLoopBody& body() const { return _body; }
   bool is_empty() const { return _pair_counter == 0; }
   bool has_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool has_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool has_left(Node* n)  const { return has_left( _body.bb_idx(n)); }
-  bool has_right(Node* n) const { return has_right(_body.bb_idx(n)); }
+  bool has_left(Node* n)  const { return _vloop.in_bb(n) && has_left( _body.bb_idx(n)); }
+  bool has_right(Node* n) const { return _vloop.in_bb(n) && has_right(_body.bb_idx(n)); }
   int get_left_for(int i)  const { return _right_to_left.at(i); }
   int get_right_for(int i) const { return _left_to_right.at(i); }
   Node* get_left_for(Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }

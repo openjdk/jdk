@@ -45,7 +45,7 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _node_info(arena(), _vloop.estimated_body_length(), 0, SWNodeInfo::initial), // info needed per node
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
-  _pairset(&_arena, _vloop_analyzer.body()),
+  _pairset(&_arena, _vloop_analyzer),
   _packset(&_arena, _vloop_analyzer
            NOT_PRODUCT(COMMA is_trace_superword_packset())
            NOT_PRODUCT(COMMA is_trace_superword_rejections())
