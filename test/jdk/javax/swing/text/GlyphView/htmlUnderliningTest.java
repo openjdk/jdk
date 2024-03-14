@@ -73,8 +73,7 @@ public class htmlUnderliningTest {
             pane.getDocument().insertString(13, "cccc\n", attrs);
             pane.getDocument().insertString(18, "ddddd\n", attrs);
         } catch (Exception e) {
-            throw new Error("Failed: Unexpecte" +
-                    "d Exception", e);
+            throw new Error("Failed: Unexpected Exception", e);
         }
         return panel;
     }
