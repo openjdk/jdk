@@ -10,6 +10,14 @@ public:
   VMATree::VTreap* treap_of(VMATree& tree) {
     return tree.tree.tree;
   }
+  NativeCallStack make_stack(size_t a, size_t b, size_t c, size_t d) {
+    NativeCallStack stack;
+    stack._stack[0] = (address)a;
+    stack._stack[1] = (address)b;
+    stack._stack[2] = (address)c;
+    stack._stack[3] = (address)d;
+    return stack;
+  }
 };
 
 // Low-level tests inspecting the state of the tree.
@@ -142,6 +150,30 @@ TEST_VM_F(VMATreeTest, LowLevel) {
       found_nodes++;
     });
     EXPECT_EQ(3, found_nodes);
+  }
+}
+
+// NativeCallStack
+TEST_VM_F(VMATreeTest, NativeCallStack) {
+  using Tree = VMATree;
+  using Node = Tree::VTreap;
+  // Construct a call stack.
+  /*
+    [0x00007bece59b89ac]ZPhysicalMemoryManager::commit(ZPhysicalMemory&)+0x9a
+    [0x00007bece59b1fdd]ZPageAllocator::commit_page(ZPage*)+0x33
+    [0x00007bece59b2997]ZPageAllocator::alloc_page_finalize(ZPageAllocation*)+0x7b
+    [0x00007bece59b2add]ZPageAllocator::alloc_page(ZPageType, unsigned long, ZAllocationFlags, ZPageAge)+0xc7
+   */
+  NativeCallStack stack = make_stack(0x00007bece59b89ac,
+                                     0x00007bece59b1fdd,
+                                     0x00007bece59b2997,
+                                     0x00007bece59b2add);
+  NativeCallStackStorage ncs(true);
+  NativeCallStackStorage::StackIndex si = ncs.push(stack);
+  Tree::Metadata md{si, mtNMT};
+  Tree tree;
+  for (int i = 0; i < 100; i++) {
+    tree.reserve_mapping(i, 100, md);
   }
 }
 
