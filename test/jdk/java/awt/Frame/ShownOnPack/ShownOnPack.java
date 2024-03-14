@@ -32,6 +32,7 @@ import java.awt.Frame;
  * @build PassFailJFrame
  * @run main/manual ShownOnPack
 */
+
 public class ShownOnPack {
 
     private static final String INSTRUCTIONS = """
