@@ -55,7 +55,7 @@ public class AWTPanelSmoothWheel {
 
     public static void main (String[] args) throws Exception {
         PassFailJFrame.builder()
-                .title("Test Wheel Rotation")
+                .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(45)
