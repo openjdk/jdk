@@ -85,7 +85,7 @@ public class bug4773378 {
             try {
                 jif.setSelected(true);
             } catch (PropertyVetoException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         });
 
