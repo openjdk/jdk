@@ -113,15 +113,15 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h,
   initialize_numa_stats();
 }
 
-size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num_workers) {
-  _rdc_local_qset.flush();
+size_t G1ParScanThreadState::flush_stats(size_t* surviving_young_words, uint num_workers, BufferNodeList* rdc_buffers) {
+  *rdc_buffers = _rdc_local_qset.flush();
   flush_numa_stats();
   // Update allocation statistics.
   _plab_allocator->flush_and_retire_stats(num_workers);
   _g1h->policy()->record_age_table(&_age_table);
 
   if (_evacuation_failed_info.has_failed()) {
-     _g1h->gc_tracer_stw()->report_evacuation_failed(_evacuation_failed_info);
+    _g1h->gc_tracer_stw()->report_evacuation_failed(_evacuation_failed_info);
   }
 
   size_t sum = 0;
@@ -593,7 +593,6 @@ const size_t* G1ParScanThreadStateSet::surviving_young_words() const {
 
 void G1ParScanThreadStateSet::flush_stats() {
   assert(!_flushed, "thread local state from the per thread states should be flushed once");
-
   for (uint worker_id = 0; worker_id < _num_workers; ++worker_id) {
     G1ParScanThreadState* pss = _states[worker_id];
     assert(pss != nullptr, "must be initialized");
@@ -604,7 +603,7 @@ void G1ParScanThreadStateSet::flush_stats() {
     // because it resets the PLAB allocator where we get this info from.
     size_t lab_waste_bytes = pss->lab_waste_words() * HeapWordSize;
     size_t lab_undo_waste_bytes = pss->lab_undo_waste_words() * HeapWordSize;
-    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers) * HeapWordSize;
+    size_t copied_bytes = pss->flush_stats(_surviving_young_words_total, _num_workers, &_rdc_buffers[worker_id]) * HeapWordSize;
     size_t evac_fail_enqueued_cards = pss->evac_failure_enqueued_cards();
 
     p->record_or_add_thread_work_item(G1GCPhaseTimes::MergePSS, worker_id, copied_bytes, G1GCPhaseTimes::MergePSSCopiedBytes);
@@ -615,6 +614,11 @@ void G1ParScanThreadStateSet::flush_stats() {
     delete pss;
     _states[worker_id] = nullptr;
   }
+
+  G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
+  dcq.merge_bufferlists(rdcqs());
+  rdcqs()->verify_empty();
+
   _flushed = true;
 }
 
@@ -706,6 +710,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
     _rdcqs(G1BarrierSet::dirty_card_queue_set().allocator()),
     _preserved_marks_set(true /* in_c_heap */),
     _states(NEW_C_HEAP_ARRAY(G1ParScanThreadState*, num_workers, mtGC)),
+    _rdc_buffers(NEW_C_HEAP_ARRAY(BufferNodeList, num_workers, mtGC)),
     _surviving_young_words_total(NEW_C_HEAP_ARRAY(size_t, collection_set->young_region_length() + 1, mtGC)),
     _num_workers(num_workers),
     _flushed(false),
@@ -713,6 +718,7 @@ G1ParScanThreadStateSet::G1ParScanThreadStateSet(G1CollectedHeap* g1h,
   _preserved_marks_set.init(num_workers);
   for (uint i = 0; i < num_workers; ++i) {
     _states[i] = nullptr;
+    _rdc_buffers[i] = BufferNodeList();
   }
   memset(_surviving_young_words_total, 0, (collection_set->young_region_length() + 1) * sizeof(size_t));
 }
@@ -721,5 +727,6 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
+  FREE_C_HEAP_ARRAY(BufferNodeList, _rdc_buffers);
   _preserved_marks_set.reclaim();
 }
