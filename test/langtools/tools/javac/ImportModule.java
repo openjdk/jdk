@@ -83,7 +83,7 @@ public class ImportModule extends TestRunner {
         Files.createDirectories(classes);
 
         new JavacTask(tb)
-            .options("--enable-preview", "--source", SOURCE_VERSION)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
             .outdir(classes)
             .files(tb.findJavaFiles(src))
             .run(Task.Expect.SUCCESS)
@@ -101,6 +101,64 @@ public class ImportModule extends TestRunner {
 
         if (!Objects.equals(expectedOut, out)) {
             throw new AssertionError("Incorrect Output, expected: " + expectedOut +
+                                      ", actual: " + out);
+
+        }
+    }
+
+    @Test
+    public void testVerifySourceLevelCheck(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.base;
+                          public class Test {
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors;
+        List<String> expectedErrors;
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--release", "21", "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+        actualErrors =
+                new JavacTask(tb)
+                    .options("-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:2:8: compiler.err.preview.feature.disabled.plural: (compiler.misc.feature.module.imports)",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
                                       ", actual: " + out);
 
         }
