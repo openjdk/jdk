@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4783,8 +4783,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     rorq(r_bitmap, bit);
   }
 
-  call(RuntimeAddress
-       (CAST_FROM_FN_PTR(address, StubRoutines::_klass_subtype_fallback_stub)));
+  call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
   // Result is in the Z flag
   jcc(Assembler::equal, L_success);
 

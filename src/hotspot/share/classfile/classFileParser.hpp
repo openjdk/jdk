@@ -132,7 +132,6 @@ class ClassFileParser {
   Array<RecordComponent*>* _record_components;
   Array<InstanceKlass*>* _local_interfaces;
   Array<InstanceKlass*>* _transitive_interfaces;
-  uint64_t _transitive_interfaces_bitmap;
   Annotations* _combined_annotations;
   AnnotationArray* _class_annotations;
   AnnotationArray* _class_type_annotations;
