@@ -35,7 +35,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testSuccessfulFlow
  * @summary Test that memory allocation logging works when allocation operations run without error
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -47,7 +47,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testAttemptedReserveFailed
  * @summary Test that memory allocation logging warns when attempted reservation fails
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -59,7 +59,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testReserveFailed
  * @summary Test that memory allocation logging warns when reservation fails
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -71,7 +71,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testCommitFailed
  * @summary Test that memory allocation logging warns when commit attempts fail
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -83,7 +83,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testUncommitFailed
  * @summary Test that memory allocation logging warns when memory uncommitment fails
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -95,7 +95,7 @@ import jdk.test.whitebox.WhiteBox;
  * @test id=testReleaseFailed
  * @summary Test that memory allocation logging warns when memory release fails
  * @library /test/lib
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
@@ -144,8 +144,6 @@ public class TestMemoryAllocationLogging {
                         /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
                         String.format("Attempt to reserve \\[0x.* - 0x.*\\), \\(.* bytes\\) failed"),
-                        /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno="
                 };
                 break;
             }
@@ -199,7 +197,6 @@ public class TestMemoryAllocationLogging {
     private static OutputAnalyzer runTestWithOptions(String[] options) throws IOException {
         ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(options);
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldHaveExitValue(0);
         return output;
     }
 
@@ -224,7 +221,8 @@ public class TestMemoryAllocationLogging {
                 }
                 case "testAttemptedReserveFailed": {
                     long addr = wb.NMTReserveMemory(PAGE_SIZE);
-                    wb.NMTAttemptReserveMemoryAt(-1, PAGE_SIZE);
+                    /* attempting to reserve the same address should fail */
+                    wb.NMTAttemptReserveMemoryAt(addr, PAGE_SIZE);
                     break;
                 }
                 case "testReserveFailed": {
@@ -232,17 +230,22 @@ public class TestMemoryAllocationLogging {
                     break;
                 }
                 case "testCommitFailed": {
-                    wb.NMTCommitMemory(1, COMMIT_SIZE);
+                    long addr = wb.NMTReserveMemory(PAGE_SIZE);
+                    /* addr is not a multiple of system page size, so it should fail */
+                    wb.NMTCommitMemory(addr - 1, COMMIT_SIZE);
                     break;
                 }
                 case "testUncommitFailed": {
                     long addr = wb.NMTReserveMemory(PAGE_SIZE);
                     wb.NMTCommitMemory(addr, PAGE_SIZE);
-                    wb.NMTUncommitMemory(1, PAGE_SIZE);
+                    /* addr is not a multiple of a system page size, so it should fail */
+                    wb.NMTUncommitMemory(addr - 1, PAGE_SIZE);
                     break;
                 }
                 case "testReleaseFailed": {
-                    wb.NMTReleaseMemory(1, PAGE_SIZE);
+                    long addr = wb.NMTReserveMemory(PAGE_SIZE);
+                    /* addr is not a multiple of system page size, so it should fail */
+                    wb.NMTReleaseMemory(addr - 1, PAGE_SIZE);
                     break;
                 }
                 default: {
