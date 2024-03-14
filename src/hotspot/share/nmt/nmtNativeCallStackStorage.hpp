@@ -62,6 +62,8 @@ private:
     return &new_link->stack;
   }
 
+  // 4096 buckets ensures that probability of collision is 50% at approximately 64
+  // different call stacks.
   static const constexpr int nr_buckets = 4096;
   GrowableArrayCHeap<Link*, mtNMT> buckets;
   bool is_detailed_mode;
