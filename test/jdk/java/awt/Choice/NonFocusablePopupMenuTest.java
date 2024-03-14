@@ -56,7 +56,7 @@ public class NonFocusablePopupMenuTest extends Frame {
             choice.add("444");
             choice.setFocusable(false);
             this.add(choice);
-            this.setLayout (new FlowLayout());
+            this.setLayout(new FlowLayout());
             setSize (200,200);
             setLocationRelativeTo(null);
             setVisible(true);
