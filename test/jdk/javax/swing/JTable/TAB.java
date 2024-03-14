@@ -50,10 +50,10 @@ import javax.swing.table.TableModel;
  * @key headful
  * @summary Verify focus changes correctly when tab is pressed while editing
  *          a JTextField in a JTable
- * @run main TAB
+ * @run main Tab
  */
 
-public class TAB
+public class Tab
 {
     private static Robot robot;
     private static JFrame frame;
@@ -68,9 +68,9 @@ public class TAB
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         robot = new Robot();
-        robot.setAutoDelay(100);
+        robot.setAutoDelay(50);
         try {
-            SwingUtilities.invokeAndWait(TAB::createAndShowUI);
+            SwingUtilities.invokeAndWait(Tab::createAndShowUI);
             robot.waitForIdle();
             robot.delay(1000);
 
@@ -85,8 +85,8 @@ public class TAB
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
             robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
             robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(20);
 
             SwingUtilities.invokeAndWait(() -> {
                 selectedRowBeforeTabPress = tableView.getSelectedRow();
@@ -95,8 +95,8 @@ public class TAB
 
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
-            robot.delay(100);
             robot.waitForIdle();
+            robot.delay(20);
 
             SwingUtilities.invokeAndWait(() -> {
                 selectedRowAfterTabPress = tableView.getSelectedRow();
@@ -124,27 +124,27 @@ public class TAB
         final String[] names = {"First Name", "Last Name", "Favorite Color",
                 "Favorite Number", "Vegetarian"};
         final Object[][] data = {
-                {"Mark", "Andrews", "Red", new Integer(2), new Boolean(true)},
-                {"Tom", "Ball", "Blue", new Integer(99), new Boolean(false)},
-                {"Alan", "Chung", "Green", new Integer(838), new Boolean(false)},
-                {"Jeff", "Dinkins", "Turquois", new Integer(8), new Boolean(true)},
-                {"Amy", "Fowler", "Yellow", new Integer(3), new Boolean(false)},
-                {"Brian", "Gerhold", "Green", new Integer(0), new Boolean(false)},
-                {"James", "Gosling", "Pink", new Integer(21), new Boolean(false)},
-                {"David", "Karlton", "Red", new Integer(1), new Boolean(false)},
-                {"Dave", "Kloba", "Yellow", new Integer(14), new Boolean(false)},
-                {"Peter", "Korn", "Purple", new Integer(12), new Boolean(false)},
-                {"Phil", "Milne", "Purple", new Integer(3), new Boolean(false)},
-                {"Dave", "Moore", "Green", new Integer(88), new Boolean(false)},
-                {"Hans", "Muller", "Maroon", new Integer(5), new Boolean(false)},
-                {"Rick", "Levenson", "Blue", new Integer(2), new Boolean(false)},
-                {"Tim", "Prinzing", "Blue", new Integer(22), new Boolean(false)},
-                {"Chester", "Rose", "Black", new Integer(0), new Boolean(false)},
-                {"Ray", "Ryan", "Gray", new Integer(77), new Boolean(false)},
-                {"Georges", "Saab", "Red", new Integer(4), new Boolean(false)},
-                {"Willie", "Walker", "Phthalo Blue", new Integer(4), new Boolean(false)},
-                {"Kathy", "Walrath", "Blue", new Integer(8), new Boolean(false)},
-                {"Arnaud", "Weber", "Green", new Integer(44), new Boolean(false)}
+                {"Mark", "Andrews", "Red", 2, true},
+                {"Tom", "Ball", "Blue", 99, false},
+                {"Alan", "Chung", "Green", 838, false},
+                {"Jeff", "Dinkins", "Turquois", 8, true},
+                {"Amy", "Fowler", "Yellow", 3, false},
+                {"Brian", "Gerhold", "Green", 0, false},
+                {"James", "Gosling", "Pink", 21, false},
+                {"David", "Karlton", "Red", 1, false},
+                {"Dave", "Kloba", "Yellow", 14, false},
+                {"Peter", "Korn", "Purple", 12, false},
+                {"Phil", "Milne", "Purple", 3, false},
+                {"Dave", "Moore", "Green", 88, false},
+                {"Hans", "Muller", "Maroon", 5, false},
+                {"Rick", "Levenson", "Blue", 2, false},
+                {"Tim", "Prinzing", "Blue", 22, false},
+                {"Chester", "Rose", "Black", 0, false},
+                {"Ray", "Ryan", "Gray", 77, false},
+                {"Georges", "Saab", "Red", 4, false},
+                {"Willie", "Walker", "Phthalo Blue", 4, false},
+                {"Kathy", "Walrath", "Blue", 8, false},
+                {"Arnaud", "Weber", "Green", 44, false}
         };
 
         // Create a model of the data.
