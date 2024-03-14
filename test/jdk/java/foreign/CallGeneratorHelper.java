@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -213,11 +213,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
     static void generateDowncalls(boolean header) {
         if (header) {
             System.out.println(
-                "#ifdef _WIN64\n" +
-                "#define EXPORT __declspec(dllexport)\n" +
-                "#else\n" +
-                "#define EXPORT\n" +
-                "#endif\n"
+                "#include \"export.h\"\n"
             );
 
             for (int j = 1; j <= MAX_FIELDS; j++) {
@@ -267,11 +263,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
     static void generateUpcalls(boolean header) {
         if (header) {
             System.out.println(
-                "#ifdef _WIN64\n" +
-                "#define EXPORT __declspec(dllexport)\n" +
-                "#else\n" +
-                "#define EXPORT\n" +
-                "#endif\n"
+                "#include \"export.h\"\n"
             );
 
             for (int j = 1; j <= MAX_FIELDS; j++) {
