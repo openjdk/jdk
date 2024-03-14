@@ -46,7 +46,10 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _clone_map(phase()->C->clone_map()),                      // map of nodes created in cloning
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _pairset(&_arena, _vloop_analyzer.body()),
-  _packset(&_arena, _vloop_analyzer),
+  _packset(&_arena, _vloop_analyzer
+           NOT_PRODUCT(COMMA is_trace_superword_packset())
+           NOT_PRODUCT(COMMA is_trace_superword_rejections())
+           ),
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
@@ -1379,9 +1382,9 @@ void SuperWord::combine_pairs_to_longer_packs() {
 #endif
 }
 
-SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
-                                             Node_List* pack,
-                                             SplitTask task)
+SplitStatus PackSet::split_pack(const char* split_name,
+                                Node_List* pack,
+                                SplitTask task)
 {
   uint pack_size = pack->size();
 
@@ -1394,12 +1397,12 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       if (is_trace_superword_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed pack: %s:", task.message());
-        _packset.print_pack(pack);
+        print_pack(pack);
       }
 #endif
     for (uint i = 0; i < pack_size; i++) {
       Node* n = pack->at(i);
-      _packset.set_pack(n, nullptr);
+      set_pack(n, nullptr);
     }
     return SplitStatus::make_rejected();
   }
@@ -1416,7 +1419,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
     tty->cr();
     tty->print_cr("INFO: splitting pack (sizes: %d %d): %s:",
                   old_size, new_size, task.message());
-    _packset.print_pack(pack);
+    print_pack(pack);
   }
 #endif
 
@@ -1427,12 +1430,12 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
       if (is_trace_superword_rejections()) {
         tty->cr();
         tty->print_cr("WARNING: Removed size 2 pack, cannot be split: %s:", task.message());
-        _packset.print_pack(pack);
+        print_pack(pack);
       }
 #endif
     for (uint i = 0; i < pack_size; i++) {
       Node* n = pack->at(i);
-      _packset.set_pack(n, nullptr);
+      set_pack(n, nullptr);
     }
     return SplitStatus::make_rejected();
   }
@@ -1441,7 +1444,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
   if (new_size < 2) {
     assert(new_size == 1 && old_size >= 2, "implied");
     Node* n = pack->pop();
-    _packset.set_pack(n, nullptr);
+    set_pack(n, nullptr);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1457,7 +1460,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
     assert(old_size == 1 && new_size >= 2, "implied");
     Node* n = pack->at(0);
     pack->remove(0);
-    _packset.set_pack(n, nullptr);
+    set_pack(n, nullptr);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -1475,7 +1478,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
   for (uint i = 0; i < new_size; i++) {
     Node* n = pack->at(old_size + i);
     new_pack->push(n);
-    _packset.set_pack(n, new_pack);
+    set_pack(n, new_pack);
   }
 
   for (uint i = 0; i < new_size; i++) {
@@ -1488,110 +1491,110 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
 }
 
 template <typename SplitStrategy>
-void SuperWord::split_packs(const char* split_name,
-                            SplitStrategy strategy) {
+void PackSet::split_packs(const char* split_name,
+                          SplitStrategy strategy) {
   bool changed;
   do {
     changed = false;
     int new_packset_length = 0;
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* pack = _packset.at(i);
+    for (int i = 0; i < _packs.length(); i++) {
+      Node_List* pack = _packs.at(i);
       assert(pack != nullptr && pack->size() >= 2, "no nullptr, at least size 2");
       SplitTask task = strategy(pack);
       SplitStatus status = split_pack(split_name, pack, task);
       changed |= !status.is_unchanged();
       Node_List* first_pack = status.first_pack();
       Node_List* second_pack = status.second_pack();
-      _packset.at_put(i, nullptr); // take out pack
+      _packs.at_put(i, nullptr); // take out pack
       if (first_pack != nullptr) {
         // The first pack can be put at the current position
         assert(i >= new_packset_length, "only move packs down");
-        _packset.at_put(new_packset_length++, first_pack);
+        _packs.at_put(new_packset_length++, first_pack);
       }
       if (second_pack != nullptr) {
         // The second node has to be appended at the end
-        _packset.append(second_pack);
+        _packs.append(second_pack);
       }
     }
-    _packset.trunc_to(new_packset_length);
+    _packs.trunc_to(new_packset_length);
   } while (changed);
 
 #ifndef PRODUCT
   if (is_trace_superword_packset()) {
     tty->print_cr("\nAfter %s", split_name);
-    _packset.print();
+    print();
   }
 #endif
 }
 
 // Split packs at boundaries where left and right have different use or def packs.
 void SuperWord::split_packs_at_use_def_boundaries() {
-  split_packs("SuperWord::split_packs_at_use_def_boundaries",
-               [&](const Node_List* pack) {
-                 uint pack_size = pack->size();
-                 uint boundary = find_use_def_boundary(pack);
-                 assert(boundary < pack_size, "valid boundary %d", boundary);
-                 if (boundary != 0) {
-                   return SplitTask::make_split(pack_size - boundary, "found a use/def boundary");
-                 }
-                 return SplitTask::make_unchanged();
-               });
+  auto split_strategy = [&](const Node_List* pack) {
+    uint pack_size = pack->size();
+    uint boundary = find_use_def_boundary(pack);
+    assert(boundary < pack_size, "valid boundary %d", boundary);
+    if (boundary != 0) {
+      return SplitTask::make_split(pack_size - boundary, "found a use/def boundary");
+    }
+    return SplitTask::make_unchanged();
+  };
+  _packset.split_packs("SuperWord::split_packs_at_use_def_boundaries", split_strategy);
 }
 
 // Split packs that are only implemented with a smaller pack size. Also splits packs
 // such that they eventually have power of 2 size.
 void SuperWord::split_packs_only_implemented_with_smaller_size() {
-  split_packs("SuperWord::split_packs_only_implemented_with_smaller_size",
-               [&](const Node_List* pack) {
-                 uint pack_size = pack->size();
-                 uint implemented_size = max_implemented_size(pack);
-                 if (implemented_size == 0)  {
-                   return SplitTask::make_rejected("not implemented at any smaller size");
-                 }
-                 assert(is_power_of_2(implemented_size), "power of 2 size or zero: %d", implemented_size);
-                 if (implemented_size != pack_size) {
-                   return SplitTask::make_split(implemented_size, "only implemented at smaller size");
-                 }
-                 return SplitTask::make_unchanged();
-               });
+  auto split_strategy = [&](const Node_List* pack) {
+    uint pack_size = pack->size();
+    uint implemented_size = max_implemented_size(pack);
+    if (implemented_size == 0)  {
+      return SplitTask::make_rejected("not implemented at any smaller size");
+    }
+    assert(is_power_of_2(implemented_size), "power of 2 size or zero: %d", implemented_size);
+    if (implemented_size != pack_size) {
+      return SplitTask::make_split(implemented_size, "only implemented at smaller size");
+    }
+    return SplitTask::make_unchanged();
+  };
+  _packset.split_packs("SuperWord::split_packs_only_implemented_with_smaller_size", split_strategy);
 }
 
 // Split packs that have a mutual dependency, until all packs are mutually_independent.
 void SuperWord::split_packs_to_break_mutual_dependence() {
-  split_packs("SuperWord::split_packs_to_break_mutual_dependence",
-               [&](const Node_List* pack) {
-                 uint pack_size = pack->size();
-                 assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
-                 if (!is_marked_reduction(pack->at(0)) &&
-                     !mutually_independent(pack)) {
-                   // As a best guess, we split the pack in half. This way, we iteratively make the
-                   // packs smaller, until there is no dependency.
-                   return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
-                 }
-                 return SplitTask::make_unchanged();
-               });
+  auto split_strategy = [&](const Node_List* pack) {
+    uint pack_size = pack->size();
+    assert(is_power_of_2(pack_size), "ensured by earlier splits %d", pack_size);
+    if (!is_marked_reduction(pack->at(0)) &&
+        !mutually_independent(pack)) {
+      // As a best guess, we split the pack in half. This way, we iteratively make the
+      // packs smaller, until there is no dependency.
+      return SplitTask::make_split(pack_size >> 1, "was not mutually independent");
+    }
+    return SplitTask::make_unchanged();
+  };
+  _packset.split_packs("SuperWord::split_packs_to_break_mutual_dependence", split_strategy);
 }
 
 template <typename FilterPredicate>
-void SuperWord::filter_packs(const char* filter_name,
+void PackSet::filter_packs(const char* filter_name,
                              const char* rejection_message,
                              FilterPredicate filter) {
-  split_packs(filter_name,
-               [&](const Node_List* pack) {
-                 if (filter(pack)) {
-                   return SplitTask::make_unchanged();
-                 } else {
-                   return SplitTask::make_rejected(rejection_message);
-                 }
-               });
+  auto split_strategy = [&](const Node_List* pack) {
+    if (filter(pack)) {
+      return SplitTask::make_unchanged();
+    } else {
+      return SplitTask::make_rejected(rejection_message);
+    }
+  };
+  split_packs(filter_name, split_strategy);
 }
 
 void SuperWord::filter_packs_for_power_of_2_size() {
-  filter_packs("SuperWord::filter_packs_for_power_of_2_size",
-               "size is not a power of 2",
-               [&](const Node_List* pack) {
-                 return is_power_of_2(pack->size());
-               });
+  auto filter = [&](const Node_List* pack) {
+    return is_power_of_2(pack->size());
+  };
+  _packset.filter_packs("SuperWord::filter_packs_for_power_of_2_size",
+                        "size is not a power of 2", filter);
 }
 
 // We know that the nodes in a pair pack were independent - this gives us independence
@@ -1615,13 +1618,13 @@ void SuperWord::filter_packs_for_power_of_2_size() {
 // for (int i ...) { v[i] = v[i + 1] + 5; }
 // for (int i ...) { v[i - 1] = v[i] + 5; }
 void SuperWord::filter_packs_for_mutual_independence() {
-  filter_packs("SuperWord::filter_packs_for_mutual_independence",
-               "found dependency between nodes at distance greater than 1",
-               [&](const Node_List* pack) {
-                 // reductions are trivially connected
-                 return is_marked_reduction(pack->at(0)) ||
-                        mutually_independent(pack);
-               });
+  auto filter = [&](const Node_List* pack) {
+    // reductions are trivially connected
+    return is_marked_reduction(pack->at(0)) ||
+           mutually_independent(pack);
+  };
+  _packset.filter_packs("SuperWord::filter_packs_for_mutual_independence",
+                        "found dependency between nodes at distance greater than 1", filter);
 }
 
 // Find the set of alignment solutions for load/store pack.
@@ -1670,35 +1673,36 @@ void SuperWord::filter_packs_for_alignment() {
   int mem_ops_count = 0;
   int mem_ops_rejected = 0;
 
-  filter_packs("SuperWord::filter_packs_for_alignment",
-               "rejected by AlignVector (strict alignment requirement)",
-               [&](const Node_List* pack) {
-                 // Only memops need to be aligned.
-                 if (!pack->at(0)->is_Load() &&
-                     !pack->at(0)->is_Store()) {
-                   return true; // accept all non memops
-                 }
+  auto filter = [&](const Node_List* pack) {
+    // Only memops need to be aligned.
+    if (!pack->at(0)->is_Load() &&
+        !pack->at(0)->is_Store()) {
+      return true; // accept all non memops
+    }
 
-                 mem_ops_count++;
-                 const AlignmentSolution* s = pack_alignment_solution(pack);
-                 const AlignmentSolution* intersect = current->filter(s);
+    mem_ops_count++;
+    const AlignmentSolution* s = pack_alignment_solution(pack);
+    const AlignmentSolution* intersect = current->filter(s);
 
 #ifndef PRODUCT
-                 if (is_trace_align_vector()) {
-                   tty->print("  solution for pack:         ");
-                   s->print();
-                   tty->print("  intersection with current: ");
-                   intersect->print();
-                 }
+    if (is_trace_align_vector()) {
+      tty->print("  solution for pack:         ");
+      s->print();
+      tty->print("  intersection with current: ");
+      intersect->print();
+    }
 #endif
-                 if (intersect->is_empty()) {
-                   mem_ops_rejected++;
-                   return false; // reject because of empty solution
-                 }
+    if (intersect->is_empty()) {
+      mem_ops_rejected++;
+      return false; // reject because of empty solution
+    }
 
-                 current = intersect;
-                 return true; // accept because of non-empty solution
-               });
+    current = intersect;
+    return true; // accept because of non-empty solution
+  };
+
+  _packset.filter_packs("SuperWord::filter_packs_for_alignment",
+                        "rejected by AlignVector (strict alignment requirement)", filter);
 
 #ifndef PRODUCT
   if (is_trace_superword_info() || is_trace_align_vector()) {
@@ -1719,11 +1723,11 @@ void SuperWord::filter_packs_for_alignment() {
 
 // Remove packs that are not implemented
 void SuperWord::filter_packs_for_implemented() {
-  filter_packs("SuperWord::filter_packs_for_implemented",
-               "Unimplemented",
-               [&](const Node_List* pack) {
-                 return implemented(pack, pack->size());
-               });
+  auto filter = [&](const Node_List* pack) {
+    return implemented(pack, pack->size());
+  };
+  _packset.filter_packs("SuperWord::filter_packs_for_implemented",
+                        "Unimplemented", filter);
 }
 
 // Remove packs that are not profitable.
@@ -1741,11 +1745,11 @@ void SuperWord::filter_packs_for_profitable() {
   }
 
   // Remove packs that are not profitable
-  filter_packs("Superword::filter_packs_for_profitable",
-               "not profitable",
-               [&](const Node_List* pack) {
-                 return profitable(pack);
-               });
+  auto filter = [&](const Node_List* pack) {
+    return profitable(pack);
+  };
+  _packset.filter_packs("Superword::filter_packs_for_profitable",
+                        "not profitable", filter);
 }
 
 // Can code be generated for the pack, restricted to size nodes?

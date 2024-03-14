@@ -134,6 +134,95 @@ public:
   }
 };
 
+class SplitTask {
+private:
+  enum Kind {
+    // The lambda method for split_packs can return one of these tasks:
+    Unchanged, // The pack is left in the packset, unchanged.
+    Rejected,  // The pack is removed from the packset.
+    Split,     // Split away split_size nodes from the end of the pack.
+  };
+  const Kind _kind;
+  const uint _split_size;
+  const char* _message;
+
+  SplitTask(const Kind kind, const uint split_size, const char* message) :
+      _kind(kind), _split_size(split_size), _message(message)
+  {
+    assert(message != nullptr, "must have message");
+    assert(_kind != Unchanged || split_size == 0, "unchanged task conditions");
+    assert(_kind != Rejected  || split_size == 0, "reject task conditions");
+    assert(_kind != Split     || split_size != 0, "split task conditions");
+  }
+
+public:
+  static SplitTask make_split(const uint split_size, const char* message) {
+    return SplitTask(Split, split_size, message);
+  }
+
+  static SplitTask make_unchanged() {
+    return SplitTask(Unchanged, 0, "unchanged");
+  }
+
+  static SplitTask make_rejected(const char* message) {
+    return SplitTask(Rejected, 0, message);
+  }
+
+  bool is_unchanged() const { return _kind == Unchanged; }
+  bool is_rejected() const { return _kind == Rejected; }
+  bool is_split() const { return _kind == Split; }
+  const char* message() const { return _message; }
+
+  uint split_size() const {
+    assert(is_split(), "only split tasks have split_size");
+    return _split_size;
+  }
+};
+
+class SplitStatus {
+private:
+  enum Kind {
+    // After split_pack, we have:                              first_pack   second_pack
+    Unchanged, // The pack is left in the pack, unchanged.     old_pack     nullptr
+    Rejected,  // The pack is removed from the packset.        nullptr      nullptr
+    Modified,  // The pack had some nodes removed.             old_pack     nullptr
+    Split,     // The pack was split into two packs.           pack1        pack2
+  };
+  Kind _kind;
+  Node_List* _first_pack;
+  Node_List* _second_pack;
+
+  SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
+    _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
+  {
+    assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
+    assert(_kind != Rejected  || (first_pack == nullptr && second_pack == nullptr), "rejected status conditions");
+    assert(_kind != Modified  || (first_pack != nullptr && second_pack == nullptr), "modified status conditions");
+    assert(_kind != Split     || (first_pack != nullptr && second_pack != nullptr), "split status conditions");
+  }
+
+public:
+  static SplitStatus make_unchanged(Node_List* old_pack) {
+    return SplitStatus(Unchanged, old_pack, nullptr);
+  }
+
+  static SplitStatus make_rejected() {
+    return SplitStatus(Rejected, nullptr, nullptr);
+  }
+
+  static SplitStatus make_modified(Node_List* first_pack) {
+    return SplitStatus(Modified, first_pack, nullptr);
+  }
+
+  static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
+    return SplitStatus(Split, first_pack, second_pack);
+  }
+
+  bool is_unchanged() const { return _kind == Unchanged; }
+  Node_List* first_pack() const { return _first_pack; }
+  Node_List* second_pack() const { return _second_pack; }
+};
+
 class PackSet : public StackObj {
 private:
   const VLoop& _vloop;
@@ -145,13 +234,25 @@ private:
   // Mapping from nodes to their pack: bb_idx -> pack
   GrowableArray<Node_List*> _node_to_pack;
 
+#ifndef PRODUCT
+  const bool _trace_packset;
+  const bool _trace_rejections;
+  bool is_trace_superword_packset() const { return _trace_packset; }
+  bool is_trace_superword_rejections() const { return _trace_rejections; }
+#endif
+
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
-  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
+  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer
+          NOT_PRODUCT(COMMA bool trace_packset COMMA bool trace_rejections)
+          ) :
     _vloop(vloop_analyzer.vloop()),
     _body(vloop_analyzer.body()),
     _packs(arena, 8, 0, nullptr),
-    _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr) {}
+    _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr)
+    NOT_PRODUCT(COMMA _trace_packset(trace_packset))
+    NOT_PRODUCT(COMMA _trace_rejections(trace_rejections))
+    {}
 
   // Accessors to iterate over packs.
   int length() const { return _packs.length(); }
@@ -168,6 +269,15 @@ public:
       set_pack(n, pack);
     }
   }
+
+  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+  template <typename SplitStrategy>
+  void split_packs(const char* split_name, SplitStrategy strategy);
+
+  template <typename FilterPredicate>
+  void filter_packs(const char* filter_name,
+                    const char* rejection_message,
+                    FilterPredicate filter);
 
   // TODO remove?
   void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
@@ -417,108 +527,10 @@ private:
 
   void combine_pairs_to_longer_packs();
 
-  class SplitTask {
-  private:
-    enum Kind {
-      // The lambda method for split_packs can return one of these tasks:
-      Unchanged, // The pack is left in the packset, unchanged.
-      Rejected,  // The pack is removed from the packset.
-      Split,     // Split away split_size nodes from the end of the pack.
-    };
-    const Kind _kind;
-    const uint _split_size;
-    const char* _message;
-
-    SplitTask(const Kind kind, const uint split_size, const char* message) :
-        _kind(kind), _split_size(split_size), _message(message)
-    {
-      assert(message != nullptr, "must have message");
-      assert(_kind != Unchanged || split_size == 0, "unchanged task conditions");
-      assert(_kind != Rejected  || split_size == 0, "reject task conditions");
-      assert(_kind != Split     || split_size != 0, "split task conditions");
-    }
-
-  public:
-    static SplitTask make_split(const uint split_size, const char* message) {
-      return SplitTask(Split, split_size, message);
-    }
-
-    static SplitTask make_unchanged() {
-      return SplitTask(Unchanged, 0, "unchanged");
-    }
-
-    static SplitTask make_rejected(const char* message) {
-      return SplitTask(Rejected, 0, message);
-    }
-
-    bool is_unchanged() const { return _kind == Unchanged; }
-    bool is_rejected() const { return _kind == Rejected; }
-    bool is_split() const { return _kind == Split; }
-    const char* message() const { return _message; }
-
-    uint split_size() const {
-      assert(is_split(), "only split tasks have split_size");
-      return _split_size;
-    }
-  };
-
-  class SplitStatus {
-  private:
-    enum Kind {
-      // After split_pack, we have:                              first_pack   second_pack
-      Unchanged, // The pack is left in the pack, unchanged.     old_pack     nullptr
-      Rejected,  // The pack is removed from the packset.        nullptr      nullptr
-      Modified,  // The pack had some nodes removed.             old_pack     nullptr
-      Split,     // The pack was split into two packs.           pack1        pack2
-    };
-    Kind _kind;
-    Node_List* _first_pack;
-    Node_List* _second_pack;
-
-    SplitStatus(Kind kind, Node_List* first_pack, Node_List* second_pack) :
-      _kind(kind), _first_pack(first_pack), _second_pack(second_pack)
-    {
-      assert(_kind != Unchanged || (first_pack != nullptr && second_pack == nullptr), "unchanged status conditions");
-      assert(_kind != Rejected  || (first_pack == nullptr && second_pack == nullptr), "rejected status conditions");
-      assert(_kind != Modified  || (first_pack != nullptr && second_pack == nullptr), "modified status conditions");
-      assert(_kind != Split     || (first_pack != nullptr && second_pack != nullptr), "split status conditions");
-    }
-
-  public:
-    static SplitStatus make_unchanged(Node_List* old_pack) {
-      return SplitStatus(Unchanged, old_pack, nullptr);
-    }
-
-    static SplitStatus make_rejected() {
-      return SplitStatus(Rejected, nullptr, nullptr);
-    }
-
-    static SplitStatus make_modified(Node_List* first_pack) {
-      return SplitStatus(Modified, first_pack, nullptr);
-    }
-
-    static SplitStatus make_split(Node_List* first_pack, Node_List* second_pack) {
-      return SplitStatus(Split, first_pack, second_pack);
-    }
-
-    bool is_unchanged() const { return _kind == Unchanged; }
-    Node_List* first_pack() const { return _first_pack; }
-    Node_List* second_pack() const { return _second_pack; }
-  };
-
-  SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
-  template <typename SplitStrategy>
-  void split_packs(const char* split_name, SplitStrategy strategy);
-
   void split_packs_at_use_def_boundaries();
   void split_packs_only_implemented_with_smaller_size();
   void split_packs_to_break_mutual_dependence();
 
-  // Filter out packs with various filter predicates
-  template <typename FilterPredicate>
-  void filter_packs(const char* filter_name,
-                    const char* rejection_message,
-                    FilterPredicate filter);
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
   // Ensure all packs are aligned, if AlignVector is on.
