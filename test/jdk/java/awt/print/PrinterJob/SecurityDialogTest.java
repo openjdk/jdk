@@ -59,13 +59,8 @@ public class SecurityDialogTest extends Frame {
     private static JLabel dialogType;
 
     public static void main(String[] args) throws Exception {
-        PrintService[] services = PrinterJob.lookupPrintServices();
         if (PrinterJob.lookupPrintServices().length == 0) {
             throw new RuntimeException("Printer not configured or available.");
-        }
-
-        for (int i = 0; i < services.length; i++) {
-            System.out.println("SecurityDialogTest service " + i + " : " + services[i]);
         }
 
         PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
@@ -99,6 +94,11 @@ public class SecurityDialogTest extends Frame {
         // writing of files.
         SecurityManager ptsm = new SecurityManager();
         System.setSecurityManager(ptsm);
+
+        PrintService[] services = PrinterJob.lookupPrintServices();
+        for (int i = 0; i < services.length; i++) {
+            System.out.println("SecurityDialogTest service " + i + " : " + services[i]);
+        }
 
         System.out.println("SecurityDialogTest default service : " + pj.getPrintService());
 
