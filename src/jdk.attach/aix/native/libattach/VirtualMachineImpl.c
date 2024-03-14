@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2015, 2018 SAP SE. All rights reserved.
+ * Copyright (c) 2015, 2024 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,13 +38,6 @@
 #include <unistd.h>
 
 #include "sun_tools_attach_VirtualMachineImpl.h"
-
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 
 #define ROOT_UID 0
 
