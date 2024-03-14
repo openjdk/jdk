@@ -97,7 +97,7 @@ public class bug4325606 {
             try {
                 Utilities.getRowStart(pane, pane.getCaretPosition());
             } catch (BadLocationException blex) {
-                throw new RuntimeException("Test failed.");
+                throw new RuntimeException("Test failed.", blex);
             }
         }
     }
