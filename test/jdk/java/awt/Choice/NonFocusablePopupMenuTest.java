@@ -28,7 +28,6 @@
  * @run main NonFocusablePopupMenuTest
  */
 
-import javax.swing.SwingUtilities;
 import java.awt.AWTException;
 import java.awt.Choice;
 import java.awt.Dimension;
@@ -42,8 +41,9 @@ import java.lang.reflect.InvocationTargetException;
 
 public class NonFocusablePopupMenuTest extends Frame {
     Choice choice;
-    Point pos;
-    Dimension size;
+    volatile Point pos;
+    volatile Dimension size;
+    volatile int selection1, selection2;
     public void performTest() throws AWTException,
             InterruptedException, InvocationTargetException {
         Robot robot = new Robot();
@@ -62,11 +62,13 @@ public class NonFocusablePopupMenuTest extends Frame {
             setVisible(true);
         });
         robot.waitForIdle();
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
             pos = choice.getLocationOnScreen();
             size = choice.getSize();
         });
-        int selected = choice.getSelectedIndex();
+        EventQueue.invokeAndWait(() -> {
+            selection1 = choice.getSelectedIndex();
+        });
         robot.mouseMove(pos.x + size.width / 2, pos.y + size.height / 2);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
@@ -76,12 +78,14 @@ public class NonFocusablePopupMenuTest extends Frame {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.waitForIdle();
-        robot.delay(500);
-        SwingUtilities.invokeAndWait(() -> {
+        EventQueue.invokeAndWait(() -> {
+            selection2 = choice.getSelectedIndex();
+        });
+        EventQueue.invokeAndWait(() -> {
             setVisible(false);
             dispose();
         });
-        if (choice.getSelectedIndex() == selected) {
+        if (selection1 == selection2) {
             throw new RuntimeException("Can not change choice selection with the mouse click");
         }
     }
