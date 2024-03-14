@@ -174,19 +174,14 @@ public class Debug {
      * Debug debug = Debug.of("login", setting);
      * }
      * @param option the debug option name
-     * @param property debug setting for this option.
-     *                 If "true" is included, a debug object is returned.
-     *                 Otherwise, {@code null} is returned.
-     * @return a new Debug object if the option is enabled
+     * @param property debug setting for this option
+     * @return a new Debug object if the property is true
      */
     public static Debug of(String option, String property) {
-        if (property != null) {
-            property = property.toLowerCase(Locale.ROOT);
-            if (property.contains("true")) {
-                Debug d = new Debug();
-                d.prefix = option;
-                return d;
-            }
+        if ("true".equalsIgnoreCase(property)) {
+            Debug d = new Debug();
+            d.prefix = option;
+            return d;
         }
         return null;
     }
