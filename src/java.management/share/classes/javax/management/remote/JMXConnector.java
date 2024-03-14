@@ -129,7 +129,12 @@ public interface JMXConnector extends Closeable {
             throws IOException;
 
     /**
-     * <p>This method is equivalent to calling {@link #getMBeanServerConnection()}.
+     * <p>When {@code delegationSubject} is {@code null}, calling his method
+     * is equivalent to calling {@link #getMBeanServerConnection()}.
+     *
+     * @implSpec The default implementation of this method throws
+     * {@code UnsupportedOperationException} if {@code delegationSubject} is
+     * non-null. Otherwise it calls {@link getMBeanServerConnection()}.
      *
      * @param delegationSubject must be {@code null}.
      *
