@@ -294,10 +294,20 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rax, 7);
     __ cmpl(rax, Address(rbp, in_bytes(VM_Version::std_cpuid0_offset()))); // Is cpuid(0x7) supported?
     __ jccb(Assembler::greater, ext_cpuid);
-
+    // ECX = 0
     __ xorl(rcx, rcx);
     __ cpuid();
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_offset())));
+    __ movl(Address(rsi, 0), rax);
+    __ movl(Address(rsi, 4), rbx);
+    __ movl(Address(rsi, 8), rcx);
+    __ movl(Address(rsi, 12), rdx);
+
+    // ECX = 1
+    __ movl(rax, 7);
+    __ movl(rcx, 1);
+    __ cpuid();
+    __ lea(rsi, Address(rbp, in_bytes(VM_Version::sef_cpuid7_ecx1_offset())));
     __ movl(Address(rsi, 0), rax);
     __ movl(Address(rsi, 4), rbx);
     __ movl(Address(rsi, 8), rcx);
@@ -958,8 +968,10 @@ void VM_Version::get_processor_features() {
     _features &= ~CPU_AVX512_IFMA;
   }
 
-  if (UseAVX < 2)
+  if (UseAVX < 2) {
     _features &= ~CPU_AVX2;
+    _features &= ~CPU_AVX_IFMA;
+  }
 
   if (UseAVX < 1) {
     _features &= ~CPU_AVX;
@@ -989,6 +1001,7 @@ void VM_Version::get_processor_features() {
       _features &= ~CPU_GFNI;
       _features &= ~CPU_AVX512_BITALG;
       _features &= ~CPU_AVX512_IFMA;
+      _features &= ~CPU_AVX_IFMA;
     }
   }
 
@@ -1345,7 +1358,7 @@ void VM_Version::get_processor_features() {
 #endif // COMPILER2 && ASSERT
 
 #ifdef _LP64
-  if (supports_avx512ifma() && supports_avx512vlbw() && MaxVectorSize >= 64) {
+  if ((supports_avx512ifma() && supports_avx512vlbw()) || supports_avxifma())  {
     if (FLAG_IS_DEFAULT(UsePoly1305Intrinsics)) {
       FLAG_SET_DEFAULT(UsePoly1305Intrinsics, true);
     }
@@ -2936,8 +2949,11 @@ uint64_t VM_Version::CpuidInfo::feature_flags() const {
     result |= CPU_VZEROUPPER;
     if (std_cpuid1_ecx.bits.f16c != 0)
       result |= CPU_F16C;
-    if (sef_cpuid7_ebx.bits.avx2 != 0)
+    if (sef_cpuid7_ebx.bits.avx2 != 0) {
       result |= CPU_AVX2;
+      if (sef_cpuid7_ecx1_eax.bits.avx_ifma != 0)
+        result |= CPU_AVX_IFMA;
+    }
     if (sef_cpuid7_ebx.bits.avx512f != 0 &&
         xem_xcr0_eax.bits.opmask != 0 &&
         xem_xcr0_eax.bits.zmm512 != 0 &&

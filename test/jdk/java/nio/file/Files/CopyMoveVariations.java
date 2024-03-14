@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,17 +70,17 @@ public class CopyMoveVariations {
     private static final boolean SUPPORTS_POSIX_PERMISSIONS;
 
     static {
-        Path tmp = null;
+        Path currentDir = null;
         try {
-            tmp = Files.createTempFile("this", "that");
+            currentDir = Files.createTempFile(Path.of("."), "this", "that");
             SUPPORTS_POSIX_PERMISSIONS =
-                Files.getFileStore(tmp).supportsFileAttributeView("posix");
+                Files.getFileStore(currentDir).supportsFileAttributeView("posix");
         } catch (IOException cause) {
             throw new UncheckedIOException(cause);
         } finally {
-            if (tmp != null) {
+            if (currentDir != null) {
                 try {
-                    Files.delete(tmp);
+                    Files.delete(currentDir);
                 } catch (IOException ignore)  {
                 }
             }
@@ -142,14 +142,15 @@ public class CopyMoveVariations {
         Path source = null;
         Path target = null;
         Path linkTarget = null;
+        Path currentDir = Path.of(".");
         try {
             switch (type) {
                 case FILE ->
-                    source = Files.createTempFile("file", "dat");
+                    source = Files.createTempFile(currentDir, "file", "dat");
                 case DIR ->
-                    source = Files.createTempDirectory("dir");
+                    source = Files.createTempDirectory(currentDir, "dir");
                 case LINK -> {
-                    linkTarget = Files.createTempFile("link", "target");
+                    linkTarget = Files.createTempFile(currentDir, "link", "target");
                     Path link = Path.of("link");
                     source = Files.createSymbolicLink(link, linkTarget);
                 }
@@ -163,7 +164,7 @@ public class CopyMoveVariations {
                 Files.setPosixFilePermissions(source, perms);
 
             if (targetExists)
-                target = Files.createTempFile("file", "target");
+                target = Files.createTempFile(currentDir, "file", "target");
             else
                 target = Path.of("target");
 

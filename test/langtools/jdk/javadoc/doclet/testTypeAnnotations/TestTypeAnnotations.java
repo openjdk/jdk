@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug      8005091 8009686 8025633 8026567 6469562 8071982 8071984 8162363 8175200 8186332 8182765
- *           8187288 8241969 8259216
+ *           8187288 8241969 8259216 8325433
  * @summary  Make sure that type annotations are displayed correctly
  * @library  ../../lib
  * @modules jdk.javadoc/jdk.javadoc.internal.tool
@@ -144,7 +144,17 @@ public class TestTypeAnnotations extends JavadocTester {
                     le="annotation interface in typeannos">@FldB</a> [] <a href="FldC.html" title="a\
                     nnotation interface in typeannos">@FldC</a> <a href="FldA.html" title="annotatio\
                     n interface in typeannos">@FldA</a> []</span>&nbsp;<span class="element-name">ar\
-                    ray2Deep</span></div>""");
+                    ray2Deep</span></div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type"><a href="FldA.html" titl\
+                    e="annotation interface in typeannos">@FldA</a> int</span>&nbsp;<span cl\
+                    ass="element-name">primitive</span></div>""",
+                """
+                    <div class="member-signature"><span class="return-type"><a href="FldA.html" titl\
+                    e="annotation interface in typeannos">@FldA</a> int <a href="FldB.h\
+                    tml" title="annotation interface in typeannos">@FldB</a> []</span>&nbsp;<span cl\
+                    ass="element-name">primitiveArray1Deep</span></div>""");
 
         checkOutput("typeannos/ModifiedScoped.html", true,
                 """
@@ -182,7 +192,18 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <div class="member-signature"><span class="return-type"><a href="MRtnA.html" tit\
                     le="annotation interface in typeannos">@MRtnA</a> java.lang.String[][]</span>&nb\
-                    sp;<span class="element-name">array2</span>()</div>""");
+                    sp;<span class="element-name">array2</span>()</div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MRtnA.html" tit\
+                    le="annotation interface in typeannos">@MRtnA</a> int</span>&nbsp;\
+                    <span class="element-name">primitive</span>()</div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type"><a href="MRtnA.html" tit\
+                    le="annotation interface in typeannos">@MRtnA</a> int <a href="MRtn\
+                    B.html" title="annotation interface in typeannos">@MRtnB</a> []</span>&nbsp;<spa\
+                    n class="element-name">primitiveArray1Deep</span>()</div>""");
 
         checkOutput("typeannos/MtdModifiedScoped.html", true,
                 """
@@ -255,7 +276,20 @@ public class TestTypeAnnotations extends JavadocTester {
                     amA.html" title="annotation interface in typeannos">@ParamA</a> java.lang.String\
                      <a href="ParamB.html" title="annotation interface in typeannos">@ParamB</a> [] \
                     <a href="ParamA.html" title="annotation interface in typeannos">@ParamA</a> []&n\
-                    bsp;a)</span></div>""");
+                    bsp;a)</span></div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
+                    lass="element-name">primitive</span><wbr><span class="parameters">(<a href="Par\
+                    amA.html" title="annotation interface in typeannos">@ParamA</a> int&nbsp;a)</sp\
+                    an></div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
+                    lass="element-name">primitiveArray1Deep</span><wbr><span class="parameters">(<a \
+                    href="ParamA.html" title="annotation interface in typeannos">@ParamA</a> int <a \
+                    href="ParamB.html" title="annotation interface in typeannos">@ParamB</a> []&nbsp\
+                    ;a)</span></div>""");
 
         // Test for type annotations on throws (Throws.java).
         checkOutput("typeannos/ThrDefaultUnmodified.html", true,

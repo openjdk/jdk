@@ -121,12 +121,6 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
                                       _object_space, _gen_counters);
 }
 
-// Assume that the generation has been allocated if its
-// reserved size is not 0.
-bool  PSOldGen::is_allocated() {
-  return virtual_space()->reserved_size() != 0;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
