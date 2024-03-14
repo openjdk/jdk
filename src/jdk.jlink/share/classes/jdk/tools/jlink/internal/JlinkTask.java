@@ -376,11 +376,9 @@ public class JlinkTask {
     // the token for "all modules on the module path"
     private static final String ALL_MODULE_PATH = "ALL-MODULE-PATH";
     private JlinkConfiguration initJlinkConfig() throws BadArgs {
-        // Currently run-time image based jlinks are only used when
-        // the module path is empty. I.e. not specified on the command line
-        // and the 'jmods' folder in JAVA_HOME is not present. This restriction
-        // is so because cases with an external jimage as run-time image based
-        // have not been considered at this point.
+        // run-time image based linking and an empty module path in conjunction
+        // with --keep-packaged-modules doesn't make sense as we are not linking
+        // from packaged modules to begin with.
         if (options.modulePath.isEmpty() && options.packagedModulesPath != null) {
             throw taskHelper.newBadArgs("err.runtime.link.packaged.mods");
         }
@@ -593,8 +591,8 @@ public class JlinkTask {
         // Perform some setup for run-time image based links
         if (config.linkFromRuntimeImage()) {
             // Catch the case where we don't have a linkable runtime. In that
-            // case, fs_java.base_files doesn't exist in the jdk.jlink
-            // module.
+            // case, fs_$m_files don't exist in the jdk.jlink module. Check
+            // existence of the file for the java.base module.
             String resourceName = String.format(RESPATH_PATTERN, "java.base");
             InputStream inStream = JlinkTask.class.getModule().getResourceAsStream(resourceName);
             if (inStream == null) {
