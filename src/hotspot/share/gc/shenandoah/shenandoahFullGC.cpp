@@ -235,12 +235,8 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     phase3_update_references();
 
     phase4_compact_objects(worker_slices);
-  }
 
-  {
-    // Epilogue
-    _preserved_marks->restore(heap->workers());
-    _preserved_marks->reclaim();
+    phase5_epilog();
   }
 
   // Resize metaspace
@@ -280,6 +276,8 @@ public:
     _ctx->capture_top_at_mark_start(r);
     r->clear_live_data();
   }
+
+  bool is_thread_safe() { return true; }
 };
 
 void ShenandoahFullGC::phase1_mark_heap() {
@@ -289,7 +287,7 @@ void ShenandoahFullGC::phase1_mark_heap() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   ShenandoahPrepareForMarkClosure cl;
-  heap->heap_region_iterate(&cl);
+  heap->parallel_heap_region_iterate(&cl);
 
   heap->set_unload_classes(heap->heuristics()->can_unload_classes());
 
@@ -328,7 +326,7 @@ public:
     _from_region = from_region;
   }
 
-  void finish_region() {
+  void finish() {
     assert(_to_region != nullptr, "should not happen");
     _to_region->set_new_top(_compact_point);
   }
@@ -348,7 +346,7 @@ public:
 
     size_t obj_size = p->size();
     if (_compact_point + obj_size > _to_region->end()) {
-      finish_region();
+      finish();
 
       // Object doesn't fit. Pick next empty region and start compacting there.
       ShenandoahHeapRegion* new_to_region;
@@ -400,47 +398,61 @@ public:
     return r->is_stw_move_allowed() && !r->is_humongous();
   }
 
-  void work(uint worker_id) {
-    ShenandoahParallelWorkerSession worker_session(worker_id);
-    ShenandoahHeapRegionSet* slice = _worker_slices[worker_id];
-    ShenandoahHeapRegionSetIterator it(slice);
-    ShenandoahHeapRegion* from_region = it.next();
-    // No work?
-    if (from_region == nullptr) {
-       return;
-    }
-
-    // Sliding compaction. Walk all regions in the slice, and compact them.
-    // Remember empty regions and reuse them as needed.
-    ResourceMark rm;
-
-    GrowableArray<ShenandoahHeapRegion*> empty_regions((int)_heap->num_regions());
-
-    ShenandoahPrepareForCompactionObjectClosure cl(_preserved_marks->get(worker_id), empty_regions, from_region);
-
-    while (from_region != nullptr) {
-      assert(is_candidate_region(from_region), "Sanity");
-
-      cl.set_from_region(from_region);
-      if (from_region->has_live()) {
-        _heap->marked_object_iterate(from_region, &cl);
-      }
-
-      // Compacted the region to somewhere else? From-region is empty then.
-      if (!cl.is_compact_same_region()) {
-        empty_regions.append(from_region);
-      }
-      from_region = it.next();
-    }
-    cl.finish_region();
-
-    // Mark all remaining regions as empty
-    for (int pos = cl.empty_regions_pos(); pos < empty_regions.length(); ++pos) {
-      ShenandoahHeapRegion* r = empty_regions.at(pos);
-      r->set_new_top(r->bottom());
-    }
-  }
+  void work(uint worker_id) override;
+private:
+  template<typename ClosureType>
+  void prepare_for_compaction(ClosureType& cl,
+                              GrowableArray<ShenandoahHeapRegion*>& empty_regions,
+                              ShenandoahHeapRegionSetIterator& it,
+                              ShenandoahHeapRegion* from_region);
 };
+
+void ShenandoahPrepareForCompactionTask::work(uint worker_id) {
+  ShenandoahParallelWorkerSession worker_session(worker_id);
+  ShenandoahHeapRegionSet* slice = _worker_slices[worker_id];
+  ShenandoahHeapRegionSetIterator it(slice);
+  ShenandoahHeapRegion* from_region = it.next();
+  // No work?
+  if (from_region == nullptr) {
+    return;
+  }
+
+  // Sliding compaction. Walk all regions in the slice, and compact them.
+  // Remember empty regions and reuse them as needed.
+  ResourceMark rm;
+
+  GrowableArray<ShenandoahHeapRegion*> empty_regions((int)_heap->num_regions());
+
+  ShenandoahPrepareForCompactionObjectClosure cl(_preserved_marks->get(worker_id), empty_regions, from_region);
+  prepare_for_compaction(cl, empty_regions, it, from_region);
+}
+
+template<typename ClosureType>
+void ShenandoahPrepareForCompactionTask::prepare_for_compaction(ClosureType& cl,
+                                                                GrowableArray<ShenandoahHeapRegion*>& empty_regions,
+                                                                ShenandoahHeapRegionSetIterator& it,
+                                                                ShenandoahHeapRegion* from_region) {
+  while (from_region != nullptr) {
+    assert(is_candidate_region(from_region), "Sanity");
+    cl.set_from_region(from_region);
+    if (from_region->has_live()) {
+      _heap->marked_object_iterate(from_region, &cl);
+    }
+
+    // Compacted the region to somewhere else? From-region is empty then.
+    if (!cl.is_compact_same_region()) {
+      empty_regions.append(from_region);
+    }
+    from_region = it.next();
+  }
+  cl.finish();
+
+  // Mark all remaining regions as empty
+  for (int pos = cl.empty_regions_pos(); pos < empty_regions.length(); ++pos) {
+    ShenandoahHeapRegion* r = empty_regions.at(pos);
+    r->set_new_top(r->bottom());
+  }
+}
 
 void ShenandoahFullGC::calculate_target_humongous_objects() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
@@ -948,7 +960,7 @@ void ShenandoahFullGC::compact_humongous_objects() {
   //
   // This code is serial, because doing the in-slice parallel sliding is tricky. In most cases,
   // humongous regions are already compacted, and do not require further moves, which alleviates
-  // sliding costs. We may consider doing this in parallel in future.
+  // sliding costs. We may consider doing this in parallel in the future.
 
   ShenandoahHeap* heap = ShenandoahHeap::heap();
 
@@ -1054,6 +1066,11 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_humong);
     compact_humongous_objects();
   }
+}
+
+void ShenandoahFullGC::phase5_epilog() {
+  GCTraceTime(Info, gc, phases) time("Phase 5: Full GC epilog", _gc_timer);
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
 
   // Reset complete bitmap. We're about to reset the complete-top-at-mark-start pointer
   // and must ensure the bitmap is in sync.
@@ -1066,14 +1083,15 @@ void ShenandoahFullGC::phase4_compact_objects(ShenandoahHeapRegionSet** worker_s
   // Bring regions in proper states after the collection, and set heap properties.
   {
     ShenandoahGCPhase phase(ShenandoahPhaseTimings::full_gc_copy_objects_rebuild);
-
     ShenandoahPostCompactClosure post_compact;
     heap->heap_region_iterate(&post_compact);
     heap->set_used(post_compact.get_live());
 
     heap->collection_set()->clear();
     heap->free_set()->rebuild();
+    heap->clear_cancelled_gc();
   }
 
-  heap->clear_cancelled_gc();
+  _preserved_marks->restore(heap->workers());
+  _preserved_marks->reclaim();
 }

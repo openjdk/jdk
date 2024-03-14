@@ -279,6 +279,15 @@ class VM_Version : public Abstract_VM_Version {
     } bits;
   };
 
+  union SefCpuid7Ecx1Eax {
+    uint32_t value;
+    struct {
+      uint32_t             : 23,
+                  avx_ifma : 1,
+                           : 8;
+    } bits;
+  };
+
   union ExtCpuid1EEbx {
     uint32_t value;
     struct {
@@ -390,7 +399,8 @@ protected:
     decl(OSPKE,             "ospke",             55) /* OS enables protection keys */ \
     decl(CET_IBT,           "cet_ibt",           56) /* Control Flow Enforcement - Indirect Branch Tracking */ \
     decl(CET_SS,            "cet_ss",            57) /* Control Flow Enforcement - Shadow Stack */ \
-    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/
+    decl(AVX512_IFMA,       "avx512_ifma",       58) /* Integer Vector FMA instructions*/ \
+    decl(AVX_IFMA,          "avx_ifma",          59) /* 256-bit VEX-coded variant of AVX512-IFMA*/
 
 #define DECLARE_CPU_FEATURE_FLAG(id, name, bit) CPU_##id = (1ULL << bit),
     CPU_FEATURE_FLAGS(DECLARE_CPU_FEATURE_FLAG)
@@ -449,10 +459,13 @@ protected:
     uint32_t     dcp_cpuid4_edx; // unused currently
 
     // cpuid function 7 (structured extended features)
+    // ECX = 0 before calling cpuid()
     SefCpuid7Eax sef_cpuid7_eax;
     SefCpuid7Ebx sef_cpuid7_ebx;
     SefCpuid7Ecx sef_cpuid7_ecx;
     SefCpuid7Edx sef_cpuid7_edx;
+    // ECX = 1 before calling cpuid()
+    SefCpuid7Ecx1Eax sef_cpuid7_ecx1_eax;
 
     // cpuid function 0xB (processor topology)
     // ecx = 0
@@ -571,6 +584,7 @@ public:
   static ByteSize std_cpuid1_offset() { return byte_offset_of(CpuidInfo, std_cpuid1_eax); }
   static ByteSize dcp_cpuid4_offset() { return byte_offset_of(CpuidInfo, dcp_cpuid4_eax); }
   static ByteSize sef_cpuid7_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_eax); }
+  static ByteSize sef_cpuid7_ecx1_offset() { return byte_offset_of(CpuidInfo, sef_cpuid7_ecx1_eax); }
   static ByteSize ext_cpuid1_offset() { return byte_offset_of(CpuidInfo, ext_cpuid1_eax); }
   static ByteSize ext_cpuid5_offset() { return byte_offset_of(CpuidInfo, ext_cpuid5_eax); }
   static ByteSize ext_cpuid7_offset() { return byte_offset_of(CpuidInfo, ext_cpuid7_eax); }
@@ -677,6 +691,7 @@ public:
   static bool supports_evex()         { return (_features & CPU_AVX512F) != 0; }
   static bool supports_avx512dq()     { return (_features & CPU_AVX512DQ) != 0; }
   static bool supports_avx512ifma()   { return (_features & CPU_AVX512_IFMA) != 0; }
+  static bool supports_avxifma()      { return (_features & CPU_AVX_IFMA) != 0; }
   static bool supports_avx512pf()     { return (_features & CPU_AVX512PF) != 0; }
   static bool supports_avx512er()     { return (_features & CPU_AVX512ER) != 0; }
   static bool supports_avx512cd()     { return (_features & CPU_AVX512CD) != 0; }

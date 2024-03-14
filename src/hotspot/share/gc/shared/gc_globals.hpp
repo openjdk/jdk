@@ -168,11 +168,6 @@
           "A System.gc() request invokes a concurrent collection; "         \
           "(effective only when using concurrent collectors)")              \
                                                                             \
-  product(uint, GCLockerEdenExpansionPercent, 5,                            \
-          "How much the GC can expand the eden by while the GC locker "     \
-          "is active (as a percentage)")                                    \
-          range(0, 100)                                                     \
-                                                                            \
   product(uintx, GCLockerRetryAllocationCount, 2, DIAGNOSTIC,               \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
@@ -213,13 +208,13 @@
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
-          "Maximum size of marking stack")                                  \
-          range(1, (INT_MAX - 1))                                          \
+          "Maximum size of marking stack in bytes.")                        \
+          range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
-          "Size of marking stack")                                          \
+          "Size of marking stack in bytes.")                                \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
-          range(1, (INT_MAX - 1))                                          \
+          range(1, (INT_MAX - 1))                                           \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
@@ -284,13 +279,6 @@
           "Number of object array elements to push onto the marking stack " \
           "before pushing a continuation entry")                            \
                                                                             \
-  develop(bool, MetadataAllocationFailALot, false,                          \
-          "Fail metadata allocations at intervals controlled by "           \
-          "MetadataAllocationFailALotInterval")                             \
-                                                                            \
-  develop(uintx, MetadataAllocationFailALotInterval, 1000,                  \
-          "Metadata allocation failure a lot interval")                     \
-                                                                            \
   product_pd(bool, NeverActAsServerClassMachine,                            \
           "Never act like a server-class machine")                          \
                                                                             \
@@ -344,10 +332,6 @@
                                                                             \
   product(bool, UseAdaptiveSizePolicyWithSystemGC, false,                   \
           "Include statistics from System.gc() for adaptive size policy")   \
-                                                                            \
-  develop(intx, PSAdaptiveSizePolicyResizeVirtualSpaceAlot, -1,             \
-          "Resize the virtual spaces of the young or old generations")      \
-          range(-1, 1)                                                      \
                                                                             \
   product(uint, AdaptiveSizeThroughPutPolicy, 0,                            \
           "Policy for changing generation size for throughput goals")       \

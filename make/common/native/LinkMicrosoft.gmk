@@ -27,18 +27,6 @@
 # This file contains functionality related to linking a native binary;
 # creating either a dynamic library, a static library or an executable.
 
-
-################################################################################
-define SetupLinkingMicrosoft
-  ifneq ($(DISABLE_MAPFILES), true)
-    $1_REAL_MAPFILE := $$($1_MAPFILE)
-  endif
-
-  ifneq ($$($1_REAL_MAPFILE), )
-    $1_EXTRA_LDFLAGS += $(call SET_SHARED_LIBRARY_MAPFILE,$$($1_REAL_MAPFILE))
-  endif
-endef
-
 ################################################################################
 define CreateLinkedResultMicrosoft
   ifeq ($$($1_TYPE), STATIC_LIBRARY)
@@ -99,7 +87,7 @@ define CreateDynamicLibraryOrExecutableMicrosoft
       $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
   $1_TARGET_DEPS := $$($1_ALL_OBJS) $$($1_RES) $$($1_MANIFEST) \
-      $$($1_REAL_MAPFILE) $$($1_VARDEPS_FILE)
+      $$($1_VARDEPS_FILE)
 
   $$($1_TARGET): $$($1_TARGET_DEPS)
         ifneq ($$($1_OBJ_FILE_LIST), )

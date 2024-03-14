@@ -71,7 +71,8 @@ ifeq ($(call check-jvm-feature, compiler2), true)
   $(eval $(call SetupNativeCompilation, BUILD_ADLC, \
       NAME := adlc, \
       TYPE := EXECUTABLE, \
-      TOOLCHAIN := TOOLCHAIN_BUILD_LINK_CXX, \
+      TARGET_TYPE := BUILD, \
+      LINK_TYPE := C++, \
       SRC := $(TOPDIR)/src/hotspot/share/adlc, \
       EXTRA_FILES := $(TOPDIR)/src/hotspot/share/opto/opcodes.cpp, \
       CFLAGS := $(ADLC_CFLAGS) $(ADLC_CFLAGS_WARNINGS), \

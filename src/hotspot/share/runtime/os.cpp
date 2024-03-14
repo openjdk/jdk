@@ -1892,7 +1892,16 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
   char* const absolute_max = (char*)(NOT_LP64(G * 3) LP64_ONLY(G * 128 * 1024));
   char* const absolute_min = (char*) os::vm_min_address();
 
-  const size_t alignment_adjusted = MAX2(alignment, os::vm_allocation_granularity());
+  // AIX is the only platform that uses System V shm for reserving virtual memory.
+  // In this case, the required alignment of the allocated size (64K) and the alignment
+  // of possible start points of the memory region (256M) differ.
+  // This is not reflected by os_allocation_granularity().
+  // The logic here is dual to the one in pd_reserve_memory in os_aix.cpp
+  const size_t system_allocation_granularity =
+    AIX_ONLY(os::vm_page_size() == 4*K ? 4*K : 256*M)
+    NOT_AIX(os::vm_allocation_granularity());
+
+  const size_t alignment_adjusted = MAX2(alignment, system_allocation_granularity);
 
   // Calculate first and last possible attach points:
   char* const lo_att = align_up(MAX2(absolute_min, min), alignment_adjusted);
@@ -2062,10 +2071,10 @@ bool os::uncommit_memory(char* addr, size_t bytes, bool executable) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::uncommit);
+    ThreadCritical tc;
     res = pd_uncommit_memory(addr, bytes, executable);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_uncommit((address)addr, bytes);
     }
   } else {
     res = pd_uncommit_memory(addr, bytes, executable);
@@ -2077,11 +2086,10 @@ bool os::release_memory(char* addr, size_t bytes) {
   assert_nonempty_range(addr, bytes);
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory(addr, bytes);
@@ -2161,10 +2169,10 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
 bool os::unmap_memory(char *addr, size_t bytes) {
   bool result;
   if (MemTracker::enabled()) {
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     result = pd_unmap_memory(addr, bytes);
     if (result) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     result = pd_unmap_memory(addr, bytes);
@@ -2197,11 +2205,10 @@ char* os::reserve_memory_special(size_t size, size_t alignment, size_t page_size
 bool os::release_memory_special(char* addr, size_t bytes) {
   bool res;
   if (MemTracker::enabled()) {
-    // Note: Tracker contains a ThreadCritical.
-    Tracker tkr(Tracker::release);
+    ThreadCritical tc;
     res = pd_release_memory_special(addr, bytes);
     if (res) {
-      tkr.record((address)addr, bytes);
+      MemTracker::record_virtual_memory_release((address)addr, bytes);
     }
   } else {
     res = pd_release_memory_special(addr, bytes);
