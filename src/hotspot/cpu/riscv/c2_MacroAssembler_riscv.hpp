@@ -276,7 +276,7 @@
   }
 
   void integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
-                        VectorRegister src, BasicType src_bt);
+                        VectorRegister src, BasicType src_bt, bool is_signed);
 
   void integer_narrow_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
                         VectorRegister src, BasicType src_bt);
