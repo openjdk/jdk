@@ -44,6 +44,7 @@ public class NonFocusablePopupMenuTest extends Frame {
     volatile Point pos;
     volatile Dimension size;
     volatile int selection1, selection2;
+
     public void performTest() throws AWTException,
             InterruptedException, InvocationTargetException {
         Robot robot = new Robot();
@@ -57,7 +58,7 @@ public class NonFocusablePopupMenuTest extends Frame {
             choice.setFocusable(false);
             this.add(choice);
             this.setLayout(new FlowLayout());
-            setSize (200,200);
+            setSize (200, 200);
             setLocationRelativeTo(null);
             setVisible(true);
         });
@@ -65,8 +66,6 @@ public class NonFocusablePopupMenuTest extends Frame {
         EventQueue.invokeAndWait(() -> {
             pos = choice.getLocationOnScreen();
             size = choice.getSize();
-        });
-        EventQueue.invokeAndWait(() -> {
             selection1 = choice.getSelectedIndex();
         });
         robot.mouseMove(pos.x + size.width / 2, pos.y + size.height / 2);
@@ -80,8 +79,6 @@ public class NonFocusablePopupMenuTest extends Frame {
         robot.waitForIdle();
         EventQueue.invokeAndWait(() -> {
             selection2 = choice.getSelectedIndex();
-        });
-        EventQueue.invokeAndWait(() -> {
             setVisible(false);
             dispose();
         });
