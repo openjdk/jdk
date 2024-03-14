@@ -21,12 +21,12 @@
  * questions.
  */
 
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Panel;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 /*
  * @test
