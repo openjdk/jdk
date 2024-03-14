@@ -227,6 +227,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
     // MBeanServerConnection Wrapper
     //-------------------------------------------------------------------------
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
                                       Subject delegationSubject)
@@ -269,6 +270,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
                                       ObjectName loaderName,
@@ -317,6 +319,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                       ObjectName name,
@@ -377,6 +380,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public ObjectInstance createMBean(String className,
                                  ObjectName name,
@@ -444,6 +448,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void unregisterMBean(ObjectName name, Subject delegationSubject)
         throws
         InstanceNotFoundException,
@@ -472,6 +477,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public ObjectInstance getObjectInstance(ObjectName name,
                                             Subject delegationSubject)
         throws
@@ -502,6 +508,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectInstance>
         queryMBeans(ObjectName name,
@@ -537,6 +544,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Set<ObjectName>
         queryNames(ObjectName name,
@@ -572,6 +580,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public boolean isRegistered(ObjectName name,
                                 Subject delegationSubject) throws IOException {
         try {
@@ -589,6 +598,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public Integer getMBeanCount(Subject delegationSubject)
         throws IOException {
         try {
@@ -610,6 +620,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public Object getAttribute(ObjectName name,
                                String attribute,
                                Subject delegationSubject)
@@ -647,6 +658,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public AttributeList getAttributes(ObjectName name,
                                        String[] attributes,
                                        Subject delegationSubject)
@@ -679,6 +691,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void setAttribute(ObjectName name,
                              MarshalledObject attribute,
@@ -732,6 +745,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public AttributeList setAttributes(ObjectName name,
                          MarshalledObject attributes,
@@ -778,6 +792,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Object invoke(ObjectName name,
                          String operationName,
@@ -835,6 +850,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public String getDefaultDomain(Subject delegationSubject)
         throws IOException {
         try {
@@ -856,6 +872,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public String[] getDomains(Subject delegationSubject) throws IOException {
         try {
             final Object params[] = new Object[] { };
@@ -876,6 +893,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public MBeanInfo getMBeanInfo(ObjectName name, Subject delegationSubject)
         throws
         InstanceNotFoundException,
@@ -911,6 +929,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public boolean isInstanceOf(ObjectName name,
                                 String className,
                                 Subject delegationSubject)
@@ -941,6 +960,8 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public Integer[] addNotificationListeners(ObjectName[] names,
                       MarshalledObject[] filters,
@@ -1029,6 +1050,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void addNotificationListener(ObjectName name,
                        ObjectName listener,
@@ -1088,6 +1110,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void removeNotificationListeners(ObjectName name,
                                             Integer[] listenerIDs,
                                             Subject delegationSubject)
@@ -1129,6 +1152,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     public void removeNotificationListener(ObjectName name,
                                            ObjectName listener,
                                            Subject delegationSubject)
@@ -1165,6 +1189,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("rawtypes")  // MarshalledObject
     public void removeNotificationListener(ObjectName name,
                         ObjectName listener,
@@ -1367,6 +1392,7 @@ public class RMIConnectionImpl implements RMIConnection, Unreferenced {
         }
     }
 
+    /** @throws UnsupportedOperationException {@inheritDoc} */
     @SuppressWarnings("removal")
     private Object doPrivilegedOperation(final int operation,
                                          final Object[] params,
