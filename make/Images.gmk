@@ -131,8 +131,8 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   JLINK_RUNTIME_CREATE_ARG += -J--add-exports=jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME)
   JLINK_RUNTIME_CREATE_ARG += --create-linkable-runtime jimage=$(JDK_LINK_OUTPUT_DIR)/lib/modules:module-path=$(IMAGES_OUTPUTDIR)/jmods
 
-  # Compile jdk.jlink_build_runlink.jar with the 'buildjdk' compiler, as it
-  # uses classes from the just built jdk.jlink module
+  # Compile $(RL_BUILD_MODULE_NAME) classes with the 'buildjdk' compiler, as it
+  # needs classes from the just built jdk.jlink module
   $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
       COMPILER := buildjdk, \
       DISABLED_WARNINGS := try, \
