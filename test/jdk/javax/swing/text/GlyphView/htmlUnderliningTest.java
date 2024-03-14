@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,48 @@
  * questions.
  */
 
-/* @test
-   @bug 4984669 8002148
-   @summary Tests HTML underlining
-   @author Peter Zhelezniakov
-   @run applet/manual=yesno bug4984669.html
-*/
-import javax.swing.*;
-import javax.swing.text.*;
+import javax.swing.JEditorPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.text.MutableAttributeSet;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledEditorKit;
 
-public class bug4984669 extends JApplet
-{
-    public void init() {
+/* @test
+ * @bug 4984669 8002148
+ * @summary Tests HTML underlining
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual htmlUnderliningTest
+ */
+
+public class htmlUnderliningTest {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                The four lines printed in a bold typeface should all be underlined.
+                It is a bug if any of these lines is underlined only partially.
+                The very first line should not be underlined at all.
+                """;
+
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(4)
+                .columns(35)
+                .splitUI(htmlUnderliningTest::initializeTest)
+                .build()
+                .awaitAndCheck();
+    }
+
+    public static JPanel initializeTest() {
+        JPanel panel = new JPanel();
         JEditorPane pane = new JEditorPane();
-        this.getContentPane().add(new JScrollPane(pane));
+        panel.add(new JScrollPane(pane));
         pane.setEditorKit(new StyledEditorKit());
 
         try {
-            pane.getDocument().insertString(0,"12   \n",null);
+            pane.getDocument().insertString(0, "12   \n", null);
             MutableAttributeSet attrs = new SimpleAttributeSet();
 
             StyleConstants.setFontSize(attrs, 36);
@@ -51,5 +75,6 @@ public class bug4984669 extends JApplet
         } catch (Exception e) {
             throw new Error("Failed: Unexpected Exception", e);
         }
+        return panel;
     }
 }
