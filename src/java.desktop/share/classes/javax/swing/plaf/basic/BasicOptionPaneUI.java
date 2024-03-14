@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1101,7 +1101,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         /**
          * Returns if the width of children should be synchronized.
          *
-         * @return if the width of children should be synchronized
+         * @return {@code true} if the width of children should be synchronized,
+         *         otherwise {@code false}
          */
         public boolean getSyncAllWidths() {
             return syncAllWidths;

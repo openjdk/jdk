@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,7 +165,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
          * The result of this method is undefined if this is an output
          * location.
          *
-         * @implNote This implementation returns true if the name includes
+         * @implSpec This implementation returns true if the name includes
          * the word "MODULE".
          *
          * @return true if this location is expected to contain modules

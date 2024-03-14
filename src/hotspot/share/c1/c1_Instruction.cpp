@@ -586,6 +586,8 @@ void BlockBegin::substitute_sux(BlockBegin* old_sux, BlockBegin* new_sux) {
 // of the inserted block, without recomputing the values of the other blocks
 // in the CFG. Therefore the value of "depth_first_number" in BlockBegin becomes meaningless.
 BlockBegin* BlockBegin::insert_block_between(BlockBegin* sux) {
+  assert(!sux->is_set(critical_edge_split_flag), "sanity check");
+
   int bci = sux->bci();
   // critical edge splitting may introduce a goto after a if and array
   // bound check elimination may insert a predicate between the if and

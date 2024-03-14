@@ -60,7 +60,7 @@ define_pd_global(bool,  VMContinuations, true);
 
 // Use large code-entry alignment.
 define_pd_global(uintx, CodeCacheSegmentSize,  128);
-define_pd_global(intx,  CodeEntryAlignment,    128);
+define_pd_global(intx,  CodeEntryAlignment,    64);
 define_pd_global(intx,  OptoLoopAlignment,     16);
 define_pd_global(intx,  InlineSmallCode,       1500);
 

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -856,6 +856,11 @@ else
   BUILD_HOTSPOT_JTREG_EXCLUDE += libtest-rw.c libtest-rwx.c \
       exeinvoke.c exestack-gap.c exestack-tls.c libAsyncGetCallTraceTest.cpp
 endif
+
+ifeq ($(call And, $(call isTargetOs, linux) $(call isTargetCpu, aarch64)), false)
+  BUILD_HOTSPOT_JTREG_EXCLUDE += libTestSVEWithJNI.c
+endif
+
 
 BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 

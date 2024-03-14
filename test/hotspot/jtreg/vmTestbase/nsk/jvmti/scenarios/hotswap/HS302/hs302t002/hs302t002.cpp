@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,9 +22,9 @@
  */
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
-#include "jvmti_tools.h"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
@@ -42,7 +42,7 @@ void JNICALL callbackClassPrepare(jvmtiEnv *jvmti_env,
   jvmti_env->GetClassSignature(klass, &className, &generic);
   if (strcmp(className,CLASS_NAME) == 0) {
       char fileName[512];
-      nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, NULL);
+      nsk_jvmti_disableNotification(jvmti_env, JVMTI_EVENT_CLASS_PREPARE, nullptr);
       nsk_jvmti_getFileName(redefineNumber, FILE_NAME, fileName, sizeof(fileName)/sizeof(char));
       if (nsk_jvmti_redefineClass(jvmti_env, klass, fileName)) {
           nsk_printf("Redefine successful ..\n");
@@ -94,7 +94,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, nullptr)) {
             nsk_printf(" Enabled. noftification..");
         } else {
             nsk_printf(" Failed to Enable ..");

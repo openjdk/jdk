@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,8 @@ NOT_PRODUCT(option(TraceEscapeAnalysis, "TraceEscapeAnalysis", Bool)) \
 NOT_PRODUCT(option(PrintIdeal, "PrintIdeal", Bool))  \
 NOT_PRODUCT(option(PrintIdealPhase, "PrintIdealPhase", Ccstrlist)) \
 NOT_PRODUCT(option(IGVPrintLevel, "IGVPrintLevel", Intx)) \
+NOT_PRODUCT(option(TraceAutoVectorization, "TraceAutoVectorization", Ccstrlist)) \
   option(Vectorize, "Vectorize", Bool) \
-  option(VectorizeDebug, "VectorizeDebug", Uintx) \
   option(CloneMapDebug, "CloneMapDebug", Bool) \
   option(IncrementalInlineForceCleanup, "IncrementalInlineForceCleanup", Bool) \
   option(MaxNodeLimit, "MaxNodeLimit", Intx)  \

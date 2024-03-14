@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -216,9 +218,11 @@ public class PackageUseWriter extends SubWriterHolderWriter {
 
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
-        Content linkContent = getModuleLink(utils.elementUtils.getModuleOf(element),
-                contents.moduleLabel);
-        return super.getNavBar(pageMode, element)
-                .setNavLinkModule(linkContent);
+        List<Content> subnavLinks = new ArrayList<>();
+        if (configuration.showModules) {
+            subnavLinks.add(getBreadcrumbLink(utils.elementUtils.getModuleOf(packageElement), false));
+        }
+        subnavLinks.add(getBreadcrumbLink(packageElement, true));
+        return super.getNavBar(pageMode, element).setSubNavLinks(subnavLinks);
     }
 }

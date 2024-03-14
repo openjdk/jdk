@@ -107,6 +107,7 @@ $(eval $(call SetupJavaCompilation, BUILD_JDK_MICROBENCHMARK, \
         --add-exports java.base/sun.invoke.util=ALL-UNNAMED \
         --add-exports java.base/sun.security.util=ALL-UNNAMED \
         --enable-preview \
+        -XDsuppressNotes \
         -processor org.openjdk.jmh.generators.BenchmarkProcessor, \
     JAVA_FLAGS := \
         --add-exports java.base/jdk.internal.vm=ALL-UNNAMED \

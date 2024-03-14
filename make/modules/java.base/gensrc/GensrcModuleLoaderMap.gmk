@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,8 +37,9 @@ $(strip \
 endef
 BOOT_MODULES_LIST := $(call SubstComma, $(BOOT_MODULES))
 PLATFORM_MODULES_LIST := $(call SubstComma, $(PLATFORM_MODULES))
+NATIVE_ACCESS_MODULES_LIST := $(call SubstComma, $(NATIVE_ACCESS_MODULES))
 
-VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST)
+VARDEPS_VALUE := $(BOOT_MODULES_LIST) $(PLATFORM_MODULES_LIST) $(NATIVE_ACCESS_MODULES_LIST)
 VARDEPS_FILE := $(call DependOnVariable, VARDEPS_VALUE)
 
 ############################################################################
@@ -49,7 +50,9 @@ $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java: 
 	$(call MakeTargetDir)
 	$(RM) $@ $@.tmp
 	$(TOOL_GENCLASSLOADERMAP) -boot $(BOOT_MODULES_LIST) \
-	     -platform $(PLATFORM_MODULES_LIST) -o $@.tmp $<
+	     -platform $(PLATFORM_MODULES_LIST) \
+	     -native-access $(NATIVE_ACCESS_MODULES_LIST) \
+	     -o $@.tmp $<
 	$(MV) $@.tmp $@
 
 TARGETS += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/jdk/internal/module/ModuleLoaderMap.java
