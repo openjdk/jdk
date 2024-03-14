@@ -27,6 +27,7 @@
 
 #include "code/compiledMethod.hpp"
 
+class CompiledICData;
 class CompileTask;
 class DepChange;
 class DirectiveSet;
@@ -196,6 +197,7 @@ class nmethod : public CompiledMethod {
   address _verified_entry_point;             // entry point without class check
   address _osr_entry_point;                  // entry point for on stack replacement
 
+  CompiledICData* _compiled_ic_data;
   bool _is_unlinked;
 
   // Shared fields for all nmethod's
@@ -604,7 +606,7 @@ public:
   // verify operations
   void verify();
   void verify_scopes();
-  void verify_interrupt_point(address interrupt_point);
+  void verify_interrupt_point(address interrupt_point, bool is_inline_cache);
 
   // Disassemble this nmethod with additional debug information, e.g. information about blocks.
   void decode2(outputStream* st) const;
@@ -699,13 +701,7 @@ public:
 
   virtual void metadata_do(MetadataClosure* f);
 
-  NativeCallWrapper* call_wrapper_at(address call) const;
-  NativeCallWrapper* call_wrapper_before(address return_pc) const;
   address call_instruction_address(address pc) const;
-
-  virtual CompiledStaticCall* compiledStaticCall_at(Relocation* call_site) const;
-  virtual CompiledStaticCall* compiledStaticCall_at(address addr) const;
-  virtual CompiledStaticCall* compiledStaticCall_before(address addr) const;
 
   virtual void  make_deoptimized();
   void finalize_relocations();

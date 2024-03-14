@@ -292,6 +292,7 @@ public class ClassWriter extends ClassVisitor {
       *     do not affect methods that are copied as is in the new class. This means that neither the
       *     maximum stack size nor the stack frames will be computed for these methods</i>.
       */
+    @SuppressWarnings("this-escape")
     public ClassWriter(final ClassReader classReader, final int flags) {
         super(/* latest api = */ Opcodes.ASM9);
         this.flags = flags;

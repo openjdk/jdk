@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023, Red Hat Inc.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,7 +82,7 @@ public class TestHugePageDecisionsAtVMStartup {
         // Note: If something goes wrong, the JVM warns but continues, so we should never see an exit value != 0
         out.shouldHaveExitValue(0);
 
-        // Static hugepages:
+        // Explicit hugepages:
         // Let X = the default hugepage size of the system (the one in /proc/meminfo).
         // The JVM will cycle through page sizes, starting at X, down to the smallest hugepage size.
         //
@@ -95,14 +95,14 @@ public class TestHugePageDecisionsAtVMStartup {
         // This picture gets more complex with -XX:LargePageSizeInBytes, which overrides the default
         // large page size; but we ignore this for now (feel free to extend the test to cover LBSiB too).
 
-        boolean haveUsableStaticHugePages = false;
-        if (configuration.supportsStaticHugePages()) {
-            long defaultLargePageSize = configuration.getStaticDefaultHugePageSize();
-            Set<HugePageConfiguration.StaticHugePageConfig> configs = configuration.getStaticHugePageConfigurations();
-            for (HugePageConfiguration.StaticHugePageConfig config: configs) {
+        boolean haveUsableExplicitHugePages = false;
+        if (configuration.supportsExplicitHugePages()) {
+            long defaultLargePageSize = configuration.getExplicitDefaultHugePageSize();
+            Set<HugePageConfiguration.ExplicitHugePageConfig> configs = configuration.getExplicitHugePageConfigurations();
+            for (HugePageConfiguration.ExplicitHugePageConfig config: configs) {
                 if (config.pageSize <= defaultLargePageSize) {
                     if (config.nr_hugepages > 0 || config.nr_overcommit_hugepages > 0) {
-                        haveUsableStaticHugePages = true; break;
+                        haveUsableExplicitHugePages = true; break;
                     }
                 }
             }
@@ -115,17 +115,18 @@ public class TestHugePageDecisionsAtVMStartup {
         if (!useLP) {
             out.shouldContain("[info][pagesize] Large page support disabled");
         } else if (useLP && !useTHP &&
-                 (!configuration.supportsStaticHugePages() || !haveUsableStaticHugePages)) {
+                 (!configuration.supportsExplicitHugePages() || !haveUsableExplicitHugePages)) {
             out.shouldContain(warningNoLP);
         } else if (useLP && useTHP && !configuration.supportsTHP()) {
             out.shouldContain(warningNoTHP);
         } else if (useLP && !useTHP &&
-                 configuration.supportsStaticHugePages() && haveUsableStaticHugePages) {
-            out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getStaticDefaultHugePageSize()));
+                 configuration.supportsExplicitHugePages() && haveUsableExplicitHugePages) {
+            out.shouldContain("[info][pagesize] Using the default large page size: " + buildSizeString(configuration.getExplicitDefaultHugePageSize()));
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=0");
             out.shouldContain("[info][pagesize] Large page support enabled");
         } else if (useLP && useTHP && configuration.supportsTHP()) {
-            String thpPageSizeString = buildSizeString(configuration.getThpPageSize());
+            long thpPageSize = configuration.getThpPageSizeOrFallback();
+            String thpPageSizeString = buildSizeString(thpPageSize);
             // We expect to see exactly two "Usable page sizes" :  the system page size and the THP page size. The system
             // page size differs, but its always in KB).
             out.shouldContain("[info][pagesize] UseLargePages=1, UseTransparentHugePages=1");

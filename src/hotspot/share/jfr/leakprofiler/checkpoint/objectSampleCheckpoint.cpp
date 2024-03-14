@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -205,6 +205,15 @@ static bool stack_trace_precondition(const ObjectSample* sample) {
   return sample->has_stack_trace_id() && !sample->is_dead();
 }
 
+static void add_to_leakp_set(const ObjectSample* sample) {
+  assert(sample != nullptr, "invariant");
+  oop object = sample->object();
+  if (object == nullptr) {
+    return;
+  }
+  JfrTraceId::load_leakp(object->klass());
+}
+
 class StackTraceBlobInstaller {
  private:
   BlobCache _cache;
@@ -214,11 +223,9 @@ class StackTraceBlobInstaller {
   StackTraceBlobInstaller() : _cache(JfrOptionSet::old_object_queue_size()) {
     prepare_for_resolution();
   }
-  ~StackTraceBlobInstaller() {
-    JfrStackTraceRepository::clear_leak_profiler();
-  }
   void sample_do(ObjectSample* sample) {
     if (stack_trace_precondition(sample)) {
+      add_to_leakp_set(sample);
       install(sample);
     }
   }
@@ -270,11 +277,14 @@ void ObjectSampleCheckpoint::on_rotation(const ObjectSampler* sampler) {
   assert(LeakProfiler::is_running(), "invariant");
   JavaThread* const thread = JavaThread::current();
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(thread);)
-  // can safepoint here
-  ThreadInVMfromNative transition(thread);
-  MutexLocker lock(ClassLoaderDataGraph_lock);
-  // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
-  install_stack_traces(sampler);
+  {
+    // can safepoint here
+    ThreadInVMfromNative transition(thread);
+    MutexLocker lock(ClassLoaderDataGraph_lock);
+    // the lock is needed to ensure the unload lists do not grow in the middle of inspection.
+    install_stack_traces(sampler);
+  }
+  JfrStackTraceRepository::clear_leak_profiler();
 }
 
 static bool is_klass_unloaded(traceid klass_id) {

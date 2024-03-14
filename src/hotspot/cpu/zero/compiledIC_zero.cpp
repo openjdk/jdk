@@ -25,7 +25,6 @@
 #include "precompiled.hpp"
 #include "code/codeCache.hpp"
 #include "code/compiledIC.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -43,27 +42,27 @@
 
 // ----------------------------------------------------------------------------
 
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
+address CompiledDirectCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
   return nullptr;
 }
 
-int CompiledStaticCall::to_interp_stub_size() {
+int CompiledDirectCall::to_interp_stub_size() {
   ShouldNotReachHere(); // Only needed for COMPILER2.
   return 0;
 }
 
 // Relocation entries for call stub, compiled java to interpreter.
-int CompiledStaticCall::reloc_to_interp_stub() {
+int CompiledDirectCall::reloc_to_interp_stub() {
   ShouldNotReachHere(); // Only needed for COMPILER2.
   return 0;
 }
 
-void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
+void CompiledDirectCall::set_to_interpreted(const methodHandle& callee, address entry) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 
-void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
+void CompiledDirectCall::set_stub_to_clean(static_stub_Relocation* static_stub) {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 
@@ -71,7 +70,7 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
 // Non-product mode code.
 #ifndef PRODUCT
 
-void CompiledDirectStaticCall::verify() {
+void CompiledDirectCall::verify() {
   ShouldNotReachHere(); // Only needed for COMPILER2.
 }
 

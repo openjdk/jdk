@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,14 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "jvmti_common.h"
+#include "jvmti_common.hpp"
 
 extern "C" {
 
 
-static jvmtiEnv *jvmti = NULL;
-static jthread exp_thread = NULL;
-static jrawMonitorID event_mon = NULL;
+static jvmtiEnv *jvmti = nullptr;
+static jthread exp_thread = nullptr;
+static jrawMonitorID event_mon = nullptr;
 static int breakpoint_count = 0;
 static int single_step_count = 0;
 
@@ -39,11 +39,11 @@ print_frame_event_info(jvmtiEnv *jvmti, JNIEnv* jni, jthread thread, jmethodID m
                        const char* event_name, int event_count) {
   char* tname = get_thread_name(jvmti, jni, thread);
   char* cname = get_method_class_name(jvmti, jni, method);
-  char* mname = NULL;
-  char* msign = NULL;
+  char* mname = nullptr;
+  char* msign = nullptr;
   jvmtiError err;
 
-  err = jvmti->GetMethodName(method, &mname, &msign, NULL);
+  err = jvmti->GetMethodName(method, &mname, &msign, nullptr);
   check_jvmti_status(jni, err, "event handler: error in JVMTI GetMethodName call");
 
   LOG("\n%s event #%d: thread: %s, method: %s: %s%s\n",
@@ -150,8 +150,8 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 JNIEXPORT void JNICALL
 Java_ContYieldBreakPointTest_enableEvents(JNIEnv *jni, jclass klass, jthread thread, jclass contKlass) {
   jint method_count = 0;
-  jmethodID* methods = NULL;
-  jmethodID method = NULL;
+  jmethodID* methods = nullptr;
+  jmethodID method = nullptr;
   jlocation location = (jlocation)0L;
   jvmtiError err;
 
@@ -172,7 +172,7 @@ Java_ContYieldBreakPointTest_enableEvents(JNIEnv *jni, jclass klass, jthread thr
     }
     deallocate(jvmti, jni, (void*)mname);
   }
-  if (method == NULL) {
+  if (method == nullptr) {
     jni->FatalError("Error in enableEvents: not found method fibTest()");
   }
 
@@ -180,7 +180,7 @@ Java_ContYieldBreakPointTest_enableEvents(JNIEnv *jni, jclass klass, jthread thr
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetBreakpoint");
 
   // Enable Breakpoint events globally
-  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, NULL);
+  err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_BREAKPOINT, nullptr);
   check_jvmti_status(jni, err, "enableEvents: error in JVMTI SetEventNotificationMode: enable BREAKPOINT");
 
   LOG("enableEvents: finished\n");

@@ -105,7 +105,7 @@ struct SimpleTestLookup {
   uintptr_t _val;
   SimpleTestLookup(uintptr_t val) : _val(val) {}
   uintx get_hash() {
-    return Pointer::get_hash(_val, NULL);
+    return Pointer::get_hash(_val, nullptr);
   }
   bool equals(const uintptr_t* value) {
     return _val == *value;
@@ -119,7 +119,7 @@ struct ValueGet {
   uintptr_t _return;
   ValueGet() : _return(0) {}
   void operator()(uintptr_t* value) {
-    EXPECT_NE(value, (uintptr_t*)NULL) << "expected valid value";
+    EXPECT_NE(value, (uintptr_t*)nullptr) << "expected valid value";
     _return = *value;
   }
   uintptr_t get_value() const {
@@ -562,7 +562,7 @@ struct TestLookup {
   uintptr_t _val;
   TestLookup(uintptr_t val) : _val(val) {}
   uintx get_hash() {
-    return TestInterface::get_hash(_val, NULL);
+    return TestInterface::get_hash(_val, nullptr);
   }
   bool equals(const uintptr_t* value) {
     return _val == *value;
@@ -684,7 +684,7 @@ class RunnerSimpleInserterThread : public CHTTestThread {
 public:
   Semaphore _done;
 
-  RunnerSimpleInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerSimpleInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(SIZE_32, SIZE_32);
   };
   virtual ~RunnerSimpleInserterThread(){}
@@ -768,7 +768,7 @@ class RunnerDeleteInserterThread : public CHTTestThread {
 public:
   Semaphore _done;
 
-  RunnerDeleteInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerDeleteInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(SIZE_32, SIZE_32);
   };
   virtual ~RunnerDeleteInserterThread(){}
@@ -795,7 +795,7 @@ public:
         TestLookup tl(v);
         TestGetHandle value_handle(this, _cht);
         uintptr_t* tmp = value_handle.get(tl);
-        tv = tmp != NULL ? *tmp : 0;
+        tv = tmp != nullptr ? *tmp : 0;
       }
       EXPECT_TRUE(tv == 0 || tv == v) << "Got unknown value.";
     }
@@ -894,7 +894,7 @@ public:
   uintptr_t _range;
   Semaphore _done;
 
-  RunnerGSInserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerGSInserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(START_SIZE, END_SIZE, 2);
   };
   virtual ~RunnerGSInserterThread(){}
@@ -1036,7 +1036,7 @@ public:
   Semaphore _done;
   uintptr_t _start;
   uintptr_t _range;
-  RunnerGI_BD_InserterThread(Semaphore* post) : CHTTestThread(0, 0, NULL, post) {
+  RunnerGI_BD_InserterThread(Semaphore* post) : CHTTestThread(0, 0, nullptr, post) {
     _cht = new TestTable(GI_BD_GI_BD_START_SIZE, GI_BD_END_SIZE, 2);
   };
   virtual ~RunnerGI_BD_InserterThread(){}

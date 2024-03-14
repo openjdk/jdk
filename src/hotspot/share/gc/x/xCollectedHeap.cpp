@@ -50,7 +50,6 @@ XCollectedHeap* XCollectedHeap::heap() {
 }
 
 XCollectedHeap::XCollectedHeap() :
-    _soft_ref_policy(),
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),
@@ -93,10 +92,6 @@ public:
 void XCollectedHeap::stop() {
   XStopConcurrentGCThreadClosure cl;
   gc_threads_do(&cl);
-}
-
-SoftRefPolicy* XCollectedHeap::soft_ref_policy() {
-  return &_soft_ref_policy;
 }
 
 size_t XCollectedHeap::max_capacity() const {
