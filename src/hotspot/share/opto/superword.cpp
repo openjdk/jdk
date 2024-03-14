@@ -1795,7 +1795,7 @@ void SuperWord::filter_packs_for_profitable() {
 }
 
 // Can code be generated for the pack, restricted to size nodes?
-bool SuperWord::implemented(const Node_List* pack, uint size) {
+bool SuperWord::implemented(const Node_List* pack, uint size) const {
   assert(size >= 2 && size <= pack->size() && is_power_of_2(size), "valid size");
   bool retValue = false;
   Node* p0 = pack->at(0);
@@ -1871,7 +1871,7 @@ bool SuperWord::requires_long_to_int_conversion(int opc) {
 
 //------------------------------same_inputs--------------------------
 // For pack p, are all idx operands the same?
-bool SuperWord::same_inputs(const Node_List* p, int idx) {
+bool SuperWord::same_inputs(const Node_List* p, int idx) const {
   Node* p0 = p->at(0);
   uint vlen = p->size();
   Node* p0_def = p0->in(idx);
@@ -1887,7 +1887,7 @@ bool SuperWord::same_inputs(const Node_List* p, int idx) {
 
 //------------------------------profitable---------------------------
 // For pack p, are all operands and all uses (with in the block) vector?
-bool SuperWord::profitable(const Node_List* p) {
+bool SuperWord::profitable(const Node_List* p) const {
   Node* p0 = p->at(0);
   uint start, end;
   VectorNode::vector_operands(p0, &start, &end);
@@ -1984,38 +1984,57 @@ bool SuperWord::profitable(const Node_List* p) {
 }
 
 #ifdef ASSERT
-// TODO maybe move, and extend, maybe refactor
-void SuperWord::verify_packs() {
-  // Verify independence at pack level.
+void SuperWord::verify_packs() const {
+  _packset.verify();
+
+  // All packs must be:
   for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    if (!is_marked_reduction(p->at(0)) &&
-        !mutually_independent(p)) {
+    Node_List* pack = _packset.at(i);
+
+    // 1. Mutually independent (or a reduction).
+    if (!is_marked_reduction(pack->at(0)) &&
+        !mutually_independent(pack)) {
       tty->print_cr("FAILURE: nodes not mutually independent in pack[%d]", i);
-      _packset.print_pack(p);
+      _packset.print_pack(pack);
       assert(false, "pack nodes not mutually independent");
     }
-  }
 
+    // 2. Implemented.
+    if (!implemented(pack, pack->size())) {
+      tty->print_cr("FAILURE: nodes not implementable in pack[%d]", i);
+      _packset.print_pack(pack);
+      assert(false, "pack not implementable");
+    }
+
+    // 3. Profitable.
+    if (!profitable(pack)) {
+      tty->print_cr("FAILURE: nodes not profitable in pack[%d]", i);
+      _packset.print_pack(pack);
+      assert(false, "pack not profitable");
+    }
+  }
+}
+
+void PackSet::verify() const {
   // Verify all nodes in packset have pack set correctly.
   ResourceMark rm;
   Unique_Node_List processed;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
+  for (int i = 0; i < _packs.length(); i++) {
+    Node_List* p = _packs.at(i);
     for (uint k = 0; k < p->size(); k++) {
       Node* n = p->at(k);
-      assert(in_bb(n), "only nodes in bb can be in packset");
+      assert(_vloop.in_bb(n), "only nodes in bb can be in packset");
       assert(!processed.member(n), "node should only occur once in packset");
-      assert(_packset.pack(n) == p, "n has consisten packset info");
+      assert(pack(n) == p, "n has consisten packset info");
       processed.push(n);
     }
   }
 
   // Check that no other node has pack set.
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
     if (!processed.member(n)) {
-      assert(_packset.pack(n) == nullptr, "should not have pack if not in packset");
+      assert(pack(n) == nullptr, "should not have pack if not in packset");
     }
   }
 }
@@ -2980,7 +2999,7 @@ uint SuperWord::find_use_def_boundary(const Node_List* pack) const {
 
 //------------------------------is_vector_use---------------------------
 // Is use->in(u_idx) a vector use?
-bool SuperWord::is_vector_use(Node* use, int u_idx) {
+bool SuperWord::is_vector_use(Node* use, int u_idx) const {
   Node_List* u_pk = _packset.pack(use);
   if (u_pk == nullptr) return false;
   if (is_marked_reduction(use)) return true;
@@ -3168,7 +3187,7 @@ void SuperWord::initialize_node_info() {
   grow_node_info(bb_idx(last));
 }
 
-BasicType SuperWord::longer_type_for_conversion(Node* n) {
+BasicType SuperWord::longer_type_for_conversion(Node* n) const {
   if (!(VectorNode::is_convert_opcode(n->Opcode()) ||
         requires_long_to_int_conversion(n->Opcode())) ||
       !in_bb(n->in(1))) {

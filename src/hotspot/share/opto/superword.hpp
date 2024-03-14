@@ -100,7 +100,7 @@ public:
     assert(has_left(n1) && has_right(n2), "must be set now");
   }
 
-  NOT_PRODUCT( void print() const; )
+  NOT_PRODUCT(void print() const;)
 };
 
 class PairSetIterator : public StackObj {
@@ -143,7 +143,7 @@ private:
   GrowableArray<Node_List*> _packs;
 
   // Mapping from nodes to their pack: bb_idx -> pack
-  GrowableArray<Node_List*> _node_to_pack; // TODO
+  GrowableArray<Node_List*> _node_to_pack;
 
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
@@ -181,8 +181,9 @@ public:
   // TODO: make private?
   void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
 
-  NOT_PRODUCT( void print() const; )
-  NOT_PRODUCT( void print_pack(Node_List* pack) const; )
+  DEBUG_ONLY(void verify() const;)
+  NOT_PRODUCT(void print() const;)
+  NOT_PRODUCT(void print_pack(Node_List* pack) const;)
 };
 
 // ========================= SuperWord =====================
@@ -368,13 +369,13 @@ class SuperWord : public ResourceObj {
   bool vectors_should_be_aligned() { return !Matcher::misaligned_vectors_ok() || AlignVector; }
 
   // memory alignment for a node
-  int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
+  int alignment(Node* n) const               { return _node_info.adr_at(bb_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
-  bool same_inputs(const Node_List* p, int idx);
+  bool same_inputs(const Node_List* p, int idx) const;
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -534,9 +535,8 @@ private:
   // Remove packs that are not profitable.
   void filter_packs_for_profitable();
 
-  // Verify that for every pack, all nodes are mutually independent.
-  // Also verify that packset and pack are consistent. // TODO move to packset?
-  DEBUG_ONLY(void verify_packs();)
+  DEBUG_ONLY(void verify_packs() const;)
+
   // Adjust the memory graph for the packed operations
   void schedule();
   // Helper function for schedule, that reorders all memops, slice by slice, according to the schedule
@@ -548,12 +548,13 @@ private:
   Node* vector_opd(Node_List* p, int opd_idx);
 
   // Can code be generated for the pack, restricted to size nodes?
-  bool implemented(const Node_List* pack, uint size);
+  bool implemented(const Node_List* pack, uint size) const;
   // Find the maximal implemented size smaller or equal to the packs size
   uint max_implemented_size(const Node_List* pack);
 
   // For pack p, are all operands and all uses (with in the block) vector?
-  bool profitable(const Node_List* p);
+  bool profitable(const Node_List* p) const;
+
   // Verify that all uses of packs are also packs, i.e. we do not need extract operations.
   DEBUG_ONLY(void verify_no_extract();)
 
@@ -561,15 +562,14 @@ private:
   bool has_use_pack_superset(const Node* n1, const Node* n2) const;
   // Find a boundary in the pack, where left and right have different pack uses and defs.
   uint find_use_def_boundary(const Node_List* pack) const;
+
   // Is use->in(u_idx) a vector use?
-  bool is_vector_use(Node* use, int u_idx);
+  bool is_vector_use(Node* use, int u_idx) const;
 
   // Initialize per node info
   void initialize_node_info();
-  // Compute max depth for expressions from beginning of block
-  void compute_max_depth();
   // Return the longer type for vectorizable type-conversion node or illegal type for other nodes.
-  BasicType longer_type_for_conversion(Node* n);
+  BasicType longer_type_for_conversion(Node* n) const;
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
 
