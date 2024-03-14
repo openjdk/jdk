@@ -42,7 +42,7 @@ public class GetBoundsResizeTest {
             0. There is a test window with a "Press" button,
                 Its original bounds should be printed in the text area below.
             1. Resize the test window using the upper left corner.
-            2. Press the button to print the result of getBounds() to the terminal.
+            2. Press the button to print the result of getBounds() to the text area.
             3. Previously, a window could report an incorrect position on the
                 screen after resizing the window in this way.
                 If getBounds() prints the appropriate values for the window,
@@ -86,7 +86,7 @@ public class GetBoundsResizeTest {
                 logFrameBounds("Current Frame.getBounds() = %s\n"));
 
         frame.add(button);
-        frame.pack();
+        frame.setSize(200, 100);
 
         return frame;
     }
