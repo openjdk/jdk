@@ -38,7 +38,7 @@
 
 // Checks an individual oop for missing precise marks. Mark
 // may be either dirty or newgen.
-class CheckForUnmarkedOops : public BasicOopIterateClosure {
+class PSCheckForUnmarkedOops : public BasicOopIterateClosure {
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
   HeapWord*    _unmarked_addr;
@@ -55,7 +55,7 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
   }
 
  public:
-  CheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
+  PSCheckForUnmarkedOops(PSYoungGen* young_gen, PSCardTable* card_table) :
     _young_gen(young_gen), _card_table(card_table), _unmarked_addr(nullptr) { }
 
   void do_oop(oop* p)       override { do_oop_work(p); }
@@ -68,13 +68,13 @@ class CheckForUnmarkedOops : public BasicOopIterateClosure {
 
 // Checks all objects for the existence of some type of mark,
 // precise or imprecise, dirty or newgen.
-class CheckForUnmarkedObjects : public ObjectClosure {
+class PSCheckForUnmarkedObjects : public ObjectClosure {
  private:
   PSYoungGen*  _young_gen;
   PSCardTable* _card_table;
 
  public:
-  CheckForUnmarkedObjects() {
+  PSCheckForUnmarkedObjects() {
     ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
     _young_gen = heap->young_gen();
     _card_table = heap->card_table();
@@ -85,7 +85,7 @@ class CheckForUnmarkedObjects : public ObjectClosure {
   // we test for missing precise marks first. If any are found, we don't
   // fail unless the object head is also unmarked.
   virtual void do_object(oop obj) {
-    CheckForUnmarkedOops object_check(_young_gen, _card_table);
+    PSCheckForUnmarkedOops object_check(_young_gen, _card_table);
     obj->oop_iterate(&object_check);
     if (object_check.has_unmarked_oop()) {
       guarantee(_card_table->is_dirty_for_addr(obj), "Found unmarked young_gen object");
@@ -377,7 +377,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
 // This should be called before a scavenge.
 void PSCardTable::verify_all_young_refs_imprecise() {
-  CheckForUnmarkedObjects check;
+  PSCheckForUnmarkedObjects check;
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();

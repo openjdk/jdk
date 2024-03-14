@@ -24,6 +24,9 @@
         .global _Copy_conjoint_words
         .global _Copy_disjoint_words
 
+        .hidden _Copy_conjoint_words
+        .hidden _Copy_disjoint_words
+
 s       .req    x0
 d       .req    x1
 count   .req    x2

@@ -312,6 +312,13 @@ public class TestLayoutPaths {
     }
 
     @Test
+    public void testHashCodeCollision() {
+        PathElement sequenceElement = PathElement.sequenceElement();
+        PathElement dereferenceElement = PathElement.dereferenceElement();
+        assertNotEquals(sequenceElement.hashCode(), dereferenceElement.hashCode());
+    }
+
+    @Test
     public void testGroupElementIndexToString() {
         PathElement e = PathElement.groupElement(2);
         assertEquals(e.toString(), "groupElement(2)");

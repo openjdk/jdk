@@ -978,10 +978,12 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
     log_develop_trace(gc, ref)("Already discovered reference (" PTR_FORMAT ": %s)",
                                p2i(obj), obj->klass()->internal_name());
 
-    // Check assumption that an object is not potentially
-    // discovered twice except by concurrent collectors that potentially
-    // trace the same Reference object twice.
-    assert(UseG1GC, "Only possible with a concurrent marking collector");
+    // Encountering an already-discovered non-strong ref because G1 can restart
+    // concurrent marking on marking-stack overflow. Must continue to treat
+    // this non-strong ref as discovered to avoid keeping the referent
+    // unnecessarily alive.
+    assert(UseG1GC, "inv");
+    assert(_discovery_is_concurrent, "inv");
     return true;
   }
 

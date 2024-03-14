@@ -48,7 +48,7 @@ bool emit_shared_stubs_to_interp(CodeBuffer* cb, SharedStubToInterpRequests* sha
   shared_stub_to_interp_requests->sort(by_shared_method);
   MacroAssembler masm(cb);
   for (int i = 0; i < shared_stub_to_interp_requests->length();) {
-    address stub = __ start_a_stub(CompiledStaticCall::to_interp_stub_size());
+    address stub = __ start_a_stub(CompiledDirectCall::to_interp_stub_size());
     if (stub == nullptr) {
       return false;
     }
