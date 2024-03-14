@@ -841,7 +841,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
   // and will still be vectorized by SuperWord::vector_opd.
   if (isomorphic(s1, s2) && !is_populate_index(s1, s2)) {
     if ((independent(s1, s2) && have_similar_inputs(s1, s2)) || reduction(s1, s2)) {
-      if (!_pairset.exists_left(s1) && !_pairset.exists_right(s2)) {
+      if (!_pairset.has_left(s1) && !_pairset.has_right(s2)) {
         if (!s1->is_Mem() || are_adjacent_refs(s1, s2)) {
           int s1_align = alignment(s1);
           int s2_align = alignment(s2);
@@ -1049,10 +1049,11 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   } while (changed);
 
   if (_race_possible) {
-    // TODO pairset
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
-      order_def_uses(p);
+    // TODO say why we do this - rename _race_possible
+    for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
+      Node* s1 = pair.left();
+      Node* s2 = pair.right();
+      order_inputs_of_use_pairs_to_match(s1, s2);
     }
   }
 
@@ -1081,7 +1082,7 @@ int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align)
 }
 
 bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
-  assert(_pairset.has_pair(s1, s2), "just checking");
+  assert(_pairset.has_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1187,44 +1188,37 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
   return changed;
 }
 
-//------------------------------order_def_uses---------------------------
-// For extended packsets, ordinally arrange uses packset by major component
-// TODO pairset
-void SuperWord::order_def_uses(Node_List* p) {
-  Node* s1 = p->at(0);
+// From a pair (def1. def2), find all use packs (use1, use2), and ensure that their inputs have an order
+// that matches the (def1, def2) pair. Example:
+//
+// def1 x1   x2 def2           def1 x1   def2 x2
+//    | |     | |       ==>       | |       | |
+//    use1    use2                use1      use2
+//
+// TODO why? - talk about commutative in name
+void SuperWord::order_inputs_of_use_pairs_to_match(Node* def1, Node* def2) {
+  assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
 
-  if (s1->is_Store()) return;
+  if (def1->is_Store()) return;
 
   // reductions are always managed beforehand
-  if (is_marked_reduction(s1)) return;
+  if (is_marked_reduction(def1)) return;
 
-  for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-    Node* t1 = s1->fast_out(i);
+  for (DUIterator_Fast imax, i = def1->fast_outs(imax); i < imax; i++) {
+    Node* use1 = def1->fast_out(i);
 
     // Only allow operand swap on commuting operations
-    if (!t1->is_Add() && !t1->is_Mul() && !VectorNode::is_muladds2i(t1)) {
+    if (!use1->is_Add() && !use1->is_Mul() && !VectorNode::is_muladds2i(use1)) {
       break;
     }
 
-    // Now find t1's packset
-    // TODO pairset
-    Node_List* p2 = nullptr;
-    for (int j = 0; j < _packset.length(); j++) {
-      p2 = _packset.at(j);
-      Node* first = p2->at(0);
-      if (t1 == first) {
-        break;
-      }
-      p2 = nullptr;
+    // Check if there is a pair (use1, use2)
+    if (!_pairset.has_left(use1)) {
+      break;
     }
-    // Arrange all sub components by the major component
-    if (p2 != nullptr) {
-      for (uint j = 1; j < p->size(); j++) {
-        Node* d1 = p->at(j);
-        Node* u1 = p2->at(j);
-        opnd_positions_match(s1, t1, d1, u1);
-      }
-    }
+    Node* use2 = _pairset.get_right_for(use1);
+
+    opnd_positions_match(def1, use1, def2, use2);
   }
 }
 
@@ -1343,13 +1337,13 @@ void SuperWord::combine_pairs_to_longer_packs() {
   for (int i = 0; i < body().length(); i++) {
     Node* n = body().at(i);
     // Start at a "left-most" node:
-    if (_pairset.exists_left(n) && !_pairset.exists_right(n)) {
+    if (_pairset.has_left(n) && !_pairset.has_right(n)) {
       Node_List* pack = new (arena()) Node_List(arena());
       pack->push(n);
 
       Node* left = n;
       // Now walk the pair-chain:
-      while (_pairset.exists_left(left)) {
+      while (_pairset.has_left(left)) {
         Node* right = _pairset.get_right_for(left);
         pack->push(right);
         left = right;
@@ -3763,11 +3757,11 @@ void PairSet::print() const {
   for (int i = 0; i < _body.body().length(); i++) {
     Node* n = _body.body().at(i);
     // Start at a "left-most" node:
-    if (exists_left(n) && !exists_right(n)) {
+    if (has_left(n) && !has_right(n)) {
       tty->print_cr(" Pair-chain %d:", chain++);
       Node* left = n;
       // Now walk the pair-chain:
-      while (exists_left(left)) {
+      while (has_left(left)) {
         Node* right = get_right_for(left);
         tty->print("  ");
         left->dump();

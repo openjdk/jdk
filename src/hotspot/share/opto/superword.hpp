@@ -79,25 +79,25 @@ public:
 
   const VLoopBody& body() const { return _body; }
   bool is_empty() const { return _pair_counter == 0; }
-  bool exists_left(int i)  const { return _left_to_right.at(i) != -1; }
-  bool exists_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool exists_left(Node* n)  const { return exists_left( _body.bb_idx(n)); }
-  bool exists_right(Node* n) const { return exists_right(_body.bb_idx(n)); }
+  bool has_left(int i)  const { return _left_to_right.at(i) != -1; }
+  bool has_right(int i) const { return _right_to_left.at(i) != -1; }
+  bool has_left(Node* n)  const { return has_left( _body.bb_idx(n)); }
+  bool has_right(Node* n) const { return has_right(_body.bb_idx(n)); }
   int get_left_for(int i)  const { return _right_to_left.at(i); }
   int get_right_for(int i) const { return _left_to_right.at(i); }
   Node* get_left_for(Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }
   Node* get_right_for(Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
-  bool has_pair(Node* n1, Node* n2) const { return exists_left(n1) && get_right_for(n1) == n2; }
+  bool has_pair(Node* n1, Node* n2) const { return has_left(n1) && get_right_for(n1) == n2; }
 
   void add_pair(Node* n1, Node* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
-    assert(!exists_left(n1) && !exists_right(n2), "cannot be left twice, or right twice");
+    assert(!has_left(n1) && !has_right(n2), "cannot be left twice, or right twice");
     int bb_idx_1 = _body.bb_idx(n1);
     int bb_idx_2 = _body.bb_idx(n2);
     _left_to_right.at_put(bb_idx_1, bb_idx_2);
     _right_to_left.at_put(bb_idx_2, bb_idx_1);
     _pair_counter++;
-    assert(exists_left(n1) && exists_right(n2), "must be set now");
+    assert(has_left(n1) && has_right(n2), "must be set now");
   }
 
   NOT_PRODUCT( void print() const; )
@@ -119,7 +119,7 @@ public:
   void next() {
     do {
       _current_bb_idx++;
-    } while (!done() && !_pairset.exists_left(_current_bb_idx));
+    } while (!done() && !_pairset.has_left(_current_bb_idx));
   }
 
   bool done() const { return _current_bb_idx >= _body.body().length(); }
@@ -391,9 +391,8 @@ private:
   void extend_pairset_with_more_pairs_by_following_use_and_def();
   bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
   bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
+  void order_inputs_of_use_pairs_to_match(Node* def1, Node* def2);
 
-  // For extended packsets, ordinally arrange uses packset by major component
-  void order_def_uses(Node_List* p);
   // Estimate the savings from executing s1 and s2 as a pack
   int est_savings(Node* s1, Node* s2);
   int adjacent_profit(Node* s1, Node* s2);
