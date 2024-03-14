@@ -136,6 +136,7 @@ public:
 
 class PackSet : public StackObj {
 private:
+  const VLoop& _vloop;
   const VLoopBody& _body;
 
   // The "packset" proper: an array of "packs"
@@ -146,20 +147,26 @@ private:
 
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
-  PackSet(Arena* arena, const VLoopBody& body) :
-    _body(body),
+  PackSet(Arena* arena, const VLoopAnalyzer& vloop_analyzer) :
+    _vloop(vloop_analyzer.vloop()),
+    _body(vloop_analyzer.body()),
     _packs(arena, 8, 0, nullptr),
-    _node_to_pack(arena, body.body().length(), body.body().length(), nullptr) {}
+    _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr) {}
 
   // Delegate to _packs
   int length() const { return _packs.length(); }
   bool is_empty() const { return _packs.is_empty(); }
   Node_List* at(int i) const { return _packs.at(i); }
+
   // TODO remove?
   void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
   void append(Node_List* pack) { _packs.append(pack); }
   void trunc_to(int len) { _packs.trunc_to(len); }
   void clear() { _packs.clear(); }
+
+  Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+  // make private?
+  void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
 
   NOT_PRODUCT( void print() const; )
   NOT_PRODUCT( void print_pack(Node_List* pack) const; )
@@ -172,9 +179,8 @@ public:
 class SWNodeInfo {
  public:
   int         _alignment; // memory alignment for a node
-  Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _my_pack(nullptr) {}
+  SWNodeInfo() : _alignment(-1) {}
   static const SWNodeInfo initial;
 };
 
@@ -352,11 +358,6 @@ class SuperWord : public ResourceObj {
   int alignment(Node* n)                     { return _node_info.adr_at(bb_idx(n))->_alignment; }
   void set_alignment(Node* n, int a)         { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_alignment = a; }
 
-  // my_pack
- public:
-  Node_List* my_pack(const Node* n)     const { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
- private:
-  void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
@@ -516,7 +517,7 @@ private:
 
   // TODO remove / integrate to combine?
   // Construct the map from nodes to packs.
-  void construct_my_pack_map();
+  void construct_pack_map();
 
   // TODO move to packset, and maybe combine with split?
   // Remove packs that are not implemented.
@@ -525,7 +526,7 @@ private:
   void filter_packs_for_profitable();
 
   // Verify that for every pack, all nodes are mutually independent.
-  // Also verify that packset and my_pack are consistent.
+  // Also verify that packset and pack are consistent. // TODO move to packset?
   DEBUG_ONLY(void verify_packs();)
   // Adjust the memory graph for the packed operations
   void schedule();
