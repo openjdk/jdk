@@ -34,7 +34,7 @@ import javax.swing.border.TitledBorder;
 /*
  * @test
  * @bug 4247606
- * @summary BorderedPane appears wrong with Title Position Below Bottom
+ * @summary BorderedPane appears wrong with title position below bottom
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual Test4247606
