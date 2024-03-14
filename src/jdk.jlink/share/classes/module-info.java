@@ -54,14 +54,15 @@ import jdk.internal.javac.ParticipatesInPreview;
  * @since 9
  */
 @ParticipatesInPreview
-@SuppressWarnings("module")
+@SuppressWarnings("module") // Due to jdk.unsupported_jlink_runtime
 module jdk.jlink {
     requires jdk.internal.opt;
     requires jdk.jdeps;
 
     uses jdk.tools.jlink.plugin.Plugin;
-    exports jdk.tools.jlink.plugin to jdk.jlink_build_runlink;
-    exports jdk.tools.jlink.internal to jdk.jlink_build_runlink;
+
+    // The build-only runtime image link plugin approach needs this
+    exports jdk.tools.jlink.plugin to jdk.unsupported_jlink_runtime;
 
     provides java.util.spi.ToolProvider with
         jdk.tools.jmod.Main.JmodToolProvider,
