@@ -2434,6 +2434,20 @@ int MacroAssembler::push_fp(unsigned int bitset, Register stack, FpPushPopMode m
     }
   }
 
+#ifndef PRODUCT
+  {
+    char buffer[48];
+    if (mode == PushPopSVE) {
+      snprintf(buffer, sizeof(buffer), "push_fp: %d SVE registers", count);
+    } else if (mode == PushPopNeon) {
+      snprintf(buffer, sizeof(buffer), "push_fp: %d Neon registers", count);
+    } else {
+      snprintf(buffer, sizeof(buffer), "push_fp: %d fp registers", count);
+    }
+    block_comment(buffer);
+  }
+#endif
+
   if (mode == PushPopSVE) {
     sub(stack, stack, sve_vector_size_in_bytes * count);
     for (int i = 0; i < count; i++) {
@@ -2531,6 +2545,20 @@ int MacroAssembler::pop_fp(unsigned int bitset, Register stack, FpPushPopMode mo
       mode = PushPopNeon;
     }
   }
+
+#ifndef PRODUCT
+  {
+    char buffer[48];
+    if (mode == PushPopSVE) {
+      snprintf(buffer, sizeof(buffer), "pop_fp: %d SVE registers", count);
+    } else if (mode == PushPopNeon) {
+      snprintf(buffer, sizeof(buffer), "pop_fp: %d Neon registers", count);
+    } else {
+      snprintf(buffer, sizeof(buffer), "pop_fp: %d fp registers", count);
+    }
+    block_comment(buffer);
+  }
+#endif
 
   if (mode == PushPopSVE) {
     for (int i = count - 1; i >= 0; i--) {
