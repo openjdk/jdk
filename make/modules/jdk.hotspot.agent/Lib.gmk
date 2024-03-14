@@ -65,7 +65,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     CFLAGS := $(SA_CFLAGS), \
     CXXFLAGS := $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -framework Foundation \

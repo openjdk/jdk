@@ -32,8 +32,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PCSC, \
     CFLAGS_unix := -D__sun_jdk, \
     EXTRA_HEADER_DIRS := libj2pcsc/MUSCLE, \
     OPTIMIZATION := LOW, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
     LIBS_windows := winscard.lib, \
 ))

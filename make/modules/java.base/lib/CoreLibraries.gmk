@@ -35,8 +35,6 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBVERIFY, \
     NAME := verify, \
     OPTIMIZATION := $(LIBVERIFY_OPTIMIZATION), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
 ))
@@ -57,8 +55,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVA, \
     ProcessImpl_md.c_CFLAGS := $(VERSION_CFLAGS), \
     java_props_md.c_CFLAGS := -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"', \
     DISABLED_WARNINGS_gcc_ProcessImpl_md.c := unused-result, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
     LIBS_unix := -ljvm, \
     LIBS_linux := $(LIBDL), \
@@ -96,8 +92,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBZIP, \
     DISABLED_WARNINGS_gcc_zip_util.c := unused-function, \
     DISABLED_WARNINGS_clang := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_gzwrite.c := format-nonliteral, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm -ljava $(LIBZ_LIBS), \
     LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
 ))
@@ -113,8 +107,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJIMAGE, \
     LINK_TYPE := C++, \
     OPTIMIZATION := LOW, \
     CFLAGS_unix := -UDEBUG, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS := $(LDFLAGS_CXX_JDK), \
     LIBS_unix := -ljvm -ldl, \
     LIBS_windows := jvm.lib, \
 ))
@@ -169,8 +162,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
     CFLAGS := $(LIBJLI_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     DISABLED_WARNINGS_clang := format-nonliteral deprecated-non-prototype, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBZ_LIBS), \
     LIBS_linux := $(LIBDL) -lpthread, \
     LIBS_aix := $(LIBDL),\
