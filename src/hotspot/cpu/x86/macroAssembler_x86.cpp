@@ -3521,7 +3521,7 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
   // WARN: Allow dst == (src1|src2), mask == scratch
   bool blend_emulation = EnableX86ECoreOpts && UseAVX > 1;
   bool scratch_available = scratch != xnoreg && scratch != src1 && scratch != src2 && scratch != dst;
-  bool dst_available = dst != mask && (dst != src1 || dst != src2);
+  bool dst_available = (dst != mask || compute_mask) && (dst != src1 || dst != src2);
   if (blend_emulation && scratch_available && dst_available) {
     if (compute_mask) {
       vpsrad(scratch, mask, 32, vector_len);
@@ -3536,7 +3536,7 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
     }
     vpor(dst, dst, scratch, vector_len);
   } else {
-    Assembler::vblendvps(dst, src1, src2, mask, vector_len);
+        Assembler::vblendvps(dst, src1, src2, mask, vector_len);
   }
 }
 
