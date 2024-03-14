@@ -78,7 +78,7 @@ public:
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
   // Print detailed report of device
-  void print_report_on(const PhysicalDevice* device, outputStream* stream);
+  void print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale);
 
   const GrowableArrayCHeap<PhysicalDevice*, mtNMT>& devices();
 
@@ -98,7 +98,7 @@ public:
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 
-    static void print_report_on(const PhysicalDevice* device, outputStream* stream);
+    static void print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale);
 
     static const GrowableArrayCHeap<PhysicalDevice*, mtNMT>& devices();
   };

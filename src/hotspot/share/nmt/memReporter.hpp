@@ -181,7 +181,7 @@ class MemDetailReporter : public MemSummaryReporter {
         PhysicalDeviceTracker::Instance::devices();
     for (int i = 0; i < devices.length(); i++) {
       PhysicalDeviceTracker::PhysicalDevice* dev = devices.at(i);
-      PhysicalDeviceTracker::Instance::print_report_on(dev, this->output());
+      PhysicalDeviceTracker::Instance::print_report_on(dev, this->output(), scale());
     }
   }
   // Report malloc allocation sites; returns number of omitted sites

@@ -37,8 +37,8 @@ void PhysicalDeviceTracker::free_memory(PhysicalDevice* device, size_t offset, s
   }
 }
 
-void PhysicalDeviceTracker::print_report_on(const PhysicalDevice* device, outputStream* stream) {
-  stream->print_cr("Detailed report for %s", device->_descriptive_name);
+void PhysicalDeviceTracker::print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale) {
+  stream->print_cr("Memory map of %s", device->_descriptive_name);
   const VMATree::VTreap* prev = nullptr;
   device->_tree.in_order_traversal([&](const VMATree::VTreap* current) {
     if (prev == nullptr) {
@@ -52,7 +52,10 @@ void PhysicalDeviceTracker::print_report_on(const PhysicalDevice* device, output
     if (pval.out == VMATree::InOut::Reserved) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated %lu bytes from %s", start_addr, end_addr, end_addr - start_addr, NMTUtil::flag_to_name(pval.metadata.flag));
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " bytes for %s", start_addr, end_addr,
+                       NMTUtil::amount_in_scale(end_addr - start_addr, scale),
+                       NMTUtil::scale_name(scale),
+                       NMTUtil::flag_to_name(pval.metadata.flag));
       pval.metadata.stack_idx.stack().print_on(stream, 4);
     }
     prev = current;
@@ -102,8 +105,8 @@ PhysicalDeviceTracker::Instance::make_device(const char* descriptive_name) {
 }
 
 void PhysicalDeviceTracker::Instance::print_report_on(const PhysicalDevice* device,
-                                                      outputStream* stream) {
-  _tracker->print_report_on(device, stream);
+                                                      outputStream* stream, size_t scale) {
+  _tracker->print_report_on(device, stream, scale);
 }
 
 const GrowableArrayCHeap<PhysicalDeviceTracker::PhysicalDevice*, mtNMT>& PhysicalDeviceTracker::Instance::devices() {
