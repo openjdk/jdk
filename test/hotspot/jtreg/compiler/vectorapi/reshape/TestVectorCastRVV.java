@@ -29,7 +29,7 @@ import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 
 /*
  * @test
- * @bug 8259610
+ * @bug 8321021 8321023 8321024
  * @key randomness
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.misc
