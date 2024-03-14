@@ -34,10 +34,10 @@ import javax.swing.text.StyledEditorKit;
  * @summary Tests HTML underlining
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- *  @run main/manual bug4984669
+ * @run main/manual htmlUnderliningTest
  */
 
-public class bug4984669 {
+public class htmlUnderliningTest {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
                 The four lines printed in a bold typeface should all be underlined.
@@ -50,7 +50,7 @@ public class bug4984669 {
                 .instructions(testInstructions)
                 .rows(4)
                 .columns(35)
-                .splitUI(bug4984669::initializeTest)
+                .splitUI(htmlUnderliningTest::initializeTest)
                 .build()
                 .awaitAndCheck();
     }
@@ -73,7 +73,8 @@ public class bug4984669 {
             pane.getDocument().insertString(13, "cccc\n", attrs);
             pane.getDocument().insertString(18, "ddddd\n", attrs);
         } catch (Exception e) {
-            throw new Error("Failed: Unexpected Exception", e);
+            throw new Error("Failed: Unexpecte" +
+                    "d Exception", e);
         }
         return panel;
     }
