@@ -308,7 +308,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   _shrink_factor = ShrinkHeapInSteps ? 0 : 100;
   _capacity_at_prologue = 0;
 
-  _gc_stats = new GCStats();
+  _avg_promoted = new AdaptivePaddedNoZeroDevAverage(AdaptiveSizePolicyWeight, PromotedPadding);
 
   // initialize performance counters
 
@@ -390,7 +390,7 @@ void TenuredGeneration::update_gc_stats(Generation* current_generation,
     // also possible that no promotion was needed.
     if (used_before_gc >= _used_at_prologue) {
       size_t promoted_in_bytes = used_before_gc - _used_at_prologue;
-      gc_stats()->avg_promoted()->sample(promoted_in_bytes);
+      _avg_promoted->sample(promoted_in_bytes);
     }
   }
 }
@@ -404,7 +404,7 @@ void TenuredGeneration::update_counters() {
 
 bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes) const {
   size_t available = max_contiguous_available();
-  size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
+  size_t av_promo  = (size_t)_avg_promoted->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
 
   log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
