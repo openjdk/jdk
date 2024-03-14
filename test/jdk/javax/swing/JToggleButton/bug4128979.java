@@ -24,9 +24,9 @@
 /* @test
  * @bug 4128979
  * @requires (os.family == "windows")
- * @modules java.desktop/com.sun.java.swing.plaf.windows
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @modules java.desktop/sun.awt
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
  * @run main bug4128979
  */
@@ -46,11 +46,10 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.JToolBar;
-import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.WindowConstants;
 
-import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
+import jtreg.SkippedException;
+import sun.awt.OSInfo;
 
 public class bug4128979 {
     private static JFrame frame;
@@ -66,6 +65,9 @@ public class bug4128979 {
             the test fails. """;
 
     public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            throw new SkippedException("This test is for Windows only");
+        }
         UIManager.setLookAndFeel("com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
         PassFailJFrame.builder()
                 .title("JToggleButton Instructions")
