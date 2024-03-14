@@ -93,6 +93,7 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
 
         {
             log("Test: retransform to null");
+            // Ensure retransformation does not fail with ClassFormatError.
             retransform(null);
             log("");
         }
