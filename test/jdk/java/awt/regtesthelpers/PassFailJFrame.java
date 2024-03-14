@@ -1333,14 +1333,6 @@ public final class PassFailJFrame {
                 position = Position.HORIZONTAL;
             }
 
-            if (panelCreator != null) {
-                if (splitUI && (testWindows != null || windowListCreator != null)) {
-                    // TODO Is it required? We can support both
-                    throw new IllegalStateException("Split UI is not allowed "
-                                                    + "with additional windows");
-                }
-            }
-
             if (positionWindows != null) {
                 if (testWindows == null && windowListCreator == null) {
                     throw new IllegalStateException("To position windows, "
