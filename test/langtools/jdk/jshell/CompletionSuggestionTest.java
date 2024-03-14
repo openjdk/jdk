@@ -811,7 +811,7 @@ public class CompletionSuggestionTest extends KullaTesting {
         assertSignature("test(|", "void test(String s)", "void test(Integer i)");
     }
 
-    //JDK-8326333
+    //JDK-8326333: verify completion returns sensible output for arrays:
     public void testArray() {
         assertEval("String[] strs = null;");
         assertCompletion("strs.to|", "toString()");
