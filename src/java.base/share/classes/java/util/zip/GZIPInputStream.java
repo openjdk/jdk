@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,6 +70,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
@@ -85,6 +86,7 @@ public class GZIPInputStream extends InflaterInputStream {
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
      * @throws    IOException if an I/O error has occurred
      */
     public GZIPInputStream(InputStream in) throws IOException {

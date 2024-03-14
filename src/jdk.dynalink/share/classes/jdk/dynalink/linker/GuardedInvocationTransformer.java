@@ -67,6 +67,7 @@ import jdk.dynalink.DynamicLinkerFactory;
  * another one. Typical usage is for implementing
  * {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer)
  * pre-link transformers}.
+ * @since 9
  */
 @FunctionalInterface
 public interface GuardedInvocationTransformer {

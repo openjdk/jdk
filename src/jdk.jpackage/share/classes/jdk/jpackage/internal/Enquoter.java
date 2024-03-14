@@ -98,7 +98,7 @@ final class Enquoter {
     private BiConsumer<Integer, StringBuilder> escaper;
     private Predicate<String> needQuotes = str -> false;
 
-    private final static Predicate<String> QUOTE_IF_WHITESPACES = new Predicate<String>() {
+    private static final Predicate<String> QUOTE_IF_WHITESPACES = new Predicate<String>() {
         @Override
         public boolean test(String t) {
             return pattern.matcher(t).find();
@@ -106,7 +106,7 @@ final class Enquoter {
         private final Pattern pattern = Pattern.compile("\\s");
     };
 
-    private final static BiConsumer<Integer, StringBuilder> PREPEND_BACKSLASH = (chr, buf) -> {
+    private static final BiConsumer<Integer, StringBuilder> PREPEND_BACKSLASH = (chr, buf) -> {
         buf.append('\\');
         buf.appendCodePoint(chr);
     };

@@ -969,20 +969,28 @@ else
 
   jdk.jdeps-gendata: java
 
-  # The ct.sym generation uses all the moduleinfos as input
-  jdk.compiler-gendata: $(GENSRC_MODULEINFO_TARGETS) $(JAVA_TARGETS)
-  # jdk.compiler-gendata needs the BUILD_JDK. If the BUILD_JDK was supplied
-  # externally, no extra prerequisites are needed.
+  # jdk.compiler gendata generates ct.sym, which requires all generated
+  # java source and compiled classes present.
+  jdk.compiler-gendata: $(JAVA_TARGETS)
+
+  # jdk.javadoc gendata generates element-list, which requires all java sources
+  # but not compiled classes.
+  jdk.javadoc-gendata: $(GENSRC_TARGETS)
+
+  # ct.sym and element-list generation also needs the BUILD_JDK. If the
+  # BUILD_JDK was supplied externally, no extra prerequisites are needed.
   ifeq ($(CREATE_BUILDJDK), true)
     ifneq ($(CREATING_BUILDJDK), true)
       # When cross compiling and an external BUILD_JDK wasn't supplied, it's
       # produced by the create-buildjdk target.
       jdk.compiler-gendata: create-buildjdk
+      jdk.javadoc-gendata: create-buildjdk
     endif
   else ifeq ($(EXTERNAL_BUILDJDK), false)
     # When not cross compiling, the BUILD_JDK is the interim jdk image, and
     # the javac launcher is needed.
     jdk.compiler-gendata: jdk.compiler-launchers
+    jdk.javadoc-gendata: jdk.compiler-launchers
   endif
 
   # Declare dependencies between jmod targets.

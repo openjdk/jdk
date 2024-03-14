@@ -36,10 +36,8 @@
 BOOL DWMIsCompositionEnabled();
 
 void initScreens(JNIEnv *env) {
-
     if (!Devices::UpdateInstance(env)) {
         JNU_ThrowInternalError(env, "Could not update the devices array.");
-        return;
     }
 }
 
@@ -126,15 +124,9 @@ BOOL DWMIsCompositionEnabled() {
     dwmIsCompositionEnabled = bRes;
 
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
-    jboolean hasException;
-    JNU_CallStaticMethodByName(env, &hasException,
+    JNU_CallStaticMethodByName(env, NULL,
                               "sun/awt/Win32GraphicsEnvironment",
                               "dwmCompositionChanged", "(Z)V", (jboolean)bRes);
-    if (hasException) {
-        J2dTraceLn(J2D_TRACE_INFO, "Exception occurred in DWMIsCompositionEnabled");
-        env->ExceptionDescribe();
-        env->ExceptionClear();
-    }
     return bRes;
 }
 

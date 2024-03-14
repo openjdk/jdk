@@ -124,8 +124,6 @@ protected:
   ~GrowableArrayView() {}
 
 public:
-  const static GrowableArrayView EMPTY;
-
   bool operator==(const GrowableArrayView<E>& rhs) const {
     if (_len != rhs._len)
       return false;
@@ -349,9 +347,6 @@ public:
     tty->print("}\n");
   }
 };
-
-template<typename E>
-const GrowableArrayView<E> GrowableArrayView<E>::EMPTY(nullptr, 0, 0);
 
 template <typename E>
 class GrowableArrayFromArray : public GrowableArrayView<E> {

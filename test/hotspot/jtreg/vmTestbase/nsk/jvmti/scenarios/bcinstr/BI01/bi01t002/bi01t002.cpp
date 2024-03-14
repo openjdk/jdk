@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,15 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include "ExceptionCheckingJniEnv.hpp"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 /* scaffold objects */
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 #define TESTED_CLASS_NAME   "nsk/jvmti/scenarios/bcinstr/BI01/bi01t002a"
@@ -109,7 +109,7 @@ cbClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv* jni_env,
             const unsigned char* class_data, jint* new_class_data_len,
             unsigned char** new_class_data) {
 
-    if (name == NULL || strcmp(name, TESTED_CLASS_NAME)) {
+    if (name == nullptr || strcmp(name, TESTED_CLASS_NAME)) {
         return;
     }
 
@@ -183,7 +183,7 @@ agentProc(jvmtiEnv* jvmti, JNIEnv* agentJNI, void* arg) {
     NSK_DISPLAY0("Notification disabled for CLASS_FILE_LOAD_HOOK event\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_DISABLE,
                                                           JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
-                                                          NULL))) {
+                                                          nullptr))) {
         nsk_jvmti_setFailStatus();
         return;
     }
@@ -253,7 +253,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     jvmti = nsk_jvmti_createJVMTIEnv(jvm, reserved);
-    if (!NSK_VERIFY(jvmti != NULL))
+    if (!NSK_VERIFY(jvmti != nullptr))
         return JNI_ERR;
 
     {
@@ -280,12 +280,12 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     NSK_DISPLAY0("Set notification enabled for CLASS_FILE_LOAD_HOOK event\n");
     if (!NSK_JVMTI_VERIFY(jvmti->SetEventNotificationMode(JVMTI_ENABLE,
                                                           JVMTI_EVENT_CLASS_FILE_LOAD_HOOK,
-                                                          NULL))) {
+                                                          nullptr))) {
         nsk_jvmti_setFailStatus();
         return NSK_FALSE;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;

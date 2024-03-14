@@ -139,6 +139,18 @@ jlong CgroupV2Subsystem::memory_max_usage_in_bytes() {
   return OSCONTAINER_ERROR; // not supported
 }
 
+jlong CgroupV2Subsystem::rss_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "anon", JULONG_FORMAT, JULONG_FORMAT, rss);
+  return rss;
+}
+
+jlong CgroupV2Subsystem::cache_usage_in_bytes() {
+  GET_CONTAINER_INFO_LINE(julong, _memory->controller(), "/memory.stat",
+                          "file", JULONG_FORMAT, JULONG_FORMAT, cache);
+  return cache;
+}
+
 char* CgroupV2Subsystem::mem_soft_limit_val() {
   GET_CONTAINER_INFO_CPTR(cptr, _unified, "/memory.low",
                          "Memory Soft Limit is: %s", "%1023s", mem_soft_limit_str, 1024);
@@ -166,6 +178,16 @@ jlong CgroupV2Subsystem::memory_and_swap_limit_in_bytes() {
   }
   log_trace(os, container)("Memory and Swap Limit is: " JLONG_FORMAT, swap_limit);
   return swap_limit;
+}
+
+jlong CgroupV2Subsystem::memory_and_swap_usage_in_bytes() {
+    jlong memory_usage = memory_usage_in_bytes();
+    if (memory_usage >= 0) {
+        char* mem_swp_current_str = mem_swp_current_val();
+        jlong swap_current = limit_from_str(mem_swp_current_str);
+        return memory_usage + (swap_current >= 0 ? swap_current : 0);
+    }
+    return memory_usage; // not supported or unlimited case
 }
 
 char* CgroupV2Subsystem::mem_swp_limit_val() {
