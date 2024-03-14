@@ -66,7 +66,6 @@ public class AWTPanelSmoothWheel {
                     return new JScrollPane(textArea);
                 })
                 .testUI(AWTPanelSmoothWheel::createUI)
-                .testTimeOut(10)
                 .build()
                 .awaitAndCheck();
     }
