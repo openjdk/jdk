@@ -128,6 +128,21 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     });
     EXPECT_EQ(2, found_nodes);
   }
+
+  { // Split a reserved region into two different reserved regions
+    Tree tree;
+    VMATree::Metadata md{NCS::StackIndex(), mtTest };
+    VMATree::Metadata md2{NCS::StackIndex(), mtNMT };
+    VMATree::Metadata md3{NCS::StackIndex(), mtNone };
+    tree.reserve_mapping(0, 100, md);
+    tree.reserve_mapping(0, 50, md2);
+    tree.reserve_mapping(50, 50, md3);
+    int found_nodes = 0;
+    tree.visit(0, 99999, [&](Node* x) {
+      found_nodes++;
+    });
+    EXPECT_EQ(3, found_nodes);
+  }
 }
 
 // Tests for summary accounting
