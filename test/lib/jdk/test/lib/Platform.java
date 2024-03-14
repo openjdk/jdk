@@ -128,7 +128,7 @@ public class Platform {
     public static boolean isCoreutilsSingleExecutable() {
         // If more distrobutions start using --enable-single-binary with coreutils
         // additional path checks may be required.
-        return Paths.exist("/usr/bin/coreutils");
+        return Files.exists(Paths.get("/usr/bin/coreutils"));
     }
 
     public static boolean isOSX() {
