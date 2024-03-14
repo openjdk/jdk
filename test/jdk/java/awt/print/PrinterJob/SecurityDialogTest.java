@@ -22,6 +22,7 @@
  */
 
 import java.awt.Frame;
+import java.awt.print.PageFormat;
 import java.awt.print.PrinterJob;
 import java.lang.reflect.InvocationTargetException;
 
@@ -103,7 +104,7 @@ public class SecurityDialogTest extends Frame {
         System.out.println("SecurityDialogTest default service : " + pj.getPrintService());
 
         setDialogType("Native Page Dialog");
-        pj.pageDialog(pj.defaultPage());
+        pj.pageDialog(new PageFormat());
 
         setDialogType("Swing Page Dialog");
         PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
