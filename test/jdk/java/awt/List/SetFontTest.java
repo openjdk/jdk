@@ -39,20 +39,21 @@ import java.awt.event.ActionListener;
 
 public class SetFontTest {
 
-    static final String INSTRUCTIONS =
-        "1) Click on the 'Enlarge font' button to enlarge font of the list.\n" +
-        "2) If you see that the rows of the list overlap one another\n" +
-        "then the test failed. Otherwise, go to step 3.\n" +
-        "3) Click on the 'Change mode' button to set multiple-selection mode.\n" +
-        "4) If you see that the rows of the list overlap one another\n" +
-        "then the test failed. Otherwise, the test passed.";
+    static final String INSTRUCTIONS = """
+        1) Click on the 'Enlarge font' button to enlarge font of the list.
+        2) If you see that the rows of the list overlap one another
+        then the test failed. Otherwise, go to step 3.
+        3) Click on the 'Change mode' button to set multiple-selection mode.
+        4) If you see that the rows of the list overlap one another
+        then the test failed. Otherwise, the test passed.
+    """;
 
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                       .title("AWT List Font Test")
                        .instructions(INSTRUCTIONS)
                        .rows(10)
-                       .columns(60)
+                       .columns(40)
                        .testUI(SetFontTest::createFontTest)
                        .build()
                        .awaitAndCheck();
@@ -89,7 +90,7 @@ public class SetFontTest {
         frame.add(list);
         frame.add(button1);
         frame.add(button2);
-        frame.setSize(200,250);
+        frame.setSize(200, 250);
         return frame;
     }
 }
