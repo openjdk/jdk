@@ -1642,7 +1642,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   bind(L_success);
   mov(result, (u1)0);
 
-  BLOCK_COMMENT("} new check_klass_subtype_slow_path");
+  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
 
