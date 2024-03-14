@@ -84,7 +84,6 @@ public class Table<T> extends Content {
     private HtmlStyle gridStyle;
     private final List<Content> bodyRows;
     private HtmlId id;
-    private boolean alwaysShowDefaultTab = false;
 
     /**
      * A record containing the data for a table tab.
@@ -144,16 +143,6 @@ public class Table<T> extends Content {
      */
     public Table<T> setDefaultTab(Content label) {
         defaultTab = label;
-        return this;
-    }
-
-    /**
-     * Sets whether to display the default tab even if tabs are empty or only contain a single tab.
-     * @param showDefaultTab true if default tab should always be shown
-     * @return this object
-     */
-    public Table<T> setAlwaysShowDefaultTab(boolean showDefaultTab) {
-        this.alwaysShowDefaultTab = showDefaultTab;
         return this;
     }
 
@@ -385,7 +374,7 @@ public class Table<T> extends Content {
         }
 
         var table = HtmlTree.DIV(tableStyle).addStyle(gridStyle);
-        if ((tabs == null || occurringTabs.size() == 1) && !alwaysShowDefaultTab) {
+        if ((tabs == null || occurringTabs.size() == 1) && renderTabs) {
             if (tabs == null) {
                 main.add(caption);
             } else {
@@ -401,15 +390,13 @@ public class Table<T> extends Content {
             HtmlId defaultTabId = HtmlIds.forTab(id, 0);
             if (renderTabs) {
                 tablist.add(createTab(defaultTabId, HtmlStyle.activeTableTab, true, defaultTab));
-            } else {
-                tablist.add(getCaption(defaultTab));
-            }
-            if (renderTabs) {
                 for (var tab : tabs) {
                     if (occurringTabs.contains(tab)) {
                         tablist.add(createTab(HtmlIds.forTab(id, tab.index()), HtmlStyle.tableTab, false, tab.label()));
                     }
                 }
+            } else {
+                tablist.add(getCaption(defaultTab));
             }
             if (id == null) {
                 throw new IllegalStateException("no id set for table");

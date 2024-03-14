@@ -39,13 +39,12 @@ import jdk.test.lib.Platform;
  * @bug 6299866 8316931
  * @summary Tests that no NPE is thrown when the tray icon is disposed from the
  * handler of action event caused by clicking on this icon.
- * @library ../../regtesthelpers /test/lib
+ * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DisposeInActionEventTest
  */
 
 public class DisposeInActionEventTest {
-    private static JTextArea textArea;
     private static SystemTray systemTray;
     private static TrayIcon trayIcon;
 
@@ -57,24 +56,26 @@ public class DisposeInActionEventTest {
         String clickInstruction =
                 (Platform.isOSX()) ? "Right-click" : "Double click (left mouse button)";
 
-        String instructions = "When the test starts, it adds the icon to the tray area. If you\n" +
-                       "  don't see a tray icon, please, make sure that the tray area\n" +
-                       "  (also called Taskbar Status Area on MS Windows, Notification\n" +
-                       "  Area on Gnome or System Tray on KDE) is visible.\n\n" +
-                        clickInstruction + " the tray icon to trigger the\n" +
-                       "  action event. Brief information about action events is printed\n" +
-                       "  in the frame. After each action event, the tray icon is removed from\n" +
-                       "  the tray and then added back in a second.\n\n" +
+        String instructions = "When the test starts, it adds an icon to the tray area.\n" +
+                       "The icon is a red filled square with a white border.\n" +
+                       "If you don't see this tray icon, please make sure that the tray area\n" +
+                       "(also called Taskbar Status Area on MS Windows, Notification\n" +
+                       "Area on Gnome or System Tray on KDE) is visible.\n" +
+                       "On macOS the default location is the right of the top system bar.\n\n" +
+                       clickInstruction + " the tray icon to trigger the action event.\n" +
+                       "Brief information about action events is printed\n" +
+                       "in the Event Message Display frame.\n" +
+                       "After each action event, the tray icon is removed from\n" +
+                       "the tray and then added back in a second.\n\n" +
                        "The test checks if any exceptions are thrown when removing and\n" +
-                       "  re-adding the icon. If something is wrong, the test will automatically fail.\n" +
-                       "  Repeat clicks several times Then press PASS button.";
+                       "re-adding the icon. If something is wrong, the test will automatically fail.\n" +
+                       "Repeat clicks several times. Then press PASS button.";
 
         try {
             PassFailJFrame.builder()
                     .title("DisposeInActionEventTest")
                     .instructions(instructions)
-                    .testTimeOut(10)
-                    .rows(15)
+                    .rows(18)
                     .columns(45)
                     .testUI(DisposeInActionEventTest::showFrameAndIcon)
                     .build()
@@ -90,7 +91,7 @@ public class DisposeInActionEventTest {
         JFrame frame = new JFrame("Event Message Display");
         frame.setLayout(new BorderLayout());
 
-        textArea = new JTextArea();
+        JTextArea textArea = new JTextArea();
         frame.getContentPane().add(new JScrollPane(textArea));
         frame.setSize(400, 200);
 

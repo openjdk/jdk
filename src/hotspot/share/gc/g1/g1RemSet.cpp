@@ -1258,39 +1258,90 @@ class G1MergeHeapRootsTask : public WorkerTask {
     size_t cards_skipped() const { return _cards_skipped; }
   };
 
-  HeapRegionClaimer _hr_claimer;
+  uint _num_workers;
   G1RemSetScanState* _scan_state;
-  BufferNode::Stack _dirty_card_buffers;
+
+  // To mitigate contention due multiple threads accessing and popping BufferNodes from a shared
+  // G1DirtyCardQueueSet, we implement a sequential distribution phase. Here, BufferNodes are
+  // distributed to worker threads in a sequential manner utilizing the _dirty_card_buffers. By doing
+  // so, we effectively alleviate the bottleneck encountered during pop operations on the
+  // G1DirtyCardQueueSet. Importantly, this approach preserves the helping aspect among worker
+  // threads, allowing them to assist one another in case of imbalances in work distribution.
+  BufferNode::Stack* _dirty_card_buffers;
+
   bool _initial_evacuation;
 
   volatile bool _fast_reclaim_handled;
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, worker_id);
-      dcqs.deallocate_buffer(node);
+    for (uint i = 0; i < _num_workers; i++) {
+      uint index = (worker_id + i) % _num_workers;
+      while (BufferNode* node = _dirty_card_buffers[index].pop()) {
+        cl->apply_to_buffer(node, worker_id);
+        dcqs.deallocate_buffer(node);
+      }
     }
   }
 
 public:
   G1MergeHeapRootsTask(G1RemSetScanState* scan_state, uint num_workers, bool initial_evacuation) :
     WorkerTask("G1 Merge Heap Roots"),
-    _hr_claimer(num_workers),
+    _num_workers(num_workers),
     _scan_state(scan_state),
-    _dirty_card_buffers(),
+    _dirty_card_buffers(nullptr),
     _initial_evacuation(initial_evacuation),
     _fast_reclaim_handled(false)
   {
     if (initial_evacuation) {
+      Ticks start = Ticks::now();
+
+      _dirty_card_buffers = NEW_C_HEAP_ARRAY(BufferNode::Stack, num_workers, mtGC);
+      for (uint i = 0; i < num_workers; i++) {
+        new (&_dirty_card_buffers[i]) BufferNode::Stack();
+      }
+
       G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
       BufferNodeList buffers = dcqs.take_all_completed_buffers();
-      if (buffers._entry_count != 0) {
-        _dirty_card_buffers.prepend(*buffers._head, *buffers._tail);
+
+      size_t entries_per_thread = ceil(buffers._entry_count / (double)num_workers);
+
+      BufferNode* head = buffers._head;
+      BufferNode* tail = head;
+
+      uint worker = 0;
+      while (tail != nullptr) {
+        size_t count = tail->size();
+        BufferNode* cur = tail->next();
+
+        while (count < entries_per_thread && cur != nullptr) {
+          tail = cur;
+          count += tail->size();
+          cur = tail->next();
+        }
+
+        tail->set_next(nullptr);
+        _dirty_card_buffers[worker++ % num_workers].prepend(*head, *tail);
+
+        assert(cur != nullptr || tail == buffers._tail, "Must be");
+        head = cur;
+        tail = cur;
       }
+
+      Tickspan total = Ticks::now() - start;
+      G1CollectedHeap::heap()->phase_times()->record_distribute_log_buffers_time_ms(total.seconds() * 1000.0);
     }
   }
 
+  ~G1MergeHeapRootsTask() {
+    if (_dirty_card_buffers != nullptr) {
+      using Stack = BufferNode::Stack;
+      for (uint i = 0; i < _num_workers; i++) {
+        _dirty_card_buffers[i].~Stack();
+      }
+      FREE_C_HEAP_ARRAY(Stack, _dirty_card_buffers);
+    }
+  }
   virtual void work(uint worker_id) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     G1GCPhaseTimes* p = g1h->phase_times();

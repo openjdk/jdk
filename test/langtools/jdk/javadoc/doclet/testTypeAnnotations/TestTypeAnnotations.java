@@ -133,17 +133,17 @@ public class TestTypeAnnotations extends JavadocTester {
                     ass="element-name">array1Deep</span></div>""",
 
                 """
-                    <div class="member-signature"><span class="return-type">java.lang.String <a href\
-                    ="FldB.html" title="annotation interface in typeannos">@FldB</a> [][]</span>&nbs\
+                    <div class="member-signature"><span class="return-type">java.lang.String[] <a hr\
+                    ef="FldB.html" title="annotation interface in typeannos">@FldB</a> []</span>&nbs\
                     p;<span class="element-name">array2SecondOld</span></div>""",
 
                 """
                     <div class="member-signature"><span class="return-type"><a href="FldD.html" titl\
                     e="annotation interface in typeannos">@FldD</a> java.lang.String <a href="FldC.h\
-                    tml" title="annotation interface in typeannos">@FldC</a> <a href="FldB.html" tit\
-                    le="annotation interface in typeannos">@FldB</a> [] <a href="FldC.html" title="a\
-                    nnotation interface in typeannos">@FldC</a> <a href="FldA.html" title="annotatio\
-                    n interface in typeannos">@FldA</a> []</span>&nbsp;<span class="element-name">ar\
+                    tml" title="annotation interface in typeannos">@FldC</a> <a href="FldA.html" tit\
+                    le="annotation interface in typeannos">@FldA</a> [] <a href="FldC.html" title="a\
+                    nnotation interface in typeannos">@FldC</a> <a href="FldB.html" title="annotatio\
+                    n interface in typeannos">@FldB</a> []</span>&nbsp;<span class="element-name">ar\
                     ray2Deep</span></div>""",
 
                 """
@@ -185,8 +185,8 @@ public class TestTypeAnnotations extends JavadocTester {
                 """
                     <div class="member-signature"><span class="return-type"><a href="MRtnA.html" tit\
                     le="annotation interface in typeannos">@MRtnA</a> java.lang.String <a href="MRtn\
-                    B.html" title="annotation interface in typeannos">@MRtnB</a> [] <a href="MRtnA.h\
-                    tml" title="annotation interface in typeannos">@MRtnA</a> []</span>&nbsp;<span c\
+                    A.html" title="annotation interface in typeannos">@MRtnA</a> [] <a href="MRtnB.h\
+                    tml" title="annotation interface in typeannos">@MRtnB</a> []</span>&nbsp;<span c\
                     lass="element-name">array2Deep</span>()</div>""",
 
                 """
@@ -274,8 +274,8 @@ public class TestTypeAnnotations extends JavadocTester {
                     <div class="member-signature"><span class="return-type">void</span>&nbsp;<span c\
                     lass="element-name">array2Deep</span><wbr><span class="parameters">(<a href="Par\
                     amA.html" title="annotation interface in typeannos">@ParamA</a> java.lang.String\
-                     <a href="ParamB.html" title="annotation interface in typeannos">@ParamB</a> [] \
-                    <a href="ParamA.html" title="annotation interface in typeannos">@ParamA</a> []&n\
+                     <a href="ParamA.html" title="annotation interface in typeannos">@ParamA</a> [] \
+                    <a href="ParamB.html" title="annotation interface in typeannos">@ParamB</a> []&n\
                     bsp;a)</span></div>""",
 
                 """
@@ -862,5 +862,45 @@ public class TestTypeAnnotations extends JavadocTester {
                     <a href="RepMethodB.html" title="annotation interface in typeannos">@RepMethodB</a> <a hre\
                     f="RepMethodB.html" title="annotation interface in typeannos">@RepMethodB</a>
                     </span><span class="return-type">void</span>&nbsp;<span class="element-name">test</span>()""");
+
+        checkOutput("typeannos/DeepArrays.html", true,
+                """
+                    <div class="member-signature"><span class="return-type"><a href="ArrA.html" title="annotat\
+                    ion interface in typeannos">@ArrA</a> java.lang.String <a href="ArrB.html" title="annotati\
+                    on interface in typeannos">@ArrB</a> [] <a href="ArrC.html" title="annotation interface in \
+                    typeannos">@ArrC</a> []</span>&nbsp;<span class="element-name">array2</span>()</div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">java.lang.String <a href="ArrA.htm\
+                    l" title="annotation interface in typeannos">@ArrA</a> [] <a href="ArrB.html" title="annot\
+                    ation interface in typeannos">@ArrB</a> [] <a href="ArrC.html" title="annotation interface \
+                    in typeannos">@ArrC</a> [] <a href="ArrD.html" title="annotation interface in typeannos">@\
+                    ArrD</a> []</span>&nbsp;<span class="element-name">array4</span>()</div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type"><a href="ArrA.html" title="annotat\
+                    ion interface in typeannos">@ArrA</a> <a href="ArrParameterized.html" title="class in type\
+                    annos">ArrParameterized</a>&lt;<a href="ArrC.html" title="annotation interface in typeanno\
+                    s">@ArrC</a> java.lang.String <a href="ArrA.html" title="annotation interface in typeannos\
+                    ">@ArrA</a> [] <a href="ArrB.html" title="annotation interface in typeannos">@ArrB</a> []&\
+                    gt; <a href="ArrC.html" title="annotation interface in typeannos">@ArrC</a> [] <a href="Ar\
+                    rD.html" title="annotation interface in typeannos">@ArrD</a> []</span>&nbsp;<span class="e\
+                    lement-name">manyNested</span>()</div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">void</span>&nbsp;<span class="elem\
+                    ent-name">varargs</span><wbr><span class="parameters">(<a href="ArrA.html" title="annotati\
+                    on interface in typeannos">@ArrA</a> java.lang.String <a href="ArrB.html" title="annotatio\
+                    n interface in typeannos">@ArrB</a> [] <a href="ArrC.html" title="annotation interface in \
+                    typeannos">@ArrC</a> [] <a href="ArrD.html" title="annotation interface in typeannos">@Arr\
+                    D</a> ...&nbsp;arg)</span></div>""",
+
+                """
+                    <div class="member-signature"><span class="return-type">int <a href="ArrB.html" title="ann\
+                    otation interface in typeannos">@ArrB</a> [] <a href="ArrA.html" title="annotation interfa\
+                    ce in typeannos">@ArrA</a> []</span>&nbsp;<span class="element-name">mixedStyles</span><wb\
+                    r><span class="parameters">(int <a href="ArrB.html" title="annotation interface in typeann\
+                    os">@ArrB</a> [] <a href="ArrA.html" title="annotation interface in typeannos">@ArrA</a> [\
+                    ]&nbsp;arg)</span></div>""");
     }
 }
