@@ -84,7 +84,6 @@ class OopIterateClosure : public OopClosure {
   // the below enum describes the different alternatives.
   enum ReferenceIterationMode {
     DO_DISCOVERY,                // Apply closure and discover references
-    DO_DISCOVERED_AND_DISCOVERY, // Apply closure to discovered field and do discovery
     DO_FIELDS,                   // Apply closure to all fields
     DO_FIELDS_EXCEPT_REFERENT    // Apply closure to all fields except the referent field
   };
