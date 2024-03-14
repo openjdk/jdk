@@ -30,8 +30,6 @@
 
 package sun.security.krb5.internal.crypto;
 
-import sun.security.krb5.internal.Krb5;
-
 import java.security.MessageDigestSpi;
 import java.security.DigestException;
 

@@ -27,7 +27,6 @@ package sun.security.jgss.spnego;
 
 import org.ietf.jgss.GSSException;
 import sun.security.jgss.GSSToken;
-import sun.security.util.Debug;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;
 import sun.security.util.ObjectIdentifier;

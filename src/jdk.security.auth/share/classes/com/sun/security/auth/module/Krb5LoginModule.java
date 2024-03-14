@@ -804,10 +804,6 @@ public class Krb5LoginModule implements LoginModule {
             username = (String)sharedState.get(NAME);
             if (debug != null) {
                 debug.println
-                    ("username from shared state is " + username + "\n");
-            }
-            if (debug != null) {
-                debug.println
                         ("username from shared state is " + username + "\n");
             }
             if (username == null) {
