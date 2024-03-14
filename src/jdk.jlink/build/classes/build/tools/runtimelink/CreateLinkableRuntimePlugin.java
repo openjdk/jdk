@@ -137,7 +137,6 @@ public final class CreateLinkableRuntimePlugin implements Plugin {
         //   { --create-linkable-runtime: jimage=/path/tojimage },
         //   { module-path: "foo,bar" }
         // }
-        // and one for 'module-path=...'
         if (v.startsWith(JIMAGE_PATH_NAME + "=")) {
             // Case: --create-linkable-runtime jimage=/path:module-path=/mpath
             String[] tokens = v.split("=");
