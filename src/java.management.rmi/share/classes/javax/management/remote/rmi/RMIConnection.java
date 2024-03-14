@@ -82,7 +82,7 @@ import javax.security.auth.Subject;
  * corresponding <code>MBeanServerConnection</code> method.
  *
  * <p>JMX Subject Delegation has been removed. All methods that take a
- * delegationSubject parameter will throw {@code UnsupportedOperationException}
+ * {@code delegationSubject} parameter will throw {@code UnsupportedOperationException}
  * if it is non-null. This parameter is kept for interoperability with older
  * remote clients.
  *
