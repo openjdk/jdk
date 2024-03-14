@@ -25,8 +25,11 @@
  * @test
  * @bug 8308660
  * @summary C2 compilation hits 'node must be dead' assert
- * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:+StressIGVN -XX:StressSeed=242006623 TestFoldIfRemovesTopNode
- * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:+StressIGVN TestFoldIfRemovesTopNode
+ * @requires vm.compiler2.enabled
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN -XX:StressSeed=242006623 TestFoldIfRemovesTopNode
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-TieredCompilation -XX:-UseOnStackReplacement
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+StressIGVN TestFoldIfRemovesTopNode
  *
  */
 
