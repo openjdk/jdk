@@ -350,7 +350,6 @@ class SuperWord : public ResourceObj {
 
   const PackSet& packset()   const { return _packset; }
  private:
-  bool           _race_possible;   // In cases where SDMU is true
   bool           _do_vector_loop;  // whether to do vectorization/simd style
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
@@ -416,7 +415,6 @@ private:
   int pack_cost(int ct)                   const { return ct; }
   int unpack_cost(int ct)                 const { return ct; }
 
-  // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
 
   class SplitTask {

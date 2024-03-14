@@ -47,7 +47,6 @@ SuperWord::SuperWord(const VLoopAnalyzer &vloop_analyzer) :
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _pairset(&_arena, _vloop_analyzer.body()),
   _packset(&_arena, _vloop_analyzer),
-  _race_possible(false),                                    // cases where SDMU is true
   _do_vector_loop(phase()->C->do_vector_loop()),            // whether to do vectorization/simd style
   _num_work_vecs(0),                                        // amount of vector work we have
   _num_reductions(0)                                        // amount of reduction work we have
@@ -1046,13 +1045,15 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     }
   } while (changed);
 
-  if (_race_possible) {
-    // TODO say why we do this - rename _race_possible
-    for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-      Node* s1 = pair.left();
-      Node* s2 = pair.right();
-      order_inputs_of_all_use_pairs_to_match_def_pair(s1, s2);
-    }
+  // During extend_pairset_with_more_pairs_by_following_use, we may have re-ordered the
+  // inputs of some nodes, when calling order_inputs_of_uses_to_match_def_pair. If a def
+  // node has multiple uses, we may have re-ordered some of the inputs one use after
+  // packing another use with the old order. Now that we have all pairs, we must ensure
+  // that the order between the pairs is matching again.
+  for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
+    Node* s1 = pair.left();
+    Node* s2 = pair.right();
+    order_inputs_of_all_use_pairs_to_match_def_pair(s1, s2);
   }
 
 #ifndef PRODUCT
@@ -1137,12 +1138,10 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
 #endif
   bool changed = false;
   int savings = -1;
-  int num_s1_uses = 0;
   Node* u1 = nullptr;
   Node* u2 = nullptr;
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* t1 = s1->fast_out(i);
-    num_s1_uses++;
     if (!in_bb(t1) || t1->is_Mem()) {
       // Only follow non-memory nodes in block - we do not want to resurrect misaligned packs.
       continue;
@@ -1167,9 +1166,6 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
         }
       }
     }
-  }
-  if (num_s1_uses > 1) {
-    _race_possible = true;
   }
   if (savings >= 0) {
     _pairset.add_pair(u1, u2);
@@ -1348,7 +1344,7 @@ int SuperWord::est_savings(Node* s1, Node* s2) const {
   return MAX2(save_def, save_use);
 }
 
-// Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
+// Combine pairs (n1, n2), (n2, n3), ... into pack (n1, n2, n3 ...)
 void SuperWord::combine_pairs_to_longer_packs() {
 #ifdef ASSERT
   assert(!_pairset.is_empty(), "pairset not empty");
