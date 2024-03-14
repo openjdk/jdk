@@ -1750,22 +1750,10 @@ void SuperWord::filter_packs_for_alignment() {
   }
 }
 
-// Compress packset, such that it has no nullptr entries
-void SuperWord::compress_packset() {
-  int j = 0;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    if (p != nullptr) {
-      _packset.at_put(j, p);
-      j++;
-    }
-  }
-  _packset.trunc_to(j);
-}
-
 //-----------------------------construct_my_pack_map--------------------------
 // Construct the map from nodes to packs.  Only valid after the
 // point where a node is only in one pack (after combine_pairs_to_longer_packs).
+// TODO remove / integrate to combine?
 void SuperWord::construct_my_pack_map() {
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
@@ -2020,6 +2008,7 @@ bool SuperWord::profitable(const Node_List* p) {
 }
 
 #ifdef ASSERT
+// TODO maybe move, and extend, maybe refactor
 void SuperWord::verify_packs() {
   // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
@@ -2430,7 +2419,7 @@ bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = phase()->C;
-  if (_packset.length() == 0) {
+  if (_packset.is_empty()) {
     return false;
   }
 
@@ -3419,6 +3408,7 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
 
 //------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
+// TODO move to packset
 void SuperWord::remove_pack_at(int pos) {
   Node_List* p = _packset.at(pos);
   for (uint i = 0; i < p->size(); i++) {

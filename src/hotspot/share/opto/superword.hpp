@@ -510,16 +510,20 @@ private:
   void filter_packs_for_mutual_independence();
   // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
+
   // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
-  // Compress packset, such that it has no nullptr entries.
-  void compress_packset();
+
+  // TODO remove / integrate to combine?
   // Construct the map from nodes to packs.
   void construct_my_pack_map();
+
+  // TODO move to packset, and maybe combine with split?
   // Remove packs that are not implemented.
   void filter_packs_for_implemented();
   // Remove packs that are not profitable.
   void filter_packs_for_profitable();
+
   // Verify that for every pack, all nodes are mutually independent.
   // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs();)
@@ -558,8 +562,11 @@ private:
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
+
+  // TODO remove?
   // Remove the pack at position pos in the packset
   void remove_pack_at(int pos);
+
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference
   int memory_alignment(MemNode* s, int iv_adjust);
