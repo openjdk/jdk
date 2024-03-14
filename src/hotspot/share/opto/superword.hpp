@@ -90,6 +90,7 @@ public:
   bool has_pair(Node* n1, Node* n2) const { return exists_left(n1) && get_right_for(n1) == n2; }
 
   void add_pair(Node* n1, Node* n2) {
+    assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
     assert(!exists_left(n1) && !exists_right(n2), "cannot be left twice, or right twice");
     int bb_idx_1 = _body.bb_idx(n1);
     int bb_idx_2 = _body.bb_idx(n2);
@@ -385,13 +386,12 @@ private:
   // do s1 and s2 have similar input edges?
   bool have_similar_inputs(Node* s1, Node* s2);
   void set_alignment(Node* s1, Node* s2, int align);
-  // Extend packset by following use->def and def->use links from pack members.
-  void extend_pairset_with_more_pairs_by_following_use_and_def();
   int adjust_alignment_for_type_conversion(Node* s, Node* t, int align);
-  // Extend the packset by visiting operand definitions of nodes in pack p
-  bool follow_use_defs(Node_List* p);
-  // Extend the packset by visiting uses of nodes in pack p
-  bool follow_def_uses(Node_List* p);
+
+  void extend_pairset_with_more_pairs_by_following_use_and_def();
+  bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
+  bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
+
   // For extended packsets, ordinally arrange uses packset by major component
   void order_def_uses(Node_List* p);
   // Estimate the savings from executing s1 and s2 as a pack

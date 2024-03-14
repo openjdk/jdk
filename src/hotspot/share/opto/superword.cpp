@@ -1035,20 +1035,16 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
   }
 }
 
-// Extend packset by following use->def and def->use links from pack members.
+// Extend pairset by following use->def and def->use links from pair members.
 void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   bool changed;
   do {
     changed = false;
     for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-      pair.left()->dump();
-      pair.right()->dump();
-    }
-    // TODO pairset
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
-      changed |= follow_use_defs(p);
-      changed |= follow_def_uses(p);
+      Node* s1 = pair.left();
+      Node* s2 = pair.right();
+      changed |= extend_pairset_with_more_pairs_by_following_def(s1, s2);
+      changed |= extend_pairset_with_more_pairs_by_following_use(s1, s2);
     }
   } while (changed);
 
@@ -1084,12 +1080,8 @@ int SuperWord::adjust_alignment_for_type_conversion(Node* s, Node* t, int align)
   return align;
 }
 
-//------------------------------follow_use_defs---------------------------
-// Extend the packset by visiting operand definitions of nodes in pack p
-bool SuperWord::follow_use_defs(Node_List* p) {
-  assert(p->size() == 2, "just checking");
-  Node* s1 = p->at(0);
-  Node* s2 = p->at(1);
+bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2) {
+  assert(_pairset.has_pair(s1, s2), "just checking");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1097,7 +1089,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
 
 #ifndef PRODUCT
   if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::follow_use_defs: s1 %d, align %d",
+    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: s1 %d, align %d",
                   s1->_idx, alignment(s1));
   }
 #endif
@@ -1118,7 +1110,7 @@ bool SuperWord::follow_use_defs(Node_List* p) {
         _pairset.add_pair(t1, t2);
 #ifndef PRODUCT
         if (is_trace_superword_alignment()) {
-          tty->print_cr("SuperWord::follow_use_defs: set_alignment(%d, %d, %d)",
+          tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_def: set_alignment(%d, %d, %d)",
                         t1->_idx, t2->_idx, align);
         }
 #endif
@@ -1130,13 +1122,9 @@ bool SuperWord::follow_use_defs(Node_List* p) {
   return changed;
 }
 
-//------------------------------follow_def_uses---------------------------
-// Extend the packset by visiting uses of nodes in pack p
-bool SuperWord::follow_def_uses(Node_List* p) {
+bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
+  assert(_pairset.has_pair(s1, s2), "just checking");
   bool changed = false;
-  Node* s1 = p->at(0);
-  Node* s2 = p->at(1);
-  assert(p->size() == 2, "just checking");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1145,7 +1133,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
   int align = alignment(s1);
 #ifndef PRODUCT
   if (is_trace_superword_alignment()) {
-    tty->print_cr("SuperWord::follow_def_uses: s1 %d, align %d",
+    tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: s1 %d, align %d",
                   s1->_idx, align);
   }
 #endif
@@ -1189,7 +1177,7 @@ bool SuperWord::follow_def_uses(Node_List* p) {
     _pairset.add_pair(u1, u2);
 #ifndef PRODUCT
     if (is_trace_superword_alignment()) {
-      tty->print_cr("SuperWord::follow_def_uses: set_alignment(%d, %d, %d)",
+      tty->print_cr("SuperWord::extend_pairset_with_more_pairs_by_following_use: set_alignment(%d, %d, %d)",
                     u1->_idx, u2->_idx, align);
     }
 #endif
@@ -1279,14 +1267,14 @@ bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
           u2->swap_edges(2, 3);
           u2->swap_edges(1, 4);
         }
-        return false; // Just swap the edges, the muladds2i nodes get packed in follow_use_defs
+        return false; // Just swap the edges, the muladds2i nodes get packed in extend_pairset_with_more_pairs_by_following_def
       } else {
         return false;
       }
     } else if (i1 == i2 && VectorNode::is_muladds2i(u2) && u1 != u2) {
       u2->swap_edges(1, 3);
       u2->swap_edges(2, 4);
-      return false; // Just swap the edges, the muladds2i nodes get packed in follow_use_defs
+      return false; // Just swap the edges, the muladds2i nodes get packed in extend_pairset_with_more_pairs_by_following_def
     }
   } while (i1 < ct);
   return true;
