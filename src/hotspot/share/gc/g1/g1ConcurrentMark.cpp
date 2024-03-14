@@ -589,7 +589,7 @@ void G1ConcurrentMark::humongous_object_eagerly_reclaimed(HeapRegion* r) {
 
   if (!_g1h->collector_state()->mark_or_rebuild_in_progress()) {
     return;
-}
+  }
 
   // Clear any statistics about the region gathered so far.
   _g1h->humongous_obj_regions_iterate(r,
