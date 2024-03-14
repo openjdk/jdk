@@ -56,7 +56,7 @@ import static org.testng.Assert.assertThrows;
  * @modules java.base/java.util:open
  * @summary White box tests for HashMap-related internals around table sizing
  * @comment skip running this test on 32 bit VM
- * @requires vm.bits == "64" & os.maxMemory > 2G
+ * @requires vm.bits == "64"
  * @run testng/othervm -Xmx2g WhiteBoxResizeTest
  */
 public class WhiteBoxResizeTest {
