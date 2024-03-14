@@ -56,15 +56,7 @@ public class bug4222153 {
         Robot robot = new Robot();
         robot.setAutoDelay(50);
         try {
-            SwingUtilities.invokeAndWait(() -> {
-                frame = new JFrame("Test JTable Tab Press");
-                table = new JTable(2, 2);
-                frame.getContentPane().add(table);
-                frame.setSize(200, 200);
-                frame.setLocationRelativeTo(null);
-                frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-                frame.setVisible(true);
-            });
+            SwingUtilities.invokeAndWait(bug4222153::createAndShowUI);
             robot.waitForIdle();
             robot.delay(1000);
 
@@ -111,5 +103,15 @@ public class bug4222153 {
                 }
             });
         }
+    }
+
+    private static void createAndShowUI() {
+        frame = new JFrame("Test JTable Tab Press");
+        table = new JTable(2, 2);
+        frame.getContentPane().add(table);
+        frame.setSize(200, 200);
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
     }
 }
