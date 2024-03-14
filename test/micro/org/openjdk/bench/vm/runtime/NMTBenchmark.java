@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 package org.openjdk.bench.vm.runtime;
 
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.BenchmarkParams;
 import org.openjdk.jmh.infra.Blackhole;
 
 import jdk.internal.misc.Unsafe;
@@ -36,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Benchmark)
+@State(Scope.Thread)
 @Warmup(iterations = 2, time = 1, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 5, time = 1, timeUnit = TimeUnit.SECONDS)
 public abstract class NMTBenchmark {
@@ -106,16 +105,8 @@ public abstract class NMTBenchmark {
     }
   }
 
-  @Setup
-  public void setup(BenchmarkParams params) throws InterruptedException {
-    if (params.getThreads() != 1)
-      throw new InterruptedException("This benchmark should run only with one thread.");
-  }
-
   @Benchmark
-  public void mixAllocateFreeMemory(BenchmarkParams params, Blackhole bh) throws InterruptedException{
-    if (params.getThreads() != 1)
-      throw new InterruptedException("This benchmark should run only with one thread.");
+  public void mixAallocateFreeMemory(Blackhole bh) throws InterruptedException{
 
     Unsafe unsafe = Unsafe.getUnsafe();
     if (unsafe == null) {
@@ -172,10 +163,7 @@ public abstract class NMTBenchmark {
   }
 
   @Benchmark
-  public void onlyAllocateMemory(BenchmarkParams params) throws InterruptedException {
-    if (params.getThreads() != 1)
-      throw new InterruptedException("This benchmark should run only with one thread.");
-
+  public void onlyAllocateMemory() throws InterruptedException {
     Unsafe unsafe = Unsafe.getUnsafe();
     if (unsafe == null) {
       throw new InterruptedException();
@@ -206,10 +194,7 @@ public abstract class NMTBenchmark {
   }
 
   @Benchmark
-  public void mixAllocateReallocateMemory(BenchmarkParams params) throws InterruptedException {
-    if (params.getThreads() != 1)
-      throw new InterruptedException("This benchmark should run only with one thread.");
-
+  public void mixAllocateReallocateMemory() throws InterruptedException {
     Unsafe unsafe = Unsafe.getUnsafe();
     if (unsafe == null) {
       throw new InterruptedException();
