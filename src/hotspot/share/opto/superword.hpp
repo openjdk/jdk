@@ -153,10 +153,13 @@ public:
     _packs(arena, 8, 0, nullptr),
     _node_to_pack(arena, _body.body().length(), _body.body().length(), nullptr) {}
 
-  // Delegate to _packs
+  // Accessors to iterate over packs.
   int length() const { return _packs.length(); }
   bool is_empty() const { return _packs.is_empty(); }
   Node_List* at(int i) const { return _packs.at(i); }
+
+  Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
+
 
   // TODO remove?
   void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
@@ -164,8 +167,10 @@ public:
   void trunc_to(int len) { _packs.trunc_to(len); }
   void clear() { _packs.clear(); }
 
-  Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
-  // make private?
+  // TODO remove?
+  void remove_pack_at(int pos);
+
+  // TODO: make private?
   void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
 
   NOT_PRODUCT( void print() const; )
@@ -563,10 +568,6 @@ private:
   BasicType longer_type_for_conversion(Node* n);
   // Find the longest type in def-use chain for packed nodes, and then compute the max vector size.
   int max_vector_size_in_def_use_chain(Node* n);
-
-  // TODO remove?
-  // Remove the pack at position pos in the packset
-  void remove_pack_at(int pos);
 
   static LoadNode::ControlDependency control_dependency(Node_List* p);
   // Alignment within a vector memory reference

@@ -1597,7 +1597,7 @@ void SuperWord::filter_packs(const char* filter_name,
       assert(i >= new_packset_length, "only move packs down");
       _packset.at_put(new_packset_length++, pack);
     } else {
-      remove_pack_at(i);
+      _packset.remove_pack_at(i);
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
@@ -3405,16 +3405,15 @@ bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
          _vloop.phase()->C->get_alias_index(m2->adr_type());
 }
 
-//------------------------------remove_pack_at---------------------------
 // Remove the pack at position pos in the packset
-// TODO move to packset
-void SuperWord::remove_pack_at(int pos) {
-  Node_List* p = _packset.at(pos);
+// TODO remove?
+void PackSet::remove_pack_at(int pos) {
+  Node_List* p = _packs.at(pos);
   for (uint i = 0; i < p->size(); i++) {
     Node* s = p->at(i);
-    _packset.set_pack(s, nullptr);
+    set_pack(s, nullptr);
   }
-  _packset.at_put(pos, nullptr);
+  _packs.at_put(pos, nullptr);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {
