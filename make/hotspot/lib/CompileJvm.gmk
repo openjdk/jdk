@@ -155,7 +155,7 @@ endif
 ifeq ($(call isTargetOs, linux), true)
   HOTSPOT_VERSION_SCRIPT := $(TOPDIR)/make/data/hotspot-symbols/version-script.txt
 
-  JVM_LDFLAGS += -Wl,--exclude-libs,ALL -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
+  JVM_LDFLAGS += -Wl,-version-script=$(HOTSPOT_VERSION_SCRIPT)
 endif
 
 ################################################################################
