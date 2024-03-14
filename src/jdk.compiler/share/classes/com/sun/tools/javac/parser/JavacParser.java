@@ -4199,9 +4199,14 @@ public class JavacParser implements Parser {
     protected JCTree importDeclaration() {
         int pos = token.pos;
         nextToken();
-        boolean importStatic = false;
+        boolean staticImport = false;
+        boolean moduleImport = false;
         if (token.kind == STATIC) {
-            importStatic = true;
+            staticImport = true;
+            nextToken();
+        } else if (token.kind == IDENTIFIER && token.name() == names.module) {
+            checkSourceLevel(Feature.MODULE_IMPORTS);
+            moduleImport = true;
             nextToken();
         }
         JCExpression pid = toP(F.at(token.pos).Ident(ident()));
@@ -4217,7 +4222,7 @@ public class JavacParser implements Parser {
             }
         } while (token.kind == DOT);
         accept(SEMI);
-        return toP(F.at(pos).Import((JCFieldAccess)pid, importStatic));
+        return toP(F.at(pos).Import((JCFieldAccess)pid, staticImport, moduleImport));
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration

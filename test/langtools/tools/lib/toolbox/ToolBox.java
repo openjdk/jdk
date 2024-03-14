@@ -747,6 +747,8 @@ public class ToolBox {
 
         private final static Pattern commentPattern =
                 Pattern.compile("(?s)(\\s+//.*?\n|/\\*.*?\\*/)");
+        private final static Pattern importPattern =
+                Pattern.compile("import\\s+");
         private final static Pattern modulePattern =
                 Pattern.compile("module\\s+((?:\\w+\\.)*)");
         private final static Pattern packagePattern =
@@ -773,7 +775,11 @@ public class ToolBox {
 
             String packageName = null;
 
-            matcher = modulePattern.matcher(source);
+            matcher = importPattern.matcher(source);
+
+            int firstImport = matcher.find() ? matcher.start() : source.length();
+
+            matcher = modulePattern.matcher(source.subSequence(0, firstImport));
             if (matcher.find())
                 return "module-info.java";
 

@@ -47,6 +47,11 @@ public interface ImportTree extends Tree {
      * @return true if this is a static import
      */
     boolean isStatic();
+    /**
+     * Returns true if this is an import module declaration.
+     * @return true if this is an import module declaration
+     */
+    boolean isModule();
 
     /**
      * Returns the qualified identifier for the declaration(s)

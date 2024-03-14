@@ -230,7 +230,7 @@ public class StarImportTest {
                     public boolean accepts(Scope origin, Symbol t) {
                         return t.kind == TYP;
                     }
-                }, make.Import(null, false), (i, cf) -> { throw new IllegalStateException(); });
+                }, make.Import(null, false, false), (i, cf) -> { throw new IllegalStateException(); });
 
                 for (Symbol sym : members.getSymbols()) {
                     starImportModel.enter(sym);
