@@ -476,7 +476,6 @@ bool SuperWord::SLP_extract() {
   split_packs_to_break_mutual_dependence();
   split_packs_at_use_def_boundaries();  // again: propagate split of other packs
 
-  // Now we only remove packs:
   filter_packs_for_power_of_2_size();
   filter_packs_for_mutual_independence();
   filter_packs_for_alignment();
@@ -3357,17 +3356,6 @@ const Type* VLoopTypes::container_type(Node* n) const {
 bool VLoopMemorySlices::same_memory_slice(MemNode* m1, MemNode* m2) const {
   return _vloop.phase()->C->get_alias_index(m1->adr_type()) ==
          _vloop.phase()->C->get_alias_index(m2->adr_type());
-}
-
-// Remove the pack at position pos in the packset
-// TODO remove?
-void PackSet::remove_pack_at(int pos) {
-  Node_List* p = _packs.at(pos);
-  for (uint i = 0; i < p->size(); i++) {
-    Node* s = p->at(i);
-    set_pack(s, nullptr);
-  }
-  _packs.at_put(pos, nullptr);
 }
 
 LoadNode::ControlDependency SuperWord::control_dependency(Node_List* p) {

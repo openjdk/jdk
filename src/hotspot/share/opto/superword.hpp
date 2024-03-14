@@ -234,12 +234,8 @@ private:
   // Mapping from nodes to their pack: bb_idx -> pack
   GrowableArray<Node_List*> _node_to_pack;
 
-#ifndef PRODUCT
-  const bool _trace_packset;
-  const bool _trace_rejections;
-  bool is_trace_superword_packset() const { return _trace_packset; }
-  bool is_trace_superword_rejections() const { return _trace_rejections; }
-#endif
+  NOT_PRODUCT(const bool _trace_packset;)
+  NOT_PRODUCT(const bool _trace_rejections;)
 
 public:
   // Initialize empty, i.e. no packs, and unmapped (nullptr).
@@ -259,6 +255,9 @@ public:
   bool is_empty() const { return _packs.is_empty(); }
   Node_List* at(int i) const { return _packs.at(i); }
 
+private:
+  void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
+public:
   Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
 
   void add_pack(Node_List* pack) {
@@ -270,7 +269,9 @@ public:
     }
   }
 
+private:
   SplitStatus split_pack(const char* split_name, Node_List* pack, SplitTask task);
+public:
   template <typename SplitStrategy>
   void split_packs(const char* split_name, SplitStrategy strategy);
 
@@ -279,18 +280,12 @@ public:
                     const char* rejection_message,
                     FilterPredicate filter);
 
-  // TODO remove?
-  void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
-  void append(Node_List* pack) { _packs.append(pack); }
-  void trunc_to(int len) { _packs.trunc_to(len); }
   void clear() { _packs.clear(); }
 
-  // TODO remove?
-  void remove_pack_at(int pos);
-
-  // TODO: make private?
-  void set_pack(const Node* n, Node_List* pack) { _node_to_pack.at_put(_body.bb_idx(n), pack); }
-
+private:
+  NOT_PRODUCT(bool is_trace_superword_packset() const { return _trace_packset; })
+  NOT_PRODUCT(bool is_trace_superword_rejections() const { return _trace_rejections; })
+public:
   DEBUG_ONLY(void verify() const;)
   NOT_PRODUCT(void print() const;)
   NOT_PRODUCT(void print_pack(Node_List* pack) const;)
@@ -533,16 +528,9 @@ private:
 
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
-  // Ensure all packs are aligned, if AlignVector is on.
   void filter_packs_for_alignment();
-
-  // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
-
-  // TODO move to packset, and maybe combine with split?
-  // Remove packs that are not implemented.
   void filter_packs_for_implemented();
-  // Remove packs that are not profitable.
   void filter_packs_for_profitable();
 
   DEBUG_ONLY(void verify_packs() const;)
