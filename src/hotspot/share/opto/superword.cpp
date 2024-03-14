@@ -1245,7 +1245,6 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
 //          Therefore, extend_pairset_with_more_pairs_by_following_use cannot extend to MulAddS2I,
 //          but there is a chance that extend_pairset_with_more_pairs_by_following_def can do it.
 //
-// TODO add some IR tests for all these swapping cases.
 SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2) {
   assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
 
