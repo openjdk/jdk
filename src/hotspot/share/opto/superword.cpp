@@ -469,8 +469,6 @@ bool SuperWord::SLP_extract() {
 
   combine_pairs_to_longer_packs();
 
-  construct_pack_map();
-
   split_packs_at_use_def_boundaries();  // a first time: create natural boundaries
   split_packs_only_implemented_with_smaller_size();
   split_packs_to_break_mutual_dependence();
@@ -1378,7 +1376,7 @@ void SuperWord::combine_pairs_to_longer_packs() {
         pack->push(right);
         left = right;
       }
-      _packset.append(pack);
+      _packset.add_pack(pack);
     }
   }
 
@@ -1747,27 +1745,6 @@ void SuperWord::filter_packs_for_alignment() {
     // Solution is constrained (not trivial)
     // -> must change pre-limit to achieve alignment
     set_align_to_ref(current->as_constrained()->mem_ref());
-  }
-}
-
-// Construct the map from nodes to packs.  Only valid after the
-// point where a node is only in one pack (after combine_pairs_to_longer_packs).
-// TODO remove / integrate to combine?
-void SuperWord::construct_pack_map() {
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    for (uint j = 0; j < p->size(); j++) {
-      Node* s = p->at(j);
-#ifdef ASSERT
-      if (_packset.pack(s) != nullptr) {
-        s->dump(1);
-        tty->print_cr("packs[%d]:", i);
-        _packset.print_pack(p);
-        assert(false, "only in one pack");
-      }
-#endif
-      _packset.set_pack(s, p);
-    }
   }
 }
 

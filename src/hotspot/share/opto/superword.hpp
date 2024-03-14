@@ -160,6 +160,14 @@ public:
 
   Node_List* pack(const Node* n) const { return !_vloop.in_bb(n) ? nullptr : _node_to_pack.at(_body.bb_idx(n)); }
 
+  void add_pack(Node_List* pack) {
+    _packs.append(pack);
+    for (uint i = 0; i < pack->size(); i++) {
+      Node* n = pack->at(i);
+      assert(this->pack(n) == nullptr, "not yet in a pack");
+      set_pack(n, pack);
+    }
+  }
 
   // TODO remove?
   void at_put(int i, Node_List* pack) { return _packs.at_put(i, pack); }
@@ -519,10 +527,6 @@ private:
 
   // Find the set of alignment solutions for load/store pack.
   const AlignmentSolution* pack_alignment_solution(const Node_List* pack);
-
-  // TODO remove / integrate to combine?
-  // Construct the map from nodes to packs.
-  void construct_pack_map();
 
   // TODO move to packset, and maybe combine with split?
   // Remove packs that are not implemented.
