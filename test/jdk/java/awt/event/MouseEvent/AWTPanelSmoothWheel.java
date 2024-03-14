@@ -33,6 +33,7 @@ import java.awt.Panel;
  * @bug 6730447
  * @summary Support for high resolution mouse wheel is still incomplete.
  *          AWT panel needs to be supported
+ * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual AWTPanelSmoothWheel
