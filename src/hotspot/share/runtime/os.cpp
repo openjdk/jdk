@@ -734,8 +734,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     }
 
 #ifdef ASSERT
+#if defined(LINUX) || defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // LINUX || APPLE
     NMT_MemoryLogRecorder::log(memflags, new_outer_size, (address)new_outer_ptr, (address)header, &stack);
-#endif
+#if defined(LINUX) || defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // LINUX || APPLE
+#endif // ASSERT
 
     // realloc(3) succeeded, variable header now points to invalid memory and we need to deaccount the old block.
     MemTracker::deaccount(free_info);
@@ -763,8 +770,15 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     }
 
 #ifdef ASSERT
+#if defined(LINUX) || defined(__APPLE__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuse-after-free"
+#endif // LINUX || APPLE
     NMT_MemoryLogRecorder::log(memflags, size, (address)rc, (address)memblock, &stack);
-#endif
+#if defined(LINUX) || defined(__APPLE__)
+#pragma GCC diagnostic pop
+#endif // LINUX || APPLE
+#endif // ASSERT
   }
 
   DEBUG_ONLY(break_if_ptr_caught(rc);)

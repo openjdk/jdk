@@ -22,11 +22,12 @@
  *
  */
 
-#ifndef SHARE_SERVICES_NMT_MEMORYLOGRECORDER_HPP
-#define SHARE_SERVICES_NMT_MEMORYLOGRECORDER_HPP
+#ifndef SHARE_NMT_MEMORYLOGRECORDER_HPP
+#define SHARE_NMT_MEMORYLOGRECORDER_HPP
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "runtime/globals.hpp"
 
 #ifdef ASSERT
 
@@ -55,4 +56,4 @@ public:
 
 #endif // ASSERT
 
-#endif // SHARE_SERVICES_NMT_MEMORYLOGRECORDER_HPP
+#endif // SHARE_NMT_MEMORYLOGRECORDER_HPP

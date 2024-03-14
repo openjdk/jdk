@@ -24,9 +24,9 @@
  */
 
 #include "precompiled.hpp"
+#include "nmt/memoryLogRecorder.hpp"
 #include "nmt/nmtPreInit.hpp"
 #include "runtime/os.hpp"
-#include "services/nmt/memoryLogRecorder.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
