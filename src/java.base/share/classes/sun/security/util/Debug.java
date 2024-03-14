@@ -163,16 +163,15 @@ public class Debug {
      * Get a Debug object corresponding to the given option on the given
      * property value.
      * <p>
-     * Note: unlike other {@code getInstance} methods, this method might
-     * return a Debug object even if the option is not set in the
-     * {@code java.security.debug} system property.
+     * Note: unlike other {@code getInstance} methods, this method does not
+     * use the {@code java.security.debug} system property.
      * <p>
      * Usually, this method is used by other individual era-specific debug
      * settings. For example,
      * {@snippet lang=java:
      * Map<String,String> settings = loadLoginSettings();
-     * String property = settings.get("logout");
-     * Debug debug = Debug.of("logout", setting);
+     * String property = settings.get("login");
+     * Debug debug = Debug.of("login", setting);
      * }
      * @param option the debug option name
      * @param property debug setting for this option.

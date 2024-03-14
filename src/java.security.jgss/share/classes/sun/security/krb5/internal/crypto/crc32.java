@@ -30,13 +30,16 @@
 
 package sun.security.krb5.internal.crypto;
 
+import sun.security.krb5.internal.Krb5;
+
 import java.security.MessageDigestSpi;
 import java.security.DigestException;
+
+import static sun.security.krb5.internal.Krb5.DEBUG;
 
 public final class crc32 extends MessageDigestSpi implements Cloneable {
     private static final int CRC32_LENGTH = 4; //32-bit
     private int seed;
-    private static boolean DEBUG = sun.security.krb5.internal.Krb5.DEBUG;
     // buffer;
     // private int bufferIndex, bufferLeft;
 
@@ -259,9 +262,9 @@ public final class crc32 extends MessageDigestSpi implements Cloneable {
 
     public static byte[] byte2crc32sum_bytes(byte[] data, int size) {
         int temp = byte2crc32sum(0, data, size);
-        if (DEBUG) {
-            System.out.println(">>>crc32: " + Integer.toHexString(temp));
-            System.out.println(">>>crc32: " + Integer.toBinaryString(temp));
+        if (DEBUG != null) {
+            DEBUG.println(">>>crc32: " + Integer.toHexString(temp));
+            DEBUG.println(">>>crc32: " + Integer.toBinaryString(temp));
         }
         return int2quad(temp);
     }
