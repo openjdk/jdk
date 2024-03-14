@@ -28,19 +28,6 @@ include Modules.gmk
 include ProcessMarkdown.gmk
 include ToolsJdk.gmk
 
-# Tell the compiler not to export any functions unless declared so in
-# the source code. On Windows, this is the default and cannot be changed.
-# On Mac, we have always exported all symbols, probably due to oversight
-# and/or misunderstanding. To emulate this, don't hide any symbols
-# by default.
-# Also provide an override for non-conformant libraries.
-ifeq ($(TOOLCHAIN_TYPE), gcc)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-  LDFLAGS_JDKEXE += -Wl,--exclude-libs,ALL
-else ifeq ($(TOOLCHAIN_TYPE), clang)
-  LAUNCHER_CFLAGS += -fvisibility=hidden
-endif
-
 LAUNCHER_SRC := $(TOPDIR)/src/java.base/share/native/launcher
 LAUNCHER_CFLAGS += -I$(TOPDIR)/src/java.base/share/native/launcher \
     -I$(TOPDIR)/src/java.base/share/native/libjli \
