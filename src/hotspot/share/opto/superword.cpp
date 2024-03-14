@@ -857,7 +857,7 @@ bool SuperWord::stmts_can_pack(Node* s1, Node* s2, int align) {
 
 //------------------------------are_adjacent_refs---------------------------
 // Is s1 immediately before s2 in memory?
-bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) {
+bool SuperWord::are_adjacent_refs(Node* s1, Node* s2) const {
   if (!s1->is_Mem() || !s2->is_Mem()) return false;
   if (!in_bb(s1)    || !in_bb(s2))    return false;
 
@@ -1302,58 +1302,51 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   return PairOrderStatus::Ordered;
 }
 
-//------------------------------est_savings---------------------------
-// Estimate the savings from executing s1 and s2 as a pack
-// TODO pairset
-int SuperWord::est_savings(Node* s1, Node* s2) {
-  int save_in = 2 - 1; // 2 operations per instruction in packed form
+// Estimate the savings from packing the pair (s1, s2).
+int SuperWord::est_savings(Node* s1, Node* s2) const {
+  assert(!_pairset.has_pair(s1, s2), "(s1, s2) is not (yet) a pair");
 
-  // inputs
+  // Savings with def nodes/packs
+  int save_def = 2 - 1; // 2 operations per instruction in packed form
   for (uint i = 1; i < s1->req(); i++) {
     Node* x1 = s1->in(i);
     Node* x2 = s2->in(i);
     if (x1 != x2) {
       if (are_adjacent_refs(x1, x2)) {
-        save_in += adjacent_profit(x1, x2);
+        save_def += adjacent_profit(x1, x2);
       } else if (!_pairset.has_pair(x1, x2)) {
-        save_in -= pack_cost(2);
+        save_def -= pack_cost(2);
       } else {
-        save_in += unpack_cost(2);
+        save_def += unpack_cost(2);
       }
     }
   }
 
-  // uses of result
-  uint ct = 0;
+  // Savings with use nodes/packs
+  uint use_packs_count = 0;
   int save_use = 0;
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-    Node* s1_use = s1->fast_out(i);
-    for (int j = 0; j < _packset.length(); j++) {
-      Node_List* p = _packset.at(j);
-      if (p->at(0) == s1_use) {
-        for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
-          Node* s2_use = s2->fast_out(k);
-          if (p->at(p->size()-1) == s2_use) {
-            ct++;
-            if (are_adjacent_refs(s1_use, s2_use)) {
-              save_use += adjacent_profit(s1_use, s2_use);
-            }
-          }
+    Node* use1 = s1->fast_out(i);
+
+    // Check if we have a pair (use1, use2)
+    if (!_pairset.has_left(use1)) { continue; }
+    Node* use2 = _pairset.get_right_for(use1);
+
+    for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
+      if (use2 == s2->fast_out(k)) {
+        use_packs_count++;
+        if (are_adjacent_refs(use1, use2)) {
+          save_use += adjacent_profit(use1, use2);
         }
       }
     }
   }
 
-  if (ct < s1->outcnt()) save_use += unpack_cost(1);
-  if (ct < s2->outcnt()) save_use += unpack_cost(1);
+  if (use_packs_count < s1->outcnt()) { save_use += unpack_cost(1); }
+  if (use_packs_count < s2->outcnt()) { save_use += unpack_cost(1); }
 
-  return MAX2(save_in, save_use);
+  return MAX2(save_def, save_use);
 }
-
-//------------------------------costs---------------------------
-int SuperWord::adjacent_profit(Node* s1, Node* s2) { return 2; }
-int SuperWord::pack_cost(int ct)   { return ct; }
-int SuperWord::unpack_cost(int ct) { return ct; }
 
 // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
 void SuperWord::combine_pairs_to_longer_packs() {

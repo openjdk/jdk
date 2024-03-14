@@ -392,7 +392,7 @@ private:
   // Can s1 and s2 be in a pack with s1 immediately preceding s2 and  s1 aligned at "align"
   bool stmts_can_pack(Node* s1, Node* s2, int align);
   // Is s1 immediately before s2 in memory?
-  bool are_adjacent_refs(Node* s1, Node* s2);
+  bool are_adjacent_refs(Node* s1, Node* s2) const;
   // Are s1 and s2 similar?
   bool isomorphic(Node* s1, Node* s2);
   // Do we have pattern n1 = (iv + c) and n2 = (iv + c + 1)?
@@ -410,11 +410,11 @@ private:
   enum PairOrderStatus { Ordered, Unordered, Unknown };
   PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
 
-  // Estimate the savings from executing s1 and s2 as a pack
-  int est_savings(Node* s1, Node* s2);
-  int adjacent_profit(Node* s1, Node* s2);
-  int pack_cost(int ct);
-  int unpack_cost(int ct);
+  // Estimate the savings from packing the pair (s1, s2).
+  int est_savings(Node* s1, Node* s2) const;
+  int adjacent_profit(Node* s1, Node* s2) const { return 2; }
+  int pack_cost(int ct)                   const { return ct; }
+  int unpack_cost(int ct)                 const { return ct; }
 
   // Combine packs A and B with A.last == B.first into A.first..,A.last,B.second,..B.last
   void combine_pairs_to_longer_packs();
