@@ -133,15 +133,17 @@
  * <a id="reachability"></a>
  * <h3>Reachability</h3>
  *
- * Going from strongest to weakest, the different levels of
+ * A <em>reachable</em> object is any object that can be accessed in any potential
+ * continuing computation from any live thread (as stated in {@jls 12.6.1}).
+ *
+ * <p> Going from strongest to weakest, the different levels of
  * reachability reflect the life cycle of an object.  They are
  * operationally defined as follows:
  *
  * <ul>
  *
- * <li> An object is <em>strongly reachable</em> if it has the potential to be
- * obtained and used by some thread without traversing the referent of a
- * Reference object.
+ * <li> An object is <em>strongly reachable</em> if it can be accessed without
+ * traversing the referent of a Reference object.
  *
  * <li> An object is <em>softly reachable</em> if it is not strongly
  * reachable but can be reached by traversing a soft reference.
