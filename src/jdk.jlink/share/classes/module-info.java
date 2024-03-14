@@ -62,7 +62,6 @@ module jdk.jlink {
     uses jdk.tools.jlink.plugin.Plugin;
     exports jdk.tools.jlink.plugin to jdk.jlink_build_runlink;
     exports jdk.tools.jlink.internal to jdk.jlink_build_runlink;
-    exports jdk.tools.jlink.internal.plugins to jdk.jlink_build_runlink;
 
     provides java.util.spi.ToolProvider with
         jdk.tools.jmod.Main.JmodToolProvider,
