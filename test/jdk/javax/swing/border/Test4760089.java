@@ -42,13 +42,14 @@ import javax.swing.border.TitledBorder;
 public class Test4760089 {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
+                When test starts, a panel with a compound titled border is seen.
                 If one of its titles is overstruck with the border's
                 line then test fails. Otherwise test passes.""";
 
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(testInstructions)
-                .rows(3)
+                .rows(4)
                 .columns(35)
                 .splitUI(Test4760089::init)
                 .build()
