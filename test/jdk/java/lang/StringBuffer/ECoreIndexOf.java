@@ -30,8 +30,11 @@
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.nio.charset.Charset;
 
+// @ECoreIndexOf(singleThreaded=true)
 public class ECoreIndexOf {
 
   static Random generator = new Random();
@@ -41,38 +44,13 @@ public class ECoreIndexOf {
 
   static boolean success = true;
 
+  static Map<Charset, String> titles = new HashMap<Charset, String>();
+
   public static void main(String[] args) throws Exception {
     int foo = 0;
     String testName = "ECoreIndexOf";
 
-    String data = "0000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
-    String sub = "10101010";
-    StringBuffer sbdata = new StringBuffer(data);
-
-    for (int k = 0; k < 200000; k++) {
-      int dummy = 0;
-      int index = 0;
-      index = indexOfKernel(data, sub);
-      while ((index = indexOfKernel(data, sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-    }
-
-    for (int k = 0; k < 200000; k++) {
-      int dummy = 0;
-      int index = 0;
-      index = indexOfKernel(sbdata, sub);
-      while ((index = indexOfKernel(sbdata, sub, index)) > -1) {
-        index++;
-        dummy += index;
-      }
-    }
-
-    for (int i = 0; i < 200000; i++) {
-      foo = foo + indexOfKernel(testName, "dex");
-      foo = foo + indexOfKernel(testName, "dex", 2);
-    }
+    ///////////////////////////  WARM-UP //////////////////////////
 
     for (int i = 0; i < 128; i++) {
       haystack[i] = (char) i;
@@ -83,63 +61,114 @@ public class ECoreIndexOf {
       haystack_16[i] = (char) (i);
     }
 
+    String xStr = new String(Arrays.copyOfRange(haystack_16, 63, 118));
+    String shs = new String(Arrays.copyOfRange(haystack_16, 0, 126));
+
+    String data = "0000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
+    String sub = "10101010";
+    StringBuffer sbdata = new StringBuffer(data);
+
+    String u16data = "\u0030" + "000100101010010110101010010101110101001110110101010010101010010000010111010101010101010100010010101110111010101101010100010010100001010111111100001010101001010100001010101001010101010111010010101010101010101010101010";
+    String u16sub = "\u0031" + "0101010";
+    StringBuffer u16sbdata = new StringBuffer(u16data);
+
+    for (int k = 0; k < 2000000; k++) {
+      int dummy = 0;
+      int index = 0;
+      index = indexOfKernel(data, sub);
+      while ((index = indexOfKernel(data, sub, index)) > -1) {
+        index++;
+        dummy += index;
+      }
+      index = 0;
+      while ((index = indexOfKernel(data, u16sub, index)) > -1) {
+        index++;
+        dummy += index;
+      }
+      index = 0;
+      while ((index = indexOfKernel(u16data, u16sub, index)) > -1) {
+        index++;
+        dummy += index;
+      }
+      index = 0;
+      while ((index = indexOfKernel(shs, "1234", index)) > -1) {
+        index++;
+        dummy += index;
+      }
+      index = 0;
+      while ((index = indexOfKernel(shs, xStr, index)) > -1) {
+        index++;
+        dummy += index;
+      }
+    }
+
+    for (int k = 0; k < 2000000; k++) {
+      int dummy = 0;
+      int index = 0;
+      index = indexOfKernel(sbdata, sub);
+      while ((index = indexOfKernel(sbdata, sub, index)) > -1) {
+        index++;
+        dummy += index;
+      }
+    }
+
+    for (int i = 0; i < 2000000; i++) {
+      foo = foo + indexOfKernel(testName, "dex");
+      foo = foo + indexOfKernel(testName, "dex", 2);
+      foo = foo + indexOfKernel(u16data, "dex");
+      foo = foo + indexOfKernel(u16data, "dex", 2);
+      foo = foo + indexOfKernel(u16data, u16sub);
+      foo = foo + indexOfKernel(u16data, u16sub, 2);
+      foo = foo + indexOfKernel(u16sbdata, u16sub);
+      foo = foo + indexOfKernel(u16sbdata, u16sub, 2);
+      foo = foo + indexOfKernel(shs, xStr);
+      foo = foo + indexOfKernel(shs, xStr, 2);
+    }
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
 
-    // simpleTest();
-    // compareIndexOfLastIndexOf();
-    // compareStringStringBuffer();
+    simpleTest();
+    compareIndexOfLastIndexOf();
+    compareStringStringBuffer();
 
-    System.out.println("Testing LL");
+    String[] decorators = {"", " (same char)"};
+    Charset[] charSets = {StandardCharsets.ISO_8859_1, StandardCharsets.UTF_16};
+    boolean[] truefalse = {true, false};
 
-    exhaustive(false, false, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(false, true, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(true, false, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(true, true, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
+    titles.put(StandardCharsets.ISO_8859_1, "L");
+    titles.put(StandardCharsets.UTF_16, "U");
 
-    System.out.println("Testing UL");
+    for (int xxy = 0; xxy < 2; xxy++) {
+      for (String decorator : decorators) {
+        for (Charset csHaystack : charSets) {
+          for (Charset csNeedle : charSets) {
+            System.out.println("Testing " + titles.get(csHaystack) + titles.get(csNeedle) + decorator);
+            for (boolean useOffset : truefalse) {
+              for (boolean useBuffer : truefalse) {
+                exhaustive(useOffset, useBuffer, csHaystack, csNeedle);
+              }
+            }
+          }
+        }
 
-    exhaustive(false, false, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(false, true, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(true, false, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(true, true, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
+        for (int i = 0; i < 128; i++) {
+          haystack[i] = (char) 'a';
+        }
 
-    System.out.println("Testing UU");
+        for (int i = 0; i < 128; i++) {
+          haystack_16[i] = (char) ('a' + 256);
+        }
+      }
 
-    exhaustive(false, false, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(false, true, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(true, false, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(true, true, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
+      for (int i = 0; i < 128; i++) {
+        haystack[i] = (char) i;
+      }
 
-    for (int i = 0; i < 128; i++) {
-      haystack[i] = (char) 'a';
+      haystack_16[0] = '\u0000'; //(char) (23 + 256);
+      for (int i = 1; i < 128; i++) {
+        haystack_16[i] = (char) (i);
+      }
     }
-
-    for (int i = 0; i < 128; i++) {
-      haystack_16[i] = (char) ('a' + 256);
-    }
-
-    System.out.println("Testing LL (same char)");
-
-    exhaustive(false, false, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(false, true, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(true, false, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-    exhaustive(true, true, StandardCharsets.ISO_8859_1, StandardCharsets.ISO_8859_1);
-
-    System.out.println("Testing UL (same char)");
-
-    exhaustive(false, false, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(false, true, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(true, false, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-    exhaustive(true, true, StandardCharsets.UTF_16, StandardCharsets.ISO_8859_1);
-
-    System.out.println("Testing UU (same char)");
-
-    exhaustive(false, false, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(false, true, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(true, false, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-    exhaustive(true, true, StandardCharsets.UTF_16, StandardCharsets.UTF_16);
-
     System.out.println(testName + " complete.");
     // compareExhaustive();
 
@@ -238,8 +267,9 @@ public class ECoreIndexOf {
     int l_offset = 0;
     int failCount = 0;
 
-    System.err.println("Use offset=" + useOffset + ", Use StringBuffer=" + useStringBuffer + ", Haystack=" + hs_charset
-        + ", Needle=" + needleCharset);
+    String thisTest = titles.get(hs_charset) + titles.get(needleCharset) + (useOffset ? " w/offset" : "") + (useStringBuffer ? " StringBuffer" : "");
+    // System.err.println("Use offset=" + useOffset + ", Use StringBuffer=" + useStringBuffer + ", Haystack=" + hs_charset
+    //     + ", Needle=" + needleCharset);
 
     for (int needleSize = 0; needleSize < 128; needleSize++) {
       for (int haystackSize = 0; haystackSize < 128; haystackSize++) {
@@ -301,6 +331,7 @@ public class ECoreIndexOf {
             System.err.println("l_offset=" + l_offset);
             System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
                 " result=" + result + " nResult=" + nResult);
+            System.err.println("");
           }
           // badResults = success ? ((midnResult == -1) || (midresult == -1)) :
           // ((midnResult != -1) || (midresult != -1));
@@ -314,6 +345,7 @@ public class ECoreIndexOf {
             System.err.println("l_offset=" + l_offset);
             System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
                 " midresult=" + midresult + " midnResult=" + midnResult);
+            System.err.println("");
           }
           // badResults = success ? ((endnResult == -1) || (endresult == -1)) :
           // ((endnResult != -1) || (endresult != -1));
@@ -327,6 +359,7 @@ public class ECoreIndexOf {
             System.err.println("l_offset=" + l_offset);
             System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
                 " endresult=" + endresult + " endnResult=" + endnResult);
+            System.err.println("");
           }
 
           if (!useOffset)
@@ -335,7 +368,7 @@ public class ECoreIndexOf {
       }
     }
 
-    report("Exhaustive                   ", failCount);
+    report("Exhaustive " + thisTest, failCount);
   }
 
   private static void compareExhaustive() {
