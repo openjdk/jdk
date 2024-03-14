@@ -43,8 +43,8 @@ public class JTextFieldTest {
     private static JFrame frame;
     private static final String INSTRUCTIONS =
             """
-             Please run this test case under Solaris cjk locale with inputmethod
-             support, if you could input Chinese/Japanese/Korean in the swing
+             Please run this test in a CJK (Chinese/Japanese/Korean) locale
+             with input method support. If you could add input in the swing
              JTextField, then the test has passed!
             """;
 
@@ -53,7 +53,7 @@ public class JTextFieldTest {
             .builder()
             .title("JTextFieldTest")
             .instructions(INSTRUCTIONS)
-            .rows(15)
+            .rows(5)
             .columns(40)
             .testUI(JTextFieldTest::createAndShowGUI)
             .build()
