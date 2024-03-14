@@ -37,7 +37,7 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBATTACH, \
     NAME := attach, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBATTACH_CFLAGS), \
+    CFLAGS := $(LIBATTACH_CFLAGS), \
     CFLAGS_windows := /Gy, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \

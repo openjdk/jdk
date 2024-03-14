@@ -189,6 +189,24 @@ define SetupJdkLibraryBody
     $1_EXTRA_HEADER_FLAGS := $$(addprefix -I, $$($1_PROCESSED_EXTRA_HEADER_DIRS))
   endif
 
+  ifneq ($$($1_DEFAULT_CFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_CFLAGS := $$(CFLAGS_JDKLIB) $$($1_CFLAGS)
+    ifneq ($$($1_CFLAGS_FILTER_OUT), )
+      $$(foreach flag, $$($1_CFLAGS_FILTER_OUT), \
+        $$(eval $1_CFLAGS := $(filter-out $$(flag), $$($1_CFLAGS)) \
+      ))
+    endif
+
+    # Set the default flags first to be able to override
+    $1_CXXFLAGS := $$(CXXFLAGS_JDKLIB) $$($1_CXXFLAGS)
+    ifneq ($$($1_CXXFLAGS_FILTER_OUT), )
+      $$(foreach flag, $$($1_CXXFLAGS_FILTER_OUT), \
+        $$(eval $1_CXXFLAGS := $(filter-out $$(flag), $$($1_CXXFLAGS)) \
+      ))
+    endif
+  endif
+
   ifneq ($$($1_CFLAGS), )
     $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
@@ -244,6 +262,24 @@ define SetupJdkExecutableBody
       -D"JDK_FTYPE=0x1L" \
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
+
+  ifneq ($$($1_DEFAULT_CFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_CFLAGS := $$(CFLAGS_JDKEXE) $$($1_CFLAGS)
+    ifneq ($$($1_CFLAGS_FILTER_OUT), )
+      $$(foreach flag, $$($1_CFLAGS_FILTER_OUT), \
+        $$(eval $1_CFLAGS := $(filter-out $$(flag), $$($1_CFLAGS)) \
+      ))
+    endif
+
+    # Set the default flags first to be able to override
+    $1_CXXFLAGS := $$(CXXFLAGS_JDKEXE) $$($1_CXXFLAGS)
+    ifneq ($$($1_CXXFLAGS_FILTER_OUT), )
+      $$(foreach flag, $$($1_CXXFLAGS_FILTER_OUT), \
+        $$(eval $1_CXXFLAGS := $(filter-out $$(flag), $$($1_CXXFLAGS)) \
+      ))
+    endif
+  endif
 
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...
