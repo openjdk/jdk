@@ -155,10 +155,11 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
  * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
  * provide a best effort implementation. Failing to close, cancel, or
- * read {@link ##streaming streaming bodies} to exhaustion may stop
- * delivery of data and {@linkplain #awaitTermination(Duration) stall an
- * orderly shutdown}. The {@link #shutdownNow()} method will attempt
- * to cancel any such non-completed requests, but may cause
+ * read {@link ##streaming streaming or publishing bodies} to exhaustion
+ * may stop delivery of data while leaving the request open, and
+ * {@linkplain #awaitTermination(Duration) stall an
+ * orderly shutdown}. The {@link #shutdownNow()} method, if called, will
+ * attempt to cancel any such non-completed requests, but may cause
  * abrupt termination of any on going operation.
  *
  * <p id="gc">
@@ -169,8 +170,8 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * eventually completed. This relies both on the garbage collector
  * to notice that the instance is no longer reachable, and on all
  * requests started on the client to eventually complete. Failure
- * to properly close {@linkplain ##streaming streaming bodies} may
- * prevent the associated requests from running to completion, and
+ * to properly close {@linkplain ##streaming streaming or publishing bodies}
+ * may prevent the associated requests from running to completion, and
  * prevent the resources allocated by the associated client from
  * being reclaimed by the garbage collector.
  *
