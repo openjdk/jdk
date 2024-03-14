@@ -53,8 +53,7 @@ import javax.swing.table.TableModel;
  * @run main Tab
  */
 
-public class Tab
-{
+public class Tab {
     private static Robot robot;
     private static JFrame frame;
     private static JTable tableView;
@@ -117,8 +116,7 @@ public class Tab
         }
     }
 
-    static void createAndShowUI()
-    {
+    static void createAndShowUI() {
         frame = new JFrame("Test JTable's Focus Component");
         // Take the dummy data from SwingSet.
         final String[] names = {"First Name", "Last Name", "Favorite Color",
