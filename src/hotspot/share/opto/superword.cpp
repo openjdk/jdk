@@ -1393,7 +1393,7 @@ SuperWord::SplitStatus SuperWord::split_pack(const char* split_name,
 #ifndef PRODUCT
       if (is_trace_superword_rejections()) {
         tty->cr();
-        tty->print_cr("WARNING: Removed pack during split: %s:", task.message());
+        tty->print_cr("WARNING: Removed pack: %s:", task.message());
         _packset.print_pack(pack);
       }
 #endif
@@ -1574,36 +1574,16 @@ void SuperWord::split_packs_to_break_mutual_dependence() {
 
 template <typename FilterPredicate>
 void SuperWord::filter_packs(const char* filter_name,
-                             const char* error_message,
+                             const char* rejection_message,
                              FilterPredicate filter) {
-  int new_packset_length = 0;
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* pack = _packset.at(i);
-    assert(pack != nullptr, "no nullptr in packset");
-    if (filter(pack)) {
-      assert(i >= new_packset_length, "only move packs down");
-      _packset.at_put(new_packset_length++, pack);
-    } else {
-      _packset.remove_pack_at(i);
-#ifndef PRODUCT
-      if (is_trace_superword_rejections()) {
-        tty->cr();
-        tty->print_cr("WARNING: Removed pack: %s:", error_message);
-        _packset.print_pack(pack);
-      }
-#endif
-    }
-  }
-
-  assert(_packset.length() >= new_packset_length, "filter only reduces number of packs");
-  _packset.trunc_to(new_packset_length);
-
-#ifndef PRODUCT
-  if (is_trace_superword_packset() && filter_name != nullptr) {
-    tty->print_cr("\nAfter %s:", filter_name);
-    _packset.print();
-  }
-#endif
+  split_packs(filter_name,
+               [&](const Node_List* pack) {
+                 if (filter(pack)) {
+                   return SplitTask::make_unchanged();
+                 } else {
+                   return SplitTask::make_rejected(rejection_message);
+                 }
+               });
 }
 
 void SuperWord::filter_packs_for_power_of_2_size() {
@@ -1761,26 +1741,11 @@ void SuperWord::filter_packs_for_profitable() {
   }
 
   // Remove packs that are not profitable
-  while (true) {
-    int old_packset_length = _packset.length();
-    filter_packs(nullptr, // don't dump each time
-                 "not profitable",
-                 [&](const Node_List* pack) {
-                   return profitable(pack);
-                 });
-    // Repeat until stable
-    if (old_packset_length == _packset.length()) {
-      break;
-    }
-  }
-
-#ifndef PRODUCT
-  if (is_trace_superword_packset()) {
-    tty->print_cr("\nAfter Superword::filter_packs_for_profitable");
-    _packset.print();
-    tty->cr();
-  }
-#endif
+  filter_packs("Superword::filter_packs_for_profitable",
+               "not profitable",
+               [&](const Node_List* pack) {
+                 return profitable(pack);
+               });
 }
 
 // Can code be generated for the pack, restricted to size nodes?

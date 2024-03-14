@@ -517,7 +517,7 @@ private:
   // Filter out packs with various filter predicates
   template <typename FilterPredicate>
   void filter_packs(const char* filter_name,
-                    const char* error_message,
+                    const char* rejection_message,
                     FilterPredicate filter);
   void filter_packs_for_power_of_2_size();
   void filter_packs_for_mutual_independence();
