@@ -42,7 +42,8 @@ public class ImageDecoratedDnD {
             A Frame, which contains a yellow button labeled "Drag ME!"
             and a RED Panel will appear.
 
-            1. Click on the button and drag to the red panel.
+            1. Click on the button and drag to the red panel by pressing
+               the "CTRL" key on the keyboard.
 
             2. When the mouse enters the red panel during the drag, the panel
                should turn yellow.
@@ -74,11 +75,11 @@ public class ImageDecoratedDnD {
     }
 
     public static Frame createUI() {
-        Frame frame = new Frame("Use keyboard for DnD change");
+        Frame frame = new Frame("DnD Test using Keyboard");
         Panel mainPanel;
         Component dragSource, dropTarget;
 
-        frame.setBounds(0, 400, 200, 200);
+        frame.setBounds(0, 400, 400, 400);
         frame.setLayout(new BorderLayout());
 
         mainPanel = new Panel();
@@ -87,9 +88,8 @@ public class ImageDecoratedDnD {
         mainPanel.setBackground(Color.BLUE);
 
         dropTarget = new DnDTarget(Color.RED, Color.YELLOW);
-        dragSource = new DnDSource("Drag ME! (" +
-                (DragSource.isDragImageSupported() ? "with " : "without")
-                + " image)" );
+        dragSource = new DnDSource("Drag ME! ("
+                + (DragSource.isDragImageSupported() ? "with " : "without") + " image)" );
 
         mainPanel.add(dragSource, "North");
         mainPanel.add(dropTarget, "Center");
