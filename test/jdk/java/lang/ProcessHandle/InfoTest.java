@@ -292,7 +292,6 @@ public class InfoTest {
                 if (info.command().isPresent()) {
                     String command = info.command().get();
                     String expected = "sleep";
-
                     if (Platform.isWindows()) {
                         expected = "sleep.exe";
                     } else if (Platform.isBusybox("/bin/sleep")) {
