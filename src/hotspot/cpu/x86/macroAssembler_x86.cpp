@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -4741,7 +4741,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // the secondary supers.
   u1 bit = super_klass->hash_slot();
   {
-    // NB: If the count in x86 a shift instruction is 0, the flags are not affected.
+    // NB: If the count in a x86 shift instruction is 0, the flags are
+    // not affected, so we do a testq instead.
     int shift_count = Klass::SEC_HASH_MASK - bit;
     if (shift_count != 0) {
       salq(r_array_index, shift_count);
@@ -4782,8 +4783,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
     rorq(r_bitmap, bit);
   }
 
-  call(RuntimeAddress
-       (CAST_FROM_FN_PTR(address, StubRoutines::_klass_subtype_fallback_stub)));
+  call(RuntimeAddress(StubRoutines::_klass_subtype_fallback_stub));
   // Result is in the Z flag
   jcc(Assembler::equal, L_success);
 
@@ -4795,7 +4795,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   bind(L_success);
   movl(result, (u1)0);
 
-  BLOCK_COMMENT("} new check_klass_subtype_slow_path");
+  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
 

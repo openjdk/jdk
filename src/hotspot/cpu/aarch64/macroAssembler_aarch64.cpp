@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2014, 2021, Red Hat Inc. All rights reserved.
+ * Copyright (c) 2014, 2024, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1642,7 +1642,7 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   bind(L_success);
   mov(result, (u1)0);
 
-  BLOCK_COMMENT("} new check_klass_subtype_slow_path");
+  BLOCK_COMMENT("} hashed check_klass_subtype_slow_path");
 
   bind(L_fallthrough);
 
