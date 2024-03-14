@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,7 @@
 
 #include "utilities/attributeNoreturn.hpp"
 #include "utilities/compilerWarnings.hpp"
-#include "utilities/debug.hpp"
-#include "utilities/macros.hpp"
-
-// Get constants like JVM_T_CHAR and JVM_SIGNATURE_INT, before pulling in <jvm.h>.
-#include "classfile_constants.h"
+#include "utilities/javaValue.hpp"
 
 #include COMPILER_HEADER(utilities/globalDefinitions)
 
@@ -211,56 +207,6 @@ FORBID_C_FUNCTION(char* getwd(char *buf), "use os::get_current_directory()");
 FORBID_C_FUNCTION(wchar_t* wcsdup(const wchar_t *s), "don't use");
 FORBID_C_FUNCTION(void* reallocf(void *ptr, size_t size), "don't use");
 
-//----------------------------------------------------------------------------------------------------
-// Constants
-
-const int LogBytesPerShort   = 1;
-const int LogBytesPerInt     = 2;
-#ifdef _LP64
-const int LogBytesPerWord    = 3;
-#else
-const int LogBytesPerWord    = 2;
-#endif
-const int LogBytesPerLong    = 3;
-
-const int BytesPerShort      = 1 << LogBytesPerShort;
-const int BytesPerInt        = 1 << LogBytesPerInt;
-const int BytesPerWord       = 1 << LogBytesPerWord;
-const int BytesPerLong       = 1 << LogBytesPerLong;
-
-const int LogBitsPerByte     = 3;
-const int LogBitsPerShort    = LogBitsPerByte + LogBytesPerShort;
-const int LogBitsPerInt      = LogBitsPerByte + LogBytesPerInt;
-const int LogBitsPerWord     = LogBitsPerByte + LogBytesPerWord;
-const int LogBitsPerLong     = LogBitsPerByte + LogBytesPerLong;
-
-const int BitsPerByte        = 1 << LogBitsPerByte;
-const int BitsPerShort       = 1 << LogBitsPerShort;
-const int BitsPerInt         = 1 << LogBitsPerInt;
-const int BitsPerWord        = 1 << LogBitsPerWord;
-const int BitsPerLong        = 1 << LogBitsPerLong;
-
-const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
-const int LongAlignmentMask  = (1 << LogBytesPerLong) - 1;
-
-const int oopSize            = sizeof(char*); // Full-width oop
-extern int heapOopSize;                       // Oop within a java object
-const int wordSize           = sizeof(char*);
-const int longSize           = sizeof(jlong);
-const int jintSize           = sizeof(jint);
-const int size_tSize         = sizeof(size_t);
-
-const int BytesPerOop        = BytesPerWord;  // Full-width oop
-
-extern int LogBytesPerHeapOop;                // Oop within a java object
-extern int LogBitsPerHeapOop;
-extern int BytesPerHeapOop;
-extern int BitsPerHeapOop;
-
-const int BitsPerJavaInteger = 32;
-const int BitsPerJavaLong    = 64;
-const int BitsPerSize_t      = size_tSize * BitsPerByte;
-
 // Size of a char[] needed to represent a jint as a string in decimal.
 const int jintAsStringSize = 12;
 
@@ -292,26 +238,6 @@ const int LogHeapWordsPerLong = LogBytesPerLong - LogHeapWordSize;
 inline size_t heap_word_size(size_t byte_size) {
   return (byte_size + (HeapWordSize-1)) >> LogHeapWordSize;
 }
-
-inline jfloat jfloat_cast(jint x);
-inline jdouble jdouble_cast(jlong x);
-
-//-------------------------------------------
-// Constant for jlong (standardized by C++11)
-
-// Build a 64bit integer constant
-#define CONST64(x)  (x ## LL)
-#define UCONST64(x) (x ## ULL)
-
-const jlong min_jlong = CONST64(0x8000000000000000);
-const jlong max_jlong = CONST64(0x7fffffffffffffff);
-
-//-------------------------------------------
-// Constant for jdouble
-const jlong min_jlongDouble = CONST64(0x0000000000000001);
-const jdouble min_jdouble = jdouble_cast(min_jlongDouble);
-const jlong max_jlongDouble = CONST64(0x7fefffffffffffff);
-const jdouble max_jdouble = jdouble_cast(max_jlongDouble);
 
 const size_t K                  = 1024;
 const size_t M                  = K*K;
@@ -438,8 +364,6 @@ const uintx max_uintx = (uintx)-1;
 // max_intx             0x7FFFFFFF      0x7FFFFFFFFFFFFFFF
 // max_uintx            0xFFFFFFFF      0xFFFFFFFFFFFFFFFF
 
-typedef unsigned int uint;   NEEDS_CLEANUP
-
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
 
@@ -505,46 +429,6 @@ inline int pointer_delta_as_int(const volatile T* left, const volatile T* right)
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
 }
-
-// Additional Java basic types
-
-typedef uint8_t  jubyte;
-typedef uint16_t jushort;
-typedef uint32_t juint;
-typedef uint64_t julong;
-
-// Unsigned byte types for os and stream.hpp
-
-// Unsigned one, two, four and eight byte quantities used for describing
-// the .class file format. See JVM book chapter 4.
-
-typedef jubyte  u1;
-typedef jushort u2;
-typedef juint   u4;
-typedef julong  u8;
-
-const jubyte  max_jubyte  = (jubyte)-1;  // 0xFF       largest jubyte
-const jushort max_jushort = (jushort)-1; // 0xFFFF     largest jushort
-const juint   max_juint   = (juint)-1;   // 0xFFFFFFFF largest juint
-const julong  max_julong  = (julong)-1;  // 0xFF....FF largest julong
-
-typedef jbyte  s1;
-typedef jshort s2;
-typedef jint   s4;
-typedef jlong  s8;
-
-const jbyte min_jbyte = -(1 << 7);       // smallest jbyte
-const jbyte max_jbyte = (1 << 7) - 1;    // largest jbyte
-const jshort min_jshort = -(1 << 15);    // smallest jshort
-const jshort max_jshort = (1 << 15) - 1; // largest jshort
-
-const jint min_jint = (jint)1 << (sizeof(jint)*BitsPerByte-1); // 0x80000000 == smallest jint
-const jint max_jint = (juint)min_jint - 1;                     // 0x7FFFFFFF == largest jint
-
-const jint min_jintFloat = (jint)(0x00000001);
-const jfloat min_jfloat = jfloat_cast(min_jintFloat);
-const jint max_jintFloat = (jint)(0x7f7fffff);
-const jfloat max_jfloat = jfloat_cast(max_jintFloat);
 
 //----------------------------------------------------------------------------------------------------
 // JVM spec restrictions
@@ -638,284 +522,11 @@ inline double percent_of(T numerator, T denominator) {
   return denominator != 0 ? (double)numerator / (double)denominator * 100.0 : 0.0;
 }
 
-//----------------------------------------------------------------------------------------------------
-// Special casts
-// Cast floats into same-size integers and vice-versa w/o changing bit-pattern
-typedef union {
-  jfloat f;
-  jint i;
-} FloatIntConv;
-
-typedef union {
-  jdouble d;
-  jlong l;
-  julong ul;
-} DoubleLongConv;
-
-inline jint    jint_cast    (jfloat  x)  { return ((FloatIntConv*)&x)->i; }
-inline jfloat  jfloat_cast  (jint    x)  { return ((FloatIntConv*)&x)->f; }
-
-inline jlong   jlong_cast   (jdouble x)  { return ((DoubleLongConv*)&x)->l;  }
-inline julong  julong_cast  (jdouble x)  { return ((DoubleLongConv*)&x)->ul; }
-inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
-
-inline jint low (jlong value)                    { return jint(value); }
-inline jint high(jlong value)                    { return jint(value >> 32); }
-
-// the fancy casts are a hopefully portable way
-// to do unsigned 32 to 64 bit type conversion
-inline void set_low (jlong* value, jint low )    { *value &= (jlong)0xffffffff << 32;
-                                                   *value |= (jlong)(julong)(juint)low; }
-
-inline void set_high(jlong* value, jint high)    { *value &= (jlong)(julong)(juint)0xffffffff;
-                                                   *value |= (jlong)high       << 32; }
-
-inline jlong jlong_from(jint h, jint l) {
-  jlong result = 0; // initialization to avoid warning
-  set_high(&result, h);
-  set_low(&result,  l);
-  return result;
-}
-
 union jlong_accessor {
   jint  words[2];
   jlong long_value;
 };
 
-void basic_types_init(); // cannot define here; uses assert
-
-
-// NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicType : u1 {
-// The values T_BOOLEAN..T_LONG (4..11) are derived from the JVMS.
-  T_BOOLEAN     = JVM_T_BOOLEAN,
-  T_CHAR        = JVM_T_CHAR,
-  T_FLOAT       = JVM_T_FLOAT,
-  T_DOUBLE      = JVM_T_DOUBLE,
-  T_BYTE        = JVM_T_BYTE,
-  T_SHORT       = JVM_T_SHORT,
-  T_INT         = JVM_T_INT,
-  T_LONG        = JVM_T_LONG,
-  // The remaining values are not part of any standard.
-  // T_OBJECT and T_VOID denote two more semantic choices
-  // for method return values.
-  // T_OBJECT and T_ARRAY describe signature syntax.
-  // T_ADDRESS, T_METADATA, T_NARROWOOP, T_NARROWKLASS describe
-  // internal references within the JVM as if they were Java
-  // types in their own right.
-  T_OBJECT      = 12,
-  T_ARRAY       = 13,
-  T_VOID        = 14,
-  T_ADDRESS     = 15,
-  T_NARROWOOP   = 16,
-  T_METADATA    = 17,
-  T_NARROWKLASS = 18,
-  T_CONFLICT    = 19, // for stack value type with conflicting contents
-  T_ILLEGAL     = 99
-};
-
-#define SIGNATURE_TYPES_DO(F, N)                \
-    F(JVM_SIGNATURE_BOOLEAN, T_BOOLEAN, N)      \
-    F(JVM_SIGNATURE_CHAR,    T_CHAR,    N)      \
-    F(JVM_SIGNATURE_FLOAT,   T_FLOAT,   N)      \
-    F(JVM_SIGNATURE_DOUBLE,  T_DOUBLE,  N)      \
-    F(JVM_SIGNATURE_BYTE,    T_BYTE,    N)      \
-    F(JVM_SIGNATURE_SHORT,   T_SHORT,   N)      \
-    F(JVM_SIGNATURE_INT,     T_INT,     N)      \
-    F(JVM_SIGNATURE_LONG,    T_LONG,    N)      \
-    F(JVM_SIGNATURE_CLASS,   T_OBJECT,  N)      \
-    F(JVM_SIGNATURE_ARRAY,   T_ARRAY,   N)      \
-    F(JVM_SIGNATURE_VOID,    T_VOID,    N)      \
-    /*end*/
-
-inline bool is_java_type(BasicType t) {
-  return T_BOOLEAN <= t && t <= T_VOID;
-}
-
-inline bool is_java_primitive(BasicType t) {
-  return T_BOOLEAN <= t && t <= T_LONG;
-}
-
-inline bool is_subword_type(BasicType t) {
-  // these guys are processed exactly like T_INT in calling sequences:
-  return (t == T_BOOLEAN || t == T_CHAR || t == T_BYTE || t == T_SHORT);
-}
-
-inline bool is_signed_subword_type(BasicType t) {
-  return (t == T_BYTE || t == T_SHORT);
-}
-
-inline bool is_unsigned_subword_type(BasicType t) {
-  return (t == T_BOOLEAN || t == T_CHAR);
-}
-
-inline bool is_double_word_type(BasicType t) {
-  return (t == T_DOUBLE || t == T_LONG);
-}
-
-inline bool is_reference_type(BasicType t, bool include_narrow_oop = false) {
-  return (t == T_OBJECT || t == T_ARRAY || (include_narrow_oop && t == T_NARROWOOP));
-}
-
-inline bool is_integral_type(BasicType t) {
-  return is_subword_type(t) || t == T_INT || t == T_LONG;
-}
-
-inline bool is_non_subword_integral_type(BasicType t) {
-  return t == T_INT || t == T_LONG;
-}
-
-inline bool is_floating_point_type(BasicType t) {
-  return (t == T_FLOAT || t == T_DOUBLE);
-}
-
-extern char type2char_tab[T_CONFLICT+1];     // Map a BasicType to a jchar
-inline char type2char(BasicType t) { return (uint)t < T_CONFLICT+1 ? type2char_tab[t] : 0; }
-extern int type2size[T_CONFLICT+1];         // Map BasicType to result stack elements
-extern const char* type2name_tab[T_CONFLICT+1];     // Map a BasicType to a char*
-extern BasicType name2type(const char* name);
-
-const char* type2name(BasicType t);
-
-inline jlong max_signed_integer(BasicType bt) {
-  if (bt == T_INT) {
-    return max_jint;
-  }
-  assert(bt == T_LONG, "unsupported");
-  return max_jlong;
-}
-
-inline jlong min_signed_integer(BasicType bt) {
-  if (bt == T_INT) {
-    return min_jint;
-  }
-  assert(bt == T_LONG, "unsupported");
-  return min_jlong;
-}
-
-// Auxiliary math routines
-// least common multiple
-extern size_t lcm(size_t a, size_t b);
-
-
-// NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicTypeSize {
-  T_BOOLEAN_size     = 1,
-  T_CHAR_size        = 1,
-  T_FLOAT_size       = 1,
-  T_DOUBLE_size      = 2,
-  T_BYTE_size        = 1,
-  T_SHORT_size       = 1,
-  T_INT_size         = 1,
-  T_LONG_size        = 2,
-  T_OBJECT_size      = 1,
-  T_ARRAY_size       = 1,
-  T_NARROWOOP_size   = 1,
-  T_NARROWKLASS_size = 1,
-  T_VOID_size        = 0
-};
-
-// this works on valid parameter types but not T_VOID, T_CONFLICT, etc.
-inline int parameter_type_word_count(BasicType t) {
-  if (is_double_word_type(t))  return 2;
-  assert(is_java_primitive(t) || is_reference_type(t), "no goofy types here please");
-  assert(type2size[t] == 1, "must be");
-  return 1;
-}
-
-// maps a BasicType to its instance field storage type:
-// all sub-word integral types are widened to T_INT
-extern BasicType type2field[T_CONFLICT+1];
-extern BasicType type2wfield[T_CONFLICT+1];
-
-
-// size in bytes
-enum ArrayElementSize {
-  T_BOOLEAN_aelem_bytes     = 1,
-  T_CHAR_aelem_bytes        = 2,
-  T_FLOAT_aelem_bytes       = 4,
-  T_DOUBLE_aelem_bytes      = 8,
-  T_BYTE_aelem_bytes        = 1,
-  T_SHORT_aelem_bytes       = 2,
-  T_INT_aelem_bytes         = 4,
-  T_LONG_aelem_bytes        = 8,
-#ifdef _LP64
-  T_OBJECT_aelem_bytes      = 8,
-  T_ARRAY_aelem_bytes       = 8,
-#else
-  T_OBJECT_aelem_bytes      = 4,
-  T_ARRAY_aelem_bytes       = 4,
-#endif
-  T_NARROWOOP_aelem_bytes   = 4,
-  T_NARROWKLASS_aelem_bytes = 4,
-  T_VOID_aelem_bytes        = 0
-};
-
-extern int _type2aelembytes[T_CONFLICT+1]; // maps a BasicType to nof bytes used by its array element
-#ifdef ASSERT
-extern int type2aelembytes(BasicType t, bool allow_address = false); // asserts
-#else
-inline int type2aelembytes(BasicType t, bool allow_address = false) { return _type2aelembytes[t]; }
-#endif
-
-inline bool same_type_or_subword_size(BasicType t1, BasicType t2) {
-  return (t1 == t2) || (is_subword_type(t1) && type2aelembytes(t1) == type2aelembytes(t2));
-}
-
-// JavaValue serves as a container for arbitrary Java values.
-
-class JavaValue {
-
- public:
-  typedef union JavaCallValue {
-    jfloat   f;
-    jdouble  d;
-    jint     i;
-    jlong    l;
-    jobject  h;
-    oopDesc* o;
-  } JavaCallValue;
-
- private:
-  BasicType _type;
-  JavaCallValue _value;
-
- public:
-  JavaValue(BasicType t = T_ILLEGAL) { _type = t; }
-
-  JavaValue(jfloat value) {
-    _type    = T_FLOAT;
-    _value.f = value;
-  }
-
-  JavaValue(jdouble value) {
-    _type    = T_DOUBLE;
-    _value.d = value;
-  }
-
- jfloat get_jfloat() const { return _value.f; }
- jdouble get_jdouble() const { return _value.d; }
- jint get_jint() const { return _value.i; }
- jlong get_jlong() const { return _value.l; }
- jobject get_jobject() const { return _value.h; }
- oopDesc* get_oop() const { return _value.o; }
- JavaCallValue* get_value_addr() { return &_value; }
- BasicType get_type() const { return _type; }
-
- void set_jfloat(jfloat f) { _value.f = f;}
- void set_jdouble(jdouble d) { _value.d = d;}
- void set_jint(jint i) { _value.i = i;}
- void set_jlong(jlong l) { _value.l = l;}
- void set_jobject(jobject h) { _value.h = h;}
- void set_oop(oopDesc* o) { _value.o = o;}
- void set_type(BasicType t) { _type = t; }
-
- jboolean get_jboolean() const { return (jboolean) (_value.i);}
- jbyte get_jbyte() const { return (jbyte) (_value.i);}
- jchar get_jchar() const { return (jchar) (_value.i);}
- jshort get_jshort() const { return (jshort) (_value.i);}
-
-};
 
 
 // TosState describes the top-of-stack state before and after the execution of
