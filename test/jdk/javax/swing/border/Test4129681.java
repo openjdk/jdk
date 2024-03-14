@@ -31,7 +31,7 @@ import javax.swing.JLabel;
 /*
  * @test
  * @bug 4129681
- * @summary Tests enabling/disabling of titled border's caption
+ * @summary Tests disabling of titled border's caption
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual Test4129681
@@ -40,7 +40,7 @@ import javax.swing.JLabel;
 public class Test4129681 {
     public static void main(String[] args) throws Exception {
         String testInstructions = """
-                Turn on the checkbox to disable the label.
+                Click the checkbox to disable the label.
                 The test passes if the title of the border
                 is disabled as well as the label.
                 """;
