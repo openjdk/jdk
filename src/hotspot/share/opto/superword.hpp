@@ -391,7 +391,9 @@ private:
   void extend_pairset_with_more_pairs_by_following_use_and_def();
   bool extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* s2);
   bool extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2);
-  void order_inputs_of_use_pairs_to_match(Node* def1, Node* def2);
+  void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
+  enum PairOrderStatus { Ordered, Unordered, Unknown };
+  PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
 
   // Estimate the savings from executing s1 and s2 as a pack
   int est_savings(Node* s1, Node* s2);
@@ -563,10 +565,6 @@ private:
   int memory_alignment(MemNode* s, int iv_adjust);
   // Ensure that the main loop vectors are aligned by adjusting the pre loop limit.
   void adjust_pre_loop_limit_to_align_main_loop_vectors();
-  // Is the use of d1 in u1 at the same operand position as d2 in u2?
-  bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
-
-  void packset_sort(int n);
 };
 
 #endif // SHARE_OPTO_SUPERWORD_HPP

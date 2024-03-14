@@ -1053,7 +1053,7 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
     for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
       Node* s1 = pair.left();
       Node* s2 = pair.right();
-      order_inputs_of_use_pairs_to_match(s1, s2);
+      order_inputs_of_all_use_pairs_to_match_def_pair(s1, s2);
     }
   }
 
@@ -1124,8 +1124,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_def(Node* s1, Node* 
 }
 
 bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* s2) {
-  assert(_pairset.has_pair(s1, s2), "just checking");
-  bool changed = false;
+  assert(_pairset.has_pair(s1, s2), "(s1, s2) must be a pair");
   assert(s1->req() == s2->req(), "just checking");
   assert(alignment(s1) + data_size(s1) == alignment(s2), "just checking");
 
@@ -1138,6 +1137,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
                   s1->_idx, align);
   }
 #endif
+  bool changed = false;
   int savings = -1;
   int num_s1_uses = 0;
   Node* u1 = nullptr;
@@ -1156,8 +1156,7 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
         continue;
       }
       if (t2->Opcode() == Op_AddI && t2 == cl()->incr()) continue; // don't mess with the iv
-      if (!opnd_positions_match(s1, t1, s2, t2))
-        continue;
+      if (order_inputs_of_uses_to_match_def_pair(s1, s2, t1, t2) != PairOrderStatus::Ordered) { continue; }
       int adjusted_align = alignment(s1);
       adjusted_align = adjust_alignment_for_type_conversion(s1, t1, adjusted_align);
       if (stmts_can_pack(t1, t2, adjusted_align)) {
@@ -1188,15 +1187,9 @@ bool SuperWord::extend_pairset_with_more_pairs_by_following_use(Node* s1, Node* 
   return changed;
 }
 
-// From a pair (def1. def2), find all use packs (use1, use2), and ensure that their inputs have an order
-// that matches the (def1, def2) pair. Example:
-//
-// def1 x1   x2 def2           def1 x1   def2 x2
-//    | |     | |       ==>       | |       | |
-//    use1    use2                use1      use2
-//
-// TODO why? - talk about commutative in name
-void SuperWord::order_inputs_of_use_pairs_to_match(Node* def1, Node* def2) {
+// For a pair (def1. def2), find all use packs (use1, use2), and ensure that their inputs have an order
+// that matches the (def1, def2) pair.
+void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2) {
   assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
 
   if (def1->is_Store()) return;
@@ -1218,60 +1211,97 @@ void SuperWord::order_inputs_of_use_pairs_to_match(Node* def1, Node* def2) {
     }
     Node* use2 = _pairset.get_right_for(use1);
 
-    opnd_positions_match(def1, use1, def2, use2);
+    order_inputs_of_uses_to_match_def_pair(def1, def2, use1, use2);
   }
 }
 
-//---------------------------opnd_positions_match-------------------------
-// Is the use of d1 in u1 at the same operand position as d2 in u2?
-bool SuperWord::opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2) {
-  // check reductions to see if they are marshalled to represent the reduction
-  // operator in a specified opnd
-  if (is_marked_reduction(u1) && is_marked_reduction(u2)) {
-    // ensure reductions have phis and reduction definitions feeding the 1st operand
-    Node* first = u1->in(2);
+// For a def-pair (def1. def2), and their use-nodes (use1, use2):
+// ensure that the input order of (use1, use2) matches the order of (def1, def2).
+//
+// We have different cases:
+//
+// 1. Reduction (use1, use2): must always reduce left-to-right. Make sure that we have pattern:
+//
+//    phi/reduction x1  phi/reduction x2                    phi/reduction x1
+//                | |               | |    and hopefully:               | |
+//                use1              use2                                use1 x2
+//                                                                         | |
+//                                                                         use2
+//
+// 2: Inputs of (use1, use2) already match (def1, def2), i.e. for all input indices i:
+//
+//    use1->in(i) == def1 || use2->in(def2)   ->    use1->in(i) == def1 && use2->in(def2)
+//
+// 3: Add/Mul (use1, use2): we can try to swap edges:
+//
+//     def1 x1   x2 def2           def1 x1   def2 x2
+//        | |     | |       ==>       | |       | |
+//        use1    use2                use1      use2
+//
+// 4: MulAddS2I (use1, use2): we can try to swap edges:
+//
+//    (x1 * x2) + (x3 * x4)    ==>  4.a: (x2 * x1) + (x4 * x3)
+//                                  4.b: (x4 * x3) + (x2 * x1)
+//                                  4.c: (x3 * x4) + (x1 * x2)
+//
+//    Note: MulAddS2I with its 4 inputs is too complicated, if there is any mismatch, we always
+//          return PairOrderStatus::Unknown.
+//          Therefore, extend_pairset_with_more_pairs_by_following_use cannot extend to MulAddS2I,
+//          but there is a chance that extend_pairset_with_more_pairs_by_following_def can do it.
+//
+// TODO add some IR tests for all these swapping cases.
+SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2) {
+  assert(_pairset.has_pair(def1, def2), "(def1, def2) must be a pair");
+
+  // 1. Reduction
+  if (is_marked_reduction(use1) && is_marked_reduction(use2)) {
+    Node* first = use1->in(2);
     if (first->is_Phi() || is_marked_reduction(first)) {
-      u1->swap_edges(1, 2);
+      use1->swap_edges(1, 2);
     }
-    // ensure reductions have phis and reduction definitions feeding the 1st operand
-    first = u2->in(2);
+    first = use2->in(2);
     if (first->is_Phi() || is_marked_reduction(first)) {
-      u2->swap_edges(1, 2);
+      use2->swap_edges(1, 2);
     }
-    return true;
+    return PairOrderStatus::Ordered;
   }
 
-  uint ct = u1->req();
-  if (ct != u2->req()) return false;
+  uint ct = use1->req();
+  if (ct != use2->req()) { return PairOrderStatus::Unordered; };
   uint i1 = 0;
   uint i2 = 0;
   do {
-    for (i1++; i1 < ct; i1++) if (u1->in(i1) == d1) break;
-    for (i2++; i2 < ct; i2++) if (u2->in(i2) == d2) break;
+    for (i1++; i1 < ct; i1++) { if (use1->in(i1) == def1) { break; } }
+    for (i2++; i2 < ct; i2++) { if (use2->in(i2) == def2) { break; } }
     if (i1 != i2) {
-      if ((i1 == (3-i2)) && (u2->is_Add() || u2->is_Mul())) {
-        // Further analysis relies on operands position matching.
-        u2->swap_edges(i1, i2);
-      } else if (VectorNode::is_muladds2i(u2) && u1 != u2) {
+      if ((i1 == (3-i2)) && (use2->is_Add() || use2->is_Mul())) {
+        // 3. Add/Mul: swap edges, and hope the other position matches too.
+        use2->swap_edges(i1, i2);
+      } else if (VectorNode::is_muladds2i(use2) && use1 != use2) {
+        // 4.a/b: MulAddS2I.
         if (i1 == 5 - i2) { // ((i1 == 3 && i2 == 2) || (i1 == 2 && i2 == 3) || (i1 == 1 && i2 == 4) || (i1 == 4 && i2 == 1))
-          u2->swap_edges(1, 2);
-          u2->swap_edges(3, 4);
+          use2->swap_edges(1, 2);
+          use2->swap_edges(3, 4);
         }
         if (i1 == 3 - i2 || i1 == 7 - i2) { // ((i1 == 1 && i2 == 2) || (i1 == 2 && i2 == 1) || (i1 == 3 && i2 == 4) || (i1 == 4 && i2 == 3))
-          u2->swap_edges(2, 3);
-          u2->swap_edges(1, 4);
+          use2->swap_edges(2, 3);
+          use2->swap_edges(1, 4);
         }
-        return false; // Just swap the edges, the muladds2i nodes get packed in extend_pairset_with_more_pairs_by_following_def
+        return PairOrderStatus::Unknown;
       } else {
-        return false;
+        // The inputs are not ordered, and we can not do anything about it.
+        return PairOrderStatus::Unordered;
       }
-    } else if (i1 == i2 && VectorNode::is_muladds2i(u2) && u1 != u2) {
-      u2->swap_edges(1, 3);
-      u2->swap_edges(2, 4);
-      return false; // Just swap the edges, the muladds2i nodes get packed in extend_pairset_with_more_pairs_by_following_def
+    } else if (i1 == i2 && VectorNode::is_muladds2i(use2) && use1 != use2) {
+      // 4.c: MulAddS2I.
+      use2->swap_edges(1, 3);
+      use2->swap_edges(2, 4);
+      return PairOrderStatus::Unknown;
     }
   } while (i1 < ct);
-  return true;
+
+  // 2. All inputs match.
+  return PairOrderStatus::Ordered;
 }
 
 //------------------------------est_savings---------------------------
