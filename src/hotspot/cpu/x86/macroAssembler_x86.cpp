@@ -4741,7 +4741,8 @@ void MacroAssembler::check_klass_subtype_slow_path(Register r_sub_klass,
   // the secondary supers.
   u1 bit = super_klass->hash_slot();
   {
-    // NB: If the count in x86 a shift instruction is 0, the flags are not affected.
+    // NB: If the count in a x86 shift instruction is 0, the flags are
+    // not affected, so we do a testq instead.
     int shift_count = Klass::SEC_HASH_MASK - bit;
     if (shift_count != 0) {
       salq(r_array_index, shift_count);
