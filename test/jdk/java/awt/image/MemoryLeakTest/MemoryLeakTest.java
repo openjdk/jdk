@@ -60,7 +60,7 @@ public class MemoryLeakTest {
     public static void main(String[] args) throws Exception {
         PassFailJFrame
             .builder()
-            .title("MemoryLeakTest")
+            .title("MemoryLeakTest Instructions")
             .instructions(INSTRUCTIONS)
             .rows(15)
             .columns(40)
