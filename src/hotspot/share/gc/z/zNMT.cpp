@@ -37,11 +37,9 @@ void ZNMT::reserve(zaddress_unsafe start, size_t size) {
   MemTracker::record_virtual_memory_reserve((address)start, size, CALLER_PC, mtJavaHeap);
 }
 void ZNMT::commit(zoffset offset, size_t size) {
-  log_trace(gc, nmt)("C(%lu, %zu)", static_cast<size_t>(offset), static_cast<size_t>(offset)+size);
   MemTracker::allocate_memory_in(ZNMT::_device, static_cast<size_t>(offset), size, mtJavaHeap, CALLER_PC);
 }
 void ZNMT::uncommit(zoffset offset, size_t size) {
-  log_trace(gc, nmt)("U(%lu, %zu)", static_cast<size_t>(offset), static_cast<size_t>(offset)+size);
   MemTracker::free_memory_in(ZNMT::_device, (size_t)offset, size);
 }
 
