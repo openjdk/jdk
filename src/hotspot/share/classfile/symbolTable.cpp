@@ -246,10 +246,15 @@ size_t SymbolTable::table_size() {
   return ((size_t)1) << _local_table->get_size_log2(Thread::current());
 }
 
+bool SymbolTable::has_work() { return Atomic::load_acquire(&_has_work); }
+
 void SymbolTable::trigger_cleanup() {
-  MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
-  _has_work = true;
-  Service_lock->notify_all();
+  // Avoid churn on ServiceThread
+  if (!has_work()) {
+    MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);
+    _has_work = true;
+    Service_lock->notify_all();
+  }
 }
 
 class SymbolsDo : StackObj {
@@ -779,7 +784,7 @@ void SymbolTable::clean_dead_entries(JavaThread* jt) {
 }
 
 void SymbolTable::check_concurrent_work() {
-  if (_has_work) {
+  if (has_work()) {
     return;
   }
   // We should clean/resize if we have
@@ -813,28 +818,27 @@ void SymbolTable::do_concurrent_work(JavaThread* jt) {
   Atomic::release_store(&_has_work, false);
 }
 
-// Rehash
-bool SymbolTable::do_rehash() {
-  if (!_local_table->is_safepoint_safe()) {
-    return false;
-  }
+// Called at VM_Operation safepoint
+void SymbolTable::rehash_table() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
+  // The ServiceThread initiates the rehashing so it is not resizing.
+  assert (_local_table->is_safepoint_safe(), "Should not be resizing now");
+
+  _alt_hash_seed = AltHashing::compute_seed();
 
   // We use current size
   size_t new_size = _local_table->get_size_log2(Thread::current());
   SymbolTableHash* new_table = new SymbolTableHash(new_size, END_SIZE, REHASH_LEN, true);
   // Use alt hash from now on
   _alt_hash = true;
-  if (!_local_table->try_move_nodes_to(Thread::current(), new_table)) {
-    _alt_hash = false;
-    delete new_table;
-    return false;
-  }
+  _local_table->rehash_nodes_to(Thread::current(), new_table);
 
   // free old table
   delete _local_table;
   _local_table = new_table;
 
-  return true;
+  _rehashed = true;
+  _needs_rehashing = false;
 }
 
 bool SymbolTable::maybe_rehash_table() {
@@ -857,21 +861,6 @@ bool SymbolTable::maybe_rehash_table() {
   VM_RehashSymbolTable op;
   VMThread::execute(&op);
   return true;
-}
-
-
-// Called at VM_Operation safepoint
-void SymbolTable::rehash_table() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be called at safepoint");
-  _alt_hash_seed = AltHashing::compute_seed();
-
-  if (do_rehash()) {
-    _rehashed = true;
-  } else {
-    log_info(symboltable)("Resizes in progress rehashing skipped.");
-  }
-
-  _needs_rehashing = false;
 }
 
 //---------------------------------------------------------------------------

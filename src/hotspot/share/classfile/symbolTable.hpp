@@ -98,7 +98,6 @@ class SymbolTable : public AllStatic {
   static void print_table_statistics(outputStream* st);
 
   static void try_rehash_table();
-  static bool do_rehash();
 
 public:
   // The symbol table
@@ -114,7 +113,7 @@ public:
   static void create_table();
 
   static void do_concurrent_work(JavaThread* jt);
-  static bool has_work() { return _has_work; }
+  static bool has_work();
   static void trigger_cleanup();
 
   // Probing

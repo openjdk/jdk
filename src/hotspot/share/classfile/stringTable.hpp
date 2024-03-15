@@ -71,8 +71,6 @@ class StringTable : AllStatic {
 
   static void print_table_statistics(outputStream* st);
 
-  static bool do_rehash();
-
  public:
   static size_t table_size();
   static TableStatistics get_table_statistics();
