@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities;
  * @build PassFailJFrame
  * @run main/manual/othervm -Djava.security.manager=allow SecurityDialogTest
  */
-public class SecurityDialogTest extends Frame {
+public class SecurityDialogTest {
     private static final String INSTRUCTIONS =
             "This test brings up a native and cross-platform page and print dialogs.\n" +
             "\n" +
