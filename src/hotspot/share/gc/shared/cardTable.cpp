@@ -77,9 +77,8 @@ CardTable::CardTable(MemRegion whole_heap) :
 void CardTable::initialize(void* region0_start, void* region1_start) {
   size_t num_cards = cards_required(_whole_heap.word_size());
 
-  // each card takes 1 byte; + 1 for the guard card
-  size_t num_bytes = num_cards + 1;
-  _byte_map_size = compute_byte_map_size(num_bytes);
+  // each card takes 1 byte
+  _byte_map_size = compute_byte_map_size(num_cards);
 
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
@@ -90,7 +89,7 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
 
   MemTracker::record_virtual_memory_type((address)heap_rs.base(), mtGC);
 
-  os::trace_page_sizes("Card Table", num_bytes, num_bytes,
+  os::trace_page_sizes("Card Table", num_cards, num_cards,
                        heap_rs.base(), heap_rs.size(), _page_size);
   if (!heap_rs.is_reserved()) {
     vm_exit_during_initialization("Could not reserve enough space for the "
