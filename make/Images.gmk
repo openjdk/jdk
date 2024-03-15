@@ -30,7 +30,7 @@ include MakeBase.gmk
 include Execute.gmk
 include Modules.gmk
 include Utils.gmk
-include ToolsJdk.gmk
+include JavaCompilation.gmk
 
 JDK_TARGETS :=
 JRE_TARGETS :=
@@ -122,14 +122,20 @@ JLINK_JDK_TARGETS := $(jlink_jdk)
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
   RL_BUILD_MODULE_NAME := jdk.unsupported_jlink_runtime
-  RL_CREATE_PLUGIN_MOD_OUTPUT := $(SUPPORT_OUTPUTDIR)/$(RL_BUILD_MODULE_NAME)
-  JDK_RUN_TIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
+  RL_CREATE_PLUGIN_MOD_OUTPUT := $(BUILDTOOLS_OUTPUTDIR)/$(RL_BUILD_MODULE_NAME)
+  JDK_RUNTIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
 
-  JLINK_RUNTIME_CREATE_ARG := -J--module-path=$(RL_CREATE_PLUGIN_MOD_OUTPUT)
-  JLINK_RUNTIME_CREATE_ARG += -J--add-exports=java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME)
-  JLINK_RUNTIME_CREATE_ARG += -J--add-exports=java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME)
-  JLINK_RUNTIME_CREATE_ARG += -J--add-exports=jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME)
-  JLINK_RUNTIME_CREATE_ARG += --create-linkable-runtime jimage=$(JDK_LINK_OUTPUT_DIR)/lib/modules:module-path=$(IMAGES_OUTPUTDIR)/jmods
+  # We need to use FixPath for Windows support
+  RL_JIMAGE_PATH_ARG := $(call FixPath,$(JDK_LINK_OUTPUT_DIR)/lib/modules)
+  # Avoid space in FixPath here as we don't allow space in the jlink invocation
+  RL_MOD_PATH_ARG := $(call FixPath,$(IMAGES_OUTPUTDIR)/jmods)
+  JLINK_RUNTIME_CREATE_ARG := \
+      -J--module-path=$(RL_CREATE_PLUGIN_MOD_OUTPUT) \
+      -J--add-exports=java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME) \
+      -J--add-exports=java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME) \
+      -J--add-exports=jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME) \
+      --create-linkable-runtime jimage=$(RL_JIMAGE_PATH_ARG):module-path=$(RL_MOD_PATH_ARG) \
+  #
 
   # Compile $(RL_BUILD_MODULE_NAME) classes with the 'buildjdk' compiler, as it
   # needs classes from the just built jdk.jlink module
@@ -150,7 +156,7 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
       WARN := Creating jdk image for runtime linking, \
       DEPS := $(BUILD_JDK_RUNLINK_CLASSES), \
       OUTPUT_DIR := $(JDK_IMAGE_DIR), \
-      SUPPORT_DIR := $(JDK_RUN_TIME_IMAGE_SUPPORT_DIR), \
+      SUPPORT_DIR := $(JDK_RUNTIME_IMAGE_SUPPORT_DIR), \
       PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
       COMMAND := $(JLINK_TOOL) $(JLINK_RUNTIME_CREATE_ARG) \
           --add-modules $(JDK_MODULES_LIST) \
