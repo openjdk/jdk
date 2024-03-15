@@ -2687,7 +2687,7 @@ static char* alloc_and_create_heapdump_pathname() {
 }
 
 
-int HeapDumper::dump_to_heapdump_path(outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
+int HeapDumper::dump_to(outputStream* out, int compression, bool overwrite, uint num_dump_threads) {
   if (HeapDumpPath == nullptr || HeapDumpPath[0] == '\0') {
     return -1;
   }

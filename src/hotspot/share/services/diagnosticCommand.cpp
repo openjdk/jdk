@@ -535,7 +535,7 @@ void HeapDumpDCmd::execute(DCmdSource source, TRAPS) {
   HeapDumper dumper(!_all.value() /* request GC if _all is false*/);
 
   if (use_heapdump_path) {
-    dumper.dump_to_heapdump_path(output(), (int)level, _overwrite.value(), (uint)parallel);
+    dumper.dump_to(output(), (int)level, _overwrite.value(), (uint)parallel);
   } else {
     dumper.dump(filename, output(), (int)level, _overwrite.value(), (uint)parallel);
   }

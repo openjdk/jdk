@@ -64,7 +64,7 @@ class HeapDumper : public StackObj {
   int dump(const char* path, outputStream* out = nullptr, int compression = -1, bool overwrite = false, uint parallel_thread_num = 1);
 
   // same as dump with path parameter, but uses the preset HeapDumpPath file or directory
-  int dump_to_heapdump_path(outputStream* out, int compression, bool overwrite, uint parallel_thread_num);
+  int dump_to(outputStream* out, int compression, bool overwrite, uint parallel_thread_num);
 
   // returns error message (resource allocated), or null if no error
   char* error_as_C_string() const;
