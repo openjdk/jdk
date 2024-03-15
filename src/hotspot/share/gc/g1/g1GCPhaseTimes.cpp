@@ -174,6 +174,7 @@ void G1GCPhaseTimes::reset() {
   _cur_merge_heap_roots_time_ms = 0.0;
   _cur_optional_merge_heap_roots_time_ms = 0.0;
   _cur_prepare_merge_heap_roots_time_ms = 0.0;
+  _cur_distribute_log_buffers_time_ms = 0.0;
   _cur_optional_prepare_merge_heap_roots_time_ms = 0.0;
   _cur_pre_evacuate_prepare_time_ms = 0.0;
   _cur_post_evacuate_cleanup_1_time_ms = 0.0;
@@ -459,6 +460,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   debug_time("Prepare Merge Heap Roots", _cur_prepare_merge_heap_roots_time_ms);
   debug_phase_merge_remset();
 
+  debug_time("Distribute Log Buffers", _cur_distribute_log_buffers_time_ms);
   debug_phase(_gc_par_phases[MergeLB]);
 
   info_time("Evacuate Collection Set", _cur_collection_initial_evac_time_ms);

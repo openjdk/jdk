@@ -60,9 +60,8 @@ ifeq ($(call isTargetOs, aix), false)
       NAME := jsound, \
       LINK_TYPE := $(LIBJSOUND_LINK_TYPE), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBJSOUND_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBJSOUND_CFLAGS), \
+      CFLAGS := $(LIBJSOUND_CFLAGS), \
+      CXXFLAGS := $(LIBJSOUND_CFLAGS), \
       DISABLED_WARNINGS_gcc := undef, \
       DISABLED_WARNINGS_clang := undef, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -71,7 +70,7 @@ ifeq ($(call isTargetOs, aix), false)
       LIBS_linux := $(ALSA_LIBS), \
       LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
           -framework CoreServices -framework AudioUnit \
-          -framework CoreMIDI -framework AudioToolbox $(LIBCXX), \
+          -framework CoreMIDI -framework AudioToolbox, \
       LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
   ))
 
@@ -89,7 +88,6 @@ ifeq ($(call isTargetOs, macosx), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXAPP, \
       NAME := osxapp, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
       DISABLED_WARNINGS_clang_NSApplicationAWT.m := deprecated-declarations format-nonliteral, \
       DISABLED_WARNINGS_clang_QueuingApplicationDelegate.m := objc-method-access, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -118,7 +116,6 @@ ifeq ($(call isTargetOs, macosx), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSX, \
       NAME := osx, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := libosxapp, \
       DISABLED_WARNINGS_clang_CFileManager.m := deprecated-declarations, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
