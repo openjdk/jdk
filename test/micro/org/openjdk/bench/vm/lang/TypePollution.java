@@ -29,6 +29,11 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/* A test to demonstrate type pollution. Run it with and without
+ * -XX:-HashSecondarySupers -XX:-UseSecondarySuperCache to see the
+ * effect.
+ *
+ */
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
@@ -78,11 +83,11 @@ public class TypePollution {
 
     public Object[] objectArray;
 
-    Random rand = new Random(0);
+    public Random rand = new Random(0);
 
     @Setup(Level.Trial)
     public void setup() {
-        objectArray = new Object[100];
+        objectArray = new Object[1000];
         var loader = getClass().getClassLoader();
         Class<?>[] someInterfaces = new Class<?>[0];
         for (int i = 0; i < objectArray.length; i++) {
@@ -96,11 +101,16 @@ public class TypePollution {
         }
     }
 
+    int probe = 99;
+
     @Benchmark
     public int instanceOfInterfaceSwitch() {
         int dummy = 0;
-        for (int i = 0; i < objectArray.length; i++) {
-            dummy += switch(objectArray[i]) {
+        for (int i = 0; i < 100; i++) {
+            probe ^= probe << 13;   // xorshift
+            probe ^= probe >>> 17;
+            probe ^= probe << 5;
+            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
             case I01 inst -> 1;
             case I02 inst -> 2;
             case I03 inst -> 3;
@@ -111,15 +121,18 @@ public class TypePollution {
             case I08 inst -> 8;
             default -> 10;
             };
-            dummy += switch(objectArray[i]) {
-            case I08 inst -> 8;
-            case I07 inst -> 7;
-            case I06 inst -> 6;
-            case I05 inst -> 5;
-            case I04 inst -> 4;
-            case I03 inst -> 3;
-            case I02 inst -> 2;
-            case I01 inst -> 1;
+            probe ^= probe << 13;   // xorshift
+            probe ^= probe >>> 17;
+            probe ^= probe << 5;
+            dummy += switch(objectArray[Math.abs(probe) % objectArray.length]) {
+            case I18 inst -> 8;
+            case I17 inst -> 7;
+            case I16 inst -> 6;
+            case I15 inst -> 5;
+            case I14 inst -> 4;
+            case I13 inst -> 3;
+            case I12 inst -> 2;
+            case I11 inst -> 1;
             default -> 0;
             };
         }
