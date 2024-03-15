@@ -22,7 +22,7 @@
  */
 
 #include <sleef.h>
-#include <jni_md.h>
+#include <jni.h>
 
 #define DEFINE_VECTOR_MATH_UNARY(op, type) \
 JNIEXPORT                                  \
