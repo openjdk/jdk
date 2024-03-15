@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     NAME := j2gss, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_gcc := undef, \
     DISABLED_WARNINGS_clang_aix := undef, \
     DISABLED_WARNINGS_clang := undef, \
@@ -46,8 +45,6 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := sspi_bridge, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := libj2gss, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := Secur32.lib, \
@@ -64,7 +61,6 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := advapi32.lib Secur32.lib kernel32.lib ws2_32.lib, \
@@ -79,7 +75,6 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXKRB5, \
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \

@@ -48,8 +48,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMLIB_IMAGE, \
     EXCLUDE_FILES := mlib_c_ImageBlendTable.c, \
     EXCLUDE_SRC_PATTERNS := $(BUILD_LIBMLIB_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(BUILD_LIBMLIB_CFLAGS), \
+    CFLAGS := $(BUILD_LIBMLIB_CFLAGS), \
     DISABLED_WARNINGS_gcc := unused-function, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
@@ -131,8 +130,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     EXCLUDES := $(LIBAWT_EXCLUDES), \
     EXCLUDE_FILES := $(LIBAWT_EXFILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
+    CFLAGS := $(LIBAWT_CFLAGS), \
+    CXXFLAGS := $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
     DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
@@ -236,8 +235,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
         EXTRA_HEADER_DIRS := $(LIBAWT_XAWT_EXTRA_HEADER_DIRS), \
         EXCLUDES := $(LIBAWT_XAWT_EXCLUDES), \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_XAWT_CFLAGS) \
-            $(X_CFLAGS), \
+        CFLAGS := $(LIBAWT_XAWT_CFLAGS) $(X_CFLAGS), \
         DISABLED_WARNINGS_gcc := int-to-pointer-cast, \
         DISABLED_WARNINGS_gcc_awt_Taskbar.c := parentheses, \
         DISABLED_WARNINGS_gcc_GLXSurfaceData.c := unused-function, \
@@ -311,8 +309,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBLCMS, \
     NAME := lcms, \
     INCLUDE_FILES := $(BUILD_LIBLCMS_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        $(LCMS_CFLAGS), \
+    CFLAGS := $(LCMS_CFLAGS), \
     CFLAGS_windows := -DCMS_IS_WINDOWS_, \
     EXTRA_HEADER_DIRS := \
         common/awt/debug \
@@ -358,7 +355,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJAVAJPEG, \
     NAME := javajpeg, \
     INCLUDE_FILES := $(BUILD_LIBJAVAJPEG_INCLUDE_FILES), \
     OPTIMIZATION := HIGHEST, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
     HEADERS_FROM_SRC := $(LIBJPEG_HEADERS_FROM_SRC), \
     DISABLED_WARNINGS_gcc_imageioJPEG.c := clobbered array-bounds, \
     DISABLED_WARNINGS_gcc_jcmaster.c := implicit-fallthrough, \
@@ -409,8 +405,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
       EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBAWT_HEADLESS_CFLAGS), \
+      CFLAGS := $(LIBAWT_HEADLESS_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_HEADLESS_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_X11Renderer.c := unused-function, \
       DISABLED_WARNINGS_gcc_X11SurfaceData.c := unused-function, \
@@ -451,8 +446,7 @@ else
   $(eval $(call SetupJdkLibrary, BUILD_LIBFREETYPE, \
       NAME := freetype, \
       OPTIMIZATION := HIGHEST, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(BUILD_LIBFREETYPE_CFLAGS), \
+      CFLAGS := $(BUILD_LIBFREETYPE_CFLAGS), \
       EXTRA_HEADER_DIRS := $(BUILD_LIBFREETYPE_HEADER_DIRS), \
       DISABLED_WARNINGS_microsoft := 4267 4244 4996, \
       DISABLED_WARNINGS_gcc := dangling-pointer stringop-overflow, \
@@ -556,8 +550,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LINK_TYPE := C++, \
     EXCLUDE_FILES := $(LIBFONTMANAGER_EXCLUDE_FILES) \
         AccelGlyphCache.c, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBFONTMANAGER_CFLAGS), \
+    CFLAGS := $(LIBFONTMANAGER_CFLAGS), \
+    CXXFLAGS := $(LIBFONTMANAGER_CFLAGS), \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
     EXTRA_HEADER_DIRS := $(LIBFONTMANAGER_EXTRA_HEADER_DIRS), \
@@ -572,7 +566,7 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBFONTMANAGER, \
     LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_aix := -Wl$(COMMA)-berok, \
     LIBS := $(BUILD_LIBFONTMANAGER_FONTLIB), \
-    LIBS_unix := -lawt -ljava -ljvm $(LIBM) $(LIBCXX), \
+    LIBS_unix := -lawt -ljava -ljvm $(LIBM), \
     LIBS_macosx := -lawt_lwawt -framework CoreText -framework CoreFoundation -framework CoreGraphics, \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib gdi32.lib \
         $(WIN_AWT_LIB), \
@@ -614,10 +608,8 @@ ifeq ($(call isTargetOs, windows), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBJAWT, \
       NAME := jawt, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBJAWT_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) \
-          $(LIBJAWT_CFLAGS), \
+      CFLAGS := $(LIBJAWT_CFLAGS), \
+      CXXFLAGS := $(LIBJAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBJAWT_EXTRA_HEADER_DIRS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
       LIBS := $(JDKLIB_LIBS) $(KERNEL32_LIB) advapi32.lib $(WIN_AWT_LIB), \
@@ -660,8 +652,7 @@ else # not windows
       EXCLUDE_SRC_PATTERNS := $(LIBJAWT_EXCLUDE_SRC_PATTERNS), \
       INCLUDE_FILES := $(JAWT_FILES), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(JAWT_CFLAGS), \
+      CFLAGS := $(JAWT_CFLAGS), \
       DISABLED_WARNINGS_clang_jawt.m := sign-compare, \
       EXTRA_HEADER_DIRS := \
           include \
@@ -797,9 +788,9 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
       EXCLUDE_FILES := imageioJPEG.c jpegdecoder.c pngtest.c, \
       EXCLUDES := $(LIBSPLASHSCREEN_EXCLUDES), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+      CFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBSPLASHSCREEN_CFLAGS) \
+      CXXFLAGS := $(LIBSPLASHSCREEN_CFLAGS) \
           $(GIFLIB_CFLAGS) $(LIBJPEG_CFLAGS) $(PNG_CFLAGS) $(LIBZ_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBSPLASHSCREEN_HEADER_DIRS), \
       DISABLED_WARNINGS_gcc_dgif_lib.c := sign-compare, \
@@ -871,8 +862,7 @@ ifeq ($(call isTargetOs, macosx), true)
       EXCLUDE_FILES := $(LIBAWT_LWAWT_EXFILES), \
       EXCLUDES := $(LIBAWT_LWAWT_EXCLUDES), \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBAWT_LWAWT_CFLAGS), \
+      CFLAGS := $(LIBAWT_LWAWT_CFLAGS), \
       EXTRA_HEADER_DIRS := $(LIBAWT_LWAWT_EXTRA_HEADER_DIRS), \
       DISABLED_WARNINGS_clang := incomplete-implementation deprecated-declarations \
           objc-method-access incompatible-pointer-types extra-tokens sign-compare undef, \
@@ -948,7 +938,6 @@ ifeq ($(call isTargetOs, macosx), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBOSXUI, \
       NAME := osxui, \
       OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
       EXTRA_HEADER_DIRS := \
           libawt_lwawt/awt \
           libosxapp, \

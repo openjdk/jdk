@@ -42,7 +42,6 @@ include lib/CoreLibraries.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     NAME := net, \
     OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
     DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
@@ -72,7 +71,6 @@ TARGETS += $(BUILD_LIBNET)
 $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
     NAME := nio, \
     OPTIMIZATION := HIGH, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
     EXTRA_HEADER_DIRS := \
         libnio/ch \
         libnio/fs \
@@ -101,7 +99,6 @@ ifeq ($(call isTargetOs, macosx), true)
     $(eval $(call SetupJdkLibrary, BUILD_LIBOSXSECURITY, \
         NAME := osxsecurity, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
         DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
@@ -125,11 +122,10 @@ endif
 
 ifeq ($(call isTargetOsType, unix), true)
   ifeq ($(STATIC_BUILD), false)
-    LIBJSIG_CFLAGS += -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"'
     $(eval $(call SetupJdkLibrary, BUILD_LIBJSIG, \
         NAME := jsig, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB) $(LIBJSIG_CFLAGS), \
+        jsig.c_CFLAGS := -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"', \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_linux := $(LIBDL), \
@@ -208,14 +204,11 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
     NAME := syslookup, \
-    CFLAGS := $(CFLAGS_JDKLIB), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB), \
     LDFLAGS := $(LDFLAGS_JDKLIB), \
     LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
     LDFLAGS_aix := -brtl -bexpfull, \
-    LIBS := $(LIBCXX), \
-    LIBS_linux := -lc -lm -ldl, \
-    LIBS_aix := -lc -lm -ldecNumber, \
+    LIBS_linux := -lm -ldl, \
+    LIBS_aix := -lm -ldecNumber, \
 ))
 
 TARGETS += $(BUILD_SYSLOOKUPLIB)
@@ -226,7 +219,7 @@ TARGETS += $(BUILD_SYSLOOKUPLIB)
 ifeq ($(ENABLE_FALLBACK_LINKER), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBFALLBACKLINKER, \
       NAME := fallbackLinker, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBFFI_CFLAGS), \
+      CFLAGS := $(LIBFFI_CFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
                  $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
@@ -243,12 +236,10 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       NAME := simdsort, \
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
-      CFLAGS := $(CFLAGS_JDKLIB), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) -std=c++17, \
+      CXXFLAGS := -std=c++17, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBCXX), \
-      LIBS_linux := -lc -lm -ldl, \
+      LIBS_linux := -lm -ldl, \
   ))
 
   TARGETS += $(BUILD_LIB_SIMD_SORT)
