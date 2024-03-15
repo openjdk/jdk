@@ -1174,7 +1174,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
   _ref_processor_cm(nullptr),
-  _is_alive_closure_cm(nullptr),
+  _is_alive_closure_cm(),
   _is_subject_to_discovery_cm(this),
   _region_attr() {
 
@@ -1506,7 +1506,7 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Reference discovery will not need a barrier.
 
   // Concurrent Mark ref processor
-  _is_alive_closure_cm = new G1CMIsAliveClosure(concurrent_mark());
+  _is_alive_closure_cm.initialize(concurrent_mark());
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
                            ParallelGCThreads,                              // degree of mt processing
@@ -1514,7 +1514,7 @@ void G1CollectedHeap::ref_processing_init() {
                            // thread counts must be considered for discovery.
                            MAX2(ParallelGCThreads, ConcGCThreads),         // degree of mt discovery
                            true,                                           // Reference discovery is concurrent
-                           _is_alive_closure_cm);                          // is alive closure
+                           &_is_alive_closure_cm);                         // is alive closure
 
   // STW ref processor
   _ref_processor_stw =

@@ -78,8 +78,16 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/powerOfTwo.hpp"
 
+G1CMIsAliveClosure::G1CMIsAliveClosure() : _cm(nullptr) { }
+
 G1CMIsAliveClosure::G1CMIsAliveClosure(G1ConcurrentMark* cm) : _cm(cm) {
   assert(cm != nullptr, "must be");
+}
+
+void G1CMIsAliveClosure::initialize(G1ConcurrentMark* cm) {
+  assert(cm != nullptr, "must be");
+  assert(_cm == nullptr, "double initialize");
+  _cm = cm;
 }
 
 bool G1CMBitMapClosure::do_addr(HeapWord* const addr) {

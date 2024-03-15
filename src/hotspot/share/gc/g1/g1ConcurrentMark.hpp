@@ -97,8 +97,11 @@ typedef GenericTaskQueueSet<G1CMTaskQueue, mtGC> G1CMTaskQueueSet;
 // reference processor as the _is_alive_non_header field
 class G1CMIsAliveClosure : public BoolObjectClosure {
   G1ConcurrentMark* _cm;
+
 public:
+  G1CMIsAliveClosure();
   G1CMIsAliveClosure(G1ConcurrentMark* cm);
+  void initialize(G1ConcurrentMark* cm);
 
   bool do_object_b(oop obj);
 };

@@ -41,7 +41,7 @@ class Thread;
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
-class Closure : public CHeapObj<mtGC> { };
+class Closure { };
 
 // Thread iterator
 class ThreadClosure {
