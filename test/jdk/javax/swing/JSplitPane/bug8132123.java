@@ -33,7 +33,7 @@ import javax.swing.JSplitPane;
  *          to get its size
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug8132123
+ * @run main/manual bug8132123
  */
 
 public class bug8132123 {
