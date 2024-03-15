@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jtreg.SkippedException
  * @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
- * @run main bug4128979
+ * @run main/manual bug4128979
  */
 
 import java.awt.Color;
