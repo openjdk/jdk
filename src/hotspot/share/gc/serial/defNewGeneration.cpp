@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -643,8 +643,6 @@ void DefNewGeneration::adjust_desired_tenuring_threshold() {
     gc_counters->tenuring_threshold()->set_value(_tenuring_threshold);
     gc_counters->desired_survivor_size()->set_value(desired_survivor_size * oopSize);
   }
-
-  age_table()->print_age_table(_tenuring_threshold);
 }
 
 void DefNewGeneration::collect(bool   full,
@@ -679,6 +677,7 @@ void DefNewGeneration::collect(bool   full,
   // These can be shared for all code paths
   IsAliveClosure is_alive(this);
 
+  adjust_desired_tenuring_threshold();
   age_table()->clear();
   to()->clear(SpaceDecorator::Mangle);
   // The preserved marks should be empty at the start of the GC.
@@ -759,7 +758,7 @@ void DefNewGeneration::collect(bool   full,
 
     assert(to()->is_empty(), "to space should be empty now");
 
-    adjust_desired_tenuring_threshold();
+    age_table()->print_age_table(_tenuring_threshold);
 
     assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
