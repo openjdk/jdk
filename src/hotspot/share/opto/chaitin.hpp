@@ -292,7 +292,7 @@ public:
 #endif
 
   //--------------- Live Range Accessors
-  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob"); return _lrgs[idx]; }
+  LRG &lrgs(uint idx) const { assert(idx < _maxlrg, "oob: index %u not smaller than %u", idx, _maxlrg); return _lrgs[idx]; }
 
   // Compute and set effective degree.  Might be folded into SquareUp().
   void Compute_Effective_Degree();

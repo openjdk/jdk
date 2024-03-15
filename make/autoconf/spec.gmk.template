@@ -477,7 +477,7 @@ MACOSX_VERSION_MAX := @MACOSX_VERSION_MAX@
 MACOSX_CODESIGN_MODE := @MACOSX_CODESIGN_MODE@
 MACOSX_CODESIGN_IDENTITY := @MACOSX_CODESIGN_IDENTITY@
 
-# Toolchain type: gcc, clang, xlc, microsoft...
+# Toolchain type: gcc, clang, microsoft...
 TOOLCHAIN_TYPE := @TOOLCHAIN_TYPE@
 TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@
 CC_VERSION_NUMBER := @CC_VERSION_NUMBER@
@@ -485,17 +485,6 @@ CXX_VERSION_NUMBER := @CXX_VERSION_NUMBER@
 
 # Legacy support
 HOTSPOT_TOOLCHAIN_TYPE := @HOTSPOT_TOOLCHAIN_TYPE@
-
-# Option used to tell the compiler whether to create 32- or 64-bit executables
-COMPILER_TARGET_BITS_FLAG := @COMPILER_TARGET_BITS_FLAG@
-COMPILER_SUPPORTS_TARGET_BITS_FLAG := @COMPILER_SUPPORTS_TARGET_BITS_FLAG@
-
-# Option used to pass a command file to the compiler
-COMPILER_COMMAND_FILE_FLAG := @COMPILER_COMMAND_FILE_FLAG@
-
-# Option for specifying a file which saves the binder commands
-# produced by the link step (for debugging, currently AIX only)
-COMPILER_BINDCMD_FILE_FLAG := @COMPILER_BINDCMD_FILE_FLAG@
 
 CC_OUT_OPTION := @CC_OUT_OPTION@
 

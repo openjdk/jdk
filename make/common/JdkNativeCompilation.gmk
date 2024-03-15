@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -140,6 +140,10 @@ define SetupJdkLibraryBody
     endif
   endif
 
+  ifeq ($$($1_LINK_TYPE), C++)
+    $1_LIBS += $(LIBCXX)
+  endif
+
   ifeq ($$($1_SRC), )
     ifneq ($$(MODULE), )
       $1_SRC := $$(call FindSrcDirsForLib, $$(MODULE), $$($1_NAME))
@@ -189,6 +193,14 @@ define SetupJdkLibraryBody
     $1_EXTRA_HEADER_FLAGS := $$(addprefix -I, $$($1_PROCESSED_EXTRA_HEADER_DIRS))
   endif
 
+  ifneq ($$($1_DEFAULT_CFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_CFLAGS := $$(filter-out $$($1_CFLAGS_FILTER_OUT), $$(CFLAGS_JDKLIB)) $$($1_CFLAGS)
+
+    # Set the default flags first to be able to override
+    $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKLIB)) $$($1_CXXFLAGS)
+  endif
+
   ifneq ($$($1_CFLAGS), )
     $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
@@ -233,6 +245,10 @@ define SetupJdkExecutableBody
     endif
   endif
 
+  ifeq ($$($1_LINK_TYPE), C++)
+    $1_LIBS += $(LIBCXX)
+  endif
+
   ifeq ($$($1_VERSIONINFO_RESOURCE), )
     $1_VERSIONINFO_RESOURCE := $$(GLOBAL_VERSION_INFO_RESOURCE)
   endif
@@ -244,6 +260,14 @@ define SetupJdkExecutableBody
       -D"JDK_FTYPE=0x1L" \
       -I$(TOPDIR)/src/java.base/windows/native/common \
       $$($1_EXTRA_RCFLAGS)
+
+  ifneq ($$($1_DEFAULT_CFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_CFLAGS := $$(filter-out $$($1_CFLAGS_FILTER_OUT), $$(CFLAGS_JDKEXE)) $$($1_CFLAGS)
+
+    # Set the default flags first to be able to override
+    $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKEXE)) $$($1_CXXFLAGS)
+  endif
 
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...

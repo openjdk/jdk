@@ -1059,6 +1059,14 @@ public final class PassFailJFrame {
 
         private Position position;
 
+        /**
+         * A private constructor for the builder,
+         * it should not be created directly.
+         * Use {@code PassFailJFrame.builder()} method instead.
+         */
+        private Builder() {
+        }
+
         public Builder title(String title) {
             this.title = title;
             return this;
@@ -1331,14 +1339,6 @@ public final class PassFailJFrame {
                     || (!splitUI && panelCreator != null))) {
 
                 position = Position.HORIZONTAL;
-            }
-
-            if (panelCreator != null) {
-                if (splitUI && (testWindows != null || windowListCreator != null)) {
-                    // TODO Is it required? We can support both
-                    throw new IllegalStateException("Split UI is not allowed "
-                                                    + "with additional windows");
-                }
             }
 
             if (positionWindows != null) {

@@ -215,14 +215,16 @@ IfProjNode* PhaseIdealLoop::create_new_if_for_predicate(ParsePredicateSuccessPro
 
 // Update ctrl and control inputs of all data nodes starting from 'node' to 'new_ctrl' which have 'old_ctrl' as
 // current ctrl.
-void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
-  Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
-  for (uint j = 0; j < nodes_with_same_ctrl.size(); j++) {
-    Node* next = nodes_with_same_ctrl[j];
-    if (next->in(0) == old_ctrl) {
-      _igvn.replace_input_of(next, 0, new_ctrl);
+void PhaseIdealLoop::set_ctrl_of_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj,
+                                                      Node* new_uncommon_proj) {
+  ResourceMark rm;
+  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  for (uint i = 0; i < nodes_with_same_ctrl.size(); i++) {
+    Node* node = nodes_with_same_ctrl[i];
+    if (node->in(0) == old_uncommon_proj) {
+      _igvn.replace_input_of(node, 0, new_uncommon_proj);
     }
-    set_ctrl(next, new_ctrl);
+    set_ctrl(node, new_uncommon_proj);
   }
 }
 
@@ -242,61 +244,31 @@ Unique_Node_List PhaseIdealLoop::find_nodes_with_same_ctrl(Node* node, const Pro
   return nodes_with_same_ctrl;
 }
 
-// Clone all nodes with the same ctrl as 'old_ctrl' starting from 'node' by following its inputs. Rewire the cloned nodes
-// to 'new_ctrl'. Returns the clone of 'node'.
-Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* node, ProjNode* old_ctrl, Node* new_ctrl) {
+// Clone all data nodes with a ctrl to the old uncommon projection from `start_node' by following its inputs. Rewire the
+// cloned nodes to the new uncommon projection. Returns the clone of the `start_node`.
+Node* PhaseIdealLoop::clone_nodes_with_same_ctrl(Node* start_node, ProjNode* old_uncommon_proj, Node* new_uncommon_proj) {
+  ResourceMark rm;
   DEBUG_ONLY(uint last_idx = C->unique();)
-  Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(node, old_ctrl);
-  Dict old_new_mapping = clone_nodes(nodes_with_same_ctrl); // Cloned but not rewired, yet
-  rewire_cloned_nodes_to_ctrl(old_ctrl, new_ctrl, nodes_with_same_ctrl, old_new_mapping);
-  Node* clone_phi_input = static_cast<Node*>(old_new_mapping[node]);
-  assert(clone_phi_input != nullptr && clone_phi_input->_idx >= last_idx, "must exist and be a proper clone");
-  return clone_phi_input;
+  const Unique_Node_List nodes_with_same_ctrl = find_nodes_with_same_ctrl(start_node, old_uncommon_proj);
+  DataNodeGraph data_node_graph(nodes_with_same_ctrl, this);
+  const OrigToNewHashtable& orig_to_clone = data_node_graph.clone(new_uncommon_proj);
+  fix_cloned_data_node_controls(old_uncommon_proj, new_uncommon_proj, orig_to_clone);
+  Node** cloned_node_ptr = orig_to_clone.get(start_node);
+  assert(cloned_node_ptr != nullptr && (*cloned_node_ptr)->_idx >= last_idx, "must exist and be a proper clone");
+  return *cloned_node_ptr;
 }
 
-// Clone all the nodes on 'list_to_clone' and return an old->new mapping.
-Dict PhaseIdealLoop::clone_nodes(const Node_List& list_to_clone) {
-  Dict old_new_mapping(cmpkey, hashkey);
-  for (uint i = 0; i < list_to_clone.size(); i++) {
-    Node* next = list_to_clone[i];
-    Node* clone = next->clone();
-    _igvn.register_new_node_with_optimizer(clone);
-    old_new_mapping.Insert(next, clone);
-  }
-  return old_new_mapping;
-}
-
-// Rewire inputs of the unprocessed cloned nodes (inputs are not updated, yet, and still point to the old nodes) by
-// using the old_new_mapping.
-void PhaseIdealLoop::rewire_cloned_nodes_to_ctrl(const ProjNode* old_ctrl, Node* new_ctrl,
-                                                 const Node_List& nodes_with_same_ctrl, const Dict& old_new_mapping) {
-  for (uint i = 0; i < nodes_with_same_ctrl.size(); i++) {
-    Node* next = nodes_with_same_ctrl[i];
-    Node* clone = static_cast<Node*>(old_new_mapping[next]);
-    if (next->in(0) == old_ctrl) {
-      // All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
-      // projection (could not only be the last data node in the chain but also, for example, a DivNode within the chain).
-      _igvn.replace_input_of(clone, 0, new_ctrl);
-      set_ctrl(clone, new_ctrl);
+// All data nodes with a control input to the uncommon projection in the chain need to be rewired to the new uncommon
+// projection (could not only be the last data node in the chain but also, for example, a pinned DivNode within the chain).
+void PhaseIdealLoop::fix_cloned_data_node_controls(const ProjNode* old_uncommon_proj, Node* new_uncommon_proj,
+                                                   const OrigToNewHashtable& orig_to_clone) {
+  auto orig_clone_action = [&](Node* orig, Node* clone) {
+    if (orig->in(0) == old_uncommon_proj) {
+      _igvn.replace_input_of(clone, 0, new_uncommon_proj);
+      set_ctrl(clone, new_uncommon_proj);
     }
-    rewire_inputs_of_clones_to_clones(new_ctrl, clone, old_new_mapping, next);
-  }
-}
-
-// Rewire the inputs of the cloned nodes to the old nodes to the new clones.
-void PhaseIdealLoop::rewire_inputs_of_clones_to_clones(Node* new_ctrl, Node* clone, const Dict& old_new_mapping,
-                                                       const Node* next) {
-  for (uint i = 1; i < next->req(); i++) {
-    Node* in = next->in(i);
-    if (!in->is_Phi()) {
-      assert(!in->is_CFG(), "must be data node");
-      Node* in_clone = static_cast<Node*>(old_new_mapping[in]);
-      if (in_clone != nullptr) {
-        _igvn.replace_input_of(clone, i, in_clone);
-        set_ctrl(clone, new_ctrl);
-      }
-    }
-  }
+  };
+  orig_to_clone.iterate_all(orig_clone_action);
 }
 
 IfProjNode* PhaseIdealLoop::clone_parse_predicate_to_unswitched_loop(ParsePredicateSuccessProj* parse_predicate_proj,
