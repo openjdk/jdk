@@ -37,7 +37,7 @@ import javax.swing.JPanel;
  * @summary [macosx] Disabled panel takes mouse input in JLayeredPane
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual CursorOverlappedPanelsTest.html
+ * @run main/manual CursorOverlappedPanelsTest
  */
 public class CursorOverlappedPanelsTest extends Frame {
     public static JFrame initialize() {
