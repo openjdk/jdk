@@ -70,6 +70,10 @@ public class Debug {
             if (args.equals("help")) {
                 Help();
             } else if (args.contains("all")) {
+                // "all" option has special handling for decorator options
+                // If the thread or timestamp decorator option is detected
+                // with the "all" option, then it impacts decorator options
+                // for other categories
                 int beginIndex = args.lastIndexOf("all") + "all".length();
                 int commaIndex = args.indexOf(',', beginIndex);
                 if (commaIndex == -1) commaIndex = args.length();
@@ -109,17 +113,17 @@ public class Debug {
         System.err.println("ts            timestamping");
         System.err.println("x509          X.509 certificate debugging");
         System.err.println();
+        System.err.println("+timestamp can be appended to any of above options to print");
+        System.err.println("              a timestamp for that debug option");
+        System.err.println("+thread can be appended to any of above options to print");
+        System.err.println("              thread information for that debug option");
+        System.err.println();
         System.err.println("The following can be used with access:");
         System.err.println();
         System.err.println("stack         include stack trace");
         System.err.println("domain        dump all domains in context");
         System.err.println("failure       before throwing exception, dump stack");
         System.err.println("              and domain that didn't have permission");
-        System.err.println();
-        System.err.println("+timestamp can be appended to any of above options to print");
-        System.err.println("              a timestamp for that debug option");
-        System.err.println("+thread can be appended to any of above options to print");
-        System.err.println("              thread information for that debug option");
         System.err.println();
         System.err.println("The following can be used with stack and domain:");
         System.err.println();
