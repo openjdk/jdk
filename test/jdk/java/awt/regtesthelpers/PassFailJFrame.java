@@ -157,6 +157,7 @@ import static javax.swing.SwingUtilities.isEventDispatchThread;
  *     <li>the title of the instruction UI,</li>
  *     <li>the timeout of the test,</li>
  *     <li>the size of the instruction UI via rows and columns, and</li>
+ *     <li>to add a log area</li>,
  *     <li>to enable screenshots.</li>
  * </ul>
  */
