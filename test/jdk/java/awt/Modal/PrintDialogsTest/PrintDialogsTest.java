@@ -51,7 +51,7 @@ public class PrintDialogsTest extends Panel implements ActionListener {
 
     static final String INSTRUCTIONS = """
         This test is free format, which means there is no enforced or guided sequence.
- 
+
         Please select each of
         (a) The dialog parent type.
         (b) The dialog modality type
@@ -78,7 +78,7 @@ public class PrintDialogsTest extends Panel implements ActionListener {
 
         Repeat all the above for different combinations, which should include
         using all of the Dialog parent choices and all of the Dialog Modality types.
- 
+
         If any behave incorrectly, note the combination of choices and press Fail.
 
         If all behave correctly, press Pass.
