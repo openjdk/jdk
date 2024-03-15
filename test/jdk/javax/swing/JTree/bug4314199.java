@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,42 +26,44 @@
  * @test
  * @bug 4314199
  * @summary Tests that JTree repaints correctly in a container with a JMenu
- * @author Peter Zhelezniakov
- * @run applet/manual=yesno bug4314199.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug4314199
  */
 
-import javax.swing.*;
-import javax.swing.tree.*;
+import java.awt.BorderLayout;
+import javax.swing.Box;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.JPanel;
+import javax.swing.JTree;
+import javax.swing.UIManager;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 
-public class bug4314199 extends JApplet {
+public class bug4314199 {
 
-    public void init() {
+    private static final String INSTRUCTIONS = """
+            Select the last tree node (marked "Here") and click on the "Menu".
+            Look at the vertical line connecting nodes "Bug" and "Here".
+            If the connecting line does not disappear when the "Menu" drops down,
+            press 'Pass' else 'Fail'. """;
 
-        try {
-            UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-            SwingUtilities.invokeAndWait(new Runnable() {
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
 
-                public void run() {
-                    createAndShowGUI();
-                }
-            });
-        } catch (final Exception e) {
-            SwingUtilities.invokeLater(new Runnable() {
-
-                public void run() {
-                    createAndShowMessage("Test fails because of exception: "
-                            + e.getMessage());
-                }
-            });
-        }
-
+        PassFailJFrame.builder()
+                .title("JTree Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(6)
+                .splitUI(bug4314199::createAndShowGUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    private void createAndShowMessage(String message) {
-        getContentPane().add(new JLabel(message));
-    }
-
-    private void createAndShowGUI() {
+    private static JPanel createAndShowGUI() {
         JMenuBar mb = new JMenuBar();
 
         // needed to exactly align left edge of menu and angled line of tree
@@ -71,7 +73,6 @@ public class bug4314199 extends JApplet {
         JMenuItem mi = new JMenuItem("MenuItem");
         mn.add(mi);
         mb.add(mn);
-        setJMenuBar(mb);
 
         DefaultMutableTreeNode n1 = new DefaultMutableTreeNode("Root");
         DefaultMutableTreeNode n2 = new DefaultMutableTreeNode("Duke");
@@ -87,6 +88,12 @@ public class bug4314199 extends JApplet {
         JTree tree = new JTree(new DefaultTreeModel(n1));
         tree.putClientProperty("JTree.lineStyle", "Angled");
         tree.expandPath(new TreePath(new Object[]{n1, n2, n3}));
-        setContentPane(tree);
+
+        JPanel p = new JPanel();
+        p.setLayout(new BorderLayout());
+        p.setSize(200, 200);
+        p.add(mb, BorderLayout.NORTH);
+        p.add(tree);
+        return p;
     }
 }
