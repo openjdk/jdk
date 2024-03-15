@@ -41,7 +41,7 @@ class Thread;
 
 // The following classes are C++ `closures` for iterating over objects, roots and spaces
 
-class Closure { };
+class Closure : public StackObj { };
 
 // Thread iterator
 class ThreadClosure {
