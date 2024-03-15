@@ -8539,13 +8539,13 @@ class StubGenerator: public StubCodeGenerator {
 
 #ifdef COMPILER2
     // Get native vector math stub routine addresses
-    void* libvmath = nullptr;
+    void* libvectormath = nullptr;
     char ebuf[1024];
     char dll_name[JVM_MAXPATHLEN];
-    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "vmath")) {
-      libvmath = os::dll_load(dll_name, ebuf, sizeof ebuf);
+    if (os::dll_locate_lib(dll_name, sizeof(dll_name), Arguments::get_dll_dir(), "vectormath")) {
+      libvectormath = os::dll_load(dll_name, ebuf, sizeof ebuf);
     }
-    if (libvmath != nullptr) {
+    if (libvectormath != nullptr) {
       // Method naming convention
       //   All the methods are named as <OP><T><N>_<U><suffix>
       //   Where:
@@ -8563,7 +8563,7 @@ class StubGenerator: public StubCodeGenerator {
       //     e.g. sinfx_u10sve is the method for computing vector float sin using SVE instructions
       //          cosd2_u10advsimd is the method for computing 2 elements vector double cos using NEON instructions
       //
-      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "vmath" JNI_LIB_SUFFIX, p2i(libvmath));
+      log_info(library)("Loaded library %s, handle " INTPTR_FORMAT, JNI_LIB_PREFIX "vectormath" JNI_LIB_SUFFIX, p2i(libvectormath));
 
       // Math vector stubs implemented with SVE for scalable vector size.
       if (UseSVE > 0) {
@@ -8574,10 +8574,10 @@ class StubGenerator: public StubCodeGenerator {
           const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
 
           snprintf(ebuf, sizeof(ebuf), "%sfx_%ssve", VectorSupport::mathname[op], ulf);
-          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvmath, ebuf);
+          StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvectormath, ebuf);
 
           snprintf(ebuf, sizeof(ebuf), "%sdx_%ssve", VectorSupport::mathname[op], ulf);
-          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvmath, ebuf);
+          StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_SCALABLE][op] = (address)os::dll_lookup(libvectormath, ebuf);
         }
       }
 
@@ -8589,13 +8589,13 @@ class StubGenerator: public StubCodeGenerator {
         const char* ulf = (vop == VectorSupport::VECTOR_OP_HYPOT) ? "u05" : "u10";
 
         snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libvmath, ebuf);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_64][op] = (address)os::dll_lookup(libvectormath, ebuf);
 
         snprintf(ebuf, sizeof(ebuf), "%sf4_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvmath, ebuf);
+        StubRoutines::_vector_f_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvectormath, ebuf);
 
         snprintf(ebuf, sizeof(ebuf), "%sd2_%sadvsimd", VectorSupport::mathname[op], ulf);
-        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvmath, ebuf);
+        StubRoutines::_vector_d_math[VectorSupport::VEC_SIZE_128][op] = (address)os::dll_lookup(libvectormath, ebuf);
       }
     } else {
       log_info(library)("Failed to load native vector math library!");
