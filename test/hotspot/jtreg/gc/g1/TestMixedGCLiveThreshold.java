@@ -99,6 +99,7 @@ public class TestMixedGCLiveThreshold {
                                        "-XX:+UnlockDiagnosticVMOptions",
                                        "-XX:+UnlockExperimentalVMOptions",
                                        "-XX:+WhiteBoxAPI",
+                                       "-XX:+UseNewCode",
                                        // Parallel full gc can distribute live objects into different regions.
                                        "-XX:ParallelGCThreads=1",
                                        "-Xlog:gc+remset+tracking=trace",

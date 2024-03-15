@@ -1420,6 +1420,10 @@ void G1ConcurrentMark::remark() {
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
     }
 
+    if (UseNewCode && _needs_remembered_set_rebuild) {
+      _g1h->policy()->build_collectionset();
+    }
+
     if (log_is_enabled(Trace, gc, liveness)) {
       G1PrintRegionLivenessInfoClosure cl("Post-Marking");
       _g1h->heap_region_iterate(&cl);
