@@ -157,6 +157,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 TEST_VM_F(VMATreeTest, NativeCallStack) {
   using Tree = VMATree;
   using Node = Tree::VTreap;
+  NativeCallStackStorage ncs(true);
   // Construct a call stack.
   /*
     [0x00007bece59b89ac]ZPhysicalMemoryManager::commit(ZPhysicalMemory&)+0x9a
@@ -168,13 +169,17 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
                                      0x00007bece59b1fdd,
                                      0x00007bece59b2997,
                                      0x00007bece59b2add);
-  NativeCallStackStorage ncs(true);
   NativeCallStackStorage::StackIndex si = ncs.push(stack);
   Tree::Metadata md{si, mtNMT};
   Tree tree;
   for (int i = 0; i < 100; i++) {
     tree.reserve_mapping(i, 100, md);
   }
+  int found_nodes = 0;
+  tree.visit(0, 100*100, [&](Node* x) {
+    found_nodes++;
+  });
+  EXPECT_EQ(2, found_nodes);
 }
 
 // Tests for summary accounting
