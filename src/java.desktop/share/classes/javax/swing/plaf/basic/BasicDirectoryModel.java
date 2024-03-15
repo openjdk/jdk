@@ -102,6 +102,8 @@ public class BasicDirectoryModel extends AbstractListModel<Object> implements Pr
             if (filesLoader != null) {
                 filesLoader.loadThread.interrupt();
                 filesLoader = null;
+                // Increment fetch ID to invalidate pending DoChangeContents
+                fetchID.incrementAndGet();
             }
         }
     }
