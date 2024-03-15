@@ -373,6 +373,11 @@ public class Object {
         long comp = Blocker.begin();
         try {
             wait0(timeoutMillis);
+        } catch (InterruptedException e) {
+            Thread thread = Thread.currentThread();
+            if (thread.isVirtual())
+                thread.getAndClearInterrupt();
+            throw e;
         } finally {
             Blocker.end(comp);
         }
