@@ -66,7 +66,7 @@ public class SecurityDialogTest extends Frame {
             throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame =  PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .splitUIBottom(SecurityDialogTest::createTestUI)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
