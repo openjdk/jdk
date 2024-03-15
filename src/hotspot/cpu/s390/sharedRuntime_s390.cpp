@@ -482,7 +482,9 @@ OopMap* RegisterSaver::generate_oop_map(MacroAssembler* masm, RegisterSet reg_se
     }
     offset += reg_size;
   }
+#ifdef ASSERT
   assert(offset == frame_size_in_bytes, "consistency check");
+#endif
   return map;
 }
 

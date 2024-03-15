@@ -353,8 +353,6 @@ register %{
 
   reg_def Z_CR(SOC, SOC, Op_RegFlags, 0, Z_CR->as_VMReg());   // volatile
 
-
-
 // Specify priority of register selection within phases of register
 // allocation. Highest priority is first. A useful heuristic is to
 // give registers a low priority when they are required by machine
@@ -755,8 +753,6 @@ reg_class z_v_reg(
 );
 
 %}
-
-
 
 //----------DEFINITION BLOCK---------------------------------------------------
 // Define 'name --> value' mappings to inform the ADLC of an integer valued name.
@@ -1206,8 +1202,8 @@ static enum RC rc_class(OptoReg::Name reg) {
   }
 
   // Between float regs & stack are the flags regs.
-  //assert(OptoReg::is_stack(reg) || reg < 64+64+128, "blow up if spilling flags");
-  assert(reg >= OptoReg::stack0(), "blow up if spilling flags");
+  assert(OptoReg::is_stack(reg) || reg < 64+64+128, "blow up if spilling flags");
+  //assert(reg >= OptoReg::stack0(), "blow up if spilling flags");
   return rc_stack;
 }
 
@@ -1292,16 +1288,14 @@ uint MachSpillCopyNode::implementation(CodeBuffer *cbuf, PhaseRegAlloc *ra_, boo
       VectorRegister Rsrc = as_VectorRegister(Matcher::_regEncode[src_lo]);
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
-        __ z_vst(Rsrc,
-              Address(Z_SP, 0, dst_offset));
+        __ z_vst(Rsrc, Address(Z_SP, 0, dst_offset));
       }
       size += 6;
       } else if (src_lo_rc == rc_stack && dst_lo_rc == rc_vector) {
       VectorRegister Rdst = as_VectorRegister(Matcher::_regEncode[dst_lo]);
       if (cbuf) {
         C2_MacroAssembler _masm(cbuf);
-        __ z_vl(Rdst,
-              Address(Z_SP, 0, src_offset));
+        __ z_vl(Rdst, Address(Z_SP, 0, src_offset));
       }
       size += 6;
       } else if (src_lo_rc == rc_vector && dst_lo_rc == rc_vector) {
@@ -11182,6 +11176,7 @@ instruct vsub8S_reg(vecX dst, vecX src1, vecX src2) %{
   %}
   ins_pipe(pipe_class_dummy);
 %}
+
 instruct vsub4I_reg(vecX dst, vecX src1, vecX src2) %{
   match(Set dst (SubVI src1 src2));
   predicate(n->as_Vector()->length() == 4);

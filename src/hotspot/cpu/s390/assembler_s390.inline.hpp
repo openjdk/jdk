@@ -948,8 +948,6 @@ inline void Assembler::z_vacch(  VectorRegister v1, VectorRegister v2, VectorReg
 inline void Assembler::z_vaccf(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vacc(v1, v2, v3, VRET_FW); }      // vector element type 'F'
 inline void Assembler::z_vaccg(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vacc(v1, v2, v3, VRET_DW); }      // vector element type 'G'
 inline void Assembler::z_vaccq(  VectorRegister v1, VectorRegister v2, VectorRegister v3)             {z_vacc(v1, v2, v3, VRET_QW); }      // vector element type 'Q'
-                                                                                                                                           //
-
 
 // SUB
 inline void Assembler::z_vs(     VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4) {emit_48(VS_ZOPC    | vreg(v1,  8) | vreg(v2, 12) | vreg(v3, 16) | vesc_mask(m4, VRET_BYTE, VRET_QW, 32)); }
