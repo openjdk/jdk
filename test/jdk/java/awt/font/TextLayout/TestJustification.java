@@ -24,6 +24,7 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
@@ -37,15 +38,14 @@ import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 import java.text.AttributedCharacterIterator;
 import java.text.AttributedString;
-import javax.swing.JFrame;
 
 /*
  * @test
  * @bug 4211728 4178140 8145542
  * @summary Justify several lines of text and verify that the lines are the same
    length and cursor positions are correct.
-   Bug 4211728:  TextLayout.draw() draws characters at wrong position.
-   Bug 4178140:  TextLayout does not justify
+   Bug 4211728: TextLayout.draw() draws characters at wrong position.
+   Bug 4178140: TextLayout does not justify.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual TestJustification
@@ -73,8 +73,8 @@ public class TestJustification {
                       .awaitAndCheck();
     }
 
-    private static JFrame createUI() {
-        JFrame frame= new JFrame("Test Text Justification");
+    private static Frame createUI() {
+        Frame frame= new Frame("Test Text Justification");
         JustificationPanel panel = new JustificationPanel("Bitstream Cyberbit");
         frame.add(panel);
         frame.add("Center", panel);
