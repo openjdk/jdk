@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,8 +68,7 @@ CardTable::CardTable(MemRegion whole_heap) :
   _page_size(os::vm_page_size()),
   _byte_map_size(0),
   _byte_map(nullptr),
-  _byte_map_base(nullptr),
-  _guard_region()
+  _byte_map_base(nullptr)
 {
   assert((uintptr_t(_whole_heap.start())  & (_card_size - 1))  == 0, "heap must start at card boundary");
   assert((uintptr_t(_whole_heap.end()) & (_card_size - 1))  == 0, "heap must end at card boundary");
@@ -106,10 +105,6 @@ void CardTable::initialize(void* region0_start, void* region1_start) {
   _byte_map_base = _byte_map - (uintptr_t(low_bound) >> _card_shift);
   assert(byte_for(low_bound) == &_byte_map[0], "Checking start of map");
   assert(byte_for(high_bound-1) <= &_byte_map[last_valid_index()], "Checking end of map");
-
-  CardValue* guard_card = &_byte_map[num_cards];
-  assert(is_aligned(guard_card, _page_size), "must be on its own OS page");
-  _guard_region = MemRegion((HeapWord*)guard_card, _page_size);
 
   initialize_covered_region(region0_start, region1_start);
 
