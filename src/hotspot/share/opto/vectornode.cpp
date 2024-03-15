@@ -1318,7 +1318,7 @@ int ReductionNode::opcode(int opc, BasicType bt) {
 
 // Return the appropriate reduction node.
 ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, BasicType bt,
-                                   bool requires_strict_order) {
+                                   bool is_associative) {
 
   int vopc = opcode(opc, bt);
 
@@ -1328,8 +1328,8 @@ ReductionNode* ReductionNode::make(int opc, Node *ctrl, Node* n1, Node* n2, Basi
   switch (vopc) {
   case Op_AddReductionVI: return new AddReductionVINode(ctrl, n1, n2);
   case Op_AddReductionVL: return new AddReductionVLNode(ctrl, n1, n2);
-  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, requires_strict_order);
-  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, requires_strict_order);
+  case Op_AddReductionVF: return new AddReductionVFNode(ctrl, n1, n2, is_associative);
+  case Op_AddReductionVD: return new AddReductionVDNode(ctrl, n1, n2, is_associative);
   case Op_MulReductionVI: return new MulReductionVINode(ctrl, n1, n2);
   case Op_MulReductionVL: return new MulReductionVLNode(ctrl, n1, n2);
   case Op_MulReductionVF: return new MulReductionVFNode(ctrl, n1, n2);

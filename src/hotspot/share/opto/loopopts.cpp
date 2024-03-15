@@ -4304,7 +4304,7 @@ PhaseIdealLoop::auto_vectorize(IdealLoopTree* lpt, VSharedData &vshared) {
 }
 
 static bool is_unordered_reduction(Node* n) {
-  return n->is_Reduction() && !n->as_Reduction()->requires_strict_order();
+  return n->is_Reduction() && n->as_Reduction()->is_associative();
 }
 
 // Having ReductionNodes in the loop is expensive. They need to recursively
@@ -4353,11 +4353,11 @@ static bool is_unordered_reduction(Node* n) {
 // after the loop, and also reduce the init value into it.
 //
 // We can not do this with all reductions. Some reductions do not allow the
-// reordering of operations (for example float addition requires strict
-// order).
+// reordering of operations (for example float addition is non-associative
+// and requires calculations to be in strict order).
 //
-// UnorderedReduction represents ReductionNode which does not require
-// calculating in strict order.
+// Unordered reduction refers to the ReductionNode which does not require
+// calculating in strict order or is associative in nature.
 void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
   assert(!C->major_progress() && loop->is_counted() && loop->is_innermost(), "sanity");
 
@@ -4371,7 +4371,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     }
 
     ReductionNode* last_ur = phi->in(2)->as_Reduction();
-    assert(!last_ur->requires_strict_order(), "must be");
+    assert(last_ur->is_associative(), "must be");
 
     // Determine types
     const TypeVect* vec_t = last_ur->vect_type();
@@ -4395,7 +4395,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     ReductionNode* current = last_ur;
     ReductionNode* first_ur = nullptr;
     while (true) {
-      assert(!current->requires_strict_order(), "sanity");
+      assert(current->is_associative(), "sanity");
 
       // Expect no ctrl and a vector_input from within the loop.
       Node* ctrl = current->in(0);
@@ -4436,7 +4436,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
           scalar_input->Opcode() == current->Opcode()) {
         // Move up the UnorderedReduction chain.
         current = scalar_input->as_Reduction();
-        assert(!current->requires_strict_order(), "must be");
+        assert(current->is_associative(), "must be");
       } else if (scalar_input == phi) {
         // Chain terminates at phi.
         first_ur = current;
@@ -4483,7 +4483,7 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         break;
       }
       current = vector_accumulator->unique_out()->as_Reduction();
-      assert(!current->requires_strict_order(), "must be");
+      assert(current->is_associative(), "must be");
     }
 
     // Create post-loop reduction.

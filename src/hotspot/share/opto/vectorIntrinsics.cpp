@@ -1743,7 +1743,7 @@ bool LibraryCallKit::inline_vector_reduction() {
     value = gvn().transform(new VectorBlendNode(reduce_identity, value, mask));
   }
 
-  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* requires_strict_order */ false);
+  value = ReductionNode::make(opc, nullptr, init, value, elem_bt, /* is_associative */ true);
 
   if (mask != nullptr && use_predicate) {
     value->add_req(mask);
