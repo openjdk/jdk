@@ -25,6 +25,7 @@
  * @test
  * @bug 6519005
  * @summary regression: Selection the item on the choice don't work properly in vista ultimate.
+ * @key headful
  * @run main NonFocusablePopupMenuTest
  */
 
