@@ -1051,7 +1051,9 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   // inputs of some nodes, when calling order_inputs_of_uses_to_match_def_pair. If a def
   // node has multiple uses, we may have re-ordered some of the inputs one use after
   // packing another use with the old order. Now that we have all pairs, we must ensure
-  // that the order between the pairs is matching again.
+  // that the order between the pairs is matching again. Since the PairSetIterator visits
+  // all pair-chains from left-to-right, we essencially impose the order of the first
+  // element on all other elements in the pair-chain.
   for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
     Node* s1 = pair.left();
     Node* s2 = pair.right();
@@ -1352,23 +1354,22 @@ void SuperWord::combine_pairs_to_longer_packs() {
   assert(_packset.is_empty(), "packset not empty");
 #endif
 
-  for (int i = 0; i < body().length(); i++) {
-    Node* n = body().at(i);
-    // Start at a "left-most" node:
-    if (_pairset.has_left(n) && !_pairset.has_right(n)) {
-      Node_List* pack = new (arena()) Node_List(arena());
-      pack->push(n);
-
-      Node* left = n;
-      // Now walk the pair-chain:
-      while (_pairset.has_left(left)) {
-        Node* right = _pairset.get_right_for(left);
-        pack->push(right);
-        left = right;
-      }
+  // Iterate pair-chain by pair-chain, each from left-most to right-most.
+  Node_List* pack = nullptr;
+  for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
+    Node* s1 = pair.left();
+    Node* s2 = pair.right();
+    if (_pairset.is_left_in_a_left_most_pair(s1)) {
+      pack = new (arena()) Node_List(arena());
+      pack->push(s1);
+    }
+    pack->push(s2);
+    if (_pairset.is_right_in_a_right_most_pair(s2)) {
       _packset.add_pack(pack);
+      pack = nullptr;
     }
   }
+  assert(pack == nullptr, "finished the last pack");
 
   assert(!_packset.is_empty(), "must have combined some packs");
 
@@ -3713,23 +3714,18 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 void PairSet::print() const {
   tty->print_cr("\nPairSet::print: %d pairs", _pair_counter);
   int chain = 0;
-  for (int i = 0; i < _body.body().length(); i++) {
-    Node* n = _body.body().at(i);
-    // Start at a "left-most" node:
-    if (has_left(n) && !has_right(n)) {
+  int chain_index = 0;
+  for (PairSetIterator pair(*this); !pair.done(); pair.next()) {
+    Node* n1 = pair.left();
+    Node* n2 = pair.right();
+    if (is_left_in_a_left_most_pair(n1)) {
+      chain_index = 0;
       tty->print_cr(" Pair-chain %d:", chain++);
-      Node* left = n;
-      // Now walk the pair-chain:
-      while (has_left(left)) {
-        Node* right = get_right_for(left);
-        tty->print("  ");
-        left->dump();
-        tty->print("  ");
-        right->dump();
-        tty->cr();
-        left = right;
-      }
+      tty->print("  %3d: ", chain_index++);
+      n1->dump();
     }
+    tty->print("  %3d: ", chain_index++);
+    n2->dump();
   }
 }
 

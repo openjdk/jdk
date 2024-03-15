@@ -90,6 +90,12 @@ public:
   Node* get_left_for(Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }
   Node* get_right_for(Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
   bool has_pair(Node* n1, Node* n2) const { return has_left(n1) && get_right_for(n1) == n2; }
+  bool is_left_in_a_left_most_pair(int i) const { return has_left(i) && !has_right(i); }
+  bool is_right_in_a_right_most_pair(int i) const { return !has_left(i) && has_right(i); }
+  bool is_left_in_a_left_most_pair(const Node* n) const { return is_left_in_a_left_most_pair(_body.bb_idx(n)); }
+  bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
+
+  // TODO figure out if we need all accessors, and make const Node*
 
   void add_pair(Node* n1, Node* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
@@ -105,26 +111,30 @@ public:
   NOT_PRODUCT(void print() const;)
 };
 
+// Iterate over the PairSet, pair-chain by pair-chain.
+// A pair-chain starts with a "left-most" pair (n1, n2), where n1 is never a right-element
+// in any pair. We walk a chain: (n2, n3), (n3, n4) ... until we hit a "right-most" pair
+// where the right-element is never a left-element of any pair.
+// These pair-chains will later be combined into packs by combine_pairs_to_longer_packs.
 class PairSetIterator : public StackObj {
 private:
   const PairSet& _pairset;
   const VLoopBody& _body;
 
-  int _current_bb_idx;
+  int _chain_start_bb_idx; // bb_idx of left-element in the left-most pair.
+  int _current_bb_idx;     // bb_idx of left-element of the current pair.
+  const int _end_bb_idx;
+
 public:
   PairSetIterator(const PairSet& pairset) :
-    _pairset(pairset), _body(pairset.body()), _current_bb_idx(-1)
+    _pairset(pairset), _body(pairset.body()),
+    _chain_start_bb_idx(-1), _current_bb_idx(-1),
+    _end_bb_idx(_body.body().length())
   {
-    next();
+    next_chain();
   }
 
-  void next() {
-    do {
-      _current_bb_idx++;
-    } while (!done() && !_pairset.has_left(_current_bb_idx));
-  }
-
-  bool done() const { return _current_bb_idx >= _body.body().length(); }
+  bool done() const { return _chain_start_bb_idx >= _end_bb_idx; }
 
   Node* left() const {
     return _body.body().at(_current_bb_idx);
@@ -133,6 +143,23 @@ public:
   Node* right() const {
     int bb_idx_2 = _pairset.get_right_for(_current_bb_idx);
     return _body.body().at(bb_idx_2);
+  }
+
+  // Try to keep walking on the current pair-chain, else find a new pair-chain.
+  void next() {
+    assert(_pairset.has_left(_current_bb_idx), "current was valid");
+    _current_bb_idx = _pairset.get_right_for(_current_bb_idx);
+    if (!_pairset.has_left(_current_bb_idx)) {
+      next_chain();
+    }
+  }
+
+private:
+  void next_chain() {
+    do {
+      _chain_start_bb_idx++;
+    } while (!done() && !_pairset.is_left_in_a_left_most_pair(_chain_start_bb_idx));
+    _current_bb_idx = _chain_start_bb_idx;
   }
 };
 
