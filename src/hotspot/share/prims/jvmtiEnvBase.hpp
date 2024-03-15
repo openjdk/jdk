@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -542,20 +542,26 @@ public:
 };
 
 // HandshakeClosure to get monitor information with stack depth.
-class GetOwnedMonitorInfoClosure : public JvmtiHandshakeClosure {
+class GetOwnedMonitorInfoClosure : public JvmtiUnitedHandshakeClosure {
 private:
-  JavaThread* _calling_thread;
   JvmtiEnv *_env;
+  JavaThread* _calling_thread;
+  JavaThread* _target_jt; // needed for mounted virtual thread case
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
-  GetOwnedMonitorInfoClosure(JavaThread* calling_thread, JvmtiEnv* env,
-                             GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitor_list)
-    : JvmtiHandshakeClosure("GetOwnedMonitorInfo"),
-      _calling_thread(calling_thread),
+  GetOwnedMonitorInfoClosure(JvmtiEnv* env,
+                             JavaThread* calling_thread,
+                             JavaThread* target_jt,
+                             GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
+    : JvmtiUnitedHandshakeClosure("GetOwnedMonitorInfo"),
       _env(env),
-      _owned_monitors_list(owned_monitor_list) {}
+      _calling_thread(calling_thread),
+      _target_jt(target_jt),
+      _owned_monitors_list(owned_monitors_list) {}
+
   void do_thread(Thread *target);
+  void do_vthread(Handle target_h);
 };
 
 // VM operation to get object monitor usage.
@@ -765,28 +771,6 @@ public:
       _location_ptr(location_ptr) {}
   void do_thread(Thread *target);
   void do_vthread(Handle target_h);
-};
-
-// HandshakeClosure to get virtual thread monitor information with stack depth.
-class VirtualThreadGetOwnedMonitorInfoClosure : public HandshakeClosure {
-private:
-  JvmtiEnv *_env;
-  Handle _vthread_h;
-  GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
-  jvmtiError _result;
-
-public:
-  VirtualThreadGetOwnedMonitorInfoClosure(JvmtiEnv* env,
-                                          Handle vthread_h,
-                                          GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
-    : HandshakeClosure("VirtualThreadGetOwnedMonitorInfo"),
-      _env(env),
-      _vthread_h(vthread_h),
-      _owned_monitors_list(owned_monitors_list),
-      _result(JVMTI_ERROR_THREAD_NOT_ALIVE) {}
-
-  void do_thread(Thread *target);
-  jvmtiError result() { return _result; }
 };
 
 // HandshakeClosure to get virtual thread thread at safepoint.
