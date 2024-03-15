@@ -3662,8 +3662,153 @@ class StubGenerator: public StubCodeGenerator {
 
 #endif // COMPILER2
 
+  address generate_cont_thaw(Continuation::thaw_kind kind) {
+    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
+    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
+
+    address start = __ pc();
+
+    if (return_barrier) {
+      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    if (return_barrier) {
+      // preserve possible return value from a method returning to the return barrier
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    __ mv(c_rarg1, (return_barrier ? 1 : 0));
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    }
+
+#ifndef PRODUCT
+    {
+      Label OK;
+      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
+      __ beq(sp, t0, OK);
+      __ stop("incorrect sp");
+      __ bind(OK);
+    }
+#endif
+
+    Label thaw_success;
+    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
+    __ bnez(t1, thaw_success);
+    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
+    __ jr(t0);
+    __ bind(thaw_success);
+
+    // make room for the thawed frames
+    __ sub(t0, sp, t1);
+    __ andi(sp, t0, -16); // align
+
+    if (return_barrier) {
+      // save original return value -- again
+      __ sub(sp, sp, 2 * wordSize);
+      __ fsd(f10, Address(sp, 0 * wordSize));
+      __ sd(x10, Address(sp, 1 * wordSize));
+    }
+
+    // If we want, we can templatize thaw by kind, and have three different entries
+    __ mv(c_rarg1, kind);
+
+    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
+    __ mv(t1, x10); // x10 is the sp of the yielding frame
+
+    if (return_barrier) {
+      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
+      __ ld(x10, Address(sp, 1 * wordSize));
+      __ fld(f10, Address(sp, 0 * wordSize));
+      __ add(sp, sp, 2 * wordSize);
+    } else {
+      __ mv(x10, zr); // return 0 (success) from doYield
+    }
+
+    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
+    __ mv(fp, t1);
+    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
+
+    if (return_barrier_exception) {
+      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
+      __ verify_oop(x10);
+      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
+
+      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
+
+      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
+
+      __ mv(x11, x10); // the exception handler
+      __ mv(x10, x9); // restore return value contaning the exception oop
+      __ verify_oop(x10);
+
+      __ leave();
+      __ mv(x13, ra);
+      __ jr(x11); // the exception handler
+    } else {
+      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
+      __ leave();
+      __ ret();
+    }
+
+    return start;
+  }
+
+  address generate_cont_thaw() {
+    if (!Continuations::enabled()) return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
+    address start = __ pc();
+    generate_cont_thaw(Continuation::thaw_top);
+    return start;
+  }
+
+  address generate_cont_returnBarrier() {
+    if (!Continuations::enabled()) return nullptr;
+
+    // TODO: will probably need multiple return barriers depending on return type
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier);
+
+    return start;
+  }
+
+  address generate_cont_returnBarrier_exception() {
+    if (!Continuations::enabled()) return nullptr;
+
+    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
+    address start = __ pc();
+
+    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+#if COMPILER2_OR_JVMCI
+
 #undef __
 #define __ this->
+
   class Sha2Generator : public MacroAssembler {
     StubCodeGenerator* _cgen;
    public:
@@ -4044,261 +4189,9 @@ class StubGenerator: public StubCodeGenerator {
       return start;
     }
   };
-#undef __
-#define __ masm->
-
-  // Continuation point for throwing of implicit exceptions that are
-  // not handled in the current activation. Fabricates an exception
-  // oop and initiates normal exception dispatching in this
-  // frame. Since we need to preserve callee-saved values (currently
-  // only for C2, but done for C1 as well) we need a callee-saved oop
-  // map and therefore have to make these stubs into RuntimeStubs
-  // rather than BufferBlobs.  If the compiler needs all registers to
-  // be preserved between the fault point and the exception handler
-  // then it must assume responsibility for that in
-  // AbstractCompiler::continuation_for_implicit_null_exception or
-  // continuation_for_implicit_division_by_zero_exception. All other
-  // implicit exceptions (e.g., NullPointerException or
-  // AbstractMethodError on entry) are either at call sites or
-  // otherwise assume that stack unwinding will be initiated, so
-  // caller saved registers were assumed volatile in the compiler.
-
-#undef __
-#define __ masm->
-
-  address generate_throw_exception(const char* name,
-                                   address runtime_entry,
-                                   Register arg1 = noreg,
-                                   Register arg2 = noreg) {
-    // Information about frame layout at time of blocking runtime call.
-    // Note that we only have to preserve callee-saved registers since
-    // the compilers are responsible for supplying a continuation point
-    // if they expect all registers to be preserved.
-    // n.b. riscv asserts that frame::arg_reg_save_area_bytes == 0
-    assert_cond(runtime_entry != nullptr);
-    enum layout {
-      fp_off = 0,
-      fp_off2,
-      return_off,
-      return_off2,
-      framesize // inclusive of return address
-    };
-
-    const int insts_size = 1024;
-    const int locs_size  = 64;
-
-    CodeBuffer code(name, insts_size, locs_size);
-    OopMapSet* oop_maps  = new OopMapSet();
-    MacroAssembler* masm = new MacroAssembler(&code);
-    assert_cond(oop_maps != nullptr && masm != nullptr);
-
-    address start = __ pc();
-
-    // This is an inlined and slightly modified version of call_VM
-    // which has the ability to fetch the return PC out of
-    // thread-local storage and also sets up last_Java_sp slightly
-    // differently than the real call_VM
-
-    __ enter(); // Save FP and RA before call
-
-    assert(is_even(framesize / 2), "sp not 16-byte aligned");
-
-    // ra and fp are already in place
-    __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
-
-    int frame_complete = __ pc() - start;
-
-    // Set up last_Java_sp and last_Java_fp
-    address the_pc = __ pc();
-    __ set_last_Java_frame(sp, fp, the_pc, t0);
-
-    // Call runtime
-    if (arg1 != noreg) {
-      assert(arg2 != c_rarg1, "clobbered");
-      __ mv(c_rarg1, arg1);
-    }
-    if (arg2 != noreg) {
-      __ mv(c_rarg2, arg2);
-    }
-    __ mv(c_rarg0, xthread);
-    BLOCK_COMMENT("call runtime_entry");
-    __ call(runtime_entry);
-
-    // Generate oop map
-    OopMap* map = new OopMap(framesize, 0);
-    assert_cond(map != nullptr);
-
-    oop_maps->add_gc_map(the_pc - start, map);
-
-    __ reset_last_Java_frame(true);
-
-    __ leave();
-
-    // check for pending exceptions
-#ifdef ASSERT
-    Label L;
-    __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
-    __ bnez(t0, L);
-    __ should_not_reach_here();
-    __ bind(L);
-#endif // ASSERT
-    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
-
-    // codeBlob framesize is in words (not VMRegImpl::slot_size)
-    RuntimeStub* stub =
-      RuntimeStub::new_runtime_stub(name,
-                                    &code,
-                                    frame_complete,
-                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
-                                    oop_maps, false);
-    assert(stub != nullptr, "create runtime stub fail!");
-    return stub->entry_point();
-  }
 
 #undef __
 #define __ _masm->
-
-  address generate_cont_thaw(Continuation::thaw_kind kind) {
-    bool return_barrier = Continuation::is_thaw_return_barrier(kind);
-    bool return_barrier_exception = Continuation::is_thaw_return_barrier_exception(kind);
-
-    address start = __ pc();
-
-    if (return_barrier) {
-      __ ld(sp, Address(xthread, JavaThread::cont_entry_offset()));
-    }
-
-#ifndef PRODUCT
-    {
-      Label OK;
-      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
-      __ beq(sp, t0, OK);
-      __ stop("incorrect sp");
-      __ bind(OK);
-    }
-#endif
-
-    if (return_barrier) {
-      // preserve possible return value from a method returning to the return barrier
-      __ sub(sp, sp, 2 * wordSize);
-      __ fsd(f10, Address(sp, 0 * wordSize));
-      __ sd(x10, Address(sp, 1 * wordSize));
-    }
-
-    __ mv(c_rarg1, (return_barrier ? 1 : 0));
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, Continuation::prepare_thaw), xthread, c_rarg1);
-    __ mv(t1, x10); // x10 contains the size of the frames to thaw, 0 if overflow or no more frames
-
-    if (return_barrier) {
-      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ld(x10, Address(sp, 1 * wordSize));
-      __ fld(f10, Address(sp, 0 * wordSize));
-      __ add(sp, sp, 2 * wordSize);
-    }
-
-#ifndef PRODUCT
-    {
-      Label OK;
-      __ ld(t0, Address(xthread, JavaThread::cont_entry_offset()));
-      __ beq(sp, t0, OK);
-      __ stop("incorrect sp");
-      __ bind(OK);
-    }
-#endif
-
-    Label thaw_success;
-    // t1 contains the size of the frames to thaw, 0 if overflow or no more frames
-    __ bnez(t1, thaw_success);
-    __ la(t0, ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
-    __ jr(t0);
-    __ bind(thaw_success);
-
-    // make room for the thawed frames
-    __ sub(t0, sp, t1);
-    __ andi(sp, t0, -16); // align
-
-    if (return_barrier) {
-      // save original return value -- again
-      __ sub(sp, sp, 2 * wordSize);
-      __ fsd(f10, Address(sp, 0 * wordSize));
-      __ sd(x10, Address(sp, 1 * wordSize));
-    }
-
-    // If we want, we can templatize thaw by kind, and have three different entries
-    __ mv(c_rarg1, kind);
-
-    __ call_VM_leaf(Continuation::thaw_entry(), xthread, c_rarg1);
-    __ mv(t1, x10); // x10 is the sp of the yielding frame
-
-    if (return_barrier) {
-      // restore return value (no safepoint in the call to thaw, so even an oop return value should be OK)
-      __ ld(x10, Address(sp, 1 * wordSize));
-      __ fld(f10, Address(sp, 0 * wordSize));
-      __ add(sp, sp, 2 * wordSize);
-    } else {
-      __ mv(x10, zr); // return 0 (success) from doYield
-    }
-
-    // we're now on the yield frame (which is in an address above us b/c sp has been pushed down)
-    __ mv(fp, t1);
-    __ sub(sp, t1, 2 * wordSize); // now pointing to fp spill
-
-    if (return_barrier_exception) {
-      __ ld(c_rarg1, Address(fp, -1 * wordSize)); // return address
-      __ verify_oop(x10);
-      __ mv(x9, x10); // save return value contaning the exception oop in callee-saved x9
-
-      __ call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), xthread, c_rarg1);
-
-      // see OptoRuntime::generate_exception_blob: x10 -- exception oop, x13 -- exception pc
-
-      __ mv(x11, x10); // the exception handler
-      __ mv(x10, x9); // restore return value contaning the exception oop
-      __ verify_oop(x10);
-
-      __ leave();
-      __ mv(x13, ra);
-      __ jr(x11); // the exception handler
-    } else {
-      // We're "returning" into the topmost thawed frame; see Thaw::push_return_frame
-      __ leave();
-      __ ret();
-    }
-
-    return start;
-  }
-
-  address generate_cont_thaw() {
-    if (!Continuations::enabled()) return nullptr;
-
-    StubCodeMark mark(this, "StubRoutines", "Cont thaw");
-    address start = __ pc();
-    generate_cont_thaw(Continuation::thaw_top);
-    return start;
-  }
-
-  address generate_cont_returnBarrier() {
-    if (!Continuations::enabled()) return nullptr;
-
-    // TODO: will probably need multiple return barriers depending on return type
-    StubCodeMark mark(this, "StubRoutines", "cont return barrier");
-    address start = __ pc();
-
-    generate_cont_thaw(Continuation::thaw_return_barrier);
-
-    return start;
-  }
-
-  address generate_cont_returnBarrier_exception() {
-    if (!Continuations::enabled()) return nullptr;
-
-    StubCodeMark mark(this, "StubRoutines", "cont return barrier exception handler");
-    address start = __ pc();
-
-    generate_cont_thaw(Continuation::thaw_return_barrier_exception);
-
-    return start;
-  }
 
   // Set of L registers that correspond to a contiguous memory area.
   // Each 64-bit register typically corresponds to 2 32-bit integers.
@@ -5149,7 +5042,7 @@ class StubGenerator: public StubCodeGenerator {
     return (address) start;
   }
 
-
+#endif // COMPILER2_OR_JVMCI
 
 #ifdef COMPILER2
 
@@ -5462,6 +5355,114 @@ static const int64_t right_3_bits = right_n_bits(3);
     __ should_not_reach_here();
 
     return start;
+  }
+
+  // Continuation point for throwing of implicit exceptions that are
+  // not handled in the current activation. Fabricates an exception
+  // oop and initiates normal exception dispatching in this
+  // frame. Since we need to preserve callee-saved values (currently
+  // only for C2, but done for C1 as well) we need a callee-saved oop
+  // map and therefore have to make these stubs into RuntimeStubs
+  // rather than BufferBlobs.  If the compiler needs all registers to
+  // be preserved between the fault point and the exception handler
+  // then it must assume responsibility for that in
+  // AbstractCompiler::continuation_for_implicit_null_exception or
+  // continuation_for_implicit_division_by_zero_exception. All other
+  // implicit exceptions (e.g., NullPointerException or
+  // AbstractMethodError on entry) are either at call sites or
+  // otherwise assume that stack unwinding will be initiated, so
+  // caller saved registers were assumed volatile in the compiler.
+
+#undef __
+#define __ masm->
+
+  address generate_throw_exception(const char* name,
+                                   address runtime_entry,
+                                   Register arg1 = noreg,
+                                   Register arg2 = noreg) {
+    // Information about frame layout at time of blocking runtime call.
+    // Note that we only have to preserve callee-saved registers since
+    // the compilers are responsible for supplying a continuation point
+    // if they expect all registers to be preserved.
+    // n.b. riscv asserts that frame::arg_reg_save_area_bytes == 0
+    assert_cond(runtime_entry != nullptr);
+    enum layout {
+      fp_off = 0,
+      fp_off2,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    const int insts_size = 1024;
+    const int locs_size  = 64;
+
+    CodeBuffer code(name, insts_size, locs_size);
+    OopMapSet* oop_maps  = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    assert_cond(oop_maps != nullptr && masm != nullptr);
+
+    address start = __ pc();
+
+    // This is an inlined and slightly modified version of call_VM
+    // which has the ability to fetch the return PC out of
+    // thread-local storage and also sets up last_Java_sp slightly
+    // differently than the real call_VM
+
+    __ enter(); // Save FP and RA before call
+
+    assert(is_even(framesize / 2), "sp not 16-byte aligned");
+
+    // ra and fp are already in place
+    __ addi(sp, fp, 0 - ((unsigned)framesize << LogBytesPerInt)); // prolog
+
+    int frame_complete = __ pc() - start;
+
+    // Set up last_Java_sp and last_Java_fp
+    address the_pc = __ pc();
+    __ set_last_Java_frame(sp, fp, the_pc, t0);
+
+    // Call runtime
+    if (arg1 != noreg) {
+      assert(arg2 != c_rarg1, "clobbered");
+      __ mv(c_rarg1, arg1);
+    }
+    if (arg2 != noreg) {
+      __ mv(c_rarg2, arg2);
+    }
+    __ mv(c_rarg0, xthread);
+    BLOCK_COMMENT("call runtime_entry");
+    __ call(runtime_entry);
+
+    // Generate oop map
+    OopMap* map = new OopMap(framesize, 0);
+    assert_cond(map != nullptr);
+
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    __ reset_last_Java_frame(true);
+
+    __ leave();
+
+    // check for pending exceptions
+#ifdef ASSERT
+    Label L;
+    __ ld(t0, Address(xthread, Thread::pending_exception_offset()));
+    __ bnez(t0, L);
+    __ should_not_reach_here();
+    __ bind(L);
+#endif // ASSERT
+    __ far_jump(RuntimeAddress(StubRoutines::forward_exception_entry()));
+
+    // codeBlob framesize is in words (not VMRegImpl::slot_size)
+    RuntimeStub* stub =
+      RuntimeStub::new_runtime_stub(name,
+                                    &code,
+                                    frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    assert(stub != nullptr, "create runtime stub fail!");
+    return stub->entry_point();
   }
 
 #undef __

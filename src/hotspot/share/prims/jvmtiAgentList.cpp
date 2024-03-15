@@ -258,7 +258,6 @@ static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_
 JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
   assert(env != nullptr, "invariant");
   assert(f_ptr != nullptr, "invariant");
-  static char ebuf[1024];
   static char buffer[JVM_MAXPATHLEN];
   int offset;
   if (!os::dll_address_to_library_name(reinterpret_cast<address>(f_ptr), &buffer[0], JVM_MAXPATHLEN, &offset)) {

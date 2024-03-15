@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,44 +21,57 @@
  * questions.
  */
 
-import java.applet.Applet;
 import java.io.File;
-
+import java.awt.BorderLayout;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.filechooser.FileFilter;
 
-public final class FileFilterDescription extends Applet {
+/*
+ * @test
+ * @bug 8029536
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual FileFilterDescription
+ */
+public final class FileFilterDescription {
 
-    @Override
-    public void init() {
-    }
+     private static final String INSTRUCTIONS = """
+         1) Check that current filter in the opened JFileChooser is a "CustomFileFilter".
+         2) Close the JFileChooser.
+         3) Test will repeat steps 1 - 2 for all supported look and feels.
+         4) If it's true for all look and feels then click Pass else click Fail.  """;
 
-    @Override
-    public void start() {
-        try {
-            test();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
+                .title("JFileChooser Filefilter Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(10)
+                .columns(35)
+                .position(PassFailJFrame.Position.TOP_LEFT_CORNER)
+                .build();
 
-
-    public static void test() throws Exception {
         final UIManager.LookAndFeelInfo[] infos = UIManager
                 .getInstalledLookAndFeels();
         for (final UIManager.LookAndFeelInfo info : infos) {
             SwingUtilities.invokeAndWait(() -> {
-                final JFileChooser chooser = new JFileChooser();
                 setLookAndFeel(info);
+                JFrame frame = new JFrame("JFileChooser FileFilter test");
+                final JFileChooser chooser = new JFileChooser();
                 chooser.setAcceptAllFileFilterUsed(false);
                 chooser.setFileFilter(new CustomFileFilter());
                 SwingUtilities.updateComponentTreeUI(chooser);
+                frame.add(chooser, BorderLayout.CENTER);
+                frame.pack();
+                PassFailJFrame.addTestWindow(frame);
+                PassFailJFrame.positionTestWindow(frame, PassFailJFrame.Position.TOP_LEFT_CORNER);
                 chooser.showDialog(null, "Open");
             });
         }
+        passFailJFrame.awaitAndCheck();
     }
 
     private static void setLookAndFeel(final UIManager.LookAndFeelInfo info) {

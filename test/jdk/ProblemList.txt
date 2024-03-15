@@ -689,6 +689,7 @@ javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 # This test fails on macOS 14
 javax/swing/plaf/synth/7158712/bug7158712.java 8324782 macosx-all
+javax/swing/JMenuItem/ActionListenerCalledTwice/ActionListenerCalledTwiceTest.java 8316151 macosx-all
 
 ############################################################################
 
@@ -789,13 +790,11 @@ java/awt/event/MouseEvent/AltGraphModifierTest/AltGraphModifierTest.java 8162380
 java/awt/image/VolatileImage/VolatileImageConfigurationTest.java 8171069 macosx-all,linux-all
 java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
-java/awt/TrayIcon/DblClickActionEventTest/DblClickActionEventTest.html 8203867 macosx-all
 java/awt/Frame/FrameStateTest/FrameStateTest.html 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
 java/awt/font/TextLayout/TestJustification.html 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all
-java/awt/FileDialog/RegexpFilterTest/RegexpFilterTest.html 7187728 macosx-all,linux-all
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
 java/awt/TextArea/TextAreaCursorTest/HoveringAndDraggingTest.java 8024986 macosx-all,linux-all
 java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macosx-all
