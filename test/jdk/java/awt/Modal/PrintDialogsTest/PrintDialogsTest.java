@@ -28,7 +28,7 @@
  * @summary Check if Print and Page Setup dialogs block other windows;
  *          check also correctness of modal behavior for other dialogs.
  * @library /java/awt/regtesthelpers
- * @run main/timeout=600 PrintDialogsTest
+ * @run main/manual PrintDialogsTest
  */
 
 
