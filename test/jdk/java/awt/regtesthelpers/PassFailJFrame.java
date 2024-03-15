@@ -54,7 +54,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
-import javax.swing.BoxLayout;
+import javax.swing.Box;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
@@ -481,9 +481,7 @@ public final class PassFailJFrame {
             logArea = new JTextArea(logAreaRows, columns);
             logArea.setEditable(false);
 
-            JPanel buttonsLogPanel = new JPanel();
-            BoxLayout layout = new BoxLayout(buttonsLogPanel, BoxLayout.Y_AXIS);
-            buttonsLogPanel.setLayout(layout);
+            Box buttonsLogPanel = Box.createVerticalBox();
 
             buttonsLogPanel.add(buttonsPanel);
             buttonsLogPanel.add(new JScrollPane(logArea));
@@ -1084,11 +1082,7 @@ public final class PassFailJFrame {
      * @param message to log
      */
     public static void log(String message) {
-        invokeOnEDTUncheckedException(() -> {
-            if (logArea != null) {
-                logArea.append(message + System.lineSeparator());
-            }
-        });
+        invokeOnEDTUncheckedException(() -> logArea.append(message + "\n"));
     }
 
     /**
@@ -1096,24 +1090,16 @@ public final class PassFailJFrame {
      * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
      */
     public static void logClear() {
-        invokeOnEDTUncheckedException(() -> {
-            if (logArea != null) {
-                logArea.setText("");
-            }
-        });
+        invokeOnEDTUncheckedException(() -> logArea.setText(""));
     }
 
     /**
      * Replaces the log area content with provided {@code text}, if enabled by
      * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
-     * @param text replacement
+     * @param text new text for the log area
      */
     public static void logSet(String text) {
-        invokeOnEDTUncheckedException(() -> {
-            if (logArea != null) {
-                logArea.setText(text);
-            }
-        });
+        invokeOnEDTUncheckedException(() -> logArea.setText(text));
     }
 
     public static final class Builder {
@@ -1176,7 +1162,8 @@ public final class PassFailJFrame {
 
         /**
          * Adds a log area below the "Pass", "Fail" buttons.
-         * <p> The log area can be controlled by {@link #log(String)},
+         * <p>
+         * The log area can be controlled by {@link #log(String)},
          * {@link #logClear()} and {@link #logSet(String)}.
          *
          * @return this builder
@@ -1188,10 +1175,11 @@ public final class PassFailJFrame {
 
         /**
          * Adds a log area below the "Pass", "Fail" buttons.
-         * <p> The log area can be controlled by {@link #log(String)},
+         * <p>
+         * The log area can be controlled by {@link #log(String)},
          * {@link #logClear()} and {@link #logSet(String)}.
-         *
-         * <p> The number of columns is taken from the number of
+         * <p>
+         * The number of columns is taken from the number of
          * columns in the instructional JTextArea.
          *
          * @param rows of the log area
