@@ -83,19 +83,17 @@ public:
   bool is_empty() const { return _pair_counter == 0; }
   bool has_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool has_right(int i) const { return _right_to_left.at(i) != -1; }
-  bool has_left(Node* n)  const { return _vloop.in_bb(n) && has_left( _body.bb_idx(n)); }
-  bool has_right(Node* n) const { return _vloop.in_bb(n) && has_right(_body.bb_idx(n)); }
+  bool has_left(const Node* n)  const { return _vloop.in_bb(n) && has_left( _body.bb_idx(n)); }
+  bool has_right(const Node* n) const { return _vloop.in_bb(n) && has_right(_body.bb_idx(n)); }
   int get_left_for(int i)  const { return _right_to_left.at(i); }
   int get_right_for(int i) const { return _left_to_right.at(i); }
-  Node* get_left_for(Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }
-  Node* get_right_for(Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
-  bool has_pair(Node* n1, Node* n2) const { return has_left(n1) && get_right_for(n1) == n2; }
-  bool is_left_in_a_left_most_pair(int i) const { return has_left(i) && !has_right(i); }
+  Node* get_left_for(const Node* n)  const { return _body.body().at(get_left_for( _body.bb_idx(n))); }
+  Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
+  bool has_pair(const Node* n1, const Node* n2) const { return has_left(n1) && get_right_for(n1) == n2; }
+  bool is_left_in_a_left_most_pair(int i)   const { return has_left(i) && !has_right(i); }
   bool is_right_in_a_right_most_pair(int i) const { return !has_left(i) && has_right(i); }
-  bool is_left_in_a_left_most_pair(const Node* n) const { return is_left_in_a_left_most_pair(_body.bb_idx(n)); }
+  bool is_left_in_a_left_most_pair(const Node* n)   const { return is_left_in_a_left_most_pair( _body.bb_idx(n)); }
   bool is_right_in_a_right_most_pair(const Node* n) const { return is_right_in_a_right_most_pair(_body.bb_idx(n)); }
-
-  // TODO figure out if we need all accessors, and make const Node*
 
   void add_pair(Node* n1, Node* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
