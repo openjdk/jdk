@@ -78,6 +78,12 @@ public final class ConcurrentModification extends ThreadGroup {
     private static final AtomicReference<Throwable> exception =
             new AtomicReference<>();
 
+    /**
+     * Stores an {@code IOException} thrown while removing the files.
+     */
+    private static final AtomicReference<IOException> ioException =
+            new AtomicReference<>();
+
 
     public static void main(String[] args) throws Throwable {
         try {
@@ -92,6 +98,11 @@ public final class ConcurrentModification extends ThreadGroup {
             runner.join();
         } catch (Throwable throwable) {
             handleException(throwable);
+        }
+
+        if (ioException.get() != null) {
+            System.err.println("An error occurred while removing files:");
+            ioException.get().printStackTrace();
         }
 
         if (exception.get() != null) {
@@ -139,7 +150,7 @@ public final class ConcurrentModification extends ThreadGroup {
             timer.cancel();
 
             deleteFiles(temp);
-            Files.delete(temp);
+            deleteFile(temp);
         }
     }
 
@@ -233,7 +244,9 @@ public final class ConcurrentModification extends ThreadGroup {
         try {
             Files.delete(file);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            if (!ioException.compareAndSet(null, e)) {
+                ioException.get().addSuppressed(e);
+            }
         }
     }
 
