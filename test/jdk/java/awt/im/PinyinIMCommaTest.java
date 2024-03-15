@@ -25,8 +25,9 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import jtreg.SkippedException;
+
 import sun.awt.OSInfo;
+import jtreg.SkippedException;
 
 /*
  * @test
@@ -62,7 +63,7 @@ public class PinyinIMCommaTest {
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            throw new SkippedException("This test is for MacOS only");
+            throw new SkippedException("This test is for macOS only");
         }
         PassFailJFrame.builder()
                       .title("Test Comma using Pinyin Input Method")
@@ -77,9 +78,8 @@ public class PinyinIMCommaTest {
 
     private static JComponent createUI() {
         JPanel panel = new JPanel();
-        JTextField input = new JTextField(20);
         panel.add(new JLabel("Text field:"));
-        panel.add(input);
+        panel.add(new JTextField(20));
         return panel;
     }
 }

@@ -24,7 +24,7 @@
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
+import javax.swing.JTextArea;
 
 import jtreg.SkippedException;
 import sun.awt.OSInfo;
@@ -42,7 +42,7 @@ import sun.awt.OSInfo;
 
 public class PinyinIMFullstopTest {
     private static final String INSTRUCTIONS = """
-            This test verifies if Chinese full stop symbol can be entered in JTextField
+            This test verifies if Chinese full stop symbol can be entered in JTextArea
             with Pinyin input method (IM).
 
             Test settings:
@@ -50,7 +50,7 @@ public class PinyinIMFullstopTest {
             add "Pinyin – Traditional" or "Pinyin – Simplified" IM from Chinese language group.
             Set current IM to "Pinyin".
 
-            1. Set focus to the text field below and press "dot" character
+            1. Set focus to the text area below and press "dot" character
                on the keyboard.
             2. Now change the current IM to the IM used before "Pinyin" or to "U.S".
                Press dot character again.
@@ -63,7 +63,7 @@ public class PinyinIMFullstopTest {
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            throw new SkippedException("This test is for MacOS only");
+            throw new SkippedException("This test is for macOS only");
         }
         PassFailJFrame.builder()
                       .title("Test Dot using Pinyin Input Method")
@@ -78,9 +78,9 @@ public class PinyinIMFullstopTest {
 
     private static JComponent createUI() {
         JPanel panel = new JPanel();
-        JTextField input = new JTextField(20);
-        panel.add(new JLabel("Text field:"));
-        panel.add(input);
+        JTextArea textArea = new JTextArea(5, 40);
+        panel.add(new JLabel("Text Area:"));
+        panel.add(textArea);
         return panel;
     }
 }
