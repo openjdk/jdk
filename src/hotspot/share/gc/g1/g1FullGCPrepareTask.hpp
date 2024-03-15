@@ -26,7 +26,7 @@
 #define SHARE_GC_G1_G1FULLGCPREPARETASK_HPP
 
 #include "gc/g1/g1FullGCTask.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 
 class G1CollectedHeap;

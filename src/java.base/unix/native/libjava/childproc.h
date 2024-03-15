@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,6 @@ extern char **environ;
 
 #define FAIL_FILENO (STDERR_FILENO + 1)
 
-/* TODO: Refactor. */
-#define RESTARTABLE(_cmd, _result) do { \
-  do { \
-    _result = _cmd; \
-  } while((_result == -1) && (errno == EINTR)); \
-} while(0)
-
 /* These numbers must be the same as the Enum in ProcessImpl.java
  * Must be a better way of doing this.
  */
@@ -128,24 +121,11 @@ typedef struct _SpawnInfo {
 extern const char * const *parentPathv;
 
 ssize_t writeFully(int fd, const void *buf, size_t count);
-int restartableDup2(int fd_from, int fd_to);
 int closeSafely(int fd);
-int isAsciiDigit(char c);
-int closeDescriptors(void);
-int moveDescriptor(int fd_from, int fd_to);
 
 int magicNumber();
 ssize_t readFully(int fd, void *buf, size_t nbyte);
 void initVectorFromBlock(const char**vector, const char* block, int count);
-void execve_as_traditional_shell_script(const char *file,
-                                        const char *argv[],
-                                        const char *const envp[]);
-void execve_with_shell_fallback(int mode, const char *file,
-                                const char *argv[],
-                                const char *const envp[]);
-void JDK_execvpe(int mode, const char *file,
-                 const char *argv[],
-                 const char *const envp[]);
 int childProcess(void *arg);
 
 #ifdef DEBUG

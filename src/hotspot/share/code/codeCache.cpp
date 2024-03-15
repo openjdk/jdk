@@ -29,12 +29,12 @@
 #include "code/compiledIC.hpp"
 #include "code/dependencies.hpp"
 #include "code/dependencyContext.hpp"
-#include "code/icBuffer.hpp"
 #include "code/nmethod.hpp"
 #include "code/pcDesc.hpp"
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerDefinitions.inline.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/oopMap.hpp"
 #include "gc/shared/barrierSetNMethod.hpp"
 #include "gc/shared/classUnloadingContext.hpp"
@@ -913,23 +913,6 @@ void CodeCache::verify_clean_inline_caches() {
 #endif
 }
 
-void CodeCache::verify_icholder_relocations() {
-#ifdef ASSERT
-  // make sure that we aren't leaking icholders
-  int count = 0;
-  FOR_ALL_HEAPS(heap) {
-    FOR_ALL_BLOBS(cb, *heap) {
-      CompiledMethod *nm = cb->as_compiled_method_or_null();
-      if (nm != nullptr) {
-        count += nm->verify_icholder_relocations();
-      }
-    }
-  }
-  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
-         CompiledICHolder::live_count(), "must agree");
-#endif
-}
-
 // Defer freeing of concurrently cleaned ExceptionCache entries until
 // after a global handshake operation.
 void CodeCache::release_exception_cache(ExceptionCache* entry) {
@@ -1377,6 +1360,67 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 
 #endif // INCLUDE_JVMTI
 
+void CodeCache::mark_directives_matches(bool top_only) {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (DirectivesStack::hasMatchingDirectives(mh, top_only)) {
+      ResourceMark rm;
+      log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
+      mh->set_has_matching_directives();
+    }
+  }
+}
+
+void CodeCache::recompile_marked_directives_matches() {
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  // Try the max level and let the directives be applied during the compilation.
+  int comp_level = CompilationPolicy::highest_compile_level();
+  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (mh->has_matching_directives()) {
+      ResourceMark rm;
+      mh->clear_directive_flags();
+      bool deopt = false;
+
+      if (!nm->is_osr_method()) {
+        log_trace(codecache)("Recompile to level %d because of matching directives %s",
+                             comp_level, mh->external_name());
+        nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, comp_level,
+                                                          methodHandle(), 0,
+                                                          CompileTask::Reason_DirectivesChanged,
+                                                          (JavaThread*)thread);
+        if (comp_nm == nullptr) {
+          log_trace(codecache)("Recompilation to level %d failed, deoptimize %s",
+                               comp_level, mh->external_name());
+          deopt = true;
+        }
+      } else {
+        log_trace(codecache)("Deoptimize OSR %s", mh->external_name());
+        deopt = true;
+      }
+      // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
+      // Deoptimize the method and let the usual hotspot logic do the rest.
+      if (deopt) {
+        if (!nm->has_been_deoptimized() && nm->can_be_deoptimized()) {
+          nm->make_not_entrant();
+          nm->make_deoptimized();
+        }
+      }
+      gc_on_allocation(); // Flush unused methods from CodeCache if required.
+    }
+  }
+}
+
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1748,6 +1792,10 @@ void CodeCache::print() {
 
 void CodeCache::print_summary(outputStream* st, bool detailed) {
   int full_count = 0;
+  julong total_used = 0;
+  julong total_max_used = 0;
+  julong total_free = 0;
+  julong total_size = 0;
   FOR_ALL_HEAPS(heap_iterator) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
@@ -1756,10 +1804,17 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     } else {
       st->print("CodeCache:");
     }
+    size_t size = total/K;
+    size_t used = (total - heap->unallocated_capacity())/K;
+    size_t max_used = heap->max_allocated_capacity()/K;
+    size_t free = heap->unallocated_capacity()/K;
+    total_size += size;
+    total_used += used;
+    total_max_used += max_used;
+    total_free += free;
     st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
                  "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
-                 total/K, (total - heap->unallocated_capacity())/K,
-                 heap->max_allocated_capacity()/K, heap->unallocated_capacity()/K);
+                 size, used, max_used, free);
 
     if (detailed) {
       st->print_cr(" bounds [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT "]",
@@ -1772,17 +1827,22 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
   }
 
   if (detailed) {
-    st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
-                       " adapters=" UINT32_FORMAT,
-                       blob_count(), nmethod_count(), adapter_count());
-    st->print_cr(" compilation: %s", CompileBroker::should_compile_new_jobs() ?
+    if (SegmentedCodeCache) {
+      st->print("CodeCache:");
+      st->print_cr(" size=" JULONG_FORMAT "Kb, used=" JULONG_FORMAT
+                   "Kb, max_used=" JULONG_FORMAT "Kb, free=" JULONG_FORMAT "Kb",
+                   total_size, total_used, total_max_used, total_free);
+    }
+    st->print_cr(" total_blobs=" UINT32_FORMAT ", nmethods=" UINT32_FORMAT
+                 ", adapters=" UINT32_FORMAT ", full_count=" UINT32_FORMAT,
+                 blob_count(), nmethod_count(), adapter_count(), full_count);
+    st->print_cr("Compilation: %s, stopped_count=%d, restarted_count=%d",
+                 CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
                  "disabled (interpreter mode)" :
-                 "disabled (not enough contiguous free space left)");
-    st->print_cr("              stopped_count=%d, restarted_count=%d",
+                 "disabled (not enough contiguous free space left)",
                  CompileBroker::get_total_compiler_stopped_count(),
                  CompileBroker::get_total_compiler_restarted_count());
-    st->print_cr(" full_count=%d", full_count);
   }
 }
 
