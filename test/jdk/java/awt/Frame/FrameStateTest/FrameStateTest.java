@@ -46,8 +46,12 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.Deque;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
+import javax.swing.Timer;
 
 /*
  * @test
@@ -88,6 +92,8 @@ public class FrameStateTest implements ActionListener, ItemListener {
             </body>
             </html>
             """;
+
+    public static final int DELAY = 1000;
 
     Button btnCreate = new Button("Create Frame");
     Button btnDispose = new Button("Dispose Frame");
@@ -223,10 +229,23 @@ public class FrameStateTest implements ActionListener, ItemListener {
             setVisible(true);
         }
 
-        private void sleep() {
-            try {
-                Thread.sleep(1000);
-            } catch (Exception ignored) {}
+        /**
+         * Calls all runnables on EDT with a {@code DELAY} delay before each run.
+         * @param runnables to run
+         */
+        private static void delayedActions(Runnable... runnables) {
+            setTimer(new ArrayDeque<>(Arrays.asList(runnables)));
+        }
+
+        private static void setTimer(Deque<Runnable> deque) {
+            if (deque == null || deque.isEmpty()) return;
+
+            Timer timer = new Timer(DELAY, e -> {
+                deque.pop().run();
+                setTimer(deque);
+            });
+            timer.setRepeats(false);
+            timer.start();
         }
 
         public void actionPerformed(ActionEvent e) {
@@ -250,49 +269,61 @@ public class FrameStateTest implements ActionListener, ItemListener {
                 dolog();
                 ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                 dolog();
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - now restoring: ");
-                ((Frame) (b1.getParent())).setState(Frame.NORMAL);
-                dolog();
+                delayedActions(() -> {
+                    System.out.println(" - now restoring: ");
+                    ((Frame) (b1.getParent())).setState(Frame.NORMAL);
+                    dolog();
+                });
             } else if (e.getSource() == b5) {
                 System.out.println(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - now reshowing: ");
-                ((Frame) (b1.getParent())).setVisible(true);
-                dolog();
+                delayedActions(() -> {
+                    System.out.println(" - now reshowing: ");
+                    ((Frame) (b1.getParent())).setVisible(true);
+                    dolog();
+                });
             } else if (e.getSource() == b6) {
                 System.out.println(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - setting Iconic: ");
-                dolog();
-                ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - now reshowing: ");
-                ((Frame) (b1.getParent())).setVisible(true);
-                dolog();
+                delayedActions(
+                        () -> {
+                            System.out.println(" - setting Iconic: ");
+                            dolog();
+                            ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
+                        },
+                        () -> {
+                            System.out.println(" - now reshowing: ");
+                            ((Frame) (b1.getParent())).setVisible(true);
+                            dolog();
+                        }
+                );
             } else if (e.getSource() == b7) {
                 System.out.println(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - setting Iconic: ");
-                dolog();
-                ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - now reshowing: ");
-                ((Frame) (b1.getParent())).setVisible(true);
-                dolog();
-                sleep(); //TODO sleep on EDT
-                System.out.println(" - now restoring: ");
-                ((Frame) (b1.getParent())).setState(Frame.NORMAL);
-                dolog();
+
+                delayedActions(
+                        () -> {
+                            System.out.println(" - setting Iconic: ");
+                            dolog();
+                            ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
+                        },
+                        () -> {
+                            System.out.println(" - now reshowing: ");
+                            ((Frame) (b1.getParent())).setVisible(true);
+                            dolog();
+                        },
+                        () -> {
+                            System.out.println(" - now restoring: ");
+                            ((Frame) (b1.getParent())).setState(Frame.NORMAL);
+                            dolog();
+                        }
+                );
             }
         }
 
