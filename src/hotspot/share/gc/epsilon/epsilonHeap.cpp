@@ -128,6 +128,9 @@ HeapWord* EpsilonHeap::allocate_work(size_t size, bool verbose) {
       size_t uncommitted_space = max_capacity() - capacity();
       size_t unused_space = max_capacity() - used();
       size_t want_space = MAX2(size_in_bytes, EpsilonMinHeapExpand);
+      assert(unused_space >= uncommitted_space,
+             "Unused (" SIZE_FORMAT ") >= uncommitted (" SIZE_FORMAT ")",
+             unused_space, uncommitted_space);
 
       if (want_space < uncommitted_space) {
         // Enough space to expand in bulk:
