@@ -166,7 +166,7 @@ public class Debug {
      * Note: unlike other {@code getInstance} methods, this method does not
      * use the {@code java.security.debug} system property.
      * <p>
-     * Usually, this method is used by other individual era-specific debug
+     * Usually, this method is used by other individual area-specific debug
      * settings. For example,
      * {@snippet lang=java:
      * Map<String, String> settings = loadLoginSettings();
