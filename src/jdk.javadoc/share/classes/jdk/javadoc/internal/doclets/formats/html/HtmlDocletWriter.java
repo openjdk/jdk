@@ -1292,7 +1292,7 @@ public abstract class HtmlDocletWriter {
                 }
             }
 
-            var docTreeVisitor = new InlineVisitor(element, tag, isLastNode, context, ch, trees);;
+            var docTreeVisitor = new InlineVisitor(element, tag, isLastNode, context, ch, trees);
 
             boolean allDone = docTreeVisitor.visit(tag, result);
             commentRemoved = false;
