@@ -3949,139 +3949,139 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len,
     add(table2, table0, 2*256*sizeof(juint));
     add(table3, table0, 3*256*sizeof(juint));
 
-  if (UseNeon) {
-      cmp(len, (u1)64);
-      br(Assembler::LT, L_by16);
-      eor(v16, T16B, v16, v16);
+    // Neon code start
+    cmp(len, (u1)64);
+    br(Assembler::LT, L_by16);
+    eor(v16, T16B, v16, v16);
 
-    Label L_fold;
+  Label L_fold;
 
-      add(tmp, table0, 4*256*sizeof(juint)); // Point at the Neon constants
+    add(tmp, table0, 4*256*sizeof(juint)); // Point at the Neon constants
 
-      ld1(v0, v1, T2D, post(buf, 32));
-      ld1r(v4, T2D, post(tmp, 8));
-      ld1r(v5, T2D, post(tmp, 8));
-      ld1r(v6, T2D, post(tmp, 8));
-      ld1r(v7, T2D, post(tmp, 8));
-      mov(v16, S, 0, crc);
+    ld1(v0, v1, T2D, post(buf, 32));
+    ld1r(v4, T2D, post(tmp, 8));
+    ld1r(v5, T2D, post(tmp, 8));
+    ld1r(v6, T2D, post(tmp, 8));
+    ld1r(v7, T2D, post(tmp, 8));
+    mov(v16, S, 0, crc);
 
-      eor(v0, T16B, v0, v16);
-      sub(len, len, 64);
+    eor(v0, T16B, v0, v16);
+    sub(len, len, 64);
 
-    BIND(L_fold);
-      pmull(v22, T8H, v0, v5, T8B);
-      pmull(v20, T8H, v0, v7, T8B);
-      pmull(v23, T8H, v0, v4, T8B);
-      pmull(v21, T8H, v0, v6, T8B);
+  BIND(L_fold);
+    pmull(v22, T8H, v0, v5, T8B);
+    pmull(v20, T8H, v0, v7, T8B);
+    pmull(v23, T8H, v0, v4, T8B);
+    pmull(v21, T8H, v0, v6, T8B);
 
-      pmull2(v18, T8H, v0, v5, T16B);
-      pmull2(v16, T8H, v0, v7, T16B);
-      pmull2(v19, T8H, v0, v4, T16B);
-      pmull2(v17, T8H, v0, v6, T16B);
+    pmull2(v18, T8H, v0, v5, T16B);
+    pmull2(v16, T8H, v0, v7, T16B);
+    pmull2(v19, T8H, v0, v4, T16B);
+    pmull2(v17, T8H, v0, v6, T16B);
 
-      uzp1(v24, T8H, v20, v22);
-      uzp2(v25, T8H, v20, v22);
-      eor(v20, T16B, v24, v25);
+    uzp1(v24, T8H, v20, v22);
+    uzp2(v25, T8H, v20, v22);
+    eor(v20, T16B, v24, v25);
 
-      uzp1(v26, T8H, v16, v18);
-      uzp2(v27, T8H, v16, v18);
-      eor(v16, T16B, v26, v27);
+    uzp1(v26, T8H, v16, v18);
+    uzp2(v27, T8H, v16, v18);
+    eor(v16, T16B, v26, v27);
 
-      ushll2(v22, T4S, v20, T8H, 8);
-      ushll(v20, T4S, v20, T4H, 8);
+    ushll2(v22, T4S, v20, T8H, 8);
+    ushll(v20, T4S, v20, T4H, 8);
 
-      ushll2(v18, T4S, v16, T8H, 8);
-      ushll(v16, T4S, v16, T4H, 8);
+    ushll2(v18, T4S, v16, T8H, 8);
+    ushll(v16, T4S, v16, T4H, 8);
 
-      eor(v22, T16B, v23, v22);
-      eor(v18, T16B, v19, v18);
-      eor(v20, T16B, v21, v20);
-      eor(v16, T16B, v17, v16);
+    eor(v22, T16B, v23, v22);
+    eor(v18, T16B, v19, v18);
+    eor(v20, T16B, v21, v20);
+    eor(v16, T16B, v17, v16);
 
-      uzp1(v17, T2D, v16, v20);
-      uzp2(v21, T2D, v16, v20);
-      eor(v17, T16B, v17, v21);
+    uzp1(v17, T2D, v16, v20);
+    uzp2(v21, T2D, v16, v20);
+    eor(v17, T16B, v17, v21);
 
-      ushll2(v20, T2D, v17, T4S, 16);
-      ushll(v16, T2D, v17, T2S, 16);
+    ushll2(v20, T2D, v17, T4S, 16);
+    ushll(v16, T2D, v17, T2S, 16);
 
-      eor(v20, T16B, v20, v22);
-      eor(v16, T16B, v16, v18);
+    eor(v20, T16B, v20, v22);
+    eor(v16, T16B, v16, v18);
 
-      uzp1(v17, T2D, v20, v16);
-      uzp2(v21, T2D, v20, v16);
-      eor(v28, T16B, v17, v21);
+    uzp1(v17, T2D, v20, v16);
+    uzp2(v21, T2D, v20, v16);
+    eor(v28, T16B, v17, v21);
 
-      pmull(v22, T8H, v1, v5, T8B);
-      pmull(v20, T8H, v1, v7, T8B);
-      pmull(v23, T8H, v1, v4, T8B);
-      pmull(v21, T8H, v1, v6, T8B);
+    pmull(v22, T8H, v1, v5, T8B);
+    pmull(v20, T8H, v1, v7, T8B);
+    pmull(v23, T8H, v1, v4, T8B);
+    pmull(v21, T8H, v1, v6, T8B);
 
-      pmull2(v18, T8H, v1, v5, T16B);
-      pmull2(v16, T8H, v1, v7, T16B);
-      pmull2(v19, T8H, v1, v4, T16B);
-      pmull2(v17, T8H, v1, v6, T16B);
+    pmull2(v18, T8H, v1, v5, T16B);
+    pmull2(v16, T8H, v1, v7, T16B);
+    pmull2(v19, T8H, v1, v4, T16B);
+    pmull2(v17, T8H, v1, v6, T16B);
 
-      ld1(v0, v1, T2D, post(buf, 32));
+    ld1(v0, v1, T2D, post(buf, 32));
 
-      uzp1(v24, T8H, v20, v22);
-      uzp2(v25, T8H, v20, v22);
-      eor(v20, T16B, v24, v25);
+    uzp1(v24, T8H, v20, v22);
+    uzp2(v25, T8H, v20, v22);
+    eor(v20, T16B, v24, v25);
 
-      uzp1(v26, T8H, v16, v18);
-      uzp2(v27, T8H, v16, v18);
-      eor(v16, T16B, v26, v27);
+    uzp1(v26, T8H, v16, v18);
+    uzp2(v27, T8H, v16, v18);
+    eor(v16, T16B, v26, v27);
 
-      ushll2(v22, T4S, v20, T8H, 8);
-      ushll(v20, T4S, v20, T4H, 8);
+    ushll2(v22, T4S, v20, T8H, 8);
+    ushll(v20, T4S, v20, T4H, 8);
 
-      ushll2(v18, T4S, v16, T8H, 8);
-      ushll(v16, T4S, v16, T4H, 8);
+    ushll2(v18, T4S, v16, T8H, 8);
+    ushll(v16, T4S, v16, T4H, 8);
 
-      eor(v22, T16B, v23, v22);
-      eor(v18, T16B, v19, v18);
-      eor(v20, T16B, v21, v20);
-      eor(v16, T16B, v17, v16);
+    eor(v22, T16B, v23, v22);
+    eor(v18, T16B, v19, v18);
+    eor(v20, T16B, v21, v20);
+    eor(v16, T16B, v17, v16);
 
-      uzp1(v17, T2D, v16, v20);
-      uzp2(v21, T2D, v16, v20);
-      eor(v16, T16B, v17, v21);
+    uzp1(v17, T2D, v16, v20);
+    uzp2(v21, T2D, v16, v20);
+    eor(v16, T16B, v17, v21);
 
-      ushll2(v20, T2D, v16, T4S, 16);
-      ushll(v16, T2D, v16, T2S, 16);
+    ushll2(v20, T2D, v16, T4S, 16);
+    ushll(v16, T2D, v16, T2S, 16);
 
-      eor(v20, T16B, v22, v20);
-      eor(v16, T16B, v16, v18);
+    eor(v20, T16B, v22, v20);
+    eor(v16, T16B, v16, v18);
 
-      uzp1(v17, T2D, v20, v16);
-      uzp2(v21, T2D, v20, v16);
-      eor(v20, T16B, v17, v21);
+    uzp1(v17, T2D, v20, v16);
+    uzp2(v21, T2D, v20, v16);
+    eor(v20, T16B, v17, v21);
 
-      shl(v16, T2D, v28, 1);
-      shl(v17, T2D, v20, 1);
+    shl(v16, T2D, v28, 1);
+    shl(v17, T2D, v20, 1);
 
-      eor(v0, T16B, v0, v16);
-      eor(v1, T16B, v1, v17);
+    eor(v0, T16B, v0, v16);
+    eor(v1, T16B, v1, v17);
 
-      subs(len, len, 32);
-      br(Assembler::GE, L_fold);
+    subs(len, len, 32);
+    br(Assembler::GE, L_fold);
 
-      mov(crc, 0);
-      mov(tmp, v0, D, 0);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v0, D, 1);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v1, D, 0);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
-      mov(tmp, v1, D, 1);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
-      update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+    mov(crc, 0);
+    mov(tmp, v0, D, 0);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+    mov(tmp, v0, D, 1);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+    mov(tmp, v1, D, 0);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
+    mov(tmp, v1, D, 1);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, false);
+    update_word_crc32(crc, tmp, tmp2, table0, table1, table2, table3, true);
 
-      add(len, len, 32);
-  }
+    add(len, len, 32);
+    // Neon code end
 
   BIND(L_by16);
     subs(len, len, 16);
