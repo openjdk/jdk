@@ -59,7 +59,7 @@ public class DnDFileGroupDescriptor {
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
-            throw new SkippedException("This test is for macOS only");
+            throw new SkippedException("This test is for Windows only");
         }
 
         PassFailJFrame.builder()
