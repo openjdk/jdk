@@ -26,7 +26,7 @@
  * @summary MetalSliderUI paint wrong vertical disabled filled JSlider for DefaultMetalTheme
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main bug6742358
+ * @run main/manual bug6742358
  */
 
 import javax.swing.BoxLayout;
