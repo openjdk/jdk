@@ -637,7 +637,7 @@ files.
 ### libsleef
 
 libsleef, the [SIMD Library for Evaluating Elementary Functions](
-https://sleef.org/) is optional. But it will provide performance enhancement
+https://sleef.org/) is optional, but it will provide performance enhancement
 for vector math operations on Linux/aarch64 platforms.
 
   * To install on an apt-based Linux, try running `sudo apt-get install
