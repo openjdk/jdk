@@ -1082,6 +1082,7 @@ public final class PassFailJFrame {
      * @param message to log
      */
     public static void log(String message) {
+        System.out.println("PassFailJFrame: " + message);
         invokeOnEDTUncheckedException(() -> logArea.append(message + "\n"));
     }
 
@@ -1090,6 +1091,7 @@ public final class PassFailJFrame {
      * {@link Builder#logArea()} or {@link Builder#logArea(int)}.
      */
     public static void logClear() {
+        System.out.println("\nPassFailJFrame: log cleared\n");
         invokeOnEDTUncheckedException(() -> logArea.setText(""));
     }
 
@@ -1099,6 +1101,7 @@ public final class PassFailJFrame {
      * @param text new text for the log area
      */
     public static void logSet(String text) {
+        System.out.println("\nPassFailJFrame: log set to:\n" + text + "\n");
         invokeOnEDTUncheckedException(() -> logArea.setText(text));
     }
 
