@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,16 @@
  */
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 
 import javax.swing.DefaultCellEditor;
-import javax.swing.JApplet;
 import javax.swing.JComboBox;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -40,43 +44,105 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 
-/**
+/*
  * @test
  * @bug 4128521
- * @summary
- *     Tabbing test
- * @author milne
- * @run applet/manual=yesno TAB.html
+ * @key headful
+ * @summary Verify focus changes correctly when tab is pressed while editing
+ *          a JTextField in a JTable
+ * @run main Tab
  */
-public class TAB extends JApplet
-{
-    static void initTest(Container contentPane)
-    {
+
+public class Tab {
+    private static Robot robot;
+    private static JFrame frame;
+    private static JTable tableView;
+    private static volatile Point tableLoc;
+    private static volatile Rectangle cellRect;
+    private static volatile int selectedRowBeforeTabPress;
+    private static volatile int selectedColumnBeforeTabPress;
+    private static volatile int selectedRowAfterTabPress;
+    private static volatile int selectedColumnAfterTabPress;
+
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        robot = new Robot();
+        robot.setAutoDelay(50);
+        try {
+            SwingUtilities.invokeAndWait(Tab::createAndShowUI);
+            robot.waitForIdle();
+            robot.delay(1000);
+
+            SwingUtilities.invokeAndWait(() -> {
+                tableLoc = tableView.getLocationOnScreen();
+                cellRect = tableView.getCellRect(2, 1, true);
+            });
+
+            robot.mouseMove(tableLoc.x + cellRect.x + cellRect.width / 2,
+                    tableLoc.y + cellRect.y + cellRect.height / 2);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
+            robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
+            robot.waitForIdle();
+            robot.delay(20);
+
+            SwingUtilities.invokeAndWait(() -> {
+                selectedRowBeforeTabPress = tableView.getSelectedRow();
+                selectedColumnBeforeTabPress = tableView.getSelectedColumn();
+            });
+
+            robot.keyPress(KeyEvent.VK_TAB);
+            robot.keyRelease(KeyEvent.VK_TAB);
+            robot.waitForIdle();
+            robot.delay(20);
+
+            SwingUtilities.invokeAndWait(() -> {
+                selectedRowAfterTabPress = tableView.getSelectedRow();
+                selectedColumnAfterTabPress = tableView.getSelectedColumn();
+            });
+
+            if (selectedRowAfterTabPress != selectedRowBeforeTabPress
+               && selectedColumnAfterTabPress != (selectedColumnBeforeTabPress + 1)) {
+                throw new RuntimeException("JTable's cell focus didn't move to next" +
+                        " cell on TAB press");
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+        }
+    }
+
+    static void createAndShowUI() {
+        frame = new JFrame("Test JTable's Focus Component");
         // Take the dummy data from SwingSet.
         final String[] names = {"First Name", "Last Name", "Favorite Color",
                 "Favorite Number", "Vegetarian"};
         final Object[][] data = {
-                {"Mark", "Andrews", "Red", new Integer(2), new Boolean(true)},
-                {"Tom", "Ball", "Blue", new Integer(99), new Boolean(false)},
-                {"Alan", "Chung", "Green", new Integer(838), new Boolean(false)},
-                {"Jeff", "Dinkins", "Turquois", new Integer(8), new Boolean(true)},
-                {"Amy", "Fowler", "Yellow", new Integer(3), new Boolean(false)},
-                {"Brian", "Gerhold", "Green", new Integer(0), new Boolean(false)},
-                {"James", "Gosling", "Pink", new Integer(21), new Boolean(false)},
-                {"David", "Karlton", "Red", new Integer(1), new Boolean(false)},
-                {"Dave", "Kloba", "Yellow", new Integer(14), new Boolean(false)},
-                {"Peter", "Korn", "Purple", new Integer(12), new Boolean(false)},
-                {"Phil", "Milne", "Purple", new Integer(3), new Boolean(false)},
-                {"Dave", "Moore", "Green", new Integer(88), new Boolean(false)},
-                {"Hans", "Muller", "Maroon", new Integer(5), new Boolean(false)},
-                {"Rick", "Levenson", "Blue", new Integer(2), new Boolean(false)},
-                {"Tim", "Prinzing", "Blue", new Integer(22), new Boolean(false)},
-                {"Chester", "Rose", "Black", new Integer(0), new Boolean(false)},
-                {"Ray", "Ryan", "Gray", new Integer(77), new Boolean(false)},
-                {"Georges", "Saab", "Red", new Integer(4), new Boolean(false)},
-                {"Willie", "Walker", "Phthalo Blue", new Integer(4), new Boolean(false)},
-                {"Kathy", "Walrath", "Blue", new Integer(8), new Boolean(false)},
-                {"Arnaud", "Weber", "Green", new Integer(44), new Boolean(false)}
+                {"Mark", "Andrews", "Red", 2, true},
+                {"Tom", "Ball", "Blue", 99, false},
+                {"Alan", "Chung", "Green", 838, false},
+                {"Jeff", "Dinkins", "Turquois", 8, true},
+                {"Amy", "Fowler", "Yellow", 3, false},
+                {"Brian", "Gerhold", "Green", 0, false},
+                {"James", "Gosling", "Pink", 21, false},
+                {"David", "Karlton", "Red", 1, false},
+                {"Dave", "Kloba", "Yellow", 14, false},
+                {"Peter", "Korn", "Purple", 12, false},
+                {"Phil", "Milne", "Purple", 3, false},
+                {"Dave", "Moore", "Green", 88, false},
+                {"Hans", "Muller", "Maroon", 5, false},
+                {"Rick", "Levenson", "Blue", 2, false},
+                {"Tim", "Prinzing", "Blue", 22, false},
+                {"Chester", "Rose", "Black", 0, false},
+                {"Ray", "Ryan", "Gray", 77, false},
+                {"Georges", "Saab", "Red", 4, false},
+                {"Willie", "Walker", "Phthalo Blue", 4, false},
+                {"Kathy", "Walrath", "Blue", 8, false},
+                {"Arnaud", "Weber", "Green", 44, false}
         };
 
         // Create a model of the data.
@@ -98,7 +164,7 @@ public class TAB extends JApplet
         };
 
         // Create the table
-        JTable tableView = new JTable(dataModel);
+        tableView = new JTable(dataModel);
         // Turn off auto-resizing so that we can set column sizes programmatically.
         // In this mode, all columns will get their preferred widths, as set blow.
         tableView.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
@@ -150,20 +216,10 @@ public class TAB extends JApplet
         scrollpane.setBorder(new BevelBorder(BevelBorder.LOWERED));
         scrollpane.setPreferredSize(new Dimension(430, 200));
 
-        contentPane.add(scrollpane);
-    }
-
-
-    public void init() {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(
-                        "javax.swing.plaf.metal.MetalLookAndFeel");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            initTest(getContentPane());
-        });
+        frame.getContentPane().add(scrollpane);
+        frame.pack();
+        frame.setLocationRelativeTo(null);
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setVisible(true);
     }
 }
