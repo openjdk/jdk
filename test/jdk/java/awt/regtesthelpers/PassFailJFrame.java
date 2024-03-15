@@ -207,6 +207,7 @@ public final class PassFailJFrame {
     private static Robot robot;
 
     private static JTextArea logArea;
+    private static boolean isLogAreaFirstAppend = true;
 
     public enum Position {HORIZONTAL, VERTICAL, TOP_LEFT_CORNER}
 
@@ -478,7 +479,8 @@ public final class PassFailJFrame {
         }
 
         if (addLogArea) {
-            logArea = new JTextArea(logAreaRows, columns);
+            logArea = new JTextArea("(the test log will be here)",
+                                    logAreaRows, columns);
             logArea.setEditable(false);
 
             Box buttonsLogPanel = Box.createVerticalBox();
@@ -1082,7 +1084,14 @@ public final class PassFailJFrame {
      * @param message to log
      */
     public static void log(String message) {
-        invokeOnEDTUncheckedException(() -> logArea.append(message + "\n"));
+        invokeOnEDTUncheckedException(() -> {
+            if (isLogAreaFirstAppend) {
+                logArea.setText(message + "\n");
+                isLogAreaFirstAppend = false;
+            } else {
+                logArea.append(message + "\n");
+            }
+        });
     }
 
     /**
