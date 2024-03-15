@@ -169,9 +169,9 @@ public class Debug {
      * Usually, this method is used by other individual era-specific debug
      * settings. For example,
      * {@snippet lang=java:
-     * Map<String,String> settings = loadLoginSettings();
+     * Map<String, String> settings = loadLoginSettings();
      * String property = settings.get("login");
-     * Debug debug = Debug.of("login", setting);
+     * Debug debug = Debug.of("login", property);
      * }
      * @param option the debug option name
      * @param property debug setting for this option
