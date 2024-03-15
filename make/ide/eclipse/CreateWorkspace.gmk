@@ -182,14 +182,11 @@ define SetupEclipseWorkspaceBody
       $1_MAKE := $$(call FixPath, $(MAKE))
     endif
 
+    # make reconfigure omitted since it is sensitive to which make was used
+    # make dist-clean omitted since it would delete the Workspace as well
     $1_MATCHING_MAKE_TARGETS :=
     $1_PLAIN_MAKE_TARGETS := update-build-docs docs gensrc gendata copy java \
         launchers libs hotspot jdk product-images product-bundles all-images test-image clean
-
-    # make reconfigure omitted since it is sensitive to which make was used
-    # make dist-clean omitted since it would delete the Workspace as well
-    # $1_PLAIN_MAKE_TARGETS += reconfigure
-    # $1_PLAIN_MAKE_TARGETS += dist-clean
 
     $1_MATCHING_MAKE_TARGETS += $$(foreach name,$$($1_PLAIN_MAKE_TARGETS), \
       <target name="$$(strip $$(name))" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder"> \
