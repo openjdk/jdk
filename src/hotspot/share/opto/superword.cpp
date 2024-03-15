@@ -1203,11 +1203,9 @@ void SuperWord::order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node
       break;
     }
 
-    // Check if there is a pair (use1, use2)
-    if (!_pairset.has_left(use1)) {
-      break;
-    }
-    Node* use2 = _pairset.get_right_for(use1);
+    // Find pair (use1, use2)
+    Node* use2 = _pairset.get_right_or_null_for(use1);
+    if (use2 == nullptr) { break; }
 
     order_inputs_of_uses_to_match_def_pair(def1, def2, use1, use2);
   }
@@ -1327,9 +1325,9 @@ int SuperWord::est_savings(Node* s1, Node* s2) const {
   for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
     Node* use1 = s1->fast_out(i);
 
-    // Check if we have a pair (use1, use2)
-    if (!_pairset.has_left(use1)) { continue; }
-    Node* use2 = _pairset.get_right_for(use1);
+    // Find pair (use1, use2)
+    Node* use2 = _pairset.get_right_or_null_for(use1);
+    if (use2 == nullptr) { continue; }
 
     for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
       if (use2 == s2->fast_out(k)) {
