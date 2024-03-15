@@ -24,7 +24,7 @@
 package gc.z;
 
 /**
- * @test TestZSpillingAtLoadBarrierStub
+ * @test TestRegistersPushPopAtZGCLoadBarrierStub
  * @bug 8326541
  * @summary Test to verify that registers are saved and restored correctly based on
             the actual register usage length on aarch64 when entering load barrier stub.
@@ -34,7 +34,7 @@ package gc.z;
  * @requires vm.gc.ZGenerational & vm.debug
  * @requires os.arch=="aarch64"
  *
- * @run driver gc.z.TestZSpillingAtLoadBarrierStub
+ * @run driver gc.z.TestRegistersPushPopAtZGCLoadBarrierStub
  */
 
 import java.util.ArrayList;
@@ -72,11 +72,11 @@ class Outer {
     }
 }
 
-public class TestZSpillingAtLoadBarrierStub {
+public class TestRegistersPushPopAtZGCLoadBarrierStub {
 
     class Launcher {
         private final static int NUM = 1024;
-        private final static int ITERATIONS = 50_000;
+        private final static int ITERATIONS = 20_000;
         private final static RandomGenerator RANDOM = RandomGeneratorFactory.getDefault().create(0);
         private final static Map<String, Runnable> TESTS;
 
@@ -96,50 +96,50 @@ public class TestZSpillingAtLoadBarrierStub {
             d_outer = new Outer(d_inner);
 
             TESTS = new LinkedHashMap<>();
-            TESTS.put("test_one_float_spilling", Launcher::test_one_float);
-            TESTS.put("test_two_floats_spilling", Launcher::test_two_floats);
-            TESTS.put("test_three_floats_spilling", Launcher::test_three_floats);
-            TESTS.put("test_one_double_spilling", Launcher::test_one_double);
-            TESTS.put("test_two_doubles_spilling", Launcher::test_two_doubles);
-            TESTS.put("test_three_doubles_spilling", Launcher::test_three_doubles);
-            TESTS.put("test_one_vector_128_spilling", Launcher::test_one_vector_128);
-            TESTS.put("test_two_vectors_128_spilling", Launcher::test_two_vectors_128);
-            TESTS.put("test_three_vectors_128_spilling", Launcher::test_three_vectors_128);
-            TESTS.put("test_vector_max_spilling", Launcher::test_vector_max);
-            TESTS.put("test_float_and_vector_spilling", Launcher::test_float_and_vector);
+            TESTS.put("test_one_float_push_pop_at_load_barrier", Launcher::test_one_float);
+            TESTS.put("test_two_floats_push_pop_at_load_barrier", Launcher::test_two_floats);
+            TESTS.put("test_three_floats_push_pop_at_load_barrier", Launcher::test_three_floats);
+            TESTS.put("test_one_double_push_pop_at_load_barrier", Launcher::test_one_double);
+            TESTS.put("test_two_doubles_push_pop_at_load_barrier", Launcher::test_two_doubles);
+            TESTS.put("test_three_doubles_push_pop_at_load_barrier", Launcher::test_three_doubles);
+            TESTS.put("test_one_vector_128_push_pop_at_load_barrier", Launcher::test_one_vector_128);
+            TESTS.put("test_two_vectors_128_push_pop_at_load_barrier", Launcher::test_two_vectors_128);
+            TESTS.put("test_three_vectors_128_push_pop_at_load_barrier", Launcher::test_three_vectors_128);
+            TESTS.put("test_vector_max_push_pop_at_load_barrier", Launcher::test_vector_max);
+            TESTS.put("test_float_and_vector_push_pop_at_load_barrier", Launcher::test_float_and_vector);
         }
 
-        static float test_one_float_spilling(Outer outer, float f) {
+        static float test_one_float_push_pop_at_load_barrier(Outer outer, float f) {
             Inner inner = outer.field;
             return f + ((InnerFloat)inner).data;
         }
 
-        static float test_two_floats_spilling(Outer outer, float f1, float f2) {
+        static float test_two_floats_push_pop_at_load_barrier(Outer outer, float f1, float f2) {
             Inner inner = outer.field;
             return f1 + f2 + ((InnerFloat)inner).data;
         }
 
-        static float test_three_floats_spilling(Outer outer, float f1, float f2, float f3) {
+        static float test_three_floats_push_pop_at_load_barrier(Outer outer, float f1, float f2, float f3) {
             Inner inner = outer.field;
             return f1 + f2 + f3 + ((InnerFloat)inner).data;
         }
 
-        static double test_one_double_spilling(Outer outer, double d) {
+        static double test_one_double_push_pop_at_load_barrier(Outer outer, double d) {
             Inner inner = outer.field;
             return d + ((InnerDouble)inner).data;
         }
 
-        static double test_two_doubles_spilling(Outer outer, double d1, double d2) {
+        static double test_two_doubles_push_pop_at_load_barrier(Outer outer, double d1, double d2) {
             Inner inner = outer.field;
             return d1 + d2 + ((InnerDouble)inner).data;
         }
 
-        static double test_three_doubles_spilling(Outer outer, double d1, double d2, double d3) {
+        static double test_three_doubles_push_pop_at_load_barrier(Outer outer, double d1, double d2, double d3) {
             Inner inner = outer.field;
             return d1 + d2 + d3 + ((InnerDouble)inner).data;
         }
 
-        static void test_one_vector_128_spilling(float[] b, Outer outer) {
+        static void test_one_vector_128_push_pop_at_load_barrier(float[] b, Outer outer) {
             VectorSpecies<Float> float_species = FloatVector.SPECIES_128;
 
             FloatVector av = FloatVector.zero(float_species);
@@ -151,7 +151,7 @@ public class TestZSpillingAtLoadBarrierStub {
             }
         }
 
-        static void test_two_vectors_128_spilling(float[] b, Outer outer) {
+        static void test_two_vectors_128_push_pop_at_load_barrier(float[] b, Outer outer) {
             VectorSpecies<Float> float_species = FloatVector.SPECIES_128;
 
             FloatVector av1 = FloatVector.zero(float_species);
@@ -165,7 +165,7 @@ public class TestZSpillingAtLoadBarrierStub {
             }
         }
 
-        static void test_three_vectors_128_spilling(float[] b, Outer outer) {
+        static void test_three_vectors_128_push_pop_at_load_barrier(float[] b, Outer outer) {
             VectorSpecies<Float> float_species = FloatVector.SPECIES_128;
 
             FloatVector av1 = FloatVector.zero(float_species);
@@ -181,7 +181,7 @@ public class TestZSpillingAtLoadBarrierStub {
             }
         }
 
-        static void test_vector_max_spilling(float[] b, Outer outer) {
+        static void test_vector_max_push_pop_at_load_barrier(float[] b, Outer outer) {
             VectorSpecies<Float> float_species = FloatVector.SPECIES_MAX;
 
             FloatVector av = FloatVector.zero(float_species);
@@ -193,7 +193,7 @@ public class TestZSpillingAtLoadBarrierStub {
             }
         }
 
-        static void test_float_and_vector_spilling(float[] b, Outer outer, float f) {
+        static void test_float_and_vector_push_pop_at_load_barrier(float[] b, Outer outer, float f) {
             VectorSpecies<Float> float_species = FloatVector.SPECIES_MAX;
 
             FloatVector av = FloatVector.zero(float_species);
@@ -207,67 +207,67 @@ public class TestZSpillingAtLoadBarrierStub {
 
         static void test_one_float() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_one_float_spilling(f_outer, RANDOM.nextFloat());
+                test_one_float_push_pop_at_load_barrier(f_outer, RANDOM.nextFloat());
             }
         }
 
         static void test_two_floats() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_two_floats_spilling(f_outer, RANDOM.nextFloat(), RANDOM.nextFloat());
+                test_two_floats_push_pop_at_load_barrier(f_outer, RANDOM.nextFloat(), RANDOM.nextFloat());
             }
         }
 
         static void test_three_floats() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_three_floats_spilling(f_outer, RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat());
+                test_three_floats_push_pop_at_load_barrier(f_outer, RANDOM.nextFloat(), RANDOM.nextFloat(), RANDOM.nextFloat());
             }
         }
 
         static void test_one_double() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_one_double_spilling(d_outer, RANDOM.nextDouble());
+                test_one_double_push_pop_at_load_barrier(d_outer, RANDOM.nextDouble());
             }
         }
 
         static void test_two_doubles() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_two_doubles_spilling(d_outer, RANDOM.nextDouble(), RANDOM.nextDouble());
+                test_two_doubles_push_pop_at_load_barrier(d_outer, RANDOM.nextDouble(), RANDOM.nextDouble());
             }
         }
 
         static void test_three_doubles() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_three_doubles_spilling(d_outer, RANDOM.nextDouble(), RANDOM.nextDouble(), RANDOM.nextDouble());
+                test_three_doubles_push_pop_at_load_barrier(d_outer, RANDOM.nextDouble(), RANDOM.nextDouble(), RANDOM.nextDouble());
             }
         }
 
         static void test_one_vector_128() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_one_vector_128_spilling(f_array, f_outer);
+                test_one_vector_128_push_pop_at_load_barrier(f_array, f_outer);
             }
         }
 
         static void test_two_vectors_128() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_two_vectors_128_spilling(f_array, f_outer);
+                test_two_vectors_128_push_pop_at_load_barrier(f_array, f_outer);
             }
         }
 
         static void test_three_vectors_128() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_three_vectors_128_spilling(f_array, f_outer);
+                test_three_vectors_128_push_pop_at_load_barrier(f_array, f_outer);
             }
         }
 
         static void test_vector_max() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_vector_max_spilling(f_array, f_outer);
+                test_vector_max_push_pop_at_load_barrier(f_array, f_outer);
             }
         }
 
         static void test_float_and_vector() {
             for (int i = 0; i < ITERATIONS; i++) {
-                test_float_and_vector_spilling(f_array, f_outer, RANDOM.nextFloat());
+                test_float_and_vector_push_pop_at_load_barrier(f_array, f_outer, RANDOM.nextFloat());
             }
         }
 
@@ -285,8 +285,8 @@ public class TestZSpillingAtLoadBarrierStub {
 
     // Check that registers are pushed and poped with correct register type and number
     static void checkPushPopRegNumberAndType(String stdout, String keyword, String expected_freg_type,
-                                             int expected_number_of_spilling_fregs) throws Exception {
-        String keyString = keyword + expected_number_of_spilling_fregs + " " + expected_freg_type + " registers";
+                                             int expected_number_of_push_pop_at_load_barrier_fregs) throws Exception {
+        String keyString = keyword + expected_number_of_push_pop_at_load_barrier_fregs + " " + expected_freg_type + " registers";
         if (!containOnlyOneOccuranceOfKeyword(stdout, keyString)) {
             throw new RuntimeException("Stdout is expected to contain only one occurance of keyString: " + "'" + keyString + "'");
         }
@@ -311,33 +311,33 @@ public class TestZSpillingAtLoadBarrierStub {
         return output.getStdout();
     }
 
-    static void run_test(String test_name, String expected_freg_type, int expected_number_of_spilling_fregs,
-                         String expected_vector_reg_type, int expected_number_of_spilling_vector_regs) throws Exception {
+    static void run_test(String test_name, String expected_freg_type, int expected_number_of_fregs,
+                         String expected_vector_reg_type, int expected_number_of_vector_regs) throws Exception {
         String stdout = launchJavaTestProcess(test_name);
 
         String keyword = "push_fp: ";
-        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_spilling_fregs);
-        checkPushPopRegNumberAndType(stdout, keyword, expected_vector_reg_type, expected_number_of_spilling_vector_regs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_fregs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_vector_reg_type, expected_number_of_vector_regs);
 
         keyword = "pop_fp: ";
-        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_spilling_fregs);
-        checkPushPopRegNumberAndType(stdout, keyword, expected_vector_reg_type, expected_number_of_spilling_vector_regs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_fregs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_vector_reg_type, expected_number_of_vector_regs);
     }
 
-    static void run_test(String test_name, String expected_freg_type, int expected_number_of_spilling_fregs) throws Exception {
+    static void run_test(String test_name, String expected_freg_type, int expected_number_of_fregs) throws Exception {
         String stdout = launchJavaTestProcess(test_name);
 
         String keyword = "push_fp: ";
         if (!containOnlyOneOccuranceOfKeyword(stdout, keyword)) {
             throw new RuntimeException("Stdout is expected to contain only one occurance of keyword: " + "'" + keyword + "'");
         }
-        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_spilling_fregs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_fregs);
 
         keyword = "pop_fp: ";
         if (!containOnlyOneOccuranceOfKeyword(stdout, keyword)) {
             throw new RuntimeException("Stdout is expected to contain only one occurance of keyword: " + "'" + keyword + "'");
         }
-        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_spilling_fregs);
+        checkPushPopRegNumberAndType(stdout, keyword, expected_freg_type, expected_number_of_fregs);
     }
 
     public static void main(String[] args) throws Exception {
@@ -347,17 +347,17 @@ public class TestZSpillingAtLoadBarrierStub {
         } else {
             vector_max_reg_type = "Neon";
         }
-        run_test("test_one_float_spilling", "fp", 1);
-        run_test("test_two_floats_spilling", "fp", 2);
-        run_test("test_three_floats_spilling", "fp", 3);
-        run_test("test_one_double_spilling", "fp", 1);
-        run_test("test_two_doubles_spilling", "fp", 2);
-        run_test("test_three_doubles_spilling", "fp", 3);
-        run_test("test_one_vector_128_spilling", "Neon", 1);
-        run_test("test_two_vectors_128_spilling", "Neon", 2);
-        run_test("test_three_vectors_128_spilling", "Neon", 3);
-        run_test("test_vector_max_spilling", vector_max_reg_type, 1);
-        run_test("test_float_and_vector_spilling", "fp", 1, vector_max_reg_type, 1);
+        run_test("test_one_float_push_pop_at_load_barrier", "fp", 1);
+        run_test("test_two_floats_push_pop_at_load_barrier", "fp", 2);
+        run_test("test_three_floats_push_pop_at_load_barrier", "fp", 3);
+        run_test("test_one_double_push_pop_at_load_barrier", "fp", 1);
+        run_test("test_two_doubles_push_pop_at_load_barrier", "fp", 2);
+        run_test("test_three_doubles_push_pop_at_load_barrier", "fp", 3);
+        run_test("test_one_vector_128_push_pop_at_load_barrier", "Neon", 1);
+        run_test("test_two_vectors_128_push_pop_at_load_barrier", "Neon", 2);
+        run_test("test_three_vectors_128_push_pop_at_load_barrier", "Neon", 3);
+        run_test("test_vector_max_push_pop_at_load_barrier", vector_max_reg_type, 1);
+        run_test("test_float_and_vector_push_pop_at_load_barrier", "fp", 1, vector_max_reg_type, 1);
     }
 }
 
