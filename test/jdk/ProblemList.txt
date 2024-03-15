@@ -792,7 +792,7 @@ java/awt/Modal/InvisibleParentTest/InvisibleParentTest.java 8172245 linux-all
 java/awt/print/Dialog/RestoreActiveWindowTest/RestoreActiveWindowTest.java 8185429 macosx-all
 java/awt/Frame/FrameStateTest/FrameStateTest.html 8203920 macosx-all,linux-all
 java/awt/print/PrinterJob/ScaledText/ScaledText.java 8231226 macosx-all
-java/awt/font/TextLayout/TestJustification.html 8250791 macosx-all
+java/awt/font/TextLayout/TestJustification.java 8250791 macosx-all
 java/awt/TrayIcon/DragEventSource/DragEventSource.java 8252242 macosx-all
 java/awt/FileDialog/DefaultFocusOwner/DefaultFocusOwner.java 7187728 macosx-all,linux-all
 java/awt/print/PageFormat/Orient.java 8016055 macosx-all
