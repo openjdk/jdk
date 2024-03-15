@@ -25,7 +25,7 @@
  * @test
  * @bug 6524424
  * @requires (os.family == "windows")
- * @summary JSlider Clicking In Tracks Behavior Inconsistent For Different Tick Spacings
+ * @summary JSlider clicking in tracks behavior inconsistent for different tick spacings
  * @modules java.desktop/com.sun.java.swing.plaf.windows
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -75,10 +75,9 @@ public class bug6524424 {
 
         TestPanel panel = new TestPanel();
 
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("bug6524424");
 
         frame.setContentPane(panel);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
         return frame;
     }
