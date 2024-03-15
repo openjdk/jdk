@@ -561,8 +561,9 @@ const int ObjectAlignmentInBytes = 8;
   product(ccstr, HeapDumpPath, nullptr, MANAGEABLE,                         \
           "When HeapDumpOnOutOfMemoryError is enabled, or a heap dump is "  \
           "triggered by jcmd GC.heap_dump without specifying a path, "      \
-          "the path (filename or directory) of the dump file "              \
-          "(defaults to java_pid<pid>.hprof in the working directory)")     \
+          "the path (filename or directory) of the dump file. "             \
+          "(in case of HeapDumpOnOutOfMemoryError only: "                   \
+          "defaults to java_pid<pid>.hprof in the working directory)")      \
                                                                             \
   product(int, HeapDumpGzipLevel, 0, MANAGEABLE,                            \
           "When HeapDumpOnOutOfMemoryError is enabled, the gzip compression " \
