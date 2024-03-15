@@ -174,10 +174,10 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
   {
     Tree tree;
     for (int i = 0; i < 100; i++) {
-      tree.reserve_mapping(i*100, 100, md);
+      tree.reserve_mapping(i * 100, 100, md);
     }
     int found_nodes = 0;
-    tree.visit(0, 100 * 100, [&](Node* x) {
+    tree.visit(0, 200 * 100, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes);
@@ -185,10 +185,10 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
   {
     Tree tree;
     for (int i = 99; i <= 0; i--) {
-      tree.reserve_mapping(i*100, 100, md);
+      tree.reserve_mapping(i * 100, 100, md);
     }
     int found_nodes = 0;
-    tree.visit(0, 100 * 100, [&](Node* x) {
+    tree.visit(0, 200 * 100, [&](Node* x) {
       found_nodes++;
     });
     EXPECT_EQ(2, found_nodes);
