@@ -30,14 +30,12 @@
  *      instead was shown in the NORMAL state.
  */
 
-import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Checkbox;
 import java.awt.CheckboxGroup;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridLayout;
-import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
@@ -50,7 +48,6 @@ import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.Deque;
 import javax.swing.JPanel;
-import javax.swing.JTextArea;
 import javax.swing.Timer;
 
 /*
@@ -104,8 +101,6 @@ public class FrameStateTest implements ActionListener, ItemListener {
     Checkbox cbNonResize = new Checkbox("Frame non-resizable", cbgResize, false);
     Checkbox cbResize = new Checkbox("Frame Resizable", cbgResize, true);
 
-    JTextArea sysout = new JTextArea(10, 50);
-
     int iState = 0;
     boolean bResize = true;
     CreateFrame icontst;
@@ -118,6 +113,7 @@ public class FrameStateTest implements ActionListener, ItemListener {
                 .testTimeOut(10)
                 .rows(20)
                 .columns(70)
+                .logArea(10)
                 .splitUIBottom(() -> new FrameStateTest().createPanel())
                 .build()
                 .awaitAndCheck();
@@ -125,18 +121,15 @@ public class FrameStateTest implements ActionListener, ItemListener {
 
     public JPanel createPanel() {
         JPanel panel = new JPanel();
-        panel.setLayout(new BorderLayout());
+        panel.setLayout(new GridLayout(0, 3));
         btnDispose.setEnabled(false);
 
-        Panel p = new Panel(new GridLayout(0, 3));
-        p.add(cbIconState);
-        p.add(cbNormState);
-        p.add(btnCreate);
-        p.add(cbResize);
-        p.add(cbNonResize);
-        p.add(btnDispose);
-        panel.add(p, BorderLayout.WEST);
-        panel.add(sysout, BorderLayout.SOUTH);
+        panel.add(cbIconState);
+        panel.add(cbResize);
+        panel.add(btnCreate);
+        panel.add(cbNormState);
+        panel.add(cbNonResize);
+        panel.add(btnDispose);
 
         // Add Listeners
         btnDispose.addActionListener(this);
@@ -146,7 +139,6 @@ public class FrameStateTest implements ActionListener, ItemListener {
         cbIconState.addItemListener(this);
         cbNonResize.addItemListener(this);
 
-        panel.setSize(600, 200);
         return panel;
     }
 
@@ -170,7 +162,8 @@ public class FrameStateTest implements ActionListener, ItemListener {
         if (cbNonResize.getState()) bResize = false;
     }
 
-    class CreateFrame extends Frame implements ActionListener, WindowListener {
+    static class CreateFrame extends Frame
+            implements ActionListener, WindowListener {
 
         Button b1, b2, b3, b4, b5, b6, b7;
         boolean resizable = true;
@@ -189,14 +182,9 @@ public class FrameStateTest implements ActionListener, ItemListener {
                 resizable = false;
             }
 
-            System.out.println("CREATING FRAME - Initially " +
+            PassFailJFrame.log("CREATING FRAME - Initially " +
                     ((iconic) ? "ICONIFIED" : "NORMAL (NON-ICONIFIED)") + " and " +
                     ((resizable) ? "RESIZABLE" : "NON-RESIZABLE"));
-
-
-            sysout.append("CREATING FRAME - Initially "+
-                    ((iconic) ? "ICONIFIED" : "NORMAL (NON-ICONIFIED)") + " and " +
-                    ((resizable) ? "RESIZABLE" : "NON-RESIZABLE") + "\n");
 
             setLayout(new FlowLayout());
             b1 = new Button("resizable");
@@ -248,78 +236,82 @@ public class FrameStateTest implements ActionListener, ItemListener {
             timer.start();
         }
 
+        private void log(String message) {
+            PassFailJFrame.log(message);
+        }
+
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == b2) {
                 Rectangle r = this.getBounds();
                 r.width += 10;
-                System.out.println(" - button pressed - setting bounds on Frame to: " + r);
+                log(" - button pressed - setting bounds on Frame to: " + r);
                 setBounds(r);
                 validate();
             } else if (e.getSource() == b1) {
                 resizable = !resizable;
-                System.out.println(" - button pressed - setting Resizable to: " + resizable);
+                log(" - button pressed - setting Resizable to: " + resizable);
                 ((Frame) (b1.getParent())).setResizable(resizable);
             } else if (e.getSource() == b3) {
-                System.out.println(" - button pressed - setting Iconic: ");
+                log(" - button pressed - setting Iconic: ");
                 dolog();
                 ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                 dolog();
             } else if (e.getSource() == b4) {
-                System.out.println(" - button pressed - setting Iconic: ");
+                log(" - button pressed - setting Iconic: ");
                 dolog();
                 ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                 dolog();
                 delayedActions(() -> {
-                    System.out.println(" - now restoring: ");
+                    log(" - now restoring: ");
                     ((Frame) (b1.getParent())).setState(Frame.NORMAL);
                     dolog();
                 });
             } else if (e.getSource() == b5) {
-                System.out.println(" - button pressed - hiding : ");
+                log(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
                 delayedActions(() -> {
-                    System.out.println(" - now reshowing: ");
+                    log(" - now reshowing: ");
                     ((Frame) (b1.getParent())).setVisible(true);
                     dolog();
                 });
             } else if (e.getSource() == b6) {
-                System.out.println(" - button pressed - hiding : ");
+                log(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
                 delayedActions(
                         () -> {
-                            System.out.println(" - setting Iconic: ");
+                            log(" - setting Iconic: ");
                             dolog();
                             ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                         },
                         () -> {
-                            System.out.println(" - now reshowing: ");
+                            log(" - now reshowing: ");
                             ((Frame) (b1.getParent())).setVisible(true);
                             dolog();
                         }
                 );
             } else if (e.getSource() == b7) {
-                System.out.println(" - button pressed - hiding : ");
+                log(" - button pressed - hiding : ");
                 dolog();
                 ((Frame) (b1.getParent())).setVisible(false);
                 dolog();
 
                 delayedActions(
                         () -> {
-                            System.out.println(" - setting Iconic: ");
+                            log(" - setting Iconic: ");
                             dolog();
                             ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                         },
                         () -> {
-                            System.out.println(" - now reshowing: ");
+                            log(" - now reshowing: ");
                             ((Frame) (b1.getParent())).setVisible(true);
                             dolog();
                         },
                         () -> {
-                            System.out.println(" - now restoring: ");
+                            log(" - now restoring: ");
                             ((Frame) (b1.getParent())).setState(Frame.NORMAL);
                             dolog();
                         }
@@ -328,43 +320,45 @@ public class FrameStateTest implements ActionListener, ItemListener {
         }
 
         public void windowActivated(WindowEvent e) {
-            System.out.println(name + " Activated");
+            log(name + " Activated");
             dolog();
         }
 
         public void windowClosed(WindowEvent e) {
-            System.out.println(name + " Closed");
+            log(name + " Closed");
             dolog();
         }
 
         public void windowClosing(WindowEvent e) {
             ((Window) (e.getSource())).dispose();
-            System.out.println(name + " Closing");
+            log(name + " Closing");
             dolog();
         }
 
         public void windowDeactivated(WindowEvent e) {
-            System.out.println(name + " Deactivated");
+            log(name + " Deactivated");
             dolog();
         }
 
         public void windowDeiconified(WindowEvent e) {
-            System.out.println(name + " Deiconified");
+            log(name + " Deiconified");
             dolog();
         }
 
         public void windowIconified(WindowEvent e) {
-            System.out.println(name + " Iconified");
+            log(name + " Iconified");
             dolog();
         }
 
         public void windowOpened(WindowEvent e) {
-            System.out.println(name + " Opened");
+            log(name + " Opened");
             dolog();
         }
 
         public void dolog() {
-            System.out.println(" getState returns: " + getState());
+            String message = " getState returns: " + getState();
+            System.out.println(message);
+//            sysout.append(message + "\n");
         }
     }
 }
