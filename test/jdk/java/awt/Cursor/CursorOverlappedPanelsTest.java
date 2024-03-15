@@ -56,6 +56,7 @@ public class CursorOverlappedPanelsTest extends Frame {
         frame.setVisible(true);
         return frame;
     }
+
     private static JPanel createPanel(Point location, boolean enabled) {
         final JPanel panel = new JPanel();
         panel.setOpaque(false);
