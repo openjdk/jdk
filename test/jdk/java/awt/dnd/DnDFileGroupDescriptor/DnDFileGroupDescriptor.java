@@ -27,18 +27,23 @@ import java.awt.Component;
 import java.awt.Frame;
 import java.awt.Panel;
 
+import sun.awt.OSInfo;
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 6242241
  * @summary Tests TransferFlavor that supports DnD of MS Outlook attachments.
  * @requires (os.family == "windows")
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
+ * @modules java.desktop/sun.awt
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
  * @run main/manual DnDFileGroupDescriptor
  */
+
 public class DnDFileGroupDescriptor {
     private static final String INSTRUCTIONS = """
-            When the test run, a RED panel is shown.
+            When the test starts, a RED panel appears.
             1. Start MS Outlook program. Find and open the mail form with attachments.
 
             2. Select attachments from the mail and drag into a red field of applet.
@@ -53,6 +58,9 @@ public class DnDFileGroupDescriptor {
             """;
 
     public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
+            throw new SkippedException("This test is for macOS only");
+        }
 
         PassFailJFrame.builder()
                 .title("Test Instructions")
@@ -65,16 +73,16 @@ public class DnDFileGroupDescriptor {
     }
 
     private static Frame createUI() {
-        Frame frame = new Frame("Test Mail Attachments DnD");
+        Frame frame = new Frame("Test MS Outlook Mail Attachments DnD");
         Panel mainPanel = new Panel();
         mainPanel.setLayout(new BorderLayout());
 
-        mainPanel.setBackground(Color.BLUE);
         Component dropTarget = new DnDTarget(Color.RED, Color.YELLOW);
-
         mainPanel.add(dropTarget, "Center");
+
         frame.add(mainPanel);
-        frame.setSize(200,200);
+        frame.setSize(400,200);
+        frame.setAlwaysOnTop(true);
         return frame;
     }
 }
