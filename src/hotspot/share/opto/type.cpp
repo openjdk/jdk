@@ -1639,12 +1639,12 @@ const Type* TypeInt::xdual() const {
 }
 
 const Type* TypeInt::widen(const Type* old, const Type* limit) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   return int_type_widen(this, old->isa_int(), limit->isa_int());
 }
 
 const Type* TypeInt::narrow(const Type* old) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   if (old == nullptr) {
     return this;
   }
@@ -1654,12 +1654,12 @@ const Type* TypeInt::narrow(const Type* old) const {
 
 //-----------------------------filter------------------------------------------
 const Type* TypeInt::filter_helper(const Type* kills, bool include_speculative) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   const TypeInt* ft = join_helper(kills, include_speculative)->isa_int();
   if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
   }
-  assert(!ft->_dual, "");
+  assert(!ft->_dual, "dual types should only be used for join calculation");
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.
@@ -1769,12 +1769,12 @@ const Type* TypeLong::xdual() const {
 }
 
 const Type* TypeLong::widen(const Type* old, const Type* limit) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   return int_type_widen(this, old->isa_long(), limit->isa_long());
 }
 
 const Type* TypeLong::narrow(const Type* old) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   if (old == nullptr) {
     return this;
   }
@@ -1784,12 +1784,12 @@ const Type* TypeLong::narrow(const Type* old) const {
 
 //-----------------------------filter------------------------------------------
 const Type* TypeLong::filter_helper(const Type* kills, bool include_speculative) const {
-  assert(!_dual, "");
+  assert(!_dual, "dual types should only be used for join calculation");
   const TypeLong* ft = join_helper(kills, include_speculative)->isa_long();
   if (ft == nullptr) {
     return Type::TOP;           // Canonical empty value
   }
-  assert(!ft->_dual, "");
+  assert(!ft->_dual, "dual types should only be used for join calculation");
   if (ft->_widen < this->_widen) {
     // Do not allow the value of kill->_widen to affect the outcome.
     // The widen bits must be allowed to run freely through the graph.

@@ -614,8 +614,11 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jint i) const { return is_con() && _lo == i; }
   jint get_con() const { assert(is_con(), "");  return _lo; }
+  // Check if a TypeInt is a subset of this TypeInt (i.e. all elements of the
+  // argument are also elements of this type)
   bool contains(jint i) const;
   bool contains(const TypeInt* t) const;
+  // Excluding the cases where this and t are the same
   bool properly_contains(const TypeInt* t) const;
 
   virtual bool is_finite() const;  // Has a finite value
@@ -692,8 +695,11 @@ public:
   bool is_con() const { return _lo == _hi; }
   bool is_con(jlong i) const { return is_con() && _lo == i; }
   jlong get_con() const { assert(is_con(), "" ); return _lo; }
+  // Check if a TypeLong is a subset of this TypeLong (i.e. all elements of the
+  // argument are also elements of this type)
   bool contains(jlong i) const;
   bool contains(const TypeLong* t) const;
+  // Excluding the cases where this and t are the same
   bool properly_contains(const TypeLong* t) const;
 
   // Check for positive 32-bit value.
