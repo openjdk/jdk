@@ -43,7 +43,7 @@ public class bug8132123 {
              the one-touch expanding buttons on HiDPI displays.
 
             If the display does not support HiDPI mode press PASS.
-                        
+
             1. Run the test on HiDPI Display.
             2. Check that the one-touch expanding buttons on the JSplitPane are painted
             correctly. If so, press PASS, else press FAIL. """;
