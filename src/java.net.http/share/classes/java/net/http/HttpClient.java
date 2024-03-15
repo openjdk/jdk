@@ -714,7 +714,7 @@ public abstract class HttpClient implements AutoCloseable {
      *          information.</li>
      * </ul>
      *
-     * <p> The default {@code HttpClient} implementation returns
+     * <p id="cancel"> The default {@code HttpClient} implementation returns
      * {@code CompletableFuture} objects that are <em>cancelable</em>.
      * {@code CompletableFuture} objects {@linkplain CompletableFuture#newIncompleteFuture()
      * derived} from cancelable futures are themselves <em>cancelable</em>.
