@@ -95,6 +95,10 @@ public class DebugOptions {
                 // turn on thread info and timestamp for all components
                 Arguments.of("all+thread+timestamp",
                         "properties\\[.*\\|main.*UTC\\]((.*\\R)*)keystore\\[.*\\|main.*UTC\\]:",
+                        "properties:"),
+                // all decorator option should override other component options
+                Arguments.of("all+thread+timestamp,properties",
+                        "properties\\[.*\\|main.*UTC\\]((.*\\R)*)keystore\\[.*\\|main.*UTC\\]:",
                         "properties:")
         );
     }
