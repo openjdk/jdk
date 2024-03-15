@@ -40,7 +40,9 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
-ContiguousSpace::ContiguousSpace(): Space(),
+ContiguousSpace::ContiguousSpace():
+  _bottom(nullptr),
+  _end(nullptr),
   _next_compaction_space(nullptr),
   _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
@@ -75,9 +77,6 @@ void ContiguousSpace::clear(bool mangle_space) {
 
 #ifndef PRODUCT
 
-void ContiguousSpace::set_top_for_allocations(HeapWord* v) {
-  mangler()->set_top_for_allocations(v);
-}
 void ContiguousSpace::set_top_for_allocations() {
   mangler()->set_top_for_allocations(top());
 }
@@ -100,35 +99,13 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-
-void Space::print_short() const { print_short_on(tty); }
-
-void Space::print_short_on(outputStream* st) const {
-  st->print(" space " SIZE_FORMAT "K, %3d%% used", capacity() / K,
-              (int) ((double) used() * 100 / capacity()));
-}
-
-void Space::print() const { print_on(tty); }
-
-void Space::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(end()));
-}
+void ContiguousSpace::print() const { print_on(tty); }
 
 void ContiguousSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-                p2i(bottom()), p2i(top()), p2i(end()));
+  st->print_cr(" space %zuK, %3d%% used [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
+               capacity() / K, (int) ((double) used() * 100 / capacity()),
+               p2i(bottom()), p2i(top()), p2i(end()));
 }
-
-#if INCLUDE_SERIALGC
-void TenuredSpace::print_on(outputStream* st) const {
-  print_short_on(st);
-  st->print_cr(" [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ")",
-              p2i(bottom()), p2i(top()), p2i(end()));
-}
-#endif
 
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
@@ -140,20 +117,12 @@ void ContiguousSpace::verify() const {
   guarantee(p == top(), "end of last object must match end of space");
 }
 
-bool Space::obj_is_alive(const HeapWord* p) const {
-  assert (block_is_obj(p), "The address should point to an object");
-  return true;
-}
-
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {
-  if (is_empty()) return;
-  object_iterate_from(bottom(), blk);
-}
-
-void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
-  while (mark < top()) {
-    blk->do_object(cast_to_oop(mark));
-    mark += cast_to_oop(mark)->size();
+  HeapWord* addr = bottom();
+  while (addr < top()) {
+    oop obj = cast_to_oop(addr);
+    blk->do_object(obj);
+    addr += obj->size();
   }
 }
 
@@ -176,26 +145,6 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   }
 }
 
-size_t ContiguousSpace::block_size(const HeapWord* p) const {
-  assert(MemRegion(bottom(), end()).contains(p),
-         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-         p2i(p), p2i(bottom()), p2i(end()));
-  HeapWord* current_top = top();
-  assert(p <= current_top,
-         "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-         p2i(p), p2i(current_top));
-  assert(p == current_top || oopDesc::is_oop(cast_to_oop(p)),
-         "p (" PTR_FORMAT ") is not a block start - "
-         "current_top: " PTR_FORMAT ", is_oop: %s",
-         p2i(p), p2i(current_top), BOOL_TO_STR(oopDesc::is_oop(cast_to_oop(p))));
-  if (p < current_top) {
-    return cast_to_oop(p)->size();
-  } else {
-    assert(p == current_top, "just checking");
-    return pointer_delta(end(), (HeapWord*) p);
-  }
-}
-
 // This version requires locking.
 inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
   assert(Heap_lock->owned_by_self() ||
@@ -205,7 +154,7 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
   if (pointer_delta(end(), obj) >= size) {
     HeapWord* new_top = obj + size;
     set_top(new_top);
-    assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+    assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
     return obj;
   } else {
     return nullptr;
@@ -223,7 +172,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
       //  the old top value: the exchange succeeded
       //  otherwise: the new value of the top is returned.
       if (result == obj) {
-        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        assert(is_object_aligned(obj) && is_object_aligned(new_top), "checking alignment");
         return obj;
       }
     } else {

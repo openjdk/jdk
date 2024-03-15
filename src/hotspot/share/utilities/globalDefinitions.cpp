@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ uint64_t OopEncodingHeapMax = 0;
 // Something to help porters sleep at night
 
 #ifdef ASSERT
-BasicType char2type(int ch) {
+static BasicType char2type(int ch) {
   switch (ch) {
 #define EACH_SIG(ch, bt, ignore) \
     case ch: return bt;

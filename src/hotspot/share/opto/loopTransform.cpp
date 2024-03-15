@@ -37,6 +37,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/movenode.hpp"
 #include "opto/opaquenode.hpp"
+#include "opto/phase.hpp"
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
@@ -1101,12 +1102,11 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
   // Enable this functionality target by target as needed
   if (SuperWordLoopUnrollAnalysis) {
     if (!cl->was_slp_analyzed()) {
-      SuperWord sw(phase);
-      sw.transform_loop(this, false);
+      Compile::TracePhase tp("autoVectorize", &Phase::timers[Phase::_t_autoVectorize]);
 
-      // If the loop is slp canonical analyze it
-      if (sw.early_return() == false) {
-        sw.unrolling_analysis(_local_loop_unroll_factor);
+      VLoop vloop(this, true);
+      if (vloop.check_preconditions()) {
+        SuperWord::unrolling_analysis(vloop, _local_loop_unroll_factor);
       }
     }
 

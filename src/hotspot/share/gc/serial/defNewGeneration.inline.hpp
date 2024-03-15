@@ -41,7 +41,6 @@ void DefNewGeneration::oop_since_save_marks_iterate(OopClosureType* cl) {
   assert(from()->saved_mark_at_top(), "inv");
 
   to()->oop_since_save_marks_iterate(cl);
-  to()->set_saved_mark();
 }
 
 #endif // SHARE_GC_SERIAL_DEFNEWGENERATION_INLINE_HPP

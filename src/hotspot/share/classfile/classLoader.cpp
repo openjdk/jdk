@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,8 @@ ClassPathEntry* ClassLoader::_last_module_path_entry = nullptr;
 #endif
 
 // helper routines
-bool string_starts_with(const char* str, const char* str_to_find) {
+#if INCLUDE_CDS
+static bool string_starts_with(const char* str, const char* str_to_find) {
   size_t str_len = strlen(str);
   size_t str_to_find_len = strlen(str_to_find);
   if (str_to_find_len > str_len) {
@@ -142,6 +143,7 @@ bool string_starts_with(const char* str, const char* str_to_find) {
   }
   return (strncmp(str, str_to_find, str_to_find_len) == 0);
 }
+#endif
 
 static const char* get_jimage_version_string() {
   static char version_string[10] = "";
@@ -1009,8 +1011,8 @@ const char* ClassLoader::file_name_for_class_name(const char* class_name,
   return file_name;
 }
 
-ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
-                                      const GrowableArray<ModuleClassPathList*>* const module_list) {
+static ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
+                                             const GrowableArray<ModuleClassPathList*>* const module_list) {
   int num_of_entries = module_list->length();
   const Symbol* class_module_name = mod_entry->name();
 
@@ -1028,17 +1030,14 @@ ClassPathEntry* find_first_module_cpe(ModuleEntry* mod_entry,
 }
 
 
-// Search either the patch-module or exploded build entries for class.
+// Search the module list for the class file stream based on the file name and java package
 ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
                                                     const GrowableArray<ModuleClassPathList*>* const module_list,
-                                                    const char* const class_name,
+                                                    PackageEntry* pkg_entry, // Java package entry derived from the class name
                                                     const char* const file_name) {
   ClassFileStream* stream = nullptr;
 
-  // Find the class' defining module in the boot loader's module entry table
-  TempNewSymbol class_name_symbol = SymbolTable::new_symbol(class_name);
-  TempNewSymbol pkg_name = package_from_class_name(class_name_symbol);
-  PackageEntry* pkg_entry = get_package_entry(pkg_name, ClassLoaderData::the_null_class_loader_data());
+  // Find the defining module in the boot loader's module entry table
   ModuleEntry* mod_entry = (pkg_entry != nullptr) ? pkg_entry->module() : nullptr;
 
   // If the module system has not defined java.base yet, then
@@ -1083,7 +1082,7 @@ ClassFileStream* ClassLoader::search_module_entries(JavaThread* current,
 }
 
 // Called by the boot classloader to load classes
-InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TRAPS) {
+InstanceKlass* ClassLoader::load_class(Symbol* name, PackageEntry* pkg_entry, bool search_append_only, TRAPS) {
   assert(name != nullptr, "invariant");
 
   ResourceMark rm(THREAD);
@@ -1130,7 +1129,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     // is not supported with UseSharedSpaces, we can never come here during dynamic dumping.
     assert(!CDSConfig::is_dumping_dynamic_archive(), "sanity");
     if (!CDSConfig::is_dumping_static_archive()) {
-      stream = search_module_entries(THREAD, _patch_mod_entries, class_name, file_name);
+      stream = search_module_entries(THREAD, _patch_mod_entries, pkg_entry, file_name);
     }
   }
 
@@ -1142,7 +1141,7 @@ InstanceKlass* ClassLoader::load_class(Symbol* name, bool search_append_only, TR
     } else {
       // Exploded build - attempt to locate class in its defining module's location.
       assert(_exploded_entries != nullptr, "No exploded build entries present");
-      stream = search_module_entries(THREAD, _exploded_entries, class_name, file_name);
+      stream = search_module_entries(THREAD, _exploded_entries, pkg_entry, file_name);
     }
   }
 
@@ -1355,7 +1354,7 @@ void ClassLoader::initialize(TRAPS) {
   setup_bootstrap_search_path(THREAD);
 }
 
-char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
+static char* lookup_vm_resource(JImageFile *jimage, const char *jimage_version, const char *path) {
   jlong size;
   JImageLocationRef location = (*JImageFindResource)(jimage, "java.base", jimage_version, path, &size);
   if (location == 0)

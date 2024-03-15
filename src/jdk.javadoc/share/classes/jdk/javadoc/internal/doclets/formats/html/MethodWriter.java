@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,6 +101,8 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         if (!methods.isEmpty()) {
             Content methodDetailsHeader = getMethodDetailsHeader(detailsList);
             Content memberList = writer.getMemberList();
+            writer.tableOfContents.addLink(HtmlIds.METHOD_DETAIL, contents.methodDetailLabel);
+            writer.tableOfContents.pushNestedList();
 
             for (Element method : methods) {
                 currentMethod = (ExecutableElement)method;
@@ -114,9 +116,13 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
                 buildTagInfo(div);
                 methodContent.add(div);
                 memberList.add(writer.getMemberListItem(methodContent));
+                writer.tableOfContents.addLink(htmlIds.forMember(currentMethod),
+                        Text.of(utils.getSimpleName(method)
+                                + utils.makeSignature(currentMethod, typeElement, false, true)));
             }
             Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
             detailsList.add(methodDetails);
+            writer.tableOfContents.popNestedList();
         }
     }
 

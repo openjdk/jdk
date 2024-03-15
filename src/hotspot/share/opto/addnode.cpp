@@ -764,7 +764,7 @@ Node* OrINode::Identity(PhaseGVN* phase) {
 }
 
 // Find shift value for Integer or Long OR.
-Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
+static Node* rotate_shift(PhaseGVN* phase, Node* lshift, Node* rshift, int mask) {
   // val << norm_con_shift | val >> ({32|64} - norm_con_shift) => rotate_left val, norm_con_shift
   const TypeInt* lshift_t = phase->type(lshift)->isa_int();
   const TypeInt* rshift_t = phase->type(rshift)->isa_int();
@@ -1080,7 +1080,7 @@ const Type* XorLNode::Value(PhaseGVN* phase) const {
   return AddNode::Value(phase);
 }
 
-Node* build_min_max_int(Node* a, Node* b, bool is_max) {
+static Node* build_min_max_int(Node* a, Node* b, bool is_max) {
   if (is_max) {
     return new MaxINode(a, b);
   } else {
@@ -1312,7 +1312,7 @@ const Type *MinINode::add_ring( const Type *t0, const Type *t1 ) const {
 //
 // Note: we assume that SubL was already replaced by an AddL, and that the stride
 // has its sign flipped: SubL(limit, stride) -> AddL(limit, -stride).
-Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
+static Node* fold_subI_no_underflow_pattern(Node* n, PhaseGVN* phase) {
   assert(n->Opcode() == Op_MaxL || n->Opcode() == Op_MinL, "sanity");
   // Check that the two clamps have the correct values.
   jlong clamp = (n->Opcode() == Op_MaxL) ? min_jint : max_jint;
