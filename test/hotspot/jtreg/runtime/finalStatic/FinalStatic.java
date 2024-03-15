@@ -69,10 +69,10 @@ public class FinalStatic {
         }
 
         private byte[] loadClassData(String name) throws Exception {
-            byte[] bytes = null;
+
             switch (name) {
                 case CLASS_NAME_A:
-                    bytes = ClassFile.of().build(ClassDesc.of(CLASS_NAME_A),
+                    return ClassFile.of().build(ClassDesc.of(CLASS_NAME_A),
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC + ACC_SUPER)
                                     .withSuperclass(CD_Object)
@@ -84,10 +84,9 @@ public class FinalStatic {
                                     .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_FINAL + ACC_STATIC,
                                             cob -> cob.ldc(FAILED).ireturn())
                     );
-                    break;
 
                 case CLASS_NAME_B:
-                    bytes = ClassFile.of().build(ClassDesc.ofInternalName(CLASS_NAME_B),
+                    return ClassFile.of().build(ClassDesc.ofInternalName(CLASS_NAME_B),
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
                                     .withFlags(ACC_PUBLIC + ACC_SUPER)
                                     .withSuperclass(ClassDesc.ofInternalName(CLASS_NAME_A))
@@ -99,12 +98,10 @@ public class FinalStatic {
                                     .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_PUBLIC,
                                             cob -> cob.ldc(EXPECTED).ireturn())
                     );
-                    break;
                 default:
                     break;
             }
-
-            return bytes;
+            return null;
         }
     }
 

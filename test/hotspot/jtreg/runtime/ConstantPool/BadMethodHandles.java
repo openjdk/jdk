@@ -51,7 +51,6 @@ public class BadMethodHandles {
     private static final ClassDesc CD_MethodHandle = ClassDesc.of("java.lang.invoke.MethodHandle");
 
     static byte[] dumpBadInterfaceMethodref() {
-        byte[] bytes;
 
         DirectMethodHandleDesc handle_1 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
                 ClassDesc.of("BadInterfaceMethodref"), "m", "()V");
@@ -59,7 +58,7 @@ public class BadMethodHandles {
         DirectMethodHandleDesc handle_2 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
                 ClassDesc.of("BadInterfaceMethodref"), "staticM", "()V");
 
-        bytes = ClassFile.of().build(ClassDesc.of("BadInterfaceMethodref"),
+        return ClassFile.of().build(ClassDesc.of("BadInterfaceMethodref"),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_PUBLIC | ACC_SUPER)
@@ -93,14 +92,11 @@ public class BadMethodHandles {
                                             .return_())
 
         );
-
-        return bytes;
     }
 
     static byte[] dumpIBad() {
-        byte[] bytes;
 
-        bytes = ClassFile.of().build(ClassDesc.of("IBad"),
+        return ClassFile.of().build(ClassDesc.of("IBad"),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_PUBLIC | ACC_ABSTRACT | ACC_INTERFACE)
@@ -118,19 +114,17 @@ public class BadMethodHandles {
                                             .invokevirtual(CD_PrintStream, "println", MethodTypeDesc.of(CD_void, CD_String))
                                             .return_())
         );
-
-        return bytes;
     }
 
     static byte[] dumpBadMethodref() {
-        byte[] bytes;
+
 
         DirectMethodHandleDesc handle_1 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
                 ClassDesc.of("BadMethodref"), "m", "()V");
         DirectMethodHandleDesc handle_2 = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.INTERFACE_VIRTUAL,
                 ClassDesc.of("BadMethodref"), "staticM", "()V");
 
-        bytes = ClassFile.of().build(ClassDesc.of("BadMethodref"),
+        return ClassFile.of().build(ClassDesc.of("BadMethodref"),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_PUBLIC | ACC_SUPER)
@@ -152,17 +146,14 @@ public class BadMethodHandles {
                                             .invokevirtual(CD_MethodHandle, "invoke", MethodTypeDesc.of(CD_void))
                                             .return_())
         );
-
-        return bytes;
     }
 
     static byte[] dumpInvokeBasic() {
-        byte[] bytes;
 
         DirectMethodHandleDesc handle = MethodHandleDesc.of(DirectMethodHandleDesc.Kind.VIRTUAL,
                 ClassDesc.of("InvokeBasicref"), "runInvokeBasicM", "()V");
 
-        bytes = ClassFile.of().build(ClassDesc.of("InvokeBasicref"),
+        return ClassFile.of().build(ClassDesc.of("InvokeBasicref"),
                     clb -> clb
                             .withVersion(JAVA_8_VERSION, 0)
                             .withFlags(ACC_PUBLIC | ACC_SUPER)
@@ -179,7 +170,6 @@ public class BadMethodHandles {
                                             .return_())
         );
 
-        return bytes;
     }
 
     static class CL extends ClassLoader {
