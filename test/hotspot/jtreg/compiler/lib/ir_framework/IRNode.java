@@ -298,6 +298,11 @@ public class IRNode {
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
+    public static final String OR = PREFIX + "OR" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(OR, "Or(I|L)");
+    }
+
     public static final String AND = PREFIX + "AND" + POSTFIX;
     static {
         beforeMatchingNameRegex(AND, "And(I|L)");
@@ -2253,7 +2258,7 @@ public class IRNode {
      */
     private static void fromMacroToBeforeMatching(String irNodePlaceholder, String regex) {
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new SinglePhaseRangeEntry(CompilePhase.PRINT_IDEAL, regex,
-                                                                          CompilePhase.MACRO_EXPANSION,
+                                                                          CompilePhase.AFTER_MACRO_EXPANSION,
                                                                           CompilePhase.BEFORE_MATCHING));
     }
 

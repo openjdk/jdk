@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.Random;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -266,7 +267,7 @@ public class CtwRunner {
     private String[] cmd(long classStart, long classStop) {
         String phase = phaseName(classStart);
         Path file = Paths.get(phase + ".cmd");
-        var rng = Utils.getRandomInstance();
+        Random rng = Utils.getRandomInstance();
 
         ArrayList<String> Args = new ArrayList<String>(Arrays.asList(
                 "-Xbatch",
@@ -298,8 +299,10 @@ public class CtwRunner {
                 "-XX:+StressGCM",
                 "-XX:+StressIGVN",
                 "-XX:+StressCCP",
+                "-XX:+StressMacroExpansion",
+                "-XX:+StressIncrementalInlining",
                 // StressSeed is uint
-                "-XX:StressSeed=" + Math.abs(rng.nextInt())));
+                "-XX:StressSeed=" + rng.nextInt(Integer.MAX_VALUE)));
 
         for (String arg : CTW_EXTRA_ARGS.split(",")) {
             Args.add(arg);

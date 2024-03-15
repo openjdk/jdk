@@ -70,11 +70,11 @@ final class Connections implements PoolCallback {
         com.sun.jndi.ldap.LdapPoolManager.trace;
     private static final int DEFAULT_SIZE = 10;
 
-    final private int initSize;
+    private final int initSize;
     private final int maxSize;
     private final int prefSize;
     private final List<ConnectionDesc> conns;
-    final private PooledConnectionFactory factory;
+    private final PooledConnectionFactory factory;
 
     private boolean closed = false;   // Closed for business
     private Reference<Object> ref; // maintains reference to id to prevent premature GC

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3986,7 +3986,7 @@ JVM_ENTRY(void, JVM_VirtualThreadUnmount(JNIEnv* env, jobject vthread, jboolean 
 JVM_END
 
 // Always update the temporary VTMS transition bit.
-JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jobject vthread, jboolean hide))
+JVM_ENTRY(void, JVM_VirtualThreadHideFrames(JNIEnv* env, jclass clazz, jboolean hide))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");
@@ -4000,7 +4000,7 @@ JVM_END
 
 // Notification from VirtualThread about disabling JVMTI Suspend in a sync critical section.
 // Needed to avoid deadlocks with JVMTI suspend mechanism.
-JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jobject vthread, jboolean enter))
+JVM_ENTRY(void, JVM_VirtualThreadDisableSuspend(JNIEnv* env, jclass clazz, jboolean enter))
 #if INCLUDE_JVMTI
   if (!DoJVMTIVirtualThreadTransitions) {
     assert(!JvmtiExport::can_support_virtual_threads(), "sanity check");

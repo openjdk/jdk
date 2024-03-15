@@ -72,6 +72,7 @@ import jdk.dynalink.linker.LinkerServices;
  * Utility methods for creating typical guards for
  * {@link MethodHandles#guardWithTest(MethodHandle, MethodHandle, MethodHandle)}
  * and for adjusting their method types.
+ * @since 9
  */
 public final class Guards {
     private static final Logger LOG = Logger

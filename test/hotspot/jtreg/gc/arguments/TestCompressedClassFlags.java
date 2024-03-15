@@ -41,17 +41,13 @@ import jdk.test.lib.Platform;
 public class TestCompressedClassFlags {
     public static void main(String[] args) throws Exception {
         if (Platform.is64bit()) {
-            OutputAnalyzer output = runJava("-XX:CompressedClassSpaceSize=1g",
-                                            "-XX:-UseCompressedClassPointers",
-                                            "-version");
+            OutputAnalyzer output = GCArguments.executeTestJava(
+                "-XX:CompressedClassSpaceSize=1g",
+                "-XX:-UseCompressedClassPointers",
+                "-version");
             output.shouldContain("warning");
             output.shouldNotContain("error");
             output.shouldHaveExitValue(0);
         }
-    }
-
-    private static OutputAnalyzer runJava(String ... args) throws Exception {
-        ProcessBuilder pb = GCArguments.createTestJavaProcessBuilder(args);
-        return new OutputAnalyzer(pb.start());
     }
 }

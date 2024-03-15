@@ -33,6 +33,7 @@ import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.ArenaImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
+import jdk.internal.foreign.Utils;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -390,9 +391,10 @@ public interface SegmentAllocator {
      *         with {@code source} is not {@linkplain MemorySegment.Scope#isAlive() alive}
      * @throws WrongThreadException if this method is called from a thread {@code T},
      *         such that {@code source.isAccessibleBy(T) == false}
-     * @throws IndexOutOfBoundsException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount * sourceElementLayout.byteSize()} overflows
+     * @throws IllegalArgumentException if {@code elementCount < 0}
      * @throws IndexOutOfBoundsException if {@code sourceOffset > source.byteSize() - (elementCount * sourceElementLayout.byteSize())}
-     * @throws IndexOutOfBoundsException if either {@code sourceOffset} or {@code elementCount} are {@code < 0}
+     * @throws IndexOutOfBoundsException if {@code sourceOffset < 0}
      */
     @ForceInline
     default MemorySegment allocateFrom(ValueLayout elementLayout,

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
 #include "code/codeCache.hpp"
 #include "code/nmethod.hpp"
 #include "gc/g1/g1CodeRootSet.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -84,8 +84,10 @@ class G1CodeRootSetHashTable : public CHeapObj<mtGC> {
 
 public:
   G1CodeRootSetHashTable() :
-    _table(Log2DefaultNumBuckets,
-           HashTable::DEFAULT_MAX_SIZE_LOG2),
+    _table(Mutex::service-1,
+           nullptr,
+           Log2DefaultNumBuckets,
+           false /* enable_statistics */),
     _table_scanner(&_table, BucketClaimSize), _num_entries(0) {
     clear();
   }

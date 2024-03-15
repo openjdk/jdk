@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,8 +126,7 @@ public abstract class LocaleProviderAdapter {
             for (String type : types) {
                 type = type.trim().toUpperCase(Locale.ROOT);
                 if (type.equals("COMPAT") || type.equals("JRE")) {
-                    compatWarningMessage = "COMPAT locale provider will be removed in a future release";
-                    type = "JRE";
+                    compatWarningMessage = "COMPAT locale provider has been removed";
                 }
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
@@ -141,17 +140,14 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
-        if (!typeList.isEmpty()) {
-            // bona fide preference exists
-            if (!(typeList.contains(Type.CLDR) || typeList.contains(Type.JRE))) {
-                // Append FALLBACK as the last resort when no ResourceBundleBasedAdapter is available.
-                typeList.add(Type.FALLBACK);
-            }
-        } else {
+        if (typeList.isEmpty()) {
             // Default preference list.
             typeList.add(Type.CLDR);
-            typeList.add(Type.JRE);
         }
+
+        // always append FALLBACK
+        typeList.add(Type.FALLBACK);
+
         adapterPreference = Collections.unmodifiableList(typeList);
 
         // Emit logs, if any, after 'adapterPreference' is initialized which is needed
@@ -307,14 +303,13 @@ public abstract class LocaleProviderAdapter {
 
     public static Locale[] toLocaleArray(Set<String> tags) {
         return tags.stream()
-            .map(t -> {
-                return switch (t) {
-                    case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
-                    case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
-                    case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
-                    default -> Locale.forLanguageTag(t);
-                };
+            .map(t -> switch (t) {
+                case "ja-JP-JP" -> JRELocaleConstants.JA_JP_JP;
+                case "no-NO-NY" -> JRELocaleConstants.NO_NO_NY;
+                case "th-TH-TH" -> JRELocaleConstants.TH_TH_TH;
+                default -> Locale.forLanguageTag(t);
             })
+            .distinct()
             .toArray(Locale[]::new);
     }
 

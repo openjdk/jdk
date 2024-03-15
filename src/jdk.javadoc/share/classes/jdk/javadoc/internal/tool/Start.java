@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
@@ -457,6 +458,7 @@ public class Start {
             if (haveErrors && result.isOK()) {
                 result = ERROR;
             }
+            log.flush();
             log.printErrorWarningCounts();
             log.flush();
         }
@@ -657,9 +659,42 @@ public class Start {
         // check if arg is accepted by the tool before emitting error
         if (!isToolOption) {
             text = log.getText("main.invalid_flag", arg);
-            throw new OptionException(ERROR, this::showUsage, text);
+            throw new OptionException(ERROR, () -> reportBadOption(arg), text);
         }
         return m * idx;
+    }
+
+    private void reportBadOption(String name) {
+        var allOptionNames = Stream.concat(
+                getToolOptions().getSupportedOptions().stream()
+                        .flatMap(o -> o.getNames().stream()),
+                docletOptions.stream()
+                        .flatMap(o -> o.getNames().stream()));
+        record Pair(String word, double similarity) { }
+        final double MIN_SIMILARITY = 0.7;
+        var suggestions = allOptionNames
+                .map(t -> new Pair(t, similarity(t, name)))
+                .sorted(Comparator.comparingDouble(Pair::similarity).reversed() /* more similar first */)
+                // .peek(p -> System.out.printf("%.3f, (%s ~ %s)%n", p.similarity, p.word, name)) // debug
+                .takeWhile(p -> Double.compare(p.similarity, MIN_SIMILARITY) >= 0)
+                .map(Pair::word)
+                .toList();
+        switch (suggestions.size()) {
+            case 0 -> { }
+            case 1 -> showLinesUsingKey("main.did-you-mean", suggestions.getFirst());
+            default -> showLinesUsingKey("main.did-you-mean-one-of", String.join(" ", suggestions));
+        }
+        showLinesUsingKey("main.for-more-details-see-usage");
+    }
+
+    // a value in [0, 1] range: the closer the value is to 1, the more similar
+    // the strings are
+    private static double similarity(String a, String b) {
+        // Normalize the distance so that similarity between "x" and "y" is
+        // less than that of "ax" and "ay". Use the greater of two lengths
+        // as normalizer, as it's an upper bound for the distance.
+        return 1.0 - ((double) StringUtils.DamerauLevenshteinDistance.of(a, b))
+                / Math.max(a.length(), b.length());
     }
 
     private static Set<? extends Option> getSupportedOptionsOf(Doclet doclet) {

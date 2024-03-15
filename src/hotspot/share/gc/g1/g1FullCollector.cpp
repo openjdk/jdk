@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,8 +120,8 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
     _oop_queue_set(_num_workers),
     _array_queue_set(_num_workers),
     _preserved_marks_set(true),
-    _serial_compaction_point(this),
-    _humongous_compaction_point(this),
+    _serial_compaction_point(this, nullptr),
+    _humongous_compaction_point(this, nullptr),
     _is_alive(this, heap->concurrent_mark()->mark_bitmap()),
     _is_alive_mutator(heap->ref_processor_stw(), &_is_alive),
     _humongous_compaction_regions(8),
@@ -142,11 +142,13 @@ G1FullCollector::G1FullCollector(G1CollectedHeap* heap,
   }
 
   for (uint i = 0; i < _num_workers; i++) {
-    _markers[i] = new G1FullGCMarker(this, i, _preserved_marks_set.get(i), _live_stats);
-    _compaction_points[i] = new G1FullGCCompactionPoint(this);
+    _markers[i] = new G1FullGCMarker(this, i, _live_stats);
+    _compaction_points[i] = new G1FullGCCompactionPoint(this, _preserved_marks_set.get(i));
     _oop_queue_set.register_queue(i, marker(i)->oop_stack());
     _array_queue_set.register_queue(i, marker(i)->objarray_stack());
   }
+  _serial_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
+  _humongous_compaction_point.set_preserved_stack(_preserved_marks_set.get(0));
   _region_attr_table.initialize(heap->reserved(), HeapRegion::GrainBytes);
 }
 
@@ -189,6 +191,7 @@ void G1FullCollector::prepare_collection() {
 
   _heap->gc_prologue(true);
   _heap->retire_tlabs();
+  _heap->flush_region_pin_cache();
   _heap->prepare_heap_for_full_collection();
 
   PrepareRegionsClosure cl(this);
@@ -307,6 +310,13 @@ void G1FullCollector::phase1_mark_live_objects() {
     assert(marker(0)->oop_stack()->is_empty(), "Should be no oops on the stack");
 
     reference_processor()->set_active_mt_degree(old_active_mt_degree);
+  }
+
+  {
+    GCTraceTime(Debug, gc, phases) debug("Phase 1: Flush Mark Stats Cache", scope()->timer());
+    for (uint i = 0; i < workers(); i++) {
+      marker(i)->flush_mark_stats_cache();
+    }
   }
 
   // Weak oops cleanup.

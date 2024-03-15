@@ -45,6 +45,12 @@ public interface OutputBuffer {
   }
 
   /**
+   * Waits for a process to finish, if there is one assocated with
+   * this OutputBuffer.
+   */
+  public void waitFor();
+
+  /**
    * Returns the stdout result
    *
    * @return stdout result
@@ -67,6 +73,13 @@ public interface OutputBuffer {
    * @return stderr result
    */
   public String getStderr();
+
+
+  /**
+   * Returns the exit value
+   *
+   * @return exit value
+   */
   public int getExitValue();
 
   /**
@@ -136,6 +149,31 @@ public interface OutputBuffer {
     }
 
     @Override
+    public void waitFor() {
+      if (exitValue != null) {
+        // Already waited for this process
+        return;
+      }
+
+      try {
+          logProgress("Waiting for completion");
+          boolean aborted = true;
+          try {
+              exitValue = p.waitFor();
+              logProgress("Waiting for completion finished");
+              aborted = false;
+          } finally {
+              if (aborted) {
+                  logProgress("Waiting for completion FAILED");
+              }
+          }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new OutputBufferException(e);
+      }
+    }
+
+    @Override
     public String getStdout() {
       return outTask.get();
     }
@@ -147,26 +185,8 @@ public interface OutputBuffer {
 
     @Override
     public int getExitValue() {
-      if (exitValue != null) {
-        return exitValue;
-      }
-      try {
-          logProgress("Waiting for completion");
-          boolean aborted = true;
-          try {
-              exitValue = p.waitFor();
-              logProgress("Waiting for completion finished");
-              aborted = false;
-              return exitValue;
-          } finally {
-              if (aborted) {
-                  logProgress("Waiting for completion FAILED");
-              }
-          }
-      } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
-        throw new OutputBufferException(e);
-      }
+      waitFor();
+      return exitValue;
     }
 
     @Override
@@ -184,6 +204,11 @@ public interface OutputBuffer {
       this.stdout = stdout;
       this.stderr = stderr;
       this.exitValue = exitValue;
+    }
+
+    @Override
+    public void waitFor() {
+      // Nothing to do since this buffer is not associated with a Process.
     }
 
     @Override

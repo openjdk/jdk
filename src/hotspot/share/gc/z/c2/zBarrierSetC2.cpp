@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -318,6 +318,20 @@ Register ZStoreBarrierStubC2::result() const {
 
 void ZStoreBarrierStubC2::emit_code(MacroAssembler& masm) {
   ZBarrierSet::assembler()->generate_c2_store_barrier_stub(&masm, static_cast<ZStoreBarrierStubC2*>(this));
+}
+
+uint ZBarrierSetC2::estimated_barrier_size(const Node* node) const {
+  uint8_t barrier_data = MemNode::barrier_data(node);
+  assert(barrier_data != 0, "should be a barrier node");
+  uint uncolor_or_color_size = node->is_Load() ? 1 : 2;
+  if ((barrier_data & ZBarrierElided) != 0) {
+    return uncolor_or_color_size;
+  }
+  // A compare and branch corresponds to approximately four fast-path Ideal
+  // nodes (Cmp, Bool, If, If projection). The slow path (If projection and
+  // runtime call) is excluded since the corresponding code is laid out
+  // separately and does not directly affect performance.
+  return uncolor_or_color_size + 4;
 }
 
 void* ZBarrierSetC2::create_barrier_state(Arena* comp_arena) const {

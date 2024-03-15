@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -429,7 +429,7 @@ xmlStream*   xtty;
 #define EXTRACHARLEN   32
 #define CURRENTAPPX    ".current"
 // convert YYYY-MM-DD HH:MM:SS to YYYY-MM-DD_HH-MM-SS
-char* get_datetime_string(char *buf, size_t len) {
+static char* get_datetime_string(char *buf, size_t len) {
   os::local_time_string(buf, len);
   int i = (int)strlen(buf);
   while (--i >= 0) {

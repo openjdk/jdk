@@ -50,13 +50,10 @@ public class TestVectorizationMismatchedAccess {
     private final static WhiteBox wb = WhiteBox.getWhiteBox();
 
     public static void main(String[] args) {
-        Object alignVector = wb.getVMFlag("AlignVector");
-        if (alignVector != null && !((Boolean)alignVector)) {
-            if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
-                throw new RuntimeException("fix test that was written for a little endian platform");
-            }
-            TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
+        if (ByteOrder.nativeOrder() != ByteOrder.LITTLE_ENDIAN) {
+            throw new RuntimeException("fix test that was written for a little endian platform");
         }
+        TestFramework.runWithFlags("--add-modules", "java.base", "--add-exports", "java.base/jdk.internal.misc=ALL-UNNAMED");
     }
 
     static int size = 1024;
@@ -189,7 +186,9 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIf = {"AlignVector", "false"})
+    // AlignVector cannot guarantee that invar is aligned.
     public static void testByteLong4(byte[] dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(dest, 8 * i + baseOffset, src[i]);
@@ -323,7 +322,9 @@ public class TestVectorizationMismatchedAccess {
     }
 
     @Test
-    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" })
+    @IR(counts = { IRNode.LOAD_VECTOR_L, ">=1", IRNode.STORE_VECTOR, ">=1" },
+        applyIf = {"AlignVector", "false"})
+    // AlignVector cannot guarantee that invar is aligned.
     public static void testOffHeapLong4(long dest, long[] src, int start, int stop) {
         for (int i = start; i < stop; i++) {
             UNSAFE.putLongUnaligned(null, dest + 8 * i + baseOffset, src[i]);

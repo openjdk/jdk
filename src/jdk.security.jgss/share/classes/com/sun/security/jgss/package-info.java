@@ -26,5 +26,7 @@
 /**
  * This package defines classes and interfaces for the JDK extensions
  * to the GSS-API.
+ *
+ * @since 1.4
  */
 package com.sun.security.jgss;

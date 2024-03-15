@@ -53,7 +53,7 @@ private:
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, _thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(p, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, p, o);
         obj = fwd;
       }

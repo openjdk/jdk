@@ -24,10 +24,10 @@
 
 #include "precompiled.hpp"
 #include "asm/macroAssembler.hpp"
+#include "code/compiledIC.hpp"
 #include "code/vtableStubs.hpp"
 #include "interp_masm_x86.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/compiledICHolder.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/klassVtable.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -176,21 +176,21 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 #endif /* PRODUCT */
 
   // Entry arguments:
-  //  rax: CompiledICHolder
+  //  rax: CompiledICData
   //  rcx: Receiver
 
   // Most registers are in use; we'll use rax, rbx, rcx, rdx, rsi, rdi
   // (If we need to make rsi, rdi callee-save, do a push/pop here.)
   const Register recv_klass_reg     = rsi;
-  const Register holder_klass_reg   = rax; // declaring interface klass (DECC)
+  const Register holder_klass_reg   = rax; // declaring interface klass (DEFC)
   const Register resolved_klass_reg = rdi; // resolved interface klass (REFC)
   const Register temp_reg           = rdx;
   const Register method             = rbx;
-  const Register icholder_reg       = rax;
+  const Register icdata_reg         = rax;
   const Register receiver           = rcx;
 
-  __ movptr(resolved_klass_reg, Address(icholder_reg, CompiledICHolder::holder_klass_offset()));
-  __ movptr(holder_klass_reg,   Address(icholder_reg, CompiledICHolder::holder_metadata_offset()));
+  __ movptr(resolved_klass_reg, Address(icdata_reg, CompiledICData::itable_refc_klass_offset()));
+  __ movptr(holder_klass_reg,   Address(icdata_reg, CompiledICData::itable_defc_klass_offset()));
 
   Label L_no_such_interface;
 

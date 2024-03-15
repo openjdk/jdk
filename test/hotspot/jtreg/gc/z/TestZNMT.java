@@ -68,21 +68,21 @@ public class TestZNMT {
          *   reservations.
          */
         final int XmsInM = Math.min(16 * XmxInM / (zForceDiscontiguousHeapReservations + 1), XmxInM);
-        OutputAnalyzer oa = ProcessTools.executeProcess(ProcessTools.createTestJavaProcessBuilder(
-                                                        "-XX:+UseZGC",
-                                                        "-XX:+ZGenerational",
-                                                        "-Xms" + XmsInM + "M",
-                                                        "-Xmx" + XmxInM + "M",
-                                                        "-Xlog:gc,gc+init",
-                                                        "-XX:ZForceDiscontiguousHeapReservations=" + zForceDiscontiguousHeapReservations,
-                                                        "-XX:NativeMemoryTracking=detail",
-                                                        "-XX:+PrintNMTStatistics",
-                                                        Test.class.getName(),
-                                                        Integer.toString(zForceDiscontiguousHeapReservations),
-                                                        Integer.toString(XmxInM)))
-                                        .outputTo(System.out)
-                                        .errorTo(System.out)
-                                        .shouldHaveExitValue(0);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(
+            "-XX:+UseZGC",
+            "-XX:+ZGenerational",
+            "-Xms" + XmsInM + "M",
+            "-Xmx" + XmxInM + "M",
+            "-Xlog:gc,gc+init",
+            "-XX:ZForceDiscontiguousHeapReservations=" + zForceDiscontiguousHeapReservations,
+            "-XX:NativeMemoryTracking=detail",
+            "-XX:+PrintNMTStatistics",
+            Test.class.getName(),
+            Integer.toString(zForceDiscontiguousHeapReservations),
+            Integer.toString(XmxInM))
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .shouldHaveExitValue(0);
         if (zForceDiscontiguousHeapReservations > 1) {
             oa.shouldContain("Address Space Type: Discontiguous");
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -492,7 +492,7 @@ static void rescale(SIZE *size) {
     }
 }
 
-jobject newInsets(JNIEnv *env, jint top, jint left, jint bottom, jint right) {
+static jobject newInsets(JNIEnv *env, jint top, jint left, jint bottom, jint right) {
     if (env->EnsureLocalCapacity(2) < 0) {
         return NULL;
     }
