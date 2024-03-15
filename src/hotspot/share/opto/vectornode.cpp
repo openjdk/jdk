@@ -1075,6 +1075,14 @@ Node* LoadVectorNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return LoadNode::Ideal(phase, can_reshape);
 }
 
+Node* LoadVectorGatherNode::Identity(PhaseGVN* phase) {
+  Node* value = LoadVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_LoadVectorGather()) && (in(MemNode::ValueIn)->eqv_uncast(value->in(MemNode::ValueIn)))) {
+    return value;
+  } 
+  return this;
+};
+
 // Return the vector version of a scalar store node.
 StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem, Node* adr,
                                        const TypePtr* atyp, Node* val, uint vlen) {
@@ -1108,6 +1116,14 @@ Node* LoadVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   return LoadVectorNode::Ideal(phase, can_reshape);
 }
 
+Node* LoadVectorMaskedNode::Identity(PhaseGVN* phase) {
+  Node* value = LoadVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_LoadVectorMasked()) && (in(MemNode::ValueIn)->eqv_uncast(value->in(MemNode::ValueIn)))) {
+    return value;
+  } 
+  return this;
+};
+
 Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (!in(4)->is_top() && in(4)->Opcode() == Op_VectorMaskGen) {
     Node* mask_len = in(4)->in(1);
@@ -1127,6 +1143,41 @@ Node* StoreVectorMaskedNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   }
   return StoreVectorNode::Ideal(phase, can_reshape);
 }
+Node* StoreVectorMaskedNode::Identity(PhaseGVN* phase) {
+  Node* value = StoreVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_StoreVectorMasked()) && (in(MemNode::ValueIn + 1)->eqv_uncast(value->in(MemNode::ValueIn + 1)))) {
+    return value;
+  } 
+  return this;
+};
+
+Node* StoreVectorScatterNode::Identity(PhaseGVN* phase) {
+  Node* value = StoreVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_StoreVectorScatter()) && (in(MemNode::ValueIn + 1)->eqv_uncast(value->in(MemNode::ValueIn + 1)))) {
+    return value;
+  } 
+  return this;
+};
+
+Node* LoadVectorGatherMaskedNode::Identity(PhaseGVN* phase) {
+  Node* value = LoadVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_LoadVectorGatherMasked()) && 
+    (in(MemNode::ValueIn)->eqv_uncast(value->in(MemNode::ValueIn))) && 
+    (in(MemNode::ValueIn + 1)->eqv_uncast(value->in(MemNode::ValueIn + 1)))) {
+    return value;
+  } 
+  return this;
+};
+
+Node* StoreVectorScatterMaskedNode::Identity(PhaseGVN* phase) {
+  Node* value = StoreVectorNode::Identity(phase);
+  if ((value != this) &&  (value->is_StoreVectorScatterMasked()) && 
+    (in(MemNode::ValueIn + 1)->eqv_uncast(value->in(MemNode::ValueIn + 1))) && 
+    (in(MemNode::ValueIn + 2)->eqv_uncast(value->in(MemNode::ValueIn + 2)))) {
+    return value;
+  } 
+  return this;
+};
 
 int ExtractNode::opcode(BasicType bt) {
   switch (bt) {
