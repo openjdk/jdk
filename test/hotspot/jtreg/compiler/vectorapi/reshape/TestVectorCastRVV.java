@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,34 +21,29 @@
  * questions.
  */
 
-import javax.swing.JColorChooser;
-import javax.swing.JPanel;
+package compiler.vectorapi.reshape;
+
+import compiler.vectorapi.reshape.tests.TestVectorCast;
+import compiler.vectorapi.reshape.utils.TestCastMethods;
+import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
 
 /*
  * @test
- * @bug 4759306
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @summary Checks if JColorChooser.setPreviewPanel removes the old one
- * @run main/manual Test4759306
+ * @bug 8321021 8321023 8321024
+ * @key randomness
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.misc
+ * @summary Test that vector cast intrinsics work as intended on riscv (rvv).
+ * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*"
+ * @library /test/lib /
+ * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastRVV
  */
-public class Test4759306 {
-
-    public static void main(String[] args) throws Exception {
-        PassFailJFrame.builder()
-                .title("Test4759306")
-                .instructions("Check that there is no panel titled \"Preview\" in the JColorChooser.")
-                .rows(5)
-                .columns(40)
-                .testTimeOut(10)
-                .splitUIRight(Test4759306::createColorChooser)
-                .build()
-                .awaitAndCheck();
-    }
-
-    private static JColorChooser createColorChooser() {
-        JColorChooser chooser = new JColorChooser();
-        chooser.setPreviewPanel(new JPanel());
-        return chooser;
+public class TestVectorCastRVV {
+    public static void main(String[] args) {
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.RVV_CAST_TESTS.stream(),
+                "-XX:+UseRVV");
     }
 }
+
