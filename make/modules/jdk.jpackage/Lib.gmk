@@ -65,8 +65,8 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
-    LIBS_macosx := $(LIBCXX) -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
-    LIBS_windows := $(LIBCXX) user32.lib ole32.lib msi.lib shlwapi.lib \
+    LIBS_macosx := -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
+    LIBS_windows := user32.lib ole32.lib msi.lib shlwapi.lib \
         Shell32.lib, \
     LIBS_linux := -ldl, \
     MANIFEST := $(JAVA_MANIFEST), \
@@ -100,7 +100,7 @@ ifeq ($(call isTargetOs, linux), true)
       CXXFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       CFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS := $(LIBCXX) -ldl, \
+      LIBS := -ldl, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_LIBAPPLAUNCHER)
@@ -119,7 +119,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBCXX) advapi32.lib ole32.lib msi.lib user32.lib \
+      LIBS := advapi32.lib ole32.lib msi.lib user32.lib \
           shlwapi.lib Shell32.lib, \
   ))
 
@@ -141,7 +141,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)), \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
-      LIBS := $(LIBCXX) ole32.lib msi.lib User32.lib shlwapi.lib \
+      LIBS := ole32.lib msi.lib User32.lib shlwapi.lib \
           Shell32.lib, \
   ))
 
@@ -161,7 +161,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_MSIWRAPPER_SRC)), \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
-      LIBS := $(LIBCXX) ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
+      LIBS := ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_MSIWRAPPER)
