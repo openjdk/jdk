@@ -125,9 +125,9 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   RL_CREATE_PLUGIN_MOD_OUTPUT := $(BUILDTOOLS_OUTPUTDIR)/$(RL_BUILD_MODULE_NAME)
   JDK_RUNTIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
 
-  # We need to use FixPath for Windows support
+  # We need to use FixPath for correct path handling on Windows. Avoid space
+  # in FixPath call in order to avoid needing to use strip.
   RL_JIMAGE_PATH_ARG := $(call FixPath,$(JDK_LINK_OUTPUT_DIR)/lib/modules)
-  # Avoid space in FixPath here as we don't allow space in the jlink invocation
   RL_MOD_PATH_ARG := $(call FixPath,$(IMAGES_OUTPUTDIR)/jmods)
   JLINK_RUNTIME_CREATE_ARG := \
       -J--module-path=$(RL_CREATE_PLUGIN_MOD_OUTPUT) \
