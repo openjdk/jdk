@@ -43,8 +43,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.border.TitledBorder;
 import javax.swing.UIManager;
+import javax.swing.border.TitledBorder;
 import java.util.Hashtable;
 
 public class bug4987336 {
@@ -72,7 +72,7 @@ public class bug4987336 {
     }
 
     private static JFrame createTestUI() {
-        frame = new JFrame();
+        frame = new JFrame("bug4987336");
         JPanel pnLafs = new JPanel();
         pnLafs.setLayout(new BoxLayout(pnLafs, BoxLayout.Y_AXIS));
 
