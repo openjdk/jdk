@@ -25,8 +25,6 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Panel;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 
 /*
  * @test
@@ -40,7 +38,6 @@ import javax.swing.JTextArea;
  */
 
 public class AWTPanelSmoothWheel {
-    private static JTextArea textArea;
     public static final String INSTRUCTIONS = """
             This test is relevant for windows platforms and mouses with high-resolution wheel,
             please just press pass if this is not the case.
@@ -60,11 +57,7 @@ public class AWTPanelSmoothWheel {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(45)
-                .splitUIBottom(() -> {
-                    textArea = new JTextArea("", 8, 40);
-                    textArea.setEditable(false);
-                    return new JScrollPane(textArea);
-                })
+                .logArea(8)
                 .testUI(AWTPanelSmoothWheel::createUI)
                 .build()
                 .awaitAndCheck();
@@ -74,7 +67,7 @@ public class AWTPanelSmoothWheel {
         Frame frame = new Frame("Test Wheel Rotation");
         Panel panel = new Panel();
         panel.setBackground(Color.GREEN);
-        panel.addMouseWheelListener(e -> textArea.append(e.toString() + "\n"));
+        panel.addMouseWheelListener(e -> PassFailJFrame.log(e.toString()));
         frame.setSize (200,200);
         frame.setLayout(new BorderLayout());
         frame.add(panel, BorderLayout.CENTER);
