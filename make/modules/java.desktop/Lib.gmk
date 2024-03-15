@@ -71,7 +71,7 @@ ifeq ($(call isTargetOs, aix), false)
       LIBS_linux := $(ALSA_LIBS), \
       LIBS_macosx := -framework CoreAudio -framework CoreFoundation \
           -framework CoreServices -framework AudioUnit \
-          -framework CoreMIDI -framework AudioToolbox $(LIBCXX), \
+          -framework CoreMIDI -framework AudioToolbox, \
       LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib dsound.lib winmm.lib user32.lib ole32.lib, \
   ))
 

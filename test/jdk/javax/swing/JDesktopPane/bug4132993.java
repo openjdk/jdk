@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,31 @@
  * questions.
  */
 
-import javax.swing.JApplet;
-import javax.swing.JTable;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
-/**
- * @test
- * @bug 4222153
- * @author Konstantin Eremin
- * @run applet/manual=yesno bug4222153.html
+/* @test
+ * @bug 4132993
+ * @summary JDesktopPane.getAllFramesInLayer(..) return iconified frame
+ * @run main bug4132993
  */
-public class bug4222153 extends JApplet {
 
-    public void init() {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(
-                        "javax.swing.plaf.metal.MetalLookAndFeel");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLayeredPane;
+
+
+public class bug4132993 {
+    public static void main(String[] args) throws Exception {
+        JDesktopPane mDesktop = new JDesktopPane();
+        JInternalFrame jif = new JInternalFrame("My Frame");
+        jif.setIconifiable(true);
+        mDesktop.add(jif);
+        jif.setIcon(true);
+        JInternalFrame[] ji =
+                mDesktop.getAllFramesInLayer(JLayeredPane.DEFAULT_LAYER);
+        for (int i = 0; i < ji.length; i++) {
+            if (jif == ji[i]) {
+                return;
             }
-            getContentPane().add(new JTable(2, 2));
-        });
+        }
+        throw new RuntimeException("JDesktopPane.getAllFramesInLayer() failed...");
     }
 }

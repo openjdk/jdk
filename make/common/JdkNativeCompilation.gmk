@@ -140,6 +140,10 @@ define SetupJdkLibraryBody
     endif
   endif
 
+  ifeq ($$($1_LINK_TYPE), C++)
+    $1_LIBS += $(LIBCXX)
+  endif
+
   ifeq ($$($1_SRC), )
     ifneq ($$(MODULE), )
       $1_SRC := $$(call FindSrcDirsForLib, $$(MODULE), $$($1_NAME))
@@ -231,6 +235,10 @@ define SetupJdkExecutableBody
     else
       $$(error Must specify OBJECT_DIR in a MODULE free context)
     endif
+  endif
+
+  ifeq ($$($1_LINK_TYPE), C++)
+    $1_LIBS += $(LIBCXX)
   endif
 
   ifeq ($$($1_VERSIONINFO_RESOURCE), )
