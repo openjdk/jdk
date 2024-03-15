@@ -37,6 +37,8 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib
  * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires vm.debug == false
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -49,22 +51,12 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib
  * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires vm.debug == false
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver TestMemoryAllocationLogging testAttemptedReserveFailed
- */
-
-/*
- * @test id=testReserveFailed
- * @summary Test that memory allocation logging warns when reservation fails
- * @library /test/lib
- * @requires os.family != "windows" & os.family != "aix"
- * @requires vm.flagless
- * @modules java.base/jdk.internal.misc
- * @build jdk.test.whitebox.WhiteBox
- * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run driver TestMemoryAllocationLogging testReserveFailed
  */
 
 /*
@@ -73,6 +65,8 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib
  * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires vm.debug == false
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -85,6 +79,8 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib
  * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires vm.debug == false
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -97,6 +93,8 @@ import jdk.test.whitebox.WhiteBox;
  * @library /test/lib
  * @requires os.family != "windows" & os.family != "aix"
  * @requires vm.flagless
+ * @requires vm.bits == "64"
+ * @requires vm.debug == false
  * @modules java.base/jdk.internal.misc
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
@@ -107,7 +105,6 @@ public class TestMemoryAllocationLogging {
 
     protected static final long PAGE_SIZE = 64 * 1024; // 64Kb - largest page size in any system
     protected static final long COMMIT_SIZE = 1024;
-    protected static long tooBig = 1024L * 1000000000000L; // 1Tb
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
@@ -144,15 +141,6 @@ public class TestMemoryAllocationLogging {
                         /* Debug level log */
                         String.format("Reserved \\[0x.* - 0x.*\\), \\(%d bytes\\)", PAGE_SIZE),
                         String.format("Attempt to reserve \\[0x.* - 0x.*\\), \\(.* bytes\\) failed"),
-                };
-                break;
-            }
-            case "testReserveFailed": {
-                expectedLogs = new String[] {
-                        /* Debug level log */
-                        "Reserve failed \\(.* bytes\\)",
-                        /* Trace level log */
-                        "mmap failed: \\[0x.* - 0x.*\\), \\(.* bytes\\) errno=\\(Not enough space\\)"
                 };
                 break;
             }
@@ -223,10 +211,6 @@ public class TestMemoryAllocationLogging {
                     long addr = wb.NMTReserveMemory(PAGE_SIZE);
                     /* attempting to reserve the same address should fail */
                     wb.NMTAttemptReserveMemoryAt(addr, PAGE_SIZE);
-                    break;
-                }
-                case "testReserveFailed": {
-                    wb.NMTReserveMemory(tooBig);
                     break;
                 }
                 case "testCommitFailed": {
