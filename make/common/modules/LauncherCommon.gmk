@@ -142,8 +142,7 @@ define SetupBuildLauncherBody
       NAME := $1, \
       EXTRA_FILES := $$($1_EXTRA_FILES), \
       OPTIMIZATION := $$($1_OPTIMIZATION), \
-      CFLAGS := $$(CFLAGS_JDKEXE) \
-          $$(LAUNCHER_CFLAGS) \
+      CFLAGS := $$(LAUNCHER_CFLAGS) \
           $$(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
