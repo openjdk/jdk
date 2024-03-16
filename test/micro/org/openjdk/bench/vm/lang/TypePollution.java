@@ -27,7 +27,9 @@ import org.openjdk.jmh.annotations.*;
 import java.io.Serializable;
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.*;
 
 /* A test to demonstrate type pollution. Run it with and without
  * -XX:-HashSecondarySupers -XX:-UseSecondarySuperCache to see the
@@ -103,6 +105,26 @@ public class TypePollution {
 
     int probe = 99;
 
+    // Try this with and without -XX:-HashSecondarySupers
+    @Benchmark
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public long parallelInstanceOfInterfaceSwitch() {
+        Supplier<Long> s = () -> {
+            long sum = 0;
+            for (int i = 0; i < 10000; i++) {
+                sum += instanceOfInterfaceSwitch();
+            }
+            return sum;
+        };
+        try {
+            CompletableFuture<Long> future = CompletableFuture.supplyAsync(s);
+            return s.get() + future.get();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Try this with and without -XX:-HashSecondarySupers
     @Benchmark
     public int instanceOfInterfaceSwitch() {
         int dummy = 0;
