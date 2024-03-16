@@ -138,7 +138,7 @@ public class ECoreIndexOf {
     titles.put(StandardCharsets.ISO_8859_1, "L");
     titles.put(StandardCharsets.UTF_16, "U");
 
-    for (int xxy = 0; xxy < 2; xxy++) {
+    for (int xxy = 0; xxy < 4; xxy++) {
       for (String decorator : decorators) {
         for (Charset csHaystack : charSets) {
           for (Charset csNeedle : charSets) {
@@ -329,7 +329,7 @@ public class ECoreIndexOf {
             System.err.print("Needle=");
             printStringBytes(needle.getBytes(needleCharset));
             System.err.println("l_offset=" + l_offset);
-            System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
+            System.err.println("haystackLen=" + haystackSize + " needleLen=" + needleSize +
                 " result=" + result + " nResult=" + nResult);
             System.err.println("");
           }
@@ -343,7 +343,7 @@ public class ECoreIndexOf {
             System.err.print("Needle=");
             printStringBytes(midNeedle.getBytes(needleCharset));
             System.err.println("l_offset=" + l_offset);
-            System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
+            System.err.println("haystackLen=" + haystackSize + " needleLen=" + needleSize +
                 " midresult=" + midresult + " midnResult=" + midnResult);
             System.err.println("");
           }
@@ -357,7 +357,7 @@ public class ECoreIndexOf {
             System.err.print("Needle=");
             printStringBytes(endNeedle.getBytes(needleCharset));
             System.err.println("l_offset=" + l_offset);
-            System.err.println("haystackLen=" + haystackSize + " neeldeLen=" + needleSize +
+            System.err.println("haystackLen=" + haystackSize + " needleLen=" + needleSize +
                 " endresult=" + endresult + " endnResult=" + endnResult);
             System.err.println("");
           }
@@ -398,7 +398,7 @@ public class ECoreIndexOf {
               if (iResult != nResult) {
                 System.out.println("Source=" + sourceString.substring(hsBegin, hsBegin + haystackLen));
                 System.out.println("Target=" + targetString.substring(nBegin, nBegin + needleLen));
-                System.out.println("haystackLen=" + haystackLen + " neeldeLen=" + needleLen + " hsBegin=" + hsBegin
+                System.out.println("haystackLen=" + haystackLen + " needleLen=" + needleLen + " hsBegin=" + hsBegin
                     + " nBegin=" + nBegin +
                     " iResult=" + iResult + " nResult=" + nResult);
                 failCount++;
