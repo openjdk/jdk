@@ -21,52 +21,65 @@
  * questions.
  */
 
-import java.awt.event.ItemEvent;
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.JCheckBox;
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 /*
  * @test
  * @bug 4129681
  * @summary Tests disabling of titled border's caption
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual Test4129681
+ * @run main Test4129681
  */
 
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.Point;
+import javax.swing.BorderFactory;
+import javax.swing.JLabel;
+import javax.swing.UIManager;
+
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+
 public class Test4129681 {
+    private static JLabel label;
+    private static final Color labelDisableColor = Color.RED;
+    private static final Dimension SIZE = new Dimension(100, 40);
+    private static final Point startPoint = new Point(8, 4);
+    private static final Point endPoint = new Point(18, 14);
+
     public static void main(String[] args) throws Exception {
-        String testInstructions = """
-                Click the checkbox to disable the label.
-                The test passes if the title of the border
-                is disabled as well as the label.
-                """;
+        int correctColoredPixels = 0;
+        int totalPixels = 0;
+        int tolerance = 20;
 
-        PassFailJFrame.builder()
-                .title("Test Instructions")
-                .instructions(testInstructions)
-                .rows(4)
-                .columns(25)
-                .splitUI(Test4129681::init)
-                .build()
-                .awaitAndCheck();
-    }
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        System.setProperty("sun.java2d.uiScale", "1.0");
+        label = new JLabel("Label");
+        label.setBorder(BorderFactory.createTitledBorder("\u2588".repeat(5)));
+        UIManager.getDefaults().put("Label.disabledForeground", labelDisableColor);
+        label.setSize(SIZE);
+        label.setEnabled(false);
+        BufferedImage image = new BufferedImage((int) Math.ceil(label.getWidth()),
+                (int) Math.ceil(label.getHeight()),
+                BufferedImage.TYPE_INT_ARGB);
 
-    public static JComponent init() {
-        JLabel label = new JLabel("message");
-        JCheckBox check = new JCheckBox("Enable/Disable");
-        check.addItemListener(event ->
-                label.setEnabled(ItemEvent.DESELECTED == event.getStateChange()));
-        label.setBorder(BorderFactory.createTitledBorder("label"));
-        label.setEnabled(!check.isSelected());
+        Graphics2D g2d = image.createGraphics();
+        label.paint(g2d);
+        g2d.dispose();
 
-        Box main = Box.createVerticalBox();
-        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
-        main.add(check);
-        main.add(label);
-        return main;
+        for (int x = startPoint.x; x < endPoint.x; x++) {
+            for (int y = startPoint.y; y < endPoint.y; y++) {
+                if (image.getRGB(x, y) == labelDisableColor.getRGB()) {
+                    correctColoredPixels++;
+                }
+                totalPixels++;
+            }
+        }
+
+        if (((double)correctColoredPixels/totalPixels*100) <= tolerance) {
+            ImageIO.write(image, "png", new File("failureImage.png"));
+            throw new RuntimeException("Label with border is not disabled");
+        }
+        System.out.println("Test Passed");
     }
 }
