@@ -471,14 +471,21 @@ class JvmtiHandshakeClosure : public HandshakeClosure {
 class JvmtiUnitedHandshakeClosure : public HandshakeClosure {
  protected:
   jvmtiError _result;
+  // the fields below are set by the JvmtiHandshake::execute
+  JavaThread* _target_jt;
+  bool _is_virtual;
   bool _self;
  public:
   JvmtiUnitedHandshakeClosure(const char* name)
     : HandshakeClosure(name),
       _result(JVMTI_ERROR_THREAD_NOT_ALIVE),
+      _target_jt(nullptr),
+      _is_virtual(false),
       _self(false) {}
 
   void set_result(jvmtiError err) { _result = err; }
+  void set_target_jt(JavaThread* target_jt) { _target_jt = target_jt; }
+  void set_is_virtual(bool val) { _is_virtual = val; }
   void set_self(bool val) { _self = val; }
   jvmtiError result() { return _result; }
   virtual void do_vthread(Handle target_h) = 0;
@@ -546,18 +553,15 @@ class GetOwnedMonitorInfoClosure : public JvmtiUnitedHandshakeClosure {
 private:
   JvmtiEnv *_env;
   JavaThread* _calling_thread;
-  JavaThread* _target_jt; // needed for mounted virtual thread case
   GrowableArray<jvmtiMonitorStackDepthInfo*> *_owned_monitors_list;
 
 public:
   GetOwnedMonitorInfoClosure(JvmtiEnv* env,
                              JavaThread* calling_thread,
-                             JavaThread* target_jt,
                              GrowableArray<jvmtiMonitorStackDepthInfo*>* owned_monitors_list)
     : JvmtiUnitedHandshakeClosure("GetOwnedMonitorInfo"),
       _env(env),
       _calling_thread(calling_thread),
-      _target_jt(target_jt),
       _owned_monitors_list(owned_monitors_list) {}
 
   void do_thread(Thread *target);

@@ -1371,7 +1371,7 @@ JvmtiEnv::GetOwnedMonitorInfo(jthread thread, jint* owned_monitor_count_ptr, job
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
     // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, java_thread, owned_monitors_list);
+    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
     JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
     err = op.result();
   }
@@ -1429,7 +1429,7 @@ JvmtiEnv::GetOwnedMonitorStackDepthInfo(jthread thread, jint* monitor_info_count
       return JVMTI_ERROR_OUT_OF_MEMORY;
     }
     // get owned monitors info with handshake
-    GetOwnedMonitorInfoClosure op(this, calling_thread, java_thread, owned_monitors_list);
+    GetOwnedMonitorInfoClosure op(this, calling_thread, owned_monitors_list);
     JvmtiHandshake::execute(&op, &tlh, java_thread, thread_handle);
     err = op.result();
   }
