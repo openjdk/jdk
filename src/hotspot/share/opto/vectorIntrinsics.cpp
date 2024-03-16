@@ -161,12 +161,12 @@ Node* GraphKit::box_vector(Node* vector, const TypeInstPtr* vbox_type, BasicType
 
 Node* GraphKit::unbox_vector(Node* v, const TypeInstPtr* vbox_type, BasicType elem_bt, int num_elem, bool shuffle_to_vector) {
   assert(EnableVectorSupport, "");
-  const TypePtr* vbox_type_v = gvn().type(v)->isa_ptr();
-  if (!vbox_type_v->isa_instptr() || vbox_type_v->maybe_null()) {
-    return nullptr; // no nulls are allowed
-  }
-  if (vbox_type->instance_klass() != vbox_type_v->is_instptr()->instance_klass()) {
+  const TypeInstPtr* vbox_type_v = gvn().type(v)->isa_instptr();
+  if (vbox_type_v == nullptr || vbox_type->instance_klass() != vbox_type_v->instance_klass()) {
     return nullptr; // arguments don't agree on vector shapes
+  }
+  if (vbox_type_v->maybe_null()) {
+    return nullptr; // no nulls are allowed
   }
   assert(check_vbox(vbox_type), "");
   const TypeVect* vt = TypeVect::make(elem_bt, num_elem, is_vector_mask(vbox_type->instance_klass()));
