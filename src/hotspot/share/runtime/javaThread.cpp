@@ -554,7 +554,6 @@ void JavaThread::interrupt() {
   _ParkEvent->unpark();
 }
 
-
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
 
@@ -567,14 +566,7 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     return false;
   }
 
-  oop thread_oop = vthread_or_thread();
-  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
-  bool interrupted = java_lang_Thread::interrupted(thread_oop);
-
-  if (!(interrupted && clear_interrupted)) {
-    return interrupted;
-  }
-  assert(this == Thread::current(), "only the current thread can clear");
+  bool interrupted = java_lang_Thread::interrupted(threadObj());
 
   // NOTE that since there is no "lock" around the interrupt and
   // is_interrupted operations, there is the possibility that the
@@ -591,12 +583,26 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   // Also, because there is no lock, we must only clear the interrupt
   // state if we are going to report that we were interrupted; otherwise
   // an interrupt that happens just after we read the field would be lost.
-  if (!is_virtual) { // platform thread
+  if (interrupted && clear_interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(threadObj(), false);
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
-    return interrupted;
   }
+  return interrupted;
+}
 
+// Checks and clears the interrupt status for platform or virtual thread.
+// Used by the JVMTI RawMonitorWait only.
+bool JavaThread::is_interrupted() {
+  if (!is_interrupted(false)) {
+    return false;
+  }
+  oop thread_oop = vthread_or_thread();
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+
+  if (!is_virtual) {
+    return is_interrupted(true);
+  }
   // Virtual thread: clear interrupt status for both virtual and
   // carrier threads under the interruptLock protection.
   JavaThread* current = JavaThread::current();
@@ -605,9 +611,10 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
 
   // re-check the interrupt status under the interruptLock protection
-  interrupted = java_lang_Thread::interrupted(thread_h());
+  bool interrupted = java_lang_Thread::interrupted(thread_h());
 
   if (interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
     java_lang_Thread::set_interrupted(thread_h(), false);  // clear for virtual
     java_lang_Thread::set_interrupted(threadObj(), false); // clear for carrier
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
