@@ -192,7 +192,7 @@ public class CallGeneratorHelper extends NativeTestHelper {
         return elems.stream().map(p -> p.name().charAt(0) + "").collect(Collectors.joining());
     }
 
-    private  static void generateStructDecl(PrintStream out, List<StructFieldType> fields) {
+    private static void generateStructDecl(PrintStream out, List<StructFieldType> fields) {
         String structCode = sigCode(fields);
         List<String> fieldDecls = new ArrayList<>();
         for (int i = 0 ; i < fields.size() ; i++) {
