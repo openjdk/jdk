@@ -91,4 +91,78 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ b(continuation());
 }
 
+int C2FastUnlockLightweightStub::max_size() const {
+  return 256;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+
+  const Register monitor = _mark_or_monitor;
+  const Register contentions_addr = _t;
+
+  Label fix_flags_and_slow_path;
+  Label restore_contentions_slow_path;
+  {
+    __ bind (restore_contentions_slow_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    // fallthrough fix_flags_and_slow_path
+  }
+  {
+    __ bind (fix_flags_and_slow_path);
+    __ cmp(monitor, checked_cast<unsigned char>(0));
+    __ b(slow_path_continuation());
+  }
+  Label fix_flags_and_fast_path;
+  Label restore_contentions_fast_path;
+  {
+    __ bind (restore_contentions_fast_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    // fallthrough fix_flags_and_fast_path
+  }
+  {
+    __ bind (fix_flags_and_fast_path);
+    __ cmp(monitor, monitor);
+    __ b(unlocked_continuation());
+  }
+
+  // The cancellation requires that we first increment and then decrement the contentions.
+  // Instead we can simply go to the slow path without changing contentions.
+  Label& canceled_deflation_slow_path = fix_flags_and_slow_path;
+
+  { // Handle monitor medium path.
+
+    __ bind(_inflated_medium_path);
+
+    __ cmpxchg(_owner_addr, zr, rthread, Assembler::xword, /*acquire*/ true,
+            /*release*/ false, /*weak*/ false, _t);
+    __ br(Assembler::EQ, fix_flags_and_slow_path);
+
+    __ cmp(_t, checked_cast<unsigned char>(reinterpret_cast<intptr_t>(DEFLATER_MARKER)));
+    __ br(Assembler::NE, fix_flags_and_fast_path);
+
+    __ lea(contentions_addr, Address(monitor, ObjectMonitor::contentions_offset()));
+
+    // FIXME: Need an extra register. This works because of the atomic_XXX implementation.
+    const Register usable_scratch = UseLSE ? rscratch1 : rscratch2;
+
+    __ atomic_addw(usable_scratch, 1, contentions_addr);
+
+    __ cmp(usable_scratch, checked_cast<unsigned char>(0));
+    __ br(Assembler::LS, restore_contentions_fast_path);
+
+    __ mov(rscratch2, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ cmpxchg(_owner_addr, rscratch2, rthread, Assembler::xword, /*acquire*/ true,
+            /*release*/ false, /*weak*/ false, zr);
+    __ br(Assembler::EQ, canceled_deflation_slow_path);
+
+    __ cmpxchg(_owner_addr, zr, rthread, Assembler::xword, /*acquire*/ true,
+            /*release*/ false, /*weak*/ false, zr);
+    __ br(Assembler::EQ, restore_contentions_slow_path);
+
+    __ atomic_addw(zr, -1, contentions_addr);
+
+    __ b(fix_flags_and_fast_path);
+  }
+}
+
 #undef __

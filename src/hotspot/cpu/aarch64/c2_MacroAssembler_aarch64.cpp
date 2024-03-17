@@ -389,6 +389,8 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
     b(slow_path);
   }
 
+  Label dummy;
+  C2FastUnlockLightweightStub* stub = nullptr;
 
   { // Handle inflated monitor.
     bind(inflated_load_monitor);
@@ -435,32 +437,44 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 
     bind(not_recursive);
 
-    Label release;
     const Register t2_owner_addr = t2;
 
     // Compute owner address.
     lea(t2_owner_addr, Address(t1_monitor, ObjectMonitor::owner_offset()));
+
+    // Set owner to null.
+    // Release to satisfy the JMM
+    stlr(zr, t2_owner_addr);
+
+    membar(StoreLoad);
 
     // Check if the entry lists are empty.
     ldr(rscratch1, Address(t1_monitor, ObjectMonitor::EntryList_offset()));
     ldr(t3_t, Address(t1_monitor, ObjectMonitor::cxq_offset()));
     orr(rscratch1, rscratch1, t3_t);
     cmp(rscratch1, zr);
-    br(Assembler::EQ, release);
+    br(Assembler::EQ, unlocked);
 
-    // The owner may be anonymous and we removed the last obj entry in
-    // the lock-stack. This loses the information about the owner.
-    // Write the thread to the owner field so the runtime knows the owner.
-    str(rthread, Address(t2_owner_addr));
-    b(slow_path);
+    if (!Compile::current()->output()->in_scratch_emit_size()) {
+      stub = new (Compile::current()->comp_arena()) C2FastUnlockLightweightStub(obj, t1_monitor, t3_t, t2_owner_addr);
+      Compile::current()->output()->add_stub(stub);
+    }
 
-    bind(release);
-    // Set owner to null.
-    // Release to satisfy the JMM
-    stlr(zr, t2_owner_addr);
+    Label& inflated_medium_path = stub == nullptr ? dummy : stub->inflated_medium_path();
+
+    // Check successor.
+    ldr(t3_t, Address(t1_monitor, ObjectMonitor::succ_offset()));
+    cbz(t3_t, inflated_medium_path);
+
+    // Set flag == EQ
+    cmp(t1_monitor, t1_monitor);
+    // Fallthrough unlocked
   }
 
   bind(unlocked);
+  if (stub != nullptr) {
+    bind(stub->unlocked_continuation());
+  }
   decrement(Address(rthread, JavaThread::held_monitor_count_offset()));
 
 #ifdef ASSERT
@@ -471,6 +485,9 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register t1, Regis
 #endif
 
   bind(slow_path);
+  if (stub != nullptr) {
+    bind(stub->slow_path_continuation());
+  }
 #ifdef ASSERT
   // Check that slow_path label is reached with Flags == NE.
   br(Assembler::NE, flag_correct);
