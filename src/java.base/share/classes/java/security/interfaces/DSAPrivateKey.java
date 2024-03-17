@@ -70,7 +70,6 @@ public interface DSAPrivateKey extends DSAKey, java.security.PrivateKey {
      * The default implementation returns {@code null}.
      *
      * @return {@inheritDoc java.security.AsymmetricKey}
-     * @since 22
      */
     @Override
     default DSAParams getParams() {
