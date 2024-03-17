@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,10 +41,10 @@ ifeq ($(call isTargetOs, windows), true)
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft := 4311 4302 4312, \
-        CFLAGS := $(filter-out -MD, $(CFLAGS_JDKLIB)) -MT \
-            -DACCESSBRIDGE_ARCH_$2, \
-        CXXFLAGS := $(filter-out -MD, $(CXXFLAGS_JDKLIB)) -MT \
-            -DACCESSBRIDGE_ARCH_$2, \
+        CFLAGS_FILTER_OUT := -MD, \
+        CXXFLAGS_FILTER_OUT := -MD, \
+        CFLAGS := -MT -DACCESSBRIDGE_ARCH_$2, \
+        CXXFLAGS := -MT -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
@@ -70,10 +70,8 @@ ifeq ($(call isTargetOs, windows), true)
         EXTRA_SRC := common, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_microsoft_WinAccessBridge.cpp := 4302 4311, \
-        CFLAGS := $(CFLAGS_JDKLIB) \
-            -DACCESSBRIDGE_ARCH_$2, \
-        CXXFLAGS := $(CXXFLAGS_JDKLIB) \
-            -DACCESSBRIDGE_ARCH_$2, \
+        CFLAGS := -DACCESSBRIDGE_ARCH_$2, \
+        CXXFLAGS := -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -93,7 +91,6 @@ ifeq ($(call isTargetOs, windows), true)
     $(call SetupJdkLibrary, BUILD_ACCESSBRIDGESYSINFO, \
         NAME := jabsysinfo, \
         OPTIMIZATION := LOW, \
-        CFLAGS := $(CFLAGS_JDKLIB), \
         LDFLAGS := $(LDFLAGS_JDKLIB), \
         VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )

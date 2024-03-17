@@ -62,11 +62,10 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBSA, \
     DISABLED_WARNINGS_clang := sign-compare, \
     DISABLED_WARNINGS_clang_libproc_impl.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_sadis.c := format-nonliteral, \
-    CFLAGS := $(CFLAGS_JDKLIB) $(SA_CFLAGS), \
-    CXXFLAGS := $(CXXFLAGS_JDKLIB) $(SA_CFLAGS) $(SA_CXXFLAGS), \
+    CFLAGS := $(SA_CFLAGS), \
+    CXXFLAGS := $(SA_CFLAGS) $(SA_CXXFLAGS), \
     EXTRA_SRC := $(LIBSA_EXTRA_SRC), \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS := $(LIBCXX), \
     LIBS_unix := -ljava, \
     LIBS_linux := $(LIBDL), \
     LIBS_macosx := -framework Foundation \

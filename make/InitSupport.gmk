@@ -442,10 +442,10 @@ else # $(HAS_SPEC)=true
         # Compare first and second build. Ignore any error code from compare.sh.
 	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
 	$(if $(COMPARE_BUILD_COMP_DIR), \
-	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh -vv $(COMPARE_BUILD_COMP_OPTS) \
+	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh --diffs $(COMPARE_BUILD_COMP_OPTS) \
 	      -2dirs $(COMPARE_BUILD_OUTPUTDIR)/$(COMPARE_BUILD_COMP_DIR) \
 	      $(OUTPUTDIR)/$(COMPARE_BUILD_COMP_DIR) $(COMPARE_BUILD_IGNORE_RESULT)), \
-	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh -vv $(COMPARE_BUILD_COMP_OPTS) \
+	  +(cd $(COMPARE_BUILD_OUTPUTDIR) && ./compare.sh --diffs $(COMPARE_BUILD_COMP_OPTS) \
 	      -o $(OUTPUTDIR) $(COMPARE_BUILD_IGNORE_RESULT)) \
 	)
   endef

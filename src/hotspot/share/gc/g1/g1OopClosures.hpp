@@ -54,8 +54,6 @@ protected:
   template <class T>
   inline void handle_non_cset_obj_common(G1HeapRegionAttr const region_attr, T* p, oop const obj);
 public:
-  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-
   inline void trim_queue_partially();
 };
 
@@ -67,6 +65,8 @@ public:
                     G1ParScanThreadState* pss,
                     size_t& heap_roots_found) :
     G1ScanClosureBase(g1h, pss), _heap_roots_found(heap_roots_found) { }
+
+  virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
 
   template <class T> void do_oop_work(T* p);
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
