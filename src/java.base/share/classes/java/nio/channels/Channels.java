@@ -216,7 +216,7 @@ public final class Channels {
                     throws IOException
             {
                 if ((off < 0) || (off > bs.length) || (len < 0) ||
-                        ((off + len) > bs.length) || ((off + len) < 0)) {
+                    ((off + len) > bs.length) || ((off + len) < 0)) {
                     throw new IndexOutOfBoundsException();
                 } else if (len == 0) {
                     return;
@@ -471,8 +471,6 @@ public final class Channels {
      * @throws  UnsupportedCharsetException
      *          If no support for the named charset is available
      *          in this instance of the Java virtual machine
-     *
-     * @since 10
      */
     public static Reader newReader(ReadableByteChannel ch,
                                    String csName)
