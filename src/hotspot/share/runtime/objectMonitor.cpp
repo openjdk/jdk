@@ -831,7 +831,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // timer scalability issues we see on some platforms as we'd only have one thread
   // -- the checker -- parked on a timer.
 
-  if (nxt == nullptr && _EntryList == nullptr) {
+  if (nxt == nullptr && _EntryList == nullptr X86_ONLY(&& LockingMode != LM_LIGHTWEIGHT)) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=current }
     Atomic::replace_if_null(&_Responsible, current);

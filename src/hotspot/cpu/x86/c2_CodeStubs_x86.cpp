@@ -102,42 +102,54 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ jmp(slow_path_continuation());
   }
 
+  const Register monitor = _mark;
+
+  Label restore_contentions_slow_path;
+  {
+    __ bind (restore_contentions_slow_path);
+    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+    __ jmpb(restore_held_monitor_count_and_slow_path);
+  }
+  Label fix_zf_and_unlock;
+  Label restore_contentions_fast_path;
+  {
+    __ bind (restore_contentions_fast_path);
+    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+    __ jmpb(fix_zf_and_unlock);
+  }
+
+  // The cancellation requires that we first increment and then decrement the contentions.
+  // Instead we can simply go to the slow path without changing contentions.
+  Label& canceled_deflation_slow_path = restore_held_monitor_count_and_slow_path;
+
   { // Handle monitor medium path.
 
-    __ bind(_check_successor);
+    __ bind(_inflated_medium_path);
 
-    Label fix_zf_and_unlocked;
-    const Register monitor = _mark;
 
-#ifndef _LP64
-    __ jmpb(restore_held_monitor_count_and_slow_path);
-#else // _LP64
-    // successor null check.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    __ jccb(Assembler::equal, restore_held_monitor_count_and_slow_path);
-
-    // Release lock.
-    __ movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-
-    // Fence.
-    // Instead of MFENCE we use a dummy locked add of 0 to the top-of-stack.
-    __ lock(); __ addl(Address(rsp, 0), 0);
-
-    // Recheck successor.
-    __ cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
-    // Observed a successor after the release -> fence we have handed off the monitor
-    __ jccb(Assembler::notEqual, fix_zf_and_unlocked);
-
-    // Try to relock, if it fails the monitor has been handed over
-    // TODO: Caveat, this may fail due to deflation, which does
-    //       not handle the monitor handoff. Currently only works
-    //       due to the responsible thread.
     __ xorptr(rax, rax);
     __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
     __ jccb  (Assembler::equal, restore_held_monitor_count_and_slow_path);
-#endif
 
-    __ bind(fix_zf_and_unlocked);
+    __ cmpptr(rax, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ jccb(Assembler::notEqual, fix_zf_and_unlock);
+
+    __ lock(); __ incrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+
+    __ cmpl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)), 0);
+    __ jccb(Assembler::less, restore_contentions_fast_path);
+
+    // rax contains DEFLATER_MARKER here
+    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    __ jccb  (Assembler::equal, canceled_deflation_slow_path);
+
+    __ xorptr(rax, rax);
+    __ lock(); __ cmpxchgptr(_thread, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)));
+    __ jccb  (Assembler::equal, restore_contentions_slow_path);
+
+    __ lock(); __ decrementl(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(contentions)));
+
+    __ bind(fix_zf_and_unlock);
     __ xorl(rax, rax);
     __ jmp(unlocked_continuation());
   }

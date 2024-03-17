@@ -1061,7 +1061,7 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
   }
 
   Label& push_and_slow_path = stub == nullptr ? dummy : stub->push_and_slow_path();
-  Label& check_successor = stub == nullptr ? dummy : stub->check_successor();
+  Label& inflated_medium_path = stub == nullptr ? dummy : stub->inflated_medium_path();
 
   { // Lightweight Unlock
 
@@ -1117,40 +1117,33 @@ void C2_MacroAssembler::fast_unlock_lightweight(Register obj, Register reg_rax, 
     // mark contains the tagged ObjectMonitor*.
     const Register monitor = mark;
 
-#ifndef _LP64
-    // Check if recursive.
-    xorptr(reg_rax, reg_rax);
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
-    jcc(Assembler::notZero, check_successor);
-
-    // Check if the entry lists are empty.
-    movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
-    jcc(Assembler::notZero, check_successor);
-
-    // Release lock.
-    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-#else // _LP64
     Label recursive;
 
     // Check if recursive.
     cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)), 0);
     jccb(Assembler::notEqual, recursive);
 
+    // Release lock.
+    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
+
+    // Fence
+    lock(); addl(Address(rsp, 0), 0);
+
     // Check if the entry lists are empty.
     movptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(cxq)));
     orptr(reg_rax, Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(EntryList)));
-    jcc(Assembler::notZero, check_successor);
-
-    // Release lock.
-    movptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(owner)), NULL_WORD);
-    jmpb(unlocked);
+    jcc(Assembler::zero, unlocked);
+    cmpptr(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(succ)), NULL_WORD);
+    jcc(Assembler::equal, inflated_medium_path);
+    Label unlocked_fix_zf;
+    jmpb(unlocked_fix_zf);
 
     // Recursive unlock.
     bind(recursive);
     decrement(Address(monitor, OM_OFFSET_NO_MONITOR_VALUE_TAG(recursions)));
+
+    bind(unlocked_fix_zf);
     xorl(t, t);
-#endif
   }
 
   bind(unlocked);
