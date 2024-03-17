@@ -77,8 +77,7 @@ CardTable::CardTable(MemRegion whole_heap) :
 void CardTable::initialize(void* region0_start, void* region1_start) {
   size_t num_cards = cards_required(_whole_heap.word_size());
 
-  // each card takes 1 byte
-  size_t num_bytes = num_cards;
+  size_t num_bytes = num_cards * sizeof(CardValue);
   _byte_map_size = compute_byte_map_size(num_bytes);
 
   HeapWord* low_bound  = _whole_heap.start();
