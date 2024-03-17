@@ -1902,6 +1902,10 @@ void ObjectMonitor::notifyAll(TRAPS) {
 
 // Spinning: Fixed frequency (100%), vary duration
 int ObjectMonitor::TrySpin(JavaThread* current) {
+  if (MonitorSkipTrySpin) {
+    if (TryLock(current) > 0) return 1;
+    return 0;
+  }
   // Dumb, brutal spin.  Good for comparative measurements against adaptive spinning.
   int ctr = Knob_FixedSpin;
   if (ctr != 0) {
