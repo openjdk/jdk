@@ -41,16 +41,6 @@ else
   JPACKAGE_APPLAUNCHER_LINK_TYPE := C++
 endif
 
-
-ifeq ($(call isTargetOs, windows), true)
-  JpackageWithStaticCrt = \
-      $(filter-out -MD, $1) -MT
-else
-  JpackageWithStaticCrt = \
-      $1
-endif
-
-
 JPACKAGE_OUTPUT_DIR := $(JDK_OUTPUTDIR)/modules/$(MODULE)/jdk/jpackage/internal/resources
 JPACKAGE_CXXFLAGS_windows := -EHsc -DUNICODE -D_UNICODE
 JPACKAGE_CFLAGS_windows := -DUNICODE -D_UNICODE
@@ -67,16 +57,16 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     OPTIMIZATION := LOW, \
     DISABLED_WARNINGS_clang_LinuxPackage.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
-    CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \
-        $(JPACKAGE_APPLAUNCHER_INCLUDES), \
-    CFLAGS := $(call JpackageWithStaticCrt, $(CFLAGS_JDKEXE)) \
-        $(JPACKAGE_APPLAUNCHER_INCLUDES), \
+    CFLAGS_FILTER_OUT := -MD, \
+    CXXFLAGS_FILTER_OUT := -MD, \
+    CXXFLAGS := -MT $(JPACKAGE_APPLAUNCHER_INCLUDES), \
+    CFLAGS := -MT $(JPACKAGE_APPLAUNCHER_INCLUDES), \
     CFLAGS_macosx := -Wno-format-nonliteral, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
-    LIBS_macosx := $(LIBCXX) -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
-    LIBS_windows := $(LIBCXX) user32.lib ole32.lib msi.lib shlwapi.lib \
+    LIBS_macosx := -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
+    LIBS_windows := user32.lib ole32.lib msi.lib shlwapi.lib \
         Shell32.lib, \
     LIBS_linux := -ldl, \
     MANIFEST := $(JAVA_MANIFEST), \
@@ -107,10 +97,10 @@ ifeq ($(call isTargetOs, linux), true)
       OPTIMIZATION := LOW, \
       DISABLED_WARNINGS_clang_JvmLauncherLib.c := format-nonliteral, \
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
-      CFLAGS := $(CFLAGS_JDKLIB) $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
+      CXXFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
+      CFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LIBS := $(LIBCXX) -ldl, \
+      LIBS := -ldl, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_LIBAPPLAUNCHER)
@@ -126,10 +116,10 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := jpackage, \
       OPTIMIZATION := LOW, \
       EXTRA_SRC := jdk.jpackage:common, \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(JPACKAGE_CXXFLAGS_windows), \
+      CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBCXX) advapi32.lib ole32.lib msi.lib user32.lib \
+      LIBS := advapi32.lib ole32.lib msi.lib user32.lib \
           shlwapi.lib Shell32.lib, \
   ))
 
@@ -147,10 +137,11 @@ ifeq ($(call isTargetOs, windows), true)
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libwixhelper, \
       OPTIMIZATION := LOW, \
       SRC := $(JPACKAGE_WIXHELPER_SRC), \
-      CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKLIB)) \
-          $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
+      CXXFLAGS_FILTER_OUT := -MD, \
+      CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)), \
+      CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
-      LIBS := $(LIBCXX) ole32.lib msi.lib User32.lib shlwapi.lib \
+      LIBS := ole32.lib msi.lib User32.lib shlwapi.lib \
           Shell32.lib, \
   ))
 
@@ -166,10 +157,11 @@ ifeq ($(call isTargetOs, windows), true)
       OUTPUT_DIR := $(JPACKAGE_OUTPUT_DIR), \
       SYMBOLS_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/msiwrapper, \
       SRC := $(JPACKAGE_MSIWRAPPER_SRC), \
-      CXXFLAGS := $(call JpackageWithStaticCrt, $(CXXFLAGS_JDKEXE)) \
-          $(addprefix -I, $(JPACKAGE_MSIWRAPPER_SRC)) $(JPACKAGE_CXXFLAGS_windows), \
+      CXXFLAGS_FILTER_OUT := -MD, \
+      CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_MSIWRAPPER_SRC)), \
+      CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
       LDFLAGS := $(LDFLAGS_JDKEXE), \
-      LIBS := $(LIBCXX) ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
+      LIBS := ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
   ))
 
   JPACKAGE_TARGETS += $(BUILD_JPACKAGE_MSIWRAPPER)

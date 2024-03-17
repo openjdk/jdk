@@ -2126,28 +2126,6 @@ operand immU31()
   interface(CONST_INTER);
 %}
 
-// Constant for long shifts
-operand immI_32()
-%{
-  predicate( n->get_int() == 32 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Constant for long shifts
-operand immI_64()
-%{
-  predicate( n->get_int() == 64 );
-  match(ConI);
-
-  op_cost(0);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Pointer Immediate
 operand immP()
 %{
@@ -2302,28 +2280,6 @@ operand immL_M1()
   interface(CONST_INTER);
 %}
 
-// Long Immediate: the value 10
-operand immL10()
-%{
-  predicate(n->get_long() == 10);
-  match(ConL);
-
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
-// Long immediate from 0 to 127.
-// Used for a shorter form of long mul by 10.
-operand immL_127()
-%{
-  predicate(0 <= n->get_long() && n->get_long() < 0x80);
-  match(ConL);
-
-  op_cost(10);
-  format %{ %}
-  interface(CONST_INTER);
-%}
-
 // Long Immediate: low 32-bit mask
 operand immL_32bits()
 %{
@@ -2453,64 +2409,6 @@ operand immL_65535()
 operand kReg()
 %{
   constraint(ALLOC_IN_RC(vectmask_reg));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K1()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K1));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K2()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K2));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K3()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K3));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K4()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K4));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K5()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K5));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-operand kReg_K6()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K6));
-  match(RegVectMask);
-  format %{%}
-  interface(REG_INTER);
-%}
-
-// Special Registers
-operand kReg_K7()
-%{
-  constraint(ALLOC_IN_RC(vectmask_reg_K7));
   match(RegVectMask);
   format %{%}
   interface(REG_INTER);
@@ -2663,18 +2561,6 @@ operand rRegN() %{
 // the RBP is used as a proper frame pointer and is not included in ptr_reg. As a
 // result, RBP is not included in the output of the instruction either.
 
-operand no_rax_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_reg));
-  match(RegP);
-  match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // This operand is not allowed to use RBP even if
 // RBP is not used to hold the frame pointer.
 operand no_rbp_RegP()
@@ -2682,17 +2568,6 @@ operand no_rbp_RegP()
   constraint(ALLOC_IN_RC(ptr_reg_no_rbp));
   match(RegP);
   match(rbx_RegP);
-  match(rsi_RegP);
-  match(rdi_RegP);
-
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand no_rax_rbx_RegP()
-%{
-  constraint(ALLOC_IN_RC(ptr_no_rax_rbx_reg));
-  match(RegP);
   match(rsi_RegP);
   match(rdi_RegP);
 

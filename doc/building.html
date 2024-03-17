@@ -68,7 +68,8 @@ id="toc-native-compiler-toolchain-requirements">Native Compiler
 <li><a href="#apple-xcode" id="toc-apple-xcode">Apple Xcode</a></li>
 <li><a href="#microsoft-visual-studio"
 id="toc-microsoft-visual-studio">Microsoft Visual Studio</a></li>
-<li><a href="#ibm-xl-cc" id="toc-ibm-xl-cc">IBM XL C/C++</a></li>
+<li><a href="#ibm-open-xl-cc" id="toc-ibm-open-xl-cc">IBM Open XL
+C/C++</a></li>
 </ul></li>
 <li><a href="#boot-jdk-requirements" id="toc-boot-jdk-requirements">Boot
 JDK Requirements</a>
@@ -562,7 +563,7 @@ system and toolchain.</p>
 </tr>
 <tr class="odd">
 <td>AIX</td>
-<td>IBM XL C/C++</td>
+<td>IBM Open XL C/C++</td>
 </tr>
 <tr class="even">
 <td>Windows</td>
@@ -601,13 +602,13 @@ to compile successfully without issues.</p>
 <p>All compilers are expected to be able to handle the C11 language
 standard for C, and C++14 for C++.</p>
 <h3 id="gcc">gcc</h3>
-<p>The minimum accepted version of gcc is 6.0. Older versions will not
+<p>The minimum accepted version of gcc is 10.0. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>The JDK is currently known to compile successfully with gcc version
 13.2 or newer.</p>
 <p>In general, any version between these two should be usable.</p>
 <h3 id="clang">clang</h3>
-<p>The minimum accepted version of clang is 3.5. Older versions will not
+<p>The minimum accepted version of clang is 13. Older versions will not
 be accepted by <code>configure</code>.</p>
 <p>To use clang instead of gcc on Linux, use
 <code>--with-toolchain-type=clang</code>.</p>
@@ -673,11 +674,10 @@ the following line: (note that the " characters are essential)</p>
 version number accordingly. If you have not installed the
 <code>BuildTools</code>, but e.g. <code>Professional</code>, adjust the
 product ID accordingly.</p>
-<h3 id="ibm-xl-cc">IBM XL C/C++</h3>
-<p>Please consult the AIX section of the <a
-href="https://wiki.openjdk.org/display/Build/Supported+Build+Platforms">Supported
-Build Platforms</a> OpenJDK Build Wiki page for details about which
-versions of XLC are supported.</p>
+<h3 id="ibm-open-xl-cc">IBM Open XL C/C++</h3>
+<p>The minimum accepted version of Open XL is 17.1.1.4. This is in
+essence clang 15, and will be treated as such by the OpenJDK build
+system.</p>
 <h2 id="boot-jdk-requirements">Boot JDK Requirements</h2>
 <p>Paradoxically, building the JDK requires a pre-existing JDK. This is
 called the "boot JDK". The boot JDK does not, however, have to be a JDK
