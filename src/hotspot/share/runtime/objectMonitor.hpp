@@ -215,6 +215,7 @@ private:
   static int Knob_SpinLimit;
 
   static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
+  static ByteSize contentions_offset() { return byte_offset_of(ObjectMonitor, _contentions); }
   static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
   static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
   static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
