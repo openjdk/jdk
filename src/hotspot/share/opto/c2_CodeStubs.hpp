@@ -100,18 +100,25 @@ public:
 class C2FastUnlockLightweightStub : public C2CodeStub {
 private:
   Register _obj;
-  Register _mark;
+  Register _mark_or_monitor;
   Register _t;
+  AARCH64_ONLY(Register _owner_addr;)
   Register _thread;
-  Label _push_and_slow_path;
+  X86_ONLY(Label _push_and_slow_path;)
   Label _inflated_medium_path;
   Label _unlocked_continuation;
 public:
-  C2FastUnlockLightweightStub(Register obj, Register mark, Register t, Register thread) : C2CodeStub(),
-    _obj(obj), _mark(mark), _t(t), _thread(thread) {}
+#ifdef X86
+  C2FastUnlockLightweightStub(Register obj, Register mark_or_monitor, Register t, Register thread) : C2CodeStub(),
+    _obj(obj), _mark_or_monitor(mark_or_monitor), _t(t), _thread(thread) {}
+#endif
+#ifdef AARCH64
+  C2FastUnlockLightweightStub(Register obj, Register mark_or_monitor, Register t, Register owner_addr) : C2CodeStub(),
+    _obj(obj), _mark_or_monitor(mark_or_monitor), _t(t), _owner_addr(owner_addr), _thread(rthread) {}
+#endif
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
-  Label& push_and_slow_path() { return _push_and_slow_path; }
+  X86_ONLY(Label& push_and_slow_path() { return _push_and_slow_path; })
   Label& inflated_medium_path() { return _inflated_medium_path; }
   Label& unlocked_continuation() { return _unlocked_continuation; }
   Label& slow_path_continuation() { return continuation(); }

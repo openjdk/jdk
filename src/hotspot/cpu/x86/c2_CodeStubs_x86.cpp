@@ -102,7 +102,7 @@ void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
     __ jmp(slow_path_continuation());
   }
 
-  const Register monitor = _mark;
+  const Register monitor = _mark_or_monitor;
 
   Label restore_contentions_slow_path;
   {
