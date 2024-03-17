@@ -854,6 +854,11 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   for (;;) {
 
     if (TryLock(current) > 0) break;
+    if (try_set_owner_from(DEFLATER_MARKER, current) == DEFLATER_MARKER) {
+      add_to_contentions(1);
+      break;
+    }
+    if (TryLock(current) > 0) break;
     assert(owner_raw() != current, "invariant");
 
     // park self
@@ -1279,8 +1284,38 @@ void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
     // to reacquire the lock the responsibility for ensuring succession
     // falls to the new owner.
     //
-    if (try_set_owner_from(nullptr, current) != nullptr) {
-      return;
+    void* owner = try_set_owner_from(nullptr, current);
+    if (owner != nullptr) {
+      if (owner != DEFLATER_MARKER) {
+        // Observed another owner.
+        return;
+      }
+      // DEFLATER_MARKER
+      struct ObjectMonitorContentionsScope {
+        ObjectMonitor& _monitor;
+        ObjectMonitorContentionsScope(ObjectMonitor& monitor) : _monitor(monitor) {
+          _monitor.add_to_contentions(1);
+        }
+        ~ObjectMonitorContentionsScope() {
+          _monitor.add_to_contentions(-1);
+        }
+      } contentions_scope(*this);
+
+      if (is_being_async_deflated()) {
+        assert((intptr_t(_EntryList)|intptr_t(_cxq)) == 0 || _succ != nullptr, "");
+        return;
+      }
+
+      if (try_set_owner_from(DEFLATER_MARKER, current) != DEFLATER_MARKER) {
+        // Owned or nullptr
+        if (try_set_owner_from(nullptr, current) != nullptr) {
+          // Owned
+          return;
+        }
+      } else {
+        // Canceled deflation
+        add_to_contentions(1);
+      }
     }
 
     guarantee(owner_raw() == current, "invariant");
