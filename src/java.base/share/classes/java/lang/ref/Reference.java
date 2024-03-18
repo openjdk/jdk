@@ -399,7 +399,6 @@ public abstract sealed class Reference<T>
      * There is a potential race condition with the garbage collector. When this
      * method is called, the garbage collector may already be in the process of
      * (or already completed) clearing and/or enqueueing this reference.
-     *
      * Avoid this race by ensuring the referent remains strongly reachable until
      * after the call to clear(), using {@link #reachabilityFence(Object)} if
      * necessary.
@@ -491,12 +490,11 @@ public abstract sealed class Reference<T>
      * method is <b><i>unsuccessful</i></b> and returns false.
      *
      * <p><a href="{@docRoot}/java.base/java/lang/ref/package-summary.html#MemoryConsistency">Memory consistency effects</a>:
-     * Actions in a thread prior to calling
-     * {@code enqueue} <b><i>successfully</i></b>
+     * Actions in a thread prior to a <b><i>successful</i></b> call to {@code enqueue}
      * <a href="{@docRoot}/java.base/java/util/concurrent/package-summary.html#MemoryVisibility"><i>happen-before</i></a>
      * the reference is removed from the queue by {@link ReferenceQueue#poll}
-     * or {@link ReferenceQueue#remove}. <b><i>Unsuccessful</i></b>
-     * {@code enqueue} calls have no specified memory consistency effects.
+     * or {@link ReferenceQueue#remove}. <b><i>Unsuccessful</i></b> calls to
+     * {@code enqueue} have no specified memory consistency effects.
      *
      * <p> When this method clears references it does so directly, without
      * invoking the {@link #clear()} method. When the garbage collector clears

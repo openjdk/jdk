@@ -124,7 +124,6 @@
  * The above chain of <i>happens-before</i> edges ensures that actions in a
  * thread prior to a {@link Reference#reachabilityFence Reference.reachabilityFence(x)}
  * <i>happen-before</i> cleanup code for {@code x} runs on the cleaner thread.
- *
  * In particular, changes to the state of {@code x} made before
  * {@code reachabilityFence(x)} will be visible to the cleanup code running on
  * the cleaner thread without additional synchronization.
@@ -142,8 +141,8 @@
  *
  * <ul>
  *
- * <li> An object is <em>strongly reachable</em> if it can be accessed without
- * traversing the referent of a Reference object.
+ * <li> An object is <em>strongly reachable</em> if it is reachable and if it
+ * can be accessed without traversing the referent of a Reference object.
  *
  * <li> An object is <em>softly reachable</em> if it is not strongly
  * reachable but can be reached by traversing a soft reference.
