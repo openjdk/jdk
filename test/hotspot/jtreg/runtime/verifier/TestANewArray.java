@@ -42,7 +42,6 @@ import jdk.test.lib.process.OutputAnalyzer;
  * @compile -XDignore.symbol.file TestANewArray.java
  * @run main TestANewArray 49
  * @run main TestANewArray 52
- *
  */
 
 /*
