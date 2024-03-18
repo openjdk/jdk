@@ -29,12 +29,12 @@
  * @run main/manual FileDialogOpenDirTest
  */
 
-import javax.swing.JFrame;
 import java.awt.Button;
 import java.awt.FileDialog;
 import java.awt.FlowLayout;
 import java.awt.Toolkit;
 import java.lang.reflect.InvocationTargetException;
+import javax.swing.JFrame;
 
 public class FileDialogOpenDirTest {
     private static JFrame initialize() {
