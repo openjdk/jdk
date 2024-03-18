@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,29 @@
  * questions.
  */
 
-/* @test
- * @bug 8154816
- * @summary Caps Lock doesn't work as expected when using Pinyin Simplified input method
- * @author Dmitry Markov
- * @run applet/manual=yesno bug8154816.html
+package compiler.vectorapi.reshape;
+
+import compiler.vectorapi.reshape.tests.TestVectorCast;
+import compiler.vectorapi.reshape.utils.TestCastMethods;
+import compiler.vectorapi.reshape.utils.VectorReshapeHelper;
+
+/*
+ * @test
+ * @bug 8321021 8321023 8321024
+ * @key randomness
+ * @modules jdk.incubator.vector
+ * @modules java.base/jdk.internal.misc
+ * @summary Test that vector cast intrinsics work as intended on riscv (rvv).
+ * @requires os.arch == "riscv64" & vm.cpu.features ~= ".*v,.*"
+ * @library /test/lib /
+ * @run main/timeout=300 compiler.vectorapi.reshape.TestVectorCastRVV
  */
-
-import javax.swing.*;
-
-public class bug8154816 extends JApplet {
-    @Override
-    public void init() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Text field:"));
-                panel.add(new JTextField(20));
-                add(panel);
-            }
-        });
+public class TestVectorCastRVV {
+    public static void main(String[] args) {
+        VectorReshapeHelper.runMainHelper(
+                TestVectorCast.class,
+                TestCastMethods.RVV_CAST_TESTS.stream(),
+                "-XX:+UseRVV");
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,28 +21,17 @@
  * questions.
  */
 
-import javax.swing.JApplet;
-import javax.swing.JTable;
-import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
-/**
- * @test
- * @bug 4222153
- * @author Konstantin Eremin
- * @run applet/manual=yesno bug4222153.html
+/* @test
+ * @bug 4330998
+ * @summary JEditorPane.setText(null) throws NullPointerException.
+ * @run main bug4330998
  */
-public class bug4222153 extends JApplet {
 
-    public void init() {
-        SwingUtilities.invokeLater(() -> {
-            try {
-                UIManager.setLookAndFeel(
-                        "javax.swing.plaf.metal.MetalLookAndFeel");
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-            getContentPane().add(new JTable(2, 2));
-        });
+import javax.swing.JEditorPane;
+
+public class bug4330998 {
+    public static void main(String[] args) {
+        JEditorPane jep = new JEditorPane();
+        jep.setText(null);
     }
 }

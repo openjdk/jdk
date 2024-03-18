@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,12 +20,32 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package nsk.share;
 
-public class NativeUtils {
-    static {
-        System.loadLibrary("native_utils");
+/* @test
+ * @bug 4132993
+ * @summary JDesktopPane.getAllFramesInLayer(..) return iconified frame
+ * @run main bug4132993
+ */
+
+import javax.swing.JDesktopPane;
+import javax.swing.JInternalFrame;
+import javax.swing.JLayeredPane;
+
+
+public class bug4132993 {
+    public static void main(String[] args) throws Exception {
+        JDesktopPane mDesktop = new JDesktopPane();
+        JInternalFrame jif = new JInternalFrame("My Frame");
+        jif.setIconifiable(true);
+        mDesktop.add(jif);
+        jif.setIcon(true);
+        JInternalFrame[] ji =
+                mDesktop.getAllFramesInLayer(JLayeredPane.DEFAULT_LAYER);
+        for (int i = 0; i < ji.length; i++) {
+            if (jif == ji[i]) {
+                return;
+            }
+        }
+        throw new RuntimeException("JDesktopPane.getAllFramesInLayer() failed...");
     }
-
-    public static native long getCurrentPID();
 }
