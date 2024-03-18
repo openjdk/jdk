@@ -21,14 +21,14 @@
  * questions.
  */
 
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.FileDialog;
 import java.awt.Frame;
 import java.lang.reflect.InvocationTargetException;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 /*
  * @test
