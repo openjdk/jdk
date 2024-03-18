@@ -65,30 +65,42 @@ import javax.swing.Timer;
 public class FrameStateTest implements ActionListener, ItemListener {
 
     private static final String INSTRUCTIONS = """
-            <html><body>
-            
-            <h1>FrameStateTest<br>Bug ID: 4157271</h1>
-            <p>This test checks that when setState(Frame.ICONIFIED) is called before
-              	setVisible(true) the Frame is shown in the proper iconified state.<br>
-              	The problem was that it did not honor the initial iconic state, but
-             	instead was shown in the NORMAL state.</p>
-            <h3>Steps to try to reproduce this problem:</h3>
-            When this test is run an Applet Viewer window will display. In the
-            Applet Viewer window select the different options for the Frame (i.e.
-            {Normal, Non-resizalbe}, {Normal, Resizable}, {Iconified, Resizable},
-            {Iconified, Non-resizalbe}). After chosing the Frame's state click the
-            Create Frame button. After the Frame (Frame State Test (Window2)) comes
-            up make sure the proper behavior occurred (Frame shown in proper state).
-            Click the Dispose button to close the Frame. Do the above steps for all
-            the different Frame state combinations available. If you observe the
-            proper behavior the test has passed, Press the Pass button. Otherwise
-            the test has failed, Press the Fail button.
-            Note: In Frame State Test (Window2) you can also chose the different
-            buttons to see different Frame behavior. An example of a problem that
-            has been seen, With the Frame non-resizable you can not iconify the Frame.
-            </body>
-            </html>
-            """;
+        <html><body><p>
+        This test checks that when setState(Frame.ICONIFIED) is called before
+        setVisible(true) the Frame is shown in the proper iconified state.
+        The problem was that it did not honor the initial iconic state, but
+        instead was shown in the NORMAL state.
+        </p><hr/><p>
+        
+        Steps to try to reproduce this problem:
+        </p><p>
+        Select the different options for the Frame:
+            <ul>
+                <li><i>{Normal, Non-resizalbe}</i></li>
+                <li><i>{Normal, Resizable}</i></li>
+                <li><i>{Iconified, Resizable}</i></li>
+                <li><i>{Iconified, Non-resizalbe}</i></li>
+            </ul>
+        After choosing the Frame's state click the
+        Create Frame button.<br>
+        After the Frame (Frame State Test (Window2)) comes
+        up make sure the proper behavior occurred<br>
+        (Frame shown in proper state).<br>
+        Click the Dispose button to close the Frame.<br>
+        
+        </p><hr/><p>
+        
+        Do the above steps for all the different Frame state combinations available.<br>
+        If you observe the proper behavior the test has passed, Press the Pass button.<br>
+        Otherwise the test has failed, Press the Fail button.
+        </p><p>
+        Note: In Frame State Test (Window2) you can also chose the different
+        buttons to see different Frame behavior.<br>An example of a problem that
+        has been seen, with the Frame non-resizable you can not iconify the Frame.
+        </p>
+        </body>
+        </html>
+        """;
 
     public static final int DELAY = 1000;
 
@@ -111,7 +123,7 @@ public class FrameStateTest implements ActionListener, ItemListener {
                 .title("GetBoundsResizeTest Instructions")
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
-                .rows(20)
+                .rows(25)
                 .columns(70)
                 .logArea(10)
                 .splitUIBottom(() -> new FrameStateTest().createPanel())
