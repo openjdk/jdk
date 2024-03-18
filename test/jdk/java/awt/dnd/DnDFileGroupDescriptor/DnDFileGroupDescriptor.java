@@ -27,17 +27,13 @@ import java.awt.Component;
 import java.awt.Frame;
 import java.awt.Panel;
 
-import sun.awt.OSInfo;
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 6242241
  * @summary Tests TransferFlavor that supports DnD of MS Outlook attachments.
  * @requires (os.family == "windows")
- * @modules java.desktop/sun.awt
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual DnDFileGroupDescriptor
  */
 
@@ -58,10 +54,6 @@ public class DnDFileGroupDescriptor {
             """;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
-            throw new SkippedException("This test is for Windows only");
-        }
-
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
@@ -81,7 +73,7 @@ public class DnDFileGroupDescriptor {
         mainPanel.add(dropTarget, "Center");
 
         frame.add(mainPanel);
-        frame.setSize(400,200);
+        frame.setSize(400, 200);
         frame.setAlwaysOnTop(true);
         return frame;
     }
