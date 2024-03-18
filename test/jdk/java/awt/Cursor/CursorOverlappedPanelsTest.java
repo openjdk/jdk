@@ -39,10 +39,10 @@ import javax.swing.JPanel;
  * @build PassFailJFrame
  * @run main/manual CursorOverlappedPanelsTest
  */
+
 public class CursorOverlappedPanelsTest extends Frame {
     public static JFrame initialize() {
         final JFrame frame = new JFrame("Overlapping Panels Cursor Test");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setPreferredSize(new Dimension(400, 400));
