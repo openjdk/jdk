@@ -136,7 +136,7 @@ public final class NativeLibraries {
                                     if (file2.exists()){
                                         return pathWithMember;
                                     }
-                                }    
+                                }
                                 return null;
                             }
                             return file.getCanonicalPath();
@@ -149,7 +149,6 @@ public final class NativeLibraries {
                 return null;
             }
         }
-        
         return loadLibrary(fromClass, name, isBuiltin);
     }
 
