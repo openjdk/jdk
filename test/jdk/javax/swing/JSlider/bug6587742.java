@@ -21,14 +21,6 @@
  * questions.
  */
 
-/* @test
- * @bug 6587742
- * @summary filling half of a JSlider's track is no longer optional
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual bug6587742
- */
-
 import javax.swing.BoxLayout;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -47,6 +39,14 @@ import javax.swing.plaf.metal.MetalTheme;
 import javax.swing.plaf.metal.OceanTheme;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+
+/* @test
+ * @bug 6587742
+ * @summary filling half of a JSlider's track is no longer optional
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug6587742
+ */
 
 public class bug6587742 {
     private static final String INSTRUCTIONS = """
