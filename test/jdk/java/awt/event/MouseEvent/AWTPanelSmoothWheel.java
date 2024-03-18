@@ -29,8 +29,8 @@ import java.awt.Panel;
 /*
  * @test
  * @bug 6730447
- * @summary Support for high resolution mouse wheel is still incomplete.
- *          AWT panel needs to be supported
+ * @summary [Win] To verify the support for high resolution mouse wheel on Windows.
+ *          AWT panel needs to support high-res mouse wheel rotation.
  * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
@@ -68,7 +68,7 @@ public class AWTPanelSmoothWheel {
         Panel panel = new Panel();
         panel.setBackground(Color.GREEN);
         panel.addMouseWheelListener(e -> PassFailJFrame.log(e.toString()));
-        frame.setSize (200,200);
+        frame.setSize (200, 200);
         frame.setLayout(new BorderLayout());
         frame.add(panel, BorderLayout.CENTER);
         return frame;
