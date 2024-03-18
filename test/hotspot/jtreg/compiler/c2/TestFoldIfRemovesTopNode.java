@@ -61,7 +61,7 @@ public class TestFoldIfRemovesTopNode {
     private static void testHelper(int k, boolean flag, int[] array) {
         if (flag) {
             k = new int[k].length;
-            int  j = k + 3;
+            int j = k + 3;
             if (j >= 0 && j <= array.length) {
             }
         }
