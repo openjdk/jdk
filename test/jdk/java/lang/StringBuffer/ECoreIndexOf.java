@@ -139,6 +139,10 @@ public class ECoreIndexOf {
     titles.put(StandardCharsets.UTF_16, "U");
 
     for (int xxy = 0; xxy < 4; xxy++) {
+
+      simpleTest();
+      compareIndexOfLastIndexOf();
+      compareStringStringBuffer();
       for (String decorator : decorators) {
         for (Charset csHaystack : charSets) {
           for (Charset csNeedle : charSets) {
