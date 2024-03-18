@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8192920 8204588 8246774 8248843 8268869 8235876
+ * @bug 8192920 8204588 8246774 8248843 8268869 8235876 8328339
  * @summary Test source launcher
  * @library /tools/lib
  * @enablePreview
@@ -321,7 +321,7 @@ public class SourceLauncherTest extends TestRunner {
     public void testMismatchOfPathAndPackage(Path base) throws IOException {
         Files.createDirectories(base);
         Path file = base.resolve("MismatchOfPathAndPackage.java");
-        Files.write(file, List.of("package p;"));
+        Files.write(file, List.of("package p; class MismatchOfPathAndPackage {}"));
         testError(file, "", "error: end of path to source file does not match its package name p: " + file);
     }
 

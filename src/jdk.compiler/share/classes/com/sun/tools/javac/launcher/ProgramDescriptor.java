@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.launcher;
 
+import com.sun.source.tree.ClassTree;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.resources.LauncherProperties.Errors;
 
@@ -33,6 +34,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -46,30 +48,50 @@ import java.util.TreeSet;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</strong></p>
  */
-public record ProgramDescriptor(ProgramFileObject fileObject, Optional<String> packageName, Path sourceRootPath) {
+public record ProgramDescriptor(
+        ProgramFileObject fileObject,
+        Optional<String> packageName,
+        List<String> declaredTypeNames,
+        Path sourceRootPath) {
     static ProgramDescriptor of(ProgramFileObject fileObject) throws Fault {
         var file = fileObject.getFile();
+        var packageName = ""; // empty string will be converted into an empty optional
+        var declaredTypeNames = new ArrayList<String>();
         try {
             var compiler = JavacTool.create();
             var standardFileManager = compiler.getStandardFileManager(null, null, null);
             var units = List.of(fileObject);
             var task = compiler.getTask(null, standardFileManager, diagnostic -> {}, null, null, units);
             for (var tree : task.parse()) {
+                for (var decl : tree.getTypeDecls()) {
+                    if (decl instanceof ClassTree cdecl) {
+                        declaredTypeNames.add(cdecl.getSimpleName().toString());
+                    }
+                }
                 var packageTree = tree.getPackage();
                 if (packageTree != null) {
-                    var packageName = packageTree.getPackageName().toString();
-                    var root = computeSourceRootPath(file, packageName);
-                    return new ProgramDescriptor(fileObject, Optional.of(packageName), root);
+                    packageName = packageTree.getPackageName().toString();
+                    break;
                 }
             }
         } catch (IOException ignore) {
             // fall through to let actual compilation determine the error message
         }
-        var root = computeSourceRootPath(file, "");
-        return new ProgramDescriptor(fileObject, Optional.empty(), root);
+        if (declaredTypeNames.isEmpty()) {
+            throw new Fault(Errors.NoClass);
+        }
+        var root = computeSourceRootPath(file, packageName);
+        var pn = packageName.isEmpty() ? "" : packageName + '.';
+        return new ProgramDescriptor(
+                fileObject,
+                packageName.isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(packageName),
+                declaredTypeNames.stream().map(name -> pn + name).toList(),
+                root);
     }
 
-    public static Path computeSourceRootPath(Path program, String packageName) {
+    public static Path computeSourceRootPath(Path program, String packageName) throws Fault {
         var absolute = program.normalize().toAbsolutePath();
         var absoluteRoot = absolute.getRoot();
         assert absoluteRoot != null;
