@@ -4,7 +4,7 @@
 #include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/vmatree.hpp"
-#include "nmt/nmtPhysicalDeviceTracker.hpp"
+#include "nmt/nmtMemoryFileTracker.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"

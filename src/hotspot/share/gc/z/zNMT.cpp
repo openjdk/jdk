@@ -28,7 +28,7 @@
 #include "gc/z/zVirtualMemory.hpp"
 #include "memory/allocation.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/nmtPhysicalDeviceTracker.hpp"
+#include "nmt/nmtMemoryFileTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
 MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;

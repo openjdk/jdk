@@ -32,7 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "nmt/memTracker.hpp"
-#include "nmt/nmtPhysicalDeviceTracker.hpp"
+#include "nmt/nmtMemoryFileTracker.hpp"
 
 class ZNMT : public AllStatic {
 private:

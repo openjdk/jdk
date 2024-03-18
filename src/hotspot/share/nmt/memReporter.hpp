@@ -30,7 +30,7 @@
 #include "nmt/memBaseline.hpp"
 #include "nmt/nmtCommon.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
-#include "nmt/nmtPhysicalDeviceTracker.hpp"
+#include "nmt/nmtMemoryFileTracker.hpp"
 #include "oops/instanceKlass.hpp"
 
 /*
