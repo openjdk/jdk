@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, 2024 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,10 @@ import javax.swing.UIManager;
  * @bug 4887836
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @summary Checks if no tooltip modification when no KeyStroke modifier
+ * @summary Checks for white area under the JColorChooser Swatch tab
  * @run main/manual Test4887836
  */
+
 public class Test4887836 {
 
     public static void main(String[] args) throws Exception {
@@ -46,15 +47,16 @@ public class Test4887836 {
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
-                .splitUIRight(Test4887836::createColorChooser)
+                .testUI(Test4887836::createColorChooser)
                 .build()
                 .awaitAndCheck();
     }
 
-
     private static JColorChooser createColorChooser() {
         JColorChooser chooser = new JColorChooser(Color.LIGHT_GRAY);
-        UIManager.put("Label.font", new Font("Perpetua", 0, 36)); // NON-NLS: property and font names
+
+        // NON-NLS: property and font names
+        UIManager.put("Label.font", new Font("Perpetua", 0, 36));
         return chooser;
     }
 }
