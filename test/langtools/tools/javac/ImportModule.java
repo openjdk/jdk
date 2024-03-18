@@ -163,4 +163,85 @@ public class ImportModule extends TestRunner {
 
         }
     }
+
+    @Test
+    public void testConflicts(Path base) throws Exception {
+        Path current = base.resolve(".");
+        Path src = current.resolve("src");
+        Path classes = current.resolve("classes");
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.logging;
+                          import java.lang.System.*;
+                          public class Test {
+                              Logger l;
+                          }
+                          """);
+
+        Files.createDirectories(classes);
+
+        List<String> actualErrors;
+        List<String> expectedErrors;
+
+        actualErrors =
+                new JavacTask(tb)
+                    .options("--enable-preview", "--release", SOURCE_VERSION,
+                             "-XDrawDiagnostics")
+                    .outdir(classes)
+                    .files(tb.findJavaFiles(src))
+                    .run(Task.Expect.FAIL)
+                    .writeAll()
+                    .getOutputLines(Task.OutputKind.DIRECT);
+
+        expectedErrors = List.of(
+                "Test.java:5:5: compiler.err.ref.ambiguous: Logger, kindname.interface, java.lang.System.Logger, java.lang.System, kindname.class, java.util.logging.Logger, java.util.logging",
+                "- compiler.note.preview.filename: Test.java, DEFAULT",
+                "- compiler.note.preview.recompile",
+                "1 error"
+        );
+
+        if (!Objects.equals(expectedErrors, actualErrors)) {
+            throw new AssertionError("Incorrect Output, expected: " + expectedErrors +
+                                      ", actual: " + out);
+
+        }
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.logging;
+                          import java.lang.System.*;
+                          import java.lang.System.Logger;
+                          public class Test {
+                              Logger l;
+                          }
+                          """);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
+
+        tb.writeJavaFiles(src,
+                          """
+                          package test;
+                          import module java.logging;
+                          import java.lang.System.*;
+                          import java.util.logging.Logger;
+                          public class Test {
+                              Logger l;
+                          }
+                          """);
+
+        new JavacTask(tb)
+            .options("--enable-preview", "--release", SOURCE_VERSION)
+            .outdir(classes)
+            .files(tb.findJavaFiles(src))
+            .run()
+            .writeAll();
+
+    }
 }
