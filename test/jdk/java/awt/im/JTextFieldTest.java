@@ -37,7 +37,6 @@ import java.awt.TextField;
 
 import javax.swing.JFrame;
 import javax.swing.JTextField;
-import javax.swing.WindowConstants;
 
 public class JTextFieldTest {
     private static JFrame frame;
@@ -68,7 +67,6 @@ public class JTextFieldTest {
         JTextField tf2 = new JTextField("12345678", 10);
         frame.getContentPane().add(tf1);
         frame.getContentPane().add(tf2);
-        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.pack();
         return frame;
     }
