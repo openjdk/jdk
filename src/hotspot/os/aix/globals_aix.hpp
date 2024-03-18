@@ -55,7 +55,7 @@
   /*  is too small, we might run into resource issues creating many native     */   \
   /*  threads, if it is too large, we reduce our chance of getting a low heap  */   \
   /*  address (needed for compressed Oops).                                    */   \
-  product(uintx, MaxExpectedDataSegmentSize, 8*G, DIAGNOSTIC,                       \
+  product(uintx, MaxExpectedDataSegmentSize, 8*G,                                   \
           "Maximum expected Data Segment Size.")                                    \
                                                                                     \
   /* Use optimized addresses for the polling page.                             */   \
