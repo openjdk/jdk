@@ -54,14 +54,6 @@ final class MonotonicUtil {
         UNSAFE.storeFence();
     }
 
-    static long intOffset(int index) {
-        return ARRAY_INT_BASE_OFFSET + (long) index * ARRAY_INT_INDEX_SCALE;
-    }
-
-    static long byteOffset(int index) {
-        return ARRAY_BYTE_BASE_OFFSET + (long) index * ARRAY_BYTE_INDEX_SCALE;
-    }
-
     static long objectOffset(int index) {
         return ARRAY_OBJECT_BASE_OFFSET + (long) index * ARRAY_OBJECT_INDEX_SCALE;
     }

@@ -1,8 +1,10 @@
 package java.lang;
 
-import jdk.internal.lang.monotonic.InternalMonotonic;
-import jdk.internal.lang.monotonic.InternalMonotonicList;
-import jdk.internal.lang.monotonic.InternalMonotonicMap;
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.javac.PreviewFeature.Feature;
+import jdk.internal.lang.monotonic.MonotonicImpl;
+import jdk.internal.lang.monotonic.MonotonicList;
+import jdk.internal.lang.monotonic.MonotonicMap;
 
 import java.util.Collection;
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.function.Supplier;
  * A collection of utility methods that makes it more convenient to use
  * {@linkplain Monotonic} values.
  */
+@PreviewFeature(feature = Feature.MONOTONIC_VALUES)
 public final class Monotonics {
 
     // Suppresses default constructor, ensuring non-instantiability.
@@ -34,8 +37,8 @@ public final class Monotonics {
      * @param mapper to be used for computing a value
      * @param <V>    the value type for the Monotonic elements in the list
      * @return the current (existing or computed) present monotonic value
-     * @throws IllegalArgumentException if no association exists for the provided
-     *                                  {@code key}.
+     * @throws IndexOutOfBoundsException if the provided {@code index} is less than
+     *                                  zero or equal or greater than the list.size()
      */
     public static <V> V computeIfAbsent(List<Monotonic<V>> list,
                                         int index,
@@ -43,22 +46,7 @@ public final class Monotonics {
         Objects.requireNonNull(list);
         Objects.checkIndex(index, list.size());
         Objects.requireNonNull(mapper);
-        Monotonic<V> monotonic = list.get(index);
-        if (monotonic.isPresent()) {
-            return monotonic.get();
-        }
-        synchronized (mapper) {
-            if (monotonic.isPresent()) {
-                return monotonic.get();
-            }
-            Supplier<V> supplier = new Supplier<V>() {
-                @Override
-                public V get() {
-                    return mapper.apply(index);
-                }
-            };
-            return monotonic.computeIfAbsent(supplier);
-        }
+        return MonotonicList.computeIfAbsent(list, index, mapper);
     }
 
     /**
@@ -84,25 +72,7 @@ public final class Monotonics {
         Objects.requireNonNull(map);
         Objects.requireNonNull(key);
         Objects.requireNonNull(mapper);
-        Monotonic<V> monotonic = map.get(key);
-        if (monotonic == null) {
-            throw new IllegalArgumentException("No such key:" + key);
-        }
-        if (monotonic.isPresent()) {
-            return monotonic.get();
-        }
-        synchronized (mapper) {
-            if (monotonic.isPresent()) {
-                return monotonic.get();
-            }
-            Supplier<V> supplier = new Supplier<V>() {
-                @Override
-                public V get() {
-                    return mapper.apply(key);
-                }
-            };
-            return monotonic.computeIfAbsent(supplier);
-        }
+        return MonotonicMap.computeIfAbsent(map, key, mapper);
     }
 
     /**
@@ -118,7 +88,7 @@ public final class Monotonics {
     public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
                                              boolean background) {
         Objects.requireNonNull(supplier);
-        return InternalMonotonic.asMemoized(supplier, background);
+        return MonotonicImpl.asMemoized(supplier, background);
     }
 
     /**
@@ -137,7 +107,7 @@ public final class Monotonics {
                                                 IntFunction<? extends V> mapper,
                                                 boolean background) {
         Objects.requireNonNull(mapper);
-        return InternalMonotonicList.asMemoized(size, mapper, background);
+        return MonotonicList.asMemoized(size, mapper, background);
     }
 
     /**
@@ -157,7 +127,7 @@ public final class Monotonics {
                                                    Function<? super K, ? extends V> mapper,
                                                    boolean background) {
         Objects.requireNonNull(mapper);
-        return InternalMonotonicMap.asMemoized(keys, mapper, background);
+        return MonotonicMap.asMemoized(keys, mapper, background);
     }
 
 }

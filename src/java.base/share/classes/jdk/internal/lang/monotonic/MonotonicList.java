@@ -34,10 +34,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
-public final class InternalMonotonicList<V>
+public final class MonotonicList<V>
         extends AbstractList<Monotonic<V>>
         implements List<Monotonic<V>> {
 
@@ -45,7 +46,7 @@ public final class InternalMonotonicList<V>
     private final Monotonic<V>[] elements;
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    InternalMonotonicList(int size) {
+    MonotonicList(int size) {
         this.elements = (Monotonic<V>[]) new Monotonic[size];
     }
 
@@ -101,27 +102,59 @@ public final class InternalMonotonicList<V>
 
     @SuppressWarnings("unchecked")
     private Monotonic<V> elementVolatile(int index) {
-        return (Monotonic<V>) UNSAFE.getReferenceVolatile(elements, MonotonicUtil.objectOffset(index));
+        return (Monotonic<V>) UNSAFE.getReferenceVolatile(elements, objectOffset(index));
     }
 
     @SuppressWarnings("unchecked")
     private Monotonic<V> caeElement(int index, Monotonic<V> created) {
         // Make sure no reordering of store operations
         freeze();
-        return (Monotonic<V>) UNSAFE.compareAndExchangeReference(elements, MonotonicUtil.objectOffset(index), null, created);
+        return (Monotonic<V>) UNSAFE.compareAndExchangeReference(elements, objectOffset(index), null, created);
     }
 
     // Factories
 
     public static <V> List<Monotonic<V>> of(int size) {
-        return new InternalMonotonicList<>(size);
+        return new MonotonicList<>(size);
+    }
+
+    public static <V> V computeIfAbsent(List<Monotonic<V>> list,
+                                        int index,
+                                        IntFunction<? extends V> mapper) {
+        Monotonic<V> monotonic = list.get(index);
+        if (monotonic.isPresent()) {
+            return monotonic.get();
+        }
+        Supplier<V> supplier = new Supplier<V>() {
+            @Override
+            public V get() {
+                return mapper.apply(index);
+            }
+        };
+        return monotonic.computeIfAbsent(supplier);
     }
 
     public static <V> IntFunction<V> asMemoized(int size,
                                                 IntFunction<? extends V> mapper,
                                                 boolean background) {
-        // Todo: Fix this
-        throw new UnsupportedOperationException();
+        List<Monotonic<V>> list = Monotonic.ofList(size);
+        IntFunction<V> function = new IntFunction<V>() {
+            @Override
+            public V apply(int value) {
+                return Monotonics.computeIfAbsent(list, value, mapper);
+            }
+        };
+        if (background) {
+            Thread.startVirtualThread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 0; i < size; i++) {
+                        function.apply(i);
+                    }
+                }
+            });
+        }
+        return function;
     }
 
 }

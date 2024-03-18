@@ -189,6 +189,7 @@ public class AccessibleObject implements AnnotatedElement {
      * <li>static final fields declared in any class or interface</li>
      * <li>final fields declared in a {@linkplain Class#isHidden() hidden class}</li>
      * <li>final fields declared in a {@linkplain Class#isRecord() record}</li>
+     * <li>final fields of type {@linkplain Monotonic Monotonic}</li>
      * </ul>
      * <p> The {@code accessible} flag when {@code true} suppresses Java language access
      * control checks to only enable {@linkplain Field#get <em>read</em>} access to
@@ -385,11 +386,15 @@ public class AccessibleObject implements AnnotatedElement {
         msg += " " + pn + "\"" ;
         if (caller != null)
             msg += " to " + caller.getModule();
+        throw newInaccessibleObjectException(msg);
+    }
+
+    InaccessibleObjectException newInaccessibleObjectException(String msg) {
         InaccessibleObjectException e = new InaccessibleObjectException(msg);
         if (printStackTraceWhenAccessFails()) {
             e.printStackTrace(System.err);
         }
-        throw e;
+        return e;
     }
 
     private boolean isSubclassOf(Class<?> queryClass, Class<?> ofClass) {

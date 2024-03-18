@@ -25,7 +25,6 @@
 
 package jdk.internal.lang.monotonic;
 
-import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.AbstractMap;
@@ -40,14 +39,15 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 import static jdk.internal.lang.monotonic.MonotonicUtil.UNSAFE;
 import static jdk.internal.lang.monotonic.MonotonicUtil.uoe;
 
-public final class InternalMonotonicMap<K, V>
+public final class MonotonicMap<K, V>
         extends AbstractMap<K, Monotonic<V>>
         implements Map<K, Monotonic<V>> {
 
-    private static final long SALT32L = Long.MAX_VALUE; // TODO dummy; also investigate order
+    private static final long SALT32L = Long.MAX_VALUE; // Todo: reuse from ImmutableCollections
     private static final int EXPAND_FACTOR = 2;
 
     @Stable
@@ -57,7 +57,7 @@ public final class InternalMonotonicMap<K, V>
 
     // keys array not trusted
     @SuppressWarnings("unchecked")
-    InternalMonotonicMap(Object[] keys) {
+    MonotonicMap(Object[] keys) {
         this.size = keys.length;
 
         int len = EXPAND_FACTOR * keys.length * 2;
@@ -76,7 +76,7 @@ public final class InternalMonotonicMap<K, V>
             }
         }
 
-        UNSAFE.storeFence(); // ensure keys are visible if table is visible
+        freeze(); // ensure keys are visible if table is visible
         this.table = table;
     }
 
@@ -105,34 +105,32 @@ public final class InternalMonotonicMap<K, V>
 
     private Monotonic<V> value(int keyIndex) {
         @SuppressWarnings("unchecked")
-        Monotonic<V> cc = (Monotonic<V>) table[keyIndex + 1];
-        if (cc != null) {
-            return cc;
+        Monotonic<V> m = (Monotonic<V>) table[keyIndex + 1];
+        if (m != null) {
+            return m;
         }
         return slowValue(keyIndex);
     }
 
     @SuppressWarnings("unchecked")
     private Monotonic<V> slowValue(int keyIndex) {
-        Monotonic<V> cc = (Monotonic<V>) getTableItemVolatile(keyIndex + 1);
-        if (cc != null) {
-            return cc;
+        Monotonic<V> m = (Monotonic<V>) tableItemVolatile(keyIndex + 1);
+        if (m != null) {
+            return m;
         }
         // racy, only use the one who uploaded first
-        return (Monotonic<V>) caeTableItemVolatile(keyIndex, Monotonic.of());
+        return (Monotonic<V>) caeTableItemWitness(keyIndex + 1, Monotonic.of());
     }
 
-    private Object getTableItemVolatile(int index) {
-        return UNSAFE.getReferenceVolatile(table, offset(index));
+    private Object tableItemVolatile(int index) {
+        return UNSAFE.getReferenceVolatile(table, objectOffset(index));
     }
 
-    private Object caeTableItemVolatile(int index, Object o) {
-        var w = UNSAFE.compareAndExchangeReference(table, offset(index), null, o);
+    private Object caeTableItemWitness(int index, Object o) {
+        // Make sure no reordering of store operations
+        freeze();
+        var w = UNSAFE.compareAndExchangeReference(table, objectOffset(index), null, o);
         return w == null ? o : w;
-    }
-
-    private static long offset(int index) {
-        return Unsafe.ARRAY_OBJECT_BASE_OFFSET + (long) index * Unsafe.ARRAY_OBJECT_INDEX_SCALE;
     }
 
     @Override
@@ -252,13 +250,48 @@ public final class InternalMonotonicMap<K, V>
         // Checks for null keys and removes any duplicates
         Object[] keyArray = Set.copyOf(keys)
                 .toArray();
-        return new InternalMonotonicMap<>(keyArray);
+        return new MonotonicMap<>(keyArray);
+    }
+
+    public static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
+                                           K key,
+                                           Function<? super K, ? extends V> mapper) {
+        Monotonic<V> monotonic = map.get(key);
+        if (monotonic == null) {
+            throw new IllegalArgumentException("No such key:" + key);
+        }
+        if (monotonic.isPresent()) {
+            return monotonic.get();
+        }
+        Supplier<V> supplier = new Supplier<V>() {
+            @Override
+            public V get() {
+                return mapper.apply(key);
+            }
+        };
+        return monotonic.computeIfAbsent(supplier);
     }
 
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
                                                    Function<? super K, ? extends V> mapper,
                                                    boolean background) {
-        // Todo: Fix this
-        throw new UnsupportedOperationException();
+        Map<K, Monotonic<V>> list = Monotonic.ofMap(keys);
+        Function<K, V> function = new Function<K, V>() {
+            @Override
+            public V apply(K k) {
+                return mapper.apply(k);
+            }
+        };
+        if (background) {
+            Thread.startVirtualThread(new Runnable() {
+                @Override
+                public void run() {
+                    for (K key:keys) {
+                        function.apply(key);
+                    }
+                }
+            });
+        }
+        return function;
     }
 }

@@ -23,7 +23,8 @@
 
 /* @test
  * @summary Basic tests for Monotonic.Map implementations
- * @run junit BasicMonotonicMapTest
+ * @compile --enable-preview -source ${jdk.version} BasicMonotonicMapTest.java
+ * @run junit/othervm --enable-preview BasicMonotonicMapTest
  */
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,18 +34,12 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -140,9 +135,10 @@ final class BasicMonotonicMapTest {
         }
     }
 
-    static String expectedToString(Map<?, ?> map) {
-        var other = Map.copyOf(map);
-        return other.toString();
+    static String expectedToString(Map<String, Monotonic<Integer>> map) {
+        return "{" + map.entrySet()
+                .stream().map(e -> e.getKey() + "=" + e.getValue())
+                .collect(Collectors.joining(", ")) + "}";
     }
 
 }

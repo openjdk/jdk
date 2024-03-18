@@ -23,7 +23,8 @@
 
 /* @test
  * @summary Basic tests for Monotonic.List implementations
- * @run junit BasicMonotonicListTest
+ * @compile --enable-preview -source ${jdk.version} BasicMonotonicListTest.java
+ * @run junit/othervm --enable-preview BasicMonotonicListTest
  */
 
 import org.junit.jupiter.api.*;
@@ -31,12 +32,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;

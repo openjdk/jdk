@@ -174,7 +174,14 @@ class Field extends AccessibleObject implements Member {
     @CallerSensitive
     public void setAccessible(boolean flag) {
         AccessibleObject.checkPermission();
-        if (flag) checkCanSetAccessible(Reflection.getCallerClass());
+        if (flag) {
+            if (Monotonic.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
+                throw newInaccessibleObjectException(
+                        "Unable to make field " + this + " accessable: " +
+                                "Monotonic fields are trusted");
+            }
+            checkCanSetAccessible(Reflection.getCallerClass());
+        }
         setAccessible0(flag);
     }
 

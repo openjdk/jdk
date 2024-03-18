@@ -656,10 +656,8 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
-        for (String name: List.of("java.lang.Monotonic", "java.lang.Monotonic.List", "java.lang.Monotonic.Map")) {
-            if (f.getType().getName().equals(name)) {
-                throw new UnsupportedOperationException("can't get field offset for a " + name + "java.lang.Monotonic: " + f);
-            }
+        if (f.getType().getName().equals("java.lang.Monotonic")) {
+            throw new UnsupportedOperationException("can't get field offset for a field of type java.lang.Monotonic: " + f);
         }
         return theInternalUnsafe.objectFieldOffset(f);
     }

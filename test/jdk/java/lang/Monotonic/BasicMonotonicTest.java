@@ -23,12 +23,15 @@
 
 /* @test
  * @summary Basic tests for Monotonic implementations
- * @run junit BasicMonotonicTest
+ * @compile --enable-preview -source ${jdk.version} BasicMonotonicTest.java
+ * @run junit/othervm --enable-preview BasicMonotonicTest
  */
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InaccessibleObjectException;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
@@ -120,6 +123,41 @@ final class BasicMonotonicTest {
         // Make sure the original supplier is not invoked more than once
         assertEquals(FIRST, memoized.get());
         assertEquals(1, cSup.cnt());
+    }
+
+    @Test
+    void reflection() throws NoSuchFieldException {
+        final class Holder {
+            private final Monotonic<Integer> monotonic = Monotonic.of();
+        }
+        final class HolderNonFinal {
+            private Monotonic<Integer> monotonic = Monotonic.of();
+        }
+
+        Field field = Holder.class.getDeclaredField("monotonic");
+        assertThrows(InaccessibleObjectException.class, () ->
+                        field.setAccessible(true)
+                );
+
+        Field fieldNonFinal = HolderNonFinal.class.getDeclaredField("monotonic");
+        assertDoesNotThrow(() -> fieldNonFinal.setAccessible(true));
+
+    }
+
+    @Test
+    void sunMiscUnsafe() throws NoSuchFieldException, IllegalAccessException {
+        Field unsafeField = sun.misc.Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        sun.misc.Unsafe unsafe = (sun.misc.Unsafe)unsafeField.get(null);
+
+        final class Holder {
+            private final Monotonic<Integer> monotonic = Monotonic.of();
+        }
+        Field field = Holder.class.getDeclaredField("monotonic");
+        assertThrows(UnsupportedOperationException.class, () ->
+                unsafe.objectFieldOffset(field)
+        );
+
     }
 
     static final class CountingSupplier<T> implements Supplier<T> {

@@ -23,7 +23,8 @@
 
 /* @test
  * @summary Demo of the JEP examples.
- * @run junit JepDemo
+ * @compile --enable-preview -source ${jdk.version} JepDemo.java
+ * @run junit/othervm --enable-preview JepDemo
  */
 
 import org.junit.jupiter.api.Test;

@@ -81,6 +81,8 @@ public @interface PreviewFeature {
         CLASSFILE_API,
         @JEP(number=461, title="Stream Gatherers", status="Preview")
         STREAM_GATHERERS,
+        @JEP(number=8312611, title="Monotonic Values", status="Preview")
+        MONOTONIC_VALUES,
         /**
          * A key for testing.
          */

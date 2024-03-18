@@ -25,9 +25,10 @@
 
 package java.lang;
 
-import jdk.internal.lang.monotonic.InternalMonotonic;
-import jdk.internal.lang.monotonic.InternalMonotonicList;
-import jdk.internal.lang.monotonic.InternalMonotonicMap;
+import jdk.internal.javac.PreviewFeature;
+import jdk.internal.lang.monotonic.MonotonicImpl;
+import jdk.internal.lang.monotonic.MonotonicList;
+import jdk.internal.lang.monotonic.MonotonicMap;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,6 +36,8 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Map;
 import java.util.function.Supplier;
+
+import static jdk.internal.javac.PreviewFeature.*;
 
 /**
  * A <em>monotonic value</em> that can be bound at most once.
@@ -47,7 +50,8 @@ import java.util.function.Supplier;
  * @param <V> value type
  * @since 23
  */
-public sealed interface Monotonic<V> permits InternalMonotonic {
+@PreviewFeature(feature = Feature.MONOTONIC_VALUES)
+public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
      * If a value is present, returns the value, otherwise throws
@@ -133,7 +137,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      * @param <V> the value type to bind
      */
     static <V> Monotonic<V> of() {
-        return InternalMonotonic.of();
+        return MonotonicImpl.of();
     }
 
     /**
@@ -155,7 +159,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
         if (size < 0) {
             throw new IllegalArgumentException();
         }
-        return InternalMonotonicList.of(size);
+        return MonotonicList.of(size);
     }
 
     /**
@@ -176,7 +180,7 @@ public sealed interface Monotonic<V> permits InternalMonotonic {
      */
     static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
-        return InternalMonotonicMap.ofMap(keys);
+        return MonotonicMap.ofMap(keys);
     }
 
 }
