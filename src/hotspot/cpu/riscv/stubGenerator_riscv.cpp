@@ -5250,6 +5250,8 @@ static const int64_t right_3_bits = right_n_bits(3);
     return start;
   }
 
+#endif // COMPILER2
+
   /**
    *  Arguments:
    *
@@ -5294,8 +5296,6 @@ static const int64_t right_3_bits = right_n_bits(3);
 
     return start;
   }
-
-#endif // COMPILER2
 
 #if INCLUDE_JFR
 
