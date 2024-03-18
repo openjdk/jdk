@@ -3835,27 +3835,29 @@ public class Resolve {
      */
     private boolean isAllowedEarlyReference(Env<AttrContext> env, Symbol sym) {
 
+// TEMP DEBUG - this method is not quite right
+//System.out.println("isAllowedEarlyReference():"
+//+"\n  sym="+sym+" \"" + sym.name + "\""
+//+"\n  sym.owner="+sym.owner
+//+"\n  tree="+env.tree+" (" + env.tree.getTag() + ")"
+//+"\n  currentClass="+env.enclClass.sym
+//);
+
         // Must be assignment
         if (!env.tree.hasTag(ASSIGN))
             return false;
 
-        // Allow "x" or "this.x" (BUG: the logic below fails if "x" is declared by a superclass)
-        JCExpression lhs = ((JCAssign)env.tree).lhs;
-        if (TreeInfo.isIdentOrThisDotIdent(lhs))
+        // Allow "this" which, if part of an assignment, must just be a qualifier
+        JCExpression lhs = TreeInfo.skipParens(((JCAssign)env.tree).lhs);
+        if (sym.name == names._this)
             return true;
 
-        // Allow "Foo.this.x" (BUG: the logic below fails if "x" is declared by a superclass)
-        if (!lhs.hasTag(SELECT))
-            return false;
-        JCExpression qualifier = TreeInfo.skipParens(((JCFieldAccess)lhs).selected);
-        if (!qualifier.hasTag(SELECT))
-            return false;
-        JCFieldAccess qualSelect = (JCFieldAccess)qualifier;
-        if (qualSelect.name != names._this)
-            return false;
+        // Allow a plain identifier "x" if "x" is declared by the class being constructed
+        if (sym.owner == env.enclClass.sym)
+            return true;
 
-        // OK
-        return true;
+        // Disallow
+        return false;
     }
 
     /**
