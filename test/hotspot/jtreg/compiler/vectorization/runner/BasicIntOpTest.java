@@ -66,56 +66,56 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-    counts = {IRNode.SUB_VI, ">0"})
+        counts = {IRNode.SUB_VI, ">0"})
     public int[] vectorNeg() {
-    int[] res = new int[SIZE];
-    for (int i = 0; i < SIZE; i++) {
-    res[i] = -a[i];
-    }
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = -a[i];
+        }
         return res;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
-    counts = {IRNode.ABS_VI, ">0"})
+        counts = {IRNode.ABS_VI, ">0"})
     public int[] vectorAbs() {
-    int[] res = new int[SIZE];
-    for (int i = 0; i < SIZE; i++) {
-    res[i] = Math.abs(a[i]);
-    }
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Math.abs(a[i]);
+        }
         return res;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-    counts = {IRNode.ADD_VI, ">0"})
+        counts = {IRNode.ADD_VI, ">0"})
     public int[] vectorAdd() {
-    int[] res = new int[SIZE];
-    for (int i = 0; i < SIZE; i++) {
-    res[i] = a[i] + b[i];
-    }
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = a[i] + b[i];
+        }
         return res;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-    counts = {IRNode.SUB_VI, ">0"})
+        counts = {IRNode.SUB_VI, ">0"})
     public int[] vectorSub() {
-    int[] res = new int[SIZE];
-    for (int i = 0; i < SIZE; i++) {
-    res[i] = a[i] - b[i];
-    }
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = a[i] - b[i];
+        }
         return res;
     }
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-    counts = {IRNode.MUL_VI, ">0"})
+        counts = {IRNode.MUL_VI, ">0"})
     public int[] vectorMul() {
-    int[] res = new int[SIZE];
-    for (int i = 0; i < SIZE; i++) {
-    res[i] = a[i] * b[i];
-    }
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = a[i] * b[i];
+        }
         return res;
     }
 
@@ -169,6 +169,25 @@ public class BasicIntOpTest extends VectorizationTestRunner {
             Asserts.assertEquals(res[i], Integer.numberOfLeadingZeros(b[i]));
         }
     }
+
+    @Test
+    @IR(counts = {IRNode.COUNTLEADINGZEROS_VI, ">0"})
+    public int[] vectorizeNumberOfLeadingZeros() {
+        int[] res = new int[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Integer.numberOfLeadingZeros(b[i]);
+        }
+        return res;
+    }
+
+    @Run(test = {"vectorizeNumberOfLeadingZeros"})
+    public void checkResult() {
+        int[] res = vectorizeNumberOfLeadingZeros();
+        for (int i = 0; i < SIZE; ++i) {
+            Asserts.assertEquals(res[i], Integer.numberOfLeadingZeros(b[i]));
+        }
+    }
+
 
     // ---------------- Logic ----------------
     @Test

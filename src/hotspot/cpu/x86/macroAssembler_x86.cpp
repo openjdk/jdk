@@ -3536,7 +3536,7 @@ void MacroAssembler::vblendvps(XMMRegister dst, XMMRegister src1, XMMRegister sr
     }
     vpor(dst, dst, scratch, vector_len);
   } else {
-        Assembler::vblendvps(dst, src1, src2, mask, vector_len);
+    Assembler::vblendvps(dst, src1, src2, mask, vector_len);
   }
 }
 
