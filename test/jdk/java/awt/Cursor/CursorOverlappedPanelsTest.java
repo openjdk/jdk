@@ -31,7 +31,7 @@ import javax.swing.JFrame;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 
-/**
+/*
  * @test
  * @bug 8007155
  * @summary [macosx] Disabled panel takes mouse input in JLayeredPane
@@ -53,7 +53,6 @@ public class CursorOverlappedPanelsTest extends Frame {
 
         frame.getContentPane().add(layeredPane);
         frame.pack();
-        frame.setVisible(true);
         return frame;
     }
 
@@ -82,7 +81,7 @@ public class CursorOverlappedPanelsTest extends Frame {
         PassFailJFrame.builder()
                 .title("Overlapping Panels Cursor Test Instructions")
                 .instructions(instructions)
-                .rows(4)
+                .rows((int) instructions.lines().count() + 1)
                 .columns(30)
                 .testUI(CursorOverlappedPanelsTest::initialize)
                 .build()
