@@ -582,7 +582,13 @@ public class ChoiceFormat extends NumberFormat {
     }
 
     @Override
-    public void setLenient(boolean lenient) {
+    public boolean isStrict() {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
+    }
+
+    @Override
+    public void setStrict(boolean strict) {
         throw new UnsupportedOperationException(
                 "ChoiceFormat does not utilize leniency when parsing");
     }

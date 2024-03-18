@@ -38,6 +38,9 @@
 
 package java.text;
 
+import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.ResourceBundleBasedAdapter;
+
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
@@ -50,8 +53,6 @@ import java.util.Currency;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import sun.util.locale.provider.LocaleProviderAdapter;
-import sun.util.locale.provider.ResourceBundleBasedAdapter;
 
 /**
  * {@code DecimalFormat} is a concrete subclass of
@@ -2220,7 +2221,7 @@ public class DecimalFormat extends NumberFormat {
      * @return     the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null.
-     * @see #setLenient(boolean)
+     * @see #setStrict(boolean)
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -2418,14 +2419,14 @@ public class DecimalFormat extends NumberFormat {
                         text.regionMatches(position, positiveSuffix,0, positiveSuffix.length());
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
-                gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
+                gotPositive = isStrict() ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
                 boolean containsNegSuffix =
                         text.regionMatches(position, negativeSuffix,0, negativeSuffix.length());
                 boolean endsWithNegSuffix =
                         containsNegSuffix && text.length() == position  + negativeSuffix.length();
-                gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
+                gotNegative = isStrict() ? endsWithNegSuffix : containsNegSuffix;
             }
 
             // If both match, take longest
@@ -2531,7 +2532,7 @@ public class DecimalFormat extends NumberFormat {
                 }
 
                 // Enforce the grouping size on the first group
-                if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
+                if (isStrict() && isGroupingUsed() && position == startPos + groupingSize
                         && prevSeparatorIndex == -groupingSize && !sawDecimal
                         && digit >= 0 && digit <= 9) {
                     return position;
@@ -2567,7 +2568,7 @@ public class DecimalFormat extends NumberFormat {
                     backup = -1;
                 } else if (!isExponent && ch == decimal) {
                     // Check grouping size on decimal separator
-                    if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
+                    if (isStrict() && isGroupingViolation(position, prevSeparatorIndex)) {
                         return groupingViolationIndex(position, prevSeparatorIndex);
                     }
                     // If we're only parsing integers, or if we ALREADY saw the
@@ -2578,7 +2579,7 @@ public class DecimalFormat extends NumberFormat {
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
                 } else if (!isExponent && ch == grouping && isGroupingUsed()) {
-                    if (parseStrict) {
+                    if (isStrict()) {
                         // text should not start with grouping when strict
                         if (position == startPos) {
                             return startPos;
@@ -2627,7 +2628,7 @@ public class DecimalFormat extends NumberFormat {
             // the final grouping, ex: "1,234". Only check the final grouping
             // if we have not seen a decimal separator, to prevent a non needed check,
             // for ex: "1,234.", "1,234.12"
-            if (parseStrict) {
+            if (isStrict()) {
                 if (!sawDecimal && isGroupingViolation(position, prevSeparatorIndex)) {
                     // -1, since position is incremented by one too many when loop is finished
                     // "1,234%" and "1,234" both end with pos = 5, since '%' breaks

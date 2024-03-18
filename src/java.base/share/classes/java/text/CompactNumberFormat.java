@@ -1580,7 +1580,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @return the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null
-     * @see #setLenient(boolean)
+     * @see #setStrict(boolean)
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -1739,7 +1739,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 status, gotPositive, gotNegative, num);
 
         if (multiplier.longValue() == -1L) {
-            if (parseStrict) {
+            if (isStrict()) {
                 // When strict, if -1L was returned, index should be
                 // reset to the original index to ensure failure
                 pos.index = oldStart;
@@ -1926,7 +1926,7 @@ public final class CompactNumberFormat extends NumberFormat {
         if (prefix.equals(matchedPrefix)
                 || matchedPrefix.equals(defaultPrefix)) {
             // Suffix must match exactly when strict
-            return parseStrict ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
+            return isStrict() ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
                     && text.length() == position + suffix.length()
                     : matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
         }
@@ -1978,7 +1978,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosIndex = compactIndex;
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
-                if (parseStrict) {
+                if (isStrict()) {
                     // when strict, exit early with exact match, same for negative
                     break;
                 }
@@ -1991,7 +1991,7 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedNegIndex = compactIndex;
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
-                if (parseStrict) {
+                if (isStrict()) {
                     break;
                 }
             }
@@ -2007,7 +2007,7 @@ public final class CompactNumberFormat extends NumberFormat {
                     positiveSuffix, 0, positiveSuffix.length());
             boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
                     position + positiveSuffix.length();
-            if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
+            if (isStrict() ? endsWithPosSuffix : containsPosSuffix) {
                 // Matches the default positive prefix
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
@@ -2016,7 +2016,7 @@ public final class CompactNumberFormat extends NumberFormat {
                     negativeSuffix, 0, negativeSuffix.length());
             boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
                     position + negativeSuffix.length();
-            if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
+            if (isStrict() ? endsWithNegSuffix : containsNegSuffix) {
                 // Matches the default negative suffix
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
@@ -2134,7 +2134,7 @@ public final class CompactNumberFormat extends NumberFormat {
         decimalFormat.setGroupingSize(getGroupingSize());
         decimalFormat.setGroupingUsed(isGroupingUsed());
         decimalFormat.setParseIntegerOnly(isParseIntegerOnly());
-        decimalFormat.setLenient(!parseStrict);
+        decimalFormat.setStrict(isStrict());
 
         try {
             defaultDecimalFormat = new DecimalFormat(decimalPattern, symbols);
@@ -2375,9 +2375,9 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     @Override
-    public void setLenient(boolean lenient) {
-        decimalFormat.setLenient(lenient);
-        super.setLenient(lenient);
+    public void setStrict(boolean strict) {
+        decimalFormat.setStrict(strict);
+        super.setStrict(strict);
     }
 
     /**

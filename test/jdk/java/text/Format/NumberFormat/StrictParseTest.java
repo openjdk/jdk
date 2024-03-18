@@ -76,10 +76,10 @@ public class StrictParseTest {
 
     // All NumberFormats should parse strictly
     static {
-        dFmt.setLenient(false);
-        pFmt.setLenient(false);
-        cFmt.setLenient(false);
-        cmpctFmt.setLenient(false);
+        dFmt.setStrict(true);
+        pFmt.setStrict(true);
+        cFmt.setStrict(true);
+        cmpctFmt.setStrict(true);
         // To effectively test strict compactNumberFormat parsing
         cmpctFmt.setParseIntegerOnly(false);
         cmpctFmt.setGroupingUsed(true);
@@ -94,7 +94,7 @@ public class StrictParseTest {
     public void uniqueCaseNumberFormatTest() {
         // Format with grouping size = 3, prefix = a, suffix = b
         DecimalFormat nonLocalizedDFmt = new DecimalFormat("a#,#00.00b");
-        nonLocalizedDFmt.setLenient(false);
+        nonLocalizedDFmt.setStrict(true);
         // Text after suffix
         failParse(nonLocalizedDFmt, "a12bfoo", 3);
         failParse(nonLocalizedDFmt, "a123,456.00bc", 11);
@@ -232,7 +232,7 @@ public class StrictParseTest {
         // default and compact patterns
         CompactNumberFormat cnf = new CompactNumberFormat("a##0.0#b", DecimalFormatSymbols
                 .getInstance(Locale.US), new String[]{"", "c0d"});
-        cnf.setLenient(false);
+        cnf.setStrict(true);
 
         // Existing behavior of failed prefix parsing has errorIndex return
         // the beginning of prefix, even if the error occurred later in the prefix.
