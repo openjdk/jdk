@@ -733,24 +733,6 @@ class BasicTests {
     }
 
     @Test
-    void testSuspend() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertThrows(UnsupportedOperationException.class, () -> group.suspend());
-    }
-
-    @Test
-    void testResume() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertThrows(UnsupportedOperationException.class, () -> group.resume());
-    }
-
-    @Test
-    void testStop() {
-        ThreadGroup group = new ThreadGroup("foo");
-        assertThrows(UnsupportedOperationException.class, () -> group.stop());
-    }
-
-    @Test
     void testNull1() {
         assertThrows(NullPointerException.class,
                      () -> new ThreadGroup(null, "group"));

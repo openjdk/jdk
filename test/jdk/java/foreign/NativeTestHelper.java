@@ -175,9 +175,13 @@ public class NativeTestHelper {
     }
 
     public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
+        return upcallStub(holder, name, descriptor, Arena.ofAuto());
+    }
+
+    public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor, Arena arena) {
         try {
             MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
-            return LINKER.upcallStub(target, descriptor, Arena.ofAuto());
+            return LINKER.upcallStub(target, descriptor, arena);
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

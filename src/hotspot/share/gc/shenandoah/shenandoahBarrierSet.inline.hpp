@@ -123,7 +123,7 @@ inline oop ShenandoahBarrierSet::load_reference_barrier(DecoratorSet decorators,
   }
 
   oop fwd = load_reference_barrier(obj);
-  if (ShenandoahSelfFixing && load_addr != nullptr && fwd != obj) {
+  if (load_addr != nullptr && fwd != obj) {
     // Since we are here and we know the load address, update the reference.
     ShenandoahHeap::atomic_update_oop(fwd, load_addr, obj);
   }
@@ -357,7 +357,7 @@ void ShenandoahBarrierSet::arraycopy_work(T* src, size_t count) {
         if (EVAC && obj == fwd) {
           fwd = _heap->evacuate_object(obj, thread);
         }
-        assert(obj != fwd || _heap->cancelled_gc(), "must be forwarded");
+        shenandoah_assert_forwarded_except(elem_ptr, obj, _heap->cancelled_gc());
         ShenandoahHeap::atomic_update_oop(fwd, elem_ptr, o);
         obj = fwd;
       }

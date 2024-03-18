@@ -30,6 +30,7 @@
 #include "gc/g1/g1DirtyCardQueue.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
 #include "logging/log.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/os.hpp"
 #include "runtime/thread.hpp"
@@ -74,11 +75,7 @@ void G1ConcurrentRefineThread::run_service() {
       }
     }
     report_inactive("Deactivated", _refinement_stats - active_stats_start);
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - _vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
+    track_usage();
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);
@@ -137,6 +134,7 @@ class G1PrimaryConcurrentRefineThread final : public G1ConcurrentRefineThread {
   bool wait_for_completed_buffers() override;
   bool maybe_deactivate() override;
   void do_refinement_step() override;
+  void track_usage() override;
 
 public:
   G1PrimaryConcurrentRefineThread(G1ConcurrentRefine* cr) :
@@ -179,6 +177,15 @@ void G1PrimaryConcurrentRefineThread::do_refinement_step() {
       // Refinement was cut off, so proceed with fewer threads.
       cr()->reduce_threads_wanted();
     }
+  }
+}
+
+void G1PrimaryConcurrentRefineThread::track_usage() {
+  G1ConcurrentRefineThread::track_usage();
+  // The primary thread is responsible for updating the CPU time for all workers.
+  if (UsePerfData && os::is_thread_cpu_time_supported()) {
+    ThreadTotalCPUTimeClosure tttc(CPUTimeGroups::CPUTimeType::gc_conc_refine);
+    cr()->threads_do(&tttc);
   }
 }
 

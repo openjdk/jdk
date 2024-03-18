@@ -19,7 +19,7 @@ dnl Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 dnl or visit www.oracle.com if you need additional information or have any
 dnl questions.
 dnl
-dnl 
+dnl
 dnl Process this file with m4 ad_encode.m4 to generate the load/store
 dnl patterns used in aarch64.ad.
 dnl
@@ -90,4 +90,3 @@ STORE(vRegD,strd,Float,,8)
       loadStore(_masm, &MacroAssembler::strb, zr, $mem->opcode(),
                as_Register($mem$$base), $mem$$index, $mem$$scale, $mem$$disp, 1);
   %}
-

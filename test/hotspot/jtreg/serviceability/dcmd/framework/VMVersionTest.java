@@ -34,10 +34,8 @@ import org.testng.annotations.Test;
  * @test
  * @bug 8221730
  * @summary Test of diagnostic command VM.version (tests all DCMD executors)
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.misc
+ * @enablePreview
+ * @modules java.base/jdk.internal.misc
  *          java.base/jdk.internal.module
  *          java.compiler
  *          java.management

@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4937672 5100706 6252456
+ * @key printer
  * @run main/othervm/manual -Djava.security.manager=allow SecurityDialogTest
  */
 

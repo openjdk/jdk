@@ -28,6 +28,7 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 
 /*
  * @test
+ * @key printer
  * @bug 4901243 8040139 8167291
  * @summary JPG, GIF, and PNG DocFlavors (URL) should be supported if Postscript is supported.
  * @run main Services_getDocFl

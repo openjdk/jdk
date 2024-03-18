@@ -24,6 +24,7 @@
 /**
  * @test
  * @bug 4185019
+ * @key printer
  * @summary Confirm that all of the drawString methods on Graphics2D
  *          work for printer graphics objects.
  * @run main/manual DrawStringMethods

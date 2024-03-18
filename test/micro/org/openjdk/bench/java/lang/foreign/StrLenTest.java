@@ -48,7 +48,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
-@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED" })
+@Fork(value = 3, jvmArgsAppend = { "--enable-native-access=ALL-UNNAMED", "-Djava.library.path=micro/native" })
 public class StrLenTest extends CLayouts {
 
     Arena arena = Arena.ofConfined();
@@ -90,7 +90,7 @@ public class StrLenTest extends CLayouts {
     }
 
     @Benchmark
-    public int panama_strlen() throws Throwable {
+    public int panama_strlen_alloc() throws Throwable {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocateFrom(str);
             return (int)STRLEN.invokeExact(segment);
@@ -104,10 +104,9 @@ public class StrLenTest extends CLayouts {
 
     @Benchmark
     public int panama_strlen_pool() throws Throwable {
-        Arena arena = pool.acquire();
-        int l = (int) STRLEN.invokeExact(arena.allocateFrom(str));
-        arena.close();
-        return l;
+        try (Arena arena = pool.acquire()) {
+            return (int) STRLEN.invokeExact(arena.allocateFrom(str));
+        }
     }
 
     @Benchmark

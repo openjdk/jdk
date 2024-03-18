@@ -27,6 +27,7 @@
 #include "runtime/os.hpp"
 
 ZLargePages::State ZLargePages::_state;
+bool ZLargePages::_os_enforced_transparent_mode;
 
 void ZLargePages::initialize() {
   pd_initialize();
@@ -41,9 +42,17 @@ const char* ZLargePages::to_string() {
     return "Enabled (Explicit)";
 
   case Transparent:
-    return "Enabled (Transparent)";
+    if (_os_enforced_transparent_mode) {
+      return "Enabled (Transparent, OS enforced)";
+    } else {
+      return "Enabled (Transparent)";
+    }
 
   default:
-    return "Disabled";
+    if (_os_enforced_transparent_mode) {
+      return "Disabled (OS enforced)";
+    } else {
+      return "Disabled";
+    }
   }
 }

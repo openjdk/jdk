@@ -26,11 +26,7 @@
  * @bug 8186046
  * @summary Test nested dynamic constant declarations that are recursive
  * @compile CondyNestedTest_Code.jcod
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  * @run testng CondyNestedTest
  * @run testng/othervm -XX:+UnlockDiagnosticVMOptions -XX:UseBootstrapCallInfo=3 CondyNestedTest
  */
@@ -83,10 +79,10 @@ public class CondyNestedTest {
 //                "bsmIndy",
 //                bsmIndyDescriptor
 //        );
-//        byte[] byteArray = Classfile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
+//        byte[] byteArray = ClassFile.of().build(ClassDesc.of(genClassName), classBuilder -> classBuilder
 //                .withVersion(55, 0)
 //                .withSuperclass(ConstantDescs.CD_Object)
-//                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder
+//                .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
 //                        .withCode(codeBuilder -> codeBuilder
 //                                .aload(0)
 //                                .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
@@ -94,7 +90,7 @@ public class CondyNestedTest {
 //                        )
 //                )
 //                .withMethod("main", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType()),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> {
 //                                            codeBuilder
 //                                                    .aload(0)
@@ -138,7 +134,7 @@ public class CondyNestedTest {
 //                // bsm that when used with indy returns a call site whose target is MethodHandles.constant(String.class, name), and
 //                // when used with condy returns the name
 //                .withMethod("bsm", MethodTypeDesc.ofDescriptor(bsmDescriptor),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> {
 //                                            codeBuilder
 //                                                    .aload(2)
@@ -168,7 +164,7 @@ public class CondyNestedTest {
 //                )
 //                // an indy bsm, that returns a call site whose target is MethodHandles.constant(String.class, methodName)
 //                .withMethod("bsmIndy", MethodTypeDesc.ofDescriptor(bsmIndyDescriptor),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_PUBLIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_PUBLIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> codeBuilder
 //                                        .new_(ClassDesc.ofDescriptor(ConstantCallSite.class.descriptorString()))
 //                                        .dup()
@@ -184,7 +180,7 @@ public class CondyNestedTest {
 //                                )
 //                )
 //                .withMethod("condy_bsm_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> codeBuilder
 //                                        .ldc(DynamicConstantDesc.ofNamed(
 //                                                        bsmMhDesc,
@@ -202,7 +198,7 @@ public class CondyNestedTest {
 //                                )
 //                )
 //                .withMethod("indy_bsmIndy_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> codeBuilder
 //                                        .invokedynamic(DynamicCallSiteDesc.of(
 //                                                        bsmIndyMhDesc,
@@ -220,7 +216,7 @@ public class CondyNestedTest {
 //                                )
 //                )
 //                .withMethod("indy_bsm_condy_bsm", MethodTypeDesc.of(ConstantDescs.CD_Object),
-//                        Classfile.ACC_PUBLIC + Classfile.ACC_STATIC, methodBuilder -> methodBuilder
+//                        ClassFile.ACC_PUBLIC + ClassFile.ACC_STATIC, methodBuilder -> methodBuilder
 //                                .withCode(codeBuilder -> codeBuilder
 //                                        .invokedynamic(DynamicCallSiteDesc.of(
 //                                                        bsmMhDesc,

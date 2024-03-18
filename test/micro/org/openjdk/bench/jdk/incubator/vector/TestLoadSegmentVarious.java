@@ -55,6 +55,9 @@ public class TestLoadSegmentVarious {
     private static final VectorSpecies<Integer> INTEGER_SPECIES = VectorSpecies.ofLargestShape(int.class);
     private static final VectorSpecies<Double> DOUBLE_SPECIES = VectorSpecies.ofLargestShape(double.class);
 
+    private static final VectorMask<Integer> INTEGER_MASK = VectorMask.fromLong(INTEGER_SPECIES, (1 << (INTEGER_SPECIES.length() / 2)) - 1);
+    private static final VectorMask<Double> DOUBLE_MASK = VectorMask.fromLong(DOUBLE_SPECIES, (1 << (DOUBLE_SPECIES.length() / 2)) - 1);
+
     // Must be evenly dividable by Double.BYTES
     @Param("1024")
     private int size;
@@ -253,4 +256,27 @@ public class TestLoadSegmentVarious {
         }
     }
 
+    @Benchmark
+    public void intVectorFromIntBackedSegmentMasked(Blackhole bh) {
+        for (int i = 0; i < INTEGER_SPECIES.loopBound(intSrcArray.length); i += INTEGER_SPECIES.vectorByteSize()) {
+            var v = IntVector.fromMemorySegment(INTEGER_SPECIES, doubleSegment, i, ByteOrder.nativeOrder(), INTEGER_MASK);
+            bh.consume(v);
+        }
+    }
+
+    @Benchmark
+    public void intVectorFromDoubleBackedSegmentMasked(Blackhole bh) {
+        for (int i = 0; i < INTEGER_SPECIES.loopBound(intSrcArray.length); i += INTEGER_SPECIES.vectorByteSize()) {
+            var v = IntVector.fromMemorySegment(INTEGER_SPECIES, doubleSegment, i, ByteOrder.nativeOrder(), INTEGER_MASK);
+            bh.consume(v);
+        }
+    }
+
+    @Benchmark
+    public void doubleVectorFromIntBackedSegmentMasked(Blackhole bh) {
+        for (int i = 0; i < DOUBLE_SPECIES.loopBound(doubleSrcArray.length); i += DOUBLE_SPECIES.vectorByteSize()) {
+            var v = DoubleVector.fromMemorySegment(DOUBLE_SPECIES, intSegment, i, ByteOrder.nativeOrder(), DOUBLE_MASK);
+            bh.consume(v);
+        }
+    }
 }

@@ -111,6 +111,8 @@ public class TestLegalNotices extends JavadocTester {
         super.out.println("   Found: " + foundFiles);
         if (foundFiles.equals(expectFiles)) {
             passed("Found all expected files");
+        } else {
+            failed("Did not find all expected files");
         }
 
         // See JDK-8306980

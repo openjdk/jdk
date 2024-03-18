@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
@@ -116,7 +116,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
@@ -2275,6 +2275,33 @@ instruct reinterpret_resize_gt128b(vReg dst, vReg src, pReg ptmp, rFlagsReg cr) 
   %}
   ins_pipe(pipe_slow);
 %}
+
+// ---------------------------- Vector zero extend --------------------------------
+dnl VECTOR_ZERO_EXTEND($1,      $2,     $3,      $4,       $5        $6,        $7,         )
+dnl VECTOR_ZERO_EXTEND(op_name, dst_bt, src_bt,  dst_size, src_size, assertion, neon_comment)
+define(`VECTOR_ZERO_EXTEND', `
+instruct vzeroExt$1toX(vReg dst, vReg src) %{
+  match(Set dst (VectorUCast`$1'2X src));
+  format %{ "vzeroExt$1toX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    assert($6, "must be");
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      // $7
+      __ neon_vector_extend($dst$$FloatRegister, $2, length_in_bytes,
+                            $src$$FloatRegister, $3, /* is_unsigned */ true);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_vector_extend($dst$$FloatRegister, __ $4,
+                           $src$$FloatRegister, __ $5, /* is_unsigned */ true);
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}')dnl
+VECTOR_ZERO_EXTEND(B, bt,     T_BYTE,  elemType_to_regVariant(bt), B, bt == T_SHORT || bt == T_INT || bt == T_LONG, `4B to 4S/4I, 8B to 8S')
+VECTOR_ZERO_EXTEND(S, T_INT,  T_SHORT, elemType_to_regVariant(bt), H, bt == T_INT || bt == T_LONG,                  `4S to 4I')
+VECTOR_ZERO_EXTEND(I, T_LONG, T_INT,   D,                          S, bt == T_LONG,                                 `2I to 2L')
 
 // ------------------------------ Vector cast ----------------------------------
 

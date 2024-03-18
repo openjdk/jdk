@@ -90,11 +90,26 @@ abstract class ReferencePipeline<P_IN, P_OUT>
      * Constructor for appending an intermediate operation onto an existing
      * pipeline.
      *
-     * @param upstream the upstream element source.
+     * @param upstream the upstream element source
+     * @param opFlags The operation flags for this operation, described in
+     *        {@link StreamOpFlag}
      */
     ReferencePipeline(AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
         super(upstream, opFlags);
     }
+
+     /**
+      * Constructor for appending an intermediate operation onto an existing
+      * pipeline.
+      *
+      * @param upupstream the upstream of the upstream element source
+      * @param upstream the upstream element source
+      * @param opFlags The operation flags for this operation, described in
+      *        {@link StreamOpFlag}
+      */
+     protected ReferencePipeline(AbstractPipeline<?, P_IN, ?> upupstream, AbstractPipeline<?, P_IN, ?> upstream, int opFlags) {
+         super(upupstream, upstream, opFlags);
+     }
 
     // Shape-specific methods
 
@@ -668,8 +683,13 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
+    public final <R> Stream<R> gather(Gatherer<? super P_OUT, ?, R> gatherer) {
+        return GathererOp.of(this, gatherer);
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
-    public final <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
+    public <R, A> R collect(Collector<? super P_OUT, A, R> collector) {
         A container;
         if (isParallel()
                 && (collector.characteristics().contains(Collector.Characteristics.CONCURRENT))
@@ -687,7 +707,7 @@ abstract class ReferencePipeline<P_IN, P_OUT>
     }
 
     @Override
-    public final <R> R collect(Supplier<R> supplier,
+    public <R> R collect(Supplier<R> supplier,
                                BiConsumer<R, ? super P_OUT> accumulator,
                                BiConsumer<R, R> combiner) {
         return evaluate(ReduceOps.makeRef(supplier, accumulator, combiner));

@@ -206,8 +206,8 @@ compiler.err.two.class.loaders.2
 compiler.err.unmatched.quote
 compiler.err.unsupported.release.version
 compiler.warn.profile.target.conflict
-compiler.warn.source.target.conflict
-compiler.warn.target.default.source.conflict
+compiler.err.source.target.conflict
+compiler.err.target.default.source.conflict
 compiler.err.preview.not.latest
 compiler.err.preview.without.source.or.release
 compiler.misc.illegal.signature                               # the compiler can now detect more non-denotable types before class writing
@@ -217,7 +217,3 @@ compiler.err.annotation.unrecognized.attribute.name
 
 # this one is transitional (waiting for FFM API to exit preview)
 compiler.warn.restricted.method
-
-# Pending removal
-compiler.note.implicit.annotation.processing
-compiler.warn.proc.use.proc.or.implicit

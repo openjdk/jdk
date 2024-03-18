@@ -525,6 +525,12 @@ const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /*
   return string != nullptr ? c_str(resolve_non_null(string), thread, c_heap) : nullptr;
 }
 
+void JfrJavaSupport::free_c_str(const char* str, bool c_heap) {
+  if (c_heap) {
+    FREE_C_HEAP_ARRAY(char, str);
+  }
+}
+
 static Symbol** allocate_symbol_array(bool c_heap, int length, Thread* thread) {
   return c_heap ?
            NEW_C_HEAP_ARRAY(Symbol*, length, mtTracing) :
@@ -546,6 +552,7 @@ Symbol** JfrJavaSupport::symbol_array(jobjectArray string_array, JavaThread* thr
     if (object != nullptr) {
       const char* text = c_str(arrayOop->obj_at(i), thread, c_heap);
       symbol = SymbolTable::new_symbol(text);
+      free_c_str(text, c_heap);
     }
     result_array[i] = symbol;
   }

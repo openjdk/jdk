@@ -23,18 +23,14 @@
 
 import java.io.*;
 import java.lang.annotation.ElementType;
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.*;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.*;
 
 /*
  * @test Presence
  * @bug 6843077
  * @summary test that all type annotations are present in the classfile
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  */
 
 public class Presence {
@@ -46,7 +42,7 @@ public class Presence {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
 
-        ClassModel cm = Classfile.of().parse(classFile.toPath());
+        ClassModel cm = ClassFile.of().parse(classFile.toPath());
         test(cm);
         for (FieldModel fm : cm.fields()) {
             test(fm);

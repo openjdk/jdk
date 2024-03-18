@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
- * Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2471,7 +2471,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     ExternalAddress target((address) JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x10, Address(t0, offset));
     });
 
@@ -2682,7 +2682,7 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x10, Address(t0, offset));
     });
     __ beqz(x10, L1);
@@ -2975,7 +2975,7 @@ void TemplateTable::jvmti_post_fast_field_mod() {
     ExternalAddress target((address)JvmtiExport::get_field_modification_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(c_rarg3, Address(t0, offset));
     });
     __ beqz(c_rarg3, L2);
@@ -3111,7 +3111,7 @@ void TemplateTable::fast_accessfield(TosState state) {
     ExternalAddress target((address)JvmtiExport::get_field_access_count_addr());
     __ relocate(target.rspec(), [&] {
       int32_t offset;
-      __ la_patchable(t0, target, offset);
+      __ la(t0, target.target(), offset);
       __ lwu(x12, Address(t0, offset));
     });
     __ beqz(x12, L1);
@@ -3547,11 +3547,10 @@ void TemplateTable::_new() {
   // get InstanceKlass
   __ load_resolved_klass_at_offset(x14, x13, x14, t0);
 
-  // make sure klass is initialized & doesn't have finalizer
-  // make sure klass is fully initialized
-  __ lbu(t0, Address(x14, InstanceKlass::init_state_offset()));
-  __ sub(t1, t0, (u1)InstanceKlass::fully_initialized);
-  __ bnez(t1, slow_case);
+  // make sure klass is initialized
+  assert(VM_Version::supports_fast_class_init_checks(),
+         "Optimization requires support for fast class initialization checks");
+  __ clinit_barrier(x14, t0, nullptr /*L_fast_path*/, &slow_case);
 
   // get instance_size in InstanceKlass (scaled to a count of bytes)
   __ lwu(x13, Address(x14, Klass::layout_helper_offset()));

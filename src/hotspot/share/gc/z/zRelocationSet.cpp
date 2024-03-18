@@ -106,11 +106,16 @@ public:
   }
 
   virtual void work() {
+    // Join the STS to block out VMThreads while running promote_barrier_on_young_oop_field
+    SuspendibleThreadSetJoiner sts_joiner;
+
     // Allocate and install forwardings for small pages
     for (size_t page_index; _small_iter.next_index(&page_index);) {
       ZPage* page = _small->at(int(page_index));
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, to_age(page));
       install_small(forwarding, _medium->length() + page_index);
+
+      SuspendibleThreadSet::yield();
     }
 
     // Allocate and install forwardings for medium pages
@@ -118,6 +123,8 @@ public:
       ZPage* page = _medium->at(int(page_index));
       ZForwarding* const forwarding = ZForwarding::alloc(_allocator, page, to_age(page));
       install_medium(forwarding, page_index);
+
+      SuspendibleThreadSet::yield();
     }
   }
 

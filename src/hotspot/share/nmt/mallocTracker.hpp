@@ -55,6 +55,12 @@ class MemoryCounter {
  public:
   MemoryCounter() : _count(0), _size(0), _peak_count(0), _peak_size(0) {}
 
+  inline void set_size_and_count(size_t size, size_t count) {
+    _size = size;
+    _count = count;
+    update_peak(size, count);
+  }
+
   inline void allocate(size_t sz) {
     size_t cnt = Atomic::add(&_count, size_t(1), memory_order_relaxed);
     if (sz > 0) {
@@ -140,7 +146,7 @@ class MallocMemorySummary;
 
 // A snapshot of malloc'd memory, includes malloc memory
 // usage by types and memory used by tracking itself.
-class MallocMemorySnapshot : public ResourceObj {
+class MallocMemorySnapshot {
   friend class MallocMemorySummary;
 
  private:
@@ -176,16 +182,7 @@ class MallocMemorySnapshot : public ResourceObj {
   // Total malloc'd memory used by arenas
   size_t total_arena() const;
 
-  void copy_to(MallocMemorySnapshot* s) {
-     // Need to make sure that mtChunks don't get deallocated while the
-     // copy is going on, because their size is adjusted using this
-     // buffer in make_adjustment().
-     ThreadCritical tc;
-     s->_all_mallocs = _all_mallocs;
-     for (int index = 0; index < mt_number_of_types; index ++) {
-       s->_malloc[index] = _malloc[index];
-     }
-   }
+  void copy_to(MallocMemorySnapshot* s);
 
   // Make adjustment by subtracting chunks used by arenas
   // from total chunks to get total free chunk size
@@ -198,7 +195,7 @@ class MallocMemorySnapshot : public ResourceObj {
 class MallocMemorySummary : AllStatic {
  private:
   // Reserve memory for placement of MallocMemorySnapshot object
-  static size_t _snapshot[CALC_OBJ_SIZE_IN_TYPE(MallocMemorySnapshot, size_t)];
+  static MallocMemorySnapshot _snapshot;
   static bool _have_limits;
 
   // Called when a total limit break was detected.
@@ -245,7 +242,7 @@ class MallocMemorySummary : AllStatic {
    }
 
   static MallocMemorySnapshot* as_snapshot() {
-    return (MallocMemorySnapshot*)_snapshot;
+    return &_snapshot;
   }
 
   // MallocLimit: returns true if allocating s bytes on f would trigger

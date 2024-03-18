@@ -25,7 +25,7 @@
  * @test
  * @bug 4691089 4819436 4942982 5104960 6544471 6627549 7066203 7195759
  *      8039317 8074350 8074351 8145952 8187946 8193552 8202026 8204269
- *      8208746 8209775 8264792 8274658 8283277 8296239
+ *      8208746 8209775 8264792 8274658 8283277 8296239 8321480
  * @summary Validate ISO 4217 data for Currency class.
  * @modules java.base/java.util:open
  *          jdk.localedata
@@ -86,7 +86,7 @@ public class ValidateISO4217 {
     // Codes that are obsolete, do not have related country, extra currency
     private static final String otherCodes =
             "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
-                    + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
+                    + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-HRK-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
                     + "PTE-ROL-RUR-SDD-SIT-SLL-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-VED-"
                     + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
                     + "YUM-ZMK-ZWD-ZWN-ZWR";
@@ -168,7 +168,7 @@ public class ValidateISO4217 {
                 if (format == null) {
                     createDateFormat();
                 }
-                // If the cut-over already passed, test the changed data too
+                // If the cut-over already passed, use the new curency for ISO4217Codes
                 if (format.parse(tokens.nextToken()).getTime() < System.currentTimeMillis()) {
                     currency = tokens.nextToken();
                     numeric = tokens.nextToken();
@@ -267,20 +267,21 @@ public class ValidateISO4217 {
      * throws an IllegalArgumentException or returns null. The test data
      * supplied is every possible combination of AA -> ZZ.
      */
-    @ParameterizedTest
-    @MethodSource("codeCombos")
-    public void twoLetterCodesTest(String country) {
-        if (codes[toIndex(country)] == UNDEFINED) {
-            // if a code is undefined / 0, creating a Currency from it
-            // should throw an IllegalArgumentException
-            assertThrows(IllegalArgumentException.class,
-                    ()-> Currency.getInstance(Locale.of("", country)),
-                    "Error: This should be an undefined code and throw IllegalArgumentException: " + country);
-        } else if (codes[toIndex(country)] == SKIPPED) {
-            // if a code is marked as skipped / 2, creating a Currency from it
-            // should return null
-            assertNull(Currency.getInstance(Locale.of("", country)),
-                    "Error: Currency.getInstance() for this locale should return null: " + country);
+    @Test
+    public void twoLetterCodesTest() {
+        for (String country : codeCombos()) {
+            if (codes[toIndex(country)] == UNDEFINED) {
+                // if a code is undefined / 0, creating a Currency from it
+                // should throw an IllegalArgumentException
+                assertThrows(IllegalArgumentException.class,
+                        () -> Currency.getInstance(Locale.of("", country)),
+                        "Error: This should be an undefined code and throw IllegalArgumentException: " + country);
+            } else if (codes[toIndex(country)] == SKIPPED) {
+                // if a code is marked as skipped / 2, creating a Currency from it
+                // should return null
+                assertNull(Currency.getInstance(Locale.of("", country)),
+                        "Error: Currency.getInstance() for this locale should return null: " + country);
+            }
         }
     }
 

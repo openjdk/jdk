@@ -25,7 +25,7 @@
  * @test
  * @bug 4242639
  * @summary Printing quality problem on Canon and NEC
- * @author prr
+ * @key printer
  * @run main/manual RasterTest
  */
 import java.awt.*;

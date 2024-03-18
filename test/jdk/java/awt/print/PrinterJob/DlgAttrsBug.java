@@ -23,6 +23,7 @@
 /*
  * @test
  * @bug 8061258
+ * @key printer
  * @summary  PrinterJob's native Print Dialog does not reflect
  *           specified Copies or Page Ranges
  * @run main/manual DlgAttrsBug

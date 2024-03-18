@@ -29,35 +29,32 @@ import java.lang.invoke.TypeDescriptor;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.constantpool.ClassEntry;
+import java.lang.classfile.constantpool.ConstantDynamicEntry;
+import java.lang.classfile.constantpool.ConstantPool;
+import java.lang.classfile.constantpool.ConstantPoolBuilder;
+import java.lang.classfile.BufWriter;
+import java.lang.classfile.constantpool.DoubleEntry;
+import java.lang.classfile.constantpool.FieldRefEntry;
+import java.lang.classfile.constantpool.FloatEntry;
+import java.lang.classfile.constantpool.IntegerEntry;
+import java.lang.classfile.constantpool.InterfaceMethodRefEntry;
+import java.lang.classfile.constantpool.InvokeDynamicEntry;
+import java.lang.classfile.constantpool.LongEntry;
+import java.lang.classfile.constantpool.MemberRefEntry;
+import java.lang.classfile.constantpool.MethodHandleEntry;
+import java.lang.classfile.constantpool.MethodRefEntry;
+import java.lang.classfile.constantpool.MethodTypeEntry;
+import java.lang.classfile.constantpool.ModuleEntry;
+import java.lang.classfile.constantpool.NameAndTypeEntry;
+import java.lang.classfile.constantpool.PackageEntry;
+import java.lang.classfile.constantpool.PoolEntry;
+import java.lang.classfile.constantpool.StringEntry;
+import java.lang.classfile.constantpool.Utf8Entry;
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantDynamicEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
-import jdk.internal.classfile.BufWriter;
-import jdk.internal.classfile.constantpool.DoubleEntry;
-import jdk.internal.classfile.constantpool.FieldRefEntry;
-import jdk.internal.classfile.constantpool.FloatEntry;
-import jdk.internal.classfile.constantpool.IntegerEntry;
-import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
-import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
-import jdk.internal.classfile.constantpool.LongEntry;
-import jdk.internal.classfile.constantpool.MemberRefEntry;
-import jdk.internal.classfile.constantpool.MethodHandleEntry;
-import jdk.internal.classfile.constantpool.MethodRefEntry;
-import jdk.internal.classfile.constantpool.MethodTypeEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.PoolEntry;
-import jdk.internal.classfile.constantpool.StringEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.util.ArraysSupport;
-
-import java.lang.constant.ModuleDesc;
-import java.lang.constant.PackageDesc;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -128,7 +125,7 @@ public abstract sealed class AbstractPoolEntry {
     }
 
     public int width() {
-        return (tag == Classfile.TAG_LONG || tag == Classfile.TAG_DOUBLE) ? 2 : 1;
+        return (tag == ClassFile.TAG_LONG || tag == ClassFile.TAG_DOUBLE) ? 2 : 1;
     }
 
     abstract PoolEntry clone(ConstantPoolBuilder cp);
@@ -162,7 +159,7 @@ public abstract sealed class AbstractPoolEntry {
 
         Utf8EntryImpl(ConstantPool cpm, int index,
                           byte[] rawBytes, int offset, int rawLen) {
-            super(cpm, Classfile.TAG_UTF8, index, 0);
+            super(cpm, ClassFile.TAG_UTF8, index, 0);
             this.rawBytes = rawBytes;
             this.offset = offset;
             this.rawLen = rawLen;
@@ -174,7 +171,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, String s, int hash) {
-            super(cpm, Classfile.TAG_UTF8, index, 0);
+            super(cpm, ClassFile.TAG_UTF8, index, 0);
             this.rawBytes = null;
             this.offset = 0;
             this.rawLen = 0;
@@ -185,7 +182,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         Utf8EntryImpl(ConstantPool cpm, int index, Utf8EntryImpl u) {
-            super(cpm, Classfile.TAG_UTF8, index, 0);
+            super(cpm, ClassFile.TAG_UTF8, index, 0);
             this.rawBytes = u.rawBytes;
             this.offset = u.offset;
             this.rawLen = u.rawLen;
@@ -474,7 +471,7 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    static abstract sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
+    abstract static sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
         protected final T ref1;
 
         public AbstractRefEntry(ConstantPool constantPool, int tag, int index, T ref1) {
@@ -497,7 +494,7 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    static abstract sealed class AbstractRefsEntry<T extends PoolEntry, U extends PoolEntry>
+    abstract static sealed class AbstractRefsEntry<T extends PoolEntry, U extends PoolEntry>
             extends AbstractPoolEntry {
         protected final T ref1;
         protected final U ref2;
@@ -528,7 +525,7 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    static abstract sealed class AbstractNamedEntry extends AbstractRefEntry<Utf8EntryImpl> {
+    abstract static sealed class AbstractNamedEntry extends AbstractRefEntry<Utf8EntryImpl> {
 
         public AbstractNamedEntry(ConstantPool constantPool, int tag, int index, Utf8EntryImpl ref1) {
             super(constantPool, tag, index, ref1);
@@ -557,7 +554,7 @@ public abstract sealed class AbstractPoolEntry {
         public ClassDesc sym = null;
 
         ClassEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, Classfile.TAG_CLASS, index, name);
+            super(cpm, ClassFile.TAG_CLASS, index, name);
         }
 
         @Override
@@ -595,7 +592,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class PackageEntryImpl extends AbstractNamedEntry implements PackageEntry {
 
         PackageEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, Classfile.TAG_PACKAGE, index, name);
+            super(cpm, ClassFile.TAG_PACKAGE, index, name);
         }
 
         @Override
@@ -621,7 +618,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class ModuleEntryImpl extends AbstractNamedEntry implements ModuleEntry {
 
         ModuleEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name) {
-            super(cpm, Classfile.TAG_MODULE, index, name);
+            super(cpm, ClassFile.TAG_MODULE, index, name);
         }
 
         @Override
@@ -650,7 +647,7 @@ public abstract sealed class AbstractPoolEntry {
         public TypeDescriptor typeSym = null;
 
         NameAndTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl name, Utf8EntryImpl type) {
-            super(cpm, Classfile.TAG_NAMEANDTYPE, index, name, type);
+            super(cpm, ClassFile.TAG_NAMEANDTYPE, index, name, type);
         }
 
         @Override
@@ -700,7 +697,7 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static abstract sealed class AbstractMemberRefEntry
+    public abstract static sealed class AbstractMemberRefEntry
             extends AbstractRefsEntry<ClassEntryImpl, NameAndTypeEntryImpl>
             implements MemberRefEntry {
 
@@ -741,7 +738,7 @@ public abstract sealed class AbstractPoolEntry {
 
         FieldRefEntryImpl(ConstantPool cpm, int index,
                               ClassEntryImpl owner, NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_FIELDREF, index, owner, nameAndType);
+            super(cpm, ClassFile.TAG_FIELDREF, index, owner, nameAndType);
         }
 
         @Override
@@ -754,7 +751,7 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodRefEntryImpl(ConstantPool cpm, int index,
                                ClassEntryImpl owner, NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_METHODREF, index, owner, nameAndType);
+            super(cpm, ClassFile.TAG_METHODREF, index, owner, nameAndType);
         }
 
         @Override
@@ -767,7 +764,7 @@ public abstract sealed class AbstractPoolEntry {
 
         InterfaceMethodRefEntryImpl(ConstantPool cpm, int index, ClassEntryImpl owner,
                                         NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_INTERFACEMETHODREF, index, owner, nameAndType);
+            super(cpm, ClassFile.TAG_INTERFACEMETHODREF, index, owner, nameAndType);
         }
 
         @Override
@@ -776,7 +773,7 @@ public abstract sealed class AbstractPoolEntry {
         }
     }
 
-    public static abstract sealed class AbstractDynamicConstantPoolEntry extends AbstractPoolEntry {
+    public abstract static sealed class AbstractDynamicConstantPoolEntry extends AbstractPoolEntry {
 
         private final int bsmIndex;
         private BootstrapMethodEntryImpl bootstrapMethod;
@@ -852,12 +849,12 @@ public abstract sealed class AbstractPoolEntry {
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, ClassFile.TAG_INVOKEDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
         InvokeDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                    NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_INVOKEDYNAMIC, index, hash2(Classfile.TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, ClassFile.TAG_INVOKEDYNAMIC, index, hash2(ClassFile.TAG_INVOKEDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
 
@@ -872,12 +869,12 @@ public abstract sealed class AbstractPoolEntry {
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int hash, BootstrapMethodEntryImpl bootstrapMethod,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
+            super(cpm, ClassFile.TAG_CONSTANTDYNAMIC, index, hash, bootstrapMethod, nameAndType);
         }
 
         ConstantDynamicEntryImpl(ConstantPool cpm, int index, int bsmIndex,
                                      NameAndTypeEntryImpl nameAndType) {
-            super(cpm, Classfile.TAG_CONSTANTDYNAMIC, index, hash2(Classfile.TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
+            super(cpm, ClassFile.TAG_CONSTANTDYNAMIC, index, hash2(ClassFile.TAG_CONSTANTDYNAMIC, bsmIndex, nameAndType.index()),
                   bsmIndex, nameAndType);
         }
 
@@ -895,14 +892,14 @@ public abstract sealed class AbstractPoolEntry {
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int hash, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, Classfile.TAG_METHODHANDLE, index, hash);
+            super(cpm, ClassFile.TAG_METHODHANDLE, index, hash);
             this.refKind = refKind;
             this.reference = reference;
         }
 
         MethodHandleEntryImpl(ConstantPool cpm, int index, int refKind, AbstractPoolEntry.AbstractMemberRefEntry
                 reference) {
-            super(cpm, Classfile.TAG_METHODHANDLE, index, hash2(Classfile.TAG_METHODHANDLE, refKind, reference.index()));
+            super(cpm, ClassFile.TAG_METHODHANDLE, index, hash2(ClassFile.TAG_METHODHANDLE, refKind, reference.index()));
             this.refKind = refKind;
             this.reference = reference;
         }
@@ -962,7 +959,7 @@ public abstract sealed class AbstractPoolEntry {
         public MethodTypeDesc sym = null;
 
         MethodTypeEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl descriptor) {
-            super(cpm, Classfile.TAG_METHODTYPE, index, descriptor);
+            super(cpm, ClassFile.TAG_METHODTYPE, index, descriptor);
         }
 
         @Override
@@ -1005,7 +1002,7 @@ public abstract sealed class AbstractPoolEntry {
             implements StringEntry {
 
         StringEntryImpl(ConstantPool cpm, int index, Utf8EntryImpl utf8) {
-            super(cpm, Classfile.TAG_STRING, index, utf8);
+            super(cpm, ClassFile.TAG_STRING, index, utf8);
         }
 
         @Override
@@ -1046,7 +1043,7 @@ public abstract sealed class AbstractPoolEntry {
 
     }
 
-    static abstract sealed class PrimitiveEntry<T extends ConstantDesc>
+    abstract static sealed class PrimitiveEntry<T extends ConstantDesc>
             extends AbstractPoolEntry {
         protected final T val;
 
@@ -1073,7 +1070,7 @@ public abstract sealed class AbstractPoolEntry {
             implements IntegerEntry {
 
         IntegerEntryImpl(ConstantPool cpm, int index, int i) {
-            super(cpm, Classfile.TAG_INTEGER, index, i);
+            super(cpm, ClassFile.TAG_INTEGER, index, i);
         }
 
         @Override
@@ -1106,7 +1103,7 @@ public abstract sealed class AbstractPoolEntry {
             implements FloatEntry {
 
         FloatEntryImpl(ConstantPool cpm, int index, float f) {
-            super(cpm, Classfile.TAG_FLOAT, index, f);
+            super(cpm, ClassFile.TAG_FLOAT, index, f);
         }
 
         @Override
@@ -1138,7 +1135,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class LongEntryImpl extends PrimitiveEntry<Long> implements LongEntry {
 
         LongEntryImpl(ConstantPool cpm, int index, long l) {
-            super(cpm, Classfile.TAG_LONG, index, l);
+            super(cpm, ClassFile.TAG_LONG, index, l);
         }
 
         @Override
@@ -1170,7 +1167,7 @@ public abstract sealed class AbstractPoolEntry {
     public static final class DoubleEntryImpl extends PrimitiveEntry<Double> implements DoubleEntry {
 
         DoubleEntryImpl(ConstantPool cpm, int index, double d) {
-            super(cpm, Classfile.TAG_DOUBLE, index, d);
+            super(cpm, ClassFile.TAG_DOUBLE, index, d);
         }
 
         @Override

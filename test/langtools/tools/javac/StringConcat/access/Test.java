@@ -21,10 +21,10 @@
  * questions.
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.instruction.InvokeDynamicInstruction;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.constantpool.*;
+import java.lang.classfile.instruction.InvokeDynamicInstruction;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -34,11 +34,7 @@ import java.util.List;
  * @test
  * @bug     8151223
  * @summary String concatenation fails with implicit toString() on package-private class
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
+ * @enablePreview
  *
  * @clean *
  * @compile -XDstringConcat=indy              Holder.java PublicClass.java PublicInterface.java Public_PublicClass.java Public_PublicInterface.java Public_PrivateInterface1.java Public_PrivateInterface2.java Test.java
@@ -181,7 +177,7 @@ public class Test {
     public static void readIndyTypes() throws Exception {
         actualTypes = new ArrayList<String>();
 
-        ClassModel classFile = Classfile.of().parse(new File(System.getProperty("test.classes", "."),
+        ClassModel classFile = ClassFile.of().parse(new File(System.getProperty("test.classes", "."),
                     Test.class.getName() + ".class").toPath());
 
         for (MethodModel method : classFile.methods()) {

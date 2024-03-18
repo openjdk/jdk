@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -62,7 +62,7 @@ public class JavaTokenizer extends UnicodeReader {
     /**
      * Sentinel for non-value.
      */
-    private final static int NOT_FOUND = -1;
+    private static final int NOT_FOUND = -1;
 
     /**
      * The source language setting. Copied from scanner factory.
@@ -742,8 +742,9 @@ public class JavaTokenizer extends UnicodeReader {
     private void scanNumber(int pos, int radix) {
         // for octal, allow base-10 digit in case it's a float literal
         this.radix = radix;
-        int digitRadix = (radix == 8 ? 10 : radix);
-        int firstDigit = digit(pos, Math.max(10, digitRadix));
+        boolean permitFloatingPoint = radix == 8 || radix == 10;
+        int digitRadix = Math.max(10, radix);
+        int firstDigit = digit(pos, digitRadix);
         boolean seendigit = firstDigit >= 0;
         boolean seenValidDigit = firstDigit >= 0 && firstDigit < digitRadix;
 
@@ -755,10 +756,10 @@ public class JavaTokenizer extends UnicodeReader {
             scanHexFractionAndSuffix(pos, seendigit);
         } else if (seendigit && radix == 16 && isOneOf('p', 'P')) {
             scanHexExponentAndSuffix(pos);
-        } else if (digitRadix == 10 && is('.')) {
+        } else if (permitFloatingPoint && is('.')) {
             putThenNext();
             scanFractionAndSuffix(pos);
-        } else if (digitRadix == 10 && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
+        } else if (permitFloatingPoint && isOneOf('e', 'E', 'f', 'F', 'd', 'D')) {
             scanFractionAndSuffix(pos);
         } else {
             if (!seenValidDigit) {
@@ -770,13 +771,6 @@ public class JavaTokenizer extends UnicodeReader {
                     lexError(pos, Errors.InvalidHexNumber);
                     break;
                 }
-            }
-            // If it is not a floating point literal,
-            // the octal number should be rescanned correctly.
-            if (radix == 8) {
-                sb.setLength(0);
-                reset(pos);
-                scanDigits(pos, 8);
             }
 
             if (acceptOneOf('l', 'L')) {

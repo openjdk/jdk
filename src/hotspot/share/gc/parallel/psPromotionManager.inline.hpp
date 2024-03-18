@@ -56,11 +56,14 @@ inline void PSPromotionManager::push_depth(ScannerTask task) {
 
 template <class T>
 inline void PSPromotionManager::claim_or_forward_depth(T* p) {
-  assert(should_scavenge(p, true), "revisiting object?");
   assert(ParallelScavengeHeap::heap()->is_in(p), "pointer outside heap");
-  oop obj = RawAccess<IS_NOT_NULL>::oop_load(p);
-  Prefetch::write(obj->mark_addr(), 0);
-  push_depth(ScannerTask(p));
+  T heap_oop = RawAccess<>::oop_load(p);
+  if (PSScavenge::is_obj_in_young(heap_oop)) {
+    oop obj = CompressedOops::decode_not_null(heap_oop);
+    assert(!PSScavenge::is_obj_in_to_space(obj), "revisiting object?");
+    Prefetch::write(obj->mark_addr(), 0);
+    push_depth(ScannerTask(p));
+  }
 }
 
 inline void PSPromotionManager::promotion_trace_event(oop new_obj, oop old_obj,
@@ -95,14 +98,12 @@ class PSPushContentsClosure: public BasicOopIterateClosure {
  public:
   PSPushContentsClosure(PSPromotionManager* pm) : BasicOopIterateClosure(PSScavenge::reference_processor()), _pm(pm) {}
 
-  template <typename T> void do_oop_nv(T* p) {
-    if (PSScavenge::should_scavenge(p)) {
-      _pm->claim_or_forward_depth(p);
-    }
+  template <typename T> void do_oop_work(T* p) {
+    _pm->claim_or_forward_depth(p);
   }
 
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 //

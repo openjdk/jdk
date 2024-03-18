@@ -31,8 +31,6 @@
 #include "utilities/align.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-#define CALC_OBJ_SIZE_IN_TYPE(obj, type) (align_up(sizeof(obj), sizeof(type))/sizeof(type))
-
 // Native memory tracking level
 //
 // The meaning of the different states:

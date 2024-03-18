@@ -102,7 +102,7 @@ public class TestBase {
 
     // Impl Specific Properties
     public static final String SP_DTD = "jdk.xml.dtd.support";
-    public static final String SP_CATALOG = "jdk.xml.jdkCatalog.resolve";
+    public static final String SP_CATALOG = "jdk.xml.jdkcatalog.resolve";
     public static final String OVERRIDE_PARSER = "jdk.xml.overrideDefaultParser";
 
     // DTD/CATALOG constants
@@ -121,6 +121,7 @@ public class TestBase {
     // CATALOG=strict
     public static final String CONFIG_CATALOG_STRICT = "catalog2.properties";
 
+    public static final String UNKNOWN_HOST = "invalid.site.com";
 
     String xmlExternalEntity, xmlExternalEntityId;
     String xmlGE_Expansion, xmlGE_ExpansionId;
@@ -334,15 +335,17 @@ public class TestBase {
 
     protected void processError(boolean expectError, String error, Exception e)
             throws Exception {
-        //e.printStackTrace();
         String str = e.getMessage();
-//        System.out.println("Exp Msg: " + str);
-        //e.printStackTrace();
         if (!expectError) {
-            Assert.assertTrue(false, "Expected pass, but Exception is thrown " +
-                    str);
+            Assert.assertTrue(false, "Expected pass, but Exception is thrown " + str);
         } else {
-            Assert.assertTrue((str != null) && str.contains(error));
+            // This check is necessary since errors other than UnknownHostException
+            // can contain the host name in the System ID
+            if (UNKNOWN_HOST.equals(error)) {
+                Assert.assertTrue((str != null) && str.equals(error));
+            } else {
+                Assert.assertTrue((str != null) && str.contains(error));
+            }
         }
     }
 

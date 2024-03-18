@@ -81,6 +81,9 @@ void VM_Version::initialize() {
     if (FLAG_IS_DEFAULT(UseZbs)) {
       FLAG_SET_DEFAULT(UseZbs, true);
     }
+    if (FLAG_IS_DEFAULT(UseZfh)) {
+      FLAG_SET_DEFAULT(UseZfh, true);
+    }
     if (FLAG_IS_DEFAULT(UseZic64b)) {
       FLAG_SET_DEFAULT(UseZic64b, true);
     }
@@ -144,31 +147,6 @@ void VM_Version::initialize() {
   if (UseAESCTRIntrinsics) {
     warning("AES/CTR intrinsics are not available on this CPU");
     FLAG_SET_DEFAULT(UseAESCTRIntrinsics, false);
-  }
-
-  if (UseSHA) {
-    warning("SHA instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseSHA, false);
-  }
-
-  if (UseSHA1Intrinsics) {
-    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
-  }
-
-  if (UseSHA256Intrinsics) {
-    warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
-  }
-
-  if (UseSHA512Intrinsics) {
-    warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseSHA3Intrinsics) {
-    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
-    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
   }
 
   if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
@@ -272,6 +250,7 @@ void VM_Version::initialize() {
   //       as there are extra checks inside it which could disable UseRVV
   //       in some situations.
 
+  // ChaCha20
   if (UseRVV) {
     if (FLAG_IS_DEFAULT(UseChaCha20Intrinsics)) {
       FLAG_SET_DEFAULT(UseChaCha20Intrinsics, true);
@@ -281,6 +260,67 @@ void VM_Version::initialize() {
       warning("Chacha20 intrinsic requires RVV instructions (not available on this CPU)");
     }
     FLAG_SET_DEFAULT(UseChaCha20Intrinsics, false);
+  }
+
+  // SHA's
+  if (FLAG_IS_DEFAULT(UseSHA)) {
+    FLAG_SET_DEFAULT(UseSHA, true);
+  }
+
+  // SHA-1, no RVV required though.
+  if (UseSHA) {
+    if (FLAG_IS_DEFAULT(UseSHA1Intrinsics)) {
+      FLAG_SET_DEFAULT(UseSHA1Intrinsics, true);
+    }
+  } else if (UseSHA1Intrinsics) {
+    warning("Intrinsics for SHA-1 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+  }
+
+  // UseZvkn (depends on RVV) and SHA-2.
+  if (UseZvkn && !UseRVV) {
+    FLAG_SET_DEFAULT(UseZvkn, false);
+    warning("Cannot enable Zvkn on cpu without RVV support.");
+  }
+  // SHA-2, depends on Zvkn.
+  if (UseSHA) {
+    if (UseZvkn) {
+      if (FLAG_IS_DEFAULT(UseSHA256Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA256Intrinsics, true);
+      }
+      if (FLAG_IS_DEFAULT(UseSHA512Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSHA512Intrinsics, true);
+      }
+    } else {
+      if (UseSHA256Intrinsics) {
+        warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, UseZvkn needed.");
+        FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+      }
+      if (UseSHA512Intrinsics) {
+        warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, UseZvkn needed.");
+        FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+      }
+    }
+  } else {
+    if (UseSHA256Intrinsics) {
+      warning("Intrinsics for SHA-224 and SHA-256 crypto hash functions not available on this CPU, as UseSHA disabled.");
+      FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    }
+    if (UseSHA512Intrinsics) {
+      warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU, as UseSHA disabled.");
+      FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+    }
+  }
+
+  // SHA-3
+  if (UseSHA3Intrinsics) {
+    warning("Intrinsics for SHA3-224, SHA3-256, SHA3-384 and SHA3-512 crypto hash functions not available on this CPU.");
+    FLAG_SET_DEFAULT(UseSHA3Intrinsics, false);
+  }
+
+  // UseSHA
+  if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA3Intrinsics || UseSHA512Intrinsics)) {
+    FLAG_SET_DEFAULT(UseSHA, false);
   }
 }
 
@@ -312,6 +352,10 @@ void VM_Version::c2_initialize() {
       UseRVV = false;
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
+  }
+
+  if (FLAG_IS_DEFAULT(UseVectorizedHashCodeIntrinsic)) {
+    FLAG_SET_DEFAULT(UseVectorizedHashCodeIntrinsic, true);
   }
 
   if (!UseZicbop) {

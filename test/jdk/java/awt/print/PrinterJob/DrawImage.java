@@ -24,8 +24,8 @@
 /**
  * @test
  * @bug 4329866
+ * @key printer
  * @summary Confirm that no printing exception is generated.
- * @author jgodinez
  * @run main/manual DrawImage
  */
 

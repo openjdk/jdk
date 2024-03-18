@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@
 #include "utilities/ostream.hpp"
 #if INCLUDE_G1GC
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 #endif
 
 # include <sys/stat.h>
@@ -162,8 +162,8 @@ void FileMapInfo::populate_header(size_t core_region_alignment) {
     c_header_size = sizeof(DynamicArchiveHeader);
     header_size = c_header_size;
 
-    const char* default_base_archive_name = Arguments::get_default_shared_archive_path();
-    const char* current_base_archive_name = Arguments::GetSharedArchivePath();
+    const char* default_base_archive_name = CDSConfig::default_archive_path();
+    const char* current_base_archive_name = CDSConfig::static_archive_path();
     if (!os::same_files(current_base_archive_name, default_base_archive_name)) {
       base_archive_name_size = strlen(current_base_archive_name) + 1;
       header_size += base_archive_name_size;
@@ -199,7 +199,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
 
   if (!info->is_static() && base_archive_name_size != 0) {
     // copy base archive name
-    copy_base_archive_name(Arguments::GetSharedArchivePath());
+    copy_base_archive_name(CDSConfig::static_archive_path());
   }
   _core_region_alignment = core_region_alignment;
   _obj_alignment = ObjectAlignmentInBytes;
@@ -212,7 +212,7 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
-  _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
+  _use_optimized_module_handling = CDSConfig::is_using_optimized_module_handling();
   _has_full_module_graph = CDSConfig::is_dumping_full_module_graph();
 
   // The following fields are for sanity checks for whether this archive
@@ -289,6 +289,8 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- requested_base_address:         " INTPTR_FORMAT, p2i(_requested_base_address));
   st->print_cr("- mapped_base_address:            " INTPTR_FORMAT, p2i(_mapped_base_address));
   st->print_cr("- heap_roots_offset:              " SIZE_FORMAT, _heap_roots_offset);
+  st->print_cr("- _heap_oopmap_start_pos:         " SIZE_FORMAT, _heap_oopmap_start_pos);
+  st->print_cr("- _heap_ptrmap_start_pos:         " SIZE_FORMAT, _heap_ptrmap_start_pos);
   st->print_cr("- allow_archiving_with_java_agent:%d", _allow_archiving_with_java_agent);
   st->print_cr("- use_optimized_module_handling:  %d", _use_optimized_module_handling);
   st->print_cr("- has_full_module_graph           %d", _has_full_module_graph);
@@ -397,23 +399,25 @@ bool SharedClassPathEntry::validate(bool is_class_path) const {
       log_warning(cds)("directory is not empty: %s", name);
       ok = false;
     }
-  } else if ((has_timestamp() && _timestamp != st.st_mtime) ||
-             _filesize != st.st_size) {
-    ok = false;
-    if (PrintSharedArchiveAndExit) {
-      log_warning(cds)(_timestamp != st.st_mtime ?
-                                 "Timestamp mismatch" :
-                                 "File size mismatch");
-    } else {
-      const char* bad_jar_msg = "A jar file is not the one used while building the shared archive file:";
-      log_warning(cds)("%s %s", bad_jar_msg, name);
-      if (!log_is_enabled(Info, cds)) {
-        log_warning(cds)("%s %s", bad_jar_msg, name);
-      }
-      if (_timestamp != st.st_mtime) {
-        log_warning(cds)("%s timestamp has changed.", name);
+  } else {
+    bool size_differs = _filesize != st.st_size;
+    bool time_differs = has_timestamp() && _timestamp != st.st_mtime;
+    if (time_differs || size_differs) {
+      ok = false;
+      if (PrintSharedArchiveAndExit) {
+        log_warning(cds)(time_differs ? "Timestamp mismatch" : "File size mismatch");
       } else {
-        log_warning(cds)("%s size has changed.", name);
+        const char* bad_file_msg = "This file is not the one used while building the shared archive file:";
+        log_warning(cds)("%s %s", bad_file_msg, name);
+        if (!log_is_enabled(Info, cds)) {
+          log_warning(cds)("%s %s", bad_file_msg, name);
+        }
+        if (time_differs) {
+          log_warning(cds)("%s timestamp has changed.", name);
+        }
+        if (size_differs) {
+          log_warning(cds)("%s size has changed.", name);
+        }
       }
     }
   }
@@ -574,12 +578,14 @@ int FileMapInfo::get_module_shared_path_index(Symbol* location) {
   const char* file = ClassLoader::skip_uri_protocol(location->as_C_string());
   for (int i = ClassLoaderExt::app_module_paths_start_index(); i < get_number_of_shared_paths(); i++) {
     SharedClassPathEntry* ent = shared_path(i);
-    assert(ent->in_named_module(), "must be");
-    bool cond = strcmp(file, ent->name()) == 0;
-    log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
-                           location->as_C_string(), ent->name(), cond ? "same" : "different");
-    if (cond) {
-      return i;
+    if (!ent->is_non_existent()) {
+      assert(ent->in_named_module(), "must be");
+      bool cond = strcmp(file, ent->name()) == 0;
+      log_debug(class, path)("get_module_shared_path_index (%d) %s : %s = %s", i,
+                             location->as_C_string(), ent->name(), cond ? "same" : "different");
+      if (cond) {
+        return i;
+      }
     }
   }
 
@@ -916,7 +922,7 @@ void FileMapInfo::log_paths(const char* msg, int start_idx, int end_idx) {
 
 bool FileMapInfo::check_module_paths() {
   const char* rp = Arguments::get_property("jdk.module.path");
-  int num_paths = Arguments::num_archives(rp);
+  int num_paths = CDSConfig::num_archives(rp);
   if (num_paths != header()->num_module_paths()) {
     return false;
   }
@@ -1248,7 +1254,7 @@ bool FileMapInfo::get_base_archive_name_from_header(const char* archive_name,
 
   const char* base = file_helper.base_archive_name();
   if (base == nullptr) {
-    *base_archive_name = Arguments::get_default_shared_archive_path();
+    *base_archive_name = CDSConfig::default_archive_path();
   } else {
     *base_archive_name = os::strdup_check_oom(base);
   }
@@ -1463,7 +1469,7 @@ BitMapView FileMapRegion::ptrmap_view() {
   return bitmap_view(false);
 }
 
-bool FileMapRegion::check_region_crc() const {
+bool FileMapRegion::check_region_crc(char* base) const {
   // This function should be called after the region has been properly
   // loaded into memory via FileMapInfo::map_region() or FileMapInfo::read_region().
   // I.e., this->mapped_base() must be valid.
@@ -1472,8 +1478,8 @@ bool FileMapRegion::check_region_crc() const {
     return true;
   }
 
-  assert(mapped_base() != nullptr, "must be initialized");
-  int crc = ClassLoader::crc32(0, mapped_base(), (jint)sz);
+  assert(base != nullptr, "must be initialized");
+  int crc = ClassLoader::crc32(0, base, (jint)sz);
   if (crc != this->crc()) {
     log_warning(cds)("Checksum verification failed.");
     return false;
@@ -1561,11 +1567,37 @@ static size_t write_bitmap(const CHeapBitMap* map, char* output, size_t offset) 
   return offset + size_in_bytes;
 }
 
+// The start of the archived heap has many primitive arrays (String
+// bodies) that are not marked by the oop/ptr maps. So we must have
+// lots of leading zeros.
+size_t FileMapInfo::remove_bitmap_leading_zeros(CHeapBitMap* map) {
+  size_t old_zeros = map->find_first_set_bit(0);
+  size_t old_size = map->size_in_bytes();
+
+  // Slice and resize bitmap
+  map->truncate(old_zeros, map->size());
+
+  DEBUG_ONLY(
+    size_t new_zeros = map->find_first_set_bit(0);
+    assert(new_zeros == 0, "Should have removed leading zeros");
+  )
+
+  assert(map->size_in_bytes() < old_size, "Map size should have decreased");
+  return old_zeros;
+}
+
 char* FileMapInfo::write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                                        size_t &size_in_bytes) {
   size_in_bytes = ptrmap->size_in_bytes();
 
   if (heap_info->is_used()) {
+    // Remove leading zeros
+    size_t removed_oop_zeros = remove_bitmap_leading_zeros(heap_info->oopmap());
+    size_t removed_ptr_zeros = remove_bitmap_leading_zeros(heap_info->ptrmap());
+
+    header()->set_heap_oopmap_start_pos(removed_oop_zeros);
+    header()->set_heap_ptrmap_start_pos(removed_ptr_zeros);
+
     size_in_bytes += heap_info->oopmap()->size_in_bytes();
     size_in_bytes += heap_info->ptrmap()->size_in_bytes();
   }
@@ -1660,9 +1692,9 @@ void FileMapInfo::close() {
 /*
  * Same as os::map_memory() but also pretouches if AlwaysPreTouch is enabled.
  */
-char* map_memory(int fd, const char* file_name, size_t file_offset,
-                 char *addr, size_t bytes, bool read_only,
-                 bool allow_exec, MEMFLAGS flags = mtNone) {
+static char* map_memory(int fd, const char* file_name, size_t file_offset,
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec, MEMFLAGS flags = mtNone) {
   char* mem = os::map_memory(fd, file_name, file_offset, addr, bytes,
                              AlwaysPreTouch ? false : read_only,
                              allow_exec, flags);
@@ -1686,9 +1718,12 @@ bool FileMapInfo::remap_shared_readonly_as_readwrite() {
     return false;
   }
   char *addr = r->mapped_base();
-  char *base = os::remap_memory(_fd, _full_path, r->file_offset(),
-                                addr, size, false /* !read_only */,
-                                r->allow_exec());
+  // This path should not be reached for Windows; see JDK-8222379.
+  assert(WINDOWS_ONLY(false) NOT_WINDOWS(true), "Don't call on Windows");
+  // Replace old mapping with new one that is writable.
+  char *base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              addr, size, false /* !read_only */,
+                              r->allow_exec());
   close();
   // These have to be errors because the shared region is now unmapped.
   if (base == nullptr) {
@@ -1758,12 +1793,12 @@ bool FileMapInfo::read_region(int i, char* base, size_t size, bool do_commit) {
     return false;
   }
 
-  r->set_mapped_from_file(false);
-  r->set_mapped_base(base);
-
-  if (VerifySharedSpaces && !r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc(base)) {
     return false;
   }
+
+  r->set_mapped_from_file(false);
+  r->set_mapped_base(base);
 
   return true;
 }
@@ -1801,6 +1836,7 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       return MAP_ARCHIVE_OTHER_FAILURE; // oom or I/O error.
     } else {
       assert(r->mapped_base() != nullptr, "must be initialized");
+      return MAP_ARCHIVE_SUCCESS;
     }
   } else {
     // Note that this may either be a "fresh" mapping into unreserved address
@@ -1815,15 +1851,16 @@ MapArchiveResult FileMapInfo::map_region(int i, intx addr_delta, char* mapped_ba
       _memory_mapping_failed = true;
       return MAP_ARCHIVE_MMAP_FAILURE;
     }
+
+    if (VerifySharedSpaces && !r->check_region_crc(requested_addr)) {
+      return MAP_ARCHIVE_OTHER_FAILURE;
+    }
+
     r->set_mapped_from_file(true);
     r->set_mapped_base(requested_addr);
-  }
 
-  if (VerifySharedSpaces && !r->check_region_crc()) {
-    return MAP_ARCHIVE_OTHER_FAILURE;
+    return MAP_ARCHIVE_SUCCESS;
   }
-
-  return MAP_ARCHIVE_SUCCESS;
 }
 
 // The return value is the location of the archive relocation bitmap.
@@ -1841,8 +1878,7 @@ char* FileMapInfo::map_bitmap_region() {
     return nullptr;
   }
 
-  r->set_mapped_base(bitmap_base);
-  if (VerifySharedSpaces && !r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc(bitmap_base)) {
     log_error(cds)("relocation bitmap CRC error");
     if (!os::unmap_memory(bitmap_base, r->used_aligned())) {
       fatal("os::unmap_memory of relocation bitmap failed");
@@ -1851,6 +1887,7 @@ char* FileMapInfo::map_bitmap_region() {
   }
 
   r->set_mapped_from_file(true);
+  r->set_mapped_base(bitmap_base);
   log_info(cds)("Mapped %s region #%d at base " INTPTR_FORMAT " top " INTPTR_FORMAT " (%s)",
                 is_static() ? "static " : "dynamic",
                 MetaspaceShared::bm, p2i(r->mapped_base()), p2i(r->mapped_end()),
@@ -1968,7 +2005,7 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
-    CDSConfig::disable_loading_full_module_graph();
+    CDSConfig::stop_using_full_module_graph();
   }
 }
 
@@ -2126,12 +2163,13 @@ bool FileMapInfo::map_heap_region_impl() {
     return false;
   }
 
-  r->set_mapped_base(base);
-  if (VerifySharedSpaces && !r->check_region_crc()) {
+  if (VerifySharedSpaces && !r->check_region_crc(base)) {
     dealloc_heap_region();
     log_info(cds)("UseSharedSpaces: mapped heap region is corrupt");
     return false;
   }
+
+  r->set_mapped_base(base);
 
   // If the requested range is different from the range allocated by GC, then
   // the pointers need to be patched.
@@ -2149,7 +2187,7 @@ bool FileMapInfo::map_heap_region_impl() {
 
   if (_heap_pointers_need_patching) {
     char* bitmap_base = map_bitmap_region();
-    if (bitmap_base == NULL) {
+    if (bitmap_base == nullptr) {
       log_info(cds)("CDS heap cannot be used because bitmap region cannot be mapped");
       dealloc_heap_region();
       unmap_region(MetaspaceShared::hp);
@@ -2273,7 +2311,7 @@ bool FileMapInfo::initialize() {
       log_info(cds)("Initialize dynamic archive failed.");
       if (AutoCreateSharedArchive) {
         CDSConfig::enable_dumping_dynamic_archive();
-        ArchiveClassesAtExit = Arguments::GetSharedDynamicArchivePath();
+        ArchiveClassesAtExit = CDSConfig::dynamic_archive_path();
       }
       return false;
     }
@@ -2383,13 +2421,13 @@ bool FileMapHeader::validate() {
   }
 
   if (!_use_optimized_module_handling) {
-    MetaspaceShared::disable_optimized_module_handling();
+    CDSConfig::stop_using_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled because archive was created without optimized module handling");
   }
 
   if (is_static() && !_has_full_module_graph) {
     // Only the static archive can contain the full module graph.
-    CDSConfig::disable_loading_full_module_graph("archive was created without full module graph");
+    CDSConfig::stop_using_full_module_graph("archive was created without full module graph");
   }
 
   return true;

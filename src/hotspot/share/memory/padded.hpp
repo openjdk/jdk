@@ -40,14 +40,14 @@
 // effective only when applied to derived-most (leaf) classes.
 
 // When no args are passed to the base ctor.
-template <class T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, size_t alignment = DEFAULT_PADDING_SIZE>
 class Padded : public T {
  private:
   char _pad_buf_[PADDING_SIZE(T, alignment)];
 };
 
 // When either 0 or 1 args may be passed to the base ctor.
-template <class T, typename Arg1T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, typename Arg1T, size_t alignment = DEFAULT_PADDING_SIZE>
 class Padded01 : public T {
  public:
   Padded01(): T() { }
@@ -75,7 +75,7 @@ class PaddedEndImpl<T, /*pad_size*/ 0> : public T {
 // minimal amount of padding needed to make the size of the objects be aligned.
 // This will help reducing false sharing,
 // if the start address is a multiple of alignment.
-template <class T, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, size_t alignment = DEFAULT_PADDING_SIZE>
 class PaddedEnd : public PaddedEndImpl<T, PADDED_END_SIZE(T, alignment)> {
   // C++ doesn't allow zero-length arrays. The padding is put in a
   // super class that is specialized for the pad_size == 0 case.
@@ -89,7 +89,7 @@ class PaddedEnd : public PaddedEndImpl<T, PADDED_END_SIZE(T, alignment)> {
 
 // Helper class to create an array of PaddedEnd<T> objects. All elements will
 // start at a multiple of alignment and the size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
 class PaddedArray {
  public:
   // Creates an aligned padded array.
@@ -100,7 +100,7 @@ class PaddedArray {
 // Helper class to create an array of references to arrays of primitive types
 // Both the array of references and the data arrays are aligned to the given
 // alignment. The allocated memory is zero-filled.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
 class Padded2DArray {
  public:
   // Creates an aligned padded 2D array.
@@ -112,7 +112,7 @@ class Padded2DArray {
 
 // Helper class to create an array of T objects. The array as a whole will
 // start at a multiple of alignment and its size will be aligned to alignment.
-template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_CACHE_LINE_SIZE>
+template <class T, MEMFLAGS flags, size_t alignment = DEFAULT_PADDING_SIZE>
 class PaddedPrimitiveArray {
  public:
   static T* create_unfreeable(size_t length);

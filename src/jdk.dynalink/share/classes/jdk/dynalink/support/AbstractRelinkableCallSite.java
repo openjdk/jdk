@@ -75,6 +75,7 @@ import jdk.dynalink.linker.GuardedInvocation;
  * {@link #relink(GuardedInvocation, MethodHandle)} and
  * {@link #resetAndRelink(GuardedInvocation, MethodHandle)}
  * methods.
+ * @since 9
  */
 public abstract class AbstractRelinkableCallSite extends MutableCallSite implements RelinkableCallSite {
     private final CallSiteDescriptor descriptor;

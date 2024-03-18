@@ -32,21 +32,21 @@ import javax.lang.model.element.*;
 import javax.tools.*;
 
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.Classfile;
+import java.lang.classfile.ClassFile;
 
 /* Create an invalid classfile with version 51.0 and a static method in an interface.*/
 @SupportedAnnotationTypes("*")
 public class CreateBadClassFile extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> elems, RoundEnvironment renv) {
         if (++round == 1) {
-            byte[] bytes = Classfile.of().build(ClassDesc.of("Test"), classBuilder -> {
+            byte[] bytes = ClassFile.of().build(ClassDesc.of("Test"), classBuilder -> {
                 classBuilder.withVersion(51, 0);
                 classBuilder.withFlags(AccessFlag.ABSTRACT,
                             AccessFlag.INTERFACE,
                             AccessFlag.PUBLIC);
                 classBuilder.withSuperclass(ConstantDescs.CD_Object);
                 classBuilder.withMethod("test", ConstantDescs.MTD_void,
-                        Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, methodBuilder -> {
+                        ClassFile.ACC_PUBLIC | ClassFile.ACC_STATIC, methodBuilder -> {
                             methodBuilder.withCode(xb -> {
                                 xb.return_();
                             });

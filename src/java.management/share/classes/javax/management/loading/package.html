@@ -2,7 +2,7 @@
 <head>
 <title>javax.management.loading package</title>
 <!--
-Copyright (c) 1999, 2017, Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
 DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
 This code is free software; you can redistribute it and/or modify it
@@ -39,15 +39,7 @@ questions.
 	ObjectName, Object[], String[])}, and to instantiate arbitrary
 	objects via the method {@link
 	javax.management.MBeanServer#instantiate(String, ObjectName,
-	Object[], String[])}.  The {@link
-	javax.management.loading.MLet MLet} class is an example of
-	such an MBean.  It is a {@link java.net.URLClassLoader
-	URLClassLoader}, so the list of URLs to load classes from can
-	be configured.</p>
-
-      <p>Additionally, an <code>MLet</code> can read a configuration
-	file that specifies a set of MBeans to be registered in the same
-	MBean Server as the <code>MLet</code>.</p>
+	Object[], String[])}.</p>
 
       <p>Every MBean Server has a <em>class loader repository</em>
 	containing all MBeans registered in that MBean Server that
@@ -55,16 +47,11 @@ questions.
 	loader repository is used by the forms of the
 	<code>createMBean</code> and <code>instantiate</code> methods
 	in the {@link javax.management.MBeanServer MBeanServer}
-	interface that do not have an explicit loader parameter.  It
-	is also used by the <code>MLet</code> class when it does not
-	find a class in its own set of URLs.</p>
+	interface that do not have an explicit loader parameter.</p>
 
       <p>If an MBean implements the interface {@link
 	javax.management.loading.PrivateClassLoader PrivateClassLoader},
-	then it is not added to the class loader repository.  The class
-	{@link javax.management.loading.PrivateMLet PrivateMLet} is a
-	subclass of <code>MLet</code> that implements
-	<code>PrivateClassLoader</code>.</p>
+	then it is not added to the class loader repository.</p>
 
     @see <a id="spec" href="https://jcp.org/aboutJava/communityprocess/mrel/jsr160/index2.html">
       JMX Specification, version 1.4</a>

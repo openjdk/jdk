@@ -23,6 +23,7 @@
 
 /* @test
    @bug 8246742
+   @key printer
    @summary Verifies ServiceUI.printDialog does not support properties dialog
    @run main/manual ServiceUIPropBtnTest
  */

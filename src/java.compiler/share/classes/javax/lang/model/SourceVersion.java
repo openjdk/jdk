@@ -415,6 +415,18 @@ public enum SourceVersion {
      * JEP 456: Unnamed Variables &amp; Patterns</a>
      */
     RELEASE_22,
+
+    /**
+     * The version introduced by the Java Platform, Standard Edition
+     * 23.
+     *
+     * @since 23
+     *
+     * @see <a
+     * href="https://docs.oracle.com/javase/specs/jls/se23/html/index.html">
+     * <cite>The Java Language Specification, Java SE 23 Edition</cite></a>
+     */
+    RELEASE_23,
     ; // Reduce code churn when appending new constants
 
     // Note that when adding constants for newer releases, the
@@ -424,7 +436,7 @@ public enum SourceVersion {
      * {@return the latest source version that can be modeled}
      */
     public static SourceVersion latest() {
-        return RELEASE_22;
+        return RELEASE_23;
     }
 
     private static final SourceVersion latestSupported = getLatestSupported();
@@ -439,7 +451,7 @@ public enum SourceVersion {
     private static SourceVersion getLatestSupported() {
         int intVersion = Runtime.version().feature();
         return (intVersion >= 11) ?
-            valueOf("RELEASE_" + Math.min(22, intVersion)):
+            valueOf("RELEASE_" + Math.min(23, intVersion)):
             RELEASE_10;
     }
 

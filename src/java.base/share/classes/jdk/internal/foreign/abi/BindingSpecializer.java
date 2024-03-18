@@ -24,11 +24,11 @@
  */
 package jdk.internal.foreign.abi;
 
-import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.Label;
-import jdk.internal.classfile.Opcode;
-import jdk.internal.classfile.TypeKind;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.CodeBuilder;
+import java.lang.classfile.Label;
+import java.lang.classfile.Opcode;
+import java.lang.classfile.TypeKind;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.Utils;
@@ -68,8 +68,8 @@ import java.util.Deque;
 import java.util.List;
 
 import static java.lang.constant.ConstantDescs.*;
-import static jdk.internal.classfile.Classfile.*;
-import static jdk.internal.classfile.TypeKind.*;
+import static java.lang.classfile.ClassFile.*;
+import static java.lang.classfile.TypeKind.*;
 
 public class BindingSpecializer {
     private static final String DUMP_CLASSES_DIR
@@ -191,7 +191,7 @@ public class BindingSpecializer {
     private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
-        byte[] bytes = Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
+        byte[] bytes = ClassFile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
@@ -212,7 +212,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = Classfile.of().parse(bytes).verify(null);
+            List<VerifyError> errors = ClassFile.of().verify(bytes);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");

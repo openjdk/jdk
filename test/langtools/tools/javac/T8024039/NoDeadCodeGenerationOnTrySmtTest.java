@@ -26,14 +26,10 @@
  * @bug 8024039
  * @summary javac, previous solution for JDK-8022186 was incorrect
  * @library /tools/lib
+ * @enablePreview
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.javac.util
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
  *          java.base/jdk.internal.classfile.impl
  * @build toolbox.ToolBox toolbox.JavacTask
  * @run main NoDeadCodeGenerationOnTrySmtTest
@@ -44,9 +40,9 @@ import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
-import jdk.internal.classfile.instruction.ExceptionCatch;
+import java.lang.classfile.*;
+import java.lang.classfile.attribute.CodeAttribute;
+import java.lang.classfile.instruction.ExceptionCatch;
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -104,7 +100,7 @@ public class NoDeadCodeGenerationOnTrySmtTest {
     }
 
     void checkClassFile(final File cfile, String[] methodsToFind) throws Exception {
-        ClassModel classFile = Classfile.of().parse(cfile.toPath());
+        ClassModel classFile = ClassFile.of().parse(cfile.toPath());
         int numberOfmethodsFound = 0;
         for (String methodToFind : methodsToFind) {
             for (MethodModel m : classFile.methods()) {

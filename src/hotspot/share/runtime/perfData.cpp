@@ -73,6 +73,9 @@ const char* PerfDataManager::_name_spaces[] = {
   "java.threads",           // Threads System name spaces
   "com.sun.threads",
   "sun.threads",
+  "java.threads.cpu_time", //Thread CPU time name spaces
+  "com.sun.threads.cpu_time",
+  "sun.threads.cpu_time",
   "java.property",          // Java Property name spaces
   "com.sun.property",
   "sun.property",

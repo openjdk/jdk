@@ -25,16 +25,11 @@
  * @test
  * @summary sourcefile attribute test for synthetic class.
  * @bug 8040129
- * @library /tools/lib /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib_legacy
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.main
- *          java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.instruction
- *          java.base/jdk.internal.classfile.components
- *          java.base/jdk.internal.classfile.impl
- * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase
+ *          jdk.jdeps/com.sun.tools.classfile
+ * @build toolbox.ToolBox InMemoryFileManager TestBase SourceFileTestBase_legacy
  * @compile -source 10 -target 10 SyntheticClassTest.java
  * @run main SyntheticClassTest true
  * @clean SyntheticClassTest$1
@@ -44,7 +39,7 @@
 
 import java.nio.file.NoSuchFileException;
 
-public class SyntheticClassTest extends SourceFileTestBase {
+public class SyntheticClassTest extends SourceFileTestBase_legacy {
     public static void main(String[] args) throws Exception {
         boolean expectSynthetic = Boolean.parseBoolean(args[0]);
         new Inner();

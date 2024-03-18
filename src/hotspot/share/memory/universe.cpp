@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@
 #include "prims/resolvedMethodTable.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/cpuTimeCounters.hpp"
 #include "runtime/flags/jvmFlagLimit.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/init.hpp"
@@ -297,7 +298,7 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
   }
 }
 
-void initialize_basic_type_klass(Klass* k, TRAPS) {
+static void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = vmClasses::Object_klass();
 #if INCLUDE_CDS
   if (UseSharedSpaces) {
@@ -337,7 +338,7 @@ void Universe::genesis(TRAPS) {
       // Initialization of the fillerArrayKlass must come before regular
       // int-TypeArrayKlass so that the int-Array mirror points to the
       // int-TypeArrayKlass.
-      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "Ljdk/internal/vm/FillerArray;", CHECK);
+      _fillerArrayKlassObj = TypeArrayKlass::create_klass(T_INT, "[Ljdk/internal/vm/FillerElement;", CHECK);
       for (int i = T_BOOLEAN; i < T_LONG+1; i++) {
         _typeArrayKlassObjs[i] = TypeArrayKlass::create_klass((BasicType)i, CHECK);
       }
@@ -781,6 +782,9 @@ jint universe_init() {
 
   GCLogPrecious::initialize();
 
+  // Initialize CPUTimeCounters object, which must be done before creation of the heap.
+  CPUTimeCounters::initialize();
+
 #ifdef _LP64
   MetaspaceShared::adjust_heap_sizes_for_dumping();
 #endif // _LP64
@@ -920,11 +924,11 @@ void universe_oopstorage_init() {
   Universe::oopstorage_init();
 }
 
-void initialize_known_method(LatestMethodCache* method_cache,
-                             InstanceKlass* ik,
-                             const char* method,
-                             Symbol* signature,
-                             bool is_static, TRAPS)
+static void initialize_known_method(LatestMethodCache* method_cache,
+                                    InstanceKlass* ik,
+                                    const char* method,
+                                    Symbol* signature,
+                                    bool is_static, TRAPS)
 {
   TempNewSymbol name = SymbolTable::new_symbol(method);
   Method* m = nullptr;

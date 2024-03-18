@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public class Processor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-    processingEnv.getMessager().printMessage(Kind.NOTE, "round " + round);
+    processingEnv.getMessager().printNote("round " + round);
     Element t = processingEnv.getElementUtils().getTypeElement("T8268575");
     for (Element e : t.getEnclosedElements()) {
       if (e instanceof ExecutableElement) {

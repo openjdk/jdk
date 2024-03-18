@@ -60,13 +60,13 @@ JfrCheckpointWriter::JfrCheckpointWriter(Thread* thread, bool header /* true */,
   }
 }
 
-JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, JfrCheckpointType type /* GENERIC */) :
+JfrCheckpointWriter::JfrCheckpointWriter(bool previous_epoch, Thread* thread, bool header /* true */, JfrCheckpointType type /* GENERIC */) :
   JfrCheckpointWriterBase(JfrCheckpointManager::lease_global(thread, previous_epoch), thread),
   _time(JfrTicks::now()),
   _offset(0),
   _count(0),
   _type(type),
-  _header(true) {
+  _header(header) {
   assert(this->is_acquired(), "invariant");
   assert(0 == this->current_offset(), "invariant");
   if (_header) {
@@ -162,8 +162,10 @@ const u1* JfrCheckpointWriter::session_data(size_t* size, bool move /* false */,
   }
   *size = this->used_size();
   assert(this->start_pos() + *size == this->current_pos(), "invariant");
-  write_checkpoint_header(const_cast<u1*>(this->start_pos()), this->used_offset(), _time, (u4)_type, count());
-  _header = false; // the header was just written
+  if (_header) {
+    write_checkpoint_header(const_cast<u1*>(this->start_pos()), this->used_offset(), _time, (u4)_type, count());
+    _header = false; // the header was just written
+  }
   if (move) {
     this->seek(_offset);
   }

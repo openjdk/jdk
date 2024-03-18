@@ -115,7 +115,8 @@ void PSOldPromotionLAB::flush() {
 
   assert(_start_array != nullptr, "Sanity");
 
-  _start_array->allocate_block(obj);
+  // filler obj
+  _start_array->update_for_block(obj, obj + cast_to_oop(obj)->size());
 }
 
 #ifdef ASSERT
@@ -132,17 +133,11 @@ bool PSYoungPromotionLAB::lab_is_valid(MemRegion lab) {
 }
 
 bool PSOldPromotionLAB::lab_is_valid(MemRegion lab) {
-  assert(_start_array->covered_region().contains(lab), "Sanity");
-
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
   PSOldGen* old_gen = heap->old_gen();
   MemRegion used = old_gen->object_space()->used_region();
 
-  if (used.contains(lab)) {
-    return true;
-  }
-
-  return false;
+  return used.contains(lab);
 }
 
 #endif /* ASSERT */
