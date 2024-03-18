@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_NMT_NMTPHYSICALDEVICETRACKER_HPP
-#define SHARE_NMT_NMTPHYSICALDEVICETRACKER_HPP
+#ifndef SHARE_NMT_NMTMEMORYFILETRACKER_HPP
+#define SHARE_NMT_NMTMEMORYFILETRACKER_HPP
 
 #include "memory/allocation.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
@@ -104,4 +104,4 @@ public:
   };
 };
 
-#endif // SHARE_NMT_NMTPHYSICALDEVICE_HPP
+#endif // SHARE_NMT_NMTMEMORYFILETRACKER_HPP
