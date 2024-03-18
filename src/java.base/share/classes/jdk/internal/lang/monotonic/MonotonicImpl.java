@@ -30,10 +30,12 @@ import jdk.internal.vm.annotation.Stable;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
+import static jdk.internal.lang.monotonic.MonotonicUtil.*;
+
 public final class MonotonicImpl<V> implements Monotonic<V> {
 
     private static final long VALUE_OFFSET =
-            MonotonicUtil.UNSAFE.objectFieldOffset(MonotonicImpl.class, "value");
+            UNSAFE.objectFieldOffset(MonotonicImpl.class, "value");
 
     private static final Object NULL_SENTINEL = new Object();
 
@@ -107,16 +109,16 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     }
 
     private Object valueVolatile() {
-        return MonotonicUtil.UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
+        return UNSAFE.getReferenceVolatile(this, VALUE_OFFSET);
     }
 
     private Object caeValue(Object value) {
         // This prevents partially initialized objects to be observed
         // under normal memory semantics.
         if (value != NULL_SENTINEL) {
-            MonotonicUtil.freeze();
+            freeze();
         }
-        return MonotonicUtil.UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
+        return UNSAFE.compareAndExchangeReference(this, VALUE_OFFSET, null, value);
     }
 
     @SuppressWarnings("unchecked")

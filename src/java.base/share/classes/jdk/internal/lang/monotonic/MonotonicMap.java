@@ -40,8 +40,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
-import static jdk.internal.lang.monotonic.MonotonicUtil.UNSAFE;
-import static jdk.internal.lang.monotonic.MonotonicUtil.uoe;
 
 public final class MonotonicMap<K, V>
         extends AbstractMap<K, Monotonic<V>>
