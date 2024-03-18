@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -188,6 +188,7 @@ public class Bind {
             server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(null);
             UnixDomainSocketAddress usa = (UnixDomainSocketAddress)server.getLocalAddress();
+            usa.getPath().toFile().deleteOnExit();
             if (usa.getPath().toString().isEmpty())
                 throw new RuntimeException("expected non zero address length");
             System.out.println("Null server address: " + server.getLocalAddress());
@@ -320,6 +321,7 @@ public class Bind {
             server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(null);
             UnixDomainSocketAddress usa = (UnixDomainSocketAddress)server.getLocalAddress();
+            usa.getPath().toFile().deleteOnExit();
             client = SocketChannel.open(usa);
             accept1 = server.accept();
             assertAddress(client.getRemoteAddress(), usa, "server");

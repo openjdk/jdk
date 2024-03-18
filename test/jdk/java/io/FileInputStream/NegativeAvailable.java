@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Test if available returns correct value when skipping beyond
  *          the end of a file.
  * @author Dan Xu
+ * @library /test/lib
  */
 
 import java.io.BufferedWriter;
@@ -37,6 +38,8 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import jdk.test.lib.Utils;
+
 public class NegativeAvailable {
 
     public static void main(String[] args) throws IOException {
@@ -45,7 +48,7 @@ public class NegativeAvailable {
         final int NEGATIVE_SKIP = -5;
 
         // Create a temporary file with size of 10 bytes.
-        Path tmp = Files.createTempFile(null, null);
+        Path tmp = Utils.createTempFile(null, null);
         try (BufferedWriter writer =
             Files.newBufferedWriter(tmp, Charset.defaultCharset())) {
             for (int i = 0; i < SIZE; i++) {

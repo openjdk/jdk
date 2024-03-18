@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,17 +40,20 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import jdk.test.lib.Utils;
+
 /* @test
  * @bug 8184940 8188869
  * @summary JDK 9 rejects zip files where the modified day or month is 0
  *          or otherwise represent an invalid date, such as 1980-02-30 24:60:60
  * @author Liam Miller-Cushon
+ * @library /test/lib
  */
 public class ZeroDate {
 
     public static void main(String[] args) throws Exception {
         // create a zip file, and read it in as a byte array
-        Path path = Files.createTempFile("bad", ".zip");
+        Path path = Utils.createTempFile("bad", ".zip");
         try (OutputStream os = Files.newOutputStream(path);
                 ZipOutputStream zos = new ZipOutputStream(os)) {
             ZipEntry e = new ZipEntry("x");
@@ -86,7 +89,7 @@ public class ZeroDate {
         writeU32(data, locpos + LOCTIM, date);
 
         // ensure that the archive is still readable, and the date is 1979-11-30
-        Path path = Files.createTempFile("out", ".zip");
+        Path path = Utils.createTempFile("out", ".zip");
         try (OutputStream os = Files.newOutputStream(path)) {
             os.write(data);
         }
