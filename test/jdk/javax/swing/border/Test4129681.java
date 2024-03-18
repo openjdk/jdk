@@ -21,13 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 4129681
- * @summary Tests disabling of titled border's caption
- * @run main Test4129681
- */
-
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -40,17 +33,23 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 
-public class Test4129681 {
-    private static JLabel label;
-    private static final Color labelDisableColor = Color.RED;
-    private static final Dimension SIZE = new Dimension(100, 40);
-    private static final Point startPoint = new Point(8, 4);
-    private static final Point endPoint = new Point(18, 14);
+/*
+ * @test
+ * @bug 4129681
+ * @summary Tests disabling of titled border's caption
+ * @run main Test4129681
+ */
 
+public class Test4129681 {
     public static void main(String[] args) throws Exception {
         int correctColoredPixels = 0;
         int totalPixels = 0;
         int tolerance = 20;
+        JLabel label;
+        Color labelDisableColor = Color.RED;
+        Dimension SIZE = new Dimension(100, 40);
+        Point startPoint = new Point(8, 4);
+        Point endPoint = new Point(18, 14);
 
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         System.setProperty("sun.java2d.uiScale", "1.0");
@@ -59,8 +58,7 @@ public class Test4129681 {
         UIManager.getDefaults().put("Label.disabledForeground", labelDisableColor);
         label.setSize(SIZE);
         label.setEnabled(false);
-        BufferedImage image = new BufferedImage((int) Math.ceil(label.getWidth()),
-                (int) Math.ceil(label.getHeight()),
+        BufferedImage image = new BufferedImage(label.getWidth(), label.getHeight(),
                 BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D g2d = image.createGraphics();
@@ -76,7 +74,7 @@ public class Test4129681 {
             }
         }
 
-        if (((double)correctColoredPixels/totalPixels*100) <= tolerance) {
+        if (((double)correctColoredPixels / totalPixels * 100) <= tolerance) {
             ImageIO.write(image, "png", new File("failureImage.png"));
             throw new RuntimeException("Label with border is not disabled");
         }
