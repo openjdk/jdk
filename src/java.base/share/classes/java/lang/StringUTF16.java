@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
@@ -1658,12 +1660,10 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    private static native boolean isBigEndian();
-
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
     static {
-        if (isBigEndian()) {
+        if (Unsafe.getUnsafe().isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
         } else {
