@@ -36,12 +36,13 @@ import java.awt.Image;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
-class Globals {
-  static boolean testPassed = false;
-  static Thread mainThread = null;
-}
+//class Globals {
+//  static boolean testPassed = false;
+//    static Thread mainThread = null;
+//}
 
 public class MemoryLeakTest {
+    static Thread mainThread = null;
     private static final String INSTRUCTIONS =
         """
          Do the following steps on Solaris only.
@@ -64,19 +65,12 @@ public class MemoryLeakTest {
             .instructions(INSTRUCTIONS)
             .rows(15)
             .columns(40)
-            .testUI(new MemoryLeak())
+            .testUI(MemoryLeak::new)
             .build()
             .awaitAndCheck();
-        Globals.mainThread = Thread.currentThread();
-        if (Globals.mainThread != null) {
-            Globals.mainThread.interrupt();
-        }
-        try {
-            Thread.sleep(300000);
-        } catch (InterruptedException e) {
-            if (!Globals.testPassed) {
-                throw new Exception("MemoryLeakTest failed.");
-            }
+        mainThread = Thread.currentThread();
+        if (mainThread != null) {
+            mainThread.interrupt();
         }
     }
 }
@@ -91,11 +85,11 @@ class MemoryLeak extends Frame implements ComponentListener {
     }
 
     public static void main(String[] args) {
-       new MemoryLeak().start();
+        new MemoryLeak().start();
     }
 
     public void start() {
-      setVisible(true);
+        setVisible(true);
     }
 
     public void paint(Graphics g) {
