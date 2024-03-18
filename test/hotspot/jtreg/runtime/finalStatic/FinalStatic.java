@@ -81,7 +81,7 @@ public class FinalStatic {
                                                     .aload(0)
                                                     .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                                     .return_())
-                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_FINAL | ACC_STATIC,
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_STATIC | ACC_FINAL,
                                             cob -> cob.ldc(FAILED).ireturn())
                     );
 
