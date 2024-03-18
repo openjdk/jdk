@@ -27,13 +27,14 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSplitPane;
 
-/* @test
+/*
+ * @test
  * @bug 8132123
  * @summary MultiResolutionCachedImage unnecessarily creates base image
  *          to get its size
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug8132123
+ * @run main/manual/othervm -Dsun.java2d.uiScale=2 bug8132123
  */
 
 public class bug8132123 {
