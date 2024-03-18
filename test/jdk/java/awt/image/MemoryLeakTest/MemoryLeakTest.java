@@ -36,13 +36,7 @@ import java.awt.Image;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 
-//class Globals {
-//  static boolean testPassed = false;
-//    static Thread mainThread = null;
-//}
-
 public class MemoryLeakTest {
-    static Thread mainThread = null;
     private static final String INSTRUCTIONS =
         """
          Do the following steps on Solaris only.
@@ -68,10 +62,6 @@ public class MemoryLeakTest {
             .testUI(MemoryLeak::new)
             .build()
             .awaitAndCheck();
-        mainThread = Thread.currentThread();
-        if (mainThread != null) {
-            mainThread.interrupt();
-        }
     }
 }
 
@@ -118,8 +108,7 @@ class MemoryLeak extends Frame implements ComponentListener {
 
     public void componentMoved(ComponentEvent e) {}
 
-    public void componentShown(ComponentEvent e)
-    {
+    public void componentShown(ComponentEvent e) {
         osImage = createImage(getSize().width, getSize().height);
         Graphics g = osImage.getGraphics();
         g.setColor(Color.blue);
