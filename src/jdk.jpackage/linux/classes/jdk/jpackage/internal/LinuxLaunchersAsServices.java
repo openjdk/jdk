@@ -98,7 +98,7 @@ public final class LinuxLaunchersAsServices extends UnixLaunchersAsServices {
         private final Path unitFilename;
     }
 
-    private final static List<String> REQUIRED_PACKAGES = List.of("systemd",
+    private static final List<String> REQUIRED_PACKAGES = List.of("systemd",
             "coreutils" /* /usr/bin/wc */, "grep");
 
     private static final String COMMON_SCRIPTS = "COMMON_SCRIPTS";

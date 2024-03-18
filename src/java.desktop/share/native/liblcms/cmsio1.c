@@ -607,7 +607,7 @@ Error:
     return NULL;
 }
 
-// Create an output MPE LUT from agiven profile. Version mismatches are handled here
+// Create an output MPE LUT from a given profile. Version mismatches are handled here
 cmsPipeline* CMSEXPORT _cmsReadOutputLUT(cmsHPROFILE hProfile, cmsUInt32Number Intent)
 {
     cmsTagTypeSignature OriginalType;
@@ -1055,4 +1055,14 @@ cmsUInt32Number  CMSEXPORT cmsGetProfileInfoASCII(cmsHPROFILE hProfile, cmsInfoT
     if (mlu == NULL) return 0;
 
     return cmsMLUgetASCII(mlu, LanguageCode, CountryCode, Buffer, BufferSize);
+}
+
+cmsUInt32Number  CMSEXPORT cmsGetProfileInfoUTF8(cmsHPROFILE hProfile, cmsInfoType Info,
+                                                          const char LanguageCode[3], const char CountryCode[3],
+                                                          char* Buffer, cmsUInt32Number BufferSize)
+{
+    const cmsMLU* mlu = GetInfo(hProfile, Info);
+    if (mlu == NULL) return 0;
+
+    return cmsMLUgetUTF8(mlu, LanguageCode, CountryCode, Buffer, BufferSize);
 }

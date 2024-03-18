@@ -1734,11 +1734,26 @@ bool ShenandoahBarrierC2Support::identical_backtoback_ifs(Node* n, PhaseIdealLoo
   return true;
 }
 
+bool ShenandoahBarrierC2Support::merge_point_safe(Node* region) {
+  for (DUIterator_Fast imax, i = region->fast_outs(imax); i < imax; i++) {
+    Node* n = region->fast_out(i);
+    if (n->is_LoadStore()) {
+      // Splitting a LoadStore node through phi, causes it to lose its SCMemProj: the split if code doesn't have support
+      // for a LoadStore at the region the if is split through because that's not expected to happen (LoadStore nodes
+      // should be between barrier nodes). It does however happen with Shenandoah though because barriers can get
+      // expanded around a LoadStore node.
+      return false;
+    }
+  }
+  return true;
+}
+
+
 void ShenandoahBarrierC2Support::merge_back_to_back_tests(Node* n, PhaseIdealLoop* phase) {
   assert(is_heap_stable_test(n), "no other tests");
   if (identical_backtoback_ifs(n, phase)) {
     Node* n_ctrl = n->in(0);
-    if (phase->can_split_if(n_ctrl)) {
+    if (phase->can_split_if(n_ctrl) && merge_point_safe(n_ctrl)) {
       IfNode* dom_if = phase->idom(n_ctrl)->as_If();
       if (is_heap_stable_test(n)) {
         Node* gc_state_load = n->in(1)->in(1)->in(1)->in(1);

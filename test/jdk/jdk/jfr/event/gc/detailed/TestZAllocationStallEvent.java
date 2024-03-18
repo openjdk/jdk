@@ -56,7 +56,7 @@ public class TestZAllocationStallEvent {
 
             // Allocate many large objects quickly, to outrun the GC
             for (int i = 0; i < 100; i++) {
-                blackHole(new byte[16 * 1024 * 1024]);
+                blackHole(new byte[4 * 1024 * 1024]);
             }
 
             recording.stop();

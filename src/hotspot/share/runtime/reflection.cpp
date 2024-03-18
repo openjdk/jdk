@@ -49,7 +49,6 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/reflection.hpp"
-#include "runtime/reflectionUtils.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/vframe.inline.hpp"
 #include "utilities/formatBuffer.hpp"
@@ -458,12 +457,6 @@ Reflection::VerifyClassAccessResults Reflection::verify_class_access(
 
   // module boundaries
   if (new_class->is_public()) {
-    // Ignore modules for -Xshare:dump because we do not have any package
-    // or module information for modules other than java.base.
-    if (CDSConfig::is_dumping_static_archive()) {
-      return ACCESS_OK;
-    }
-
     // Find the module entry for current_class, the accessor
     ModuleEntry* module_from = current_class->module();
     // Find the module entry for new_class, the accessee

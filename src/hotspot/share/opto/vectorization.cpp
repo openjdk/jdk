@@ -31,22 +31,314 @@
 #include "opto/rootnode.hpp"
 #include "opto/vectorization.hpp"
 
+bool VLoop::check_preconditions() {
+#ifndef PRODUCT
+  if (is_trace_preconditions()) {
+    tty->print_cr("\nVLoop::check_preconditions");
+    lpt()->dump_head();
+    lpt()->head()->dump();
+  }
+#endif
+
+  VStatus status = check_preconditions_helper();
+  if (!status.is_success()) {
+#ifndef PRODUCT
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: failed: %s", status.failure_reason());
+    }
+#endif
+    return false; // failure
+  }
+  return true; // success
+}
+
+VStatus VLoop::check_preconditions_helper() {
+  // Only accept vector width that is power of 2
+  int vector_width = Matcher::vector_width_in_bytes(T_BYTE);
+  if (vector_width < 2 || !is_power_of_2(vector_width)) {
+    return VStatus::make_failure(VLoop::FAILURE_VECTOR_WIDTH);
+  }
+
+  // Only accept valid counted loops (int)
+  if (!_lpt->_head->as_Loop()->is_valid_counted_loop(T_INT)) {
+    return VStatus::make_failure(VLoop::FAILURE_VALID_COUNTED_LOOP);
+  }
+  _cl = _lpt->_head->as_CountedLoop();
+  _iv = _cl->phi()->as_Phi();
+
+  if (_cl->is_vectorized_loop()) {
+    return VStatus::make_failure(VLoop::FAILURE_ALREADY_VECTORIZED);
+  }
+
+  if (_cl->is_unroll_only()) {
+    return VStatus::make_failure(VLoop::FAILURE_UNROLL_ONLY);
+  }
+
+  // Check for control flow in the body
+  _cl_exit = _cl->loopexit();
+  bool has_cfg = _cl_exit->in(0) != _cl;
+  if (has_cfg && !is_allow_cfg()) {
+#ifndef PRODUCT
+    if (is_trace_preconditions()) {
+      tty->print_cr("VLoop::check_preconditions: fails because of control flow.");
+      tty->print("  cl_exit %d", _cl_exit->_idx); _cl_exit->dump();
+      tty->print("  cl_exit->in(0) %d", _cl_exit->in(0)->_idx); _cl_exit->in(0)->dump();
+      tty->print("  lpt->_head %d", _cl->_idx); _cl->dump();
+      _lpt->dump_head();
+    }
+#endif
+    return VStatus::make_failure(VLoop::FAILURE_CONTROL_FLOW);
+  }
+
+  // Make sure the are no extra control users of the loop backedge
+  if (_cl->back_control()->outcnt() != 1) {
+    return VStatus::make_failure(VLoop::FAILURE_BACKEDGE);
+  }
+
+  // To align vector memory accesses in the main-loop, we will have to adjust
+  // the pre-loop limit.
+  if (_cl->is_main_loop()) {
+    CountedLoopEndNode* pre_end = _cl->find_pre_loop_end();
+    if (pre_end == nullptr) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
+    }
+    Node* pre_opaq1 = pre_end->limit();
+    if (pre_opaq1->Opcode() != Op_Opaque1) {
+      return VStatus::make_failure(VLoop::FAILURE_PRE_LOOP_LIMIT);
+    }
+    _pre_loop_end = pre_end;
+  }
+
+  return VStatus::make_success();
+}
+
+// Return true iff all submodules are loaded successfully
+bool VLoopAnalyzer::setup_submodules() {
+#ifndef PRODUCT
+  if (_vloop.is_trace_loop_analyzer()) {
+    tty->print_cr("\nVLoopAnalyzer::setup_submodules");
+    _vloop.lpt()->dump_head();
+    _vloop.cl()->dump();
+  }
+#endif
+
+  VStatus status = setup_submodules_helper();
+  if (!status.is_success()) {
+#ifndef PRODUCT
+    if (_vloop.is_trace_loop_analyzer()) {
+      tty->print_cr("\nVLoopAnalyze::setup_submodules: failed: %s", status.failure_reason());
+    }
+#endif
+    return false; // failed
+  }
+  return true; // success
+}
+
+VStatus VLoopAnalyzer::setup_submodules_helper() {
+  // Skip any loop that has not been assigned max unroll by analysis.
+  if (SuperWordLoopUnrollAnalysis && _vloop.cl()->slp_max_unroll() == 0) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_MAX_UNROLL);
+  }
+
+  if (SuperWordReductions) {
+    _reductions.mark_reductions();
+  }
+
+  _memory_slices.find_memory_slices();
+
+  // If there is no memory slice detected, it means there is no store.
+  // If there is no reduction and no store, then we give up, because
+  // vectorization is not possible anyway (given current limitations).
+  if (!_reductions.is_marked_reduction_loop() &&
+      _memory_slices.heads().is_empty()) {
+    return VStatus::make_failure(VLoopAnalyzer::FAILURE_NO_REDUCTION_OR_STORE);
+  }
+
+  VStatus body_status = _body.construct();
+  if (!body_status.is_success()) {
+    return body_status;
+  }
+
+  _types.compute_vector_element_type();
+
+  _dependency_graph.construct();
+
+  return VStatus::make_success();
+}
+
+// Construct the dependency graph:
+//  - Data-dependencies: implicit (taken from C2 node inputs).
+//  - Memory-dependencies:
+//    - No edges between different slices.
+//    - No Load-Load edges.
+//    - Inside a slice, add all Store-Load, Load-Store, Store-Store edges,
+//      except if we can prove that the memory does not overlap.
+void VLoopDependencyGraph::construct() {
+  const GrowableArray<PhiNode*>& mem_slice_heads = _memory_slices.heads();
+  const GrowableArray<MemNode*>& mem_slice_tails = _memory_slices.tails();
+
+  ResourceMark rm;
+  GrowableArray<MemNode*> slice_nodes;
+  GrowableArray<int> memory_pred_edges;
+
+  // For each memory slice, create the memory subgraph
+  for (int i = 0; i < mem_slice_heads.length(); i++) {
+    PhiNode* head = mem_slice_heads.at(i);
+    MemNode* tail = mem_slice_tails.at(i);
+
+    _memory_slices.get_slice_in_reverse_order(head, tail, slice_nodes);
+
+    // In forward order (reverse of reverse), visit all memory nodes in the slice.
+    for (int j = slice_nodes.length() - 1; j >= 0 ; j--) {
+      MemNode* n1 = slice_nodes.at(j);
+      memory_pred_edges.clear();
+
+      VPointer p1(n1, _vloop);
+      // For all memory nodes before it, check if we need to add a memory edge.
+      for (int k = slice_nodes.length() - 1; k > j; k--) {
+        MemNode* n2 = slice_nodes.at(k);
+
+        // Ignore Load-Load dependencies:
+        if (n1->is_Load() && n2->is_Load()) { continue; }
+
+        VPointer p2(n2, _vloop);
+        if (!VPointer::not_equal(p1.cmp(p2))) {
+          // Possibly overlapping memory
+          memory_pred_edges.append(_body.bb_idx(n2));
+        }
+      }
+      if (memory_pred_edges.is_nonempty()) {
+        // Data edges are taken implicitly from the C2 graph, thus we only add
+        // a dependency node if we have memory edges.
+        add_node(n1, memory_pred_edges);
+      }
+    }
+    slice_nodes.clear();
+  }
+
+  compute_depth();
+
+  NOT_PRODUCT( if (_vloop.is_trace_dependency_graph()) { print(); } )
+}
+
+void VLoopDependencyGraph::add_node(MemNode* n, GrowableArray<int>& memory_pred_edges) {
+  assert(_dependency_nodes.at_grow(_body.bb_idx(n), nullptr) == nullptr, "not yet created");
+  assert(!memory_pred_edges.is_empty(), "no need to create a node without edges");
+  DependencyNode* dn = new (_arena) DependencyNode(n, memory_pred_edges, _arena);
+  _dependency_nodes.at_put_grow(_body.bb_idx(n), dn, nullptr);
+}
+
+// We iterate over the body, which is already ordered by the dependencies, i.e. pred comes
+// before use. With a single pass, we can compute the depth of every node, since we can
+// assume that the depth of all preds is already computed when we compute the depth of use.
+void VLoopDependencyGraph::compute_depth() {
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    int max_pred_depth = 0;
+    if (n->is_Phi()) {
+      for (PredsIterator it(*this, n); !it.done(); it.next()) {
+        Node* pred = it.current();
+        if (_vloop.in_bb(pred)) {
+          max_pred_depth = MAX2(max_pred_depth, depth(pred));
+        }
+      }
+    }
+    set_depth(n, max_pred_depth + 1);
+  }
+}
+
+#ifndef PRODUCT
+void VLoopDependencyGraph::print() const {
+  tty->print_cr("\nVLoopDependencyGraph::print:");
+
+  tty->print_cr(" Memory pred edges:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    const DependencyNode* dn = dependency_node(n);
+    if (dn != nullptr) {
+      tty->print("  DependencyNode[%d %s:", n->_idx, n->Name());
+      for (uint j = 0; j < dn->memory_pred_edges_length(); j++) {
+        Node* pred = _body.body().at(dn->memory_pred_edge(j));
+        tty->print("  %d %s", pred->_idx, pred->Name());
+      }
+      tty->print_cr("]");
+    }
+  }
+  tty->cr();
+
+  tty->print_cr(" Complete dependency graph:");
+  for (int i = 0; i < _body.body().length(); i++) {
+    Node* n = _body.body().at(i);
+    tty->print("  d%02d Dependencies[%d %s:", depth(n), n->_idx, n->Name());
+    for (PredsIterator it(*this, n); !it.done(); it.next()) {
+      Node* pred = it.current();
+      tty->print("  %d %s", pred->_idx, pred->Name());
+    }
+    tty->print_cr("]");
+  }
+}
+#endif
+
+VLoopDependencyGraph::DependencyNode::DependencyNode(MemNode* n,
+                                                     GrowableArray<int>& memory_pred_edges,
+                                                     Arena* arena) :
+    _node(n),
+    _memory_pred_edges_length(memory_pred_edges.length()),
+    _memory_pred_edges(nullptr)
+{
+  assert(memory_pred_edges.is_nonempty(), "not empty");
+  uint bytes = memory_pred_edges.length() * sizeof(int);
+  _memory_pred_edges = (int*)arena->Amalloc(bytes);
+  memcpy(_memory_pred_edges, memory_pred_edges.adr_at(0), bytes);
+}
+
+VLoopDependencyGraph::PredsIterator::PredsIterator(const VLoopDependencyGraph& dependency_graph,
+                                                   const Node* node) :
+    _dependency_graph(dependency_graph),
+    _node(node),
+    _dependency_node(dependency_graph.dependency_node(node)),
+    _current(nullptr),
+    _next_pred(0),
+    _end_pred(node->req()),
+    _next_memory_pred(0),
+    _end_memory_pred((_dependency_node != nullptr) ? _dependency_node->memory_pred_edges_length() : 0)
+{
+  if (_node->is_Store() || _node->is_Load()) {
+    // Load: address
+    // Store: address, value
+    _next_pred = MemNode::Address;
+  } else {
+    assert(!_node->is_Mem(), "only loads and stores are expected mem nodes");
+    _next_pred = 1; // skip control
+  }
+  next();
+}
+
+void VLoopDependencyGraph::PredsIterator::next() {
+  if (_next_pred < _end_pred) {
+    _current = _node->in(_next_pred++);
+  } else if (_next_memory_pred < _end_memory_pred) {
+    int pred_bb_idx = _dependency_node->memory_pred_edge(_next_memory_pred++);
+    _current = _dependency_graph._body.body().at(pred_bb_idx);
+  } else {
+    _current = nullptr; // done
+  }
+}
+
 #ifndef PRODUCT
 int VPointer::Tracer::_depth = 0;
 #endif
 
-VPointer::VPointer(const MemNode* mem,
-                   PhaseIdealLoop* phase, IdealLoopTree* lpt,
+VPointer::VPointer(const MemNode* mem, const VLoop& vloop,
                    Node_Stack* nstack, bool analyze_only) :
-  _mem(mem), _phase(phase), _lpt(lpt),
-  _iv(lpt->_head->as_CountedLoop()->phi()->as_Phi()),
+  _mem(mem), _vloop(vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
   _nstack(nstack), _analyze_only(analyze_only), _stack_idx(0)
 #ifndef PRODUCT
-  , _tracer((phase->C->directive()->VectorizeDebugOption & 2) > 0)
+  , _tracer(vloop.is_trace_pointer_analysis())
 #endif
 {
   NOT_PRODUCT(_tracer.ctor_1(mem);)
@@ -109,7 +401,7 @@ VPointer::VPointer(const MemNode* mem,
 // Following is used to create a temporary object during
 // the pattern match of an address expression.
 VPointer::VPointer(VPointer* p) :
-  _mem(p->_mem), _phase(p->_phase), _lpt(p->_lpt), _iv(p->_iv),
+  _mem(p->_mem), _vloop(p->_vloop),
   _base(nullptr), _adr(nullptr), _scale(0), _offset(0), _invar(nullptr),
 #ifdef ASSERT
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
@@ -153,7 +445,7 @@ bool VPointer::invariant(Node* n) const {
       // main loop (Illegal invariant happens when n_c is a CastII node that
       // prevents data nodes to flow above the main loop).
       Node* n_c = phase()->get_ctrl(n);
-      return phase()->is_dominator(n_c, cl->pre_loop_head());
+      return phase()->is_dominator(n_c, _vloop.pre_loop_head());
     }
   }
   return is_not_member;
@@ -1191,7 +1483,7 @@ AlignmentSolution* AlignmentSolver::solve() const {
 }
 
 #ifdef ASSERT
-void print_con_or_idx(const Node* n) {
+static void print_con_or_idx(const Node* n) {
   if (n == nullptr) {
     tty->print("(0)");
   } else if (n->is_ConI()) {

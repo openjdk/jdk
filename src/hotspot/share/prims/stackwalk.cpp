@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -544,7 +544,11 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jint mode, jlong magic,
     // the continuation and it returns to let Java side set the continuation.
     // Now this batch starts right at the first frame of another continuation.
     if (last_batch_count > 0) {
-      log_debug(stackwalk)("advanced past %s", stream.method()->external_name());
+      // It is not always safe to dig out the name of the last frame
+      // here, i.e. stream.method()->external_name(), since it may
+      // have been reclaimed by HandleMark::pop_and_restore() together
+      // with the rest of the previous batch.
+      log_debug(stackwalk)("advanced past last frame decoded in the previous batch");
       stream.next();
     }
 

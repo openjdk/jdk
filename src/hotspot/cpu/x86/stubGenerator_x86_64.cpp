@@ -951,6 +951,92 @@ address StubGenerator::generate_fp_mask(const char *stub_name, int64_t mask) {
   return start;
 }
 
+address StubGenerator::generate_compress_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int compression permute index table. A row is
+    // accessed using 8 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index corresponding to set bit position
+    // or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(j, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 8; ctr++) {
+        __ emit_data(-1, relocInfo::none);
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long compression permute index table. A row is
+    // accessed using 4 bit index computed using vector mask. An entry in
+    // a row holds either a valid permute index pair for a quadword corresponding
+    // to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * j, relocInfo::none);
+          __ emit_data(2 * j + 1, relocInfo::none);
+          ctr++;
+        }
+      }
+      for (; ctr < 4; ctr++) {
+        __ emit_data64(-1L, relocInfo::none);
+      }
+    }
+  }
+  return start;
+}
+
+address StubGenerator::generate_expand_perm_table(const char *stub_name, int32_t esize) {
+  __ align(CodeEntryAlignment);
+  StubCodeMark mark(this, "StubRoutines", stub_name);
+  address start = __ pc();
+  if (esize == 32) {
+    // Loop to generate 256 x 8 int expand permute index table. A row is accessed
+    // using 8 bit index computed using vector mask. An entry in a row holds either
+    // a valid permute index (starting from least significant lane) placed at poisition
+    // corresponding to set bit position or a -1 (default) value.
+    for (int mask = 0; mask < 256; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 8; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(ctr++, relocInfo::none);
+        } else {
+          __ emit_data(-1, relocInfo::none);
+        }
+      }
+    }
+  } else {
+    assert(esize == 64, "");
+    // Loop to generate 16 x 4 long expand permute index table. A row is accessed
+    // using 4 bit index computed using vector mask. An entry in a row holds either
+    // a valid doubleword permute index pair representing a quadword index (starting
+    // from least significant lane) placed at poisition corresponding to set bit
+    // position or a -1 (default) value.
+    for (int mask = 0; mask < 16; mask++) {
+      int ctr = 0;
+      for (int j = 0; j < 4; j++) {
+        if (mask & (1 << j)) {
+          __ emit_data(2 * ctr, relocInfo::none);
+          __ emit_data(2 * ctr + 1, relocInfo::none);
+          ctr++;
+        } else {
+          __ emit_data64(-1L, relocInfo::none);
+        }
+      }
+    }
+  }
+  return start;
+}
+
 address StubGenerator::generate_vector_mask(const char *stub_name, int64_t mask) {
   __ align(CodeEntryAlignment);
   StubCodeMark mark(this, "StubRoutines", stub_name);
@@ -4094,6 +4180,13 @@ void StubGenerator::generate_compiler_stubs() {
   StubRoutines::x86::_vector_reverse_byte_perm_mask_long = generate_vector_reverse_byte_perm_mask_long("perm_mask_long");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_int = generate_vector_reverse_byte_perm_mask_int("perm_mask_int");
   StubRoutines::x86::_vector_reverse_byte_perm_mask_short = generate_vector_reverse_byte_perm_mask_short("perm_mask_short");
+
+  if (VM_Version::supports_avx2() && !VM_Version::supports_avx512vl()) {
+    StubRoutines::x86::_compress_perm_table32 = generate_compress_perm_table("compress_perm_table32", 32);
+    StubRoutines::x86::_compress_perm_table64 = generate_compress_perm_table("compress_perm_table64", 64);
+    StubRoutines::x86::_expand_perm_table32 = generate_expand_perm_table("expand_perm_table32", 32);
+    StubRoutines::x86::_expand_perm_table64 = generate_expand_perm_table("expand_perm_table64", 64);
+  }
 
   if (VM_Version::supports_avx2() && !VM_Version::supports_avx512_vpopcntdq()) {
     // lut implementation influenced by counting 1s algorithm from section 5-1 of Hackers' Delight.

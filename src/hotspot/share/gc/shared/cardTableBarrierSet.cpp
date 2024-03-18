@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -97,7 +97,7 @@ void CardTableBarrierSet::print_on(outputStream* st) const {
 // to a newly allocated object along the fast-path. We
 // compensate for such elided card-marks as follows:
 // (a) Generational, non-concurrent collectors, such as
-//     GenCollectedHeap(DefNew,Tenured) and
+//     SerialHeap(DefNew,Tenured) and
 //     ParallelScavengeHeap(ParallelGC, ParallelOldGC)
 //     need the card-mark if and only if the region is
 //     in the old gen, and do not care if the card-mark

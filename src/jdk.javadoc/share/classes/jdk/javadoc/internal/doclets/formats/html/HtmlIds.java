@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ public class HtmlIds {
     private final HtmlConfiguration configuration;
     private final Utils utils;
 
+    static final HtmlId TOP_OF_PAGE = HtmlId.of(""); // empty fragment/id indicates top of page
     static final HtmlId ALL_CLASSES_TABLE = HtmlId.of("all-classes-table");
     static final HtmlId ALL_MODULES_TABLE = HtmlId.of("all-modules-table");
     static final HtmlId ALL_PACKAGES_TABLE = HtmlId.of("all-packages-table");
@@ -90,7 +91,6 @@ public class HtmlIds {
     static final HtmlId METHOD_SUMMARY_TABLE = HtmlId.of("method-summary-table");
     static final HtmlId MODULES = HtmlId.of("modules-summary");
     static final HtmlId MODULE_DESCRIPTION = HtmlId.of("module-description");
-    static final HtmlId NAVBAR_SUB_LIST = HtmlId.of("navbar-sub-list");
     static final HtmlId NAVBAR_TOGGLE_BUTTON = HtmlId.of("navbar-toggle-button");
     static final HtmlId NAVBAR_TOP = HtmlId.of("navbar-top");
     static final HtmlId NAVBAR_TOP_FIRSTROW = HtmlId.of("navbar-top-firstrow");
@@ -101,7 +101,7 @@ public class HtmlIds {
     static final HtmlId PROPERTY_DETAIL = HtmlId.of("property-detail");
     static final HtmlId PROPERTY_SUMMARY = HtmlId.of("property-summary");
     static final HtmlId RELATED_PACKAGE_SUMMARY = HtmlId.of("related-package-summary");
-    static final HtmlId RESET_BUTTON = HtmlId.of("reset-button");
+    static final HtmlId RESET_SEARCH = HtmlId.of("reset-search");
     static final HtmlId SEARCH_INPUT = HtmlId.of("search-input");
     static final HtmlId SERVICES = HtmlId.of("services-summary");
     static final HtmlId SKIP_NAVBAR_TOP = HtmlId.of("skip-navbar-top");

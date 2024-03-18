@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -454,7 +454,7 @@ public:
   void mask_for(int bci, InterpreterOopMap* mask);
 
   // operations on invocation counter
-  void print_invocation_count();
+  void print_invocation_count(outputStream* st);
 
   // byte codes
   void    set_code(address code)      { return constMethod()->set_code(code); }
@@ -814,6 +814,14 @@ public:
       build_method_counters(current, this);
     }
     return _method_counters;
+  }
+
+  // Clear the flags related to compiler directives that were set by the compilerBroker,
+  // because the directives can be updated.
+  void clear_directive_flags() {
+    set_has_matching_directives(false);
+    clear_is_not_c1_compilable();
+    clear_is_not_c2_compilable();
   }
 
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }

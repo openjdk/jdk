@@ -77,6 +77,7 @@ public class BootstrapMethodError extends LinkageError {
      *
      * @param cause the cause, may be {@code null}.
      */
+    @SuppressWarnings("this-escape")
     public BootstrapMethodError(Throwable cause) {
         // cf. Throwable(Throwable cause) constructor.
         super(cause == null ? null : cause.toString());

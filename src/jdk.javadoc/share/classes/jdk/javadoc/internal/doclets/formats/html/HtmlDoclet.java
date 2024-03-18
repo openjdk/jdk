@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,7 +233,6 @@ public class HtmlDoclet extends AbstractDoclet {
             messages.error("doclet.No_Non_Deprecated_Classes_To_Document");
             return;
         }
-        boolean nodeprecated = options.noDeprecated();
         copyFile(options.helpFile(), DocPath.empty);
         copyFile(options.stylesheetFile(), DocPaths.RESOURCE_FILES);
         for (String stylesheet : options.additionalStylesheets()) {
@@ -309,7 +308,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (options.stylesheetFile().length() == 0) {
             copyResource(DocPaths.STYLESHEET, DocPaths.RESOURCE_FILES.resolve(DocPaths.STYLESHEET), true);
         }
-        copyResource(DocPaths.SCRIPT_JS, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
+        copyResource(DocPaths.SCRIPT_JS_TEMPLATE, DocPaths.SCRIPT_FILES.resolve(DocPaths.SCRIPT_JS), true);
         copyResource(DocPaths.CLIPBOARD_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.CLIPBOARD_SVG), true);
         copyResource(DocPaths.LINK_SVG, DocPaths.RESOURCE_FILES.resolve(DocPaths.LINK_SVG), true);
 

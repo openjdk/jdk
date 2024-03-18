@@ -96,6 +96,7 @@ public class TestGenerator {
     public static String DESC_FORMAT = "\n"
             + "/**\n"
             + " * @test %1$s\n"
+            + " * @key external-dep\n"
             + " * @library /test/lib /\n"
             + " * @run driver/timeout=21600 " + JcstressRunner.class.getName()
                     // verbose output

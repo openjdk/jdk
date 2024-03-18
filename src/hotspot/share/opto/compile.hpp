@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@
 #include "compiler/compilerOracle.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compilerEvent.hpp"
+#include "compiler/cHeapStringHolder.hpp"
 #include "libadt/dict.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/resourceArea.hpp"
@@ -363,7 +364,7 @@ class Compile : public Phase {
   ciEnv*                _env;                   // CI interface
   DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
-  const char*           _failure_reason;        // for record_failure/failing pattern
+  CHeapStringHolder     _failure_reason;        // for record_failure/failing pattern
   CompilationFailureInfo* _first_failure_details; // Details for the first failure happening during compilation
   GrowableArray<CallGenerator*> _intrinsics;    // List of intrinsics.
   GrowableArray<Node*>  _macro_nodes;           // List of nodes which need to be expanded before matching.
@@ -780,6 +781,7 @@ private:
   void add_coarsened_locks(GrowableArray<AbstractLockNode*>& locks);
   void remove_coarsened_lock(Node* n);
   bool coarsened_locks_consistent();
+  void mark_unbalanced_boxes() const;
 
   bool       post_loop_opts_phase() { return _post_loop_opts_phase;  }
   void   set_post_loop_opts_phase() { _post_loop_opts_phase = true;  }
@@ -794,6 +796,7 @@ private:
   void remove_useless_unstable_if_traps(Unique_Node_List &useful);
   void process_for_unstable_if_traps(PhaseIterGVN& igvn);
 
+  void shuffle_macro_nodes();
   void sort_macro_nodes();
 
   void mark_parse_predicate_nodes_useless(PhaseIterGVN& igvn);
@@ -809,12 +812,24 @@ private:
   Arena*      comp_arena()           { return &_comp_arena; }
   ciEnv*      env() const            { return _env; }
   CompileLog* log() const            { return _log; }
-  bool        failing() const        { return _env->failing() || _failure_reason != nullptr; }
-  const char* failure_reason() const { return (_env->failing()) ? _env->failure_reason() : _failure_reason; }
+
+  bool        failing() const        {
+    return _env->failing() ||
+           _failure_reason.get() != nullptr;
+  }
+
+  const char* failure_reason() const {
+    return _env->failing() ? _env->failure_reason()
+                           : _failure_reason.get();
+  }
+
   const CompilationFailureInfo* first_failure_details() const { return _first_failure_details; }
 
   bool failure_reason_is(const char* r) const {
-    return (r == _failure_reason) || (r != nullptr && _failure_reason != nullptr && strcmp(r, _failure_reason) == 0);
+    return (r == _failure_reason.get()) ||
+           (r != nullptr &&
+            _failure_reason.get() != nullptr &&
+            strcmp(r, _failure_reason.get()) == 0);
   }
 
   void record_failure(const char* reason);

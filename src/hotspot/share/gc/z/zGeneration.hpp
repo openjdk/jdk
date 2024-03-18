@@ -166,6 +166,7 @@ public:
   // Relocation
   void synchronize_relocation();
   void desynchronize_relocation();
+  bool is_relocate_queue_active() const;
   zaddress relocate_or_remap_object(zaddress_unsafe addr);
   zaddress remap_object(zaddress_unsafe addr);
 
