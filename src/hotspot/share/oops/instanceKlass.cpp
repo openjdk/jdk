@@ -972,11 +972,6 @@ void InstanceKlass::rewrite_class(TRAPS) {
   }
   Rewriter::rewrite(this, CHECK);
   set_rewritten();
-#if INCLUDE_CDS
-  if (CDSConfig::is_dumping_dynamic_archive()) {
-    assign_class_loader_type();
-  }
-#endif
 }
 
 // Now relocate and link method entry points after class is rewritten.

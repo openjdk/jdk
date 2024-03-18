@@ -740,10 +740,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_shared_boot_class()) {
         type = "boot";
         num_boot_klasses ++;
@@ -797,6 +793,20 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("               symbols = %5d", _symbols->length());
 
   DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::assign_class_loader_type() {
+  if (CDSConfig::is_dumping_static_archive()) {
+    // For static dump, class loader type are already set.
+    return;
+  }
+  for (int i = 0; i < klasses()->length(); i++) {
+    Klass* k = klasses()->at(i);
+    if (k->is_instance_klass()) {
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      ik->assign_class_loader_type();
+    }
+  }
 }
 
 void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
