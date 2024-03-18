@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SHARED_SPACE_HPP
 #define SHARE_GC_SHARED_SPACE_HPP
 
-#include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/BOTConstants.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/allocation.hpp"

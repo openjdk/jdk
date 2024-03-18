@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 #ifndef SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_HPP
 #define SHARE_GC_SERIAL_SERIALBLOCKOFFSETTABLE_HPP
 
-#include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/BOTConstants.hpp"
 #include "gc/shared/cardTable.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
