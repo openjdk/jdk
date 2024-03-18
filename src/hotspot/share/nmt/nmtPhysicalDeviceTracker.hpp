@@ -38,8 +38,8 @@
 // The PhysicalDeviceTracker tracks memory of 'physical devices',
 // storage with its own memory space separate from the process.
 // A typical example of such a device is a memory mapped file.
-class PhysicalDeviceTracker {
-  friend class PhysicalDeviceTrackerTest;
+class MemoryFileTracker {
+  friend class MemoryFileTrackerTest;
   // Provide caching of stacks.
   NativeCallStackStorage _stack_storage;
 
@@ -47,8 +47,8 @@ class PhysicalDeviceTracker {
   using DeviceSpace = VMATree;
 public:
   class MemoryFile : public CHeapObj<mtNMT> {
-    friend PhysicalDeviceTracker;
-    friend class PhysicalDeviceTrackerTest;
+    friend MemoryFileTracker;
+    friend class MemoryFileTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
     DeviceSpace _tree;
@@ -64,7 +64,7 @@ private:
   GrowableArrayCHeap<MemoryFile*, mtNMT> _devices;
 
 public:
-  PhysicalDeviceTracker(bool is_detailed_mode);
+  MemoryFileTracker(bool is_detailed_mode);
 
   void allocate_memory(MemoryFile* device, size_t offset, size_t size, MEMFLAGS flag,
                        const NativeCallStack& stack);
@@ -83,7 +83,7 @@ public:
   const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
 
   class Instance : public AllStatic {
-    static PhysicalDeviceTracker* _tracker;
+    static MemoryFileTracker* _tracker;
   public:
     static bool initialize(NMT_TrackingLevel tracking_level);
 

@@ -31,7 +31,7 @@
 #include "nmt/nmtPhysicalDeviceTracker.hpp"
 #include "utilities/nativeCallStack.hpp"
 
-PhysicalDeviceTracker::MemoryFile* ZNMT::_device = nullptr;
+MemoryFileTracker::MemoryFile* ZNMT::_device = nullptr;
 
 void ZNMT::reserve(zaddress_unsafe start, size_t size) {
   MemTracker::record_virtual_memory_reserve((address)start, size, CALLER_PC, mtJavaHeap);

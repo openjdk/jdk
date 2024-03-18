@@ -177,11 +177,11 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_virtual_memory_map();
   // Report all physical devices
   void report_physical_devices() {
-    const GrowableArrayCHeap<PhysicalDeviceTracker::MemoryFile*, mtNMT>& devices =
-        PhysicalDeviceTracker::Instance::devices();
+    const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
+        MemoryFileTracker::Instance::devices();
     for (int i = 0; i < devices.length(); i++) {
-      PhysicalDeviceTracker::MemoryFile* dev = devices.at(i);
-      PhysicalDeviceTracker::Instance::print_report_on(dev, this->output(), scale());
+      MemoryFileTracker::MemoryFile* dev = devices.at(i);
+      MemoryFileTracker::Instance::print_report_on(dev, this->output(), scale());
     }
   }
   // Report malloc allocation sites; returns number of omitted sites

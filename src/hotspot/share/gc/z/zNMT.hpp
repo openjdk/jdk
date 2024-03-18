@@ -36,7 +36,7 @@
 
 class ZNMT : public AllStatic {
 private:
-  static PhysicalDeviceTracker::MemoryFile* _device;
+  static MemoryFileTracker::MemoryFile* _device;
 public:
   static void init();
   static void map(zaddress_unsafe addr, size_t size, zoffset offset);

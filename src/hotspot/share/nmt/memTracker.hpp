@@ -167,33 +167,33 @@ class MemTracker : AllStatic {
     }
   }
 
-  static inline PhysicalDeviceTracker::MemoryFile* register_device(const char* descriptive_name) {
+  static inline MemoryFileTracker::MemoryFile* register_device(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
     ThreadCritical tc;
-    return PhysicalDeviceTracker::Instance::make_device(descriptive_name);
+    return MemoryFileTracker::Instance::make_device(descriptive_name);
   }
 
-  static inline void remove_device(PhysicalDeviceTracker::MemoryFile* device) {
+  static inline void remove_device(MemoryFileTracker::MemoryFile* device) {
     assert_post_init();
     if (!enabled()) return;
     ThreadCritical tc;
-    PhysicalDeviceTracker::Instance::free_device(device);
+    MemoryFileTracker::Instance::free_device(device);
   }
 
-  static inline void allocate_memory_in(PhysicalDeviceTracker::MemoryFile* device, size_t offset, size_t size,
+  static inline void allocate_memory_in(MemoryFileTracker::MemoryFile* device, size_t offset, size_t size,
                                         MEMFLAGS flag, const NativeCallStack& stack) {
     assert_post_init();
     if (!enabled()) return;
     ThreadCritical tc;
-    PhysicalDeviceTracker::Instance::allocate_memory(device, offset, size, flag, stack);
+    MemoryFileTracker::Instance::allocate_memory(device, offset, size, flag, stack);
   }
-  static inline void free_memory_in(PhysicalDeviceTracker::MemoryFile* device,
+  static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,
                                         size_t offset, size_t size) {
     assert_post_init();
     if (!enabled()) return;
     ThreadCritical tc;
-    PhysicalDeviceTracker::Instance::free_memory(device, offset, size);
+    MemoryFileTracker::Instance::free_memory(device, offset, size);
   }
 
   // Given an existing memory mapping registered with NMT and a splitting
