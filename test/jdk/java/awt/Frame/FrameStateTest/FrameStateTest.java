@@ -69,7 +69,7 @@ public class FrameStateTest implements ActionListener {
         The problem was that it did not honor the initial iconic state, but
         instead was shown in the NORMAL state.
         </p><hr/><p>
-        
+
         Steps to try to reproduce this problem:
         </p><p>
         Select the different options for the Frame:
@@ -85,9 +85,9 @@ public class FrameStateTest implements ActionListener {
         up make sure the proper behavior occurred<br>
         (Frame shown in proper state).<br>
         Click the Dispose button to close the Frame.<br>
-        
+
         </p><hr/><p>
-        
+
         Do the above steps for all the different Frame state combinations available.<br>
         If you observe the proper behavior the test has passed, Press the Pass button.<br>
         Otherwise the test has failed, Press the Fail button.
