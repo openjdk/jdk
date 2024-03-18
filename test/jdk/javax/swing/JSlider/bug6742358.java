@@ -21,7 +21,8 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 6742358
  * @summary MetalSliderUI paint wrong vertical disabled filled JSlider for DefaultMetalTheme
  * @library /java/awt/regtesthelpers
