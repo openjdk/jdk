@@ -67,7 +67,7 @@ public class OverriderMsg {
         bytes = ClassFile.of().build(ClassDesc.of("HasFinal"),
                     clb -> clb
                             .withVersion(JAVA_7_VERSION, 0)
-                            .withFlags(ACC_PUBLIC + ACC_SUPER)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
                             .withSuperclass(CD_Object)
 
                             .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
@@ -76,7 +76,7 @@ public class OverriderMsg {
                                             .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                             .return_())
 
-                            .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC + ACC_FINAL, CodeBuilder::return_)
+                            .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC | ACC_FINAL, CodeBuilder::return_)
 
         );
 
@@ -93,7 +93,7 @@ public class OverriderMsg {
         bytes = ClassFile.of().build(ClassDesc.of("Overrider"),
                 clb -> clb
                         .withVersion(JAVA_7_VERSION, 0)
-                        .withFlags(ACC_PUBLIC + ACC_SUPER)
+                        .withFlags(ACC_PUBLIC | ACC_SUPER)
                         .withSuperclass(ClassDesc.of("HasFinal"))
 
                         .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
@@ -104,7 +104,7 @@ public class OverriderMsg {
 
                         .withMethodBody("m", MethodTypeDesc.ofDescriptor("(Ljava/lang/String;)V"), ACC_PUBLIC, CodeBuilder::return_)
 
-                        .withMethodBody("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC + ACC_STATIC, CodeBuilder::return_)
+                        .withMethodBody("main", MethodTypeDesc.ofDescriptor("([Ljava/lang/String;)V"), ACC_PUBLIC | ACC_STATIC, CodeBuilder::return_)
 
         );
 

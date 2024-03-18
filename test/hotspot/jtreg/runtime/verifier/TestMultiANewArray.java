@@ -65,13 +65,13 @@ public class TestMultiANewArray {
                     clb -> clb
                             .withVersion(cfv, 0)
                             .withSuperclass(CD_Object)
-                            .withFlags(ACC_PUBLIC + ACC_SUPER)
+                            .withFlags(ACC_PUBLIC | ACC_SUPER)
                             .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
                                     cob -> cob
                                             .aload(0)
                                             .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                             .return_())
-                            .withMethodBody("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()),ACC_PUBLIC + ACC_STATIC,
+                            .withMethodBody("main", MethodTypeDesc.of(CD_void, CD_String.arrayType()), ACC_PUBLIC | ACC_STATIC,
                                     cob -> cob
                                             .iconst_1()
                                             .iconst_2()

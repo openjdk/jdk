@@ -74,21 +74,21 @@ public class FinalStatic {
                 case CLASS_NAME_A:
                     return ClassFile.of().build(ClassDesc.of(CLASS_NAME_A),
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
-                                    .withFlags(ACC_PUBLIC + ACC_SUPER)
+                                    .withFlags(ACC_PUBLIC | ACC_SUPER)
                                     .withSuperclass(CD_Object)
                                     .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
                                             cob -> cob
                                                     .aload(0)
                                                     .invokespecial(CD_Object, INIT_NAME, MTD_void)
                                                     .return_())
-                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_FINAL + ACC_STATIC,
+                                    .withMethodBody("m", MethodTypeDesc.of(CD_int), ACC_FINAL | ACC_STATIC,
                                             cob -> cob.ldc(FAILED).ireturn())
                     );
 
                 case CLASS_NAME_B:
                     return ClassFile.of().build(ClassDesc.ofInternalName(CLASS_NAME_B),
                             clb -> clb.withVersion(JAVA_8_VERSION, 0)
-                                    .withFlags(ACC_PUBLIC + ACC_SUPER)
+                                    .withFlags(ACC_PUBLIC | ACC_SUPER)
                                     .withSuperclass(ClassDesc.ofInternalName(CLASS_NAME_A))
                                     .withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC,
                                             cob -> cob
