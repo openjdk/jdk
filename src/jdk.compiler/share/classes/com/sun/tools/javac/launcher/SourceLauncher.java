@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,11 @@ public final class SourceLauncher {
             // 2. If the first class doesn't have a main method, look for a class with a matching name
             var compilationUnitName = context.getProgramDescriptor().fileObject().getFile().getFileName().toString();
             assert compilationUnitName.endsWith(".java");
-            var expectedName = compilationUnitName.substring(0, compilationUnitName.length() - 5);
+            var expectedSimpleName = compilationUnitName.substring(0, compilationUnitName.length() - 5);
+            var expectedPackageName = context.getProgramDescriptor().packageName().orElse("");
+            var expectedName = expectedPackageName.isEmpty()
+                    ? expectedSimpleName
+                    : expectedPackageName + '.' + expectedSimpleName;
             var actualName = topLevelClassNames.stream()
                     .filter(name -> name.equals(expectedName))
                     .findFirst()

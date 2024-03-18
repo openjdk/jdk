@@ -111,6 +111,27 @@ public class SourceLauncherTest extends TestRunner {
     }
 
     @Test
+    public void testHelloWorldInPackageWithStaticImport(Path base) throws IOException {
+        tb.writeJavaFiles(base,
+                """
+                package hello;
+                import static hello.Helper.*;
+                import java.util.Arrays;
+                class World {
+                    public static void main(String... args) {
+                        m(args);
+                    }
+                }
+                class Helper {
+                    static void m(String... args) {
+                        System.out.println("Hello World! " + Arrays.toString(args));
+                    }
+                }
+                """);
+        testSuccess(base.resolve("hello").resolve("World.java"), "Hello World! [1, 2, 3]\n");
+    }
+
+    @Test
     public void testHelloWorldWithAux(Path base) throws IOException {
         tb.writeJavaFiles(base,
             "import java.util.Arrays;\n" +
