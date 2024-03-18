@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static jdk.internal.javac.PreviewFeature.*;
@@ -47,7 +48,7 @@ import static jdk.internal.javac.PreviewFeature.*;
  * The state of a monotonic value can only go from absent to present and consequently, a
  * value can only be bound at most once.
  *
- * @implSpec The implementation of this interface is thread-safe, and non-blocking.
+ * @implSpec The implementation of this interface is thread-safe, atomic, and non-blocking.
  *
  * @param <V> value type
  * @since 23
@@ -56,10 +57,9 @@ import static jdk.internal.javac.PreviewFeature.*;
 public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
-     * If a value is present, returns the value, otherwise throws
-     * {@code NoSuchElementException}.
+     * {@return the (nullable) value if present, otherwise throws
+     * {@code NoSuchElementException}}
      *
-     * @return the value (nullable) present in this monotonic
      * @throws NoSuchElementException if no value is present
      */
     V get();
@@ -80,7 +80,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
      * If no value is present, binds the monotonic value to the provided (nullable)
-     * {@code value}}, returning the (pre-existing or newly bound) value.
+     * {@code value}, returning the (pre-existing or newly bound) value.
      * <p>
      * If several threads invoke this method simultaneously, only one thread will succeed
      * in binding a value and that (witness) value will be returned to all threads.
@@ -116,11 +116,12 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *     return newValue;
      * }
      * }</pre>
-     * Except it is thread-safe and will only return the same witness value regardless if
-     * invoked by several threads.
+     * Except it is atomic, thread-safe and will only return the same witness value
+     * regardless if invoked by several threads.
      *
-     * <p>The implementation guarantees the provided {@code supplier} is invoked
-     * once (if successful) even if invoked from several threads.
+     * <p>
+     * The implementation guarantees the provided {@code supplier} is invoked once
+     * (if successful) even if invoked from several threads.
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
@@ -185,7 +186,10 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      */
     static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
-        return MonotonicMap.ofMap(keys);
+        // Checks for null keys and removes any duplicates
+        Object[] keyArray = Set.copyOf(keys)
+                .toArray();
+        return MonotonicMap.ofMap(keyArray);
     }
 
 }

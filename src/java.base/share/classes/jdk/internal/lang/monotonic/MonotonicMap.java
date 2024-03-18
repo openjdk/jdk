@@ -244,11 +244,8 @@ public final class MonotonicMap<K, V>
 
     // Factories
 
-    public static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
-        // Checks for null keys and removes any duplicates
-        Object[] keyArray = Set.copyOf(keys)
-                .toArray();
-        return new MonotonicMap<>(keyArray);
+    public static <K, V> Map<K, Monotonic<V>> ofMap(Object[] keys) {
+        return new MonotonicMap<>(keys);
     }
 
     public static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
@@ -273,11 +270,11 @@ public final class MonotonicMap<K, V>
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
                                                    Function<? super K, ? extends V> mapper,
                                                    boolean background) {
-        Map<K, Monotonic<V>> list = Monotonic.ofMap(keys);
+        Map<K, Monotonic<V>> map = Monotonic.ofMap(keys);
         Function<K, V> function = new Function<K, V>() {
             @Override
             public V apply(K k) {
-                return mapper.apply(k);
+                return Monotonics.computeIfAbsent(map, k, mapper);
             }
         };
         if (background) {

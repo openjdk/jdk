@@ -26,7 +26,6 @@
 package java.util;
 
 import java.io.Serializable;
-import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.function.ToLongFunction;

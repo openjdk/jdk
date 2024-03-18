@@ -30,6 +30,8 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.Field;
 import java.lang.reflect.InaccessibleObjectException;
 import java.util.NoSuchElementException;
@@ -159,6 +161,30 @@ final class BasicMonotonicTest {
         );
 
     }
+
+    @Test
+    void varHandle() throws NoSuchFieldException, IllegalAccessException {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+
+        Monotonic<Integer> original = Monotonic.of();
+
+        final class Holder {
+            private final Monotonic<Integer> monotonic = original;
+        }
+
+        VarHandle varHandle = lookup.findVarHandle(Holder.class, "monotonic", Monotonic.class);
+        Holder holder = new Holder();
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                varHandle.set(holder, Monotonic.of())
+        );
+
+        assertThrows(UnsupportedOperationException.class, () ->
+                varHandle.compareAndSet(holder, original, Monotonic.of())
+        );
+
+    }
+
 
     static final class CountingSupplier<T> implements Supplier<T> {
 

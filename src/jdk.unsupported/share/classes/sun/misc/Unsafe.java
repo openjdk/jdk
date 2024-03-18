@@ -32,7 +32,6 @@ import jdk.internal.reflect.Reflection;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.util.List;
 import java.util.Set;
 
 
@@ -656,6 +655,7 @@ public final class Unsafe {
         if (declaringClass.isRecord()) {
             throw new UnsupportedOperationException("can't get field offset on a record class: " + f);
         }
+        // Todo: When Monotonic is a final feature: if (java.lang.Monotonic.class.isAssignableFrom(f.getType()))
         if (f.getType().getName().equals("java.lang.Monotonic")) {
             throw new UnsupportedOperationException("can't get field offset for a field of type java.lang.Monotonic: " + f);
         }

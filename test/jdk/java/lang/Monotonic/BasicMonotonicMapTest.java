@@ -58,12 +58,17 @@ final class BasicMonotonicMapTest {
     }
 
     @Test
-    void empty() {
+    void untouched() {
         assertFalse(map.isEmpty());
         assertEquals(SIZE, map.size());
 
         for (String key : STRINGS) {
             assertFalse(map.get(key).isPresent());
+        }
+
+        for (String key : STRINGS) {
+            assertNotNull(map.get(key));
+            assertTrue(map.containsKey(key));
         }
 
         assertEquals(expectedToString(map), map.toString());

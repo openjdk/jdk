@@ -178,7 +178,7 @@ class Field extends AccessibleObject implements Member {
             if (Monotonic.class.isAssignableFrom(type) && Modifier.isFinal(modifiers)) {
                 throw newInaccessibleObjectException(
                         "Unable to make field " + this + " accessable: " +
-                                "Monotonic fields are trusted");
+                                "java.lang.Monotonic fields are trusted");
             }
             checkCanSetAccessible(Reflection.getCallerClass());
         }
