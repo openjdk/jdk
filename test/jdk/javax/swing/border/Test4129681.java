@@ -74,7 +74,7 @@ public class Test4129681 {
             }
         }
 
-        if (((double)correctColoredPixels / totalPixels * 100) <= tolerance) {
+        if (((double) correctColoredPixels / totalPixels * 100) <= tolerance) {
             ImageIO.write(image, "png", new File("failureImage.png"));
             throw new RuntimeException("Label with border is not disabled");
         }
