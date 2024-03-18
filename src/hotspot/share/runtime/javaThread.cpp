@@ -591,9 +591,9 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
   return interrupted;
 }
 
-// Checks and clears the interrupt status for platform or virtual thread.
-// Used by the JVMTI RawMonitorWait only.
-bool JavaThread::is_interrupted() {
+// This is only for use by JVMTI RawMonitorWait. It emulates the actions of
+// the Java code in Object::wait which are not present in RawMonitorWait.
+bool JavaThread::get_and_clear_interrupted() {
   if (!is_interrupted(false)) {
     return false;
   }
