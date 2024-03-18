@@ -40,12 +40,14 @@ import java.util.function.Supplier;
 import static jdk.internal.javac.PreviewFeature.*;
 
 /**
- * A <em>monotonic value</em> that can be bound at most once.
+ * A <em>monotonic value</em> that can be atomically bound at most once.
+ * <p>
+ * Monotonic values are eligible for constant folding and other optimizations by the JVM.
  * <p>
  * The state of a monotonic value can only go from absent to present and consequently, a
  * value can only be bound at most once.
  *
- * @implSpec The implementation of this interface is immutable and thread-safe.
+ * @implSpec The implementation of this interface is thread-safe, and non-blocking.
  *
  * @param <V> value type
  * @since 23
@@ -63,9 +65,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     V get();
 
     /**
-     * If a value is present, returns {@code true}, otherwise {@code false}.
-     *
-     * @return {@code true} if a value is present, otherwise {@code false}
+     * {@return {@code true} if a value is present, otherwise {@code false}}
      */
     boolean isPresent();
 
@@ -108,26 +108,24 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * {@code monotonic}:
      *
      * <pre> {@code
-     * if (!monotonic.isPresent()) {
+     * if (monotonic.isPresent()) {
+     *     return monotonic.get();
+     * } else {
      *     V newValue = supplier.get();
      *     monotonic.put(newValue);
      *     return newValue;
-     * } else {
-     *     return monotonic.get();
      * }
      * }</pre>
      * Except it is thread-safe and will only return the same witness value regardless if
      * invoked by several threads.
      *
      * <p>The implementation guarantees the provided {@code supplier} is invoked
-     * once (if successful) even if invoked from several threads and may block when
-     * synchronizing on the provided {@code supplier}.
+     * once (if successful) even if invoked from several threads.
      *
      * @param supplier to be used for computing a value
      * @return the current (pre-existing or computed) value
      */
     V computeIfAbsent(Supplier<? extends V> supplier);
-
 
     // Factories
 
@@ -141,8 +139,8 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     }
 
     /**
-     * {@return a new shallowly immutable, thread-safe, lazy {@linkplain List } of
-     * {@code size} distinct empty monotonic values}
+     * {@return a new shallowly immutable, thread-safe, lazy, non-blocking
+     * {@linkplain List } of {@code size} distinct empty monotonic values}
      * <p>
      * The returned {@code List} is equivalent to the following List:
      * {@snippet lang=java :
@@ -151,6 +149,9 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *         .toList();
      * }
      * except it creates the elements lazily as they are accessed.
+     * <p>
+     * Returned monotonic lists are eligible for constant folding and other optimizations
+     * by the JVM.
      *
      * @param size the size of the returned monotonic list
      * @param <V>  the value type for the Monotonic elements in this list
@@ -163,9 +164,10 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     }
 
     /**
-     * {@return a new shallowly immutable, thread-safe, lazy {@linkplain Map } where the
-     * {@linkplain java.util.Map#keySet() keys} contains precisely the distinct provided
-     * {@code keys} and where the values are distinct empty monotonic values}
+     * {@return a new shallowly immutable, thread-safe, lazy, non-blocking
+     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys} contains
+     * precisely the distinct provided {@code keys} and where the values are distinct
+     * empty monotonic values}
      * <p>
      * The returned {@code Map} is equivalent to the following Map:
      * {@snippet lang=java :
@@ -173,6 +175,9 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *         .collect(Collectors.toMap(Function.identity(), _ -> Monotonic.of())));
      * }
      * except it creates the values lazily as they are accessed.
+     * <p>
+     * Returned monotonic maps are eligible for constant folding and other optimizations
+     * by the JVM.
      *
      * @param keys the keys in the map
      * @param <K>  the type of keys maintained by the returned map
