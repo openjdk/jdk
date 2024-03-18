@@ -67,6 +67,14 @@
   develop(bool, StressMethodHandleLinkerInlining, false,                    \
           "Stress inlining through method handle linkers")                  \
                                                                             \
+  product(bool, StressBailout, false, DIAGNOSTIC,                           \
+         "Perform bailouts randomly at C2 failing() checks.")               \
+          constraint(StressBailoutConstraintFunc, AfterErgo)                \
+                                                                            \
+  product(uint, StressBailoutInterval, 10000, DIAGNOSTIC,                   \
+          "Stress bailout every n:th time on average")                      \
+          range(1, max_juint)                                               \
+                                                                            \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \

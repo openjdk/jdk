@@ -395,6 +395,7 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
   x->init_req(0, x);
   _goto = matcher.match_tree(x);
   assert(_goto != nullptr, "");
+  if (C->failing()) {return; } // match_tree
   _goto->set_req(0,_goto);
 
   // Build the CFG in Reverse Post Order

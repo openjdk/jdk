@@ -740,6 +740,20 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
 
+  // If any phase is randomized for stress testing, seed random number
+  // generation and log the seed for repeatability.
+  if (StressLCM || StressGCM || StressIGVN || StressCCP || StressIncrementalInlining || StressBailout) {
+    if (FLAG_IS_DEFAULT(StressSeed) || (FLAG_IS_ERGO(StressSeed) && directive->RepeatCompilationOption)) {
+      _stress_seed = static_cast<uint>(Ticks::now().nanoseconds());
+      FLAG_SET_ERGO(StressSeed, _stress_seed);
+    } else {
+      _stress_seed = StressSeed;
+    }
+    if (_log != nullptr) {
+      _log->elem("stress_test seed='%u'", _stress_seed);
+    }
+  }
+
   print_inlining_init();
   { // Scope for timing the parser
     TracePhase tp("parse", &timers[_t_parser]);
@@ -794,7 +808,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
       assert(failure_reason() != nullptr, "expect reason for parse failure");
       stringStream ss;
       ss.print("method parse failed: %s", failure_reason());
-      record_method_not_compilable(ss.as_string());
+      record_method_not_compilable(ss.as_string(), true);
       return;
     }
     GraphKit kit(jvms);
@@ -1125,7 +1139,9 @@ void Compile::Init(bool aliasing) {
 //---------------------------init_start----------------------------------------
 // Install the StartNode on this compile object.
 void Compile::init_start(StartNode* s) {
-  if (failing())
+  if (failing(true)) // Skip : this method has no side effect in product,
+                     // but we do a bailout check anyway, and then another one
+                     // in Compile::start(). TODO refactor?
     return; // already failing
   assert(s == start(), "");
 }
@@ -1136,7 +1152,7 @@ void Compile::init_start(StartNode* s) {
  * the ideal graph.
  */
 StartNode* Compile::start() const {
-  assert (!failing(), "Must not have pending failure. Reason is: %s", failure_reason());
+  assert (!failing_internal(), "Must not have pending failure. Reason is: %s", failure_reason());
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
     if (start->is_Start()) {
@@ -2960,6 +2976,7 @@ void Compile::Code_Gen() {
 
   // Build a proper-looking CFG
   PhaseCFG cfg(node_arena(), root(), matcher);
+  if (failing()) {return; }
   _cfg = &cfg;
   {
     TracePhase tp("scheduler", &timers[_t_scheduler]);
@@ -4385,7 +4402,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 // to backtrack and retry without subsuming loads.  Other than this backtracking
 // behavior, the Compile's failure reason is quietly copied up to the ciEnv
 // by the logic in C2Compiler.
-void Compile::record_failure(const char* reason) {
+void Compile::record_failure(const char* reason, bool skip) {
   if (log() != nullptr) {
     log()->elem("failure reason='%s' phase='compile'", reason);
   }
@@ -4394,6 +4411,10 @@ void Compile::record_failure(const char* reason) {
     _failure_reason.set(reason);
     if (CaptureBailoutInformation) {
       _first_failure_details = new CompilationFailureInfo(reason);
+    }
+  } else {
+    if (StressBailout && !skip)  {
+        guarantee(false, "should have handled previous failure.");
     }
   }
 
@@ -4422,7 +4443,7 @@ Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
 }
 
 Compile::TracePhase::~TracePhase() {
-  if (_compile->failing()) return;
+  if (_compile->failing(true)) return; // timing code, not stressing bailouts.
 #ifdef ASSERT
   if (PrintIdealNodeCount) {
     tty->print_cr("phase name='%s' nodes='%d' live='%d' live_graph_walk='%d'",
@@ -5200,7 +5221,7 @@ void Compile::sort_macro_nodes() {
 }
 
 void Compile::print_method(CompilerPhaseType cpt, int level, Node* n) {
-  if (failing()) { return; }
+  if (failing_internal()) { return; } // failing_internal to not stress bailouts from printing code.
   EventCompilerPhase event(UNTIMED);
   if (event.should_commit()) {
     CompilerEvent::PhaseEvent::post(event, C->_latest_stage_start_counter, cpt, C->_compile_id, level);

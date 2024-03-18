@@ -439,3 +439,13 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
   return JVMFlag::SUCCESS;
 }
 
+#ifdef COMPILER2
+JVMFlag::Error StressBailoutConstraintFunc(bool value, bool verbose) {
+  if (StressBailout && AbortVMOnCompilationFailure) {
+    JVMFlag::printError(verbose,
+		        "Disabling StressBailout due to AbortVMOnCompilationFailure. \n");
+    StressBailout = false;
+  }
+  return JVMFlag::SUCCESS;
+}
+#endif // COMPILER2

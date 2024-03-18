@@ -307,7 +307,7 @@ static Node* clone_node(Node* def, Block *b, Compile* C) {
     } else {
       // Bailout without retry
       assert(false, "RA Split failed: attempt to clone node with anti_dependence");
-      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence");
+      C->record_method_not_compilable("RA Split failed: attempt to clone node with anti_dependence", true);
     }
     return 0;
   }
