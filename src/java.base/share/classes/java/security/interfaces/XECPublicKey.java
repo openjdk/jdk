@@ -60,6 +60,7 @@ public interface XECPublicKey extends XECKey, PublicKey {
      * The default implementation returns {@code null}.
      *
      * @return {@inheritDoc java.security.AsymmetricKey}
+     * @since 22
      */
     @Override
     default AlgorithmParameterSpec getParams() {
