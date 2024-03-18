@@ -290,15 +290,17 @@ void Matcher::match( ) {
     // preserve area, locks & pad2.
 
     OptoReg::Name reg1 = warp_incoming_stk_arg(vm_parm_regs[i].first());
-
-    if (C->failing()) {return; } //warp_incoming_stk_arg
+    if (C->failing()) {
+      return;
+    }
 
     if( OptoReg::is_valid(reg1))
       _calling_convention_mask[i].Insert(reg1);
 
     OptoReg::Name reg2 = warp_incoming_stk_arg(vm_parm_regs[i].second());
-
-    if (C->failing()) {return; }
+    if (C->failing()) {
+      return;
+    }
 
     if( OptoReg::is_valid(reg2))
       _calling_convention_mask[i].Insert(reg2);
@@ -396,6 +398,7 @@ void Matcher::match( ) {
       // The control will be set when this node is used first time
       // in find_base_for_derived().
       assert(_mach_null != nullptr, "");
+
       C->set_root(xroot->is_Root() ? xroot->as_Root() : nullptr);
 
 #ifdef ASSERT
@@ -1434,17 +1437,20 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
       }
       // Grab first register, adjust stack slots and insert in mask.
       OptoReg::Name reg1 = warp_outgoing_stk_arg(first, begin_out_arg_area, out_arg_limit_per_call );
+      if (C->failing()) {
+        return nullptr;
+      }
+
       if (OptoReg::is_valid(reg1))
         rm->Insert( reg1 );
 
-      if (C->failing()) {return nullptr; } //warp_outgoing_stk_arg
-
       // Grab second register (if any), adjust stack slots and insert in mask.
       OptoReg::Name reg2 = warp_outgoing_stk_arg(second, begin_out_arg_area, out_arg_limit_per_call );
+      if (C->failing()) {
+        return nullptr;
+      }
       if (OptoReg::is_valid(reg2))
         rm->Insert( reg2 );
-
-      if (C->failing()) {return nullptr; } //warp_outgoing_stk_arg
 
     } // End of for all arguments
   }
