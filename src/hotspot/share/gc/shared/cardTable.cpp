@@ -207,10 +207,7 @@ void CardTable::dirty_MemRegion(MemRegion mr) {
   assert(align_up  (mr.end(),   HeapWordSize) == mr.end(),   "Unaligned end"  );
   CardValue* cur  = byte_for(mr.start());
   CardValue* last = byte_after(mr.last());
-  while (cur < last) {
-    *cur = dirty_card;
-    cur++;
-  }
+  memset(cur, dirty_card, pointer_delta(last, cur, sizeof(CardValue)));
 }
 
 void CardTable::clear_MemRegion(MemRegion mr) {
