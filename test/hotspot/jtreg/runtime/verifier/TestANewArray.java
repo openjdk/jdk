@@ -24,6 +24,7 @@
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.classfile.ClassFile;
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
 import static java.lang.classfile.ClassFile.*;
@@ -107,7 +108,7 @@ public class TestANewArray {
 
         classCName = "classCName_" + cfv + "_" + testDimension264;
 
-        return ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(java.lang.constant.ClassDesc.of(classCName),
+        return ClassFile.of(ClassFile.StackMapsOption.DROP_STACK_MAPS).build(ClassDesc.of(classCName),
                     clb -> clb
                             .withVersion(cfv, 0)
                             .withSuperclass(CD_Object)
