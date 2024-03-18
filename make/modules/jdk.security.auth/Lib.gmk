@@ -30,8 +30,6 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBJAAS, \
     NAME := jaas, \
     OPTIMIZATION := LOW, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_windows := netapi32.lib user32.lib mpr.lib advapi32.lib $(JDKLIB_LIBS), \
 ))
 

@@ -36,8 +36,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBPREFS, \
     NAME := prefs, \
     EXCLUDE_SRC_PATTERNS := $(LIBPREFS_EXCLUDE_SRC_PATTERNS), \
     OPTIMIZATION := HIGH, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_linux := -ljava, \
     LIBS_aix := -ljava, \
