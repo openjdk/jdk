@@ -832,7 +832,7 @@ void ObjectMonitor::EnterI(JavaThread* current) {
   // -- the checker -- parked on a timer.
 
   if (nxt == nullptr && _EntryList == nullptr X86_ONLY(&& LockingMode != LM_LIGHTWEIGHT)
-     AARCH64_ONLY(&& LockingMode != LM_LIGHTWEIGHT)) {
+     AARCH64_ONLY(&& LockingMode != LM_LIGHTWEIGHT) RISCV_ONLY(&& LockingMode != LM_LIGHTWEIGHT)) {
     // Try to assume the role of responsible thread for the monitor.
     // CONSIDER:  ST vs CAS vs { if (Responsible==null) Responsible=current }
     Atomic::replace_if_null(&_Responsible, current);

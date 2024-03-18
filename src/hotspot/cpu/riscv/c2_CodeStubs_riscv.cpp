@@ -99,4 +99,63 @@ void C2HandleAnonOMOwnerStub::emit(C2_MacroAssembler& masm) {
   __ j(continuation());
 }
 
+int C2FastUnlockLightweightStub::max_size() const {
+  // FIXME
+  return 256;
+}
+
+void C2FastUnlockLightweightStub::emit(C2_MacroAssembler& masm) {
+
+  const Register monitor = _mark_or_monitor;
+  const Register contentions_addr = _t;
+
+  Label restore_contentions_slow_path;
+  {
+    __ bind (restore_contentions_slow_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ j(slow_path_continuation());
+  }
+  Label restore_contentions_fast_path;
+  {
+    __ bind (restore_contentions_fast_path);
+    __ atomic_addw(noreg, -1, contentions_addr);
+    __ j(unlocked_continuation());
+  }
+
+  // The cancellation requires that we first increment and then decrement the contentions.
+  // Instead we can simply go to the slow path without changing contentions.
+  Label& canceled_deflation_slow_path = slow_path_continuation();
+
+  { // Handle monitor medium path.
+
+    __ bind(_inflated_medium_path);
+
+    __ cmpxchg(/*addr*/ _owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t2);
+    __ beqz(t2, slow_path_continuation());
+
+    __ li(t1, reinterpret_cast<intptr_t>(DEFLATER_MARKER));
+    __ bne(t1, t2, slow_path_continuation());
+
+    __ la(contentions_addr, Address(monitor, ObjectMonitor::contentions_offset()));
+
+    __ atomic_addw(t1, 1, contentions_addr);
+
+    __ bltz(t1, restore_contentions_fast_path);
+
+    // t1 contains DEFLATER_MARKER
+    __ cmpxchg(/*addr*/ _owner_addr, /*expected*/ t1, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t2);
+    __ beq(t1, t2,  canceled_deflation_slow_path);
+
+    __ cmpxchg(/*addr*/ _owner_addr, /*expected*/ zr, /*new*/ xthread, Assembler::int64,
+               /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t2);
+    __ beqz(t2, restore_contentions_slow_path);
+
+    __ atomic_addw(zr, -1, contentions_addr);
+
+    __ j(unlocked_continuation());
+  }
+}
+
 #undef __

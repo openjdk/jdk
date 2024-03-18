@@ -102,7 +102,9 @@ private:
   Register _obj;
   Register _mark_or_monitor;
   Register _t;
-  AARCH64_ONLY(Register _owner_addr;)
+#if defined(AARCH64) || defined(RISCV)
+  Register _owner_addr;
+#endif
   Register _thread;
   X86_ONLY(Label _push_and_slow_path;)
   Label _inflated_medium_path;
@@ -115,6 +117,10 @@ public:
 #ifdef AARCH64
   C2FastUnlockLightweightStub(Register obj, Register mark_or_monitor, Register t, Register owner_addr) : C2CodeStub(),
     _obj(obj), _mark_or_monitor(mark_or_monitor), _t(t), _owner_addr(owner_addr), _thread(rthread) {}
+#endif
+#ifdef RISCV
+  C2FastUnlockLightweightStub(Register obj, Register mark_or_monitor, Register t, Register owner_addr) : C2CodeStub(),
+    _obj(obj), _mark_or_monitor(mark_or_monitor), _t(t), _owner_addr(owner_addr), _thread(xthread) {}
 #endif
   int max_size() const;
   void emit(C2_MacroAssembler& masm);
