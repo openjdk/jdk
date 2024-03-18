@@ -617,13 +617,6 @@ const bool support_IRIW_for_not_multiple_copy_atomic_cpu = PPC64_ONLY(true) NOT_
 
 
 //----------------------------------------------------------------------------------------------------
-// Utility macros for compilers
-// used to silence compiler warnings
-
-#define Unused_Variable(var) var
-
-
-//----------------------------------------------------------------------------------------------------
 // Miscellaneous
 
 // 6302670 Eliminate Hotspot __fabsf dependency

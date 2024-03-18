@@ -2791,7 +2791,7 @@ void C2_MacroAssembler::compare_fp_v(VectorRegister vd, VectorRegister src1, Vec
 }
 
 void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, uint vector_length,
-                                         VectorRegister src, BasicType src_bt) {
+                                         VectorRegister src, BasicType src_bt, bool is_signed) {
   assert(type2aelembytes(dst_bt) > type2aelembytes(src_bt) && type2aelembytes(dst_bt) <= 8 && type2aelembytes(src_bt) <= 4, "invalid element size");
   assert(dst_bt != T_FLOAT && dst_bt != T_DOUBLE && src_bt != T_FLOAT && src_bt != T_DOUBLE, "unsupported element type");
   // https://github.com/riscv/riscv-v-spec/blob/master/v-spec.adoc#52-vector-operands
@@ -2801,28 +2801,54 @@ void C2_MacroAssembler::integer_extend_v(VectorRegister dst, BasicType dst_bt, u
   assert_different_registers(dst, src);
 
   vsetvli_helper(dst_bt, vector_length);
-  if (src_bt == T_BYTE) {
-    switch (dst_bt) {
-    case T_SHORT:
+  if (is_signed) {
+    if (src_bt == T_BYTE) {
+      switch (dst_bt) {
+      case T_SHORT:
+        vsext_vf2(dst, src);
+        break;
+      case T_INT:
+        vsext_vf4(dst, src);
+        break;
+      case T_LONG:
+        vsext_vf8(dst, src);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else if (src_bt == T_SHORT) {
+      if (dst_bt == T_INT) {
+        vsext_vf2(dst, src);
+      } else {
+        vsext_vf4(dst, src);
+      }
+    } else if (src_bt == T_INT) {
       vsext_vf2(dst, src);
-      break;
-    case T_INT:
-      vsext_vf4(dst, src);
-      break;
-    case T_LONG:
-      vsext_vf8(dst, src);
-      break;
-    default:
-      ShouldNotReachHere();
     }
-  } else if (src_bt == T_SHORT) {
-    if (dst_bt == T_INT) {
-      vsext_vf2(dst, src);
-    } else {
-      vsext_vf4(dst, src);
+  } else {
+    if (src_bt == T_BYTE) {
+      switch (dst_bt) {
+      case T_SHORT:
+        vzext_vf2(dst, src);
+        break;
+      case T_INT:
+        vzext_vf4(dst, src);
+        break;
+      case T_LONG:
+        vzext_vf8(dst, src);
+        break;
+      default:
+        ShouldNotReachHere();
+      }
+    } else if (src_bt == T_SHORT) {
+      if (dst_bt == T_INT) {
+        vzext_vf2(dst, src);
+      } else {
+        vzext_vf4(dst, src);
+      }
+    } else if (src_bt == T_INT) {
+      vzext_vf2(dst, src);
     }
-  } else if (src_bt == T_INT) {
-    vsext_vf2(dst, src);
   }
 }
 

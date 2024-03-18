@@ -59,6 +59,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBGTEST, \
     INCLUDE_FILES := gtest-all.cc gmock-all.cc, \
     DISABLED_WARNINGS_gcc := undef unused-result format-nonliteral maybe-uninitialized, \
     DISABLED_WARNINGS_clang := undef unused-result format-nonliteral, \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
@@ -88,6 +89,7 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     EXCLUDE_PATTERNS := $(JVM_EXCLUDE_PATTERNS), \
     EXTRA_OBJECT_FILES := $(filter-out %/operator_new$(OBJ_SUFFIX), \
         $(BUILD_LIBJVM_ALL_OBJS)), \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include \
@@ -134,6 +136,7 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
     OUTPUT_DIR := $(JVM_OUTPUTDIR)/gtest, \
     EXTRA_FILES := $(GTEST_LAUNCHER_SRC), \
     OBJECT_DIR := $(JVM_OUTPUTDIR)/gtest/launcher-objs, \
+    DEFAULT_CFLAGS := false, \
     CFLAGS := $(JVM_CFLAGS) \
         -I$(GTEST_FRAMEWORK_SRC)/googletest \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
@@ -141,7 +144,6 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
     LDFLAGS := $(LDFLAGS_JDKEXE), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LIBS_linux := $(LIBCXX), \
     LIBS_unix := -ljvm, \
     LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \
     COPY_DEBUG_SYMBOLS := $(GTEST_COPY_DEBUG_SYMBOLS), \

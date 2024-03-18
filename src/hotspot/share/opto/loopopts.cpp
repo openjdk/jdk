@@ -4495,3 +4495,31 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
     assert(phi->outcnt() == 1, "accumulator is the only use of phi");
   }
 }
+
+void DataNodeGraph::clone_data_nodes(Node* new_ctrl) {
+  for (uint i = 0; i < _data_nodes.size(); i++) {
+    clone(_data_nodes[i], new_ctrl);
+  }
+}
+
+// Clone the given node and set it up properly. Set `new_ctrl` as ctrl.
+void DataNodeGraph::clone(Node* node, Node* new_ctrl) {
+  Node* clone = node->clone();
+  _phase->igvn().register_new_node_with_optimizer(clone);
+  _orig_to_new.put(node, clone);
+  _phase->set_ctrl(clone, new_ctrl);
+}
+
+// Rewire the data inputs of all (unprocessed) cloned nodes, whose inputs are still pointing to the same inputs as their
+// corresponding orig nodes, to the newly cloned inputs to create a separate cloned graph.
+void DataNodeGraph::rewire_clones_to_cloned_inputs() {
+  _orig_to_new.iterate_all([&](Node* node, Node* clone) {
+    for (uint i = 1; i < node->req(); i++) {
+      Node** cloned_input = _orig_to_new.get(node->in(i));
+      if (cloned_input != nullptr) {
+        // Input was also cloned -> rewire clone to the cloned input.
+        _phase->igvn().replace_input_of(clone, i, *cloned_input);
+      }
+    }
+  });
+}
