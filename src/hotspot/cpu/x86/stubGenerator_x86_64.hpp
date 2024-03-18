@@ -540,8 +540,8 @@ class StubGenerator: public StubCodeGenerator {
 
   void generate_libm_stubs();
 
-  void generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding ae);
-  void generate_string_indexof();
+  void generate_string_indexof_stubs(address *fnptrs, StrIntrinsicNode::ArgEncoding ae);
+  void generate_string_indexof(address *fnptrs);
 
   address generate_cont_thaw(const char* label, Continuation::thaw_kind kind);
   address generate_cont_thaw();

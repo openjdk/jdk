@@ -26,7 +26,6 @@
 #include "macroAssembler_x86.hpp"
 #include "precompiled.hpp"
 #include "stubGenerator_x86_64.hpp"
-#include "runtime/stubRoutines.hpp"
 
 /******************************************************************************/
 //                     String handling intrinsics
@@ -1009,19 +1008,19 @@ static void byte_compare_helper(int size, Label& L_noMatch, Label& L_matchFound,
   __ jmp(L_noMatch);
 }
 
-void StubGenerator::generate_string_indexof() {
+void StubGenerator::generate_string_indexof(address *fnptrs) {
   assert((int) StrIntrinsicNode::LL < 4, "Enum out of range");
   assert((int) StrIntrinsicNode::UL < 4, "Enum out of range");
   assert((int) StrIntrinsicNode::UU < 4, "Enum out of range");
-  generate_string_indexof_stubs(StrIntrinsicNode::LL);
-  generate_string_indexof_stubs(StrIntrinsicNode::UL);
-  generate_string_indexof_stubs(StrIntrinsicNode::UU);
-  assert(StubRoutines::_string_indexof_array[StrIntrinsicNode::LL] != nullptr, "LL not generated.");
-  assert(StubRoutines::_string_indexof_array[StrIntrinsicNode::UL] != nullptr, "UL not generated.");
-  assert(StubRoutines::_string_indexof_array[StrIntrinsicNode::UU] != nullptr, "UU not generated.");
+  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::LL);
+  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::UL);
+  generate_string_indexof_stubs(fnptrs, StrIntrinsicNode::UU);
+  assert(fnptrs[StrIntrinsicNode::LL] != nullptr, "LL not generated.");
+  assert(fnptrs[StrIntrinsicNode::UL] != nullptr, "UL not generated.");
+  assert(fnptrs[StrIntrinsicNode::UU] != nullptr, "UU not generated.");
 }
 
-void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding ae) {
+void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicNode::ArgEncoding ae) {
   StubCodeMark mark(this, "StubRoutines", "stringIndexOf");
   address large_hs_jmp_table[NUMBER_OF_CASES];  // Jump table for large haystacks
   address small_hs_jmp_table[NUMBER_OF_CASES];  // Jump table for small haystacks
@@ -1138,9 +1137,9 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
     // Jump past jump table setups to get addresses of cases.
 
     __ align(CodeEntryAlignment);
-    StubRoutines::_string_indexof_array[isLL   ? StrIntrinsicNode::LL
-                                        : isUU ? StrIntrinsicNode::UU
-                                               : StrIntrinsicNode::UL] =
+    fnptrs[isLL   ? StrIntrinsicNode::LL
+           : isUU ? StrIntrinsicNode::UU
+                  : StrIntrinsicNode::UL] =
         __ pc();
     __ enter();  // required for proper stackwalking of RuntimeStub frame
 
@@ -1469,31 +1468,6 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
       //  rbp: -1
       //  XMM_BYTE_0 - first element of needle broadcast
       //  XMM_BYTE_K - last element of needle broadcast
-
-      // const Register rTmp = rax;
-      // const Register haystack = rbx;
-      // const Register saveNeedleAddress = rbx; // NOTE re-use
-      // const Register origNeedleLen = rcx;
-      // const Register firstNeedleCompare = rdx;
-      // const Register hsLen = rsi;
-      // const Register origHsLen = rsi; // NOTE re-use
-      // const Register rTmp2 = rdi;
-      // const Register mask = rbp;
-      // const Register rScratch = r8;
-      // const Register compLen = r9;
-      // const Register needleLen = r12;
-      // const Register hsIndex = r12; // NOTE re-use
-      // const Register constOffset = r13;
-      // const Register needle = r14;
-      // const Register index = r14; // NOTE re-use
-      // const Register haystackEnd = r15;
-
-      // const XMMRegister cmp_0 = xmm_tmp3;
-      // const XMMRegister cmp_k = xmm_tmp4;
-      // const XMMRegister result = xmm_tmp3;
-
-      // const XMMRegister saveCompLen = xmm_tmp2;
-      // const XMMRegister saveIndex = xmm_tmp1;
 
       __ bind(L_bigCaseDefault);
 
@@ -2048,24 +2022,6 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
                                      NUMBER_OF_NEEDLE_BYTES_TO_COMPARE, needle,
                                      origNeedleLen, isUU, isUL, _masm);
 
-        // #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 2
-        //         // Add compare for second element
-        //         __ movzbl(rax, Address(needle, 1));  // Second byte of needle
-        //         __ movdl(byte_1, rax);
-        //         __ vpbroadcastw(byte_1, byte_1,
-        //                         Assembler::AVX_256bit);  // 2nd byte of
-        //                         needle in words
-        // #endif
-
-        // #if NUMBER_OF_NEEDLE_BYTES_TO_COMPARE > 3
-        //         // Add compare for third element
-        //         __ movzbl(rax, Address(needle, 2));  // Second byte of needle
-        //         __ movdl(byte_2, rax);
-        //         __ vpbroadcastw(byte_2, byte_2,
-        //                         Assembler::AVX_256bit);  // 2nd byte of
-        //                         needle in words
-        // #endif
-
         __ leaq(haystackEnd, Address(haystack, hsLen, Address::times_1));
 
         assert(NUMBER_OF_NEEDLE_BYTES_TO_COMPARE <= 4, "Invalid");
@@ -2081,9 +2037,8 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
 
         __ movq(index, origHsLen);
         __ negptr(index);  // incr
-        // __ movq(constOffset, -31);
+
       // constant offset from end for full 32-byte read
-        // __ subq(constOffset, origNeedleLen);
         __ movq(constOffset, origHsLen);
         __ shlq(origNeedleLen, 1);
         __ subq(constOffset, origNeedleLen);
@@ -2193,7 +2148,7 @@ void StubGenerator::generate_string_indexof_stubs(StrIntrinsicNode::ArgEncoding 
         __ leaq(r9, Address(haystack, r11));
         __ leaq(r12, Address(needle, 0));
         __ movq(r13, origNeedleLen);
-        // __ shlq(r13, 1);
+
         __ arrays_equals(false, r9, r12, r13, rax, rdx, xmm_tmp3, xmm_tmp4,
                          false /* char */, knoreg, true /* expand_ary2 */);
         __ testq(rax, rax);
