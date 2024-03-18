@@ -187,20 +187,13 @@ public class FrameStateTest implements ActionListener, ItemListener {
                     ((resizable) ? "RESIZABLE" : "NON-RESIZABLE"));
 
             setLayout(new FlowLayout());
-            b1 = new Button("resizable");
-            add(b1);
-            b2 = new Button("resize");
-            add(b2);
-            b3 = new Button("iconify");
-            add(b3);
-            b4 = new Button("iconify and restore");
-            add(b4);
-            b5 = new Button("hide and show");
-            add(b5);
-            b6 = new Button("hide, iconify and show");
-            add(b6);
-            b7 = new Button("hide, iconify, show, and restore");
-            add(b7);
+            add(b1 = new Button("resizable"));
+            add(b2 = new Button("resize"));
+            add(b3 = new Button("iconify"));
+            add(b4 = new Button("iconify and restore"));
+            add(b5 = new Button("hide and show"));
+            add(b6 = new Button("hide, iconify and show"));
+            add(b7 = new Button("hide, iconify, show, and restore"));
             b1.addActionListener(this);
             b2.addActionListener(this);
             b3.addActionListener(this);
@@ -236,129 +229,114 @@ public class FrameStateTest implements ActionListener, ItemListener {
             timer.start();
         }
 
-        private void log(String message) {
-            PassFailJFrame.log(message);
-        }
-
         public void actionPerformed(ActionEvent e) {
             if (e.getSource() == b2) {
                 Rectangle r = this.getBounds();
                 r.width += 10;
-                log(" - button pressed - setting bounds on Frame to: " + r);
+                stateLog(" - button pressed - setting bounds on Frame to: " + r);
                 setBounds(r);
                 validate();
             } else if (e.getSource() == b1) {
                 resizable = !resizable;
-                log(" - button pressed - setting Resizable to: " + resizable);
+                stateLog(" - button pressed - setting Resizable to: " + resizable);
                 ((Frame) (b1.getParent())).setResizable(resizable);
             } else if (e.getSource() == b3) {
-                log(" - button pressed - setting Iconic: ");
-                dolog();
+                stateLog(" - button pressed - setting Iconic: ");
                 ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
-                dolog();
+                stateLog();
             } else if (e.getSource() == b4) {
-                log(" - button pressed - setting Iconic: ");
-                dolog();
+                stateLog(" - button pressed - setting Iconic: ");
                 ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
-                dolog();
+                stateLog();
                 delayedActions(() -> {
-                    log(" - now restoring: ");
+                    stateLog(" - now restoring: ");
                     ((Frame) (b1.getParent())).setState(Frame.NORMAL);
-                    dolog();
+                    stateLog();
                 });
             } else if (e.getSource() == b5) {
-                log(" - button pressed - hiding : ");
-                dolog();
-                ((Frame) (b1.getParent())).setVisible(false);
-                dolog();
+                stateLog(" - button pressed - hiding : ");
+                b1.getParent().setVisible(false);
+                stateLog();
                 delayedActions(() -> {
-                    log(" - now reshowing: ");
-                    ((Frame) (b1.getParent())).setVisible(true);
-                    dolog();
+                    stateLog(" - now reshowing: ");
+                    b1.getParent().setVisible(true);
+                    stateLog();
                 });
             } else if (e.getSource() == b6) {
-                log(" - button pressed - hiding : ");
-                dolog();
-                ((Frame) (b1.getParent())).setVisible(false);
-                dolog();
+                stateLog(" - button pressed - hiding : ");
+                b1.getParent().setVisible(false);
+                stateLog();
                 delayedActions(
                         () -> {
-                            log(" - setting Iconic: ");
-                            dolog();
+                            stateLog(" - setting Iconic: ");
                             ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                         },
                         () -> {
-                            log(" - now reshowing: ");
-                            ((Frame) (b1.getParent())).setVisible(true);
-                            dolog();
+                            stateLog(" - now reshowing: ");
+                            b1.getParent().setVisible(true);
+                            stateLog();
                         }
                 );
             } else if (e.getSource() == b7) {
-                log(" - button pressed - hiding : ");
-                dolog();
-                ((Frame) (b1.getParent())).setVisible(false);
-                dolog();
+                stateLog(" - button pressed - hiding : ");
+                b1.getParent().setVisible(false);
+                stateLog();
 
                 delayedActions(
                         () -> {
-                            log(" - setting Iconic: ");
-                            dolog();
+                            stateLog(" - setting Iconic: ");
                             ((Frame) (b1.getParent())).setState(Frame.ICONIFIED);
                         },
                         () -> {
-                            log(" - now reshowing: ");
-                            ((Frame) (b1.getParent())).setVisible(true);
-                            dolog();
+                            stateLog(" - now reshowing: ");
+                            b1.getParent().setVisible(true);
+                            stateLog();
                         },
                         () -> {
-                            log(" - now restoring: ");
+                            stateLog(" - now restoring: ");
                             ((Frame) (b1.getParent())).setState(Frame.NORMAL);
-                            dolog();
+                            stateLog();
                         }
                 );
             }
         }
 
         public void windowActivated(WindowEvent e) {
-            log(name + " Activated");
-            dolog();
+            stateLog("Activated");
         }
 
         public void windowClosed(WindowEvent e) {
-            log(name + " Closed");
-            dolog();
+            stateLog("Closed");
         }
 
         public void windowClosing(WindowEvent e) {
             ((Window) (e.getSource())).dispose();
-            log(name + " Closing");
-            dolog();
+            stateLog("Closing");
         }
 
         public void windowDeactivated(WindowEvent e) {
-            log(name + " Deactivated");
-            dolog();
+            stateLog("Deactivated");
         }
 
         public void windowDeiconified(WindowEvent e) {
-            log(name + " Deiconified");
-            dolog();
+            stateLog("Deiconified");
         }
 
         public void windowIconified(WindowEvent e) {
-            log(name + " Iconified");
-            dolog();
+            stateLog("Iconified");
         }
 
         public void windowOpened(WindowEvent e) {
-            log(name + " Opened");
-            dolog();
+            stateLog("Opened");
         }
 
-        public void dolog() {
-            String message = " getState returns: " + getState();
-            System.out.println(message);
-//            sysout.append(message + "\n");
+        public void stateLog(String message) {
+            PassFailJFrame
+                .log("[State=%d] %s %s".formatted(getState(), name, message));
+        }
+
+        public void stateLog() {
+            PassFailJFrame.log("[State=" + getState() + "]");
         }
     }
 }
