@@ -141,6 +141,10 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
+  if (FLAG_IS_DEFAULT(UseAdler32Intrinsics)) {
+    FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
+  }
+
   if (UseVectorizedMismatchIntrinsic) {
     warning("VectorizedMismatch intrinsic is not available on this CPU.");
     FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
