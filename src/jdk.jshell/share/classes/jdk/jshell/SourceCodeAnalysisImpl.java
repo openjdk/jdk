@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1032,14 +1032,7 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             case DECLARED: {
                 TypeElement element = (TypeElement) at.getTypes().asElement(site);
                 List<Element> result = new ArrayList<>();
-                at.getElements().getAllMembers(element).forEach(m -> result.add(
-                    element.equals(m.getEnclosingElement())
-                        ? m
-                        : (m instanceof Symbol.MethodSymbol ms)
-                            ? ms.clone((Symbol)element)
-                            : (m instanceof Symbol.VarSymbol vs)
-                                ? vs.clone((Symbol)element)
-                                : m));
+                result.addAll(membersOf(at, element));
                 if (shouldGenerateDotClassItem) {
                     result.add(createDotClassSymbol(at, site));
                 }
@@ -1076,6 +1069,10 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             }
             case ARRAY: {
                 List<Element> result = new ArrayList<>();
+                TypeElement jlObject = at.getElements().getTypeElement("java.lang.Object");
+                if (jlObject != null) {
+                    result.addAll(membersOf(at, jlObject));
+                }
                 result.add(createArrayLengthSymbol(at, site));
                 if (shouldGenerateDotClassItem)
                     result.add(createDotClassSymbol(at, site));
@@ -1084,6 +1081,17 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
             default:
                 return Collections.emptyList();
         }
+    }
+
+    private List<? extends Element> membersOf(AnalyzeTask at, TypeElement element) {
+        return at.getElements().getAllMembers(element).stream().map(m ->
+            element.equals(m.getEnclosingElement())
+                ? m
+                : (m instanceof Symbol.MethodSymbol ms)
+                    ? ms.clone((Symbol)element)
+                    : (m instanceof Symbol.VarSymbol vs)
+                        ? vs.clone((Symbol)element)
+                        : m).toList();
     }
 
     private List<? extends Element> membersOf(AnalyzeTask at, List<? extends Element> elements) {
