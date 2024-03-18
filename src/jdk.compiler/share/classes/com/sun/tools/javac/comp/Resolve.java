@@ -1508,11 +1508,8 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && (sym.flags_field & SYNTHETIC) == 0) {
-                        if (!env.tree.hasTag(ASSIGN) || !TreeInfo.isIdentOrThisDotIdent(((JCAssign)env.tree).lhs)) {
-                            return new RefBeforeCtorCalledError(sym);
-                        }
-                    }
+                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, sym))
+                        return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
             } else {
@@ -3778,7 +3775,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue)
+                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3831,6 +3828,35 @@ public class Resolve {
         return result.toList();
     }
 
+    /**
+     * Determine if the reference to the given instance field appearing in an early initialization context
+     * (before super()/this()) is allowed. We only allow assignments to fields declared in the same class
+     * as the constructor.
+     */
+    private boolean isAllowedEarlyReference(Env<AttrContext> env, Symbol sym) {
+
+        // Must be assignment
+        if (!env.tree.hasTag(ASSIGN))
+            return false;
+
+        // Allow "x" or "this.x" (BUG: the logic below fails if "x" is declared by a superclass)
+        JCExpression lhs = ((JCAssign)env.tree).lhs;
+        if (TreeInfo.isIdentOrThisDotIdent(lhs))
+            return true;
+
+        // Allow "Foo.this.x" (BUG: the logic below fails if "x" is declared by a superclass)
+        if (!lhs.hasTag(SELECT))
+            return false;
+        JCExpression qualifier = TreeInfo.skipParens(((JCFieldAccess)lhs).selected);
+        if (!qualifier.hasTag(SELECT))
+            return false;
+        JCFieldAccess qualSelect = (JCFieldAccess)qualifier;
+        if (qualSelect.name != names._this)
+            return false;
+
+        // OK
+        return true;
+    }
 
     /**
      * Resolve `c.this' for an enclosing class c that contains the
