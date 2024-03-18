@@ -151,16 +151,10 @@ class G1BuildCandidateRegionsTask : public WorkerTask {
         return false;
       }
 
+      // TODO: Fix Comment
       // Can not add a region without a remembered set to the candidates.
-      if (UseNewCode) {
-        if (!r->rem_set()->is_tracked()) {
-          return false;
-        }
-      } else {
-        assert(!r->rem_set()->is_updating(), "must be");
-        if (!r->rem_set()->is_complete()) {
-          return false;
-        }
+      if (!r->rem_set()->is_tracked()) {
+        return false;
       }
 
       // Skip any region that is currently used as an old GC alloc region. We should

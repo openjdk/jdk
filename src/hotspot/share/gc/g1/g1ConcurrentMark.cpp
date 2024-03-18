@@ -1420,7 +1420,7 @@ void G1ConcurrentMark::remark() {
       _needs_remembered_set_rebuild = (cl.total_selected_for_rebuild() > 0);
     }
 
-    if (UseNewCode && _needs_remembered_set_rebuild) {
+    if (_needs_remembered_set_rebuild) {
       _g1h->policy()->build_collectionset();
     }
 
