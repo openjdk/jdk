@@ -47,7 +47,7 @@ class ClassLoaderHelper {
      * such that if the original pathname did not exist, then the
      * file may be located at the alternate location.
      * For AIX, this replaces the final .so suffix with .a
-     * If the path name has a member, we place the member name after 
+     * If the path name has a member, we place the member name after
      * .a.
      */
     static File mapAlternativeName(File lib) {
