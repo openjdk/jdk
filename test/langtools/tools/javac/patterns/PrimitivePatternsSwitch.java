@@ -118,7 +118,7 @@ public class PrimitivePatternsSwitch {
         assertEquals(Character.MAX_VALUE, testUnboxingAndWideningCharacter3(Character.MAX_VALUE));
         assertEquals(Float.MAX_VALUE, testUnboxingAndWideningFloat(Float.MAX_VALUE));
         assertEquals(Float.MAX_VALUE, testUnboxingAndWideningFloatExplicitCast(Float.MAX_VALUE));
-        assertEquals(42f, testUnboxingAndWideningLong(42l));
+        assertEquals(42f, testUnboxingAndWideningLong(42L));
         assertEquals(2, testUnboxingAndWideningLong(Long.MAX_VALUE));
     }
 
