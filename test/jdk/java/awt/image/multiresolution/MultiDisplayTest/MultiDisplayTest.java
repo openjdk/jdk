@@ -95,7 +95,7 @@ public class MultiDisplayTest {
                 .builder()
                 .title("MultiDisplayTest Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(25)
+                .rows(30)
                 .columns(40)
                 .testUI(MultiDisplayTest::createAndShowGUI)
                 .build()
