@@ -218,25 +218,15 @@ public final class MonotonicMap<K, V>
     }
 
     // all mutating methods throw UnsupportedOperationException
-    @Override public Monotonic<V> put(K key, Monotonic<V> value) {
-        throw uoe();
-    }
-    @Override public Monotonic<V> remove(Object key) {
-        throw uoe();
-    }
+    @Override public Monotonic<V> put(K key, Monotonic<V> value) {throw uoe();}
+    @Override public Monotonic<V> remove(Object key) {throw uoe();}
     @Override public void putAll(Map<? extends K, ? extends Monotonic<V>> m) {throw uoe();}
-    @Override public void clear() {
-        throw uoe();
-    }
+    @Override public void clear() {throw uoe();}
     @Override public void replaceAll(BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> function) {throw uoe();}
     @Override public Monotonic<V> putIfAbsent(K key, Monotonic<V> value) {throw uoe();}
-    @Override public boolean remove(Object key, Object value) {
-        throw uoe();
-    }
+    @Override public boolean remove(Object key, Object value) {throw uoe();}
     @Override public boolean replace(K key, Monotonic<V> oldValue, Monotonic<V> newValue) {throw uoe();}
-    @Override public Monotonic<V> replace(K key, Monotonic<V> value) {
-        throw uoe();
-    }
+    @Override public Monotonic<V> replace(K key, Monotonic<V> value) {throw uoe();}
     @Override public Monotonic<V> computeIfAbsent(K key, Function<? super K, ? extends Monotonic<V>> mappingFunction) {throw uoe();}
     @Override public Monotonic<V> computeIfPresent(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) {throw uoe();}
     @Override public Monotonic<V> compute(K key, BiFunction<? super K, ? super Monotonic<V>, ? extends Monotonic<V>> remappingFunction) {throw uoe();}
@@ -258,13 +248,8 @@ public final class MonotonicMap<K, V>
         if (monotonic.isPresent()) {
             return monotonic.get();
         }
-        Supplier<V> supplier = new Supplier<V>() {
-            @Override
-            public V get() {
-                return mapper.apply(key);
-            }
-        };
-        return monotonic.computeIfAbsent(supplier);
+        V newValue = mapper.apply(key);
+        return monotonic.bindIfAbsent(newValue);
     }
 
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
@@ -274,7 +259,7 @@ public final class MonotonicMap<K, V>
         Function<K, V> function = new Function<K, V>() {
             @Override
             public V apply(K k) {
-                return Monotonics.computeIfAbsent(map, k, mapper);
+                return computeIfAbsent(map, k, mapper);
             }
         };
         if (background) {

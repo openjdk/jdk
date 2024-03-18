@@ -125,13 +125,8 @@ public final class MonotonicList<V>
         if (monotonic.isPresent()) {
             return monotonic.get();
         }
-        Supplier<V> supplier = new Supplier<V>() {
-            @Override
-            public V get() {
-                return mapper.apply(index);
-            }
-        };
-        return monotonic.computeIfAbsent(supplier);
+        V newValue = mapper.apply(index);
+        return monotonic.bindIfAbsent(newValue);
     }
 
     public static <V> IntFunction<V> asMemoized(int size,
@@ -141,7 +136,7 @@ public final class MonotonicList<V>
         IntFunction<V> function = new IntFunction<V>() {
             @Override
             public V apply(int value) {
-                return Monotonics.computeIfAbsent(list, value, mapper);
+                return computeIfAbsent(list, value, mapper);
             }
         };
         if (background) {

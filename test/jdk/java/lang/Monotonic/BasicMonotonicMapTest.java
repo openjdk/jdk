@@ -46,15 +46,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 final class BasicMonotonicMapTest {
 
-    private static final String[] STRINGS = "A,B,C,D,E,F,G".split(",");
-    private static final int SIZE = STRINGS.length;
+    private static final String[] KEYS = "A,B,C,D,E,F,G".split(",");
+    private static final int SIZE = KEYS.length;
     private static final String KEY = "C";
+    private static final Function<String, Integer> FUNCTION = (String s) -> s.chars()
+            .findFirst()
+            .orElseThrow();
 
     private Map<String, Monotonic<Integer>> map;
 
     @BeforeEach
     void setup() {
-        map = Monotonic.ofMap(Arrays.asList(STRINGS));
+        map = Monotonic.ofMap(Arrays.asList(KEYS));
     }
 
     @Test
@@ -62,11 +65,11 @@ final class BasicMonotonicMapTest {
         assertFalse(map.isEmpty());
         assertEquals(SIZE, map.size());
 
-        for (String key : STRINGS) {
+        for (String key : KEYS) {
             assertFalse(map.get(key).isPresent());
         }
 
-        for (String key : STRINGS) {
+        for (String key : KEYS) {
             assertNotNull(map.get(key));
             assertTrue(map.containsKey(key));
         }
@@ -84,7 +87,6 @@ final class BasicMonotonicMapTest {
     @MethodSource("nullOperations")
     void npe(String name, Consumer<Map<String, Monotonic<Integer>>> op) {
         assertThrows(NullPointerException.class, () -> op.accept(map), name);
-
     }
 
     private static Stream<Arguments> unsupportedOperations() {

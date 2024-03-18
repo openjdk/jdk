@@ -107,6 +107,4 @@ public class MonotonicListBenchmark {
         return list;
     }
 
-
-
 }
