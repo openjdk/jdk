@@ -2910,7 +2910,7 @@ class Assembler : public AbstractAssembler {
   inline void z_vistrfs(VectorRegister v1, VectorRegister v2);
 
 
-  // Floatingpoint instructions
+  // Vector Floatingpoint instructions
   // ==========================
   // Add
   inline void z_vfa(VectorRegister v1, VectorRegister v2, VectorRegister v3, int64_t m4);
@@ -2941,6 +2941,8 @@ class Assembler : public AbstractAssembler {
   inline void z_vflr( VectorRegister v1, VectorRegister v2, int64_t m3, int64_t m5);
   inline void z_vflrd( VectorRegister v1, VectorRegister v2, int64_t m5);
 
+  // Vector Floatingpoint instructions
+  // ==========================
   // compare instructions
   inline void z_cebr(FloatRegister r1, FloatRegister r2);                     // compare (r1, r2)                ; float
   inline void z_ceb(FloatRegister r1, int64_t d2, Register x2, Register b2);  // compare (r1, *(d2_imm12+x2+b2)) ; float
