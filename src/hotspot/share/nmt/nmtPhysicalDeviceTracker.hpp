@@ -46,61 +46,61 @@ class PhysicalDeviceTracker {
   // Each device has its own memory space.
   using DeviceSpace = VMATree;
 public:
-  class PhysicalDevice : public CHeapObj<mtNMT> {
+  class MemoryFile : public CHeapObj<mtNMT> {
     friend PhysicalDeviceTracker;
     friend class PhysicalDeviceTrackerTest;
     const char* _descriptive_name;
     VirtualMemorySnapshot _summary;
     DeviceSpace _tree;
   public:
-    NONCOPYABLE(PhysicalDevice);
-    PhysicalDevice(const char* descriptive_name)
+    NONCOPYABLE(MemoryFile);
+    MemoryFile(const char* descriptive_name)
       : _descriptive_name(descriptive_name) {
     }
   };
 
 private:
   // We need pointers to each allocated device.
-  GrowableArrayCHeap<PhysicalDevice*, mtNMT> _devices;
+  GrowableArrayCHeap<MemoryFile*, mtNMT> _devices;
 
 public:
   PhysicalDeviceTracker(bool is_detailed_mode);
 
-  void allocate_memory(PhysicalDevice* device, size_t offset, size_t size, MEMFLAGS flag,
+  void allocate_memory(MemoryFile* device, size_t offset, size_t size, MEMFLAGS flag,
                        const NativeCallStack& stack);
-  void free_memory(PhysicalDevice* device, size_t offset, size_t size);
+  void free_memory(MemoryFile* device, size_t offset, size_t size);
 
-  PhysicalDevice* make_device(const char* descriptive_name);
-  void free_device(PhysicalDevice* device);
+  MemoryFile* make_device(const char* descriptive_name);
+  void free_device(MemoryFile* device);
 
-  const VirtualMemorySnapshot& summary_for(const PhysicalDevice* device);
+  const VirtualMemorySnapshot& summary_for(const MemoryFile* device);
 
   void summary_snapshot(VirtualMemorySnapshot* snapshot) const;
 
   // Print detailed report of device
-  void print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale);
+  void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
 
-  const GrowableArrayCHeap<PhysicalDevice*, mtNMT>& devices();
+  const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
 
   class Instance : public AllStatic {
     static PhysicalDeviceTracker* _tracker;
   public:
     static bool initialize(NMT_TrackingLevel tracking_level);
 
-    static PhysicalDevice* make_device(const char* descriptive_name);
-    static void free_device(PhysicalDevice* device);
+    static MemoryFile* make_device(const char* descriptive_name);
+    static void free_device(MemoryFile* device);
 
-    static void allocate_memory(PhysicalDevice* device, size_t offset, size_t size,
+    static void allocate_memory(MemoryFile* device, size_t offset, size_t size,
                                 MEMFLAGS flag, const NativeCallStack& stack);
-    static void free_memory(PhysicalDevice* device, size_t offset, size_t size);
+    static void free_memory(MemoryFile* device, size_t offset, size_t size);
 
-    static const VirtualMemorySnapshot& summary_for(const PhysicalDevice* device);
+    static const VirtualMemorySnapshot& summary_for(const MemoryFile* device);
 
     static void summary_snapshot(VirtualMemorySnapshot* snapshot);
 
-    static void print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale);
+    static void print_report_on(const MemoryFile* device, outputStream* stream, size_t scale);
 
-    static const GrowableArrayCHeap<PhysicalDevice*, mtNMT>& devices();
+    static const GrowableArrayCHeap<MemoryFile*, mtNMT>& devices();
   };
 };
 

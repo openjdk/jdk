@@ -15,7 +15,7 @@ PhysicalDeviceTracker::PhysicalDeviceTracker(bool is_detailed_mode)
 : _stack_storage(is_detailed_mode), _devices() {
 }
 
-void PhysicalDeviceTracker::allocate_memory(PhysicalDevice* device, size_t offset,
+void PhysicalDeviceTracker::allocate_memory(MemoryFile* device, size_t offset,
                                             size_t size, MEMFLAGS flag,
                                             const NativeCallStack& stack) {
   NativeCallStackStorage::StackIndex sidx = _stack_storage.push(stack);
@@ -28,7 +28,7 @@ void PhysicalDeviceTracker::allocate_memory(PhysicalDevice* device, size_t offse
   }
 }
 
-void PhysicalDeviceTracker::free_memory(PhysicalDevice* device, size_t offset, size_t size) {
+void PhysicalDeviceTracker::free_memory(MemoryFile* device, size_t offset, size_t size) {
   DeviceSpace::SummaryDiff diff = device->_tree.release_mapping(offset, size);
   for (int i = 0; i < mt_number_of_types; i++) {
     const VMATree::SingleDiff& rescom = diff.flag[i];
@@ -37,7 +37,7 @@ void PhysicalDeviceTracker::free_memory(PhysicalDevice* device, size_t offset, s
   }
 }
 
-void PhysicalDeviceTracker::print_report_on(const PhysicalDevice* device, outputStream* stream, size_t scale) {
+void PhysicalDeviceTracker::print_report_on(const MemoryFile* device, outputStream* stream, size_t scale) {
   stream->print_cr("Memory map of %s", device->_descriptive_name);
   const VMATree::VTreap* prev = nullptr;
   device->_tree.in_order_traversal([&](const VMATree::VTreap* current) {
@@ -62,21 +62,21 @@ void PhysicalDeviceTracker::print_report_on(const PhysicalDevice* device, output
   });
 }
 
-PhysicalDeviceTracker::PhysicalDevice* PhysicalDeviceTracker::make_device(const char* descriptive_name) {
-  PhysicalDevice* device_place = new PhysicalDevice{descriptive_name};
+PhysicalDeviceTracker::MemoryFile* PhysicalDeviceTracker::make_device(const char* descriptive_name) {
+  MemoryFile* device_place = new MemoryFile{descriptive_name};
   _devices.push(device_place);
   return device_place;
 }
 
-void PhysicalDeviceTracker::free_device(PhysicalDevice* device) {
+void PhysicalDeviceTracker::free_device(MemoryFile* device) {
   _devices.remove(device);
   delete device;
 }
 
-const GrowableArrayCHeap<PhysicalDeviceTracker::PhysicalDevice*, mtNMT>& PhysicalDeviceTracker::devices() {
+const GrowableArrayCHeap<PhysicalDeviceTracker::MemoryFile*, mtNMT>& PhysicalDeviceTracker::devices() {
   return _devices;
 }
-const VirtualMemorySnapshot& PhysicalDeviceTracker::summary_for(const PhysicalDevice* device) {
+const VirtualMemorySnapshot& PhysicalDeviceTracker::summary_for(const MemoryFile* device) {
   return device->_summary;
 }
 
@@ -88,28 +88,28 @@ bool PhysicalDeviceTracker::Instance::initialize(NMT_TrackingLevel tracking_leve
   new (_tracker) PhysicalDeviceTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
   return true;
 }
-void PhysicalDeviceTracker::Instance::allocate_memory(PhysicalDevice* device, size_t offset,
+void PhysicalDeviceTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
                                                       size_t size, MEMFLAGS flag,
                                                       const NativeCallStack& stack) {
   _tracker->allocate_memory(device, offset, size, flag, stack);
 }
 
-void PhysicalDeviceTracker::Instance::free_memory(PhysicalDevice* device, size_t offset,
+void PhysicalDeviceTracker::Instance::free_memory(MemoryFile* device, size_t offset,
                                                   size_t size) {
   _tracker->free_memory(device, offset, size);
 }
 
-PhysicalDeviceTracker::PhysicalDevice*
+PhysicalDeviceTracker::MemoryFile*
 PhysicalDeviceTracker::Instance::make_device(const char* descriptive_name) {
   return _tracker->make_device(descriptive_name);
 }
 
-void PhysicalDeviceTracker::Instance::print_report_on(const PhysicalDevice* device,
+void PhysicalDeviceTracker::Instance::print_report_on(const MemoryFile* device,
                                                       outputStream* stream, size_t scale) {
   _tracker->print_report_on(device, stream, scale);
 }
 
-const GrowableArrayCHeap<PhysicalDeviceTracker::PhysicalDevice*, mtNMT>& PhysicalDeviceTracker::Instance::devices() {
+const GrowableArrayCHeap<PhysicalDeviceTracker::MemoryFile*, mtNMT>& PhysicalDeviceTracker::Instance::devices() {
   return _tracker->devices();
 };
 void PhysicalDeviceTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {

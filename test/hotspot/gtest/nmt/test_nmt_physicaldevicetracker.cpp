@@ -10,7 +10,7 @@ public:
   size_t sz(int x) { return (size_t) x; }
   void basics() {
     PhysicalDeviceTracker tracker(false);
-    PhysicalDeviceTracker::PhysicalDevice* dev = tracker.make_device("test");
+    PhysicalDeviceTracker::MemoryFile* dev = tracker.make_device("test");
     tracker.allocate_memory(dev, 0, 100, mtTest, CALLER_PC);
     EXPECT_EQ(dev->_summary.by_type(mtTest)->reserved(), sz(100));
     tracker.allocate_memory(dev, 100, 100, mtTest, CALLER_PC);

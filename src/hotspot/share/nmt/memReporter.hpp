@@ -177,10 +177,10 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_virtual_memory_map();
   // Report all physical devices
   void report_physical_devices() {
-    const GrowableArrayCHeap<PhysicalDeviceTracker::PhysicalDevice*, mtNMT>& devices =
+    const GrowableArrayCHeap<PhysicalDeviceTracker::MemoryFile*, mtNMT>& devices =
         PhysicalDeviceTracker::Instance::devices();
     for (int i = 0; i < devices.length(); i++) {
-      PhysicalDeviceTracker::PhysicalDevice* dev = devices.at(i);
+      PhysicalDeviceTracker::MemoryFile* dev = devices.at(i);
       PhysicalDeviceTracker::Instance::print_report_on(dev, this->output(), scale());
     }
   }
