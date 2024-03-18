@@ -2140,18 +2140,44 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Parses text from a string to produce a {@code Number}.
+     * Parses text from a string to produce a {@code Number}. Parsing can be done
+     * in either a strict or lenient manner, by default it is lenient.
      * <p>
-     * The method attempts to parse text starting at the index given by
+     * This method attempts to parse text starting at the index given by
      * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
+     * <p>
+     * When <b>lenient</b>, if parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
      * number is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
      * If an error occurs, then the index of {@code pos} is not
      * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
+     * the character where the error occurred, and {@code null} is returned.
+     * When lenient, parsing will fail if the prefix and/or suffix are non-empty,
+     * and cannot be found due to parsing ending early, or the first character
+     * after the prefix cannot be parsed.
+     * <p>
+     * When <b>strict</b>, this method will return {@code null} and {@link #parse(String)}
+     * will throw a {@code ParseException} if not every character is parsed, indicating a failure.
+     * {@code pos} can be used to obtain the cause of the failure by calling
+     * {@link ParsePosition#getErrorIndex()}. When strict, a failure will occur,
+     * if in {@code text},
+     * <ul>
+     *   <li> The prefix is not found, for example: "{@code $}"
+     *   <li> The suffix is not found, for example: "{@code %}"
+     *   <li> {@link #isGroupingUsed()} returns {@code true}, and {@link
+     *   #getGroupingSize()} is not adhered to
+     *   <li> {@link #isGroupingUsed()} returns {@code false}, and the grouping
+     *   symbol is found
+     *   <li> {@link #isParseIntegerOnly()} returns {@code true}, and the decimal
+     *   separator is found
+     *   <li> {@link #isGroupingUsed()} returns {@code true} and {@link
+     *   #isParseIntegerOnly()} returns {@code false}, and the grouping
+     *   symbol occurs after the decimal separator
+     *   <li> Any other characters are found, that are not the expected symbols,
+     *   and are not digits that occur within the numerical portion
+     * </ul>
      * <p>
      * The subclass returned depends on the value of {@link #isParseBigDecimal}
      * as well as on the string being parsed.
@@ -2194,6 +2220,7 @@ public class DecimalFormat extends NumberFormat {
      * @return     the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null.
+     * @see #setLenient(boolean)
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -2371,22 +2398,34 @@ public class DecimalFormat extends NumberFormat {
             return false;
         }
 
+        // position will serve as new index when success, otherwise it will
+        // serve as errorIndex when failure
         position = subparseNumber(text, position, digits, true, isExponent, status);
+
+        // First character after the prefix was un-parseable, should
+        // fail regardless if lenient or strict.
         if (position == -1) {
             parsePosition.index = oldStart;
             parsePosition.errorIndex = oldStart;
             return false;
         }
 
-        // Check for suffix
+        // When strict, text should end with the suffix.
+        // When lenient, text only needs to contain the suffix.
         if (!isExponent) {
             if (gotPositive) {
-                gotPositive = text.regionMatches(position,positiveSuffix,0,
-                        positiveSuffix.length());
+                boolean containsPosSuffix =
+                        text.regionMatches(position, positiveSuffix,0, positiveSuffix.length());
+                boolean endsWithPosSuffix =
+                        containsPosSuffix && text.length() == position + positiveSuffix.length();
+                gotPositive = parseStrict ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
-                gotNegative = text.regionMatches(position,negativeSuffix,0,
-                        negativeSuffix.length());
+                boolean containsNegSuffix =
+                        text.regionMatches(position, negativeSuffix,0, negativeSuffix.length());
+                boolean endsWithNegSuffix =
+                        containsNegSuffix && text.length() == position  + negativeSuffix.length();
+                gotNegative = parseStrict ? endsWithNegSuffix : containsNegSuffix;
             }
 
             // If both match, take longest
@@ -2404,8 +2443,9 @@ public class DecimalFormat extends NumberFormat {
                 return false;
             }
 
+            // No failures, thus increment the index by the suffix
             parsePosition.index = position +
-                    (gotPositive ? positiveSuffix.length() : negativeSuffix.length()); // mark success!
+                    (gotPositive ? positiveSuffix.length() : negativeSuffix.length());
         } else {
             parsePosition.index = position;
         }
@@ -2420,7 +2460,7 @@ public class DecimalFormat extends NumberFormat {
 
     /**
      * Parses a number from the given {@code text}. The text is parsed
-     * beginning at position, until an unparseable character is seen.
+     * beginning at {@code position}, until an unparseable character is seen.
      *
      * @param text the string to parse
      * @param position the position at which parsing begins
@@ -2438,7 +2478,7 @@ public class DecimalFormat extends NumberFormat {
                        boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
-        if (!isExponent && text.regionMatches(position,symbols.getInfinity(),0,
+        if (!isExponent && text.regionMatches(position, symbols.getInfinity(),0,
                 symbols.getInfinity().length())) {
             position += symbols.getInfinity().length();
             status[STATUS_INFINITE] = true;
@@ -2467,6 +2507,8 @@ public class DecimalFormat extends NumberFormat {
             // We have to track digitCount ourselves, because digits.count will
             // pin when the maximum allowable digits is reached.
             int digitCount = 0;
+            int prevSeparatorIndex = -groupingSize;
+            int startPos = position; // Rely on startPos as index after prefix
 
             int backup = -1;
             for (; position < text.length(); ++position) {
@@ -2486,6 +2528,13 @@ public class DecimalFormat extends NumberFormat {
                 int digit = ch - zero;
                 if (digit < 0 || digit > 9) {
                     digit = Character.digit(ch, 10);
+                }
+
+                // Enforce the grouping size on the first group
+                if (parseStrict && isGroupingUsed() && position == startPos + groupingSize
+                        && prevSeparatorIndex == -groupingSize && !sawDecimal
+                        && digit >= 0 && digit <= 9) {
+                    return position;
                 }
 
                 if (digit == 0) {
@@ -2517,6 +2566,10 @@ public class DecimalFormat extends NumberFormat {
                     // Cancel out backup setting (see grouping handler below)
                     backup = -1;
                 } else if (!isExponent && ch == decimal) {
+                    // Check grouping size on decimal separator
+                    if (parseStrict && isGroupingViolation(position, prevSeparatorIndex)) {
+                        return groupingViolationIndex(position, prevSeparatorIndex);
+                    }
                     // If we're only parsing integers, or if we ALREADY saw the
                     // decimal, then don't parse this one.
                     if (isParseIntegerOnly() || sawDecimal) {
@@ -2525,8 +2578,23 @@ public class DecimalFormat extends NumberFormat {
                     digits.decimalAt = digitCount; // Not digits.count!
                     sawDecimal = true;
                 } else if (!isExponent && ch == grouping && isGroupingUsed()) {
-                    if (sawDecimal) {
-                        break;
+                    if (parseStrict) {
+                        // text should not start with grouping when strict
+                        if (position == startPos) {
+                            return startPos;
+                        }
+                        // when strict, fail if grouping occurs after decimal OR
+                        // current group violates grouping size
+                        if (sawDecimal || (isGroupingViolation(position, prevSeparatorIndex))) {
+                            return groupingViolationIndex(position, prevSeparatorIndex);
+                        }
+                        prevSeparatorIndex = position; // track previous
+                    } else {
+                        // when lenient, only exit if grouping occurs after decimal
+                        // subsequent grouping symbols are allowed when lenient
+                        if (sawDecimal) {
+                            break;
+                        }
                     }
                     // Ignore grouping characters, if we are using them, but
                     // require that they be followed by a digit.  Otherwise
@@ -2554,6 +2622,23 @@ public class DecimalFormat extends NumberFormat {
                 }
             }
 
+            // (When strict), within the loop we enforce grouping when encountering
+            // decimal/grouping symbols. Once outside loop, we need to check
+            // the final grouping, ex: "1,234". Only check the final grouping
+            // if we have not seen a decimal separator, to prevent a non needed check,
+            // for ex: "1,234.", "1,234.12"
+            if (parseStrict) {
+                if (!sawDecimal && isGroupingViolation(position, prevSeparatorIndex)) {
+                    // -1, since position is incremented by one too many when loop is finished
+                    // "1,234%" and "1,234" both end with pos = 5, since '%' breaks
+                    // the loop before incrementing position. In both cases, check
+                    // should be done at pos = 4
+                    return groupingViolationIndex(position - 1, prevSeparatorIndex);
+                }
+            }
+
+            // If a grouping symbol is not followed by a digit, it must be
+            // backed up to either exit early or fail depending on leniency
             if (backup != -1) {
                 position = backup;
             }
@@ -2575,7 +2660,24 @@ public class DecimalFormat extends NumberFormat {
             }
         }
         return position;
+    }
 
+    // Checks to make sure grouping size is not violated. Used when strict.
+    private boolean isGroupingViolation(int pos, int prevGroupingPos) {
+        return isGroupingUsed() && // Only violates if using grouping
+                // Checks if a previous grouping symbol was seen.
+                prevGroupingPos != -groupingSize &&
+                // The check itself, - 1 to account for grouping/decimal symbol
+                pos - 1 != prevGroupingPos + groupingSize;
+    }
+
+    // Calculates the index that violated the grouping size
+    // Calculation is determined whether it was an under or over violation
+    private int groupingViolationIndex(int pos, int prevGroupingPos) {
+        return Math.min(
+                pos, // ex: "1,23,4" OR "1,,2". When under, violating char is grouping
+                // ex: "1,2345,6. When over, violating char is digit
+                prevGroupingPos + groupingSize + 1);
     }
 
     /**

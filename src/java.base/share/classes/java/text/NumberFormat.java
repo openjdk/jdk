@@ -38,8 +38,8 @@
 
 package java.text;
 
-import java.io.InvalidObjectException;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
@@ -399,33 +399,38 @@ public abstract class NumberFormat extends Format  {
                                         FieldPosition pos);
 
     /**
-     * Returns a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Parses text from the beginning of the given string to produce a {@code Number}.
+     * The method may not use the entire text of the given string. Parsing can
+     * be done in either a strict or lenient manner, by default it is lenient.
+     * This method does not throw an exception if parsing fails, and returns
+     * {@code null} instead. Upon failure, index remains unchanged and {@code parsePosition}
+     * can be used to retrieve the error index of where the parse failed.
+     * <p>
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
-     * If IntegerOnly is set, will stop at a decimal
-     * point (or equivalent; e.g., for rational numbers "1 2/3", will stop
-     * after the 1).
-     * Does not throw an exception; if no object can be parsed, index is
-     * unchanged!
      *
      * @param source the String to parse
      * @param parsePosition the parse position
      * @return the parsed value
-     * @see java.text.NumberFormat#isParseIntegerOnly
      * @see java.text.Format#parseObject
+     * @see #setLenient(boolean)
+     * @see #isParseIntegerOnly()
+     * @see #isGroupingUsed()
      */
     public abstract Number parse(String source, ParsePosition parsePosition);
 
     /**
-     * Parses text from the beginning of the given string to produce a number.
-     * The method may not use the entire text of the given string.
+     * Parses text from the beginning of the given string to produce a {@code Number}.
+     * The method may not use the entire text of the given string. Parsing can
+     * be done in either a strict or lenient manner, by default it is lenient.
      * <p>
      * See the {@link #parse(String, ParsePosition)} method for more information
      * on number parsing.
      *
      * @param source A {@code String} whose beginning should be parsed.
      * @return A {@code Number} parsed from the string.
-     * @throws    ParseException if the beginning of the specified string
-     *            cannot be parsed.
+     * @throws    ParseException if parsing fails
+     * @see #setLenient(boolean)
      */
     public Number parse(String source) throws ParseException {
         ParsePosition parsePosition = new ParsePosition(0);
@@ -461,6 +466,23 @@ public abstract class NumberFormat extends Format  {
      */
     public void setParseIntegerOnly(boolean value) {
         parseIntegerOnly = value;
+    }
+
+    /**
+     * Change the leniency value for parsing. Parsing can either be strict or lenient,
+     * by default it is lenient.
+     *
+     * @implSpec A subclass could override this method and throw a {@code
+     * UnsupportedOperationException} if leniency is not utilized when parsing,
+     * or there is only one leniency mode.
+     * @param lenient {@code true} if parsing should be done leniently;
+     *                {@code false} otherwise
+     * @throws    UnsupportedOperationException if the implementation of this
+     *            method does not support this operation
+     * @since 23
+     */
+    public void setLenient(boolean lenient) {
+        this.parseStrict = !lenient;
     }
 
     //============== Locale Stuff =====================
@@ -764,7 +786,8 @@ public abstract class NumberFormat extends Format  {
             && maximumFractionDigits == other.maximumFractionDigits
             && minimumFractionDigits == other.minimumFractionDigits
             && groupingUsed == other.groupingUsed
-            && parseIntegerOnly == other.parseIntegerOnly);
+            && parseIntegerOnly == other.parseIntegerOnly
+            && parseStrict == other.parseStrict);
     }
 
     /**
@@ -1181,6 +1204,16 @@ public abstract class NumberFormat extends Format  {
      * @see #isParseIntegerOnly
      */
     private boolean parseIntegerOnly = false;
+
+    /**
+     * True if this format will parse numbers with strict leniency.
+     * Protected visibility, so that subclasses can utilize this value in their own
+     * implementations without needing a isLenient() method.
+     *
+     * @since 23
+     * @see #setLenient(boolean)
+     */
+    protected boolean parseStrict = false;
 
     // new fields for 1.2.  byte is too small for integer digits.
 

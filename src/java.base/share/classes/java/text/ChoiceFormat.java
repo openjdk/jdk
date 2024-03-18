@@ -581,6 +581,12 @@ public class ChoiceFormat extends NumberFormat {
         return Double.valueOf(bestNumber);
     }
 
+    @Override
+    public void setLenient(boolean lenient) {
+        throw new UnsupportedOperationException(
+                "ChoiceFormat does not utilize leniency when parsing");
+    }
+
     /**
      * Finds the least double greater than {@code d}.
      * If {@code NaN}, returns same value.

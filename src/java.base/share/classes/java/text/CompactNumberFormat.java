@@ -1499,10 +1499,15 @@ public final class CompactNumberFormat extends NumberFormat {
 
     /**
      * Parses a compact number from a string to produce a {@code Number}.
+     * Parsing can be done in either a strict or lenient manner, by default
+     * it is lenient.
      * <p>
      * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
+     * {@code pos}. The returned value is the numeric part in the given text multiplied
+     * by the numeric equivalent of the affix attached
+     * (For example, "K" = 1000 in {@link java.util.Locale#US US locale}).
+     * <p>
+     * When <b>lenient</b>, if parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
      * number is returned. The updated {@code pos} can be used to
@@ -1510,10 +1515,32 @@ public final class CompactNumberFormat extends NumberFormat {
      * If an error occurs, then the index of {@code pos} is not
      * changed, the error index of {@code pos} is set to the index of
      * the character where the error occurred, and {@code null} is returned.
+     * When lenient, parsing will fail if the prefix and/or suffix are non-empty,
+     * and cannot be found due to parsing ending early, or the first character
+     * after the prefix cannot be parsed. A {@code CompactNumberFormat} can match
+     * the default prefix/suffix to a compact prefix/suffix interchangeably.
      * <p>
-     * The value is the numeric part in the given text multiplied
-     * by the numeric equivalent of the affix attached
-     * (For example, "K" = 1000 in {@link java.util.Locale#US US locale}).
+     * When <b>strict</b>, this method will return {@code null} and {@link #parse(String)}
+     * will throw a {@code ParseException} if not every character is parsed, indicating a failure.
+     * {@code pos} can be used to obtain the cause of the failure by calling
+     * {@link ParsePosition#getErrorIndex()}. When strict, a failure will occur,
+     * if in {@code text},
+     * <ul>
+     *   <li> The default or a compact prefix is not found, for example: "{@code $}"
+     *   <li> The default or a compact suffix is not found, for example: "{@code K}"
+     *   <li> {@link #isGroupingUsed()} returns {@code false}, and the grouping
+     *   symbol is found
+     *   <li> {@link #isGroupingUsed()} returns {@code true}, and {@link
+     *   #getGroupingSize()} is not adhered to
+     *   <li> {@link #isParseIntegerOnly()} returns {@code true}, and the decimal
+     *   separator is found
+     *   <li> {@link #isGroupingUsed()} returns {@code true} and {@link
+     *   #isParseIntegerOnly()} returns {@code false}, and the grouping
+     *   symbol occurs after the decimal separator
+     *   <li> Any other characters are found, that are not the expected symbols,
+     *   and are not digits that occur within the numerical portion
+     * </ul>
+     * <p>
      * The subclass returned depends on the value of
      * {@link #isParseBigDecimal}.
      * <ul>
@@ -1553,7 +1580,7 @@ public final class CompactNumberFormat extends NumberFormat {
      * @return the parsed value, or {@code null} if the parse fails
      * @throws     NullPointerException if {@code text} or
      *             {@code pos} is null
-     *
+     * @see #setLenient(boolean)
      */
     @Override
     public Number parse(String text, ParsePosition pos) {
@@ -1661,6 +1688,13 @@ public final class CompactNumberFormat extends NumberFormat {
                     return cnfMultiplier;
                 }
             }
+        } else {
+            // Neither prefix match, should fail now (strict or lenient), before
+            // position is incremented by subparseNumber(). Otherwise, an empty
+            // prefix could pass through here, position gets incremented by the
+            // numerical portion, and return a faulty errorIndex and index later.
+            pos.errorIndex = position;
+            return null;
         }
 
         digitList.setRoundingMode(getRoundingMode());
@@ -1705,6 +1739,11 @@ public final class CompactNumberFormat extends NumberFormat {
                 status, gotPositive, gotNegative, num);
 
         if (multiplier.longValue() == -1L) {
+            if (parseStrict) {
+                // When strict, if -1L was returned, index should be
+                // reset to the original index to ensure failure
+                pos.index = oldStart;
+            }
             return null;
         } else if (multiplier.longValue() != 1L) {
             cnfMultiplier = multiplier;
@@ -1886,7 +1925,10 @@ public final class CompactNumberFormat extends NumberFormat {
 
         if (prefix.equals(matchedPrefix)
                 || matchedPrefix.equals(defaultPrefix)) {
-            return matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
+            // Suffix must match exactly when strict
+            return parseStrict ? matchAffix(text, position, suffix, defaultSuffix, matchedSuffix)
+                    && text.length() == position + suffix.length()
+                    : matchAffix(text, position, suffix, defaultSuffix, matchedSuffix);
         }
         return false;
     }
@@ -1924,10 +1966,11 @@ public final class CompactNumberFormat extends NumberFormat {
             String positiveSuffix = getAffix(true, false, false, compactIndex, num);
             String negativeSuffix = getAffix(true, false, true, compactIndex, num);
 
-            // Do not break if a match occur; there is a possibility that the
+            // When lenient, do not break if a match occurs; there is a possibility that the
             // subsequent affixes may match the longer subsequence in the given
-            // string.
-            // For example, matching "3Mdx" with "M", "Md" should match with "Md"
+            // string. For example, matching "3Mdx" with "M", "Md" should match
+            // with "Md". However, when strict, break as the match should be exact,
+            // and thus no need to check for a longer suffix.
             boolean match = matchPrefixAndSuffix(text, position, positivePrefix, matchedPrefix,
                     defaultDecimalFormat.getPositivePrefix(), positiveSuffix,
                     matchedPosSuffix, defaultDecimalFormat.getPositiveSuffix());
@@ -1935,6 +1978,10 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedPosIndex = compactIndex;
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
+                if (parseStrict) {
+                    // when strict, exit early with exact match, same for negative
+                    break;
+                }
             }
 
             match = matchPrefixAndSuffix(text, position, negativePrefix, matchedPrefix,
@@ -1944,29 +1991,39 @@ public final class CompactNumberFormat extends NumberFormat {
                 matchedNegIndex = compactIndex;
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
+                if (parseStrict) {
+                    break;
+                }
             }
         }
 
         // Suffix in the given text does not match with the compact
         // patterns suffixes; match with the default suffix
+        // When strict, text must end with the default suffix
         if (!gotPos && !gotNeg) {
             String positiveSuffix = defaultDecimalFormat.getPositiveSuffix();
             String negativeSuffix = defaultDecimalFormat.getNegativeSuffix();
-            if (text.regionMatches(position, positiveSuffix, 0,
-                    positiveSuffix.length())) {
+            boolean containsPosSuffix = text.regionMatches(position,
+                    positiveSuffix, 0, positiveSuffix.length());
+            boolean endsWithPosSuffix = containsPosSuffix && text.length() ==
+                    position + positiveSuffix.length();
+            if (parseStrict ? endsWithPosSuffix : containsPosSuffix) {
                 // Matches the default positive prefix
                 matchedPosSuffix = positiveSuffix;
                 gotPos = true;
             }
-            if (text.regionMatches(position, negativeSuffix, 0,
-                    negativeSuffix.length())) {
+            boolean containsNegSuffix = text.regionMatches(position,
+                    negativeSuffix, 0, negativeSuffix.length());
+            boolean endsWithNegSuffix = containsNegSuffix && text.length() ==
+                    position + negativeSuffix.length();
+            if (parseStrict ? endsWithNegSuffix : containsNegSuffix) {
                 // Matches the default negative suffix
                 matchedNegSuffix = negativeSuffix;
                 gotNeg = true;
             }
         }
 
-        // If both matches, take the longest one
+        // If both match, take the longest one
         if (gotPos && gotNeg) {
             if (matchedPosSuffix.length() > matchedNegSuffix.length()) {
                 gotNeg = false;
@@ -2077,6 +2134,7 @@ public final class CompactNumberFormat extends NumberFormat {
         decimalFormat.setGroupingSize(getGroupingSize());
         decimalFormat.setGroupingUsed(isGroupingUsed());
         decimalFormat.setParseIntegerOnly(isParseIntegerOnly());
+        decimalFormat.setLenient(!parseStrict);
 
         try {
             defaultDecimalFormat = new DecimalFormat(decimalPattern, symbols);
@@ -2314,6 +2372,12 @@ public final class CompactNumberFormat extends NumberFormat {
     public void setParseIntegerOnly(boolean value) {
         decimalFormat.setParseIntegerOnly(value);
         super.setParseIntegerOnly(value);
+    }
+
+    @Override
+    public void setLenient(boolean lenient) {
+        decimalFormat.setLenient(lenient);
+        super.setLenient(lenient);
     }
 
     /**
