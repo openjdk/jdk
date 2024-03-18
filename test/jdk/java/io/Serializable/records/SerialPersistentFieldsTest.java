@@ -270,13 +270,13 @@ public class SerialPersistentFieldsTest {
                     cob.bipush(i);
                     cob.new_(CD_ObjectStreamField);
                     cob.dup();
-                    cob.constantInstruction(osf.getName());
+                    cob.loadConstant(osf.getName());
                     if (osf.isPrimitive()) {
-                        cob.constantInstruction(DynamicConstantDesc.ofNamed(
+                        cob.loadConstant(DynamicConstantDesc.ofNamed(
                                 ConstantDescs.BSM_PRIMITIVE_CLASS, String.valueOf(osf.getTypeCode()), CD_Class));
                     } else {
                         // Currently Classfile API cannot encode primitive classdescs as condy
-                        cob.constantInstruction(osf.getType().describeConstable().orElseThrow());
+                        cob.loadConstant(osf.getType().describeConstable().orElseThrow());
                     }
                     cob.invokespecial(CD_ObjectStreamField, INIT_NAME, MethodTypeDesc.of(CD_void, CD_String, CD_Class));
                     cob.aastore();

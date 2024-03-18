@@ -64,7 +64,7 @@ class BuilderBlockTest {
                           mb -> mb.withCode(xb -> {
                               startEnd[0] = xb.startLabel();
                               startEnd[1] = xb.endLabel();
-                              xb.returnInstruction(TypeKind.VoidType);
+                              xb.return_();
                               assertEquals(((LabelImpl) startEnd[0]).getBCI(), 0);
                               assertEquals(((LabelImpl) startEnd[1]).getBCI(), -1);
                           }));
@@ -83,13 +83,13 @@ class BuilderBlockTest {
                           mb -> mb.withCode(xb -> {
                               startEnd[0] = xb.startLabel();
                               startEnd[1] = xb.endLabel();
-                              xb.nopInstruction();
+                              xb.nop();
                               xb.block(xxb -> {
                                   startEnd[2] = xxb.startLabel();
                                   startEnd[3] = xxb.endLabel();
-                                  xxb.nopInstruction();
+                                  xxb.nop();
                               });
-                              xb.returnInstruction(TypeKind.VoidType);
+                              xb.return_();
                           }));
         });
 
@@ -106,9 +106,9 @@ class BuilderBlockTest {
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
                           mb -> mb.withCode(xb -> xb.iload(0)
-                                                    .ifThen(xxb -> xxb.iconst_1().returnInstruction(TypeKind.IntType))
+                                                    .ifThen(xxb -> xxb.iconst_1().ireturn())
                                                     .iconst_2()
-                                                    .returnInstruction(TypeKind.IntType)));
+                                                    .ireturn()));
         });
 
         Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)
@@ -125,8 +125,8 @@ class BuilderBlockTest {
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
                           mb -> mb.withCode(xb -> xb.iload(0)
-                                                    .ifThenElse(xxb -> xxb.iconst_1().returnInstruction(TypeKind.IntType),
-                                                                xxb -> xxb.iconst_2().returnInstruction(TypeKind.IntType))));
+                                                    .ifThenElse(xxb -> xxb.iconst_1().ireturn(),
+                                                                xxb -> xxb.iconst_2().ireturn())));
         });
 
         Method fooMethod = new ByteArrayClassLoader(BuilderBlockTest.class.getClassLoader(), "Foo", bytes)

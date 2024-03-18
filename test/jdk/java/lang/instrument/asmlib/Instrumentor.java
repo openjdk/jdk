@@ -122,13 +122,13 @@ public class Instrumentor {
                                 // load method parameters
                                 for (int i = 0; i < mt.parameterCount(); i++) {
                                     TypeKind kind = TypeKind.from(mt.parameterType(i));
-                                    cb.loadInstruction(kind, ptr);
+                                    cb.loadLocal(kind, ptr);
                                     ptr += kind.slotSize();
                                 }
 
-                                cb.invokeInstruction(isStatic ? Opcode.INVOKESTATIC : Opcode.INVOKESPECIAL,
+                                cb.invoke(isStatic ? Opcode.INVOKESTATIC : Opcode.INVOKESPECIAL,
                                         model.thisClass().asSymbol(), newName, mt, false);
-                                cb.returnInstruction(TypeKind.from(mt.returnType()));
+                                cb.return_(TypeKind.from(mt.returnType()));
                             }));
                         }
                     }));

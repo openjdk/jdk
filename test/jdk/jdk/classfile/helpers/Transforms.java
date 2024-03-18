@@ -217,7 +217,7 @@ public class Transforms {
                     cb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel xm) {
                             mb.withCode(xb -> {
-                                xb.nopInstruction();
+                                xb.nop();
                                 xm.forEachElement(new Consumer<>() {
                                     @Override
                                     public void accept(CodeElement e) {

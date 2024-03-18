@@ -107,7 +107,7 @@ public class OpcodesValidationTest {
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                                       mb -> mb.withCode(
-                                              codeb -> codeb.constantInstruction(opcode, (ConstantDesc) constant))));
+                                              codeb -> codeb.loadConstant(opcode, (ConstantDesc) constant))));
     }
 
 
@@ -124,6 +124,6 @@ public class OpcodesValidationTest {
                         cb -> cb.withFlags(AccessFlag.PUBLIC)
                                 .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
                         mb -> mb .withCode(
-                                codeb -> codeb.constantInstruction(opcode, (ConstantDesc)constant))));
+                                codeb -> codeb.loadConstant(opcode, (ConstantDesc)constant))));
     }
 }

@@ -91,7 +91,7 @@ class RetransformAgent {
                                    .addMethodEntryInjection(
                                         nname,
                                         cb -> {
-                                           cb.constantInstruction(fixedIndex);
+                                           cb.loadConstant(fixedIndex);
                                            cb.invokestatic(
                                                    CD_RetransformAgent,
                                                    "callTracker", MTD_void_int);

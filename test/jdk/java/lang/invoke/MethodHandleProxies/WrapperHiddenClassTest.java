@@ -95,7 +95,7 @@ public class WrapperHiddenClassTest {
 
             // <clinit>
             clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
-                cob.constantInstruction(CD_Comparator);
+                cob.loadConstant(CD_Comparator);
                 cob.putstatic(CD_HostileWrapper, TYPE, CD_Class);
                 cob.return_();
             });

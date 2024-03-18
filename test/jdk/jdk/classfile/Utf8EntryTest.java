@@ -196,7 +196,7 @@ class Utf8EntryTest {
     static byte[] createClassFile(String s) {
         return ClassFile.of().build(ClassDesc.of("C"),
                                clb -> clb.withMethod("m", MethodTypeDesc.of(CD_void), 0,
-                                                     mb -> mb.withCode(cb -> cb.constantInstruction(s)
-                                                                               .returnInstruction(VoidType))));
+                                                     mb -> mb.withCode(cb -> cb.loadConstant(s)
+                                                                               .return_())));
     }
 }

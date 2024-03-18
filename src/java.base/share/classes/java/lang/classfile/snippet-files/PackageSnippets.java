@@ -213,7 +213,7 @@ class PackageSnippets {
             if (e instanceof InvokeInstruction i
                     && i.owner().asInternalName().equals("Foo")
                     && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invokeInstruction(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                        b.invoke(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
         };
         // @end
@@ -327,7 +327,7 @@ class PackageSnippets {
                                               for (CodeElement e : xm) {
                                                   if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
-                                                              codeBuilder.invokeInstruction(i.opcode(), CD_Bar,
+                                                              codeBuilder.invoke(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());
                                                   else codeBuilder.with(e);
                                               }});

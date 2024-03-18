@@ -251,7 +251,7 @@ public class ExampleGallery {
             @Override
             public void accept(CodeBuilder codeB, CodeElement codeE) {
                 if (found) {
-                    codeB.nopInstruction();
+                    codeB.nop();
                     found = false;
                 }
                 codeB.with(codeE);
@@ -265,7 +265,7 @@ public class ExampleGallery {
         return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case InvokeInstruction i -> {
-                    codeB.nopInstruction();
+                    codeB.nop();
                     codeB.with(codeE);
                 }
                 default -> codeB.with(codeE);
@@ -277,7 +277,7 @@ public class ExampleGallery {
         return ClassFile.of().transform(cm, ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
                 case ConstantInstruction ci -> {
-                        if (ci.constantValue() instanceof Integer i) codeB.constantInstruction(i + 1);
+                        if (ci.constantValue() instanceof Integer i) codeB.loadConstant(i + 1);
                         else codeB.with(codeE);
                 }
                 default -> codeB.with(codeE);

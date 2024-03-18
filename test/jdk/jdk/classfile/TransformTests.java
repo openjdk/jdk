@@ -59,7 +59,7 @@ class TransformTests {
     static CodeTransform swapLdc(String x, String y) {
         return (b, e) -> {
             if (e instanceof ConstantInstruction ci && ci.constantValue().equals(x)) {
-                b.constantInstruction(y);
+                b.loadConstant(y);
             }
             else
                 b.with(e);

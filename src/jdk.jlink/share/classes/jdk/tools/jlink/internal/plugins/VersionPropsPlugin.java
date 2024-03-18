@@ -143,7 +143,7 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
                                         // forget about it
                                         pendingLDC = null;
                                         // and add an ldc for the new value
-                                        cob.constantInstruction(value);
+                                        cob.loadConstant(value);
                                         redefined = true;
                                     } else {
                                         flushPendingLDC(cob);

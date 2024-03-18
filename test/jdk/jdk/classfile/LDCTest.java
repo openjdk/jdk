@@ -49,9 +49,9 @@ class LDCTest {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
+                      .withCode(codeb -> codeb.aload(0)
+                                              .invokespecial(CD_Object, "<init>", MTD_VOID, false)
+                                              .return_()
                       )
               )
 
@@ -62,15 +62,15 @@ class LDCTest {
                                   for (int i = 0; i <= 256/2 + 2; i++) { // two entries per String
                                       StringEntry s = cpb.stringEntry("string" + i);
                                   }
-                                  c0.constantInstruction(LDC, "string0")
-                                    .constantInstruction(LDC, "string131")
-                                    .constantInstruction(LDC, "string50")
-                                    .constantInstruction(-0.0f)
-                                    .constantInstruction(-0.0d)
+                                  c0.loadConstant(LDC, "string0")
+                                    .loadConstant(LDC, "string131")
+                                    .loadConstant(LDC, "string50")
+                                    .loadConstant(-0.0f)
+                                    .loadConstant(-0.0d)
                                     //non-LDC test cases
-                                    .constantInstruction(0.0f)
-                                    .constantInstruction(0.0d)
-                                    .returnInstruction(VoidType);
+                                    .loadConstant(0.0f)
+                                    .loadConstant(0.0d)
+                                    .return_();
                               }));
         });
 
