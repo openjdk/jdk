@@ -86,11 +86,13 @@ JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
 
 JLINK_JRE_EXTRA_OPTS := --no-man-pages --no-header-files --strip-debug
 
+DEFAULT_JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
-  RL_INTERMEDIATE_IMAGE_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-initial-jdk
-  JDK_LINK_OUTPUT_DIR := $(RL_INTERMEDIATE_IMAGE_DIR)
+  JDK_LINK_OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-initial-jdk
+  JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
 else
   JDK_LINK_OUTPUT_DIR := $(JDK_IMAGE_DIR)
+  JDK_IMAGE_SUPPORT_DIR := $(DEFAULT_JDK_IMAGE_SUPPORT_DIR)
 endif
 
 ifeq ($(JLINK_KEEP_PACKAGED_MODULES), true)
@@ -102,7 +104,6 @@ endif
 
 JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
 
-JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
 JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
 $(eval $(call SetupExecute, jlink_jdk, \
@@ -123,7 +124,6 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
   RL_BUILD_MODULE_NAME := jdk.unsupported_jlink_runtime
   RL_CREATE_PLUGIN_MOD_OUTPUT := $(BUILDTOOLS_OUTPUTDIR)/$(RL_BUILD_MODULE_NAME)
-  JDK_RUNTIME_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/runtime-link-support
 
   # We need to use FixPath for correct path handling on Windows. Avoid space
   # in FixPath call in order to avoid needing to use strip.
@@ -154,9 +154,9 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
   $(eval $(call SetupExecute, jlink_runtime_jdk, \
       WARN := Creating jdk image for runtime linking, \
-      DEPS := $(BUILD_JDK_RUNLINK_CLASSES), \
+      DEPS := $(BUILD_JDK_RUNLINK_CLASSES) $(jlink_jdk), \
       OUTPUT_DIR := $(JDK_IMAGE_DIR), \
-      SUPPORT_DIR := $(JDK_RUNTIME_IMAGE_SUPPORT_DIR), \
+      SUPPORT_DIR := $(DEFAULT_JDK_IMAGE_SUPPORT_DIR), \
       PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
       COMMAND := $(JLINK_TOOL) $(JLINK_RUNTIME_CREATE_ARG) \
           --add-modules $(JDK_MODULES_LIST) \
@@ -167,6 +167,12 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
 
   JLINK_JDK_TARGETS += $(jlink_runtime_jdk)
 
+endif
+
+ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
+  FINAL_JDK_JLINK := $(jlink_runtime_jdk)
+else
+  FINAL_JDK_JLINK := $(jlink_jdk)
 endif
 
 $(eval $(call SetupExecute, jlink_jre, \
@@ -216,7 +222,7 @@ define CreateCDSArchive
   $$(eval $$(call SetupExecute, $1_$2_gen_cds_archive_jdk, \
       WARN := Creating CDS$$($1_$2_DUMP_TYPE) archive for jdk image for $1, \
       INFO := Using CDS flags for $1: $$($1_$2_CDS_DUMP_FLAGS), \
-      DEPS := $$(jlink_jdk), \
+      DEPS := $$(FINAL_JDK_JLINK), \
       OUTPUT_FILE := $$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE), \
       SUPPORT_DIR := $$(JDK_IMAGE_SUPPORT_DIR), \
       COMMAND := $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java -Xshare:dump \
