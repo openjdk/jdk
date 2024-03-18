@@ -254,6 +254,8 @@ class ParallelScavengeHeap : public CollectedHeap {
   // Mangle the unused parts of all spaces in the heap
   void gen_mangle_unused_area() PRODUCT_RETURN;
 
+  size_t zero_unused() override;
+
   GCMemoryManager* old_gc_manager() const { return _old_manager; }
   GCMemoryManager* young_gc_manager() const { return _young_manager; }
 

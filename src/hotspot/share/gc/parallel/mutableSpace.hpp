@@ -119,6 +119,8 @@ class MutableSpace: public CHeapObj<mtGC> {
 
   virtual void ensure_parsability() { }
 
+  virtual size_t zero_unused();
+
   virtual void mangle_region(MemRegion mr) PRODUCT_RETURN;
 
   // Boolean queries.
