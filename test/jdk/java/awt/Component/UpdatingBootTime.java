@@ -25,6 +25,8 @@
  * @test
  * @bug 6461933 7194219
  * @summary adjust system boot time in nowMillisUTC() frequently
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual UpdatingBootTime
  */
 
