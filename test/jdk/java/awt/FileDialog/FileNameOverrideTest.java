@@ -91,7 +91,7 @@ public class FileNameOverrideTest {
                 1) Click on 'Show File Dialog' button. A file dialog will come up.
                 2) Double-click on '$clickDirName' and click OK.
                 3) The text in the text field will indicate if test is passed or failed.
-                """;
+                """.replace("$clickDirName", clickDirName);
 
         String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
         if (!toolkit.equals("sun.awt.X11.XToolkit")) {
