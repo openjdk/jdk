@@ -75,7 +75,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the specified buffer size that
-     * allows concatenated compressed streams and trailing garbage.
+     * allows concatenated compressed streams and tolerates trailing garbage.
      *
      * @param in the input stream
      * @param size the input buffer size
@@ -92,7 +92,7 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /**
      * Creates a new input stream with the default buffer size that
-     * allows concatenated compressed streams and trailing garbage.
+     * allows concatenated compressed streams and tolerates trailing garbage.
      *
      * @param in the input stream
      *
@@ -123,8 +123,8 @@ public class GZIPInputStream extends InflaterInputStream {
      * {@code allowConcatenation} is true): when {@code allowTrailingGarbage} is true,
      * the unexpected data and/or any {@link IOException} thrown trying to read it is
      * simply discarded and EOF is returned; when {@code allowTrailingGarbage} is false,
-     * any such unexpected data triggers a {@link ZipException} and any {@link IOException}
-     * thrown is propagated to the caller.
+     * any unexpected data triggers a {@link ZipException}, and any {@link IOException}
+     * thrown by the underlying input stream is propagated to the caller.
      *
      * @apiNote The original behavior of this class is replicated by setting both
      * {@code allowConcatenation} and {@code allowTrailingGarbage} to true. However,
@@ -137,7 +137,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * @param allowConcatenation true to allow multiple concatenated compressed data streams,
      *                           or false to expect exactly one compressed data stream
      * @param allowTrailingGarbage true to tolerate and ignore trailing garbage, false to
-     *                             throw {@link ZipException} if trailing garbate is encountered
+     *                             throw {@link ZipException} if trailing garbage is encountered
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
