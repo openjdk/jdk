@@ -321,8 +321,9 @@ public:
     Metadata empty;
     return register_mapping(from, from + sz, InOut::Released, empty, [](Metadata& merge_into, const Metadata& existent) {
       // The releasing API takes no flag, so we inherit the flag of the reserved/committed region.
-      // This is necessary for correct summary accounting.
+      // The releasing API also has no call stack, so we inherit the callstack also.
       merge_into.flag = existent.flag;
+      merge_into.stack_idx = existent.stack_idx;
       return merge_into;
     });
   }
