@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8246774
  * @summary Basic tests for prohibited magic serialPersistentFields
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @enablePreview
  * @run testng SerialPersistentFieldsTest
  */
 
@@ -38,23 +38,34 @@ import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 import java.io.ObjectStreamField;
 import java.io.Serializable;
+import java.lang.classfile.ClassBuilder;
+import java.lang.classfile.ClassElement;
+import java.lang.classfile.ClassTransform;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.FieldModel;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.DynamicConstantDesc;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.FieldVisitor;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.Type;
+
 import jdk.test.lib.ByteCodeLoader;
 import jdk.test.lib.compiler.InMemoryJavaCompiler;
 import org.testng.annotations.BeforeTest;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import static java.lang.System.out;
-import static jdk.internal.org.objectweb.asm.ClassWriter.*;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import static java.lang.classfile.ClassFile.ACC_FINAL;
+import static java.lang.classfile.ClassFile.ACC_PRIVATE;
+import static java.lang.classfile.ClassFile.ACC_STATIC;
+import static java.lang.constant.ConstantDescs.CD_Class;
+import static java.lang.constant.ConstantDescs.CD_String;
+import static java.lang.constant.ConstantDescs.CD_void;
+import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
+import static java.lang.constant.ConstantDescs.INIT_NAME;
+import static java.lang.constant.ConstantDescs.MTD_void;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -218,105 +229,62 @@ public class SerialPersistentFieldsTest {
 
     static byte[] addSerialPersistentFields(byte[] classBytes,
                                             ObjectStreamField[] spf) {
-        ClassReader reader = new ClassReader(classBytes);
-        ClassWriter writer = new ClassWriter(reader, COMPUTE_MAXS | COMPUTE_FRAMES);
-        reader.accept(new SerialPersistentFieldsVisitor(writer, spf), 0);
-        return writer.toByteArray();
+        var cf = ClassFile.of();
+        var model = cf.parse(classBytes);
+        return cf.transform(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }
 
     /** A visitor that adds a serialPersistentFields field, and assigns it in clinit. */
-    static final class SerialPersistentFieldsVisitor extends ClassVisitor {
+    static final class SerialPersistentFieldsVisitor implements ClassTransform {
         static final String FIELD_NAME = "serialPersistentFields";
-        static final String FIELD_DESC = "[Ljava/io/ObjectStreamField;";
+        static final ClassDesc CD_ObjectStreamField = ObjectStreamField.class.describeConstable().orElseThrow();
+        static final ClassDesc FIELD_DESC = CD_ObjectStreamField.arrayType();
         final ObjectStreamField[] spf;
-        String className;
-        SerialPersistentFieldsVisitor(ClassVisitor cv, ObjectStreamField[] spf) {
-            super(ASM8, cv);
+        final ClassDesc className;
+        SerialPersistentFieldsVisitor(ClassDesc className, ObjectStreamField[] spf) {
+            this.className = className;
             this.spf = spf;
         }
+
         @Override
-        public void visit(final int version,
-                          final int access,
-                          final String name,
-                          final String signature,
-                          final String superName,
-                          final String[] interfaces) {
-            this.className = name;
-            cv.visit(version, access, name, signature, superName, interfaces);
-        }
-        @Override
-        public FieldVisitor visitField(final int access,
-                                       final String name,
-                                       final String descriptor,
-                                       final String signature,
-                                       final Object value) {
-            // the field-to-be-added should not already exist
-            assert !name.equals("serialPersistentFields") : "Unexpected " + name + " field";
-            return cv.visitField(access, name, descriptor, signature, value);
-        }
-        @Override
-        public void visitEnd() {
-            {
-                FieldVisitor fv = cv.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
-                                                FIELD_NAME,
-                                                FIELD_DESC,
-                                                null,
-                                                null);
-                fv.visitEnd();
+        public void accept(ClassBuilder builder, ClassElement element) {
+            if (element instanceof FieldModel fieldModel) {
+                var name = fieldModel.fieldName().stringValue();
+                assert !name.equals(FIELD_NAME) : "Unexpected " + FIELD_NAME + " field";
+                builder.accept(fieldModel);
+            } else {
+                builder.accept(element);
             }
-            {
-                MethodVisitor mv = cv.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
-                mv.visitCode();
-                mv.visitIntInsn(BIPUSH, spf.length);
-                mv.visitTypeInsn(ANEWARRAY, "java/io/ObjectStreamField");
+        }
+
+        @Override
+        public void atEnd(ClassBuilder builder) {
+            builder.withField(FIELD_NAME, FIELD_DESC, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+            builder.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
+                cob.bipush(spf.length);
+                cob.anewarray(CD_ObjectStreamField);
 
                 for (int i = 0; i < spf.length; i++) {
                     ObjectStreamField osf = spf[i];
-                    mv.visitInsn(DUP);
-                    mv.visitIntInsn(BIPUSH, i);
-                    mv.visitTypeInsn(NEW, "java/io/ObjectStreamField");
-                    mv.visitInsn(DUP);
-                    mv.visitLdcInsn(osf.getName());
-                    if (osf.getType().isPrimitive()) {
-                        mv.visitFieldInsn(GETSTATIC,  getPrimitiveBoxClass(osf.getType()), "TYPE", "Ljava/lang/Class;");
+                    cob.dup();
+                    cob.bipush(i);
+                    cob.new_(CD_ObjectStreamField);
+                    cob.dup();
+                    cob.constantInstruction(osf.getName());
+                    if (osf.isPrimitive()) {
+                        cob.constantInstruction(DynamicConstantDesc.ofNamed(
+                                ConstantDescs.BSM_PRIMITIVE_CLASS, String.valueOf(osf.getTypeCode()), CD_Class));
                     } else {
-                        mv.visitLdcInsn(Type.getType(osf.getType()));
+                        // Currently Classfile API cannot encode primitive classdescs as condy
+                        cob.constantInstruction(osf.getType().describeConstable().orElseThrow());
                     }
-                    mv.visitMethodInsn(INVOKESPECIAL, "java/io/ObjectStreamField", "<init>", "(Ljava/lang/String;Ljava/lang/Class;)V", false);
-                    mv.visitInsn(AASTORE);
+                    cob.invokespecial(CD_ObjectStreamField, INIT_NAME, MethodTypeDesc.of(CD_void, CD_String, CD_Class));
+                    cob.aastore();
                 }
 
-                mv.visitFieldInsn(PUTSTATIC, className, "serialPersistentFields", "[Ljava/io/ObjectStreamField;");
-                mv.visitInsn(RETURN);
-                mv.visitMaxs(0, 0);
-                mv.visitEnd();
-            }
-            cv.visitEnd();
-        }
-
-        static String getPrimitiveBoxClass(final Class<?> clazz) {
-            if (!clazz.isPrimitive())
-                throw new AssertionError("unexpected non-primitive:" + clazz);
-
-            if (clazz == Integer.TYPE) {
-                return "java/lang/Integer";
-            } else if (clazz == Boolean.TYPE) {
-                return "java/lang/Boolean";
-            } else if (clazz == Byte.TYPE) {
-                return "java/lang/Byte";
-            } else if (clazz == Character.TYPE) {
-                return "java/lang/Character";
-            } else if (clazz == Short.TYPE) {
-                return "java/lang/Short";
-            } else if (clazz == Double.TYPE) {
-                return "java/lang/Double";
-            } else if (clazz == Float.TYPE) {
-                return "java/lang/Float";
-            } else if (clazz == Long.TYPE) {
-                return "java/lang/Long";
-            } else {
-                throw new AssertionError("unknown:" + clazz);
-            }
+                cob.putstatic(className, FIELD_NAME, FIELD_DESC);
+                cob.return_();
+            });
         }
     }
 

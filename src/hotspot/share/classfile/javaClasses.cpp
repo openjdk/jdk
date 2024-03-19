@@ -1541,6 +1541,7 @@ int java_lang_Thread::_jvmti_thread_state_offset;
 int java_lang_Thread::_jvmti_VTMS_transition_disable_count_offset;
 int java_lang_Thread::_jvmti_is_in_VTMS_transition_offset;
 int java_lang_Thread::_interrupted_offset;
+int java_lang_Thread::_interruptLock_offset;
 int java_lang_Thread::_tid_offset;
 int java_lang_Thread::_continuation_offset;
 int java_lang_Thread::_park_blocker_offset;
@@ -1554,6 +1555,7 @@ JFR_ONLY(int java_lang_Thread::_jfr_epoch_offset;)
   macro(_inheritedAccessControlContext_offset, k, vmSymbols::inheritedAccessControlContext_name(), accesscontrolcontext_signature, false); \
   macro(_eetop_offset,         k, "eetop", long_signature, false); \
   macro(_interrupted_offset,   k, "interrupted", bool_signature, false); \
+  macro(_interruptLock_offset, k, "interruptLock", object_signature, false); \
   macro(_tid_offset,           k, "tid", long_signature, false); \
   macro(_park_blocker_offset,  k, "parkBlocker", object_signature, false); \
   macro(_continuation_offset,  k, "cont", continuation_signature, false); \
@@ -1635,6 +1637,9 @@ void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
 oop java_lang_Thread::holder(oop java_thread) {
   // Note: may return null if the thread is still attaching
   return java_thread->obj_field(_holder_offset);
+}
+oop java_lang_Thread::interrupt_lock(oop java_thread) {
+  return java_thread->obj_field(_interruptLock_offset);
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {

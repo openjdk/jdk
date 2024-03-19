@@ -66,12 +66,6 @@
   product(bool, Use64KPages, true,                                                  \
           "Use 64K pages if available.")                                            \
                                                                                     \
-  /*  If VM uses 64K paged memory (shmat) for virtual memory: threshold below  */   \
-  /*  which virtual memory allocations are done with 4K memory (mmap). This is */   \
-  /*  mainly for test purposes.                                                */   \
-  develop(uintx, Use64KPagesThreshold, 0,                                           \
-          "4K/64K page allocation threshold.")                                      \
-                                                                                    \
   /* Normally AIX commits memory on touch, but sometimes it is helpful to have */   \
   /* explicit commit behaviour. This flag, if true, causes the VM to touch     */   \
   /* memory on os::commit_memory() (which normally is a noop).                 */   \

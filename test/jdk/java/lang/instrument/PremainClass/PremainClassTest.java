@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,14 +39,10 @@ public class PremainClassTest {
     // a non ascii character.
     // Verify that the premain() function is executed correctly.
     public static void main(String[] a) throws Exception {
-        String testArgs = String.format(
-                "-javaagent:%s/Agent.jar -classpath %s DummyMain",
-                System.getProperty("test.src"),
-                System.getProperty("test.classes", "."));
+        String testArgs = String.format("-javaagent:%s/Agent.jar",
+                System.getProperty("test.src"));
 
-        ProcessBuilder pb = ProcessTools.createLimitedTestJavaProcessBuilder(
-                Utils.addTestJavaOpts(testArgs.split("\\s+")));
-        System.out.println("testjvm.cmd:" + Utils.getCommandLine(pb));
+        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(testArgs, "DummyMain");
 
         OutputAnalyzer output = ProcessTools.executeProcess(pb);
         System.out.println("testjvm.stdout:" + output.getStdout());
