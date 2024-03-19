@@ -40,9 +40,9 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
-public class MonotonicBigListBenchmark {
+public class MonotonicSmallListBenchmark {
 
-    private static final int SIZE = 1_000_000;
+    private static final int SIZE = 1_000;
 
     private static final List<Monotonic<Integer>> MONOTONIC_LAZY = randomMono(Monotonic.ofList(SIZE));
     private final List<Monotonic<Integer>> MONOTONIC_EAGER = randomMono(IntStream.range(0, SIZE)
