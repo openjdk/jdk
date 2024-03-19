@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 6742358
- * @summary MetalSliderUI paint wrong vertical disabled filled JSlider for DefaultMetalTheme
+ * @summary Verifies that painting a vertical disabled filled JSlider, the
+ *          track will be painted correctly for DefaultMetalTheme.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug6742358
@@ -70,7 +71,8 @@ public class bug6742358 {
             pnVertical.setLayout(new BoxLayout(pnVertical, BoxLayout.Y_AXIS));
 
             for (int i = 0; i < 8; i++) {
-                pnVertical.add(createSlider(false, (i & 4) == 0, (i & 2) == 0, (i & 1) == 0));
+                pnVertical.add(createSlider(false, (i & 4) == 0,
+                        (i & 2) == 0, (i & 1) == 0));
             }
 
             JPanel pnHorizontal = new JPanel();
@@ -78,7 +80,8 @@ public class bug6742358 {
             pnHorizontal.setLayout(new BoxLayout(pnHorizontal, BoxLayout.X_AXIS));
 
             for (int i = 0; i < 8; i++) {
-                pnHorizontal.add(createSlider(true, (i & 4) == 0, (i & 2) == 0, (i & 1) == 0));
+                pnHorizontal.add(createSlider(true, (i & 4) == 0,
+                        (i & 2) == 0, (i & 1) == 0));
             }
 
             add(pnHorizontal);
@@ -86,14 +89,17 @@ public class bug6742358 {
         }
     }
 
-    private static JSlider createSlider(boolean vertical, boolean enabled, boolean filled, boolean inverted) {
-        JSlider result = new JSlider(vertical ? SwingConstants.VERTICAL : SwingConstants.HORIZONTAL, 0, 10, 5);
+    private static JSlider createSlider(boolean vertical, boolean enabled,
+                                         boolean filled, boolean inverted) {
+        JSlider result = new JSlider(vertical ? SwingConstants.VERTICAL : SwingConstants.HORIZONTAL,
+                 0, 10, 5);
 
         result.setEnabled(enabled);
         result.putClientProperty("JSlider.isFilled", filled);
         result.setInverted(inverted);
-        result.setToolTipText("<html>vertical = " + vertical + "<br>enabled = " + enabled + "<br>filled = " + filled +
-                "<br>inverted = " + inverted + "</html>");
+        result.setToolTipText("<html>vertical = " + vertical + "<br>enabled = "
+                 + enabled+ "<br>filled = " + filled
+                 + "<br>inverted = " + inverted + "</html>");
 
         return result;
     }
