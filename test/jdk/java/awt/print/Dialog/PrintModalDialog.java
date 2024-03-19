@@ -31,10 +31,8 @@
  * @run main PrintModalDialog
  */
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.event.ActionEvent;
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
@@ -67,21 +65,15 @@ public class PrintModalDialog {
                 .instructions(INSTRUCTIONS)
                 .rows(10)
                 .columns(40)
-                .testUI(PrintModalDialog::createAndShowGUI)
+                .splitUIBottom(PrintModalDialog::createAndShowGUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JFrame createAndShowGUI() {
-        frame = new JFrame("PrintModalDialog Test");
-        frame.setSize(400, 300);
-        frame.getContentPane().setLayout(null);
-        frame.getContentPane().setBackground(Color.pink);
+    public static JButton createAndShowGUI() {
         jButton1 = new JButton("PRINT");
         jButton1.addActionListener(e -> jButton1_actionPerformed(e));
-        jButton1.setBounds(new Rectangle(165, 248, 80, 30));
-        frame.getContentPane().add(jButton1, BorderLayout.SOUTH);
-        return frame;
+        return jButton1;
     }
 
     static void jButton1_actionPerformed(ActionEvent e) {
@@ -125,6 +117,8 @@ public class PrintModalDialog {
                 }
                 catch (java.awt.print.PrinterException ex) {
                     ex.printStackTrace();
+                    String msg = "PrinterException: " + ex.getMessage();
+                    PassFailJFrame.forceFail(msg);
                 }
             }
         }
