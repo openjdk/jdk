@@ -123,8 +123,6 @@ public:
     gather_array_klasses();
     reserve_buffer();
 
-    assign_class_loader_type();
-
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
                            klasses()->length(), symbols()->length());
     dump_rw_metadata();

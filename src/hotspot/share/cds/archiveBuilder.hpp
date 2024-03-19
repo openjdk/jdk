@@ -380,7 +380,6 @@ public:
   void relocate_metaspaceobj_embedded_pointers();
   void record_regenerated_object(address orig_src_obj, address regen_src_obj);
   void make_klasses_shareable();
-  void assign_class_loader_type();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
