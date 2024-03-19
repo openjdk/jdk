@@ -26,6 +26,8 @@
  * @bug 4974135
  * @summary FileDialog should open current directory by default.
  * @requires (os.family == "linux")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual FileDialogOpenDirTest
  */
 
