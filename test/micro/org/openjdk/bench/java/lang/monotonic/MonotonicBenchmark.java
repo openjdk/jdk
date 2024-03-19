@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 @State(Scope.Thread)
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
-@Fork(value = 2)
+@Fork(value = 2, jvmArgsAppend = "--enable-preview")
 public class MonotonicBenchmark {
 
     private static final int VALUE = 42;

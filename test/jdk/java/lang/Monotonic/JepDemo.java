@@ -75,10 +75,8 @@ final class JepDemo {
 
     static
     class Bar3 {
-        // 1. Declare a monotonic value
-        private static final Monotonic<Logger> MONOTONIC = Monotonic.of();
-        // 2. Declare a memoized (cached) Supplier backed by the monotonic value
-        private static final Supplier<Logger> LOGGER = () -> MONOTONIC
+        // 1. Declare a memoized (cached) Supplier backed by a monotonic value
+        private static final Supplier<Logger> LOGGER = () -> Monotonic.<Logger>of()
                 .computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {
@@ -91,11 +89,9 @@ final class JepDemo {
     static
     class Bar4 {
         // 1. Declare a memoized (cached) Supplier backed by the monotonic value that
-        //    is pre-computed in the background
+        //    is invoked at most once
         private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
-                        () -> Logger.getLogger("com.foo.Bar") ,
-                        true
-                );
+                        () -> Logger.getLogger("com.foo.Bar"));
 
         static Logger logger() {
             // 2. Access the memoized value with as-declared-final performance
@@ -147,7 +143,7 @@ final class JepDemo {
         private final IntFunction<Integer> numCache;
 
         public Fibonacci3(int upperBound) {
-            numCache = Monotonics.asMemoized(upperBound, this::number, true);
+            numCache = Monotonics.asMemoized(upperBound, this::number);
         }
 
         public int number(int n) {
@@ -177,8 +173,7 @@ final class JepDemo {
         private static final Function<String, Logger> LOGGERS =
                 Monotonics.asMemoized(
                         Set.of("com.foo.Bar", "com.foo.Baz"),
-                        Logger::getLogger,
-                        true);
+                        Logger::getLogger);
 
         static Logger logger(String name) {
             // 2. Access the memoized value with as-declared-final performance

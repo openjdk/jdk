@@ -35,6 +35,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -100,6 +102,19 @@ final class BasicMonotonicsMapTest {
         }
     }
 
+    @Test
+    void asMemoized() {
+        CountingFunction<String, Integer> function = new CountingFunction<>(FUNCTION);
+
+        Function<String, Integer> memoized = Monotonics.asMemoized(Arrays.asList(KEYS), function);
+        for (int j = 0; j < 2; j++) {
+            for (String key:KEYS) {
+                assertEquals(FUNCTION.apply(key), memoized.apply(key));
+            }
+        }
+        assertEquals(KEYS.length, function.sum());
+    }
+
     @ParameterizedTest
     @MethodSource("nullOperations")
     void npe(String name, Consumer<Map<String, Monotonic<Integer>>> op) {
@@ -111,8 +126,8 @@ final class BasicMonotonicsMapTest {
                 Arguments.of("computeIfAbsent(M, K, null)",  asListConsumer(m -> Monotonics.computeIfAbsent(m, KEY, null))),
                 Arguments.of("computeIfAbsent(M, null, M)",  asListConsumer(m -> Monotonics.computeIfAbsent(m, null, FUNCTION))),
                 Arguments.of("computeIfAbsent(null, K, M)",  asListConsumer(m -> Monotonics.computeIfAbsent(null, KEY, FUNCTION))),
-                Arguments.of("asMemoized(i, null, b)",       asListConsumer(m -> Monotonics.asMemoized(Arrays.asList(KEYS), null, false))),
-                Arguments.of("asMemoized(null, M, b)",       asListConsumer(m -> Monotonics.asMemoized(null, FUNCTION, false)))
+                Arguments.of("asMemoized(i, null, b)",       asListConsumer(m -> Monotonics.asMemoized(Arrays.asList(KEYS), null))),
+                Arguments.of("asMemoized(null, M, b)",       asListConsumer(m -> Monotonics.asMemoized(null, FUNCTION)))
         );
     }
 
@@ -120,5 +135,33 @@ final class BasicMonotonicsMapTest {
         return consumer;
     }
 
+    private static final class CountingFunction<T, R> implements Function<T, R> {
+
+        private final Function<T, R> delegate;
+        private final Map<T, AtomicInteger> counters;
+
+
+        public CountingFunction(Function<T, R> delegate) {
+            this.delegate = delegate;
+            this.counters = new ConcurrentHashMap<>();
+        }
+
+        @Override
+        public R apply(T key) {
+            counters.computeIfAbsent(key, _ -> new AtomicInteger()).incrementAndGet();
+            return delegate.apply(key);
+        }
+
+        int cnt(T key) {
+            return counters.get(key).get();
+        }
+
+        int sum() {
+            return counters.values().stream()
+                    .mapToInt(AtomicInteger::get)
+                    .sum();
+        }
+
+    }
 
 }

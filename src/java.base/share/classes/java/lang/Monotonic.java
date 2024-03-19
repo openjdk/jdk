@@ -156,6 +156,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *
      * @param size the size of the returned monotonic list
      * @param <V>  the value type for the Monotonic elements in this list
+     * @see List#of()
      */
     static <V> List<Monotonic<V>> ofList(int size) {
         if (size < 0) {
@@ -164,8 +165,9 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
         return MonotonicList.of(size);
     }
 
+    // Todo: Snippet is wrong
     /**
-     * {@return a new shallowly immutable, thread-safe, lazy, non-blocking
+     * {@return a new shallowly immutable, thread-safe, value-lazy, non-blocking
      * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys} contains
      * precisely the distinct provided {@code keys} and where the values are distinct
      * empty monotonic values}
@@ -183,6 +185,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * @param keys the keys in the map
      * @param <K>  the type of keys maintained by the returned map
      * @param <V>  the value type for the Monotonic values in this map
+     * @see Map#of()
      */
     static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);

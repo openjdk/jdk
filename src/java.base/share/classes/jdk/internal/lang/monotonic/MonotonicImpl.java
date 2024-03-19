@@ -146,24 +146,25 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
         return new MonotonicImpl<>();
     }
 
-    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
-                                             boolean background) {
+    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier) {
         Monotonic<V> monotonic = Monotonic.of();
-        Supplier<V> result = new Supplier<V>() {
+        Supplier<V> guardedSupplier = new Supplier<>() {
             @Override
             public V get() {
-                return monotonic.computeIfAbsent(supplier);
+                synchronized (monotonic) {
+                    if (monotonic.isPresent()) {
+                        return monotonic.get();
+                    }
+                }
+                return supplier.get();
             }
         };
-        if (background) {
-            Thread.startVirtualThread(new Runnable() {
-                @Override
-                public void run() {
-                    result.get();
-                }
-            });
-        }
-        return result;
+        return new Supplier<>() {
+            @Override
+            public V get() {
+                return monotonic.computeIfAbsent(guardedSupplier);
+            }
+        };
     }
 
 }

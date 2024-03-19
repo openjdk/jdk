@@ -130,26 +130,26 @@ public final class MonotonicList<V>
     }
 
     public static <V> IntFunction<V> asMemoized(int size,
-                                                IntFunction<? extends V> mapper,
-                                                boolean background) {
+                                                IntFunction<? extends V> mapper) {
         List<Monotonic<V>> list = Monotonic.ofList(size);
-        IntFunction<V> function = new IntFunction<V>() {
+        IntFunction<V> guardedMapper = new IntFunction<>() {
             @Override
             public V apply(int value) {
-                return computeIfAbsent(list, value, mapper);
-            }
-        };
-        if (background) {
-            Thread.startVirtualThread(new Runnable() {
-                @Override
-                public void run() {
-                    for (int i = 0; i < size; i++) {
-                        function.apply(i);
+                Monotonic<V> monotonic = list.get(value);
+                synchronized (monotonic) {
+                    if (monotonic.isPresent()) {
+                        return monotonic.get();
                     }
                 }
-            });
-        }
-        return function;
+                return mapper.apply(value);
+            }
+        };
+        return new IntFunction<>() {
+            @Override
+            public V apply(int value) {
+                return computeIfAbsent(list, value, guardedMapper);
+            }
+        };
     }
 
 }

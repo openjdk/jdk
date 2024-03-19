@@ -77,57 +77,73 @@ public final class Monotonics {
 
     /**
      * {@return a thread-safe, memoized supplier backed by a new empty monotonic value
-     * where the memoized value is obtained by invoking the provided {@code suppler}}
+     * where the memoized value is obtained by invoking the provided {@code suppler} at
+     * most once}
+     * <p>
+     * The returned {@code Supplier} is equivalent to the following supplier:
+     * {@snippet lang=java :
+     * () -> Monotonic.<V>of().computeIfAbsent(supplier);
+     * }
+     * except it promises the provided {@code supplier} is invoked once even
+     * though the returned Supplier is invoked simultaneously by several threads.
      *
      * @param supplier   to be used for computing a value
-     * @param background if true, spawns a virtual background thread that per-computes a
-     *                   memoized value
      * @param <V>        the type of the value to memoize
      * @see Monotonic#computeIfAbsent(Supplier)
      */
-    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier,
-                                             boolean background) {
+    public static <V> Supplier<V> asMemoized(Supplier<? extends V> supplier) {
         Objects.requireNonNull(supplier);
-        return MonotonicImpl.asMemoized(supplier, background);
+        return MonotonicImpl.asMemoized(supplier);
     }
 
     /**
      * {@return a thread-safe, memoized {@linkplain IntFunction} backed by a new list
      * of {@code size} empty monotonic elements where the memoized values is obtained by
-     * invoking the provided {@code mapper}}
+     * invoking the provided {@code mapper} at most once per index}
+     * <p>
+     * The returned {@code IntFunction} is equivalent to the following supplier:
+     * {@snippet lang=java :
+     * index -> computeIfAbsent(Monotonic.<V>ofList(size), index, mapper);
+     * }
+     * except it promises the provided {@code mapper} is invoked only once per index
+     * even though the returned IntFunction is invoked simultaneously by several threads
+     * using the same index.
      *
      * @param size       the size of the backing monotonic list
      * @param mapper     to be used for computing values
-     * @param background if true, spawns a virtual background thread that per-computes the
-     *                   memoized values in an unspecified order
      * @param <V>        the value type for the Monotonic elements in the backing list
      * @see Monotonic#ofList(int)
      */
     public static <V> IntFunction<V> asMemoized(int size,
-                                                IntFunction<? extends V> mapper,
-                                                boolean background) {
+                                                IntFunction<? extends V> mapper) {
         Objects.requireNonNull(mapper);
-        return MonotonicList.asMemoized(size, mapper, background);
+        return MonotonicList.asMemoized(size, mapper);
     }
 
     /**
      * {@return a thread-safe, memoized {@linkplain Function} backed by a new map
      * with the {@code keys} and of empty monotonic elements where the memoized values
-     * is obtained by invoking the provided {@code mapper}}
+     * is obtained by invoking the provided {@code mapper} at most once per key}
+     * <p>
+     * The returned {@code Function} is equivalent to the following supplier:
+     * {@snippet lang=java :
+     * key -> computeIfAbsent(Monotonic.<K, V>ofMap(keys), key, mapper);
+     * }
+     * except it promises the provided {@code mapper} is invoked only once per index
+     * even though the returned IntFunction is invoked simultaneously by several threads
+     * using the same index.
      *
      * @param keys       the keys in the backing map
      * @param mapper     to be used for computing values
-     * @param background if true, spawns a virtual background thread that per-computes the
-     *                   memoized values in order 0, 1, ... , size-1
      * @param <K>        the type of keys maintained by the backing map
      * @param <V>        the value type for the Monotonic values in the backing map
      * @see Monotonic#ofMap(Collection)
      */
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
-                                                   Function<? super K, ? extends V> mapper,
-                                                   boolean background) {
+                                                   Function<? super K, ? extends V> mapper) {
+        Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
-        return MonotonicMap.asMemoized(keys, mapper, background);
+        return MonotonicMap.asMemoized(keys, mapper);
     }
 
 }

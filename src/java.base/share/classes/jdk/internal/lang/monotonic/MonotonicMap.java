@@ -37,7 +37,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
@@ -241,10 +240,7 @@ public final class MonotonicMap<K, V>
     public static <K, V> V computeIfAbsent(Map<K, Monotonic<V>> map,
                                            K key,
                                            Function<? super K, ? extends V> mapper) {
-        Monotonic<V> monotonic = map.get(key);
-        if (monotonic == null) {
-            throw new IllegalArgumentException("No such key:" + key);
-        }
+        Monotonic<V> monotonic = monotonicOrThrow(map, key);
         if (monotonic.isPresent()) {
             return monotonic.get();
         }
@@ -253,25 +249,36 @@ public final class MonotonicMap<K, V>
     }
 
     public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
-                                                   Function<? super K, ? extends V> mapper,
-                                                   boolean background) {
+                                                   Function<? super K, ? extends V> mapper) {
         Map<K, Monotonic<V>> map = Monotonic.ofMap(keys);
-        Function<K, V> function = new Function<K, V>() {
+        Function<K, V> guardedMapper = new Function<>() {
+
             @Override
-            public V apply(K k) {
-                return computeIfAbsent(map, k, mapper);
-            }
-        };
-        if (background) {
-            Thread.startVirtualThread(new Runnable() {
-                @Override
-                public void run() {
-                    for (K key:keys) {
-                        function.apply(key);
+            public V apply(K key) {
+                Monotonic<V> monotonic = monotonicOrThrow(map, key);
+                synchronized (monotonic) {
+                    if (monotonic.isPresent()) {
+                        return monotonic.get();
                     }
                 }
-            });
-        }
-        return function;
+                return mapper.apply(key);
+            }
+
+        };
+        return new Function<>() {
+            @Override
+            public V apply(K key) {
+                return computeIfAbsent(map, key, guardedMapper);
+            }
+        };
     }
+
+    private static <K, V> Monotonic<V> monotonicOrThrow(Map<K, Monotonic<V>> map, K key) {
+        Monotonic<V> monotonic = map.get(key);
+        if (monotonic == null) {
+            throw new IllegalArgumentException("No such key:" + key);
+        }
+        return monotonic;
+    }
+
 }

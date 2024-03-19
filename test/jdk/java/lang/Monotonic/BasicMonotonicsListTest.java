@@ -34,7 +34,10 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -43,6 +46,7 @@ final class BasicMonotonicsListTest {
 
     private static final int SIZE = 7;
     private static final int INDEX = 2;
+    private static final IntFunction<Integer> FUNCTION = i -> i;
 
     private List<Monotonic<Integer>> list;
 
@@ -53,7 +57,7 @@ final class BasicMonotonicsListTest {
 
     @Test
     void listComputeIfAbsent() {
-        Integer v = Monotonics.computeIfAbsent(list, INDEX, i -> i);
+        Integer v = Monotonics.computeIfAbsent(list, INDEX, FUNCTION);
         assertEquals(INDEX, v);
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
@@ -94,6 +98,19 @@ final class BasicMonotonicsListTest {
         }
     }
 
+    @Test
+    void asMemoized() {
+        CountingIntFunction<Integer> function = new CountingIntFunction<>(FUNCTION);
+
+        IntFunction<Integer> memoized = Monotonics.asMemoized(SIZE, function);
+        for (int j = 0; j < 2; j++) {
+            for (int i = 0; i < SIZE; i++) {
+                assertEquals(i, memoized.apply(i));
+            }
+        }
+        assertEquals(SIZE, function.sum());
+    }
+
     @ParameterizedTest
     @MethodSource("nullOperations")
     void npe(String name, Consumer<List<Monotonic<Integer>>> op) {
@@ -104,7 +121,7 @@ final class BasicMonotonicsListTest {
         return Stream.of(
                 Arguments.of("computeIfAbsent(L, i, null)",  asListConsumer(l -> Monotonics.computeIfAbsent(l, 0, null))),
                 Arguments.of("computeIfAbsent(null, i, M)",  asListConsumer(l -> Monotonics.computeIfAbsent(null, 0, i -> i))),
-                Arguments.of("asMemoized(i, null, b)",       asListConsumer(l -> Monotonics.asMemoized(SIZE, null, false)))
+                Arguments.of("asMemoized(i, null, b)",       asListConsumer(l -> Monotonics.asMemoized(SIZE, null)))
         );
     }
 
@@ -112,5 +129,35 @@ final class BasicMonotonicsListTest {
         return consumer;
     }
 
+    private static final class CountingIntFunction<T> implements IntFunction<T> {
+
+        private final IntFunction<T> delegate;
+        private final AtomicInteger[] counters;
+
+        public CountingIntFunction(IntFunction<T> delegate) {
+            this.delegate = delegate;
+            this.counters = new AtomicInteger[SIZE];
+            for (int i = 0; i < SIZE; i++) {
+                counters[i] = new AtomicInteger();
+            }
+        }
+
+        @Override
+        public T apply(int value) {
+            counters[value].incrementAndGet();
+            return delegate.apply(value);
+        }
+
+        int cnt(int i) {
+            return counters[i].get();
+        }
+
+        int sum() {
+            return IntStream.range(0, SIZE)
+                    .map(i -> counters[i].get())
+                    .sum();
+        }
+
+    }
 
 }
