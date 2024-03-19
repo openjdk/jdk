@@ -23,14 +23,25 @@
  * questions.
  */
 
+package jdk.tools.jlink.internal.runtimelink;
+
 /**
- * Build-only module extending jlink to be able to produce
- * a runtime linkable image.
+ * Exception thrown for links without packaged modules. I.e. run-image link.
+ *
  */
-module jdk.unsupported_jlink_runtime {
-    requires jdk.jlink;
+public class RuntimeImageLinkException extends IllegalStateException {
 
-    uses jdk.tools.jlink.plugin.Plugin;
+    private static final long serialVersionUID = -1848914673073119403L;
 
-    provides jdk.tools.jlink.plugin.Plugin with build.tools.runtimelink.CreateLinkableRuntimePlugin;
+    private final IllegalArgumentException iae;
+
+    public RuntimeImageLinkException(IllegalArgumentException cause) {
+        super(cause);
+        this.iae = cause;
+    }
+
+    public IllegalArgumentException getReason() {
+        return iae;
+    }
+
 }

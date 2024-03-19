@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.tools.jlink.internal;
+package jdk.tools.jlink.internal.runtimelink;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

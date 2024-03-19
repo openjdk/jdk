@@ -43,10 +43,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import build.tools.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.internal.JRTArchive;
 import jdk.tools.jlink.internal.Platform;
-import jdk.tools.jlink.internal.ResourceDiff;
+import jdk.tools.jlink.internal.runtimelink.ImageReader;
+import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator;
+import jdk.tools.jlink.internal.runtimelink.JmodsReader;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
+import jdk.tools.jlink.internal.runtimelink.JimageDiffGenerator.ImageResource;
 import jdk.tools.jlink.plugin.Plugin;
 import jdk.tools.jlink.plugin.ResourcePool;
 import jdk.tools.jlink.plugin.ResourcePoolBuilder;

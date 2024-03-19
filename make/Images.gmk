@@ -134,6 +134,7 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
       -J--add-exports=java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME) \
       -J--add-exports=java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME) \
       -J--add-exports=jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME) \
+      -J--add-exports=jdk.jlink/jdk.tools.jlink.internal.runtimelink=$(RL_BUILD_MODULE_NAME) \
       --create-linkable-runtime jimage=$(RL_JIMAGE_PATH_ARG):module-path=$(RL_MOD_PATH_ARG) \
   #
 
@@ -142,11 +143,12 @@ ifeq ($(JLINK_PRODUCE_RUNTIME_LINK_JDK), true)
   $(eval $(call SetupJavaCompilation, BUILD_JDK_RUNLINK_CLASSES, \
       COMPILER := buildjdk, \
       DISABLED_WARNINGS := try, \
-      SRC := $(TOPDIR)/src/jdk.jlink/build/classes, \
+      SRC := $(TOPDIR)/make/jdk/src/jdk.unsupported_jlink_runtime/share/classes, \
       BIN := $(RL_CREATE_PLUGIN_MOD_OUTPUT), \
       JAVAC_FLAGS := \
           --add-modules jdk.jlink \
           --add-exports jdk.jlink/jdk.tools.jlink.internal=$(RL_BUILD_MODULE_NAME) \
+          --add-exports jdk.jlink/jdk.tools.jlink.internal.runtimelink=$(RL_BUILD_MODULE_NAME) \
           --add-exports jdk.jlink/jdk.tools.jlink.plugin=$(RL_BUILD_MODULE_NAME) \
           --add-exports java.base/jdk.internal.module=$(RL_BUILD_MODULE_NAME) \
           --add-exports java.base/jdk.internal.jimage=$(RL_BUILD_MODULE_NAME) \

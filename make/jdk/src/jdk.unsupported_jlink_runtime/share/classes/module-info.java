@@ -4,7 +4,9 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,37 +22,16 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package build.tools.runtimelink;
 
-import java.io.IOException;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+/**
+ * Build-only module extending jlink to be able to produce
+ * a runtime linkable image.
+ */
+module jdk.unsupported_jlink_runtime {
+    requires jdk.jlink;
 
-import jdk.internal.jimage.BasicImageReader;
+    uses jdk.tools.jlink.plugin.Plugin;
 
-public class ImageReader extends BasicImageReader implements JimageDiffGenerator.ImageResource {
-
-    public ImageReader(Path path) throws IOException {
-        super(path);
-    }
-
-    public static boolean isNotTreeInfoResource(String path) {
-        return !(path.startsWith("/packages") || path.startsWith("/modules"));
-    }
-
-    @Override
-    public List<String> getEntries() {
-        return Arrays.asList(getEntryNames()).stream()
-                .filter(ImageReader::isNotTreeInfoResource)
-                .sorted()
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public byte[] getResourceBytes(String name) {
-        return getResource(name);
-    }
-
+    provides jdk.tools.jlink.plugin.Plugin with
+        build.tools.runtimelink.CreateLinkableRuntimePlugin;
 }

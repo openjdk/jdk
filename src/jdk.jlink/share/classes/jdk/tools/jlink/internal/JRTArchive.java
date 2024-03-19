@@ -52,7 +52,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import jdk.internal.util.OperatingSystem;
+import jdk.tools.jlink.internal.Archive.Entry;
 import jdk.tools.jlink.internal.Archive.Entry.EntryType;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff;
+import jdk.tools.jlink.internal.runtimelink.RuntimeImageLinkException;
+import jdk.tools.jlink.internal.runtimelink.ResourceDiff.Kind;
 import jdk.tools.jlink.plugin.ResourcePoolEntry;
 import jdk.tools.jlink.plugin.ResourcePoolEntry.Type;
 

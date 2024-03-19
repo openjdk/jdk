@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package build.tools.runtimelink;
+package jdk.tools.jlink.internal.runtimelink;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 
 import jdk.internal.module.ModulePath;
 
+@SuppressWarnings("try")
 public class JmodsReader implements JimageDiffGenerator.ImageResource {
 
     private final ModuleFinder finder;

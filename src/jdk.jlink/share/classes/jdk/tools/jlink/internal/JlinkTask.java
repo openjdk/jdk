@@ -234,9 +234,9 @@ public class JlinkTask {
     }
 
     public static final String OPTIONS_RESOURCE = "jdk/tools/jlink/internal/options";
-    public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/fs_%s_files";
+    public static final String RESPATH_PATTERN = "jdk/tools/jlink/internal/runtimelink/fs_%s_files";
     // The diff file per module
-    public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/diff_%s";
+    public static final String DIFF_PATTERN = "jdk/tools/jlink/internal/runtimelink/diff_%s";
 
     int run(String[] args) {
         if (log == null) {

@@ -656,7 +656,7 @@ public class VMProps implements Callable<Map<String, String>> {
     private String runtimeLinkable() {
         // jdk.jlink module has the following resource listing native libs
         // belonging to the java.base module for runtime linkable jimages.
-        String linkableRuntimeResource = "jdk/tools/jlink/internal/fs_java.base_files";
+        String linkableRuntimeResource = "jdk/tools/jlink/internal/runtimelink/fs_java.base_files";
         try {
             ModuleFinder finder = ModuleFinder.ofSystem();
             Optional<ModuleReference> ref = finder.find("jdk.jlink");

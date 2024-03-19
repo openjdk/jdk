@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package build.tools.runtimelink;
+package jdk.tools.jlink.internal.runtimelink;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,8 +32,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import jdk.tools.jlink.internal.ResourceDiff;
-
+/**
+ * Used by the build-only jlink plugin CreateLinkableRuntimePlugin.
+ */
 public class JimageDiffGenerator {
 
     private static final boolean DEBUG = false;
