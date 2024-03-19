@@ -1298,7 +1298,7 @@ public class ClassReader {
                         for (int i = 0; i < numberOfPermittedSubtypes; i++) {
                             subtypes.add(poolReader.getClass(nextChar()));
                         }
-                        ((ClassSymbol)sym).permitted = subtypes.toList();
+                        ((ClassSymbol)sym).setPermittedSubclasses(subtypes.toList());
                     }
                 }
             },
@@ -2802,7 +2802,7 @@ public class ClassReader {
                 && parameterAccessFlags[mpIndex] != 0) {
             flags |= parameterAccessFlags[mpIndex];
         }
-        if (parameterNameIndicesMp != null
+        if (parameterNameIndicesMp != null && mpIndex < parameterNameIndicesMp.length
                 // if name_index is 0, then we might still get a name from the LocalVariableTable
                 && parameterNameIndicesMp[mpIndex] != 0) {
             argName = optPoolEntry(parameterNameIndicesMp[mpIndex], poolReader::getName, names.empty);
@@ -2930,7 +2930,7 @@ public class ClassReader {
         for (int i = 0; i < methodCount; i++) skipMember();
         readClassAttrs(c);
 
-        if (c.permitted != null && !c.permitted.isEmpty()) {
+        if (!c.getPermittedSubclasses().isEmpty()) {
             c.flags_field |= SEALED;
         }
 

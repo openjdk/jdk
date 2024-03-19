@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  */
 
 /* Copyright  (c) 2002 Graz University of Technology. All rights reserved.
@@ -508,7 +508,6 @@ void destroyLockObject(JNIEnv *env, jobject jLockObject);
 extern jfieldID pNativeDataID;
 extern jfieldID mech_mechanismID;
 extern jfieldID mech_pParameterID;
-extern jfieldID mech_pHandleID;
 
 extern jclass jByteArrayClass;
 extern jclass jLongClass;

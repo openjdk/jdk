@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,9 +59,6 @@ protected:
   // The covered regions should be in address order.
   MemRegion _covered[max_covered_regions];
 
-  // The last card is a guard card; never committed.
-  MemRegion _guard_region;
-
   inline size_t compute_byte_map_size(size_t num_bytes);
 
   enum CardValues {
@@ -76,19 +73,12 @@ protected:
 
   // CardTable entry size
   static uint _card_shift;
+  static uint _card_shift_in_words;
   static uint _card_size;
   static uint _card_size_in_words;
 
   size_t last_valid_index() const {
     return cards_required(_whole_heap.word_size()) - 1;
-  }
-
-  // Mapping from card marking array entry to address of first word without checks.
-  HeapWord* addr_for_raw(const CardValue* p) const {
-    // As _byte_map_base may be "negative" (the card table has been allocated before
-    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
-    size_t delta = p - _byte_map_base;
-    return (HeapWord*) (delta << _card_shift);
   }
 
 private:
@@ -152,13 +142,16 @@ public:
     return byte_after(p);
   }
 
-  // Mapping from card marking array entry to address of first word.
+  // Mapping from card marking array entry to address of first word
   HeapWord* addr_for(const CardValue* p) const {
     assert(p >= _byte_map && p < _byte_map + _byte_map_size,
            "out of bounds access to card marking array. p: " PTR_FORMAT
            " _byte_map: " PTR_FORMAT " _byte_map + _byte_map_size: " PTR_FORMAT,
            p2i(p), p2i(_byte_map), p2i(_byte_map + _byte_map_size));
-    HeapWord* result = addr_for_raw(p);
+    // As _byte_map_base may be "negative" (the card table has been allocated before
+    // the heap in memory), do not use pointer_delta() to avoid the assertion failure.
+    size_t delta = p - _byte_map_base;
+    HeapWord* result = (HeapWord*) (delta << _card_shift);
     assert(_whole_heap.contains(result),
            "Returning result = " PTR_FORMAT " out of bounds of "
            " card marking array's _whole_heap = [" PTR_FORMAT "," PTR_FORMAT ")",
@@ -188,6 +181,10 @@ public:
 
   static uint card_shift() {
     return _card_shift;
+  }
+
+  static uint card_shift_in_words() {
+    return _card_shift_in_words;
   }
 
   static uint card_size() {

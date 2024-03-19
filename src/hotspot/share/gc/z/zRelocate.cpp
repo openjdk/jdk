@@ -87,6 +87,7 @@ ZRelocateQueue::ZRelocateQueue()
     _nworkers(0),
     _nsynchronized(0),
     _synchronize(false),
+    _is_active(false),
     _needs_attention(0) {}
 
 bool ZRelocateQueue::needs_attention() const {
@@ -101,6 +102,20 @@ void ZRelocateQueue::inc_needs_attention() {
 void ZRelocateQueue::dec_needs_attention() {
   const int needs_attention = Atomic::sub(&_needs_attention, 1);
   assert(needs_attention == 0 || needs_attention == 1, "Invalid state");
+}
+
+void ZRelocateQueue::activate(uint nworkers) {
+  _is_active = true;
+  join(nworkers);
+}
+
+void ZRelocateQueue::deactivate() {
+  Atomic::store(&_is_active, false);
+  clear();
+}
+
+bool ZRelocateQueue::is_active() const {
+  return Atomic::load(&_is_active);
 }
 
 void ZRelocateQueue::join(uint nworkers) {
@@ -327,7 +342,7 @@ ZWorkers* ZRelocate::workers() const {
 }
 
 void ZRelocate::start() {
-  _queue.join(workers()->active_workers());
+  _queue.activate(workers()->active_workers());
 }
 
 void ZRelocate::add_remset(volatile zpointer* p) {
@@ -1088,6 +1103,9 @@ public:
 
   ~ZRelocateTask() {
     _generation->stat_relocation()->at_relocate_end(_small_allocator.in_place_count(), _medium_allocator.in_place_count());
+
+    // Signal that we're not using the queue anymore. Used mostly for asserts.
+    _queue->deactivate();
   }
 
   virtual void work() {
@@ -1232,8 +1250,6 @@ void ZRelocate::relocate(ZRelocationSet* relocation_set) {
     ZRelocateAddRemsetForFlipPromoted task(relocation_set->flip_promoted_pages());
     workers()->run(&task);
   }
-
-  _queue.clear();
 }
 
 ZPageAge ZRelocate::compute_to_age(ZPageAge from_age) {
@@ -1315,4 +1331,8 @@ void ZRelocate::desynchronize() {
 
 ZRelocateQueue* ZRelocate::queue() {
   return &_queue;
+}
+
+bool ZRelocate::is_queue_active() const {
+  return _queue.is_active();
 }

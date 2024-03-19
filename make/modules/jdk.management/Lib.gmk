@@ -46,8 +46,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_EXT, \
     OPTIMIZATION := $(LIBMANAGEMENT_EXT_OPTIMIZATION), \
     DISABLED_WARNINGS_clang_UnixOperatingSystem.c := format-nonliteral, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBMANAGEMENT_EXT_CFLAGS), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \

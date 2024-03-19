@@ -43,7 +43,7 @@ import jdk.test.whitebox.WhiteBox;
 public class TestWBGC {
 
     public static void main(String args[]) throws Exception {
-        ProcessBuilder pb = ProcessTools.createTestJavaProcessBuilder(
+        OutputAnalyzer output = ProcessTools.executeTestJava(
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
@@ -51,7 +51,6 @@ public class TestWBGC {
                 "-Xlog:gc",
                 GCYoungTest.class.getName());
 
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         System.out.println(output.getStdout());
         output.shouldHaveExitValue(0);
         output.shouldContain("WhiteBox Initiated Young GC");

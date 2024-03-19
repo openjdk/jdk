@@ -56,7 +56,7 @@ public class CompileCommandPrintCompilation {
         options.add("-XX:CompileCommand=PrintCompilation," + getTestMethod(include));
         options.add(getTestClass());
 
-        OutputAnalyzer oa = ProcessTools.executeTestJvm(options);
+        OutputAnalyzer oa = ProcessTools.executeTestJava(options);
 
         oa.shouldHaveExitValue(0)
         .shouldContain(getTestMethod(include))

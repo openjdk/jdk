@@ -66,7 +66,7 @@ public class StressStackOverflow {
         TestFailureException(String s) { super(s); }
     }
 
-    static final long DURATION_IN_NANOS = Duration.ofMinutes(2).toNanos();
+    static final long DURATION_IN_NANOS = Duration.ofMinutes(1).toNanos();
 
     // Test the ScopedValue recovery mechanism for stack overflows. We implement both Callable
     // and Runnable interfaces. Which one gets tested depends on the constructor argument.

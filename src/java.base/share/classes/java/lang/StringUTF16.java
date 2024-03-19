@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,8 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.DecimalDigits;
 import jdk.internal.vm.annotation.ForceInline;
@@ -452,20 +454,6 @@ final class StringUTF16 {
     }
 
     @IntrinsicCandidate
-    public static boolean equals(byte[] value, byte[] other) {
-        if (value.length == other.length) {
-            int len = value.length >> 1;
-            for (int i = 0; i < len; i++) {
-                if (getChar(value, i) != getChar(other, i)) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    }
-
-    @IntrinsicCandidate
     public static int compareTo(byte[] value, byte[] other) {
         int len1 = length(value);
         int len2 = length(other);
@@ -604,12 +592,8 @@ final class StringUTF16 {
         };
     }
 
+    // Caller must ensure that from- and toIndex are within bounds
     public static int indexOf(byte[] value, int ch, int fromIndex, int toIndex) {
-        fromIndex = Math.max(fromIndex, 0);
-        toIndex = Math.min(toIndex, value.length >> 1);
-        if (fromIndex >= toIndex) {
-            return -1;
-        }
         if (ch < Character.MIN_SUPPLEMENTARY_CODE_POINT) {
             // handle most cases here (ch is a BMP code point or a
             // negative value (invalid code point))
@@ -716,11 +700,6 @@ final class StringUTF16 {
 
     @IntrinsicCandidate
     private static int indexOfChar(byte[] value, int ch, int fromIndex, int max) {
-        checkBoundsBeginEnd(fromIndex, max, value);
-        return indexOfCharUnsafe(value, ch, fromIndex, max);
-    }
-
-    private static int indexOfCharUnsafe(byte[] value, int ch, int fromIndex, int max) {
         for (int i = fromIndex; i < max; i++) {
             if (getChar(value, i) == ch) {
                 return i;
@@ -1681,12 +1660,10 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    private static native boolean isBigEndian();
-
     private static final int HI_BYTE_SHIFT;
     private static final int LO_BYTE_SHIFT;
     static {
-        if (isBigEndian()) {
+        if (Unsafe.getUnsafe().isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
         } else {

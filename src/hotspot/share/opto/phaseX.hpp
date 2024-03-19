@@ -415,8 +415,8 @@ protected:
 public:
   // Return a node which computes the same function as this node, but
   // in a faster or cheaper fashion.
-  Node  *transform( Node *n );
-  Node  *transform_no_reclaim( Node *n );
+  Node* transform(Node* n);
+
   virtual void record_for_igvn(Node *n) {
     C->record_for_igvn(n);
   }

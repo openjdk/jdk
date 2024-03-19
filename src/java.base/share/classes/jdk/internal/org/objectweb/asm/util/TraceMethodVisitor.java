@@ -342,4 +342,3 @@ public final class TraceMethodVisitor extends MethodVisitor {
         super.visitEnd();
     }
 }
-

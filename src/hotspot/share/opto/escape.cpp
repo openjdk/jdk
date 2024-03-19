@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "opto/compile.hpp"
 #include "opto/escape.hpp"
 #include "opto/macro.hpp"
+#include "opto/locknode.hpp"
 #include "opto/phaseX.hpp"
 #include "opto/movenode.hpp"
 #include "opto/narrowptrnode.hpp"
@@ -712,7 +713,7 @@ Node* ConnectionGraph::specialize_castpp(Node* castpp, Node* base, Node* current
   _igvn->_worklist.push(current_control);
   _igvn->_worklist.push(control_successor);
 
-  return _igvn->transform(ConstraintCastNode::make_cast(castpp->Opcode(), not_eq_control, base, _igvn->type(castpp), ConstraintCastNode::UnconditionalDependency, nullptr));
+  return _igvn->transform(ConstraintCastNode::make_cast_for_type(not_eq_control, base, _igvn->type(castpp), ConstraintCastNode::UnconditionalDependency, nullptr));
 }
 
 Node* ConnectionGraph::split_castpp_load_through_phi(Node* curr_addp, Node* curr_load, Node* region, GrowableArray<Node*>* bases_for_loads, GrowableArray<Node *>  &alloc_worklist) {
@@ -1179,7 +1180,7 @@ bool ConnectionGraph::reduce_phi_on_safepoints_helper(Node* ophi, Node* cast, No
   Node* nsr_merge_pointer = ophi;
   if (cast != nullptr) {
     const Type* new_t = merge_t->meet(TypePtr::NULL_PTR);
-    nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast(cast->Opcode(), cast->in(0), cast->in(1), new_t, ConstraintCastNode::RegularDependency, nullptr));
+    nsr_merge_pointer = _igvn->transform(ConstraintCastNode::make_cast_for_type(cast->in(0), cast->in(1), new_t, ConstraintCastNode::RegularDependency, nullptr));
   }
 
   for (uint spi = 0; spi < safepoints.size(); spi++) {
@@ -1316,7 +1317,7 @@ void ConnectionGraph::reset_scalar_replaceable_entries(PhiNode* ophi) {
       }
 
       if (change) {
-        Node* new_cast = ConstraintCastNode::make_cast(out->Opcode(), out->in(0), out->in(1), out_new_t, ConstraintCastNode::StrongDependency, nullptr);
+        Node* new_cast = ConstraintCastNode::make_cast_for_type(out->in(0), out->in(1), out_new_t, ConstraintCastNode::StrongDependency, nullptr);
         _igvn->replace_node(out, new_cast);
         _igvn->register_new_node_with_optimizer(new_cast);
       }
@@ -1685,7 +1686,7 @@ void ConnectionGraph::add_final_edges(Node *n) {
     return;
   }
   assert(n->is_Store() || n->is_LoadStore() ||
-         (n_ptn != nullptr) && (n_ptn->ideal_node() != nullptr),
+         ((n_ptn != nullptr) && (n_ptn->ideal_node() != nullptr)),
          "node should be registered already");
   int opcode = n->Opcode();
   bool gc_handled = BarrierSet::barrier_set()->barrier_set_c2()->escape_add_final_edges(this, _igvn, n, opcode);
@@ -3126,7 +3127,7 @@ void ConnectionGraph::optimize_ideal_graph(GrowableArray<Node*>& ptr_cmp_worklis
       if (n->is_AbstractLock()) { // Lock and Unlock nodes
         AbstractLockNode* alock = n->as_AbstractLock();
         if (!alock->is_non_esc_obj()) {
-          if (not_global_escape(alock->obj_node())) {
+          if (can_eliminate_lock(alock)) {
             assert(!alock->is_eliminated() || alock->is_coarsened(), "sanity");
             // The lock could be marked eliminated by lock coarsening
             // code during first IGVN before EA. Replace coarsened flag
@@ -3468,6 +3469,21 @@ bool ConnectionGraph::not_global_escape(Node *n) {
   return true;
 }
 
+// Return true if locked object does not escape globally
+// and locked code region (identified by BoxLockNode) is balanced:
+// all compiled code paths have corresponding Lock/Unlock pairs.
+bool ConnectionGraph::can_eliminate_lock(AbstractLockNode* alock) {
+  BoxLockNode* box = alock->box_node()->as_BoxLock();
+  if (!box->is_unbalanced() && not_global_escape(alock->obj_node())) {
+    if (EliminateNestedLocks) {
+      // We can mark whole locking region as Local only when only
+      // one object is used for locking.
+      box->set_local();
+    }
+    return true;
+  }
+  return false;
+}
 
 // Helper functions
 
@@ -4449,7 +4465,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           record_for_optimizer(n);
         } else {
           assert(tn_type == TypePtr::NULL_PTR ||
-                 tn_t != nullptr && !tinst->maybe_java_subtype_of(tn_t),
+                 (tn_t != nullptr && !tinst->maybe_java_subtype_of(tn_t)),
                  "unexpected type");
           continue; // Skip dead path with different type
         }
@@ -4599,6 +4615,13 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       if (n == nullptr) {
         continue;
       }
+    } else if (n->is_CallLeaf()) {
+      // Runtime calls with narrow memory input (no MergeMem node)
+      // get the memory projection
+      n = n->as_Call()->proj_out_or_null(TypeFunc::Memory);
+      if (n == nullptr) {
+        continue;
+      }
     } else if (n->Opcode() == Op_StrCompressedCopy ||
                n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
@@ -4641,7 +4664,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           continue;
         }
         memnode_worklist.append_if_missing(use);
-      } else if (use->is_MemBar()) {
+      } else if (use->is_MemBar() || use->is_CallLeaf()) {
         if (use->in(TypeFunc::Memory) == n) { // Ignore precedent edge
           memnode_worklist.append_if_missing(use);
         }

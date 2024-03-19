@@ -40,7 +40,6 @@
 import java.lang.management.LockInfo;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,38 +54,53 @@ class CarrierThreadWaits {
     void testCarrierThreadWaiting() throws Exception {
         try (ForkJoinPool pool = new ForkJoinPool(1)) {
             var carrierRef = new AtomicReference<Thread>();
+            var vthreadRef = new AtomicReference<Thread>();
+
             Executor scheduler = task -> {
                 pool.submit(() -> {
-                    carrierRef.set(Thread.currentThread());
+                    Thread carrier = Thread.currentThread();
+                    carrierRef.set(carrier);
+                    Thread vthread = vthreadRef.get();
+
+                    System.err.format("%s run task (%s) ...%n", carrier, vthread);
                     task.run();
+                    System.err.format("%s task done (%s)%n", carrier, vthread);
                 });
             };
 
             // start a virtual thread that spins and remains mounted until "done"
-            var latch = new CountDownLatch(1);
+            var started = new AtomicBoolean();
             var done = new AtomicBoolean();
             Thread.Builder builder = ThreadBuilders.virtualThreadBuilder(scheduler);
-            Thread vthread = builder.start(() -> {
-                latch.countDown();
+            Thread vthread = builder.unstarted(() -> {
+                started.set(true);
                 while (!done.get()) {
                     Thread.onSpinWait();
                 }
             });
-
-            // wait for virtual thread to execute
-            latch.await();
+            vthreadRef.set(vthread);
+            vthread.start();
 
             try {
-                long carrierId = carrierRef.get().threadId();
+                // wait for virtual thread to start
+                while (!started.get()) {
+                    Thread.sleep(10);
+                }
+
+                Thread carrier = carrierRef.get();
+
+                long carrierId = carrier.threadId();
                 long vthreadId = vthread.threadId();
 
                 // carrier thread should be on WAITING on virtual thread
                 ThreadInfo ti = ManagementFactory.getThreadMXBean().getThreadInfo(carrierId);
-                assertTrue(ti.getThreadState() == Thread.State.WAITING);
-                assertEquals(vthread.getClass().getName(), ti.getLockInfo().getClassName());
-                assertTrue(ti.getLockInfo().getIdentityHashCode() == System.identityHashCode(vthread));
-                assertTrue(ti.getLockOwnerId() == vthreadId);
-
+                Thread.State state = ti.getThreadState();
+                LockInfo lockInfo = ti.getLockInfo();
+                assertEquals(Thread.State.WAITING, state);
+                assertNotNull(lockInfo);
+                assertEquals(vthread.getClass().getName(), lockInfo.getClassName());
+                assertEquals(System.identityHashCode(vthread), lockInfo.getIdentityHashCode());
+                assertEquals(vthreadId, ti.getLockOwnerId());
             } finally {
                 done.set(true);
             }

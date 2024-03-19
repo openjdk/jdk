@@ -42,6 +42,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 MallocMemorySnapshot MallocMemorySummary::_snapshot;
 
@@ -57,6 +58,23 @@ void MemoryCounter::update_peak(size_t size, size_t cnt) {
       peak_sz = old_sz;
     }
   }
+}
+
+void MallocMemorySnapshot::copy_to(MallocMemorySnapshot* s) {
+  // Use ThreadCritical to make sure that mtChunks don't get deallocated while the
+  // copy is going on, because their size is adjusted using this
+  // buffer in make_adjustment().
+  ThreadCritical tc;
+  s->_all_mallocs = _all_mallocs;
+  size_t total_size = 0;
+  size_t total_count = 0;
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    s->_malloc[index] = _malloc[index];
+    total_size += s->_malloc[index].malloc_size();
+    total_count += s->_malloc[index].malloc_count();
+  }
+  // malloc counters may be updated concurrently
+  s->_all_mallocs.set_size_and_count(total_size, total_count);
 }
 
 // Total malloc'd memory used by arenas
@@ -84,14 +102,20 @@ void MallocMemorySummary::initialize() {
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached global limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);
@@ -105,14 +129,20 @@ bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const mal
 
 bool MallocMemorySummary::category_limit_reached(MEMFLAGS f, size_t s, size_t so_far, const malloclimit* limit) {
 
-  // Ignore the limit break during error reporting to prevent secondary errors.
-  if (VMError::is_error_reported()) {
-    return false;
-  }
-
 #define FORMATTED \
   "MallocLimit: reached category \"%s\" limit (triggering allocation size: " PROPERFMT ", allocated so far: " PROPERFMT ", limit: " PROPERFMT ") ", \
   NMTUtil::flag_to_enum_name(f), PROPERFMTARGS(s), PROPERFMTARGS(so_far), PROPERFMTARGS(limit->sz)
+
+  // If we hit the limit during error reporting, we print a short warning but otherwise ignore it.
+  // We don't want to risk recursive assertion or torn hs-err logs.
+  if (VMError::is_error_reported()) {
+    // Print warning, but only the first n times to avoid flooding output.
+    static int stopafter = 10;
+    if (stopafter-- > 0) {
+      log_warning(nmt)(FORMATTED);
+    }
+    return false;
+  }
 
   if (limit->mode == MallocLimitMode::trigger_fatal) {
     fatal(FORMATTED);

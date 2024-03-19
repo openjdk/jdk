@@ -33,6 +33,7 @@ import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class Platform {
@@ -346,6 +347,20 @@ public class Platform {
         return Pattern.compile(archnameRE, Pattern.CASE_INSENSITIVE)
                       .matcher(osArch)
                       .matches();
+    }
+
+    public static boolean isOracleLinux7() {
+        if (System.getProperty("os.name").toLowerCase().contains("linux") &&
+                System.getProperty("os.version").toLowerCase().contains("el")) {
+            Pattern p = Pattern.compile("el(\\d+)");
+            Matcher m = p.matcher(System.getProperty("os.version"));
+            if (m.find()) {
+                try {
+                    return Integer.parseInt(m.group(1)) <= 7;
+                } catch (NumberFormatException nfe) {}
+            }
+        }
+        return false;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -200,9 +200,8 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
     }
 
     /**
-     * @return if the flavor is supported
+     * @return {@code true} if the flavor is supported, otherwise {@code false}
      */
-
     public boolean isDataFlavorSupported(DataFlavor df) {
         Transferable localTransferable = local;
 
@@ -289,7 +288,8 @@ public abstract class SunDropTargetContextPeer implements DropTargetContextPeer,
       throws IOException;
 
     /**
-     * @return if the transfer is a local one
+     * @return {@code true} if the transfer is a local one, otherwise
+     *         {@code false}
      */
     public boolean isTransferableJVMLocal() {
         return local != null || getJVMLocalSourceTransferable() != null;

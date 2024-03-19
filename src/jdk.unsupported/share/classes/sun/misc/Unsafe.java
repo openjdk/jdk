@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -436,9 +436,10 @@ public final class Unsafe {
     /**
      * Allocates a new block of native memory, of the given size in bytes.  The
      * contents of the memory are uninitialized; they will generally be
-     * garbage.  The resulting native pointer will never be zero, and will be
-     * aligned for all value types.  Dispose of this memory by calling {@link
-     * #freeMemory}, or resize it with {@link #reallocateMemory}.
+     * garbage.  The resulting native pointer will be zero if and only if the
+     * requested size is zero.  The resulting native pointer will be aligned for
+     * all value types.   Dispose of this memory by calling {@link #freeMemory}
+     * or resize it with {@link #reallocateMemory}.
      *
      * <em>Note:</em> It is the responsibility of the caller to make
      * sure arguments are checked before the methods are called. While

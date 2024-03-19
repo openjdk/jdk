@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,10 +34,10 @@ class PerfMemoryTest : public ::testing::Test {
 TEST_VM_F(PerfMemoryTest, destroy) {
   PerfMemory::destroy();
 
-  ASSERT_NE(PerfMemory::start(), (char*)NULL) << "PerfMemory::_start should not be NULL";
-  ASSERT_NE(PerfMemory::end(), (char*)NULL) << "PerfMemory::_end should not be NULL";
-  ASSERT_NE(PerfMemoryTest::top(), (char*)NULL) << "PerfMemory::_top should not be NULL";
-  ASSERT_NE(PerfMemoryTest::prologue(), (PerfDataPrologue*)NULL) << "PerfMemory::_prologue should not be NULL";
+  ASSERT_NE(PerfMemory::start(), (char*)nullptr) << "PerfMemory::_start should not be null";
+  ASSERT_NE(PerfMemory::end(), (char*)nullptr) << "PerfMemory::_end should not be null";
+  ASSERT_NE(PerfMemoryTest::top(), (char*)nullptr) << "PerfMemory::_top should not be null";
+  ASSERT_NE(PerfMemoryTest::prologue(), (PerfDataPrologue*)nullptr) << "PerfMemory::_prologue should not be null";
   ASSERT_NE(PerfMemory::capacity(), (size_t)0) << "PerfMemory::_capacity should not be 0";
 }
 

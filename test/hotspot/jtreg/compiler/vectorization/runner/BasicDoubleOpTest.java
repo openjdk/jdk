@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -233,6 +234,17 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
             res[i] = Math.max(d[i], e[i]);
+        }
+        return res;
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
+        counts = {IRNode.MAX_VD, ">0"})
+    public double[] vectorMax_8322090() {
+        double[] res = new double[SIZE];
+        for (int i = 0; i < SIZE; i++) {
+            res[i] = Math.max(d[i], d[i]);
         }
         return res;
     }

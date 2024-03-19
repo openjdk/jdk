@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <jvmti.h>
-#include "agent_common.h"
-#include "JVMTITools.h"
+#include "agent_common.hpp"
+#include "JVMTITools.hpp"
 
 extern "C" {
 
@@ -33,7 +33,7 @@ extern "C" {
 #define STATUS_FAILED 2
 #define PASSED 0
 
-static jvmtiEnv *jvmti = NULL;
+static jvmtiEnv *jvmti = nullptr;
 static jvmtiCapabilities caps;
 static jvmtiEventCallbacks callbacks;
 static int watch_ev = 0;    /* ignore JVMTI events by default */
@@ -59,7 +59,7 @@ ClassFileLoadHook(jvmtiEnv *jvmti_env, JNIEnv *env, jclass class_being_redefined
 
     jvmti->RawMonitorEnter(watch_ev_monitor);
 
-    if (watch_ev && class_being_redefined != NULL) {
+    if (watch_ev && class_being_redefined != nullptr) {
         printf("#### JVMTI_EVENT_CLASS_FILE_LOAD_HOOK occurred ####\n");
         CFLH_gen_ev++;
     }
@@ -164,7 +164,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass005_makeRedefinition(JNIEnv *env,
     jthread thread;
     jvmtiClassDefinition classDef;
 
-    if (jvmti == NULL) {
+    if (jvmti == nullptr) {
         printf("JVMTI client was not properly loaded!\n");
         return STATUS_FAILED;
     }
@@ -180,7 +180,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass005_makeRedefinition(JNIEnv *env,
         return STATUS_FAILED;
     }
 
-    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, NULL);
+    err = jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_CLASS_FILE_LOAD_HOOK, nullptr);
     if (err != JVMTI_ERROR_NONE) {
         printf("Failed to enable event JVMTI_EVENT_CLASS_FILE_LOAD_HOOK: %s (%d)\n",
                TranslateError(err), err);
@@ -202,7 +202,7 @@ Java_nsk_jvmti_RedefineClasses_redefclass005_makeRedefinition(JNIEnv *env,
 /* filling the structure jvmtiClassDefinition */
     classDef.klass = redefCls;
     classDef.class_byte_count = env->GetArrayLength(classBytes);
-    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, NULL);
+    classDef.class_bytes = (unsigned char *) env->GetByteArrayElements(classBytes, nullptr);
 
     set_watch_ev(1); /* watch JVMTI events */
 

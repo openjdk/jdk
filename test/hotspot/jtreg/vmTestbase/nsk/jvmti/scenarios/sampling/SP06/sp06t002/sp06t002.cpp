@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,17 @@
 
 #include <string.h>
 #include "jvmti.h"
-#include "agent_common.h"
-#include "jni_tools.h"
-#include "jvmti_tools.h"
+#include "agent_common.hpp"
+#include "jni_tools.hpp"
+#include "jvmti_tools.hpp"
 
 extern "C" {
 
 /* ============================================================================= */
 
 /* scaffold objects */
-static JNIEnv* jni = NULL;
-static jvmtiEnv *jvmti = NULL;
+static JNIEnv* jni = nullptr;
+static jvmtiEnv *jvmti = nullptr;
 static jlong timeout = 0;
 
 /* constants */
@@ -62,12 +62,12 @@ typedef struct {
 
 /* descriptions of tested threads */
 static ThreadDesc threadsDesc[THREADS_COUNT] = {
-    { "threadRunning", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
-    { "threadEntering", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
-    { "threadWaiting", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
-    { "threadSleeping", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
-    { "threadRunningInterrupted", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
-    { "threadRunningNative", "testedMethod", "(ZI)V", NULL, NULL, NULL, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE }
+    { "threadRunning", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
+    { "threadEntering", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
+    { "threadWaiting", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
+    { "threadSleeping", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
+    { "threadRunningInterrupted", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE },
+    { "threadRunningNative", "testedMethod", "(ZI)V", nullptr, nullptr, nullptr, NSK_JVMTI_INVALID_JLOCATION, NSK_FALSE }
 };
 
 /* indexes of known threads */
@@ -160,7 +160,7 @@ static int generateEvents() {
  *    - enable events
  */
 static int prepare() {
-    jthread *allThreadsList = NULL;
+    jthread *allThreadsList = nullptr;
     jint allThreadsCount = 0;
     int found = 0;
     int i;
@@ -169,8 +169,8 @@ static int prepare() {
 
     /* clean threads list */
     for (i = 0; i < THREADS_COUNT; i++) {
-        threadsDesc[i].thread = (jthread)NULL;
-        threadsDesc[i].method = (jmethodID)NULL;
+        threadsDesc[i].thread = (jthread)nullptr;
+        threadsDesc[i].method = (jmethodID)nullptr;
         threadsDesc[i].location = NSK_JVMTI_INVALID_JLOCATION;
         threadsDesc[i].methodCompiled = NSK_FALSE;
     }
@@ -179,20 +179,20 @@ static int prepare() {
     if (!NSK_JVMTI_VERIFY(jvmti->GetAllThreads(&allThreadsCount, &allThreadsList)))
         return NSK_FALSE;
 
-    if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != NULL))
+    if (!NSK_VERIFY(allThreadsCount > 0 && allThreadsList != nullptr))
         return NSK_FALSE;
 
     /* find tested threads */
     for (i = 0; i < allThreadsCount; i++) {
         jvmtiThreadInfo threadInfo;
 
-        if (!NSK_VERIFY(allThreadsList[i] != NULL))
+        if (!NSK_VERIFY(allThreadsList[i] != nullptr))
             return NSK_FALSE;
 
         if (!NSK_JVMTI_VERIFY(jvmti->GetThreadInfo(allThreadsList[i], &threadInfo)))
             return NSK_FALSE;
 
-        if (threadInfo.name != NULL) {
+        if (threadInfo.name != nullptr) {
             int j;
 
             for (j = 0; j < THREADS_COUNT; j++) {
@@ -212,7 +212,7 @@ static int prepare() {
     /* check if all tested threads found */
     found = 0;
     for (i = 0; i < THREADS_COUNT; i++) {
-        if (threadsDesc[i].thread == NULL) {
+        if (threadsDesc[i].thread == nullptr) {
             NSK_COMPLAIN2("Not found tested thread #%d (%s)\n", i, threadsDesc[i].threadName);
         } else {
             found++;
@@ -227,11 +227,11 @@ static int prepare() {
     for (i = 0; i < THREADS_COUNT; i++) {
 
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].cls =
-                jni->GetObjectClass(threadsDesc[i].thread)) != NULL))
+                jni->GetObjectClass(threadsDesc[i].thread)) != nullptr))
             return NSK_FALSE;
 
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].method =
-                jni->GetMethodID(threadsDesc[i].cls, threadsDesc[i].methodName, threadsDesc[i].methodSig)) != NULL))
+                jni->GetMethodID(threadsDesc[i].cls, threadsDesc[i].methodName, threadsDesc[i].methodSig)) != nullptr))
             return NSK_FALSE;
 
         NSK_DISPLAY4("    thread #%d (%s): 0x%p (%s)\n",
@@ -243,15 +243,15 @@ static int prepare() {
     /* make global refs */
     for (i = 0; i < THREADS_COUNT; i++) {
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].thread = (jthread)
-                jni->NewGlobalRef(threadsDesc[i].thread)) != NULL))
+                jni->NewGlobalRef(threadsDesc[i].thread)) != nullptr))
             return NSK_FALSE;
         if (!NSK_JNI_VERIFY(jni, (threadsDesc[i].cls = (jclass)
-                jni->NewGlobalRef(threadsDesc[i].cls)) != NULL))
+                jni->NewGlobalRef(threadsDesc[i].cls)) != nullptr))
             return NSK_FALSE;
     }
 
     NSK_DISPLAY0("Enable tested events\n");
-    if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, NULL))
+    if (!nsk_jvmti_enableEvents(JVMTI_ENABLE, EVENTS_COUNT, eventsList, nullptr))
         return NSK_FALSE;
 
     return NSK_TRUE;
@@ -337,8 +337,8 @@ static int checkThreads(int suspended, const char* kind0) {
                                         j, (void*)frameStack[j].method,
                                         (long)frameStack[j].location);
             /* check frame method */
-            if (frameStack[j].method == NULL) {
-                NSK_COMPLAIN3("NULL methodID in stack for %s thread #%d (%s)\n",
+            if (frameStack[j].method == nullptr) {
+                NSK_COMPLAIN3("null methodID in stack for %s thread #%d (%s)\n",
                             kind, i, threadsDesc[i].threadName);
                 nsk_jvmti_setFailStatus();
             } else if (frameStack[j].method == threadsDesc[i].method) {
@@ -372,7 +372,7 @@ static int clean() {
     int i;
 
     NSK_DISPLAY0("Disable events\n");
-    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, NULL))
+    if (!nsk_jvmti_enableEvents(JVMTI_DISABLE, EVENTS_COUNT, eventsList, nullptr))
         return NSK_FALSE;
 
     NSK_DISPLAY0("Dispose global references to threads\n");
@@ -503,7 +503,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
     timeout = nsk_jvmti_getWaitTime() * 60 * 1000;
 
     if (!NSK_VERIFY((jvmti =
-            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != NULL))
+            nsk_jvmti_createJVMTIEnv(jvm, reserved)) != nullptr))
         return JNI_ERR;
 
     {
@@ -524,7 +524,7 @@ jint Agent_Initialize(JavaVM *jvm, char *options, void *reserved) {
             return JNI_ERR;
     }
 
-    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, NULL)))
+    if (!NSK_VERIFY(nsk_jvmti_setAgentProc(agentProc, nullptr)))
         return JNI_ERR;
 
     return JNI_OK;
