@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import java.util.HashSet;
 import java.util.Iterator;
 import sun.security.krb5.internal.KRBError;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * KDC-REQ/KDC-REP communication. No more base class for KrbAsReq and
  * KrbTgsReq. This class is now communication only.
@@ -71,8 +73,6 @@ public final class KdcComm {
      * max UDP packet size, default unlimited (-1)
      */
     private static int defaultUdpPrefLimit;
-
-    private static final boolean DEBUG = Krb5.DEBUG;
 
     /**
      * What to do when a KDC is unavailable, specified in the
@@ -118,8 +118,8 @@ public final class KdcComm {
                     } catch (NumberFormatException nfe) {
                         // Ignored. Please note that tryLess is recognized and
                         // used, parameters using default values
-                        if (DEBUG) {
-                            System.out.println("Invalid krb5.kdc.bad.policy" +
+                        if (DEBUG != null) {
+                            DEBUG.println("Invalid krb5.kdc.bad.policy" +
                                     " parameter for tryLess: " +
                                     value + ", use default");
                         }
@@ -151,8 +151,8 @@ public final class KdcComm {
             udp_pref_limit = parsePositiveIntString(temp);
         } catch (Exception exc) {
            // ignore any exceptions; use default values
-           if (DEBUG) {
-                System.out.println ("Exception in getting KDC communication " +
+           if (DEBUG != null) {
+                DEBUG.println ("Exception in getting KDC communication " +
                                     "settings, using default value " +
                                     exc.getMessage());
            }
@@ -276,10 +276,10 @@ public final class KdcComm {
             KdcAccessibility.removeBad(tempKdc);
             return ibuf;
         } catch(Exception e) {
-            if (DEBUG) {
-                System.out.println(">>> KrbKdcReq send: error trying " +
+            if (DEBUG != null) {
+                DEBUG.println(">>> KrbKdcReq send: error trying " +
                         tempKdc);
-                e.printStackTrace(System.out);
+                e.printStackTrace(DEBUG.getPrintStream());
             }
             KdcAccessibility.addBad(tempKdc);
             throw e;
@@ -345,8 +345,8 @@ public final class KdcComm {
         }
 
         byte[] obuf = req.encoding();
-        if (DEBUG) {
-            System.out.println(">>> KrbKdcReq send: kdc=" + kdc
+        if (DEBUG != null) {
+            DEBUG.println(">>> KrbKdcReq send: kdc=" + kdc
                                + (useTCP ? " TCP:":" UDP:")
                                +  port +  ", timeout="
                                + timeout
@@ -360,8 +360,8 @@ public final class KdcComm {
         try {
             @SuppressWarnings("removal")
             byte[] ibuf = AccessController.doPrivileged(kdcCommunication);
-            if (DEBUG) {
-                System.out.println(">>> KrbKdcReq send: #bytes read="
+            if (DEBUG != null) {
+                DEBUG.println(">>> KrbKdcReq send: #bytes read="
                         + (ibuf != null ? ibuf.length : 0));
             }
             return ibuf;
@@ -404,8 +404,8 @@ public final class KdcComm {
 
             for (int i=1; i <= retries; i++) {
                 String proto = useTCP?"TCP":"UDP";
-                if (DEBUG) {
-                    System.out.println(">>> KDCCommunication: kdc=" + kdc
+                if (DEBUG != null) {
+                    DEBUG.println(">>> KDCCommunication: kdc=" + kdc
                             + " " + proto + ":"
                             +  port +  ", timeout="
                             + timeout
@@ -418,8 +418,8 @@ public final class KdcComm {
                     ibuf = kdcClient.receive();
                     break;
                 } catch (SocketTimeoutException se) {
-                    if (DEBUG) {
-                        System.out.println ("SocketTimeOutException with " +
+                    if (DEBUG != null) {
+                        DEBUG.println ("SocketTimeOutException with " +
                                 "attempt: " + i);
                     }
                     if (i == retries) {
@@ -518,15 +518,15 @@ public final class KdcComm {
         private static Set<String> bads = new HashSet<>();
 
         private static synchronized void addBad(String kdc) {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: add " + kdc);
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: add " + kdc);
             }
             bads.add(kdc);
         }
 
         private static synchronized void removeBad(String kdc) {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: remove " + kdc);
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: remove " + kdc);
             }
             bads.remove(kdc);
         }
@@ -536,8 +536,8 @@ public final class KdcComm {
         }
 
         private static synchronized void reset() {
-            if (DEBUG) {
-                System.out.println(">>> KdcAccessibility: reset");
+            if (DEBUG != null) {
+                DEBUG.println(">>> KdcAccessibility: reset");
             }
             bads.clear();
         }

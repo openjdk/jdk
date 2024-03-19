@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
  * questions.
  */
 
-#include "AppLauncher.h"
 #include "app.h"
+#include "AppLauncher.h"
+#include "ErrorHandling.h"
 #include "FileUtils.h"
+#include "jni.h"
+#include "JvmLauncher.h"
 #include "PackageFile.h"
 #include "UnixSysInfo.h"
-#include "JvmLauncher.h"
-#include "ErrorHandling.h"
 
 
 namespace {
@@ -89,7 +90,7 @@ void initJvmLauncher() {
 } // namespace
 
 
-int main(int argc, char *argv[]) {
+JNIEXPORT int main(int argc, char *argv[]) {
     if (jvmLauncher) {
         // This is the call from the thread spawned by JVM.
         // Skip initialization phase as we have done this already in the first

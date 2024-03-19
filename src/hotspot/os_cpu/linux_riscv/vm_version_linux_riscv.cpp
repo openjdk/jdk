@@ -244,13 +244,11 @@ void VM_Version::rivos_features() {
 
   ext_Zfh.enable_feature();
 
-  ext_Zacas.enable_feature();
   ext_Zicboz.enable_feature();
   ext_Zicsr.enable_feature();
   ext_Zifencei.enable_feature();
   ext_Zic64b.enable_feature();
   ext_Ztso.enable_feature();
-  ext_Zihintpause.enable_feature();
 
   ext_Zvfh.enable_feature();
 
@@ -259,4 +257,8 @@ void VM_Version::rivos_features() {
 
   // Features dependent on march/mimpid.
   // I.e. march.value() and mimplid.value()
+  if (mimpid.value() > 0x100) {
+    ext_Zacas.enable_feature();
+    ext_Zihintpause.enable_feature();
+  }
 }
