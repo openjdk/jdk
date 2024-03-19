@@ -52,7 +52,7 @@ public class InitialMaximizedTest {
         try {
             EventQueue.invokeAndWait(InitialMaximizedTest::createAndShowFrame);
             robot.waitForIdle();
-            robot.delay(2000);
+            robot.delay(1000);
             EventQueue.invokeAndWait(InitialMaximizedTest::checkMaximized);
         } finally {
             EventQueue.invokeAndWait(() -> {
