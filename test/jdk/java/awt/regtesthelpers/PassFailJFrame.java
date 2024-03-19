@@ -446,9 +446,9 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
-
+        JButton btnPause = new JButton(TimeoutHandler.PAUSE_BUTTON_LABEL);
         JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
-        timeoutHandler = new TimeoutHandler(testTimeoutLabel, testTimeOut);
+        timeoutHandler = new TimeoutHandler(testTimeoutLabel, btnPause, testTimeOut);
         main.add(testTimeoutLabel, BorderLayout.NORTH);
 
         JTextComponent text = instructions.startsWith("<html>")
@@ -473,6 +473,7 @@ public final class PassFailJFrame {
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
+        buttonsPanel.add(btnPause);
 
         if (enableScreenCapture) {
             buttonsPanel.add(createCapturePanel());
@@ -639,20 +640,31 @@ public final class PassFailJFrame {
 
 
     private static final class TimeoutHandler implements ActionListener {
-        private final long endTime;
+
+        private static final String PAUSED_LABEL_SUFFIX = " PAUSED";
+        private static final String PAUSE_BUTTON_LABEL = "Pause Timer";
+        private static final String RESUME_BUTTON_LABEL = "Resume Timer";
+        private long endTime;
+        private long pauseTimeLeft = 0L;
 
         private final Timer timer;
 
         private final JLabel label;
+        private final JButton button;
 
-        public TimeoutHandler(final JLabel label, final long testTimeOut) {
+        public TimeoutHandler(final JLabel label,
+                              final JButton button,
+                              final long testTimeOut) {
             endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
 
             this.label = label;
+            this.button = button;
 
             timer = new Timer(1000, this);
             timer.start();
             updateTime(testTimeOut);
+
+            button.addActionListener(e -> pauseToggle());
         }
 
         @Override
@@ -678,6 +690,21 @@ public final class PassFailJFrame {
             label.setText(String.format(Locale.ENGLISH,
                                         "Test timeout: %02d:%02d:%02d",
                                         hours, minutes, seconds));
+        }
+
+
+        private void pauseToggle() {
+            if (timer.isRunning()) {
+                pauseTimeLeft = endTime - System.currentTimeMillis();
+                timer.stop();
+                label.setText(label.getText() + PAUSED_LABEL_SUFFIX);
+                button.setText(RESUME_BUTTON_LABEL);
+            } else {
+                label.setText(label.getText().replace(PAUSED_LABEL_SUFFIX, ""));
+                endTime = System.currentTimeMillis() + pauseTimeLeft;
+                timer.start();
+                button.setText(PAUSE_BUTTON_LABEL);
+            }
         }
 
         public void stop() {
