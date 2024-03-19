@@ -18,6 +18,11 @@ public:
     stack._stack[3] = (address)d;
     return stack;
   }
+  NativeCallStack stack1 = make_stack(0x00007bece59b89ac,
+                                      0x00007bece59b1fdd,
+                                      0x00007bece59b2997,
+                                      0x00007bece59b2add);
+  NativeCallStack stack2 = make_stack(0x123, 0x456,0x789, 0xAAAA);
 };
 
 // Low-level tests inspecting the state of the tree.
@@ -25,6 +30,9 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   using Tree = VMATree;
   using Node = Tree::VTreap;
   using NCS = NativeCallStackStorage;
+  NativeCallStackStorage ncs(true);
+  NativeCallStackStorage::StackIndex si1 = ncs.push(stack1);
+  NativeCallStackStorage::StackIndex si2 = ncs.push(stack2);
 
   // Adjacent reservations should result in exactly 2 nodes
   auto adjacent_2_nodes = [&](VMATree::Metadata& md) {
@@ -104,7 +112,7 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   commit_middle(nothing);
   commit_whole(nothing);
 
-  VMATree::Metadata md{NCS::StackIndex(), mtTest };
+  VMATree::Metadata md{si1, mtTest };
   adjacent_2_nodes(md);
   remove_all_leaves_empty_tree(md);
   commit_middle(md);
@@ -112,8 +120,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Identical operation but different metadata should store both
     Tree tree;
-    VMATree::Metadata md{NCS::StackIndex(), mtTest };
-    VMATree::Metadata md2{NCS::StackIndex(), mtNMT };
+    VMATree::Metadata md{si1, mtTest };
+    VMATree::Metadata md2{si2, mtNMT };
     tree.reserve_mapping(0, 100, md);
     tree.reserve_mapping(100, 100, md2);
     int found_nodes = 0;
@@ -125,8 +133,8 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Reserving should overwrite commit
     Tree tree;
-    VMATree::Metadata md{NCS::StackIndex(), mtTest };
-    VMATree::Metadata md2{NCS::StackIndex(), mtNMT };
+    VMATree::Metadata md{si1, mtTest };
+    VMATree::Metadata md2{si2, mtNMT };
     tree.commit_mapping(50, 50, md2);
     tree.reserve_mapping(0, 100, md);
     int found_nodes = 0;
@@ -139,9 +147,9 @@ TEST_VM_F(VMATreeTest, LowLevel) {
 
   { // Split a reserved region into two different reserved regions
     Tree tree;
-    VMATree::Metadata md{NCS::StackIndex(), mtTest };
-    VMATree::Metadata md2{NCS::StackIndex(), mtNMT };
-    VMATree::Metadata md3{NCS::StackIndex(), mtNone };
+    VMATree::Metadata md{si1, mtTest };
+    VMATree::Metadata md2{si2, mtNMT };
+    VMATree::Metadata md3{si1, mtNone };
     tree.reserve_mapping(0, 100, md);
     tree.reserve_mapping(0, 50, md2);
     tree.reserve_mapping(50, 50, md3);
@@ -151,6 +159,13 @@ TEST_VM_F(VMATreeTest, LowLevel) {
     });
     EXPECT_EQ(3, found_nodes);
   }
+  { // One big reserve + release leaves an empty tree
+    Tree::Metadata md{si1, mtNMT};
+    Tree tree;
+    tree.reserve_mapping(0, 500000, md);
+    tree.release_mapping(0, 500000);
+    EXPECT_EQ(nullptr, treap_of(tree));
+  }
 }
 
 // NativeCallStack
@@ -158,26 +173,8 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
   using Tree = VMATree;
   using Node = Tree::VTreap;
   NativeCallStackStorage ncs(true);
-  // Construct a call stack.
-  /*
-    [0x00007bece59b89ac]ZPhysicalMemoryManager::commit(ZPhysicalMemory&)+0x9a
-    [0x00007bece59b1fdd]ZPageAllocator::commit_page(ZPage*)+0x33
-    [0x00007bece59b2997]ZPageAllocator::alloc_page_finalize(ZPageAllocation*)+0x7b
-    [0x00007bece59b2add]ZPageAllocator::alloc_page(ZPageType, unsigned long, ZAllocationFlags, ZPageAge)+0xc7
-   */
-  NativeCallStack stack = make_stack(0x00007bece59b89ac,
-                                     0x00007bece59b1fdd,
-                                     0x00007bece59b2997,
-                                     0x00007bece59b2add);
-  NativeCallStackStorage::StackIndex si = ncs.push(stack);
+  NativeCallStackStorage::StackIndex si = ncs.push(stack1);
   Tree::Metadata md{si, mtNMT};
-  { // One big reserve + release leaves an empty tree
-    Tree tree;
-    tree.reserve_mapping(0, 500000, md);
-    tree.release_mapping(0, 500000);
-    EXPECT_EQ(nullptr, treap_of(tree));
-  }
-
   {
     Tree tree;
     for (int i = 0; i < 100; i++) {
