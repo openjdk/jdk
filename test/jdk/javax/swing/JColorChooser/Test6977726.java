@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,22 +21,36 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6977726
- * @summary Checks if JColorChooser.setPreviewPanel removes the old one
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test6977726.html
- */
-
-import javax.swing.JApplet;
 import javax.swing.JColorChooser;
 import javax.swing.JLabel;
 
-public class Test6977726 extends JApplet {
-    public void init() {
+/*
+ * @test
+ * @bug 6977726
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @summary Checks if JColorChooser.setPreviewPanel(JLabel) doesn't remove the preview panel but
+ *          removes the content of the default preview panel
+ * @run main/manual Test6977726
+ */
+
+public class Test6977726 {
+
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                .title("Test6977726")
+                .instructions("Check that there is an empty panel titled \"Preview\" in the JColorChooser.")
+                .rows(5)
+                .columns(40)
+                .testTimeOut(10)
+                .splitUIRight(Test6977726::createColorChooser)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static JColorChooser createColorChooser() {
         JColorChooser chooser = new JColorChooser();
         chooser.setPreviewPanel(new JLabel("Text Preview Panel"));
-        getContentPane().add(chooser);
+        return chooser;
     }
 }
