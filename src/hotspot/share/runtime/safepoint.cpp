@@ -539,12 +539,6 @@ public:
   }
 
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
-      // Don't bother reporting event or time for this very short operation.
-      // To have any utility we'd also want to report whether needed.
-      OopStorage::trigger_cleanup_if_needed();
-    }
-
     _subtasks.all_tasks_claimed();
   }
 };
