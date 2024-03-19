@@ -510,7 +510,6 @@ void SafepointSynchronize::end() {
 class ParallelCleanupTask : public WorkerTask {
 private:
   SubTasksDone _subtasks;
-  bool _do_lazy_roots;
 
   class Tracer {
   private:
@@ -531,35 +530,15 @@ private:
 public:
   ParallelCleanupTask() :
     WorkerTask("Parallel Safepoint Cleanup"),
-    _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS),
-    _do_lazy_roots(!VMThread::vm_operation()->skip_thread_oop_barriers() &&
-                   Universe::heap()->uses_stack_watermark_barrier()) {}
+    _subtasks(SafepointSynchronize::SAFEPOINT_CLEANUP_NUM_TASKS) {}
 
   uint expected_num_workers() const {
     uint workers = 0;
-
-    if (_do_lazy_roots) {
-      workers++;
-    }
 
     return MAX2<uint>(1, workers);
   }
 
   void work(uint worker_id) {
-    if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_LAZY_ROOT_PROCESSING)) {
-      if (_do_lazy_roots) {
-        Tracer t("lazy partial thread root processing");
-        class LazyRootClosure : public ThreadClosure {
-        public:
-          void do_thread(Thread* thread) {
-            StackWatermarkSet::start_processing(JavaThread::cast(thread), StackWatermarkKind::gc);
-          }
-        };
-        LazyRootClosure cl;
-        Threads::java_threads_do(&cl);
-      }
-    }
-
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_REQUEST_OOPSTORAGE_CLEANUP)) {
       // Don't bother reporting event or time for this very short operation.
       // To have any utility we'd also want to report whether needed.
