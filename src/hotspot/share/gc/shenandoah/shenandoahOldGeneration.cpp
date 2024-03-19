@@ -27,27 +27,21 @@
 
 #include "gc/shared/strongRootsScope.hpp"
 #include "gc/shenandoah/shenandoahCollectorPolicy.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAsserts.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahMarkClosures.hpp"
-#include "gc/shenandoah/shenandoahMark.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
 #include "gc/shenandoah/shenandoahOldGeneration.hpp"
 #include "gc/shenandoah/shenandoahOopClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "prims/jvmtiTagMap.hpp"
 #include "runtime/threads.hpp"
 #include "utilities/events.hpp"
 
@@ -174,6 +168,15 @@ public:
 ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity)
   : ShenandoahGeneration(OLD, max_queues, max_capacity, soft_max_capacity),
     _coalesce_and_fill_region_array(NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, ShenandoahHeap::heap()->num_regions(), mtGC)),
+    _old_heuristics(nullptr),
+    _region_surplus(0),
+    _region_deficit(0),
+    _promoted_reserve(0),
+    _promoted_expended(0),
+    _promotion_potential(0),
+    _pad_for_promote_in_place(0),
+    _promotable_humongous_regions(0),
+    _promotable_regular_regions(0),
     _state(WAITING_FOR_BOOTSTRAP),
     _growth_before_compaction(INITIAL_GROWTH_BEFORE_COMPACTION),
     _min_growth_before_compaction ((ShenandoahMinOldGenGrowthPercent * FRACTIONAL_DENOMINATOR) / 100)
@@ -181,6 +184,39 @@ ShenandoahOldGeneration::ShenandoahOldGeneration(uint max_queues, size_t max_cap
   _live_bytes_after_last_mark = ShenandoahHeap::heap()->capacity() * INITIAL_LIVE_FRACTION / FRACTIONAL_DENOMINATOR;
   // Always clear references for old generation
   ref_processor()->set_soft_reference_policy(true);
+}
+
+void ShenandoahOldGeneration::set_promoted_reserve(size_t new_val) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  _promoted_reserve = new_val;
+}
+
+size_t ShenandoahOldGeneration::get_promoted_reserve() const {
+  return _promoted_reserve;
+}
+
+void ShenandoahOldGeneration::augment_promoted_reserve(size_t increment) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  _promoted_reserve += increment;
+}
+
+void ShenandoahOldGeneration::reset_promoted_expended() {
+  shenandoah_assert_heaplocked_or_safepoint();
+  Atomic::store(&_promoted_expended, (size_t) 0);
+}
+
+size_t ShenandoahOldGeneration::expend_promoted(size_t increment) {
+  shenandoah_assert_heaplocked_or_safepoint();
+  assert(get_promoted_expended() + increment <= get_promoted_reserve(), "Do not expend more promotion than budgeted");
+  return Atomic::add(&_promoted_expended, increment);
+}
+
+size_t ShenandoahOldGeneration::unexpend_promoted(size_t decrement) {
+  return Atomic::sub(&_promoted_expended, decrement);
+}
+
+size_t ShenandoahOldGeneration::get_promoted_expended() {
+  return Atomic::load(&_promoted_expended);
 }
 
 size_t ShenandoahOldGeneration::get_live_bytes_after_last_mark() const {
@@ -193,6 +229,10 @@ void ShenandoahOldGeneration::set_live_bytes_after_last_mark(size_t bytes) {
   if (_growth_before_compaction < _min_growth_before_compaction) {
     _growth_before_compaction = _min_growth_before_compaction;
   }
+}
+
+void ShenandoahOldGeneration::handle_failed_transfer() {
+  _old_heuristics->trigger_cannot_expand();
 }
 
 size_t ShenandoahOldGeneration::usage_trigger_threshold() const {
@@ -465,4 +505,68 @@ ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahM
 void ShenandoahOldGeneration::record_success_concurrent(bool abbreviated) {
   heuristics()->record_success_concurrent(abbreviated);
   ShenandoahHeap::heap()->shenandoah_policy()->record_success_old();
+}
+
+void ShenandoahOldGeneration::handle_failed_evacuation() {
+  if (_failed_evacuation.try_set()) {
+    log_info(gc)("Old gen evac failure.");
+  }
+}
+
+void ShenandoahOldGeneration::handle_failed_promotion(Thread* thread, size_t size) {
+  // We squelch excessive reports to reduce noise in logs.
+  const size_t MaxReportsPerEpoch = 4;
+  static size_t last_report_epoch = 0;
+  static size_t epoch_report_count = 0;
+  auto heap = ShenandoahGenerationalHeap::heap();
+
+  size_t promotion_reserve;
+  size_t promotion_expended;
+
+  const size_t gc_id = heap->control_thread()->get_gc_id();
+
+  if ((gc_id != last_report_epoch) || (epoch_report_count++ < MaxReportsPerEpoch)) {
+    {
+      // Promotion failures should be very rare.  Invest in providing useful diagnostic info.
+      ShenandoahHeapLocker locker(heap->lock());
+      promotion_reserve = get_promoted_reserve();
+      promotion_expended = get_promoted_expended();
+    }
+    PLAB* const plab = ShenandoahThreadLocalData::plab(thread);
+    const size_t words_remaining = (plab == nullptr)? 0: plab->words_remaining();
+    const char* promote_enabled = ShenandoahThreadLocalData::allow_plab_promotions(thread)? "enabled": "disabled";
+
+    log_info(gc, ergo)("Promotion failed, size " SIZE_FORMAT ", has plab? %s, PLAB remaining: " SIZE_FORMAT
+                       ", plab promotions %s, promotion reserve: " SIZE_FORMAT ", promotion expended: " SIZE_FORMAT
+                       ", old capacity: " SIZE_FORMAT ", old_used: " SIZE_FORMAT ", old unaffiliated regions: " SIZE_FORMAT,
+                       size * HeapWordSize, plab == nullptr? "no": "yes",
+                       words_remaining * HeapWordSize, promote_enabled, promotion_reserve, promotion_expended,
+                       max_capacity(), used(), free_unaffiliated_regions());
+
+    if ((gc_id == last_report_epoch) && (epoch_report_count >= MaxReportsPerEpoch)) {
+      log_info(gc, ergo)("Squelching additional promotion failure reports for current epoch");
+    } else if (gc_id != last_report_epoch) {
+      last_report_epoch = gc_id;
+      epoch_report_count = 1;
+    }
+  }
+}
+
+void ShenandoahOldGeneration::handle_evacuation(HeapWord* obj, size_t words, bool promotion) {
+  auto heap = ShenandoahGenerationalHeap::heap();
+  auto card_scan = heap->card_scan();
+
+  // Only register the copy of the object that won the evacuation race.
+  card_scan->register_object_without_lock(obj);
+
+  // Mark the entire range of the evacuated object as dirty.  At next remembered set scan,
+  // we will clear dirty bits that do not hold interesting pointers.  It's more efficient to
+  // do this in batch, in a background GC thread than to try to carefully dirty only cards
+  // that hold interesting pointers right now.
+  card_scan->mark_range_as_dirty(obj, words);
+
+  if (promotion) {
+    // This evacuation was a promotion, track this as allocation against old gen
+    increase_allocated(words * HeapWordSize);
+  }
 }

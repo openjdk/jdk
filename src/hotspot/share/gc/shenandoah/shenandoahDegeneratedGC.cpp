@@ -31,6 +31,7 @@
 #include "gc/shenandoah/shenandoahDegeneratedGC.hpp"
 #include "gc/shenandoah/shenandoahFullGC.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMetrics.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -290,38 +291,12 @@ void ShenandoahDegenGC::op_degenerated() {
       op_cleanup_complete();
       // We defer generation resizing actions until after cset regions have been recycled.
       if (heap->mode()->is_generational()) {
-        size_t old_region_surplus = heap->get_old_region_surplus();
-        size_t old_region_deficit = heap->get_old_region_deficit();
-        bool success;
-        size_t region_xfer;
-        const char* region_destination;
-        if (old_region_surplus) {
-          region_xfer = old_region_surplus;
-          region_destination = "young";
-          success = heap->generation_sizer()->transfer_to_young(old_region_surplus);
-        } else if (old_region_deficit) {
-          region_xfer = old_region_surplus;
-          region_destination = "old";
-          success = heap->generation_sizer()->transfer_to_old(old_region_deficit);
-          if (!success) {
-            heap->old_heuristics()->trigger_cannot_expand();
-          }
-        } else {
-          region_destination = "none";
-          region_xfer = 0;
-          success = true;
+        auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
+        LogTarget(Info, gc, ergo) lt;
+        if (lt.is_enabled()) {
+          LogStream ls(lt);
+          result.print_on("Degenerated GC", &ls);
         }
-
-        size_t young_available = heap->young_generation()->available();
-        size_t old_available = heap->old_generation()->available();
-        log_info(gc, ergo)("After cleanup, %s " SIZE_FORMAT " regions to %s to prepare for next gc, old available: "
-                           SIZE_FORMAT "%s, young_available: " SIZE_FORMAT "%s",
-                           success? "successfully transferred": "failed to transfer", region_xfer, region_destination,
-                           byte_size_in_proper_unit(old_available), proper_unit_for_byte_size(old_available),
-                           byte_size_in_proper_unit(young_available), proper_unit_for_byte_size(young_available));
-
-        heap->set_old_region_surplus(0);
-        heap->set_old_region_deficit(0);
       }
       break;
     default:
@@ -331,9 +306,7 @@ void ShenandoahDegenGC::op_degenerated() {
   if (heap->mode()->is_generational()) {
     // In case degeneration interrupted concurrent evacuation or update references, we need to clean up transient state.
     // Otherwise, these actions have no effect.
-    heap->set_young_evac_reserve(0);
-    heap->set_old_evac_reserve(0);
-    heap->set_promoted_reserve(0);
+    ShenandoahGenerationalHeap::heap()->reset_generation_reserves();
   }
 
   if (ShenandoahVerify) {
@@ -397,9 +370,7 @@ void ShenandoahDegenGC::op_prepare_evacuation() {
     heap->tlabs_retire(false);
   }
 
-  size_t humongous_regions_promoted = heap->get_promotable_humongous_regions();
-  size_t regular_regions_promoted_in_place = heap->get_regular_regions_promoted_in_place();
-  if (!heap->collection_set()->is_empty() || (humongous_regions_promoted + regular_regions_promoted_in_place > 0)) {
+  if (!heap->collection_set()->is_empty() || heap->old_generation()->has_in_place_promotions()) {
     // Even if the collection set is empty, we need to do evacuation if there are regions to be promoted in place.
     // Degenerated evacuation takes responsibility for registering objects and setting the remembered set cards to dirty.
 

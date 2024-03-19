@@ -43,7 +43,6 @@
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalControlThread.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.inline.hpp"
-#include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/shenandoahThreadLocalData.hpp"
 #include "gc/shenandoah/shenandoahScanRemembered.inline.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
@@ -372,183 +371,6 @@ inline oop ShenandoahHeap::evacuate_object(oop p, Thread* thread) {
   return try_evacuate_object(p, thread, r, target_gen);
 }
 
-// try_evacuate_object registers the object and dirties the associated remembered set information when evacuating
-// to OLD_GENERATION.
-inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, ShenandoahHeapRegion* from_region,
-                                               ShenandoahAffiliation target_gen) {
-  bool alloc_from_lab = true;
-  bool has_plab = false;
-  HeapWord* copy = nullptr;
-  size_t size = p->size();
-  bool is_promotion = (target_gen == OLD_GENERATION) && from_region->is_young();
-
-#ifdef ASSERT
-  if (ShenandoahOOMDuringEvacALot &&
-      (os::random() & 1) == 0) { // Simulate OOM every ~2nd slow-path call
-        copy = nullptr;
-  } else {
-#endif
-    if (UseTLAB) {
-      switch (target_gen) {
-        case YOUNG_GENERATION: {
-           copy = allocate_from_gclab(thread, size);
-           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::gclab_size(thread))) {
-             // GCLAB allocation failed because we are bumping up against the limit on young evacuation reserve.  Try resetting
-             // the desired GCLAB size and retry GCLAB allocation to avoid cascading of shared memory allocations.
-             ShenandoahThreadLocalData::set_gclab_size(thread, PLAB::min_size());
-             copy = allocate_from_gclab(thread, size);
-             // If we still get nullptr, we'll try a shared allocation below.
-           }
-           break;
-        }
-        case OLD_GENERATION: {
-           PLAB* plab = ShenandoahThreadLocalData::plab(thread);
-           if (plab != nullptr) {
-             has_plab = true;
-           }
-           copy = allocate_from_plab(thread, size, is_promotion);
-           if ((copy == nullptr) && (size < ShenandoahThreadLocalData::plab_size(thread)) &&
-               ShenandoahThreadLocalData::plab_retries_enabled(thread)) {
-             // PLAB allocation failed because we are bumping up against the limit on old evacuation reserve or because
-             // the requested object does not fit within the current plab but the plab still has an "abundance" of memory,
-             // where abundance is defined as >= PLAB::min_size().  In the former case, we try resetting the desired
-             // PLAB size and retry PLAB allocation to avoid cascading of shared memory allocations.
-
-             // In this situation, PLAB memory is precious.  We'll try to preserve our existing PLAB by forcing
-             // this particular allocation to be shared.
-             if (plab->words_remaining() < PLAB::min_size()) {
-               ShenandoahThreadLocalData::set_plab_size(thread, PLAB::min_size());
-               copy = allocate_from_plab(thread, size, is_promotion);
-               // If we still get nullptr, we'll try a shared allocation below.
-               if (copy == nullptr) {
-                 // If retry fails, don't continue to retry until we have success (probably in next GC pass)
-                 ShenandoahThreadLocalData::disable_plab_retries(thread);
-               }
-             }
-             // else, copy still equals nullptr.  this causes shared allocation below, preserving this plab for future needs.
-           }
-           break;
-        }
-        default: {
-          ShouldNotReachHere();
-          break;
-        }
-      }
-    }
-
-    if (copy == nullptr) {
-      // If we failed to allocate in LAB, we'll try a shared allocation.
-      if (!is_promotion || !has_plab || (size > PLAB::min_size())) {
-        ShenandoahAllocRequest req = ShenandoahAllocRequest::for_shared_gc(size, target_gen);
-        copy = allocate_memory(req, is_promotion);
-        alloc_from_lab = false;
-      }
-      // else, we leave copy equal to nullptr, signaling a promotion failure below if appropriate.
-      // We choose not to promote objects smaller than PLAB::min_size() by way of shared allocations, as this is too
-      // costly.  Instead, we'll simply "evacuate" to young-gen memory (using a GCLAB) and will promote in a future
-      // evacuation pass.  This condition is denoted by: is_promotion && has_plab && (size <= PLAB::min_size())
-    }
-#ifdef ASSERT
-  }
-#endif
-
-  if (copy == nullptr) {
-    if (target_gen == OLD_GENERATION) {
-      assert(mode()->is_generational(), "Should only be here in generational mode.");
-      if (from_region->is_young()) {
-        // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
-        report_promotion_failure(thread, size);
-        return nullptr;
-      } else {
-        // Remember that evacuation to old gen failed. We'll want to trigger a full gc to recover from this
-        // after the evacuation threads have finished.
-        handle_old_evacuation_failure();
-      }
-    }
-
-    control_thread()->handle_alloc_failure_evac(size);
-
-    _oom_evac_handler.handle_out_of_memory_during_evacuation();
-
-    return ShenandoahBarrierSet::resolve_forwarded(p);
-  }
-
-  // Copy the object:
-  _evac_tracker->begin_evacuation(thread, size * HeapWordSize);
-  Copy::aligned_disjoint_words(cast_from_oop<HeapWord*>(p), copy, size);
-
-  oop copy_val = cast_to_oop(copy);
-
-  if (mode()->is_generational() && target_gen == YOUNG_GENERATION && is_aging_cycle()) {
-    ShenandoahHeap::increase_object_age(copy_val, from_region->age() + 1);
-  }
-
-  // Try to install the new forwarding pointer.
-  ContinuationGCSupport::relativize_stack_chunk(copy_val);
-
-  oop result = ShenandoahForwarding::try_update_forwardee(p, copy_val);
-  if (result == copy_val) {
-    // Successfully evacuated. Our copy is now the public one!
-    _evac_tracker->end_evacuation(thread, size * HeapWordSize);
-    if (mode()->is_generational()) {
-      if (target_gen == OLD_GENERATION) {
-        handle_old_evacuation(copy, size, from_region->is_young());
-      } else {
-        // When copying to the old generation above, we don't care
-        // about recording object age in the census stats.
-        assert(target_gen == YOUNG_GENERATION, "Error");
-        // We record this census only when simulating pre-adaptive tenuring behavior, or
-        // when we have been asked to record the census at evacuation rather than at mark
-        if (ShenandoahGenerationalCensusAtEvac || !ShenandoahGenerationalAdaptiveTenuring) {
-          _evac_tracker->record_age(thread, size * HeapWordSize, ShenandoahHeap::get_object_age(copy_val));
-        }
-      }
-    }
-    shenandoah_assert_correct(nullptr, copy_val);
-    return copy_val;
-  }  else {
-    // Failed to evacuate. We need to deal with the object that is left behind. Since this
-    // new allocation is certainly after TAMS, it will be considered live in the next cycle.
-    // But if it happens to contain references to evacuated regions, those references would
-    // not get updated for this stale copy during this cycle, and we will crash while scanning
-    // it the next cycle.
-    if (alloc_from_lab) {
-       // For LAB allocations, it is enough to rollback the allocation ptr. Either the next
-       // object will overwrite this stale copy, or the filler object on LAB retirement will
-       // do this.
-       switch (target_gen) {
-         case YOUNG_GENERATION: {
-             ShenandoahThreadLocalData::gclab(thread)->undo_allocation(copy, size);
-            break;
-         }
-         case OLD_GENERATION: {
-            ShenandoahThreadLocalData::plab(thread)->undo_allocation(copy, size);
-            if (is_promotion) {
-              ShenandoahThreadLocalData::subtract_from_plab_promoted(thread, size * HeapWordSize);
-            } else {
-              ShenandoahThreadLocalData::subtract_from_plab_evacuated(thread, size * HeapWordSize);
-            }
-            break;
-         }
-         default: {
-           ShouldNotReachHere();
-           break;
-         }
-       }
-    } else {
-      // For non-LAB allocations, we have no way to retract the allocation, and
-      // have to explicitly overwrite the copy with the filler object. With that overwrite,
-      // we have to keep the fwdptr initialized and pointing to our (stale) copy.
-      assert(size >= ShenandoahHeap::min_fill_size(), "previously allocated object known to be larger than min_size");
-      fill_with_object(copy, size);
-      shenandoah_assert_correct(nullptr, copy_val);
-      // For non-LAB allocations, the object has already been registered
-    }
-    shenandoah_assert_correct(nullptr, result);
-    return result;
-  }
-}
-
 void ShenandoahHeap::increase_object_age(oop obj, uint additional_age) {
   // This operates on new copy of an object. This means that the object's mark-word
   // is thread-local and therefore safe to access. However, when the mark is
@@ -595,10 +417,6 @@ uint ShenandoahHeap::get_object_age(oop obj) {
   }
   assert(w.age() <= markWord::max_age, "Impossible!");
   return w.age();
-}
-
-inline bool ShenandoahHeap::clear_old_evacuation_failure() {
-  return _old_gen_oom_evac.try_unset();
 }
 
 bool ShenandoahHeap::is_in(const void* p) const {
@@ -709,10 +527,6 @@ inline bool ShenandoahHeap::is_stable() const {
   return _gc_state.is_clear();
 }
 
-inline bool ShenandoahHeap::has_evacuation_reserve_quantities() const {
-  return _has_evacuation_reserve_quantities;
-}
-
 inline bool ShenandoahHeap::is_idle() const {
   return _gc_state.is_unset(MARKING | EVACUATION | UPDATEREFS);
 }
@@ -763,66 +577,6 @@ inline bool ShenandoahHeap::is_concurrent_weak_root_in_progress() const {
 
 inline bool ShenandoahHeap::is_aging_cycle() const {
   return _is_aging_cycle.is_set();
-}
-
-inline size_t ShenandoahHeap::set_promoted_reserve(size_t new_val) {
-  size_t orig = _promoted_reserve;
-  _promoted_reserve = new_val;
-  return orig;
-}
-
-inline size_t ShenandoahHeap::get_promoted_reserve() const {
-  return _promoted_reserve;
-}
-
-inline size_t ShenandoahHeap::set_old_evac_reserve(size_t new_val) {
-  size_t orig = _old_evac_reserve;
-  _old_evac_reserve = new_val;
-  return orig;
-}
-
-inline size_t ShenandoahHeap::get_old_evac_reserve() const {
-  return _old_evac_reserve;
-}
-
-inline void ShenandoahHeap::augment_old_evac_reserve(size_t increment) {
-  _old_evac_reserve += increment;
-}
-
-inline void ShenandoahHeap::augment_promo_reserve(size_t increment) {
-  _promoted_reserve += increment;
-}
-
-inline void ShenandoahHeap::reset_promoted_expended() {
-  Atomic::store(&_promoted_expended, (size_t) 0);
-}
-
-inline size_t ShenandoahHeap::expend_promoted(size_t increment) {
-  return Atomic::add(&_promoted_expended, increment);
-}
-
-inline size_t ShenandoahHeap::unexpend_promoted(size_t decrement) {
-  return Atomic::sub(&_promoted_expended, decrement);
-}
-
-inline size_t ShenandoahHeap::get_promoted_expended() {
-  return Atomic::load(&_promoted_expended);
-}
-
-inline size_t ShenandoahHeap::set_young_evac_reserve(size_t new_val) {
-  size_t orig = _young_evac_reserve;
-  _young_evac_reserve = new_val;
-  return orig;
-}
-
-inline size_t ShenandoahHeap::get_young_evac_reserve() const {
-  return _young_evac_reserve;
-}
-
-inline void ShenandoahHeap::reset_generation_reserves() {
-  set_young_evac_reserve(0);
-  set_old_evac_reserve(0);
-  set_promoted_reserve(0);
 }
 
 template<class T>

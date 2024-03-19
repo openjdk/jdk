@@ -119,7 +119,7 @@ void ShenandoahGenerationalControlThread::run_service() {
 
       ShenandoahHeuristics* heuristics = _degen_generation->heuristics();
       generation = _degen_generation->type();
-      bool old_gen_evacuation_failed = heap->clear_old_evacuation_failure();
+      bool old_gen_evacuation_failed = heap->old_generation()->clear_failed_evacuation();
 
       // Do not bother with degenerated cycle if old generation evacuation failed or if humongous allocation failed
       if (ShenandoahDegeneratedGC && heuristics->should_degenerate_cycle() &&

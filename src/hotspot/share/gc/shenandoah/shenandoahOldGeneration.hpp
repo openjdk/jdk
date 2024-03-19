@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_SHENANDOAH_SHENANDOAHOLDGENERATION_HPP
 
 #include "gc/shenandoah/shenandoahGeneration.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 
 class ShenandoahHeapRegion;
 class ShenandoahHeapRegionClosure;
@@ -36,6 +37,45 @@ private:
   ShenandoahHeapRegion** _coalesce_and_fill_region_array;
   ShenandoahOldHeuristics* _old_heuristics;
 
+  // After determining the desired size of the old generation (see compute_old_generation_balance), these
+  // quantities represent the number of regions above (surplus) or below (deficit) that size.
+  // These values are computed prior to the actual exchange of any regions. These may never both
+  // be positive simultaneously.
+  size_t _region_surplus;
+  size_t _region_deficit;
+
+  // Set when evacuation in the old generation fails. When this is set, the control thread will initiate a
+  // full GC instead of a futile degenerated cycle.
+  ShenandoahSharedFlag _failed_evacuation;
+
+  // Bytes reserved within old-gen to hold the results of promotion. This is separate from
+  // and in addition to the evacuation reserve for intra-generation evacuations (ShenandoahGeneration::_evacuation_reserve).
+  size_t _promoted_reserve;
+
+  // Bytes of old-gen memory expended on promotions. This may be modified concurrently
+  // by mutators and gc workers when promotion LABs are retired during evacuation. It
+  // is therefore always accessed through atomic operations. This is increased when a
+  // PLAB is allocated for promotions. The value is decreased by the amount of memory
+  // remaining in a PLAB when it is retired.
+  size_t _promoted_expended;
+
+  // Represents the quantity of live bytes we expect to promote in place during the next
+  // evacuation cycle. This value is used by the young heuristic to trigger mixed collections.
+  // It is also used when computing the optimum size for the old generation.
+  size_t _promotion_potential;
+
+  // When a region is selected to be promoted in place, the remaining free memory is filled
+  // in to prevent additional allocations (preventing premature promotion of newly allocated
+  // objects. This field records the total amount of padding used for such regions.
+  size_t _pad_for_promote_in_place;
+
+  // During construction of the collection set, we keep track of regions that are eligible
+  // for promotion in place. These fields track the count of those humongous and regular regions.
+  // This data is used to force the evacuation phase even when the collection set is otherwise
+  // empty.
+  size_t _promotable_humongous_regions;
+  size_t _promotable_regular_regions;
+
   bool coalesce_and_fill();
 
 public:
@@ -45,6 +85,61 @@ public:
 
   const char* name() const override {
     return "OLD";
+  }
+
+  // See description in field declaration
+  void set_promoted_reserve(size_t new_val);
+  size_t get_promoted_reserve() const;
+
+  // The promotion reserve is increased when rebuilding the free set transfers a region to the old generation
+  void augment_promoted_reserve(size_t increment);
+
+  // This zeros out the expended promotion count after the promotion reserve is computed
+  void reset_promoted_expended();
+
+  // This is incremented when allocations are made to copy promotions into the old generation
+  size_t expend_promoted(size_t increment);
+
+  // This is used to return unused memory from a retired promotion LAB
+  size_t unexpend_promoted(size_t decrement);
+
+  // This is used on the allocation path to gate promotions that would exceed the reserve
+  size_t get_promoted_expended();
+
+  // See description in field declaration
+  void set_region_surplus(size_t surplus) { _region_surplus = surplus; };
+  void set_region_deficit(size_t deficit) { _region_deficit = deficit; };
+  size_t get_region_surplus() const { return _region_surplus; };
+  size_t get_region_deficit() const { return _region_deficit; };
+
+  // See description in field declaration
+  void set_promotion_potential(size_t val) { _promotion_potential = val; };
+  size_t get_promotion_potential() const { return _promotion_potential; };
+
+  // See description in field declaration
+  void set_pad_for_promote_in_place(size_t pad) { _pad_for_promote_in_place = pad; }
+  size_t get_pad_for_promote_in_place() const { return _pad_for_promote_in_place; }
+
+  // See description in field declaration
+  void set_expected_humongous_region_promotions(size_t region_count) { _promotable_humongous_regions = region_count; }
+  void set_expected_regular_region_promotions(size_t region_count) { _promotable_regular_regions = region_count; }
+  bool has_in_place_promotions() const { return (_promotable_humongous_regions + _promotable_regular_regions) > 0; }
+
+  // This will signal the heuristic to trigger an old generation collection
+  void handle_failed_transfer();
+
+  // This will signal the control thread to run a full GC instead of a futile degenerated gc
+  void handle_failed_evacuation();
+
+  // This logs that an evacuation to the old generation has failed
+  void handle_failed_promotion(Thread* thread, size_t size);
+
+  // A successful evacuation re-dirties the cards and registers the object with the remembered set
+  void handle_evacuation(HeapWord* obj, size_t words, bool promotion);
+
+  // Clear the flag after it is consumed by the control thread
+  bool clear_failed_evacuation() {
+    return _failed_evacuation.try_unset();
   }
 
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;

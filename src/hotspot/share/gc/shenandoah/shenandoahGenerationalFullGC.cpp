@@ -26,6 +26,7 @@
 
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "gc/shenandoah/shenandoahGenerationalFullGC.hpp"
+#include "gc/shenandoah/shenandoahGenerationalHeap.hpp"
 #include "gc/shenandoah/shenandoahGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.hpp"
@@ -49,7 +50,8 @@ void assert_usage_not_more_than_regions_used(ShenandoahGeneration* generation) {
 #endif
 
 
-void ShenandoahGenerationalFullGC::prepare(ShenandoahHeap* heap) {
+void ShenandoahGenerationalFullGC::prepare() {
+  auto heap = ShenandoahGenerationalHeap::heap();
   // Since we may arrive here from degenerated GC failure of either young or old, establish generation as GLOBAL.
   heap->set_gc_generation(heap->global_generation());
 
@@ -111,39 +113,13 @@ void ShenandoahGenerationalFullGC::balance_generations_after_gc(ShenandoahHeap* 
                PROPERFMTARGS(heap->old_generation()->used()));
 }
 
-void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set(ShenandoahHeap* heap) {
-  bool success;
-  size_t region_xfer;
-  const char* region_destination;
-  ShenandoahYoungGeneration* young_gen = heap->young_generation();
-  ShenandoahGeneration* old_gen = heap->old_generation();
-
-  size_t old_region_surplus = heap->get_old_region_surplus();
-  size_t old_region_deficit = heap->get_old_region_deficit();
-  if (old_region_surplus) {
-    success = heap->generation_sizer()->transfer_to_young(old_region_surplus);
-    region_destination = "young";
-    region_xfer = old_region_surplus;
-  } else if (old_region_deficit) {
-    success = heap->generation_sizer()->transfer_to_old(old_region_deficit);
-    region_destination = "old";
-    region_xfer = old_region_deficit;
-    if (!success) {
-      ((ShenandoahOldHeuristics *) old_gen->heuristics())->trigger_cannot_expand();
-    }
-  } else {
-    region_destination = "none";
-    region_xfer = 0;
-    success = true;
+void ShenandoahGenerationalFullGC::balance_generations_after_rebuilding_free_set() {
+  auto result = ShenandoahGenerationalHeap::heap()->balance_generations();
+  LogTarget(Info, gc, ergo) lt;
+  if (lt.is_enabled()) {
+    LogStream ls(lt);
+    result.print_on("Full GC", &ls);
   }
-  heap->set_old_region_surplus(0);
-  heap->set_old_region_deficit(0);
-  size_t young_available = young_gen->available();
-  size_t old_available = old_gen->available();
-  log_info(gc, ergo)("After cleanup, %s " SIZE_FORMAT " regions to %s to prepare for next gc, old available: "
-                     PROPERFMT ", young_available: " PROPERFMT,
-                     success? "successfully transferred": "failed to transfer", region_xfer, region_destination,
-                     PROPERFMTARGS(old_available), PROPERFMTARGS(young_available));
 }
 
 void ShenandoahGenerationalFullGC::log_live_in_old(ShenandoahHeap* heap) {
@@ -191,6 +167,15 @@ void ShenandoahGenerationalFullGC::maybe_coalesce_and_fill_region(ShenandoahHeap
     r->begin_preemptible_coalesce_and_fill();
     r->oop_fill_and_coalesce_without_cancel();
   }
+}
+
+void ShenandoahGenerationalFullGC::compute_balances() {
+  auto heap = ShenandoahGenerationalHeap::heap();
+
+  // In case this Full GC resulted from degeneration, clear the tally on anticipated promotion.
+  heap->old_generation()->set_promotion_potential(0);
+  // Invoke this in case we are able to transfer memory from OLD to YOUNG.
+  heap->compute_old_generation_balance(0, 0);
 }
 
 ShenandoahPrepareForGenerationalCompactionObjectClosure::ShenandoahPrepareForGenerationalCompactionObjectClosure(PreservedMarks* preserved_marks,
