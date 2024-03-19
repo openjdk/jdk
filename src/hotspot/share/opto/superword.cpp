@@ -1337,6 +1337,14 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     }
   };
 
+  auto compute_input_cost_muladds2i = [&] (const Node* in1, const Node* in2, const Node* in3, const Node* in4) {
+    if (_pairset.has_pair(in1, in2) & _pairset.has_pair(in2, in3) && _pairset.has_pair(in3, in4)) {
+      cost_scalar += unpack_cost(4);
+    } else {
+      cost_packed += pack_cost(4);
+    }
+  };
+
   if (reduction(s1, s2)) {
     // 1 Instruction if packed or scalar.
     cost_packed += 1;
@@ -1351,8 +1359,13 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     cost_scalar += 2; // 2 separate instructions
 
     // Cost packing / unpacking the inputs
-    for (uint i = 1; i < s1->req(); i++) {
-      compute_input_cost(s1->in(i), s2->in(i));
+    if (VectorNode::is_muladds2i(s1)) {
+      compute_input_cost_muladds2i(s1->in(1), s1->in(3), s2->in(1), s2->in(3));
+      compute_input_cost_muladds2i(s1->in(2), s1->in(4), s2->in(2), s2->in(4));
+    } else {
+      for (uint i = 1; i < s1->req(); i++) {
+        compute_input_cost(s1->in(i), s2->in(i));
+      }
     }
 
     // Count the number of shared use packs.
@@ -1380,6 +1393,11 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     if (use_packs_count < s1->outcnt()) { cost_packed += unpack_cost(1); }
     if (use_packs_count < s2->outcnt()) { cost_packed += unpack_cost(1); }
   }
+
+  // TODO
+  //tty->print_cr("cost: %d %d", cost_scalar, cost_packed);
+  //s1->dump();
+  //s2->dump();
 
   // How much do we save, i.e. how much more expensive is scalar compared to packed?
   return cost_scalar - cost_packed;
