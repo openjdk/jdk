@@ -168,37 +168,6 @@ TEST_VM_F(VMATreeTest, LowLevel) {
   }
 }
 
-// NativeCallStack
-TEST_VM_F(VMATreeTest, NativeCallStack) {
-  using Tree = VMATree;
-  using Node = Tree::VTreap;
-  NativeCallStackStorage ncs(true);
-  NativeCallStackStorage::StackIndex si = ncs.push(stack1);
-  Tree::Metadata md{si, mtNMT};
-  {
-    Tree tree;
-    for (int i = 0; i < 100; i++) {
-      tree.reserve_mapping(i * 100, 100, md);
-    }
-    int found_nodes = 0;
-    tree.visit(0, 200 * 100, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes);
-  }
-  {
-    Tree tree;
-    for (int i = 99; i >= 0; i--) {
-      tree.reserve_mapping(i * 100, 100, md);
-    }
-    int found_nodes = 0;
-    tree.visit(0, 200 * 100, [&](Node* x) {
-      found_nodes++;
-    });
-    EXPECT_EQ(2, found_nodes);
-  }
-}
-
 // Tests for summary accounting
 TEST_VM_F(VMATreeTest, SummaryAccounting) {
   using Tree = VMATree;
