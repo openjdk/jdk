@@ -498,6 +498,14 @@ static void compare_haystack_to_needle(bool sizeKnown, int size,
                 : Address(haystack, needleLen, Address::times_1, -(sizeIncr));
   size = sizeKnown ? size : NUMBER_OF_CASES + 1;
 
+  // Creates a mask of (n - k + 1) ones.  This prevents
+  // recognizing any false-positives past the end of
+  // the valid haystack.
+  __ movq(rTmp, -1);
+  __ movq(eq_mask, r10);   // Assumes r10 has n - k
+  __ addq(eq_mask, 1);
+  __ bzhiq(rTmp, rTmp, eq_mask);
+
   // Compare first byte of needle to haystack
   if (isU) {
     __ vpcmpeqw(cmp_0, byte_0, Address(haystack, 0), Assembler::AVX_256bit);
@@ -518,6 +526,7 @@ static void compare_haystack_to_needle(bool sizeKnown, int size,
       if (size > (isU ? 4 : 2)) {
         if (doEarlyBailout) {
           __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
+          __ andq(eq_mask, rTmp);
           __ testl(eq_mask, eq_mask);
           __ je(noMatch);
         }
@@ -536,6 +545,7 @@ static void compare_haystack_to_needle(bool sizeKnown, int size,
       if (size > (isU ? 6 : 3)) {
         if (doEarlyBailout) {
           __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
+          __ andq(eq_mask, rTmp);
           __ testl(eq_mask, eq_mask);
           __ je(noMatch);
         }
@@ -550,19 +560,6 @@ static void compare_haystack_to_needle(bool sizeKnown, int size,
       }
     }
   }
-
-  // Create initial mask to ensure in range
-  // rTmp = ((1 << (n - k)) << 1) - 1
-  // Creates a mask of (n - k) ones.  This prevents
-  // recognizing any false-positives past the end of
-  // the valid haystack.
-  __ movq(eq_mask, 2);  // pre-shift by 1
-  __ movq(rTmp, r10);   // Assumes r10 has n - k
-  __ xchgq(rTmp, rcx);
-  __ shlq(eq_mask);
-  __ decrementq(eq_mask);
-  __ xchgq(rTmp, rcx);
-  __ movq(rTmp, eq_mask);
 
   __ vpmovmskb(eq_mask, result, Assembler::AVX_256bit);
   __ andq(eq_mask, rTmp);
@@ -1153,23 +1150,13 @@ void StubGenerator::generate_string_indexof_stubs(address *fnptrs, StrIntrinsicN
         __ leaq(haystack, Address(rsp, r8, Address::times_1));
       }
 
-      // Set up accumulation mask
-      // __ movq(r8, -1);
-
-      // Adjust for validity comparison
-      __ subq(haystack_len, needle_len);
-
-      // Create initial mask to ensure in range
-      // r8 = ((1 << (n - k)) << 1) - 1
-      // Creates a mask of (n - k) ones.  This prevents
+      // Creates a mask of (n - k + 1) ones.  This prevents
       // recognizing any false-positives past the end of
       // the valid haystack.
-      __ movq(r8, 2);  // pre-shift by 1
-      assert(needle_len == rcx, "Bad register");
-      __ xchgq(haystack_len, needle_len);
-      __ shlq(r8);
-      __ decrementq(r8);
-      __ xchgq(haystack_len, needle_len);
+      __ movq(r8, -1);
+      __ subq(haystack_len, needle_len);
+      __ incq(haystack_len);
+      __ bzhiq(r8, r8, haystack_len);
 
       for (int size = 1; size <= OPT_NEEDLE_SIZE_MAX; size++) {
         // Broadcast next needle byte into ymm register
