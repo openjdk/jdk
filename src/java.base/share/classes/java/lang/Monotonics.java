@@ -82,7 +82,8 @@ public final class Monotonics {
      * <p>
      * The returned {@code Supplier} is equivalent to the following supplier:
      * {@snippet lang=java :
-     * () -> Monotonic.<V>of().computeIfAbsent(supplier);
+     * Supplier<V> memoized = () ->
+     *         Monotonic.<V>of().computeIfAbsent(supplier);
      * }
      * except it promises the provided {@code supplier} is invoked once even
      * though the returned Supplier is invoked simultaneously by several threads.
@@ -102,20 +103,22 @@ public final class Monotonics {
      * invoking the provided {@code mapper} at most once per index}
      * <p>
      * The returned {@code IntFunction} is equivalent to the following supplier:
-     * {@snippet lang=java :
-     * index -> computeIfAbsent(Monotonic.<V>ofList(size), index, mapper);
-     * }
+     * {@snippet lang = java:
+     * IntFunction<R> memoized = index ->
+     *         computeIfAbsent(Monotonic.<R>ofList(size), index, mapper);
+     *}
      * except it promises the provided {@code mapper} is invoked only once per index
      * even though the returned IntFunction is invoked simultaneously by several threads
      * using the same index.
      *
-     * @param size       the size of the backing monotonic list
-     * @param mapper     to be used for computing values
-     * @param <V>        the value type for the Monotonic elements in the backing list
+     * @param size   the size of the backing monotonic list
+     * @param mapper to be used for computing values
+     * @param <R>    the type of the result of the function (and the value type for the
+     *               Monotonic elements in the backing list)
      * @see Monotonic#ofList(int)
      */
-    public static <V> IntFunction<V> asMemoized(int size,
-                                                IntFunction<? extends V> mapper) {
+    public static <R> IntFunction<R> asMemoized(int size,
+                                                IntFunction<? extends R> mapper) {
         Objects.requireNonNull(mapper);
         return MonotonicList.asMemoized(size, mapper);
     }
@@ -126,21 +129,25 @@ public final class Monotonics {
      * is obtained by invoking the provided {@code mapper} at most once per key}
      * <p>
      * The returned {@code Function} is equivalent to the following supplier:
-     * {@snippet lang=java :
-     * key -> computeIfAbsent(Monotonic.<K, V>ofMap(keys), key, mapper);
-     * }
+     * {@snippet lang = java:
+     * Function<T, R> memoized =
+     *         key -> computeIfAbsent(Monotonic.<T, R>ofMap(keys), key, mapper);
+     *}
      * except it promises the provided {@code mapper} is invoked only once per index
      * even though the returned IntFunction is invoked simultaneously by several threads
      * using the same index.
      *
-     * @param keys       the keys in the backing map
+     * @param keys       the keys in the backing map (enumerating all the possible
+     *                   input values to the returned function)
      * @param mapper     to be used for computing values
-     * @param <K>        the type of keys maintained by the backing map
-     * @param <V>        the value type for the Monotonic values in the backing map
+     * @param <T>        the type of the input to the function (and keys maintained by
+     *                   the backing map)
+     * @param <R>        the type of the result of the function (and the Monotonic values
+     *                   in the backing map)
      * @see Monotonic#ofMap(Collection)
      */
-    public static <K, V> Function<K, V> asMemoized(Collection<? extends K> keys,
-                                                   Function<? super K, ? extends V> mapper) {
+    public static <T, R> Function<T, R> asMemoized(Collection<? extends T> keys,
+                                                   Function<? super T, ? extends R> mapper) {
         Objects.requireNonNull(keys);
         Objects.requireNonNull(mapper);
         return MonotonicMap.asMemoized(keys, mapper);
