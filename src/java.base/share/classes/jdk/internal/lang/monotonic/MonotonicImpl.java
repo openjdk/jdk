@@ -57,7 +57,21 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     @ForceInline
     @Override
     public V get() {
-        return computeIfAbsent(this::throwNoSuchElementException);
+        // Optimistically try plain semantics first
+        Object v = value;
+        if (v != null) {
+            // If we happen to see a non-null value under
+            // plain semantics, we know a value is present.
+            // The non-null value could represent `null` or a value of type `V`
+            return toV(v);
+        }
+        // Now, fall back to volatile semantics.
+        v = valueVolatile();
+        if (v != null) {
+            // If we see a non-null value, we know a value is present.
+            return toV(v);
+        }
+        throw new NoSuchElementException();
     }
 
     @ForceInline
@@ -134,10 +148,6 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     private V caeWitness(V newValue) {
         Object witness = caeValue(toObject(newValue));
         return (V) (witness == null ? newValue : witness);
-    }
-
-    private V throwNoSuchElementException() {
-         throw new NoSuchElementException();
     }
 
     // Factories
