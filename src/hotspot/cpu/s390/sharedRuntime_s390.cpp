@@ -414,18 +414,10 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, RegisterSet reg
 
   for (int i = 0; i < vregstosave_num; i++) {
     int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
-    //int reg_type = RegisterSaver_LiveVRegs[i].reg_type;
 
     __ z_vst(as_VectorRegister(reg_num), Address(Z_SP, offset));
 
-    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2),
-        RegisterSaver_LiveVRegs[i].vmreg);
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + half_reg_size ) >> 2),
-        RegisterSaver_LiveVRegs[i].vmreg->next());
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 2)) >> 2),
-        RegisterSaver_LiveVRegs[i].vmreg->next(2));
-    map->set_callee_saved(VMRegImpl::stack2reg((offset + (half_reg_size * 3)) >> 2),
-        RegisterSaver_LiveVRegs[i].vmreg->next(3));
+    map->set_callee_saved(VMRegImpl::stack2reg(offset>>2), RegisterSaver_LiveVRegs[i].vmreg);
     offset += v_reg_size;
   }
 
@@ -578,7 +570,6 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, RegisterSet reg
 
   for (int i = 0; i < vregstosave_num; i++) {
     int reg_num  = RegisterSaver_LiveVRegs[i].reg_num;
-    //int reg_type = RegisterSaver_LiveVRegs[i].reg_type;
 
     __ z_vl(as_VectorRegister(reg_num), Address(Z_SP, offset));
 

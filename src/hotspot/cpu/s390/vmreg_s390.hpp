@@ -42,33 +42,22 @@ inline bool is_VectorRegister() {
 
 inline Register as_Register() {
   assert(is_Register() && is_even(value()), "even-aligned GPR name");
-  return ::as_Register(value() / Register::max_slots_per_register);
+  return ::as_Register(value() >> 1);
 }
 
 inline FloatRegister as_FloatRegister() {
   assert(is_FloatRegister() && is_even(value()), "must be");
-  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr)
-          / FloatRegister::max_slots_per_register);
+  return ::as_FloatRegister((value() - ConcreteRegisterImpl::max_gpr) >> 1);
 }
 
 inline VectorRegister as_VectorRegister() {
-  assert(is_VectorRegister()
-         && (value() % VectorRegister::max_slots_per_register == 0), "must be");
-  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr)
-          / VectorRegister::max_slots_per_register);
+  assert(is_VectorRegister(), "must be");
+  return ::as_VectorRegister((value() - ConcreteRegisterImpl::max_fpr));
 }
 
 inline bool is_concrete() {
   assert(is_reg(), "must be");
-  if (is_FloatRegister()) {
-    int base = value() - ConcreteRegisterImpl::max_gpr;
-    return (base % FloatRegister::max_slots_per_register) == 0;
-  } else if (is_VectorRegister()) {
-    int base = value() - ConcreteRegisterImpl::max_fpr;
-    return (base % VectorRegister::max_slots_per_register) == 0;
-  } else {
-    return is_even(value());
-  }
+  return is_even(value());
 }
 
 #endif // CPU_S390_VMREG_S390_HPP

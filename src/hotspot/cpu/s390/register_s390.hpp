@@ -64,7 +64,6 @@ class Register {
 public:
   enum {
     number_of_registers     = 16,
-    max_slots_per_register  = 2,
     number_of_arg_registers = 5
   };
 
@@ -171,7 +170,6 @@ class FloatRegister {
 public:
   enum {
     number_of_registers     = 16,
-    max_slots_per_register  = 2,
     number_of_arg_registers = 4
   };
 
@@ -289,7 +287,6 @@ class VectorRegister {
 public:
   enum {
     number_of_registers     = 32,
-    max_slots_per_register  = 4,
     number_of_arg_registers = 0
   };
 
@@ -387,9 +384,9 @@ constexpr VectorRegister Z_V31 = as_VectorRegister(31);
 class ConcreteRegisterImpl : public AbstractRegisterImpl {
  public:
   enum {
-    max_gpr = Register::number_of_registers * Register::max_slots_per_register,
-    max_fpr = max_gpr + FloatRegister::number_of_registers * FloatRegister::max_slots_per_register,
-    max_vr  = max_fpr + VectorRegister::number_of_registers * VectorRegister::max_slots_per_register,
+    max_gpr = Register::number_of_registers * 2,
+    max_fpr = max_gpr + FloatRegister::number_of_registers * 2,
+    max_vr  = max_fpr + VectorRegister::number_of_registers,
 
     // A big enough number for C2: all the registers plus flags
     // This number must be large enough to cover REG_COUNT (defined by c2) registers.
