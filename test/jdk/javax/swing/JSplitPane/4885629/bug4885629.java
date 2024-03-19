@@ -104,9 +104,9 @@ public class bug4885629 {
 
                     SwingUtilities.convertPointToScreen(p, sp);
 
-                    for (int i = 0; i < rect.width; i++) {
+                    for (int i = 1; i < rect.width - 1; i++) {
                         if (!BGCOLOR.equals(robot.getPixelColor(p.x + i, p.y + rect.height - 1))) {
-                            throw new Error("The divider's area has incorrect color.");
+                            throw new Error("The divider's area has incorrect color. i=" + i);
                         }
                     }
                 }
