@@ -67,19 +67,19 @@ class os::win32 {
   static bool   is_windows_server_2022_or_greater();
   static DWORD  system_logical_processor_count();
   static int windows_major_version() {
-    initialize_windows_version();
+    assert(_major_version > 0, "windows version not initialized.");
     return _major_version;
   }
   static int windows_minor_version() {
-    initialize_windows_version();
+    assert(_major_version > 0, "windows version not initialized.");
     return _minor_version;
   }
   static int windows_build_number() {
-    initialize_windows_version();
+    assert(_major_version > 0, "windows version not initialized.");
     return _build_number;
   }
   static int windows_build_minor() {
-    initialize_windows_version();
+    assert(_major_version > 0, "windows version not initialized.");
     return _build_minor;
   }
 
