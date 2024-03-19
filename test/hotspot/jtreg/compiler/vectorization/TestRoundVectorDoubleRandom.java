@@ -90,77 +90,77 @@ public class TestRoundVectorDoubleRandom {
     }
 
     int errn = 0;
-    // a double precise float point is composed of 3 parts: sign/e(exponent)/f(signicand)
-    // e (exponent) part of a float value
-    final int eShift = 52;
-    final int eWidth = 11;
-    final int eBound = 1 << eWidth;
-    // f (significant) part of a float value
-    final int fWidth = eShift;
-    final long fBound = 1L << fWidth;
-    final int fNum = 256;
+    // a double precise float point is composed of 3 parts: sign/exponent/signicand
+    // exponent part of a float value
+    final int exponentShift = 52;
+    final int exponentWidth = 11;
+    final int exponentBound = 1 << exponentWidth;
+    // significant part of a float value
+    final int signicandWidth = exponentShift;
+    final long signicandBound = 1L << signicandWidth;
+    final int signicandNum = 256;
 
-    // prepare for data of f (i.e. significand part)
-    long fis[] = new long[fNum];
-    int fidx = 0;
-    for (; fidx < fWidth; fidx++) {
-      fis[fidx] = 1L << fidx;
+    // prepare for data of significand part
+    long signicandValues[] = new long[signicandNum];
+    int signicandIdx = 0;
+    for (; signicandIdx < signicandWidth; signicandIdx++) {
+      signicandValues[signicandIdx] = 1L << signicandIdx;
     }
-    for (; fidx < fNum; fidx++) {
-      fis[fidx] = rand.nextLong(fBound);
+    for (; signicandIdx < signicandNum; signicandIdx++) {
+      signicandValues[signicandIdx] = rand.nextLong(signicandBound);
     }
-    fis[rand.nextInt(fNum)] = 0;
+    signicandValues[rand.nextInt(signicandNum)] = 0;
 
     // generate input arrays for testing, then run tests & verify results
 
     // generate input arrays by combining different parts
-    for (long fi : fis) {
+    for (long sv : signicandValues) {
       // generate test input by combining different parts:
-      //   previously generated f values,
-      //   random value in e (i.e. exponent) range,
-      //   both positive and negative of previous combined values (e+f)
-      final int eStart = rand.nextInt(9);
-      final int eStep = (1 << 3) + rand.nextInt(3);
+      //   previously generated significand values,
+      //   random value in exponent range,
+      //   both positive and negative of previous combined values (exponent+significand)
+      final int exponentStart = rand.nextInt(9);
+      final int exponentStep = (1 << 3) + rand.nextInt(3);
       // Here, we could have iterated the whole range of exponent values, but it would
       // take more time to run the test, so just randomly choose some of exponent values.
-      int ei = eStart;
-      int eiIdx = 0;
-      for (; ei < eBound; ei += eStep) {
-        eiIdx = ei/eStep;
-        // combine e and f
-        long bits = ((long)ei << eShift) + fi;
-        // combine sign(+/-) with e and f
+      int ev = exponentStart;
+      int inputIdx = 0;
+      for (; ev < exponentBound; ev += exponentStep) {
+        inputIdx = ev/exponentStep;
+        // combine exponent and significand
+        long bits = ((long)ev << exponentShift) + sv;
+        // combine sign(+/-) with exponent and significand
         // positive values
-        input[eiIdx*2] = Double.longBitsToDouble(bits);
+        input[inputIdx*2] = Double.longBitsToDouble(bits);
         // negative values
         bits = bits | (1L << 63);
-        input[eiIdx*2+1] = Double.longBitsToDouble(bits);
+        input[inputIdx*2+1] = Double.longBitsToDouble(bits);
       }
       // add specific test cases where it looks like in binary format:
       //   s111 1111 1111 xxxx xxxx xxxx xxxx xxxx ...
       // these are for the NaN and Inf.
-      eiIdx = eiIdx*2+2;
-      long bits = (1L << eWidth) - 1L;
-      bits <<= eShift;
-      input[eiIdx++] = Double.longBitsToDouble(bits);
+      inputIdx = inputIdx*2+2;
+      long bits = (1L << exponentWidth) - 1L;
+      bits <<= exponentShift;
+      input[inputIdx++] = Double.longBitsToDouble(bits);
       bits = bits | (1L << 63);
-      input[eiIdx] = Double.longBitsToDouble(bits);
+      input[inputIdx] = Double.longBitsToDouble(bits);
 
       // run tests
       test_round(res, input);
 
       // verify results
-      ei = eStart;
-      eiIdx = ei/eStep;
-      for (; ei < eBound; ei += eStep) {
+      ev = exponentStart;
+      inputIdx = ev/exponentStep;
+      for (; ev < exponentBound; ev += exponentStep) {
         for (int sign = 0; sign < 2; sign++) {
-          int idx = eiIdx * 2 + sign;
+          int idx = inputIdx * 2 + sign;
           if (res[idx] != golden_round(input[idx])) {
             errn++;
             System.err.println("round error, input: " + input[idx] +
                                ", res: " + res[idx] + "expected: " + golden_round(input[idx]) +
                                ", input hex: " + Double.doubleToLongBits(input[idx]) +
-                               ", fi: " + fi + ", ei: " + ei + ", sign: " + sign);
+                               ", fi: " + sv + ", ei: " + ev + ", sign: " + sign);
           }
         }
       }

@@ -92,60 +92,60 @@ public class TestRoundVectorFloatRandom {
     }
 
     int errn = 0;
-    // a single precise float point is composed of 3 parts: sign/e(exponent)/f(signicand)
-    // e (exponent) part of a float value
-    final int eStart = 0;
-    final int eShift = 23;
-    final int eWidth = 8;
-    final int eBound = 1 << eWidth;
-    // f (significant) part of a float value
-    final int fWidth = eShift;
-    final int fBound = 1 << fWidth;
-    final int fNum = 128;
+    // a single precise float point is composed of 3 parts: sign/exponent/signicand
+    // exponent part of a float value
+    final int exponentStart = 0;
+    final int exponentShift = 23;
+    final int exponentWidth = 8;
+    final int exponentBound = 1 << exponentWidth;
+    // significant part of a float value
+    final int signicandWidth = exponentShift;
+    final int signicandBound = 1 << signicandWidth;
+    final int signicandNum = 128;
 
-    // prepare for data of f (i.e. significand part)
-    int fis[] = new int[fNum];
-    int fidx = 0;
-    for (; fidx < fWidth; fidx++) {
-      fis[fidx] = 1 << fidx;
+    // prepare for data of significand part
+    int signicandValues[] = new int[signicandNum];
+    int signicandIdx = 0;
+    for (; signicandIdx < signicandWidth; signicandIdx++) {
+      signicandValues[signicandIdx] = 1 << signicandIdx;
     }
-    for (; fidx < fNum; fidx++) {
-      fis[fidx] = rand.nextInt(fBound);
+    for (; signicandIdx < signicandNum; signicandIdx++) {
+      signicandValues[signicandIdx] = rand.nextInt(signicandBound);
     }
-    fis[rand.nextInt(fNum)] = 0;
+    signicandValues[rand.nextInt(signicandNum)] = 0;
 
     // generate input arrays for testing, then run tests & verify results
 
     // generate input arrays by combining different parts
-    for (int fi : fis) {
+    for (int sv : signicandValues) {
       // generate test input by combining different parts:
-      //   previously generated f values,
-      //   all values in e (i.e. exponent) range,
-      //   both positive and negative of previous combined values (e+f)
-      for (int ei = eStart; ei < eBound; ei++) {
-        // combine e and f
-        int bits = (ei << eShift) + fi;
-        // combine sign(+/-) with e and f
+      //   previously generated significand values,
+      //   all values in exponent range,
+      //   both positive and negative of previous combined values (exponent+significand)
+      for (int ev = exponentStart; ev < exponentBound; ev++) {
+        // combine exponent and significand
+        int bits = (ev << exponentShift) + sv;
+        // combine sign(+/-) with exponent and significand
         // positive values
-        input[ei*2] = Float.intBitsToFloat(bits);
+        input[ev*2] = Float.intBitsToFloat(bits);
         // negative values
         bits = bits | (1 << 31);
-        input[ei*2+1] = Float.intBitsToFloat(bits);
+        input[ev*2+1] = Float.intBitsToFloat(bits);
       }
 
       // run tests
       test_round(res, input);
 
       // verify results
-      for (int ei = eStart; ei < eBound; ei++) {
+      for (int ev = exponentStart; ev < exponentBound; ev++) {
         for (int sign = 0; sign < 2; sign++) {
-          int idx = ei * 2 + sign;
+          int idx = ev * 2 + sign;
           if (res[idx] != golden_round(input[idx])) {
             errn++;
             System.err.println("round error, input: " + input[idx] +
                                ", res: " + res[idx] + "expected: " + golden_round(input[idx]) +
                                ", input hex: " + Float.floatToIntBits(input[idx]) +
-                               ", fi: " + fi + ", ei: " + ei + ", sign: " + sign);
+                               ", fi: " + sv + ", ei: " + ev + ", sign: " + sign);
           }
         }
       }
