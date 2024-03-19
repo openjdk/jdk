@@ -102,14 +102,16 @@ public final class Monotonics {
      * of {@code size} empty monotonic elements where the memoized values is obtained by
      * invoking the provided {@code mapper} at most once per index}
      * <p>
-     * The returned {@code IntFunction} is equivalent to the following supplier:
+     * The returned memoized {@linkplain  IntFunction} is equivalent to
+     * the following {@linkplain  IntFunction}:
+     *
      * {@snippet lang = java:
      * List<Monotonic<R>> list = Monotonic.ofList(size);
      * IntFunction<R> memoized = index -> computeIfAbsent(list, index, mapper);
      *}
      * except it promises the provided {@code mapper} is invoked only once per index
-     * even though the returned IntFunction is invoked simultaneously by several threads
-     * using the same index.
+     * even though the returned memoized IntFunction is invoked simultaneously by several
+     * threads using the same index.
      *
      * @param size   the size of the backing monotonic list
      * @param mapper to be used for computing values
@@ -128,17 +130,19 @@ public final class Monotonics {
      * with the {@code keys} and of empty monotonic elements where the memoized values
      * is obtained by invoking the provided {@code mapper} at most once per key}
      * <p>
-     * The returned {@code Function} is equivalent to the following supplier:
+     * The returned memoized {@linkplain Function} is equivalent to
+     * the following {@linkplain Function}:
+     *
      * {@snippet lang = java:
      * Map<T, Monotonic<R>> map = Monotonic.ofMap(keys);
      * Function<T, R> memoized = key -> computeIfAbsent(map, key, mapper);
      *}
-     * except it promises the provided {@code mapper} is invoked only once per index
-     * even though the returned IntFunction is invoked simultaneously by several threads
-     * using the same index.
+     * except it promises the provided {@code mapper} is invoked only once per key
+     * even though the returned memoized Function is invoked simultaneously by several
+     * threads using the same key.
      *
      * @param keys       the keys in the backing map (enumerating all the possible
-     *                   input values to the returned function)
+     *                   input values to the returned memoized function)
      * @param mapper     to be used for computing values
      * @param <T>        the type of the input to the function (and keys maintained by
      *                   the backing map)
