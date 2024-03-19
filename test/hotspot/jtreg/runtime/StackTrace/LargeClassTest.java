@@ -27,8 +27,7 @@
  * @enablePreview
  * @summary JVM crashes on stack trace for large number of methods.
  * @library /test/lib
- * @modules java.base/jdk.internal.org.objectweb.asm
- *          java.base/jdk.internal.misc
+ * @modules java.base/jdk.internal.misc
  * @run main LargeClassTest
  */
 
