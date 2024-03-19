@@ -65,7 +65,6 @@ public interface RSAPublicKey extends java.security.PublicKey, RSAKey
      * The default implementation returns {@code null}.
      *
      * @return {@inheritDoc java.security.AsymmetricKey}
-     * @since 11
      */
     @Override
     default AlgorithmParameterSpec getParams() {
