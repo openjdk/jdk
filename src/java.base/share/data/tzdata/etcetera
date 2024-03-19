@@ -28,7 +28,7 @@
 
 # These entries are for uses not otherwise covered by the tz database.
 # Their main practical use is for platforms like Android that lack
-# support for POSIX-style TZ strings.  On such platforms these entries
+# support for POSIX.1-2017-style TZ strings.  On such platforms these entries
 # can be useful if the timezone database is wrong or if a ship or
 # aircraft at sea is not in a timezone.
 

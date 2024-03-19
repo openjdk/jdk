@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, 2020, Red Hat Inc. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -27,6 +27,7 @@
 #include "precompiled.hpp"
 #include "asm/assembler.hpp"
 #include "asm/assembler.inline.hpp"
+#include "code/compiledIC.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/barrierSetAssembler.hpp"
@@ -48,6 +49,7 @@
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 #ifdef COMPILER2
 #include "opto/compile.hpp"
@@ -634,8 +636,8 @@ void MacroAssembler::unimplemented(const char* what) {
 }
 
 void MacroAssembler::emit_static_call_stub() {
-  IncompressibleRegion ir(this);  // Fixed length: see CompiledStaticCall::to_interp_stub_size().
-  // CompiledDirectStaticCall::set_to_interpreted knows the
+  IncompressibleRegion ir(this);  // Fixed length: see CompiledDirectCall::to_interp_stub_size().
+  // CompiledDirectCall::set_to_interpreted knows the
   // exact layout of this stub.
 
   mov_metadata(xmethod, (Metadata*)nullptr);
@@ -2542,7 +2544,7 @@ void MacroAssembler::lookup_interface_method(Register recv_klass,
 }
 
 // Look up the method for a megamorphic invokeinterface call in a single pass over itable:
-// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICHolder
+// - check recv_klass (actual object class) is a subtype of resolved_klass from CompiledICData
 // - find a holder_klass (class that implements the method) vtable offset and get the method from vtable by index
 // The target method is determined by <holder_klass, itable_index>.
 // The receiver klass is in recv_klass.
@@ -2725,27 +2727,36 @@ void MacroAssembler::safepoint_poll(Label& slow_path, bool at_return, bool acqui
 
 void MacroAssembler::cmpxchgptr(Register oldv, Register newv, Register addr, Register tmp,
                                 Label &succeed, Label *fail) {
-  assert_different_registers(addr, tmp);
-  assert_different_registers(newv, tmp);
-  assert_different_registers(oldv, tmp);
+  assert_different_registers(addr, tmp, t0);
+  assert_different_registers(newv, tmp, t0);
+  assert_different_registers(oldv, tmp, t0);
 
   // oldv holds comparison value
   // newv holds value to write in exchange
   // addr identifies memory word to compare against/update
-  Label retry_load, nope;
-  bind(retry_load);
-  // Load reserved from the memory location
-  load_reserved(tmp, addr, int64, Assembler::aqrl);
-  // Fail and exit if it is not what we expect
-  bne(tmp, oldv, nope);
-  // If the store conditional succeeds, tmp will be zero
-  store_conditional(tmp, newv, addr, int64, Assembler::rl);
-  beqz(tmp, succeed);
-  // Retry only when the store conditional failed
-  j(retry_load);
+  if (UseZacas) {
+    mv(tmp, oldv);
+    atomic_cas(tmp, newv, addr, Assembler::int64, Assembler::aq, Assembler::rl);
+    beq(tmp, oldv, succeed);
+  } else {
+    Label retry_load, nope;
+    bind(retry_load);
+    // Load reserved from the memory location
+    load_reserved(tmp, addr, int64, Assembler::aqrl);
+    // Fail and exit if it is not what we expect
+    bne(tmp, oldv, nope);
+    // If the store conditional succeeds, tmp will be zero
+    store_conditional(tmp, newv, addr, int64, Assembler::rl);
+    beqz(tmp, succeed);
+    // Retry only when the store conditional failed
+    j(retry_load);
 
-  bind(nope);
+    bind(nope);
+  }
+
+  // neither amocas nor lr/sc have an implied barrier in the failing case
   membar(AnyAny);
+
   mv(oldv, tmp);
   if (fail != nullptr) {
     j(*fail);
@@ -2771,7 +2782,7 @@ void MacroAssembler::load_reserved(Register dst,
       break;
     case uint32:
       lr_w(dst, addr, acquire);
-      zero_extend(t0, t0, 32);
+      zero_extend(dst, dst, 32);
       break;
     default:
       ShouldNotReachHere();
@@ -2819,7 +2830,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
   }
   sll(mask, mask, shift);
 
-  xori(not_mask, mask, -1);
+  notr(not_mask, mask);
 
   sll(expected, expected, shift);
   andr(expected, expected, mask);
@@ -2829,7 +2840,7 @@ void MacroAssembler::cmpxchg_narrow_value_helper(Register addr, Register expecte
 }
 
 // cmpxchg_narrow_value will kill t0, t1, expected, new_val and tmps.
-// It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w,
+// It's designed to implement compare and swap byte/boolean/char/short by lr.w/sc.w or amocas.w,
 // which are forced to work with 4-byte aligned address.
 void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
                                           Register new_val,
@@ -2844,14 +2855,29 @@ void MacroAssembler::cmpxchg_narrow_value(Register addr, Register expected,
   Label retry, fail, done;
 
   bind(retry);
-  lr_w(old, aligned_addr, acquire);
-  andr(tmp, old, mask);
-  bne(tmp, expected, fail);
 
-  andr(tmp, old, not_mask);
-  orr(tmp, tmp, new_val);
-  sc_w(tmp, tmp, aligned_addr, release);
-  bnez(tmp, retry);
+  if (UseZacas) {
+    lw(old, aligned_addr);
+
+    // if old & mask != expected
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+
+    atomic_cas(old, tmp, aligned_addr, operand_size::int32, acquire, release);
+    bne(tmp, old, retry);
+  } else {
+    lr_w(old, aligned_addr, acquire);
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+    sc_w(tmp, tmp, aligned_addr, release);
+    bnez(tmp, retry);
+  }
 
   if (result_as_bool) {
     mv(result, 1);
@@ -2891,14 +2917,28 @@ void MacroAssembler::weak_cmpxchg_narrow_value(Register addr, Register expected,
 
   Label fail, done;
 
-  lr_w(old, aligned_addr, acquire);
-  andr(tmp, old, mask);
-  bne(tmp, expected, fail);
+  if (UseZacas) {
+    lw(old, aligned_addr);
 
-  andr(tmp, old, not_mask);
-  orr(tmp, tmp, new_val);
-  sc_w(tmp, tmp, aligned_addr, release);
-  bnez(tmp, fail);
+    // if old & mask != expected
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+
+    atomic_cas(tmp, new_val, addr, operand_size::int32, acquire, release);
+    bne(tmp, old, fail);
+  } else {
+    lr_w(old, aligned_addr, acquire);
+    andr(tmp, old, mask);
+    bne(tmp, expected, fail);
+
+    andr(tmp, old, not_mask);
+    orr(tmp, tmp, new_val);
+    sc_w(tmp, tmp, aligned_addr, release);
+    bnez(tmp, fail);
+  }
 
   // Success
   mv(result, 1);
@@ -2920,6 +2960,19 @@ void MacroAssembler::cmpxchg(Register addr, Register expected,
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
+
+  if (UseZacas) {
+    if (result_as_bool) {
+      mv(t0, expected);
+      atomic_cas(t0, new_val, addr, size, acquire, release);
+      xorr(t0, t0, expected);
+      seqz(result, t0);
+    } else {
+      mv(result, expected);
+      atomic_cas(result, new_val, addr, size, acquire, release);
+    }
+    return;
+  }
 
   Label retry_load, done, ne_done;
   bind(retry_load);
@@ -2952,6 +3005,11 @@ void MacroAssembler::cmpxchg_weak(Register addr, Register expected,
                                   enum operand_size size,
                                   Assembler::Aqrl acquire, Assembler::Aqrl release,
                                   Register result) {
+  if (UseZacas) {
+    cmpxchg(addr, expected, new_val, size, acquire, release, result, true);
+    return;
+  }
+
   assert_different_registers(addr, t0);
   assert_different_registers(expected, t0);
   assert_different_registers(new_val, t0);
@@ -3017,6 +3075,89 @@ ATOMIC_XCHGU(xchgwu, xchgw)
 ATOMIC_XCHGU(xchgalwu, xchgalw)
 
 #undef ATOMIC_XCHGU
+
+#define ATOMIC_CAS(OP, AOP, ACQUIRE, RELEASE)                                        \
+void MacroAssembler::atomic_##OP(Register prev, Register newv, Register addr) {      \
+  assert(UseZacas, "invariant");                                                     \
+  prev = prev->is_valid() ? prev : zr;                                               \
+  AOP(prev, addr, newv, (Assembler::Aqrl)(ACQUIRE | RELEASE));                       \
+  return;                                                                            \
+}
+
+ATOMIC_CAS(cas, amocas_d, Assembler::relaxed, Assembler::relaxed)
+ATOMIC_CAS(casw, amocas_w, Assembler::relaxed, Assembler::relaxed)
+ATOMIC_CAS(casl, amocas_d, Assembler::relaxed, Assembler::rl)
+ATOMIC_CAS(caslw, amocas_w, Assembler::relaxed, Assembler::rl)
+ATOMIC_CAS(casal, amocas_d, Assembler::aq, Assembler::rl)
+ATOMIC_CAS(casalw, amocas_w, Assembler::aq, Assembler::rl)
+
+#undef ATOMIC_CAS
+
+#define ATOMIC_CASU(OP1, OP2)                                                        \
+void MacroAssembler::atomic_##OP1(Register prev, Register newv, Register addr) {     \
+  atomic_##OP2(prev, newv, addr);                                                    \
+  zero_extend(prev, prev, 32);                                                       \
+  return;                                                                            \
+}
+
+ATOMIC_CASU(caswu, casw)
+ATOMIC_CASU(caslwu, caslw)
+ATOMIC_CASU(casalwu, casalw)
+
+#undef ATOMIC_CASU
+
+void MacroAssembler::atomic_cas(
+    Register prev, Register newv, Register addr, enum operand_size size, Assembler::Aqrl acquire, Assembler::Aqrl release) {
+  switch (size) {
+    case int64:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_cas(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_casl(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casal(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    case int32:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_casw(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_caslw(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casalw(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    case uint32:
+      switch ((Assembler::Aqrl)(acquire | release)) {
+        case Assembler::relaxed:
+          atomic_caswu(prev, newv, addr);
+          break;
+        case Assembler::rl:
+          atomic_caslwu(prev, newv, addr);
+          break;
+        case Assembler::aqrl:
+          atomic_casalwu(prev, newv, addr);
+          break;
+        default:
+          ShouldNotReachHere();
+      }
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
 
 void MacroAssembler::far_jump(const Address &entry, Register tmp) {
   assert(ReservedCodeCacheSize < 4*G, "branch out of range");
@@ -3401,6 +3542,48 @@ address MacroAssembler::ic_call(address entry, jint method_index) {
   movptr(t1, (address)Universe::non_oop_word());
   assert_cond(entry != nullptr);
   return trampoline_call(Address(entry, rh));
+}
+
+int MacroAssembler::ic_check_size() {
+  // No compressed
+  return (NativeInstruction::instruction_size * (2 /* 2 loads */ + 1 /* branch */)) +
+          far_branch_size();
+}
+
+int MacroAssembler::ic_check(int end_alignment) {
+  IncompressibleRegion ir(this);
+  Register receiver = j_rarg0;
+  Register data = t1;
+
+  Register tmp1 = t0; // t0 always scratch
+  // t2 is saved on call, thus should have been saved before this check.
+  // Hence we can clobber it.
+  Register tmp2 = t2;
+
+  // The UEP of a code blob ensures that the VEP is padded. However, the padding of the UEP is placed
+  // before the inline cache check, so we don't have to execute any nop instructions when dispatching
+  // through the UEP, yet we can ensure that the VEP is aligned appropriately. That's why we align
+  // before the inline cache check here, and not after
+  align(end_alignment, ic_check_size());
+  int uep_offset = offset();
+
+  if (UseCompressedClassPointers) {
+    lwu(tmp1, Address(receiver, oopDesc::klass_offset_in_bytes()));
+    lwu(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  } else {
+    ld(tmp1,  Address(receiver, oopDesc::klass_offset_in_bytes()));
+    ld(tmp2, Address(data, CompiledICData::speculated_klass_offset()));
+  }
+
+  Label ic_hit;
+  beq(tmp1, tmp2, ic_hit);
+  // Note, far_jump is not fixed size.
+  // Is this ever generates a movptr alignment/size will be off.
+  far_jump(RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
+  bind(ic_hit);
+
+  assert((offset() % end_alignment) == 0, "Misaligned verified entry point.");
+  return uep_offset;
 }
 
 // Emit a trampoline stub for a call to a target which is too far away.
@@ -4342,6 +4525,57 @@ void MacroAssembler::zero_dcache_blocks(Register base, Register cnt, Register tm
   bge(cnt, tmp1, loop);
 }
 
+// java.lang.Math.round(float a)
+// Returns the closest int to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_float(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, jint_cast(0.5f));
+  fmv_w_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_s(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5f) rounded down towards negative infinity
+  //   Adding 0.5f to some floats exceeds the precision limits for a float and rounding takes place.
+  //   RDN is required for fadd_s, RNE gives incorrect results:
+  //     --------------------------------------------------------------------
+  //     fadd.s rne (src + 0.5f): src = 8388609.000000  ftmp = 8388610.000000
+  //     fcvt.w.s rdn: ftmp = 8388610.000000 dst = 8388610
+  //     --------------------------------------------------------------------
+  //     fadd.s rdn (src + 0.5f): src = 8388609.000000  ftmp = 8388609.000000
+  //     fcvt.w.s rdn: ftmp = 8388609.000000 dst = 8388609
+  //     --------------------------------------------------------------------
+  fadd_s(ftmp, src, ftmp, RoundingMode::rdn);
+  fcvt_w_s(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
+}
+
+// java.lang.Math.round(double a)
+// Returns the closest long to the argument, with ties rounding to positive infinity.
+void MacroAssembler::java_round_double(Register dst, FloatRegister src, FloatRegister ftmp) {
+  // this instructions calling sequence provides performance improvement on all tested devices;
+  // don't change it without re-verification
+  Label done;
+  mv(t0, julong_cast(0.5));
+  fmv_d_x(ftmp, t0);
+
+  // dst = 0 if NaN
+  feq_d(t0, src, src); // replacing fclass with feq as performance optimization
+  mv(dst, zr);
+  beqz(t0, done);
+
+  // dst = (src + 0.5) rounded down towards negative infinity
+  fadd_d(ftmp, src, ftmp, RoundingMode::rdn); // RDN is required here otherwise some inputs produce incorrect results
+  fcvt_l_d(dst, ftmp, RoundingMode::rdn);
+
+  bind(done);
+}
+
 #define FCVT_SAFE(FLOATCVT, FLOATSIG)                                                     \
 void MacroAssembler::FLOATCVT##_safe(Register dst, FloatRegister src, Register tmp) {     \
   Label done;                                                                             \
@@ -4488,41 +4722,54 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
 }
 
 void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
-  if (UseZba && bits == 32) {
-    zext_w(dst, src);
-    return;
+  switch (bits) {
+    case 32:
+      if (UseZba) {
+        zext_w(dst, src);
+        return;
+      }
+      break;
+    case 16:
+      if (UseZbb) {
+        zext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        zext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (UseZbb && bits == 16) {
-    zext_h(dst, src);
-    return;
-  }
-
-  if (bits == 8) {
-    zext_b(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srli(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srli(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::sign_extend(Register dst, Register src, int bits) {
-  if (UseZbb) {
-    if (bits == 8) {
-      sext_b(dst, src);
+  switch (bits) {
+    case 32:
+      sext_w(dst, src);
       return;
-    } else if (bits == 16) {
-      sext_h(dst, src);
-      return;
-    }
+    case 16:
+      if (UseZbb) {
+        sext_h(dst, src);
+        return;
+      }
+      break;
+    case 8:
+      if (UseZbb) {
+        sext_b(dst, src);
+        return;
+      }
+      break;
+    default:
+      break;
   }
-
-  if (bits == 32) {
-    sext_w(dst, src);
-  } else {
-    slli(dst, src, XLEN - bits);
-    srai(dst, dst, XLEN - bits);
-  }
+  slli(dst, src, XLEN - bits);
+  srai(dst, dst, XLEN - bits);
 }
 
 void MacroAssembler::cmp_x2i(Register dst, Register src1, Register src2,
@@ -4701,9 +4948,9 @@ void MacroAssembler::object_move(OopMap* map,
 
 // A float arg may have to do float reg int reg conversion
 void MacroAssembler::float_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       lwu(tmp, Address(fp, reg2offset_in(src.first())));
@@ -4745,9 +4992,9 @@ void MacroAssembler::long_move(VMRegPair src, VMRegPair dst, Register tmp) {
 
 // A double move
 void MacroAssembler::double_move(VMRegPair src, VMRegPair dst, Register tmp) {
-  assert(src.first()->is_stack() && dst.first()->is_stack() ||
-         src.first()->is_reg() && dst.first()->is_reg() ||
-         src.first()->is_stack() && dst.first()->is_reg(), "Unexpected error");
+  assert((src.first()->is_stack() && dst.first()->is_stack()) ||
+         (src.first()->is_reg() && dst.first()->is_reg()) ||
+         (src.first()->is_stack() && dst.first()->is_reg()), "Unexpected error");
   if (src.first()->is_stack()) {
     if (dst.first()->is_stack()) {
       ld(tmp, Address(fp, reg2offset_in(src.first())));
@@ -4796,98 +5043,124 @@ void MacroAssembler::test_bit(Register Rd, Register Rs, uint32_t bit_pos) {
 }
 
 // Implements lightweight-locking.
-// Branches to slow upon failure to lock the object.
-// Falls through upon success.
 //
 //  - obj: the object to be locked
-//  - hdr: the header, already loaded from obj, will be destroyed
-//  - tmp1, tmp2: temporary registers, will be destroyed
-void MacroAssembler::lightweight_lock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+//  - tmp1, tmp2, tmp3: temporary registers, will be destroyed
+//  - slow: branched to if locking fails
+void MacroAssembler::lightweight_lock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
-  // Check if we would have space on lock-stack for the object.
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  mv(tmp2, (unsigned)LockStack::end_offset());
-  bge(tmp1, tmp2, slow, /* is_far */ true);
+  Label push;
+  const Register top = tmp1;
+  const Register mark = tmp2;
+  const Register t = tmp3;
 
-  // Load (object->mark() | 1) into hdr
-  ori(hdr, hdr, markWord::unlocked_value);
-  // Clear lock-bits, into tmp2
-  xori(tmp2, hdr, markWord::unlocked_value);
+  // Preload the markWord. It is important that this is the first
+  // instruction emitted as it is part of C1's null check semantics.
+  ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
 
-  // Try to swing header from unlocked to locked
-  Label success;
-  cmpxchgptr(hdr, tmp2, obj, tmp1, success, &slow);
-  bind(success);
+  // Check if the lock-stack is full.
+  lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  mv(t, (unsigned)LockStack::end_offset());
+  bge(top, t, slow, /* is_far */ true);
 
-  // After successful lock, push object on lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  add(tmp2, xthread, tmp1);
-  sd(obj, Address(tmp2, 0));
-  addw(tmp1, tmp1, oopSize);
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+  // Check for recursion.
+  add(t, xthread, top);
+  ld(t, Address(t, -oopSize));
+  beq(obj, t, push);
+
+  // Check header for monitor (0b10).
+  test_bit(t, mark, exact_log2(markWord::monitor_value));
+  bnez(t, slow, /* is_far */ true);
+
+  // Try to lock. Transition lock-bits 0b01 => 0b00
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid a la");
+  ori(mark, mark, markWord::unlocked_value);
+  xori(t, mark, markWord::unlocked_value);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
+          /*acquire*/ Assembler::aq, /*release*/ Assembler::relaxed, /*result*/ t);
+  bne(mark, t, slow, /* is_far */ true);
+
+  bind(push);
+  // After successful lock, push object on lock-stack.
+  add(t, xthread, top);
+  sd(obj, Address(t));
+  addw(top, top, oopSize);
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
 }
 
 // Implements ligthweight-unlocking.
-// Branches to slow upon failure.
-// Falls through upon success.
 //
 // - obj: the object to be unlocked
-// - hdr: the (pre-loaded) header of the object
-// - tmp1, tmp2: temporary registers
-void MacroAssembler::lightweight_unlock(Register obj, Register hdr, Register tmp1, Register tmp2, Label& slow) {
+// - tmp1, tmp2, tmp3: temporary registers
+// - slow: branched to if unlocking fails
+void MacroAssembler::lightweight_unlock(Register obj, Register tmp1, Register tmp2, Register tmp3, Label& slow) {
   assert(LockingMode == LM_LIGHTWEIGHT, "only used with new lightweight locking");
-  assert_different_registers(obj, hdr, tmp1, tmp2, t0);
+  assert_different_registers(obj, tmp1, tmp2, tmp3, t0);
 
 #ifdef ASSERT
   {
-    // The following checks rely on the fact that LockStack is only ever modified by
-    // its owning thread, even if the lock got inflated concurrently; removal of LockStack
-    // entries after inflation will happen delayed in that case.
-
     // Check for lock-stack underflow.
     Label stack_ok;
     lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
     mv(tmp2, (unsigned)LockStack::start_offset());
-    bgt(tmp1, tmp2, stack_ok);
+    bge(tmp1, tmp2, stack_ok);
     STOP("Lock-stack underflow");
     bind(stack_ok);
   }
-  {
-    // Check if the top of the lock-stack matches the unlocked object.
-    Label tos_ok;
-    subw(tmp1, tmp1, oopSize);
-    add(tmp1, xthread, tmp1);
-    ld(tmp1, Address(tmp1, 0));
-    beq(tmp1, obj, tos_ok);
-    STOP("Top of lock-stack does not match the unlocked object");
-    bind(tos_ok);
-  }
-  {
-    // Check that hdr is fast-locked.
-   Label hdr_ok;
-    andi(tmp1, hdr, markWord::lock_mask_in_place);
-    beqz(tmp1, hdr_ok);
-    STOP("Header is not fast-locked");
-    bind(hdr_ok);
-  }
 #endif
 
-  // Load the new header (unlocked) into tmp1
-  ori(tmp1, hdr, markWord::unlocked_value);
+  Label unlocked, push_and_slow;
+  const Register top = tmp1;
+  const Register mark = tmp2;
+  const Register t = tmp3;
 
-  // Try to swing header from locked to unlocked
-  Label success;
-  cmpxchgptr(hdr, tmp1, obj, tmp2, success, &slow);
-  bind(success);
+  // Check if obj is top of lock-stack.
+  lwu(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  subw(top, top, oopSize);
+  add(t, xthread, top);
+  ld(t, Address(t));
+  bne(obj, t, slow, /* is_far */ true);
 
-  // After successful unlock, pop object from lock-stack
-  lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
-  subw(tmp1, tmp1, oopSize);
+  // Pop lock-stack.
+  DEBUG_ONLY(add(t, xthread, top);)
+  DEBUG_ONLY(sd(zr, Address(t));)
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+
+  // Check if recursive.
+  add(t, xthread, top);
+  ld(t, Address(t, -oopSize));
+  beq(obj, t, unlocked);
+
+  // Not recursive. Check header for monitor (0b10).
+  ld(mark, Address(obj, oopDesc::mark_offset_in_bytes()));
+  test_bit(t, mark, exact_log2(markWord::monitor_value));
+  bnez(t, push_and_slow);
+
 #ifdef ASSERT
-  add(tmp2, xthread, tmp1);
-  sd(zr, Address(tmp2, 0));
+  // Check header not unlocked (0b01).
+  Label not_unlocked;
+  test_bit(t, mark, exact_log2(markWord::unlocked_value));
+  beqz(t, not_unlocked);
+  stop("lightweight_unlock already unlocked");
+  bind(not_unlocked);
 #endif
-  sw(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+
+  // Try to unlock. Transition lock bits 0b00 => 0b01
+  assert(oopDesc::mark_offset_in_bytes() == 0, "required to avoid lea");
+  ori(t, mark, markWord::unlocked_value);
+  cmpxchg(/*addr*/ obj, /*expected*/ mark, /*new*/ t, Assembler::int64,
+          /*acquire*/ Assembler::relaxed, /*release*/ Assembler::rl, /*result*/ t);
+  beq(mark, t, unlocked);
+
+  bind(push_and_slow);
+  // Restore lock-stack and handle the unlock in runtime.
+  DEBUG_ONLY(add(t, xthread, top);)
+  DEBUG_ONLY(sd(obj, Address(t));)
+  addw(top, top, oopSize);
+  sw(top, Address(xthread, JavaThread::lock_stack_top_offset()));
+  j(slow);
+
+  bind(unlocked);
 }

@@ -170,14 +170,25 @@ final class MemoryContext {
      *         if no source file was found for the given name
      */
     byte[] compileJavaFileByName(String name) {
+        // Initially, determine existing directory from class name.
+        // [pack$age . ] na$me [ $ enclo$ed [$ dee$per] ]
+        var lastDot = name.lastIndexOf(".");
+        var packageName = lastDot == -1 ? "" : name.substring(0, lastDot);
+        var packagePath = descriptor.sourceRootPath().resolve(packageName.replace('.', '/'));
+        // Trivial case: no matching directory exists
+        if (!Files.isDirectory(packagePath)) return null;
+
         // Determine source file from class name.
-        var firstDollarSign = name.indexOf('$'); // [package . ] name [ $ enclosed [$ deeper] ]
-        var packageAndClassName = firstDollarSign == -1 ? name : name.substring(0, firstDollarSign);
-        var path = packageAndClassName.replace('.', '/') + ".java";
-        var file = descriptor.sourceRootPath().resolve(path);
+        var candidate = name.substring(lastDot + 1, name.length()); // "na$me$enclo$ed$dee$per"
+        // For each `$` in the name try to find the first matching compilation unit.
+        while (candidate.contains("$")) {
+            if (Files.exists(packagePath.resolve(candidate + ".java"))) break;
+            candidate = candidate.substring(0, candidate.lastIndexOf("$"));
+        }
+        var file = packagePath.resolve(candidate + ".java");
 
         // Trivial case: no matching source file exists
-        if (Files.notExists(file)) return null;
+        if (!Files.exists(file)) return null;
 
         // Compile source file (unit) with similar options as the program.
         var opts = options.forSubsequentCompilations();

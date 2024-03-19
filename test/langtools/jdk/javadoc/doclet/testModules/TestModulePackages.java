@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,21 +151,33 @@ public class TestModulePackages extends JavadocTester {
         checkPackageRow("o", "p", 0, "package-summary-table package-summary-table-tab1", null, null, "&nbsp;");
         checkOutput("m/p/package-summary.html", true,
                 """
-                    <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;<a href="../module-summary.html">m</a></div>
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">m</a></li>
+                    <li><a href="package-summary.html" class="current-selection">p</a></li>
+                    </ol>
                     """);
         checkOutput("o/p/package-summary.html", true,
                 """
-                    <div class="sub-title"><span class="module-label-in-package">Module</span>&nbsp;<a href="../module-summary.html">o</a></div>
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">o</a></li>
+                    <li><a href="package-summary.html" class="current-selection">p</a></li>
+                    </ol>
                     """);
         checkOutput("m/p/C.html", true,
                 """
-                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a href="../module-summary.html">m</a></div>
-                    <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<a href="package-summary.html">p</a></div>
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">m</a></li>
+                    <li><a href="package-summary.html">p</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
+                    </ol>
                     """);
         checkOutput("o/p/C.html", true,
                 """
-                    <div class="sub-title"><span class="module-label-in-type">Module</span>&nbsp;<a href="../module-summary.html">o</a></div>
-                    <div class="sub-title"><span class="package-label-in-type">Package</span>&nbsp;<a href="package-summary.html">p</a></div>
+                    <ol class="sub-nav-list">
+                    <li><a href="../module-summary.html">o</a></li>
+                    <li><a href="package-summary.html">p</a></li>
+                    <li><a href="C.html" class="current-selection">C</a></li>
+                    </ol>
                     """);
         checkOutput("type-search-index.js", true,
                 """

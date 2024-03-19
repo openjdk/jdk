@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,7 +183,7 @@ public:
   }
 
   u1 flags() const {
-    return _header._struct._flags;
+    return Atomic::load_acquire(&_header._struct._flags);
   }
 
   u2 bci() const {
@@ -204,11 +204,36 @@ public:
     return _cells[index];
   }
 
-  void set_flag_at(u1 flag_number) {
-    _header._struct._flags |= (u1)(0x1 << flag_number);
+  bool set_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == bit) {
+        // already set.
+        return false;
+      }
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, static_cast<u1>(compare_value | bit)));
+    return true;
   }
+
+  bool clear_flag_at(u1 flag_number) {
+    const u1 bit = 1 << flag_number;
+    u1 compare_value;
+    u1 exchange_value;
+    do {
+      compare_value = _header._struct._flags;
+      if ((compare_value & bit) == 0) {
+        // already cleaed.
+        return false;
+      }
+      exchange_value = compare_value & ~bit;
+    } while (compare_value != Atomic::cmpxchg(&_header._struct._flags, compare_value, exchange_value));
+    return true;
+  }
+
   bool flag_at(u1 flag_number) const {
-    return (_header._struct._flags & (0x1 << flag_number)) != 0;
+    return (flags() & (1 << flag_number)) != 0;
   }
 
   // Low-level support for code generation.
@@ -491,11 +516,12 @@ protected:
   enum : u1 {
     // null_seen:
     //  saw a null operand (cast/aastore/instanceof)
-      null_seen_flag              = DataLayout::first_flag + 0,
-      exception_handler_entered_flag     = null_seen_flag + 1
+      null_seen_flag                  = DataLayout::first_flag + 0,
+      exception_handler_entered_flag  = null_seen_flag + 1,
+      deprecated_method_callsite_flag = exception_handler_entered_flag + 1
 #if INCLUDE_JVMCI
     // bytecode threw any exception
-    , exception_seen_flag         = exception_handler_entered_flag + 1
+    , exception_seen_flag             = deprecated_method_callsite_flag + 1
 #endif
   };
   enum { bit_cell_count = 0 };  // no additional data fields needed.
@@ -519,6 +545,9 @@ public:
   // Consulting it allows the compiler to avoid setting up null_check traps.
   bool null_seen()     { return flag_at(null_seen_flag); }
   void set_null_seen()    { set_flag_at(null_seen_flag); }
+  bool deprecated_method_call_site() const { return flag_at(deprecated_method_callsite_flag); }
+  bool set_deprecated_method_call_site() { return data()->set_flag_at(deprecated_method_callsite_flag); }
+  bool clear_deprecated_method_call_site() { return data()->clear_flag_at(deprecated_method_callsite_flag); }
 
 #if INCLUDE_JVMCI
   // true if an exception was thrown at the specific BCI
@@ -2139,7 +2168,7 @@ private:
   // What is the index of the first data entry?
   int first_di() const { return 0; }
 
-  ProfileData* bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent);
+  ProfileData* bci_to_extra_data_find(int bci, Method* m, DataLayout*& dp);
   // Find or create an extra ProfileData:
   ProfileData* bci_to_extra_data(int bci, Method* m, bool create_if_missing);
 
@@ -2281,20 +2310,12 @@ public:
   intx arg_local()                               { return _arg_local; }
   intx arg_stack()                               { return _arg_stack; }
   intx arg_returned()                            { return _arg_returned; }
-  uint arg_modified(int a)                       { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   return aid->arg_modified(a); }
-
+  uint arg_modified(int a);
   void set_eflags(intx v)                        { _eflags = v; }
   void set_arg_local(intx v)                     { _arg_local = v; }
   void set_arg_stack(intx v)                     { _arg_stack = v; }
   void set_arg_returned(intx v)                  { _arg_returned = v; }
-  void set_arg_modified(int a, uint v)           { ArgInfoData *aid = arg_info();
-                                                   assert(aid != nullptr, "arg_info must be not null");
-                                                   assert(a >= 0 && a < aid->number_of_args(), "valid argument number");
-                                                   aid->set_arg_modified(a, v); }
-
+  void set_arg_modified(int a, uint v);
   void clear_escape_info()                       { _eflags = _arg_local = _arg_stack = _arg_returned = 0; }
 
   // Location and size of data area
@@ -2342,6 +2363,8 @@ public:
 
   // Same, but try to create an extra_data record if one is needed:
   ProfileData* allocate_bci_to_data(int bci, Method* m) {
+    check_extra_data_locked();
+
     ProfileData* data = nullptr;
     // If m not null, try to allocate a SpeculativeTrapData entry
     if (m == nullptr) {
@@ -2368,7 +2391,10 @@ public:
 
   // Add a handful of extra data records, for trap tracking.
   // Only valid after 'set_size' is called at the end of MethodData::initialize
-  DataLayout* extra_data_base() const  { return limit_data_position(); }
+  DataLayout* extra_data_base() const  {
+    check_extra_data_locked();
+    return limit_data_position();
+  }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
   // pointers to sections in extra data
   DataLayout* args_data_limit() const  { return parameters_data_base(); }
@@ -2383,7 +2409,7 @@ public:
   DataLayout* exception_handler_data_base() const { return data_layout_at(_exception_handler_data_di); }
   DataLayout* exception_handler_data_limit() const { return extra_data_limit(); }
 
-  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)extra_data_base()); }
+  int extra_data_size() const          { return (int)((address)extra_data_limit() - (address)limit_data_position()); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.
@@ -2500,6 +2526,7 @@ public:
   void clean_method_data(bool always_clean);
   void clean_weak_method_links();
   Mutex* extra_data_lock() { return &_extra_data_lock; }
+  void check_extra_data_locked() const NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_OOPS_METHODDATA_HPP

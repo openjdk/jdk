@@ -73,7 +73,6 @@ public class TestNewRatioFlag {
                 "-Xbootclasspath/a:.",
                 "-XX:+UnlockDiagnosticVMOptions",
                 "-XX:+WhiteBoxAPI",
-                "-XX:GCLockerEdenExpansionPercent=0",
                 "-Xmx" + HEAP_SIZE,
                 "-Xms" + HEAP_SIZE,
                 "-XX:NewRatio=" + ratio,
@@ -82,8 +81,7 @@ public class TestNewRatioFlag {
                 Integer.toString(ratio)
         );
 
-        ProcessBuilder procBuilder = GCArguments.createLimitedTestJavaProcessBuilder(vmOptions);
-        OutputAnalyzer analyzer = new OutputAnalyzer(procBuilder.start());
+        OutputAnalyzer analyzer = GCArguments.executeLimitedTestJava(vmOptions);
         analyzer.shouldHaveExitValue(0);
         System.out.println(analyzer.getOutput());
     }

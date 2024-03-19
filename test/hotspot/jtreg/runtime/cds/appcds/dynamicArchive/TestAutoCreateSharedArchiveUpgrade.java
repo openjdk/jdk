@@ -30,7 +30,7 @@
  * @library /test/lib
  * @compile -source 1.8 -target 1.8 ../test-classes/HelloJDK8.java
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar Hello.jar HelloJDK8
- * @run driver TestAutoCreateSharedArchiveUpgrade
+ * @run driver/timeout=600 TestAutoCreateSharedArchiveUpgrade
  */
 
 import java.io.File;
@@ -52,7 +52,7 @@ public class TestAutoCreateSharedArchiveUpgrade {
     // the JDK using "jtreg -vmoption:-Dtest.previous.jdk=${JDK19_HOME} ..."
     private static final String PREV_JDK = System.getProperty("test.previous.jdk", null);
 
-    // If you're unning this test using something like
+    // If you're running this test using something like
     // "make test TEST=test/hotspot/jtreg/runtime/cds/appcds/dynamicArchive/TestAutoCreateSharedArchiveUpgrade.java",
     // the test.boot.jdk property is normally passed by make/RunTests.gmk
     private static String BOOT_JDK = System.getProperty("test.boot.jdk", null);
@@ -103,8 +103,12 @@ public class TestAutoCreateSharedArchiveUpgrade {
 
         newJVM = TEST_JDK + FS + "bin" + FS + "java";
 
+        // Version 0 is used here to indicate that no version is supplied so that
+        // PREV_JDK or BOOT_JDK are used
         if (fetchVersion >= 19) {
             oldJVM = fetchJDK(fetchVersion) + FS + "bin" + FS + "java";
+        } else if (fetchVersion > 0) {
+            throw new RuntimeException("Unsupported JDK version " + fetchVersion);
         } else if (PREV_JDK != null) {
             oldJVM = PREV_JDK + FS + "bin" + FS + "java";
         } else if (BOOT_JDK != null) {
@@ -186,6 +190,9 @@ public class TestAutoCreateSharedArchiveUpgrade {
                 break;
             case 20:
                 build = 29;
+                break;
+            case 21:
+                build = 35;
                 break;
             default:
                 throw new RuntimeException("Unsupported JDK version " + version);

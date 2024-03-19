@@ -306,9 +306,12 @@ public class PKCS10 {
 
 
         byte[] CRLF = new byte[] {'\r', '\n'};
-        out.println("-----BEGIN NEW CERTIFICATE REQUEST-----");
-        out.println(Base64.getMimeEncoder(64, CRLF).encodeToString(encoded));
-        out.println("-----END NEW CERTIFICATE REQUEST-----");
+        out.print("-----BEGIN NEW CERTIFICATE REQUEST-----");
+        out.print("\r\n");
+        out.print(Base64.getMimeEncoder(64, CRLF).encodeToString(encoded));
+        out.print("\r\n");
+        out.print("-----END NEW CERTIFICATE REQUEST-----");
+        out.print("\r\n");
     }
 
     /**

@@ -58,7 +58,7 @@ void (*fp_pw_stream_destroy)(struct pw_stream *stream);
 
 
 void (*fp_pw_init)(int *argc, char **argv[]);
-
+void (*fp_pw_deinit)(void);
 
 struct pw_core *
 (*fp_pw_context_connect_fd)(struct pw_context *context,

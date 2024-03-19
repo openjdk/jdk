@@ -37,7 +37,8 @@ frame JavaThread::pd_last_frame() {
   intptr_t* sp = last_Java_sp();
   address pc = _anchor.last_Java_pc();
 
-  return frame(sp, pc);
+  // Likely the frame of a RuntimeStub.
+  return frame(sp, pc, frame::kind::code_blob);
 }
 
 bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, bool isInJava) {
@@ -50,7 +51,7 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     // pc can be seen as null because not all writers use store pc + release store sp.
     // Simply discard the sample in this very rare case.
     if (pc == nullptr) return false;
-    *fr_addr = frame(sp, pc);
+    *fr_addr = frame(sp, pc, frame::kind::code_blob);
     return true;
   }
 
@@ -66,7 +67,8 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       return false;
     }
 
-    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc);
+    // pc could refer to a native address outside the code cache even though the thread isInJava.
+    frame ret_frame((intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/], pc, frame::kind::unknown);
 
     if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.

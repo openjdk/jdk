@@ -65,7 +65,7 @@ public class TestImplicitlyDeclaredClasses extends JavadocTester {
                         .collect(Collectors.joining("\n")));
                 // TODO: remove preview-related options once "Implicitly Declared
                 //  Classes and Instance Main Methods" has been standardized
-                javadoc("--enable-preview", "--source=22",
+                javadoc("--enable-preview", "--source=" + Runtime.version().feature(),
                         "-d", base.resolve("out-" + index).toString(),
                         src.toString());
 

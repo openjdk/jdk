@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -1774,7 +1775,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             carry = product >>> 32;
         }
         if (carry == 0L) {
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         } else {
             rmag[rstart] = (int)carry;
         }
@@ -1819,7 +1820,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             rmag[0] = (int)carry;
         }
         if (carry == 0L)
-            rmag = java.util.Arrays.copyOfRange(rmag, 1, rmag.length);
+            rmag = Arrays.copyOfRange(rmag, 1, rmag.length);
         return new BigInteger(rmag, rsign);
     }
 
@@ -3963,6 +3964,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return -1, 0 or 1 as this BigInteger is numerically less than, equal
      *         to, or greater than {@code val}.
      */
+    @Override
     public int compareTo(BigInteger val) {
         if (signum == val.signum) {
             return switch (signum) {
@@ -3991,12 +3993,9 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return -1;
         if (len1 > len2)
             return 1;
-        for (int i = 0; i < len1; i++) {
-            int a = m1[i];
-            int b = m2[i];
-            if (a != b)
-                return ((a & LONG_MASK) < (b & LONG_MASK)) ? -1 : 1;
-        }
+        int i = ArraysSupport.mismatch(m1, m2, len1);
+        if (i != -1)
+            return Integer.compareUnsigned(m1[i], m2[i]) < 0 ? -1 : 1;
         return 0;
     }
 
@@ -4023,7 +4022,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         } else {
@@ -4032,12 +4031,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             int a = m1[0];
             int b = highWord;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             a = m1[1];
             b = (int)val;
             if (a != b) {
-                return ((a & LONG_MASK) < (b & LONG_MASK))? -1 : 1;
+                return Integer.compareUnsigned(a, b) < 0 ? -1 : 1;
             }
             return 0;
         }
@@ -4050,6 +4049,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      * @return {@code true} if and only if the specified Object is a
      *         BigInteger whose value is numerically equal to this BigInteger.
      */
+    @Override
     public boolean equals(Object x) {
         // This test is just an optimization, which may or may not help
         if (x == this)
@@ -4061,17 +4061,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (xInt.signum != signum)
             return false;
 
-        int[] m = mag;
-        int len = m.length;
-        int[] xm = xInt.mag;
-        if (len != xm.length)
+        if (mag.length != xInt.mag.length)
             return false;
 
-        for (int i = 0; i < len; i++)
-            if (xm[i] != m[i])
-                return false;
-
-        return true;
+        return ArraysSupport.mismatch(mag, xInt.mag, mag.length) == -1;
     }
 
     /**
@@ -4100,17 +4093,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
     // Hash Function
 
     /**
-     * Returns the hash code for this BigInteger.
-     *
-     * @return hash code for this BigInteger.
+     * {@return the hash code for this BigInteger}
      */
+    @Override
     public int hashCode() {
-        int hashCode = 0;
-
-        for (int i=0; i < mag.length; i++)
-            hashCode = (int)(31*hashCode + (mag[i] & LONG_MASK));
-
-        return hashCode * signum;
+        return ArraysSupport.vectorizedHashCode(mag, 0, mag.length, 0,
+                ArraysSupport.T_INT) * signum;
     }
 
     /**
@@ -4593,7 +4581,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return java.util.Arrays.copyOfRange(val, keep, vlen);
+        return Arrays.copyOfRange(val, keep, vlen);
     }
 
     /**
@@ -4607,7 +4595,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         // Find first nonzero byte
         for (keep = 0; keep < vlen && val[keep] == 0; keep++)
             ;
-        return keep == 0 ? val : java.util.Arrays.copyOfRange(val, keep, vlen);
+        return keep == 0 ? val : Arrays.copyOfRange(val, keep, vlen);
     }
 
     private static int[] stripLeadingZeroBytes(byte[] a, int from, int len) {

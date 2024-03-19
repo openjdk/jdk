@@ -39,6 +39,27 @@
   <property name="dist"  location="dist"/>
   <property name="resources"  location="resources"/>
 
+  <condition property="source" value="7">
+     <not>
+        <isset property="source"/>
+     </not>
+  </condition>
+  <condition property="target" value="7">
+     <not>
+        <isset property="target"/>
+     </not>
+  </condition>
+  <condition property="java" value="java">
+     <not>
+        <isset property="java"/>
+     </not>
+  </condition>
+  <condition property="javac" value="javac">
+     <not>
+        <isset property="javac"/>
+     </not>
+  </condition>
+
   <target name="init">
     <!-- Create the time stamp -->
     <tstamp/>
@@ -49,13 +70,14 @@
   <target name="compile" depends="init"
         description="compile the source " >
     <!-- Compile the java code from ${src} into ${build} -->
-    <javac debug="off" source="1.7" target="1.7" srcdir="${src}" destdir="${build}"/>
+    <javac debug="off" source="${source}" target="${target}" srcdir="${src}" destdir="${build}" fork="true" executable="${javac}"/>
   </target>
 
   <target name="run" depends="dist"
     description="run J2DBench" >
     <java jar="${dist}/J2DBench.jar"
        fork="true"
+       jvm="${java}"
     >
     </java>
   </target>
@@ -64,6 +86,7 @@
     description="run J2DAnalyzer" >
     <java jar="${dist}/J2DAnalyzer.jar"
        fork="true"
+       jvm="${java}"
     >
     </java>
   </target>

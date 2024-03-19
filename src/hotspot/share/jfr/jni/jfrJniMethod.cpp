@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "jfr/recorder/repository/jfrEmergencyDump.hpp"
 #include "jfr/recorder/service/jfrEventThrottler.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
+#include "jfr/recorder/service/jfrRecorderService.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilter.hpp"
 #include "jfr/recorder/stacktrace/jfrStackFilterRegistry.hpp"
 #include "jfr/recorder/stacktrace/jfrStackTraceRepository.hpp"
@@ -45,6 +46,7 @@
 #include "jfr/instrumentation/jfrEventClassTransformer.hpp"
 #include "jfr/instrumentation/jfrJvmtiAgent.hpp"
 #include "jfr/leakprofiler/leakProfiler.hpp"
+#include "jfr/support/jfrDeprecationManager.hpp"
 #include "jfr/support/jfrJdkJfrEvent.hpp"
 #include "jfr/support/jfrKlassUnloading.hpp"
 #include "jfr/utilities/jfrJavaLog.hpp"
@@ -159,13 +161,17 @@ NO_TRANSITION(jdouble, jfr_time_conv_factor(JNIEnv* env, jclass jvm))
   return (jdouble)JfrTimeConverter::nano_to_counter_multiplier();
 NO_TRANSITION_END
 
-NO_TRANSITION(jboolean, jfr_set_cutoff(JNIEnv* env, jclass jvm, jlong event_type_id, jlong cutoff_ticks))
-  return JfrEventSetting::set_cutoff(event_type_id, cutoff_ticks) ? JNI_TRUE : JNI_FALSE;
-NO_TRANSITION_END
-
 NO_TRANSITION(jboolean, jfr_set_throttle(JNIEnv* env, jclass jvm, jlong event_type_id, jlong event_sample_size, jlong period_ms))
   JfrEventThrottler::configure(static_cast<JfrEventId>(event_type_id), event_sample_size, period_ms);
   return JNI_TRUE;
+NO_TRANSITION_END
+
+NO_TRANSITION(void, jfr_set_miscellaneous(JNIEnv* env, jobject jvm, jlong event_type_id, jlong value))
+  JfrEventSetting::set_miscellaneous(event_type_id, value);
+  const JfrEventId typed_event_id = (JfrEventId)event_type_id;
+  if (EventDeprecatedInvocation::eventId == typed_event_id) {
+    JfrDeprecationManager::on_level_setting_update(value);
+  }
 NO_TRANSITION_END
 
 NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jclass jvm))
@@ -342,9 +348,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_force_instrumentation(JNIEnv* env, jclass jvm, jb
   JfrEventClassTransformer::set_force_instrumentation(force_instrumentation == JNI_TRUE);
 JVM_END
 
-JVM_ENTRY_NO_ENV(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
-  LeakProfiler::emit_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
-JVM_END
+NO_TRANSITION(void, jfr_emit_old_object_samples(JNIEnv* env, jclass jvm, jlong cutoff_ticks, jboolean emit_all, jboolean skip_bfs))
+  JfrRecorderService service;
+  service.emit_leakprofiler_events(cutoff_ticks, emit_all == JNI_TRUE, skip_bfs == JNI_TRUE);
+NO_TRANSITION_END
 
 JVM_ENTRY_NO_ENV(void, jfr_exclude_thread(JNIEnv* env, jclass jvm, jobject t))
   JfrJavaSupport::exclude(thread, t);
@@ -393,6 +400,15 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jclass jvm))
   return os::Linux::physical_memory();
 #else
   return os::physical_memory();
+#endif
+JVM_END
+
+JVM_ENTRY_NO_ENV(jlong, jfr_host_total_swap_memory(JNIEnv* env, jclass jvm))
+#ifdef LINUX
+  // We want the host swap memory, not the container value.
+  return os::Linux::host_swap();
+#else
+  return os::total_swap_space();
 #endif
 JVM_END
 

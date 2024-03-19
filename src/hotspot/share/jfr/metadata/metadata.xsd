@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <!--
- Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@
               <xs:attribute name="period" type="periodType" use="optional" />
               <xs:attribute name="cutoff" type="xs:boolean" use="optional" />
               <xs:attribute name="throttle" type="xs:boolean" use="optional" />
+              <xs:attribute name="level" type="xs:string" use="optional" />
             </xs:complexType>
           </xs:element>
           <xs:element maxOccurs="unbounded" name="Type">

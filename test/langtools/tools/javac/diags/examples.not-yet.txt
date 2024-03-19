@@ -217,7 +217,3 @@ compiler.err.annotation.unrecognized.attribute.name
 
 # this one is transitional (waiting for FFM API to exit preview)
 compiler.warn.restricted.method
-
-# Pending removal
-compiler.note.implicit.annotation.processing
-compiler.warn.proc.use.proc.or.implicit

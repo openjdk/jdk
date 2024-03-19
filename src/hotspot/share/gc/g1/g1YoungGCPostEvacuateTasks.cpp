@@ -34,12 +34,12 @@
 #include "gc/g1/g1EvacFailureRegions.inline.hpp"
 #include "gc/g1/g1EvacInfo.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
+#include "gc/g1/g1HeapRegion.inline.hpp"
+#include "gc/g1/g1HeapRegionRemSet.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.hpp"
 #include "gc/g1/g1RemSet.hpp"
 #include "gc/g1/g1YoungGCPostEvacuateTasks.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
-#include "gc/g1/heapRegionRemSet.inline.hpp"
 #include "gc/shared/bufferNode.hpp"
 #include "gc/shared/preservedMarks.inline.hpp"
 #include "jfr/jfrEvents.hpp"
@@ -67,16 +67,26 @@ public:
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
   bool _evacuation_failed;
+  bool _allocation_failed;
 
 public:
-  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
+  RecalculateUsedTask(bool evacuation_failed, bool allocation_failed) :
+    G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed),
+    _evacuation_failed(evacuation_failed),
+    _allocation_failed(allocation_failed) { }
 
   double worker_cost() const override {
     // If there is no evacuation failure, the work to perform is minimal.
     return _evacuation_failed ? 1.0 : AlmostNoWork;
   }
 
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
+  void do_work(uint worker_id) override {
+    G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed);
+    if (_allocation_failed) {
+      // Reset the G1GCAllocationFailureALot counters and flags
+      G1CollectedHeap::heap()->allocation_failure_injector()->reset();
+    }
+  }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
@@ -309,9 +319,10 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
   bool evac_failed = evac_failure_regions->has_regions_evac_failed();
+  bool alloc_failed = evac_failure_regions->has_regions_alloc_failed();
 
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask(evac_failed));
+  add_serial_task(new RecalculateUsedTask(evac_failed, alloc_failed));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
@@ -579,22 +590,16 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask2::RedirtyLoggedCardsTask : public G1AbstractSubTask {
-  G1RedirtyCardsQueueSet* _rdcqs;
-  BufferNode* volatile _nodes;
+  BufferNodeList* _rdc_buffers;
+  uint _num_buffer_lists;
   G1EvacFailureRegions* _evac_failure_regions;
 
 public:
-  RedirtyLoggedCardsTask(G1RedirtyCardsQueueSet* rdcqs, G1EvacFailureRegions* evac_failure_regions) :
+  RedirtyLoggedCardsTask(G1EvacFailureRegions* evac_failure_regions, BufferNodeList* rdc_buffers, uint num_buffer_lists) :
     G1AbstractSubTask(G1GCPhaseTimes::RedirtyCards),
-    _rdcqs(rdcqs),
-    _nodes(rdcqs->all_completed_buffers()),
+    _rdc_buffers(rdc_buffers),
+    _num_buffer_lists(num_buffer_lists),
     _evac_failure_regions(evac_failure_regions) { }
-
-  virtual ~RedirtyLoggedCardsTask() {
-    G1DirtyCardQueueSet& dcq = G1BarrierSet::dirty_card_queue_set();
-    dcq.merge_bufferlists(_rdcqs);
-    _rdcqs->verify_empty();
-  }
 
   double worker_cost() const override {
     // Needs more investigation.
@@ -603,13 +608,23 @@ public:
 
   void do_work(uint worker_id) override {
     RedirtyLoggedCardTableEntryClosure cl(G1CollectedHeap::heap(), _evac_failure_regions);
-    BufferNode* next = Atomic::load(&_nodes);
-    while (next != nullptr) {
-      BufferNode* node = next;
-      next = Atomic::cmpxchg(&_nodes, node, node->next());
-      if (next == node) {
-        cl.apply_to_buffer(node, worker_id);
-        next = node->next();
+
+    uint start = worker_id;
+    for (uint i = 0; i < _num_buffer_lists; i++) {
+      uint index = (start + i) % _num_buffer_lists;
+
+      BufferNode* next = Atomic::load(&_rdc_buffers[index]._head);
+      BufferNode* tail = Atomic::load(&_rdc_buffers[index]._tail);
+
+      while (next != nullptr) {
+        BufferNode* node = next;
+        next = Atomic::cmpxchg(&_rdc_buffers[index]._head, node, (node != tail ) ? node->next() : nullptr);
+        if (next == node) {
+          cl.apply_to_buffer(node, worker_id);
+          next = (node != tail ) ? node->next() : nullptr;
+        } else {
+          break; // If there is contention, move to the next BufferNodeList
+        }
       }
     }
     record_work_item(worker_id, 0, cl.num_dirtied());
@@ -959,7 +974,10 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }
-  add_parallel_task(new RedirtyLoggedCardsTask(per_thread_states->rdcqs(), evac_failure_regions));
+  add_parallel_task(new RedirtyLoggedCardsTask(evac_failure_regions,
+                                               per_thread_states->rdc_buffers(),
+                                               per_thread_states->num_workers()));
+
   if (UseTLAB && ResizeTLAB) {
     add_parallel_task(new ResizeTLABsTask());
   }
