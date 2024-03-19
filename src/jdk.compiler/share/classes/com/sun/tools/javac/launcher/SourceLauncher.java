@@ -197,7 +197,7 @@ public final class SourceLauncher {
 
         // 1. Find a main method in the first class and if there is one - invoke it
         Class<?> firstClass;
-        String firstClassName = program.declaredTypeNames().getFirst();
+        String firstClassName = program.qualifiedTypeNames().getFirst();
         try {
             ClassLoader loader = context.newClassLoaderFor(parentLoader, firstClassName);
             firstClass = Class.forName(firstClassName, false, loader);
@@ -215,7 +215,7 @@ public final class SourceLauncher {
             var expectedName = expectedPackageName.isEmpty()
                     ? expectedSimpleName
                     : expectedPackageName + '.' + expectedSimpleName;
-            var actualName = program.declaredTypeNames().stream()
+            var actualName = program.qualifiedTypeNames().stream()
                     .filter(name -> name.equals(expectedName))
                     .findFirst()
                     .orElseThrow(() -> new Fault(Errors.CantFindClass(expectedName)));

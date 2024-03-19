@@ -51,44 +51,40 @@ import java.util.TreeSet;
 public record ProgramDescriptor(
         ProgramFileObject fileObject,
         Optional<String> packageName,
-        List<String> declaredTypeNames,
+        List<String> qualifiedTypeNames,
         Path sourceRootPath) {
     static ProgramDescriptor of(ProgramFileObject fileObject) throws Fault {
         var file = fileObject.getFile();
         var packageName = ""; // empty string will be converted into an empty optional
-        var declaredTypeNames = new ArrayList<String>();
+        var packageNameAndDot = ""; // empty string or packageName + '.'
+        var qualifiedTypeNames = new ArrayList<String>();
         try {
             var compiler = JavacTool.create();
             var standardFileManager = compiler.getStandardFileManager(null, null, null);
             var units = List.of(fileObject);
             var task = compiler.getTask(null, standardFileManager, diagnostic -> {}, null, null, units);
-            for (var tree : task.parse()) {
-                for (var decl : tree.getTypeDecls()) {
-                    if (decl instanceof ClassTree cdecl) {
-                        declaredTypeNames.add(cdecl.getSimpleName().toString());
-                    }
-                }
-                var packageTree = tree.getPackage();
-                if (packageTree != null) {
-                    packageName = packageTree.getPackageName().toString();
-                    break;
+            var tree = task.parse().iterator().next(); // single compilation unit
+            var packageTree = tree.getPackage();
+            if (packageTree != null) {
+                packageName = packageTree.getPackageName().toString();
+                packageNameAndDot = packageName + '.';
+            }
+            for (var type : tree.getTypeDecls()) {
+                if (type instanceof ClassTree classType) {
+                    qualifiedTypeNames.add(packageNameAndDot + classType.getSimpleName());
                 }
             }
         } catch (IOException ignore) {
             // fall through to let actual compilation determine the error message
         }
-        if (declaredTypeNames.isEmpty()) {
+        if (qualifiedTypeNames.isEmpty()) {
             throw new Fault(Errors.NoClass);
         }
-        var root = computeSourceRootPath(file, packageName);
-        var pn = packageName.isEmpty() ? "" : packageName + '.';
         return new ProgramDescriptor(
                 fileObject,
-                packageName.isEmpty()
-                        ? Optional.empty()
-                        : Optional.of(packageName),
-                declaredTypeNames.stream().map(name -> pn + name).toList(),
-                root);
+                packageName.isEmpty() ? Optional.empty() : Optional.of(packageName),
+                List.copyOf(qualifiedTypeNames),
+                computeSourceRootPath(file, packageName));
     }
 
     public static Path computeSourceRootPath(Path program, String packageName) throws Fault {
