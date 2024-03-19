@@ -39,7 +39,7 @@ import java.awt.dnd.DragSource;
 
 public class ImageDecoratedDnD {
     private static final String INSTRUCTIONS = """
-            A Frame, which contains a yellow button labeled "Drag ME!"
+            When test runs a Frame which contains a yellow button labeled "Drag ME!"
             and a RED Panel will appear.
 
             1. Click on the button and drag to the red panel by pressing
@@ -47,15 +47,19 @@ public class ImageDecoratedDnD {
 
             2. When the mouse enters the red panel during the drag, the panel
                should turn yellow.
-                On the systems that supports pictured drag, the image under the drag-cursor
-                should appear (anchor is shifted, from top-left corner of the picture to
-                inside the picture to 10pt in both dimensions).
 
-                In WIN32 systems the image under cursor would be visible ONLY over
+                On the systems that supports pictured drag, the image under the drag-cursor
+                should appear.
+                "Image under drag-cursor" is a translucent blue rectangle + red circle
+                and includes an anchor that is shifted from top-left corner of the
+                picture to inside the picture to 10pt in both dimensions.
+
+                On Windows system the image under cursor would be visible ONLY over
                 the drop targets with activated extended OLE D'n'D support (that are,
                 the desktop and IE).
 
             3. Release the mouse button.
+
                 The panel should turn red again and a yellow button labeled ,
                 "Drag ME!" should appear inside the panel. You should be able,
                 to repeat this operation multiple times.
@@ -75,7 +79,7 @@ public class ImageDecoratedDnD {
     }
 
     public static Frame createUI() {
-        Frame frame = new Frame("DnD Test using Keyboard");
+        Frame frame = new Frame("Ctrl + Drag - Image DnD test");
         Panel mainPanel;
         Component dragSource, dropTarget;
 
@@ -94,6 +98,7 @@ public class ImageDecoratedDnD {
         mainPanel.add(dragSource, "North");
         mainPanel.add(dropTarget, "Center");
         frame.add(mainPanel, BorderLayout.CENTER);
+        frame.setAlwaysOnTop(true);
         return frame;
     }
 }
