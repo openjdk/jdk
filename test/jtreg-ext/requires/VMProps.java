@@ -419,7 +419,7 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * @return "true" if compiler in use supports RTM and false otherwise.
+     * @return "true" if compiler in use supports RTM and "false" otherwise.
      * Note: Lightweight locking does not support RTM (for now).
      */
     protected String vmRTMCompiler() {
