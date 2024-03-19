@@ -59,7 +59,7 @@ public class PrintAllFonts implements Printable {
             throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .testTimeOut(10)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
