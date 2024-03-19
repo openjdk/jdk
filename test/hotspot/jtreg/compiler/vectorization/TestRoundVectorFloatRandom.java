@@ -115,6 +115,8 @@ public class TestRoundVectorFloatRandom {
     fis[rand.nextInt(fNum)] = 0;
 
     // generate input arrays for testing, then run tests & verify results
+
+    // generate input arrays by combining different parts
     for (int fi : fis) {
       // generate test input by combining different parts:
       //   previously generated f values,
@@ -138,16 +140,38 @@ public class TestRoundVectorFloatRandom {
       for (int ei = eStart; ei < eBound; ei++) {
         for (int sign = 0; sign < 2; sign++) {
           int idx = ei * 2 + sign;
-          if (res[idx] != Math.round(input[idx])) {
+          if (res[idx] != golden_round(input[idx])) {
             errn++;
             System.err.println("round error, input: " + input[idx] +
-                               ", res: " + res[idx] + "expected: " + Math.round(input[idx]) +
+                               ", res: " + res[idx] + "expected: " + golden_round(input[idx]) +
                                ", input hex: " + Float.floatToIntBits(input[idx]) +
                                ", fi: " + fi + ", ei: " + ei + ", sign: " + sign);
           }
         }
       }
     }
+
+    // generate pure random input arrays, which does not depend on significand/exponent values
+    for(int i = 0; i < 128; i++) {
+      for (int j = 0; j < ARRLEN; j++) {
+        input[j] = rand.nextFloat();
+      }
+
+      // run tests
+      test_round(res, input);
+
+      // verify results
+      for (int j = 0; j < ARRLEN; j++) {
+        if (res[j] != golden_round(input[j])) {
+          errn++;
+          System.err.println("round error, input: " + input[j] +
+                             ", res: " + res[j] + "expected: " + golden_round(input[j]) +
+                             ", input hex: " + Float.floatToIntBits(input[j]));
+        }
+      }
+    }
+
+
     if (errn > 0) {
       throw new RuntimeException("There are some round error detected!");
     }
