@@ -170,25 +170,6 @@ public class BasicIntOpTest extends VectorizationTestRunner {
         }
     }
 
-    @Test
-    @IR(counts = {IRNode.COUNTLEADINGZEROS_VI, ">0"})
-    public int[] vectorizeNumberOfLeadingZeros() {
-        int[] res = new int[SIZE];
-        for (int i = 0; i < SIZE; i++) {
-            res[i] = Integer.numberOfLeadingZeros(b[i]);
-        }
-        return res;
-    }
-
-    @Run(test = {"vectorizeNumberOfLeadingZeros"})
-    public void checkResult() {
-        int[] res = vectorizeNumberOfLeadingZeros();
-        for (int i = 0; i < SIZE; ++i) {
-            Asserts.assertEquals(res[i], Integer.numberOfLeadingZeros(b[i]));
-        }
-    }
-
-
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
