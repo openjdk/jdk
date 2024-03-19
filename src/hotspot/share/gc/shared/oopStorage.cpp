@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -896,32 +896,8 @@ bool OopStorage::should_report_num_dead() const {
 // Global cleanup request state.
 static volatile bool needs_cleanup_requested = false;
 
-// Flag for avoiding duplicate notifications.
-static bool needs_cleanup_triggered = false;
-
-// Time after which a notification can be made.
-static jlong cleanup_trigger_permit_time = 0;
-
-// Minimum time since last service thread check before notification is
-// permitted.  The value of 500ms was an arbitrary choice; frequent, but not
-// too frequent.
-const jlong cleanup_trigger_defer_period = 500 * NANOSECS_PER_MILLISEC;
-
-void OopStorage::trigger_cleanup_if_needed() {
-  MonitorLocker ml(Service_lock, Monitor::_no_safepoint_check_flag);
-  if (Atomic::load(&needs_cleanup_requested) &&
-      !needs_cleanup_triggered &&
-      (os::javaTimeNanos() > cleanup_trigger_permit_time)) {
-    needs_cleanup_triggered = true;
-    ml.notify_all();
-  }
-}
-
 bool OopStorage::has_cleanup_work_and_reset() {
   assert_lock_strong(Service_lock);
-  cleanup_trigger_permit_time =
-    os::javaTimeNanos() + cleanup_trigger_defer_period;
-  needs_cleanup_triggered = false;
   // Set the request flag false and return its old value.
   // Needs to be atomic to avoid dropping a concurrent request.
   // Can't use Atomic::xchg, which may not support bool.
