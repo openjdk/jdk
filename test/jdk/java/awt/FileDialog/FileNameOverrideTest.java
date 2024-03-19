@@ -21,54 +21,52 @@
  * questions.
  */
 
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.Toolkit;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import javax.swing.JButton;
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 6260659
  * @summary File Name set programmatically in FileDialog is overridden during navigation, XToolkit
  * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
+ * @library /test/lib
  * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @run main/manual FileNameOverrideTest
  */
-
-import java.awt.BorderLayout;
-import java.awt.Button;
-import java.awt.FileDialog;
-import java.awt.Toolkit;
-import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import javax.swing.JFrame;
-import javax.swing.JTextField;
 
 public class FileNameOverrideTest {
     private final static String fileName = "input";
     private final static String clickDirName = "Directory for double click";
     private final static String dirPath = System.getProperty("user.dir");;
-    private static Button showBtn;
+    private static JButton showBtn;
     private static FileDialog fd;
 
-    private static JFrame initialize() {
-        JFrame frame = new JFrame("File Name Override Test Frame");
-        frame.setLayout(new BorderLayout());
-        JTextField textOutput = new JTextField(30);
-        frame.add(textOutput, BorderLayout.NORTH);
-
-        fd = new FileDialog(frame, "Open");
-
-        showBtn = new Button("Show File Dialog");
+    private static JButton initialize() {
+        showBtn = new JButton("Show File Dialog");
         showBtn.addActionListener(w -> {
+            Frame frame = new Frame();
+            fd = new FileDialog(frame, "Open");
             fd.setFile(fileName);
             fd.setDirectory(dirPath);
             fd.setVisible(true);
             String output = fd.getFile();
+            fd.dispose();
+            frame.dispose();
             if (fileName.equals(output)) {
-                textOutput.setText("TEST PASSED");
+                PassFailJFrame.forcePass();;
             } else {
-                textOutput.setText("TEST FAILED (output file - " + output + ")");
+                PassFailJFrame.forceFail("File name mismatch: "
+                        + fileName + " vs " + output);
             }
         });
-        frame.add(showBtn, BorderLayout.SOUTH);
 
         try {
             File tmpFileUp = new File(dirPath + File.separator + fileName);
@@ -81,23 +79,21 @@ public class FileNameOverrideTest {
             throw new RuntimeException("Cannot create test folder", ex);
         }
 
-        frame.pack();
-        return frame;
+        return showBtn;
     }
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         String instructions = """
                 1) Click on 'Show File Dialog' button. A file dialog will come up.
-                2) Double-click on '$clickDirName' and click OK.
-                3) The text in the text field will indicate if test is passed or failed.
+                2) Double-click on '$clickDirName' and click OK or Open
+                   to confirm selection (label on the button depends on the current window manager).
+                3) Test will pass or fail automatically.
                 """.replace("$clickDirName", clickDirName);
 
         String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
         if (!toolkit.equals("sun.awt.X11.XToolkit")) {
-            instructions = """
-                    The test is not applicable for $toolkit. Press Pass.
-                    """. replace("$toolkit", toolkit);
+            throw new SkippedException("Test is not designed for toolkit " + toolkit);
         }
 
         PassFailJFrame.builder()
