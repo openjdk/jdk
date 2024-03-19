@@ -55,23 +55,25 @@ extern "C" {
         }
     }
 
-    DLL_PUBLIC void avx512_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t *pivot_indices, int32_t index_pivot1, int32_t index_pivot2) {
+    DLL_PUBLIC long avx512_partition(void *array, int elem_type, int32_t from_index, int32_t to_index, int32_t index_pivot1, int32_t index_pivot2) {
+        long pivot_indices = 0;
         switch(elem_type) {
             case JVM_T_INT:
-                avx512_fast_partition((int32_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((int32_t*)array, from_index, to_index, (int32_t *) &pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_LONG:
-                avx512_fast_partition((int64_t*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((int64_t*)array, from_index, to_index, (int32_t *) &pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_FLOAT:
-                avx512_fast_partition((float*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((float*)array, from_index, to_index, (int32_t *) &pivot_indices, index_pivot1, index_pivot2);
                 break;
             case JVM_T_DOUBLE:
-                avx512_fast_partition((double*)array, from_index, to_index, pivot_indices, index_pivot1, index_pivot2);
+                avx512_fast_partition((double*)array, from_index, to_index, (int32_t *) &pivot_indices, index_pivot1, index_pivot2);
                 break;
             default:
                 assert(false, "Unexpected type");
         }
+        return pivot_indices;
     }
 
 }
