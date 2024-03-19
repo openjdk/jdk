@@ -107,6 +107,7 @@ class SpaceMangler: public CHeapObj<mtGC> {
   // Mangle all the unused region [top, end)
   void mangle_unused_area_complete();
   size_t zero_unused();
+  static size_t zero_unused(MemRegion mr);
   // Do some sparse checking on the area that should have been mangled.
   void check_mangled_unused_area(HeapWord* limit) PRODUCT_RETURN;
   // Do a complete check of the area that should be mangled.

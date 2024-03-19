@@ -3077,3 +3077,20 @@ void G1CollectedHeap::finish_codecache_marking_cycle() {
   CodeCache::on_gc_marking_cycle_finish();
   CodeCache::arm_all_nmethods();
 }
+
+class G1ZeroUnusedClosure: public HeapRegionClosure {
+  size_t _used;
+public:
+  G1ZeroUnusedClosure() : _used(0) {}
+  bool do_heap_region(HeapRegion* r) {
+    _used += r->zero_unused();
+    return false;
+  }
+  size_t result() { return _used; }
+};
+
+size_t G1CollectedHeap::zero_unused() {
+  G1ZeroUnusedClosure blk;
+  heap_region_iterate(&blk);
+  return blk.result();
+}

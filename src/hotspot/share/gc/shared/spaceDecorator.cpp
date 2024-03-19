@@ -143,3 +143,9 @@ size_t SpaceMangler::zero_unused() {
   Copy::zero_to_bytes(top(), len);
   return len;
 }
+
+size_t SpaceMangler::zero_unused(MemRegion mr) {
+  size_t len = mr.byte_size();
+  Copy::zero_to_bytes(mr.start(), len);
+  return len;
+}
