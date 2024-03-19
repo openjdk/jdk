@@ -121,7 +121,6 @@ void StackWatermarkSet::on_safepoint(JavaThread* jt) {
 
 void StackWatermarkSet::start_processing(JavaThread* jt, StackWatermarkKind kind) {
   verify_processing_context();
-  assert(!jt->is_terminated(), "Poll after termination is a bug");
   StackWatermark* watermark = get(jt, kind);
   if (watermark != nullptr) {
     watermark->start_processing();
