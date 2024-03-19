@@ -819,7 +819,7 @@ void ShenandoahConcurrentGC::op_final_mark() {
     } else {
       // Not is_generational()
       if (!heap->collection_set()->is_empty()) {
-        LogTarget(Info, gc, ergo) lt;
+        LogTarget(Debug, gc, ergo) lt;
         if (lt.is_enabled()) {
           ResourceMark rm;
           LogStream ls(lt);
