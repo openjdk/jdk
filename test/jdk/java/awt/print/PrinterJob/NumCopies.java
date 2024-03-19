@@ -49,7 +49,7 @@ public class NumCopies implements Printable {
             throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)

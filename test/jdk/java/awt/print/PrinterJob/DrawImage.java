@@ -101,7 +101,7 @@ public class DrawImage {
 
         BufferedImage image = prepareFrontImage();
 
-        PassFailJFrame passFailJFrame = new PassFailJFrame.Builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
                 .columns(45)
