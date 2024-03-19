@@ -75,8 +75,11 @@ final class JepDemo {
 
     static
     class Bar3 {
-        // 1. Declare a memoized (cached) Supplier backed by a monotonic value
-        private static final Supplier<Logger> LOGGER = () -> Monotonic.<Logger>of()
+        // 1. Declare a backing monotonic value
+        private static final Monotonic<Logger> MONOTONIC = Monotonic.of();
+
+        // 2. Declare a memoized (cached) Supplier backed by the monotonic value
+        private static final Supplier<Logger> LOGGER = () -> MONOTONIC
                 .computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
 
         static Logger logger() {

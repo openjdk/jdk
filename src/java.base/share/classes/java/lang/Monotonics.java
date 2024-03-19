@@ -104,8 +104,8 @@ public final class Monotonics {
      * <p>
      * The returned {@code IntFunction} is equivalent to the following supplier:
      * {@snippet lang = java:
-     * IntFunction<R> memoized = index ->
-     *         computeIfAbsent(Monotonic.<R>ofList(size), index, mapper);
+     * List<Monotonic<R>> list = Monotonic.ofList(size);
+     * IntFunction<R> memoized = index -> computeIfAbsent(list, index, mapper);
      *}
      * except it promises the provided {@code mapper} is invoked only once per index
      * even though the returned IntFunction is invoked simultaneously by several threads
@@ -130,8 +130,8 @@ public final class Monotonics {
      * <p>
      * The returned {@code Function} is equivalent to the following supplier:
      * {@snippet lang = java:
-     * Function<T, R> memoized =
-     *         key -> computeIfAbsent(Monotonic.<T, R>ofMap(keys), key, mapper);
+     * Map<T, Monotonic<R>> map = Monotonic.ofMap(keys);
+     * Function<T, R> memoized = key -> computeIfAbsent(map, key, mapper);
      *}
      * except it promises the provided {@code mapper} is invoked only once per index
      * even though the returned IntFunction is invoked simultaneously by several threads
