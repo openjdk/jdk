@@ -33,8 +33,15 @@ import java.io.IOException;
 import java.io.EOFException;
 
 /**
- * This class implements a stream filter for reading compressed data in
- * the GZIP file format.
+ * This class implements a stream filter for reading compressed data in the GZIP file format.
+ *
+ * <p>
+ * The GZIP compressed data format is self-delimiting, i.e., it includes an explicit trailer
+ * frame that marks the end of the compressed data. Therefore it's possible for the underlying
+ * input to contain additional data beyond the end of the compressed GZIP data. In particular,
+ * some GZIP compression tools will concatenate multiple compressed data streams together.
+ * This class includes configurable support for decompressing multiple concatenated compressed
+ * data streams as a single uncompressed data stream.
  *
  * @see         InflaterInputStream
  * @author      David Connelly
@@ -52,6 +59,9 @@ public class GZIPInputStream extends InflaterInputStream {
      */
     protected boolean eos;
 
+    private final boolean allowConcatenation;
+    private final boolean allowTrailingGarbage;
+
     private boolean closed = false;
 
     /**
@@ -64,7 +74,9 @@ public class GZIPInputStream extends InflaterInputStream {
     }
 
     /**
-     * Creates a new input stream with the specified buffer size.
+     * Creates a new input stream with the specified buffer size that
+     * allows concatenated compressed streams and trailing garbage.
+     *
      * @param in the input stream
      * @param size the input buffer size
      *
@@ -75,13 +87,13 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IllegalArgumentException if {@code size <= 0}
      */
     public GZIPInputStream(InputStream in, int size) throws IOException {
-        super(in, in != null ? new Inflater(true) : null, size);
-        usesDefaultInflater = true;
-        readHeader(in);
+        this(in, size, true, true);
     }
 
     /**
-     * Creates a new input stream with a default buffer size.
+     * Creates a new input stream with the default buffer size that
+     * allows concatenated compressed streams and trailing garbage.
+     *
      * @param in the input stream
      *
      * @throws    ZipException if a GZIP format error has occurred or the
@@ -90,7 +102,56 @@ public class GZIPInputStream extends InflaterInputStream {
      * @throws    IOException if an I/O error has occurred
      */
     public GZIPInputStream(InputStream in) throws IOException {
-        this(in, 512);
+        this(in, 512, true, true);
+    }
+
+    /**
+     * Creates a new input stream with the specified buffer size,
+     * support for concatenated streams, and tolerance for traliling garbage.
+     *
+     * <p>
+     * When {@code allowConcatenation} is true, then any data following a GZIP trailer
+     * frame will be interpreted as the start of another compressed data stream, so that
+     * multiple concatenated compressed data streams will be read out as a single
+     * uncompressed stream. When {@code allowConcatenation} is false, only a single
+     * decompression stops after the end of the first compressed data stream.
+     *
+     * <p>
+     * The {@code allowTrailingGarbage} flag controls the behavior when any data appears
+     * after the first GZIP trailer frame (if {@code allowConcatenation} is false)
+     * or when an invalid GZIP header frame appears after any GZIP trailer frame (if
+     * {@code allowConcatenation} is true): when {@code allowTrailingGarbage} is true,
+     * the unexpected data and/or any {@link IOException} thrown trying to read it is
+     * simply discarded and EOF is returned; when {@code allowTrailingGarbage} is false,
+     * any such unexpected data triggers a {@link ZipException} and any {@link IOException}
+     * thrown is propagated to the caller.
+     *
+     * @apiNote The original behavior of this class is replicated by setting both
+     * {@code allowConcatenation} and {@code allowTrailingGarbage} to true. However,
+     * enabling {@code allowTrailingGarbage} is discouraged because of its imprecision
+     * in how many additional bytes are read and how underlying {@link IOException}s
+     * are handled.
+     *
+     * @param in the input stream
+     * @param size the input buffer size
+     * @param allowConcatenation true to allow multiple concatenated compressed data streams,
+     *                           or false to expect exactly one compressed data stream
+     * @param allowTrailingGarbage true to tolerate and ignore trailing garbage, false to
+     *                             throw {@link ZipException} if trailing garbate is encountered
+     *
+     * @throws    ZipException if a GZIP format error has occurred or the
+     *                         compression method used is unsupported
+     * @throws    NullPointerException if {@code in} is null
+     * @throws    IOException if an I/O error has occurred
+     * @since     23
+     */
+    public GZIPInputStream(InputStream in, int size,
+            boolean allowConcatenation, boolean allowTrailingGarbage) throws IOException {
+        super(in, in != null ? new Inflater(true) : null, size);
+        usesDefaultInflater = true;
+        this.allowConcatenation = allowConcatenation;
+        this.allowTrailingGarbage = allowTrailingGarbage;
+        readHeader(in, -1);
     }
 
     /**
@@ -168,13 +229,18 @@ public class GZIPInputStream extends InflaterInputStream {
 
     /*
      * Reads GZIP member header and returns the total byte number
-     * of this member header.
+     * of this member header. Use the given value as the first byte
+     * if not equal to -1 (and include it in the returned byte count).
+     * Throws EOFException if there's not enough input data.
      */
-    private int readHeader(InputStream this_in) throws IOException {
+    private int readHeader(InputStream this_in, int firstByte) throws IOException {
         CheckedInputStream in = new CheckedInputStream(this_in, crc);
         crc.reset();
         // Check header magic
-        if (readUShort(in) != GZIP_MAGIC) {
+        int byte1 = firstByte != -1 ? firstByte : readUByte(in);
+        int byte2 = readUByte(in);
+        int magic = (byte2 << 8) | byte1;
+        if (magic != GZIP_MAGIC) {
             throw new ZipException("Not in GZIP format");
         }
         // Check compression method
@@ -237,23 +303,33 @@ public class GZIPInputStream extends InflaterInputStream {
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
 
-        // If there are more bytes available in "in" or
-        // the leftover in the "inf" is > 26 bytes:
-        // this.trailer(8) + next.header.min(10) + next.trailer(8)
-        // try concatenated case
-        if (this.in.available() > 0 || n > 26) {
-            int m = 8;                  // this.trailer
+        // Keep track of how many bytes of buffered data we may have read
+        int m = 8;                                          // this.trailer
+
+        // Handle concatenation and/or trailing garbage
+        if (allowConcatenation && allowTrailingGarbage) {   // i.e., the legacy behavior
             try {
-                m += readHeader(in);    // next.header
+                m += readHeader(in, -1);                    // next.header
             } catch (IOException ze) {
                 return true;  // ignore any malformed, do nothing
             }
-            inf.reset();
-            if (n > m)
-                inf.setInput(buf, len - n + m, n - m);
-            return false;
+        } else {
+            int nextByte = in.read();
+            if (nextByte == -1)
+                return true;
+            if (!allowConcatenation) {      // there's not supposed to be any more data!
+                if (!allowTrailingGarbage)
+                    throw new ZipException("Trailing garbage after GZIP trailer");
+                return true;
+            }
+            m += readHeader(in, nextByte);                  // next.header
         }
-        return true;
+
+        // Pass along any remaining buffered data to the new inflater
+        inf.reset();
+        if (n > m)
+            inf.setInput(buf, len - n + m, n - m);
+        return false;
     }
 
     /*
