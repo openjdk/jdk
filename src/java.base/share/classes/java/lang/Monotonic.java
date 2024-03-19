@@ -140,7 +140,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     }
 
     /**
-     * {@return a new shallowly immutable, thread-safe, lazy, non-blocking
+     * {@return a new unmodifiable, shallowly immutable, thread-safe, lazy, non-blocking
      * {@linkplain List } of {@code size} distinct empty monotonic values}
      * <p>
      * The returned {@code List} is equivalent to the following List:
@@ -149,10 +149,10 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      *         .mapToObj(_ -> Monotonic.<V>of())
      *         .toList();
      * }
-     * except it creates the elements lazily as they are accessed.
+     * except it creates the list's elements lazily as they are accessed.
      * <p>
-     * Returned monotonic lists are eligible for constant folding and other optimizations
-     * by the JVM.
+     * The returned monotonic list is eligible for constant folding and other
+     * optimizations by the JVM.
      *
      * @param size the size of the returned monotonic list
      * @param <V>  the value type for the Monotonic elements in this list
@@ -165,22 +165,23 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
         return MonotonicList.of(size);
     }
 
-    // Todo: Snippet is wrong
     /**
-     * {@return a new shallowly immutable, thread-safe, value-lazy, non-blocking
-     * {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys} contains
-     * precisely the distinct provided {@code keys} and where the values are distinct
-     * empty monotonic values}
+     * {@return a new unmodifiable, shallowly immutable, thread-safe, value-lazy,
+     * non-blocking {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
+     * contains precisely the distinct provided {@code keys} and where the values are
+     * distinct empty monotonic values}
      * <p>
      * The returned {@code Map} is equivalent to the following Map:
      * {@snippet lang=java :
      * Map<K, Monotonic<V>> map = Map.copyOf(keys.stream()
+     *         .distinct()
+     *         .map(Objects::requireNonNull)
      *         .collect(Collectors.toMap(Function.identity(), _ -> Monotonic.of())));
      * }
-     * except it creates the values lazily as they are accessed.
+     * except it creates the map's values lazily as they are accessed.
      * <p>
-     * Returned monotonic maps are eligible for constant folding and other optimizations
-     * by the JVM.
+     * The returned monotonic map is eligible for constant folding and other
+     * optimizations by the JVM.
      *
      * @param keys the keys in the map
      * @param <K>  the type of keys maintained by the returned map
