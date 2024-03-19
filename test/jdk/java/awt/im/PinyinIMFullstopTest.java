@@ -26,17 +26,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
-import jtreg.SkippedException;
-import sun.awt.OSInfo;
-
 /*
  * @test
  * @bug 8132503
  * @summary [macosx] Chinese full stop symbol cannot be entered with Pinyin IM on OS X
  * @requires (os.family == "mac")
- * @modules java.desktop/sun.awt
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual PinyinIMFullstopTest
  */
 
@@ -62,9 +58,6 @@ public class PinyinIMFullstopTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            throw new SkippedException("This test is for macOS only");
-        }
         PassFailJFrame.builder()
                       .title("Test Dot using Pinyin Input Method")
                       .instructions(INSTRUCTIONS)

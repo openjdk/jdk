@@ -26,18 +26,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
-import sun.awt.OSInfo;
-import jtreg.SkippedException;
-
 /*
  * @test
  * @bug 8148984
  * @summary Verify that Chinese comma can be entered in JTextField
  *          with Pinyin input method (IM) on OS X.
  * @requires (os.family == "mac")
- * @modules java.desktop/sun.awt
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual PinyinIMCommaTest
  */
 
@@ -62,9 +58,6 @@ public class PinyinIMCommaTest {
             """;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            throw new SkippedException("This test is for macOS only");
-        }
         PassFailJFrame.builder()
                       .title("Test Comma using Pinyin Input Method")
                       .instructions(INSTRUCTIONS)
