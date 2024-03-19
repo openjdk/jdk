@@ -101,7 +101,7 @@ public class FileNameOverrideTest {
                 .instructions(instructions)
                 .rows((int) instructions.lines().count() + 1)
                 .columns(50)
-                .testUI(FileNameOverrideTest::initialize)
+                .splitUIBottom(FileNameOverrideTest::initialize)
                 .build()
                 .awaitAndCheck();
     }
