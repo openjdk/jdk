@@ -372,7 +372,7 @@ class SuperWord : public ResourceObj {
     return _vloop_analyzer.reductions().is_marked_reduction(n);
   }
 
-  bool reduction(Node* n1, Node* n2) const {
+  bool reduction(const Node* n1, const Node* n2) const {
     return _vloop_analyzer.reductions().is_marked_reduction_pair(n1, n2);
   }
 
@@ -539,12 +539,7 @@ private:
   void order_inputs_of_all_use_pairs_to_match_def_pair(Node* def1, Node* def2);
   enum PairOrderStatus { Ordered, Unordered, Unknown };
   PairOrderStatus order_inputs_of_uses_to_match_def_pair(Node* def1, Node* def2, Node* use1, Node* use2);
-
-  // Estimate the savings from packing the pair (s1, s2).
-  int est_savings(Node* s1, Node* s2) const;
-  int adjacent_profit(Node* s1, Node* s2) const { return 2; }
-  int pack_cost(int ct)                   const { return ct; }
-  int unpack_cost(int ct)                 const { return ct; }
+  int estimate_cost_savings_when_packing_pair(const Node* s1, const Node* s2) const;
 
   void combine_pairs_to_longer_packs();
 
