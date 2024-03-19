@@ -80,13 +80,14 @@ public final class Monotonics {
      * where the memoized value is obtained by invoking the provided {@code suppler} at
      * most once}
      * <p>
-     * The returned {@code Supplier} is equivalent to the following supplier:
+     * The returned memoized {@code Supplier} is equivalent to the following supplier:
      * {@snippet lang=java :
-     * Supplier<V> memoized = () ->
-     *         Monotonic.<V>of().computeIfAbsent(supplier);
+     * Monotonic<V> monotonic = Monotonic.of();
+     * Supplier<V> memoized = () -> monotonic.computeIfAbsent(supplier);
      * }
      * except it promises the provided {@code supplier} is invoked once even
-     * though the returned Supplier is invoked simultaneously by several threads.
+     * though the returned memoized Supplier is invoked simultaneously
+     * by several threads.
      *
      * @param supplier   to be used for computing a value
      * @param <V>        the type of the value to memoize
