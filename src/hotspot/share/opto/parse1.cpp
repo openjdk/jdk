@@ -1017,6 +1017,13 @@ void Parse::do_exits() {
     if ((AlwaysSafeConstructors && wrote_fields()) ||
         (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile())) {
       bar = _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+    } else if (wrote_final()) {
+      bar = _exits.insert_mem_bar(
+          Op_MemBarStoreStore,
+          alloc_with_final() == nullptr ? nullptr : alloc_with_final()->in(1));
+    }
+
+    if (bar != nullptr) {
       // If Memory barrier is created for final fields write
       // and allocation node does not escape the initialize method,
       // then barrier introduced by allocation node can be removed.
@@ -1025,15 +1032,10 @@ void Parse::do_exits() {
             AllocateNode::Ideal_allocation(alloc_with_final());
         alloc->compute_MemBar_redundancy(method());
       }
-    } else if (wrote_final()) {
-      bar = _exits.insert_mem_bar(
-          Op_MemBarStoreStore,
-          alloc_with_final() == nullptr ? nullptr : alloc_with_final()->in(1));
-    }
-
-    if (bar != nullptr && PrintOpto && (Verbose || WizardMode)) {
-      method()->print_name();
-      tty->print_cr(" writes finals and needs a memory barrier");
+      if (PrintOpto && (Verbose || WizardMode)) {
+        method()->print_name();
+        tty->print_cr(" writes finals and needs a memory barrier");
+      }
     }
   }
 
