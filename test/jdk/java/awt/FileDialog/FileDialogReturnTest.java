@@ -26,6 +26,8 @@
  * @bug 6260676
  * @summary FileDialog.setDirectory() does not work properly, XToolkit
  * @requires (os.family == "linux")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual FileDialogReturnTest.html
  */
 
