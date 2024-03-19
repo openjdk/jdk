@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.IntStream;
 
 /**
  * Benchmark measuring monotonic list performance
@@ -46,7 +47,10 @@ public class MonotonicBigListBenchmark {
     private static final List<Monotonic<Integer>> MONOTONIC_LIST = randomMono(Monotonic.ofList(SIZE));
     private static final List<Integer> ARRAY_LIST = random(new ArrayList<>(SIZE));
 
-    private final List<Monotonic<Integer>> primitiveList = randomMono(Monotonic.ofList(SIZE));
+    private final List<Monotonic<Integer>> monotonicList = randomMono(Monotonic.ofList(SIZE));
+    private final List<Monotonic<Integer>> monotonicList2 = randomMono(IntStream.range(0, SIZE)
+                     .mapToObj(_ -> Monotonic.<Integer>of())
+                     .toList());
     private static final List<Integer> arrayList = random(new ArrayList<>(SIZE));
 
     @Setup
@@ -56,7 +60,7 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public int staticMonotonic() {
         int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < MONOTONIC_LIST.size(); i++) {
             sum += MONOTONIC_LIST.get(i).get();
         }
         return sum;
@@ -65,7 +69,7 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public int staticArrayList() {
         int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < ARRAY_LIST.size(); i++) {
             sum += ARRAY_LIST.get(i);
         }
         return sum;
@@ -74,8 +78,17 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public int instanceMonotonic() {
         int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
-            sum += primitiveList.get(i).get();
+        for (int i = 0; i < monotonicList.size(); i++) {
+            sum += monotonicList.get(i).get();
+        }
+        return sum;
+    }
+
+    @Benchmark
+    public int instanceMonotonic2() {
+        int sum = 0;
+        for (int i = 0; i < monotonicList2.size(); i++) {
+            sum += monotonicList2.get(i).get();
         }
         return sum;
     }
@@ -83,7 +96,7 @@ public class MonotonicBigListBenchmark {
     @Benchmark
     public Integer instanceArrayList() {
         int sum = 0;
-        for (int i = 0; i < SIZE; i++) {
+        for (int i = 0; i < arrayList.size(); i++) {
             sum += arrayList.get(i);
         }
         return sum;

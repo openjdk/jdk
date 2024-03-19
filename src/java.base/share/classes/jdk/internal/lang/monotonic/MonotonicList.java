@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import static jdk.internal.lang.monotonic.MonotonicUtil.*;
 
@@ -44,10 +43,13 @@ public final class MonotonicList<V>
 
     @Stable
     private final Monotonic<V>[] elements;
+    @Stable
+    private final int size; // Appears to be faster than elements.length
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     MonotonicList(int size) {
         this.elements = (Monotonic<V>[]) new Monotonic[size];
+        this.size = size;
     }
 
     @Override
@@ -56,7 +58,11 @@ public final class MonotonicList<V>
         if (m != null) {
             return m;
         }
-        m = elementVolatile(index);
+        return slowPath(index);
+    }
+
+    private Monotonic<V> slowPath(int index) {
+        Monotonic<V> m = elementVolatile(index);
         if (m != null) {
             return m;
         }
@@ -67,19 +73,19 @@ public final class MonotonicList<V>
 
     @Override
     public int size() {
-        return elements.length;
+        return size;
     }
 
     // all mutating methods throw UnsupportedOperationException
     @Override public boolean add(Monotonic<V> v) {throw uoe();}
     @Override public boolean addAll(Collection<? extends Monotonic<V>> c) {throw uoe();}
     @Override public boolean addAll(int index, Collection<? extends Monotonic<V>> c) {throw uoe();}
-    @Override public void clear() {throw uoe();}
+    @Override public void    clear() {throw uoe();}
     @Override public boolean remove(Object o) {throw uoe();}
     @Override public boolean removeAll(Collection<?> c) {throw uoe();}
     @Override public boolean removeIf(Predicate<? super Monotonic<V>> filter) {throw uoe();}
     @Override public boolean retainAll(Collection<?> c) {throw uoe();}
-    @Override public void sort(Comparator<? super Monotonic<V>> c) {throw uoe();}
+    @Override public void    sort(Comparator<? super Monotonic<V>> c) {throw uoe();}
 
     @Override
     public int indexOf(Object o) {
