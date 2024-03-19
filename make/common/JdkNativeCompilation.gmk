@@ -211,6 +211,18 @@ define SetupJdkLibraryBody
     $1_CFLAGS += $$($1_SRC_HEADER_FLAGS) $$($1_EXTRA_HEADER_FLAGS)
   endif
 
+  ifneq ($$($1_DEFAULT_LDFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKLIB)) $$($1_LDFLAGS)
+  endif
+
+  ifneq ($$($1_LD_SET_ORIGIN), false)
+    $1_LDFLAGS += $$(call SET_SHARED_LIBRARY_ORIGIN)
+  endif
+  # APPEND_LDFLAGS, if it exists, must be set after the origin flags
+  # This is a workaround to keep existing behavior
+  $1_LDFLAGS += $$($1_APPEND_LDFLAGS)
+
   # Since we reuse the rule name ($1), all our arguments will pass through.
   # We lose in transparency, but gain in brevity in this call...
   $$(eval $$(call SetupNativeCompilation, $1, ))
@@ -267,6 +279,15 @@ define SetupJdkExecutableBody
 
     # Set the default flags first to be able to override
     $1_CXXFLAGS := $$(filter-out $$($1_CXXFLAGS_FILTER_OUT), $$(CXXFLAGS_JDKEXE)) $$($1_CXXFLAGS)
+  endif
+
+  ifneq ($$($1_DEFAULT_LDFLAGS), false)
+    # Set the default flags first to be able to override
+    $1_LDFLAGS := $$(filter-out $$($1_LDFLAGS_FILTER_OUT), $$(LDFLAGS_JDKEXE)) $$($1_LDFLAGS)
+  endif
+
+  ifneq ($$($1_LD_SET_ORIGIN), false)
+    $1_LDFLAGS += $$(call SET_EXECUTABLE_ORIGIN)
   endif
 
   # Since we reuse the rule name ($1), all our arguments will pass through.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,24 +20,23 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-#include <stdio.h>
 
-#if (defined(WIN32) || defined (_WIN32))
-#include <process.h>
-#define getpid _getpid
-#define pidType int
-#else
-#include <unistd.h>
-#define pidType pid_t
-#endif
+/**
+ * @test
+ * @bug 8323972
+ * @summary C2 compilation fails with assert(!x->as_Loop()->is_loop_nest_inner_loop()) failed: loop was transformed
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestInaccurateInnerLoopLimit::test* -XX:-TieredCompilation TestInaccurateInnerLoopLimit
+ *
+ */
 
-#include <sys/types.h>
-#include <jni.h>
+public class TestInaccurateInnerLoopLimit {
 
-extern "C" {
+    public static void main(String args[]) {
+        test();
+    }
 
-JNIEXPORT jlong
-JNICALL Java_nsk_share_NativeUtils_getCurrentPID(JNIEnv * jni, jobject  jobj) {
-        return (jlong) getpid();
-}
+    public static void test() {
+        for (long i = 9223372034707292164L; i > 9223372034707292158L; i += -2L) { }
+    }
 }

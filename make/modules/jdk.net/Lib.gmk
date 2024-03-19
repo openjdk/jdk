@@ -32,8 +32,6 @@ ifeq ($(call isTargetOs, linux macosx windows aix), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBEXTNET, \
       NAME := extnet, \
       OPTIMIZATION := LOW, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS_unix := -ljava, \
       LIBS_linux := -ljvm, \
       LIBS_windows := jvm.lib ws2_32.lib $(WIN_JAVA_LIB), \

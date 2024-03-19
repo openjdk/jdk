@@ -37,7 +37,7 @@ class LogTagSet;
 // Consists of ordered LogSelections, i.e. "tag1+tag2=level1,tag3*=level2".
 class LogSelectionList : public StackObj {
  public:
-  static const size_t MaxSelections = 256;
+  static const size_t MaxSelections = 320;
 
  private:
   friend void LogConfiguration::configure_stdout(LogLevelType, int, ...);

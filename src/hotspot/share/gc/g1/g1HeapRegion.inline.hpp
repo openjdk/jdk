@@ -176,9 +176,6 @@ inline void HeapRegion::prepare_for_full_gc() {
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a movable region is invalid.
-  // But all objects are live, we get this by setting TAMS to bottom.
-  init_top_at_mark_start();
 
   reset_after_full_gc_common();
 }
@@ -186,16 +183,18 @@ inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
 inline void HeapRegion::reset_skip_compacting_after_full_gc() {
   assert(!is_free(), "must be");
 
-  _garbage_bytes = 0;
-
-  reset_top_at_mark_start();
-
   reset_after_full_gc_common();
 }
 
 inline void HeapRegion::reset_after_full_gc_common() {
+  // After a full gc the mark information in a movable region is invalid. Reset marking
+  // information.
+  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
+
   // Everything above bottom() is parsable and live.
   reset_parsable_bottom();
+
+  _garbage_bytes = 0;
 
   // Clear unused heap memory in debug builds.
   if (ZapUnusedHeapArea) {
@@ -266,14 +265,6 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
   _bot_part.update_for_block(obj_start, obj_end);
 }
 
-inline HeapWord* HeapRegion::top_at_mark_start() const {
-  return Atomic::load(&_top_at_mark_start);
-}
-
-inline void HeapRegion::set_top_at_mark_start(HeapWord* value) {
-  Atomic::store(&_top_at_mark_start, value);
-}
-
 inline HeapWord* HeapRegion::parsable_bottom() const {
   assert(!is_init_completed() || SafepointSynchronize::is_at_safepoint(), "only during initialization or safepoint");
   return _parsable_bottom;
@@ -287,44 +278,20 @@ inline void HeapRegion::reset_parsable_bottom() {
   Atomic::release_store(&_parsable_bottom, bottom());
 }
 
-inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
-  if (is_old_or_humongous() && !is_collection_set_candidate()) {
-    set_top_at_mark_start(top());
-  }
-}
-
-inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
+inline void HeapRegion::note_end_of_marking(HeapWord* top_at_mark_start, size_t marked_bytes) {
   assert_at_safepoint();
 
-  if (top_at_mark_start() != bottom()) {
-    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start) - marked_bytes;
   }
 
   if (needs_scrubbing()) {
-    _parsable_bottom = top_at_mark_start();
+    _parsable_bottom = top_at_mark_start;
   }
 }
 
 inline void HeapRegion::note_end_of_scrubbing() {
   reset_parsable_bottom();
-}
-
-inline void HeapRegion::init_top_at_mark_start() {
-  reset_top_at_mark_start();
-  _parsable_bottom = bottom();
-  _garbage_bytes = 0;
-}
-
-inline void HeapRegion::reset_top_at_mark_start() {
-  // We do not need a release store here because
-  //
-  // - if this method is called during concurrent bitmap clearing, we do not read
-  // the bitmap any more for live/dead information (we do not read the bitmap at
-  // all at that point).
-  // - otherwise we reclaim regions only during GC and we do not read tams and the
-  // bitmap concurrently.
-  set_top_at_mark_start(bottom());
 }
 
 inline bool HeapRegion::needs_scrubbing() const {

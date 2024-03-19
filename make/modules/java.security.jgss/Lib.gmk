@@ -33,8 +33,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2GSS, \
     DISABLED_WARNINGS_gcc := undef, \
     DISABLED_WARNINGS_clang_aix := undef, \
     DISABLED_WARNINGS_clang := undef, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(LIBDL), \
 ))
 
@@ -45,8 +43,6 @@ ifeq ($(call isTargetOs, windows), true)
       NAME := sspi_bridge, \
       OPTIMIZATION := LOW, \
       EXTRA_HEADER_DIRS := libj2gss, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := Secur32.lib, \
   ))
 
@@ -61,8 +57,6 @@ ifneq ($(BUILD_CRYPTO), false)
     $(eval $(call SetupJdkLibrary, BUILD_LIBW2K_LSA_AUTH, \
         NAME := w2k_lsa_auth, \
         OPTIMIZATION := LOW, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := advapi32.lib Secur32.lib kernel32.lib ws2_32.lib, \
     ))
 
@@ -76,8 +70,6 @@ ifneq ($(BUILD_CRYPTO), false)
         NAME := osxkrb5, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_clang_nativeccache.c := deprecated-declarations, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS := -framework Cocoa -framework SystemConfiguration \
             -framework Kerberos, \
     ))
