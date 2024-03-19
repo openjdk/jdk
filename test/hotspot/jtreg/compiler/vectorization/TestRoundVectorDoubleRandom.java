@@ -123,8 +123,10 @@ public class TestRoundVectorDoubleRandom {
       final int eStep = (1 << 3) + rand.nextInt(3);
       // Here, we could have iterated the whole range of exponent values, but it would
       // take more time to run the test, so just randomly choose some of exponent values.
-      for (int ei = eStart; ei < eBound; ei += eStep) {
-        int eiIdx = ei/eStep;
+      int ei = eStart;
+      int eiIdx = 0;
+      for (; ei < eBound; ei += eStep) {
+        eiIdx = ei/eStep;
         // combine e and f
         long bits = ((long)ei << eShift) + fi;
         // combine sign(+/-) with e and f
@@ -134,13 +136,23 @@ public class TestRoundVectorDoubleRandom {
         bits = bits | (1L << 63);
         input[eiIdx*2+1] = Double.longBitsToDouble(bits);
       }
+      // add specific test cases where it looks like in binary format:
+      //   s111 1111 1111 xxxx xxxx xxxx xxxx xxxx ...
+      // these are for the NaN and Inf.
+      eiIdx = eiIdx*2+2;
+      long bits = (1L << eWidth) - 1L;
+      bits <<= eShift;
+      input[eiIdx++] = Double.longBitsToDouble(bits);
+      bits = bits | (1L << 63);
+      input[eiIdx] = Double.longBitsToDouble(bits);
 
       // run tests
       test_round(res, input);
 
       // verify results
-      for (int ei = eStart; ei < eBound; ei += eStep) {
-        int eiIdx = ei/eStep;
+      ei = eStart;
+      eiIdx = ei/eStep;
+      for (; ei < eBound; ei += eStep) {
         for (int sign = 0; sign < 2; sign++) {
           int idx = eiIdx * 2 + sign;
           if (res[idx] != golden_round(input[idx])) {
