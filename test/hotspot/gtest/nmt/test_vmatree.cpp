@@ -171,6 +171,13 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
                                      0x00007bece59b2add);
   NativeCallStackStorage::StackIndex si = ncs.push(stack);
   Tree::Metadata md{si, mtNMT};
+  { // One big reserve + release leaves an empty tree
+    Tree tree;
+    tree.reserve_mapping(0, 500000, md);
+    tree.release_mapping(0, 500000);
+    EXPECT_EQ(nullptr, treap_of(tree));
+  }
+
   {
     Tree tree;
     for (int i = 0; i < 100; i++) {
