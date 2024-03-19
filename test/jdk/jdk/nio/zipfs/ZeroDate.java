@@ -58,31 +58,34 @@ public class ZeroDate {
 
     public static void main(String[] args) throws Exception {
         // create a zip file, and read it in as a byte array
-        Path path = Utils.createTempFile("bad", ".zip");
-        try (OutputStream os = Files.newOutputStream(path);
-                ZipOutputStream zos = new ZipOutputStream(os)) {
-            ZipEntry e = new ZipEntry("x");
-            zos.putNextEntry(e);
-            zos.write((int) 'x');
-        }
-        int len = (int) Files.size(path);
-        byte[] data = new byte[len];
-        try (InputStream is = Files.newInputStream(path)) {
-            is.read(data);
-        }
-        Files.delete(path);
+        Path path = Files.createTempFile("bad", ".zip");
+        try {
+            try (OutputStream os = Files.newOutputStream(path);
+                 ZipOutputStream zos = new ZipOutputStream(os)) {
+                ZipEntry e = new ZipEntry("x");
+                zos.putNextEntry(e);
+                zos.write((int) 'x');
+            }
+            int len = (int) Files.size(path);
+            byte[] data = new byte[len];
+            try (InputStream is = Files.newInputStream(path)) {
+                is.read(data);
+            }
 
-        // year, month, day are zero
-        testDate(data.clone(), 0, LocalDate.of(1979, 11, 30).atStartOfDay());
-        // only year is zero
-        testDate(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5).atStartOfDay());
-        // month is greater than 12
-        testDate(data.clone(), 0 << 25 | 13 << 21 | 1 << 16, LocalDate.of(1981, 1, 1).atStartOfDay());
-        // 30th of February
-        testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16, LocalDate.of(1980, 3, 1).atStartOfDay());
-        // 30th of February, 24:60:60
-        testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16 | 24 << 11 | 60 << 5 | 60 >> 1,
-                LocalDateTime.of(1980, 3, 2, 1, 1, 0));
+            // year, month, day are zero
+            testDate(data.clone(), 0, LocalDate.of(1979, 11, 30).atStartOfDay());
+            // only year is zero
+            testDate(data.clone(), 0 << 25 | 4 << 21 | 5 << 16, LocalDate.of(1980, 4, 5).atStartOfDay());
+            // month is greater than 12
+            testDate(data.clone(), 0 << 25 | 13 << 21 | 1 << 16, LocalDate.of(1981, 1, 1).atStartOfDay());
+            // 30th of February
+            testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16, LocalDate.of(1980, 3, 1).atStartOfDay());
+            // 30th of February, 24:60:60
+            testDate(data.clone(), 0 << 25 | 2 << 21 | 30 << 16 | 24 << 11 | 60 << 5 | 60 >> 1,
+                    LocalDateTime.of(1980, 3, 2, 1, 1, 0));
+        } finally {
+            Files.delete(path);
+        }
     }
 
     private static void testDate(byte[] data, int date, LocalDateTime expected) throws IOException {

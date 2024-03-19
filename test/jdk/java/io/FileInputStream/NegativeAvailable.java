@@ -27,7 +27,6 @@
  * @summary Test if available returns correct value when skipping beyond
  *          the end of a file.
  * @author Dan Xu
- * @library /test/lib
  */
 
 import java.io.BufferedWriter;
@@ -38,8 +37,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import jdk.test.lib.Utils;
-
 public class NegativeAvailable {
 
     public static void main(String[] args) throws IOException {
@@ -48,29 +45,32 @@ public class NegativeAvailable {
         final int NEGATIVE_SKIP = -5;
 
         // Create a temporary file with size of 10 bytes.
-        Path tmp = Utils.createTempFile(null, null);
-        try (BufferedWriter writer =
-            Files.newBufferedWriter(tmp, Charset.defaultCharset())) {
-            for (int i = 0; i < SIZE; i++) {
-                writer.write('1');
+        Path tmp = Files.createTempFile(null, null);
+        try {
+            try (BufferedWriter writer =
+                         Files.newBufferedWriter(tmp, Charset.defaultCharset())) {
+                for (int i = 0; i < SIZE; i++) {
+                    writer.write('1');
+                }
             }
-        }
 
-        File tempFile = tmp.toFile();
-        try (FileInputStream fis = new FileInputStream(tempFile)) {
-            if (tempFile.length() != SIZE) {
-                throw new RuntimeException("unexpected file size = "
-                                           + tempFile.length());
+            File tempFile = tmp.toFile();
+            try (FileInputStream fis = new FileInputStream(tempFile)) {
+                if (tempFile.length() != SIZE) {
+                    throw new RuntimeException("unexpected file size = "
+                            + tempFile.length());
+                }
+                long space = skipBytes(fis, SKIP, SIZE);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, SKIP, space);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
+                space = skipBytes(fis, NEGATIVE_SKIP, space);
             }
-            long space = skipBytes(fis, SKIP, SIZE);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, SKIP, space);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
-            space = skipBytes(fis, NEGATIVE_SKIP, space);
+        } finally {
+            Files.deleteIfExists(tmp);
         }
-        Files.deleteIfExists(tmp);
     }
 
     /**

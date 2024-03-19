@@ -32,6 +32,8 @@ import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.file.Files;
+
 import jtreg.SkippedException;
 
 public class NonBlockingAccept {
@@ -49,20 +51,21 @@ public class NonBlockingAccept {
     public static void main(String[] args) throws Exception {
 
         checkSupported();
+        UnixDomainSocketAddress addr = null;
 
         try (ServerSocketChannel serverSocketChannel =
                                  ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
             //non blocking mode
             serverSocketChannel.configureBlocking(false);
             serverSocketChannel.bind(null);
-            UnixDomainSocketAddress addr =
-                    (UnixDomainSocketAddress) serverSocketChannel.getLocalAddress();
-            addr.getPath().toFile().deleteOnExit();
+            addr = (UnixDomainSocketAddress) serverSocketChannel.getLocalAddress();
             SocketChannel socketChannel = serverSocketChannel.accept();
             System.out.println("The socketChannel is : expected Null " + socketChannel);
             if (socketChannel != null)
                 throw new RuntimeException("expected null");
             // or exception could be thrown otherwise
+        } finally {
+            Files.deleteIfExists(addr.getPath());
         }
     }
 }
