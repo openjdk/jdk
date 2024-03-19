@@ -90,26 +90,26 @@ public class TestRoundVectorDoubleRandom {
     }
 
     int errn = 0;
-    // a double precise float point is composed of 3 parts: sign/e(exponent)/f(signicant)
+    // a double precise float point is composed of 3 parts: sign/e(exponent)/f(signicand)
     // e (exponent) part of a float value
     final int eShift = 52;
     final int eWidth = 11;
     final int eBound = 1 << eWidth;
     // f (significant) part of a float value
     final int fWidth = eShift;
-    final long fBound = 1 << fWidth;
+    final long fBound = 1L << fWidth;
     final int fNum = 256;
 
     // prepare for data of f (i.e. significand part)
     long fis[] = new long[fNum];
     int fidx = 0;
     for (; fidx < fWidth; fidx++) {
-      fis[fidx] = 1 << fidx;
+      fis[fidx] = 1L << fidx;
     }
     for (; fidx < fNum; fidx++) {
       fis[fidx] = rand.nextLong(fBound);
     }
-    fis[rand.nextInt(fidx)] = 0;
+    fis[rand.nextInt(fNum)] = 0;
 
     // generate input arrays for testing, then run tests & verify results
     for (long fi : fis) {
@@ -119,15 +119,17 @@ public class TestRoundVectorDoubleRandom {
       //   both positive and negative of previous combined values (e+f)
       final int eStart = rand.nextInt(9);
       final int eStep = (1 << 3) + rand.nextInt(3);
+      // Here, we could have iterated the whole range of exponent values, but it would
+      // take more time to run the test, so just randomly choose some of exponent values.
       for (int ei = eStart; ei < eBound; ei += eStep) {
         int eiIdx = ei/eStep;
         // combine e and f
-        long bits = (ei << eShift) + fi;
+        long bits = ((long)ei << eShift) + fi;
         // combine sign(+/-) with e and f
         // positive values
         input[eiIdx*2] = Double.longBitsToDouble(bits);
         // negative values
-        bits = bits | (1 << 63);
+        bits = bits | (1L << 63);
         input[eiIdx*2+1] = Double.longBitsToDouble(bits);
       }
 

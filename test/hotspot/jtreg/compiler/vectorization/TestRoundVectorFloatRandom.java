@@ -92,7 +92,7 @@ public class TestRoundVectorFloatRandom {
     }
 
     int errn = 0;
-    // a single precise float point is composed of 3 parts: sign/e(exponent)/f(signicant)
+    // a single precise float point is composed of 3 parts: sign/e(exponent)/f(signicand)
     // e (exponent) part of a float value
     final int eStart = 0;
     final int eShift = 23;
@@ -112,7 +112,7 @@ public class TestRoundVectorFloatRandom {
     for (; fidx < fNum; fidx++) {
       fis[fidx] = rand.nextInt(fBound);
     }
-    fis[rand.nextInt(fidx)] = 0;
+    fis[rand.nextInt(fNum)] = 0;
 
     // generate input arrays for testing, then run tests & verify results
     for (int fi : fis) {
