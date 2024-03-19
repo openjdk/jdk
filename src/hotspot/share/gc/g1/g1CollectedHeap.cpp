@@ -1505,8 +1505,8 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
-  // Concurrent Mark ref processor
   _is_alive_closure_cm.initialize(concurrent_mark());
+  // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,
                            ParallelGCThreads,                              // degree of mt processing
