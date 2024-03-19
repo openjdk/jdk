@@ -26,6 +26,8 @@
  * @bug 6260659
  * @summary File Name set programmatically in FileDialog is overridden during navigation, XToolkit
  * @requires (os.family == "linux")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual FileNameOverrideTest
  */
 
@@ -85,7 +87,7 @@ public class FileNameOverrideTest {
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
-        String instructions = """ 
+        String instructions = """
                 1) Click on 'Show File Dialog' button. A file dialog will come up.
                 2) Double-click on '$clickDirName' and click OK.
                 3) The text in the text field will indicate if test is passed or failed.
