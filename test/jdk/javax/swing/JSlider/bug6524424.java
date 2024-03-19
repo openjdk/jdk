@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,46 +21,65 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 6524424
  * @requires (os.family == "windows")
- * @summary JSlider Clicking In Tracks Behavior Inconsistent For Different Tick Spacings
- * @author Pavel Porvatov
+ * @summary JSlider clicking in tracks behavior inconsistent for different tick spacings
  * @modules java.desktop/com.sun.java.swing.plaf.windows
- * @run applet/manual=done bug6524424.html
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug6524424
  */
 
-import java.awt.*;
-import javax.swing.*;
+import java.awt.Component;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import com.sun.java.swing.plaf.windows.WindowsLookAndFeel;
 
-public class bug6524424 extends JApplet {
-    public static void main(String[] args) {
+public class bug6524424 {
+    private static final String INSTRUCTIONS = """
+          1. Select a slider (do the next steps for every slider)
+          2. Check that the next keyboard buttons work correctly:
+             Up, Down, Left, Right, Page Up, Page Down
+          3. Press left mouse button on a free space of the slider
+             check if thumb moves correctly
+             press Pass else press Fail.""";
+
+    public static void main(String[] args) throws Exception {
+         PassFailJFrame.builder()
+                .title("Slider Behavior Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(7)
+                .columns(30)
+                .testUI(bug6524424::createTestUI)
+                .build()
+                .awaitAndCheck();
+    }
+
+    private static JFrame createTestUI() {
         try {
             UIManager.setLookAndFeel(new WindowsLookAndFeel());
-        } catch (UnsupportedLookAndFeelException e) {
-            e.printStackTrace();
-
-            return;
+        } catch (UnsupportedLookAndFeelException ex) {
+            PassFailJFrame.forceFail(ex.toString());
+            return null;
         }
 
         TestPanel panel = new TestPanel();
 
-        JFrame frame = new JFrame();
+        JFrame frame = new JFrame("bug6524424");
 
         frame.setContentPane(panel);
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.pack();
-        frame.setLocationRelativeTo(null);
-
-        frame.setVisible(true);
-    }
-
-    public void init() {
-        TestPanel panel = new TestPanel();
-
-        setContentPane(panel);
+        return frame;
     }
 
     private static class TestPanel extends JPanel {
