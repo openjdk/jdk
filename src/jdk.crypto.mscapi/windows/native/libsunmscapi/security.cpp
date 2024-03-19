@@ -802,9 +802,16 @@ JNIEXPORT jbyteArray JNICALL Java_sun_security_mscapi_CSignature_signHash
             if (::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL, //deprecated
                 PROV_RSA_AES, 0) == FALSE)
             {
+                // If the key is in a local machine store, we need to try again with CRYPT_MACHINE flag.
+                // See https://learn.microsoft.com/en-us/troubleshoot/windows-server/windows-security/cryptacquirecontext-troubleshooting
+                if (GetLastError() != NTE_BAD_KEYSET
+                        || ::CryptAcquireContext(&hCryptProvAlt, LPCSTR(pbData), NULL, //deprecated
+                                                 PROV_RSA_AES, CRYPT_MACHINE_KEYSET) == FALSE)
+                {
+                    ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
+                    __leave;
+                }
 
-                ThrowException(env, SIGNATURE_EXCEPTION, GetLastError());
-                __leave;
             }
 
             // Acquire a hash object handle.
