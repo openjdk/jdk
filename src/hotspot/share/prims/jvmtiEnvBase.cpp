@@ -2001,7 +2001,7 @@ JvmtiHandshake::execute(JvmtiUnitedHandshakeClosure* hs_cl, ThreadsListHandle* t
   bool self = target_jt == JavaThread::current();
 
   hs_cl->set_target_jt(target_jt);   // can be needed in the virtual thread case
-  hs_cl->set_is_virtual(is_virtual); // needed when suspend is required for non-current target thread
+  hs_cl->set_is_virtual(is_virtual); // can be needed in the virtual thread case
   hs_cl->set_self(self);             // needed when suspend is required for non-current target thread
 
   if (is_virtual) {                // virtual thread
