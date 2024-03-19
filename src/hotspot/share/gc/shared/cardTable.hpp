@@ -73,6 +73,7 @@ protected:
 
   // CardTable entry size
   static uint _card_shift;
+  static uint _card_shift_in_words;
   static uint _card_size;
   static uint _card_size_in_words;
 
@@ -180,6 +181,10 @@ public:
 
   static uint card_shift() {
     return _card_shift;
+  }
+
+  static uint card_shift_in_words() {
+    return _card_shift_in_words;
   }
 
   static uint card_size() {
