@@ -35,6 +35,8 @@ import javax.swing.JTextArea;
  * @bug 7161437
  * @summary We should support "apple.awt.fileDialogForDirectories" property.
  * @requires (os.family == "mac")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual FileDialogForDirectories
  */
 
