@@ -25,50 +25,72 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Panel;
+import java.awt.event.MouseWheelEvent;
 
 /*
  * @test
  * @bug 6730447
- * @summary [Win] To verify the support for high resolution mouse wheel on Windows.
+ * @summary To verify the support for high resolution mouse wheel.
  *          AWT panel needs to support high-res mouse wheel rotation.
- * @requires (os.family == "windows")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual AWTPanelSmoothWheel
  */
 
 public class AWTPanelSmoothWheel {
-    public static final String INSTRUCTIONS = """
-            This test is relevant for windows platforms and mouses with high-resolution wheel,
-            please just press pass if this is not the case.
+    private static int wheelEventCount = 0;
+    private static final String INSTRUCTIONS = """
+            <html>
+            <body>
+            This test is relevant on platforms with high-resolution mouse wheel,
+            please press PASS if this is not the case.<br> <br>
 
             Place the mouse cursor above the green panel and rotate the mouse wheel,
             the test will print all mouse wheel event messages into the logging panel
-            below the instruction window.
-            Please make sure that some of the messages have non-zero 'wheelRotation' value,
-            and also check if the test works OK if the mouse wheel is rotated very slow.
+            below the instruction window.<br> <br>
 
-            If the above is true press PASS, else FAIL.
+            Check if the test works OK when the mouse wheel is rotated very slow.<br> <br>
+
+            This is a semi-automated test, when 5 or more MouseWheelEvents with
+            <br><b> scrollType=WHEEL_UNIT_SCROLL and wheelRotation != 0 </b> <br>
+            are recorded, the test automatically passes.<br>
+            The events are also logged in the logging panel
+            for user reference.<br> <br>
+
+            <hr>
+            PS: If you don't see events with scrollType=WHEEL_UNIT_SCROLL,
+            then the mouse doesn't support high-resolution scrolling.<br> <br>
+            </body>
+            </html>
             """;
 
-    public static void main (String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(45)
-                .logArea(8)
+                .rows(18)
+                .columns(50)
+                .logArea(10)
                 .testUI(AWTPanelSmoothWheel::createUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    private static Frame createUI () {
+    private static Frame createUI() {
         Frame frame = new Frame("Test Wheel Rotation");
         Panel panel = new Panel();
         panel.setBackground(Color.GREEN);
-        panel.addMouseWheelListener(e -> PassFailJFrame.log(e.toString()));
-        frame.setSize (200, 200);
+        panel.addMouseWheelListener(e -> {
+            PassFailJFrame.log(e.toString());
+            if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL
+                    && e.getWheelRotation() != 0) {
+                wheelEventCount++;
+            }
+            if (wheelEventCount > 5) {
+                PassFailJFrame.forcePass();
+            }
+        });
+        frame.setSize (400, 200);
         frame.setLayout(new BorderLayout());
         frame.add(panel, BorderLayout.CENTER);
         return frame;
