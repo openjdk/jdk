@@ -46,10 +46,10 @@ import java.util.Date;
 public class CopyAreaSpeed {
     public static void main(String args[]) throws Exception {
         String instructions = """
-                    "This test prints out the time it takes for a certain amount ",
-                    "of copyArea calls to be completed. Because the performance ",
-                    "measurement is relative, this code only provides a benchmark ",
-                    "to run with different releases to compare the outcomes."
+                    This test prints out the time it takes for a certain amount
+                    of copyArea calls to be completed. Because the performance
+                    measurement is relative, this code only provides a benchmark
+                    to run with different releases to compare the outcomes.
                 """;
 
         PassFailJFrame.builder()
