@@ -510,9 +510,10 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
     RecordComponent* component = components->at(i);
     write_u2(component->name_index());
     write_u2(component->descriptor_index());
-    u2 attributes_count = component->generic_signature_index() != 0 ? 1 : 0
-                        + component->annotations() != nullptr ? 1 : 0
-                        + component->type_annotations() != nullptr ? 1 : 0;
+    u2 attributes_count = (component->generic_signature_index() != 0 ? 1 : 0)
+                        + (component->annotations() != nullptr ? 1 : 0)
+                        + (component->type_annotations() != nullptr ? 1 : 0);
+
     write_u2(attributes_count);
     if (component->generic_signature_index() != 0) {
       write_signature_attribute(component->generic_signature_index());

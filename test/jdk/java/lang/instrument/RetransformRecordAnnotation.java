@@ -32,15 +32,51 @@
  */
 
 import java.io.File;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.lang.instrument.ClassFileTransformer;
 import java.nio.file.Files;
 import java.security.ProtectionDomain;
 
 public class RetransformRecordAnnotation extends AInstrumentationTestCase {
 
-    // RetentionPolicy.CLASS by default
-    @interface MyAnnotation{}
-    public record MyRecord(@MyAnnotation Object o, Object other) {}
+    @Target({ElementType.TYPE_PARAMETER, ElementType.TYPE_USE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface RuntimeTypeAnno {}
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface RuntimeParamAnno {
+        String s() default "foo";
+    }
+
+    @Target({ElementType.TYPE_PARAMETER, ElementType.TYPE_USE})
+    @Retention(RetentionPolicy.CLASS)
+    @interface ClassTypeAnno {}
+
+    @Retention(RetentionPolicy.CLASS)
+    @interface ClassParamAnno {
+        String s() default "bar";
+    }
+
+    @RuntimeTypeAnno
+    @RuntimeParamAnno(s = "1")
+    public record VisibleAnnos(@RuntimeTypeAnno @RuntimeParamAnno(s = "2") Object o, Object other) {
+    }
+
+    @ClassTypeAnno
+    @ClassParamAnno(s = "3")
+    public record InvisibleAnnos(@ClassTypeAnno @ClassParamAnno(s = "4") Object o, Object other) {
+    }
+
+    @RuntimeTypeAnno
+    @RuntimeParamAnno(s = "5")
+    @ClassTypeAnno
+    @ClassParamAnno(s = "6")
+    public record MixedAnnos(@RuntimeTypeAnno @RuntimeParamAnno(s = "7")
+                             @ClassTypeAnno @ClassParamAnno(s = "8") Object o, Object other) {
+    }
 
     public static void main (String[] args) throws Throwable {
         ATestCaseScaffold test = new RetransformRecordAnnotation();
@@ -48,21 +84,13 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
         test.runTest();
     }
 
-    private String targetClassName = "RetransformRecordAnnotation$MyRecord";
-    private String classFileName = targetClassName + ".class";
-    private Class targetClass;
-    private byte[] originalClassBytes;
-
+    // for Transformer
+    private String targetClassName;
     private byte[] seenClassBytes;
     private byte[] newClassBytes;
 
     public RetransformRecordAnnotation() throws Throwable {
         super("RetransformRecordAnnotation");
-
-        File origClassFile = new File(System.getProperty("test.classes", "."), classFileName);
-        log("Reading test class from " + origClassFile);
-        originalClassBytes = Files.readAllBytes(origClassFile.toPath());
-        log("Read " + originalClassBytes.length + " bytes.");
     }
 
     private void log(Object o) {
@@ -71,34 +99,52 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
 
     // Retransforms target class using provided class bytes;
     // Returns class bytes passed to the transformer.
-    private byte[] retransform(byte[] classBytes) throws Throwable {
+    private byte[] retransform(Class targetClass, byte[] classBytes) throws Throwable {
+        targetClassName = targetClass.getName();
         seenClassBytes = null;
         newClassBytes = classBytes;
         fInst.retransformClasses(targetClass);
-        assertTrue(targetClassName + " was not seen by transform()", seenClassBytes != null);
+        assertTrue(targetClass.getName() + " was not seen by transform()", seenClassBytes != null);
         return seenClassBytes;
     }
 
     protected final void doRunTest() throws Throwable {
-        ClassLoader loader = getClass().getClassLoader();
-        targetClass = loader.loadClass(targetClassName);
-
         fInst.addTransformer(new Transformer(), true);
 
         {
             log("Sanity: retransform to original class bytes");
-            retransform(originalClassBytes);
+            retransform(InvisibleAnnos.class, loadClassBytes(InvisibleAnnos.class));
             log("");
         }
 
         {
-            log("Test: retransform to null");
+            log("Test: retransform VisibleAnnos to null");
             // Ensure retransformation does not fail with ClassFormatError.
-            retransform(null);
+            retransform(VisibleAnnos.class, null);
+            log("");
+        }
+
+        {
+            log("Test: retransform InvisibleAnnos to null");
+            retransform(InvisibleAnnos.class, null);
+            log("");
+        }
+
+        {
+            log("Test: retransform MixedAnnos to null");
+            retransform(MixedAnnos.class, null);
             log("");
         }
     }
 
+    private byte[] loadClassBytes(Class cls) throws Exception {
+        String classFileName = cls.getName() + ".class";
+        File classFile = new File(System.getProperty("test.classes", "."), classFileName);
+        log("Reading test class from " + classFile);
+        byte[] classBytes = Files.readAllBytes(classFile.toPath());
+        log("Read " + classBytes.length + " bytes.");
+        return classBytes;
+    }
 
     public class Transformer implements ClassFileTransformer {
         public Transformer() {
