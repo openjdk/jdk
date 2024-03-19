@@ -38,6 +38,8 @@ import javax.swing.JFrame;
  * @bug 8028212
  * @summary [macosx] Custom Cursor HiDPI support
  * @requires (os.family == "mac")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual MultiResolutionCursorTest
  */
 public class MultiResolutionCursorTest {
