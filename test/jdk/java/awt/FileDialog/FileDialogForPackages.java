@@ -35,6 +35,8 @@ import javax.swing.JTextArea;
  * @bug 8026869
  * @summary Support apple.awt.use-file-dialog-packages property.
  * @requires (os.family == "mac")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
  * @run main/manual FileDialogForPackages
 */
 
