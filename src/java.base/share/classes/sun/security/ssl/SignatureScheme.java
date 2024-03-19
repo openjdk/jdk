@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -556,6 +556,24 @@ enum SignatureScheme {
         }
 
         return new String[0];
+    }
+
+    static String[][] getAlgorithmNamesNamedGroups(Collection<SignatureScheme> schemes) {
+        if (schemes != null) {
+            String[][] algArray = new String[schemes.size()][2];
+            int i = 0;
+            for (SignatureScheme scheme : schemes) {
+                algArray[i][0] = scheme.algorithm;
+                if (scheme.namedGroup != null) {
+                    algArray[i][1] = scheme.namedGroup.name;
+                }
+                i++;
+            }
+
+            return algArray;
+        }
+
+        return new String[0][0];
     }
 
     private static List<SignatureScheme> namesOfAvailable(

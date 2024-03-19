@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,22 @@ public interface AlgorithmConstraints {
      * or empty, or the key is {@code null}
      */
     boolean permits(Set<CryptoPrimitive> primitives, Key key);
+
+    /**
+     * Determines whether a key and the signature algorithm are granted
+     * permission for the specified cryptographic primitives.
+     *
+     * @param primitives a set of cryptographic primitives
+     * @param key the key
+     * @param sigAlg the signature algorithm
+     *
+     * @return {@code true} if the key and the signature algorithm can be used
+     *     for all the specified cryptographic primitives
+     *
+     * @throws IllegalArgumentException if primitives is {@code null}
+     * or empty, or the key is {@code null}
+     */
+    boolean permits(Set<CryptoPrimitive> primitives, Key key, String sigAlg);
 
     /**
      * Determines whether an algorithm and the corresponding key are granted

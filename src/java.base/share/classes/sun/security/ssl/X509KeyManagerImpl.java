@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,15 +189,15 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
             if (session != null) {
                 if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
+                    String[][] peerSupportedSignAlgsNamedGroups = null;
 
                     if (session instanceof ExtendedSSLSession extSession) {
-                        peerSupportedSignAlgs =
-                            extSession.getPeerSupportedSignatureAlgorithms();
+                        peerSupportedSignAlgsNamedGroups =
+                                extSession.getPeerSupportedSignatureAlgorithmsNamedGroups();
                     }
-
                     return SSLAlgorithmConstraints.forSocket(
-                        sslSocket, peerSupportedSignAlgs, true);
+                            sslSocket, peerSupportedSignAlgsNamedGroups, true);
+
                 }
             }
 
@@ -213,15 +213,17 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
             SSLSession session = engine.getHandshakeSession();
             if (session != null) {
                 if (ProtocolVersion.useTLS12PlusSpec(session.getProtocol())) {
-                    String[] peerSupportedSignAlgs = null;
+
+                    String[][] peerSupportedSignAlgsNamedGroups = null;
 
                     if (session instanceof ExtendedSSLSession extSession) {
-                        peerSupportedSignAlgs =
-                            extSession.getPeerSupportedSignatureAlgorithms();
+                        peerSupportedSignAlgsNamedGroups =
+                            extSession.getPeerSupportedSignatureAlgorithmsNamedGroups();
                     }
 
                     return SSLAlgorithmConstraints.forEngine(
-                        engine, peerSupportedSignAlgs, true);
+                            engine, peerSupportedSignAlgsNamedGroups, true);
+
                 }
             }
         }

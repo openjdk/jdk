@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import java.math.BigInteger;
 import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -443,6 +445,38 @@ public final class KeyUtil {
             };
         } catch (IOException e) {
             throw new NoSuchAlgorithmException("Cannot decode public key", e);
+        }
+    }
+
+    public static final List<String> getNamedCurveFromKey(Key key) {
+        if (key instanceof ECKey) {
+            NamedCurve nc = CurveDB.lookup(((ECKey)key).getParams());
+            return (nc == null ? List.of()
+                    : Arrays.asList(nc.getNameAndAliases()));
+        } else if (key instanceof XECKey) {
+            return List.of(
+                    ((NamedParameterSpec)((XECKey)key).getParams()).getName());
+        } else {
+            return List.of();
+        }
+    }
+
+    public static final String printNamedCurvesFromKey(Key key) {
+        List<String> namedCurves = new ArrayList<>();
+
+        if (key instanceof ECKey) {
+            NamedCurve nc = CurveDB.lookup(((ECKey) key).getParams());
+            if (nc != null) {
+                namedCurves.addAll(Arrays.asList(nc.getNameAndAliases()));
+            }
+        } else if (key instanceof XECKey) {
+            namedCurves.add(((NamedParameterSpec) ((XECKey) key).getParams()).getName());
+        }
+
+        if (namedCurves.isEmpty()) {
+            return "null";
+        } else {
+            return String.join(", ", namedCurves);
         }
     }
 }

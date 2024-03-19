@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -184,6 +184,11 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         return checkConstraints(primitives, "", key, null);
     }
 
+    @Override
+    public final boolean permits(Set<CryptoPrimitive> primitives, Key key, String currSigAlg) {
+        return true;
+    }
+
     /*
      * Checks if the key algorithm has been disabled or if constraints have
      * been placed on the key.
@@ -246,7 +251,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         if (checkKey) {
             // Check if named curves in the key are disabled.
             for (Key key : cp.getKeys()) {
-                for (String curve : getNamedCurveFromKey(key)) {
+                for (String curve : KeyUtil.getNamedCurveFromKey(key)) {
                     if (!cachedCheckAlgorithm(curve)) {
                         throw new CertPathValidatorException(
                             "Algorithm constraints check failed on disabled " +
@@ -257,19 +262,6 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
             }
         }
         algorithmConstraints.permits(algorithm, cp, checkKey);
-    }
-
-    private static List<String> getNamedCurveFromKey(Key key) {
-        if (key instanceof ECKey) {
-            NamedCurve nc = CurveDB.lookup(((ECKey)key).getParams());
-            return (nc == null ? List.of()
-                               : Arrays.asList(nc.getNameAndAliases()));
-        } else if (key instanceof XECKey) {
-            return List.of(
-                ((NamedParameterSpec)((XECKey)key).getParams()).getName());
-        } else {
-            return List.of();
-        }
     }
 
     // Check algorithm constraints with key and algorithm
@@ -298,7 +290,7 @@ public class DisabledAlgorithmConstraints extends AbstractAlgorithmConstraints {
         }
 
         // If this is an elliptic curve, check if it is disabled
-        for (String curve : getNamedCurveFromKey(key)) {
+        for (String curve : KeyUtil.getNamedCurveFromKey(key)) {
             if (!permits(primitives, curve, null)) {
                 return false;
             }

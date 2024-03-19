@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,12 @@ public class ResumeChecksClient extends SSLContextTemplate {
         public boolean permits(Set<CryptoPrimitive> primitives, Key key) {
             return true;
         }
+
+        @Override
+        public boolean permits(Set<CryptoPrimitive> primitives, Key key, String sigAlg) {
+            return true;
+        }
+
         @Override
         public boolean permits(Set<CryptoPrimitive> primitives,
             String algorithm, AlgorithmParameters parameters) {

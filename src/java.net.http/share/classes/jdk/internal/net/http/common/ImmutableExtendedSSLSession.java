@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,8 +129,16 @@ public class ImmutableExtendedSSLSession extends ExtendedSSLSession {
         return delegate.getLocalSupportedSignatureAlgorithms();
     }
 
+    public String[][] getLocalSupportedSignatureAlgorithmsNamedGroups() {
+        return delegate.getLocalSupportedSignatureAlgorithmsNamedGroups();
+    }
+
     public String[] getPeerSupportedSignatureAlgorithms() {
         return delegate.getPeerSupportedSignatureAlgorithms();
+    }
+
+    public String[][] getPeerSupportedSignatureAlgorithmsNamedGroups() {
+        return delegate.getPeerSupportedSignatureAlgorithmsNamedGroups();
     }
 
     public List<SNIServerName> getRequestedServerNames()  {
