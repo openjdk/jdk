@@ -50,6 +50,29 @@ public class ECoreIndexOf {
     int foo = 0;
     String testName = "ECoreIndexOf";
 
+    String dataString = "ngdflsoscargfdgf";
+    String dataString16 = "ngdfilso\u01facargfd\u01eef";
+    String dataStringHuge = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "X").repeat(2) + "bB";
+    String dataStringHuge16 = (("A".repeat(32) + "B".repeat(32)).repeat(16) + "\u01fe").repeat(2) + "\u01eeB";
+    String earlyMatchString = dataStringHuge.substring(0, 34);
+    String earlyMatchString16 = dataStringHuge16.substring(0, 34);
+    String midMatchString = dataStringHuge.substring(dataStringHuge.length() / 2 - 16, dataStringHuge.length() / 2 + 32);
+    String midMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() / 2 - 16, dataStringHuge16.length() / 2 + 32);
+    String lateMatchString = dataStringHuge.substring(dataStringHuge.length() - 31);
+    String lateMatchString16 = dataStringHuge16.substring(dataStringHuge16.length() - 31);
+
+    String searchString = "oscar";
+    String searchString16 = "o\u01facar";
+    String searchStringSmall = "dgf";
+    String searchStringSmall16 = "d\u01eef";
+
+    String searchStringHuge = "capaapapapasdkajdlkajskldjaslkajdlkajskldjaslkjdlkasjdsalk";
+    String searchStringHuge16 = "capaapapapasdkajdlka\u01feskldjaslkajdlkajskldjaslkjdlkasjdsalk";
+
+    for (int xx = 0; xx < 10000000; xx++) {
+      foo += dataStringHuge.indexOf(earlyMatchString);
+    }
+
     ///////////////////////////  WARM-UP //////////////////////////
 
     for (int i = 0; i < 128; i++) {
@@ -127,10 +150,6 @@ public class ECoreIndexOf {
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
 
-    simpleTest();
-    compareIndexOfLastIndexOf();
-    compareStringStringBuffer();
-
     String[] decorators = {"", " (same char)"};
     Charset[] charSets = {StandardCharsets.ISO_8859_1, StandardCharsets.UTF_16};
     boolean[] truefalse = {true, false};
@@ -143,6 +162,7 @@ public class ECoreIndexOf {
       simpleTest();
       compareIndexOfLastIndexOf();
       compareStringStringBuffer();
+
       for (String decorator : decorators) {
         for (Charset csHaystack : charSets) {
           for (Charset csNeedle : charSets) {

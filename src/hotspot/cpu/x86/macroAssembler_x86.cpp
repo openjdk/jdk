@@ -9899,12 +9899,12 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
 
   if (UseAVX >= 2) {
     // With AVX2, use 32-byte vector compare
-    Label COMPARE_WIDE_VECTORS, COMPARE_TAIL;
+    Label COMPARE_WIDE_VECTORS, COMPARE_WIDE_VECTORS_16, COMPARE_TAIL, COMPARE_TAIL_16;
 
     // Compare 32-byte vectors
     andl(result, 0x0000001f);  //   tail count (in bytes)
     andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jcc(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL_16);
 
     lea(ary1, Address(ary1, limit,
                       expand_ary2 ? Address::times_2 : Address::times_1));
@@ -9980,8 +9980,36 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
     vpxor(vec1, vec2);
 
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, FALSE_LABEL);
-    jmpb(TRUE_LABEL);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    jmp(TRUE_LABEL);
+
+    bind(COMPARE_TAIL_16); // limit is zero
+    movl(limit, result);
+
+    // Compare 16-byte chunks
+    andl(result, 0x0000000f);  //   tail count (in bytes)
+    andl(limit, 0xfffffff0);   // vector count (in bytes)
+    jcc(Assembler::zero, COMPARE_TAIL);
+
+    lea(ary1, Address(ary1, limit, expand_ary2 ? Address::times_2 : Address::times_1));
+    lea(ary2, Address(ary2, limit, Address::times_1));
+    negptr(limit);
+
+    bind(COMPARE_WIDE_VECTORS_16);
+    movdqu(vec1, Address(ary1, limit,
+                         expand_ary2 ? Address::times_2 : Address::times_1));
+    if (expand_ary2) {
+      vpmovzxbw(vec2, Address(ary2, limit, Address::times_1),
+                Assembler::AVX_128bit);
+    } else {
+      movdqu(vec2, Address(ary2, limit, Address::times_1));
+    }
+    vpxor(vec1, vec2);
+
+    vptest(vec1, vec1);
+    jcc(Assembler::notZero, FALSE_LABEL);
+    addptr(limit, expand_ary2 ? 8 : 16);
+    jcc(Assembler::notZero, COMPARE_WIDE_VECTORS_16);
 
     bind(COMPARE_TAIL); // limit is zero
     movl(limit, result);
@@ -10027,7 +10055,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
 
   // Compare 4-byte vectors
   if (expand_ary2) {
-    cmpl(result, 0);
+    testl(result, result);
     jccb(Assembler::zero, TRUE_LABEL);
   } else {
     andl(limit, 0xfffffffc); // vector count (in bytes)
@@ -10044,7 +10072,7 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1,
     movzbl(chr, Address(ary2, limit, Address::times_1));
     cmpl(chr, Address(ary1, limit, Address::times_2));
     jccb(Assembler::notEqual, FALSE_LABEL);
-    addq(limit, 1);
+    addptr(limit, 1);
     jcc(Assembler::notZero, COMPARE_VECTORS);
     jmp(TRUE_LABEL);
   } else {
