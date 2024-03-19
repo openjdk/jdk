@@ -965,6 +965,13 @@ public class ToolSimpleTest extends ReplToolTesting {
     }
 
     @Test
+    public void testSwitchExpressionYieldUnknownType() {
+        test(a -> assertCommandOutputContains(a,
+                "I m(I i, int x) { return switch (x) { default -> i; }; } ",
+                "created method m(I,int), however, it cannot be referenced until class I is declared"));
+    }
+
+    @Test
     public void testSelfReference() {
         test(
                 (a) -> assertCommandOutputContains(a, "var a = a;", "cannot use 'var' on self-referencing variable")

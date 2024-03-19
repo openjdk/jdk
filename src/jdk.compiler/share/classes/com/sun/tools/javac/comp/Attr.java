@@ -4628,7 +4628,11 @@ public class Attr extends JCTree.Visitor {
                      Env<AttrContext> env,
                      ResultInfo resultInfo) {
             if (pt.isErroneous()) {
-                return types.createErrorType(site);
+                Type errorType = types.createErrorType(site);
+                if (resultInfo.checkMode.updateTreeType()) {
+                    tree.type = errorType;
+                }
+                return errorType;
             }
             Type owntype; // The computed type of this identifier occurrence.
             switch (sym.kind) {
