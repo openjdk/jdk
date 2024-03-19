@@ -40,10 +40,8 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterJob;
 
 import javax.swing.JButton;
-import javax.swing.JFrame;
 
 public class PrintModalDialog {
-    private static JFrame frame;
     private static JButton jButton1;
     private static final String INSTRUCTIONS =
             """
