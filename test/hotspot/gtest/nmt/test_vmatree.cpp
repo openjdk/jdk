@@ -188,7 +188,7 @@ TEST_VM_F(VMATreeTest, NativeCallStack) {
   }
   {
     Tree tree;
-    for (int i = 99; i <= 0; i--) {
+    for (int i = 99; i >= 0; i--) {
       tree.reserve_mapping(i * 100, 100, md);
     }
     int found_nodes = 0;
