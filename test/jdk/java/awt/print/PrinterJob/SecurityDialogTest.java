@@ -39,8 +39,8 @@ import javax.swing.SwingUtilities;
  * @test
  * @bug 4937672 5100706 6252456
  * @key printer
- * @summary tests native and cross-platform page and print dialog
- *          when security manager is installed
+ * @summary Verifies "Print to file" option is disable if reading/writing files
+ *          is not allowed by Security Manager.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual/othervm -Djava.security.manager=allow SecurityDialogTest
@@ -66,7 +66,7 @@ public class SecurityDialogTest {
             throw new RuntimeException("Printer not configured or available.");
         }
 
-        PassFailJFrame passFailJFrame =  PassFailJFrame.builder()
+        PassFailJFrame passFailJFrame = PassFailJFrame.builder()
                 .instructions(INSTRUCTIONS)
                 .splitUIBottom(SecurityDialogTest::createTestUI)
                 .rows((int) INSTRUCTIONS.lines().count() + 1)
