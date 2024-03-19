@@ -3556,7 +3556,7 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
                                      Register tmp1, Register tmp2, Register tmp3, Register tmp4,
                                      Register tmp5, Register tmp6, Register product_hi, Register tmp8) {
 
-  assert_different_registers(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, tmp8);
+  assert_different_registers(x, xlen, y, ylen, z, tmp1, tmp2, tmp3, tmp4, tmp5, tmp6, product_hi, tmp8);
 
   const Register idx = tmp1;
   const Register kdx = tmp2;
