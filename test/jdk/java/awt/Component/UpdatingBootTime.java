@@ -73,7 +73,7 @@ public class UpdatingBootTime {
         String instructions =
                 """
             1) In the test window press "Press me" button.
-            2) A two timestamps should be printed.
+            2) Two timestamps should be printed.
             3) Verify that they are not differ a lot:
                it is okay to observe a 1 or 2 seconds difference.
             4) Change the system time significantly (by a month or a year)
