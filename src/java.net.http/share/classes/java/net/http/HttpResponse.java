@@ -1266,7 +1266,7 @@ public interface HttpResponse<T> {
          * from being reused for subsequent operations.
          *
          * @param charset the character set to use when converting bytes to characters
-         * @return a {@linkplain HttpClient##streaming streaming body subscriber} that streams
+         * @return a {@linkplain HttpClient##streaming streaming body subscriber} which streams
          *          the response body as a {@link Stream Stream}{@code <String>}.
          *
          * @see BufferedReader#lines()
