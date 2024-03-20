@@ -171,6 +171,41 @@ public class TestRoundVectorFloatRandom {
       }
     }
 
+    // test cases for NaN, Inf, subnormal, and so on
+    {
+      Float[] dv = new Float[] {
+        Float.MAX_VALUE,
+        Float.MIN_VALUE,
+        Float.NEGATIVE_INFINITY,
+        Float.POSITIVE_INFINITY,
+        Float.NaN,
+        Float.intBitsToFloat(0x7f800001), // another NaN
+        Float.MIN_NORMAL,
+        0x0.fffffep-126f,   // Maximum Subnormal Value
+        1.5f,
+        100.5f,
+        10000.5f,
+        -1.5f,
+        -100.5f,
+        -10000.5f
+      };
+      for (int j = 0; j < ARRLEN; j++) {
+        input[j] = dv[rand.nextInt(dv.length)];
+      }
+
+      // run tests
+      test_round(res, input);
+
+      // verify results
+      for (int j = 0; j < ARRLEN; j++) {
+        if (res[j] != golden_round(input[j])) {
+          errn++;
+          System.err.println("round error, input: " + input[j] +
+                             ", res: " + res[j] + "expected: " + golden_round(input[j]) +
+                             ", input hex: " + Float.floatToIntBits(input[j]));
+        }
+      }
+    }
 
     if (errn > 0) {
       throw new RuntimeException("There are some round error detected!");

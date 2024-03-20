@@ -53,6 +53,8 @@ public class TestRoundVectorDoubleRandom {
   private static final Random rand = new Random();
 
   public static void main(String args[]) {
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3");
+    TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=8");
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=16");
     TestFramework.runWithFlags("-XX:-TieredCompilation", "-XX:CompileThresholdScaling=0.3", "-XX:MaxVectorSize=32");
   }
@@ -65,9 +67,11 @@ public class TestRoundVectorDoubleRandom {
   @Test
   @IR(counts = {IRNode.ROUND_VD, "> 0"},
       applyIfPlatform = {"x64", "true"},
-      applyIfCPUFeature = {"avx512dq", "true"})
+      applyIfCPUFeature = {"avx512dq", "true"},
+      applyIf = {"MaxVectorSize", ">= 16"})
   @IR(counts = {IRNode.ROUND_VD, "> 0"},
-      applyIfPlatform = {"aarch64", "true"})
+      applyIfPlatform = {"aarch64", "true"},
+      applyIf = {"MaxVectorSize", ">= 16"})
   void test_round(long[] a0, double[] a1) {
     for (int i = 0; i < a0.length; i+=1) {
       a0[i] = Math.round(a1[i]);
@@ -170,6 +174,42 @@ public class TestRoundVectorDoubleRandom {
     for(int i = 0; i < 128; i++) {
       for (int j = 0; j < ARRLEN; j++) {
         input[j] = rand.nextDouble();
+      }
+
+      // run tests
+      test_round(res, input);
+
+      // verify results
+      for (int j = 0; j < ARRLEN; j++) {
+        if (res[j] != golden_round(input[j])) {
+          errn++;
+          System.err.println("round error, input: " + input[j] +
+                             ", res: " + res[j] + "expected: " + golden_round(input[j]) +
+                             ", input hex: " + Double.doubleToLongBits(input[j]));
+        }
+      }
+    }
+
+    // test cases for NaN, Inf, subnormal, and so on
+    {
+      Double[] dv = new Double[] {
+        Double.MAX_VALUE,
+        Double.MIN_VALUE,
+        Double.NEGATIVE_INFINITY,
+        Double.POSITIVE_INFINITY,
+        Double.NaN,
+        Double.longBitsToDouble(0x7ff0000000000001L), // another NaN
+        Double.MIN_NORMAL,
+        0x0.fffffffffffffp-1022,   // Maximum Subnormal Value
+        1.5,
+        100.5,
+        10000.5,
+        -1.5,
+        -100.5,
+        -10000.5
+      };
+      for (int j = 0; j < ARRLEN; j++) {
+        input[j] = dv[rand.nextInt(dv.length)];
       }
 
       // run tests
