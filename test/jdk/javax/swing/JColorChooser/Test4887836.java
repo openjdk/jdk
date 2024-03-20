@@ -38,8 +38,9 @@ import javax.swing.UIManager;
 public class Test4887836 {
 
     public static void main(String[] args) throws Exception {
-        String instructions = "If you do not see white area under the \"Swatches\" tab,\n" +
-                "then test passed, otherwise it failed.";
+        String instructions = """
+                                If you do not see white area under the \"Swatches\" tab,\n +
+                                then test passed, otherwise it failed.""";
 
         PassFailJFrame.builder()
                 .title("Test4759306")
