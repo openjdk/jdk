@@ -31,7 +31,7 @@ import java.awt.dnd.DragSource;
 /*
  * @test
  * @bug 4874070
- * @summary Tests basic DnD functionality
+ * @summary Tests CTRL + DnD functionality.
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ImageDecoratedDnD
@@ -42,27 +42,28 @@ public class ImageDecoratedDnD {
             When test runs a Frame which contains a yellow button labeled
             "Drag ME!" and a RED Panel will appear.
 
-            1. Click on the button and drag to the red panel by pressing
+            1. Click on the button and drag it to the red panel while holding
                the "CTRL" key on the keyboard.
 
             2. When the mouse enters the red panel during the drag, the panel
                should turn yellow.
 
-                On the systems that supports pictured drag, the image under the
+                On systems that supports pictured drag, the image under the
                 drag-cursor should appear.
                 "Image under drag-cursor" is a translucent blue rectangle + red
                 circle and includes an anchor that is shifted from top-left
                 corner of the picture to inside the picture to 10pt
                 in both dimensions.
 
-                On Windows system the image under cursor would be visible ONLY
-                over the drop targets with activated extended OLE DnD support
-                (that are, the desktop and IE).
+                On Windows, the image under the cursor would be visible ONLY over
+                drop targets with activated extended D'n'D support. It means the image
+                may not be displayed when dragging over some windows, it is not error.
+                The image should be display when dragging over the red/yellow panel.
 
             3. Release the mouse button.
 
-                The panel should turn red again and a yellow button labeled,
-                "Drag ME!" should appear inside the panel. You should be able,
+                The panel should turn red again and a yellow button labeled
+                "Drag ME!" should appear inside the panel. You should be able
                 to repeat this operation multiple times.
 
             If above is true press PASS, else press FAIL.
