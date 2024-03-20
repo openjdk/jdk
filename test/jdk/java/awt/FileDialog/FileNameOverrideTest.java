@@ -61,7 +61,7 @@ public class FileNameOverrideTest {
             fd.dispose();
             frame.dispose();
             if (fileName.equals(output)) {
-                PassFailJFrame.forcePass();;
+                PassFailJFrame.forcePass();
             } else {
                 PassFailJFrame.forceFail("File name mismatch: "
                         + fileName + " vs " + output);
