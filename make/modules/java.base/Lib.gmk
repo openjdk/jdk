@@ -49,8 +49,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_clang_aix_NetworkInterface.c := gnu-pointer-arith, \
     DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -delayload:secur32.dll -delayload:iphlpapi.dll \
         -delayload:winhttp.dll, \
     LIBS_unix := -ljvm -ljava, \
@@ -75,8 +73,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNIO, \
         libnio/ch \
         libnio/fs \
         libnet, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljava -lnet, \
     LIBS_linux := -lpthread $(LIBDL), \
     LIBS_aix := $(LIBDL), \
@@ -100,9 +96,7 @@ ifeq ($(call isTargetOs, macosx), true)
         NAME := osxsecurity, \
         OPTIMIZATION := LOW, \
         DISABLED_WARNINGS_clang_KeystoreImpl.m := deprecated-declarations, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
+        LDFLAGS := -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base,\
         LIBS := \
             -lobjc \
             -framework CoreServices \
@@ -126,8 +120,6 @@ ifeq ($(call isTargetOsType, unix), true)
         NAME := jsig, \
         OPTIMIZATION := LOW, \
         jsig.c_CFLAGS := -DHOTSPOT_VM_DISTRO='"$(HOTSPOT_VM_DISTRO)"', \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
-            $(call SET_SHARED_LIBRARY_ORIGIN), \
         LIBS_linux := $(LIBDL), \
         LIBS_aix := $(LIBDL), \
     ))
@@ -204,7 +196,7 @@ endif
 
 $(eval $(call SetupJdkLibrary, BUILD_SYSLOOKUPLIB, \
     NAME := syslookup, \
-    LDFLAGS := $(LDFLAGS_JDKLIB), \
+    LD_SET_ORIGIN := false, \
     LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
     LDFLAGS_aix := -brtl -bexpfull, \
     LIBS_linux := -lm -ldl, \
@@ -220,8 +212,6 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
   $(eval $(call SetupJdkLibrary, BUILD_LIBFALLBACKLINKER, \
       NAME := fallbackLinker, \
       CFLAGS := $(LIBFFI_CFLAGS), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-                 $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
       LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
   ))
@@ -237,8 +227,6 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       LINK_TYPE := C++, \
       OPTIMIZATION := HIGH, \
       CXXFLAGS := -std=c++17, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS_linux := -lm -ldl, \
   ))
 

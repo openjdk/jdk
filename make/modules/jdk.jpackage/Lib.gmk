@@ -64,7 +64,7 @@ $(eval $(call SetupJdkExecutable, BUILD_JPACKAGE_APPLAUNCHEREXE, \
     CFLAGS_macosx := -Wno-format-nonliteral, \
     CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
     CFLAGS_windows := $(JPACKAGE_CFLAGS_windows), \
-    LDFLAGS := $(LDFLAGS_JDKEXE), \
+    LD_SET_ORIGIN := false, \
     LIBS_macosx := -framework Cocoa  -rpath @executable_path/../Frameworks/ -rpath @executable_path/../PlugIns/, \
     LIBS_windows := user32.lib ole32.lib msi.lib shlwapi.lib \
         Shell32.lib, \
@@ -99,7 +99,7 @@ ifeq ($(call isTargetOs, linux), true)
       DISABLED_WARNINGS_clang_tstrings.cpp := format-nonliteral, \
       CXXFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
       CFLAGS := $(JPACKAGE_LIBAPPLAUNCHER_INCLUDES), \
-      LDFLAGS := $(LDFLAGS_JDKLIB), \
+      LD_SET_ORIGIN := false, \
       LIBS := -ldl, \
   ))
 
@@ -117,8 +117,7 @@ ifeq ($(call isTargetOs, windows), true)
       OPTIMIZATION := LOW, \
       EXTRA_SRC := jdk.jpackage:common, \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
+      LDFLAGS := $(LDFLAGS_CXX_JDK), \
       LIBS := advapi32.lib ole32.lib msi.lib user32.lib \
           shlwapi.lib Shell32.lib, \
   ))
@@ -140,7 +139,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS_FILTER_OUT := -MD, \
       CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_WIXHELPER_SRC)), \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK), \
+      LDFLAGS := $(LDFLAGS_CXX_JDK), \
       LIBS := ole32.lib msi.lib User32.lib shlwapi.lib \
           Shell32.lib, \
   ))
@@ -160,7 +159,6 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS_FILTER_OUT := -MD, \
       CXXFLAGS := -MT $(addprefix -I, $(JPACKAGE_MSIWRAPPER_SRC)), \
       CXXFLAGS_windows := $(JPACKAGE_CXXFLAGS_windows), \
-      LDFLAGS := $(LDFLAGS_JDKEXE), \
       LIBS := ole32.lib msi.lib user32.lib shlwapi.lib Shell32.lib, \
   ))
 
@@ -178,6 +176,7 @@ ifeq ($(call isTargetOs, windows), true)
       CXXFLAGS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_CXXFLAGS_windows) -DJP_LAUNCHERW, \
       CFLAGS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_CFLAGS), \
       CFLAGS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_CFLAGS_windows) -DJP_LAUNCHERW, \
+      LD_SET_ORIGIN := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LD_SET_ORIGIN), \
       LDFLAGS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LDFLAGS), \
       LIBS := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS), \
       LIBS_windows := $(BUILD_JPACKAGE_APPLAUNCHEREXE_LIBS_windows), \

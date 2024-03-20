@@ -40,6 +40,7 @@
 #endif
 
 uint CardTable::_card_shift = 0;
+uint CardTable::_card_shift_in_words = 0;
 uint CardTable::_card_size = 0;
 uint CardTable::_card_size_in_words = 0;
 
@@ -50,9 +51,7 @@ void CardTable::initialize_card_size() {
   _card_size = GCCardSizeInBytes;
   _card_shift = log2i_exact(_card_size);
   _card_size_in_words = _card_size / sizeof(HeapWord);
-
-  // Set blockOffsetTable size based on card table entry size
-  BOTConstants::initialize_bot_size(_card_shift);
+  _card_shift_in_words = _card_shift - LogHeapWordSize;
 
   log_info_p(gc, init)("CardTable entry size: " UINT32_FORMAT,  _card_size);
 }

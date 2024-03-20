@@ -524,6 +524,7 @@ private:
   void clear_scopedValueBindings();
   oop jvmti_vthread() const;
   void set_jvmti_vthread(oop p);
+  oop vthread_or_thread() const;
 
   // Prepare thread and add to priority queue.  If a priority is
   // not specified, use the priority of the thread object. Threads_lock
@@ -1149,6 +1150,10 @@ public:
   // java.lang.Thread interruption support
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
+
+  // This is only for use by JVMTI RawMonitorWait. It emulates the actions of
+  // the Java code in Object::wait which are not present in RawMonitorWait.
+  bool get_and_clear_interrupted();
 
 private:
   LockStack _lock_stack;

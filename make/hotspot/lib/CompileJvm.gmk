@@ -203,6 +203,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJVM, \
     DISABLED_WARNINGS_clang_aix_osThread_aix.cpp := tautological-undefined-compare, \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
     ASFLAGS := $(JVM_ASFLAGS), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LIBS := $(JVM_LIBS), \
     OPTIMIZATION := $(JVM_OPTIMIZATION), \
