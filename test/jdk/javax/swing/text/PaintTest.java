@@ -63,7 +63,7 @@ public class PaintTest {
     }
 
     private static JFrame createTestUI() {
-        JFrame frame = new JFrame("TEST");
+        JFrame frame = new JFrame("PaintTest");
 
         new PaintTest().create(frame.getContentPane());
         frame.pack();
