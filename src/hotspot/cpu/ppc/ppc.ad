@@ -4388,27 +4388,6 @@ operand rarg1RegL() %{
   interface(REG_INTER);
 %}
 
-operand rarg2RegL() %{
-  constraint(ALLOC_IN_RC(rarg2_bits64_reg));
-  match(iRegLdst);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand rarg3RegL() %{
-  constraint(ALLOC_IN_RC(rarg3_bits64_reg));
-  match(iRegLdst);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
-operand rarg4RegL() %{
-  constraint(ALLOC_IN_RC(rarg4_bits64_reg));
-  match(iRegLdst);
-  format %{ %}
-  interface(REG_INTER);
-%}
-
 // Pointer Destination Register
 // See definition of reg_class bits64_reg_rw.
 operand iRegPdst() %{

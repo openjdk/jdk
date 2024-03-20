@@ -255,11 +255,11 @@ print_generic_summary_region(size_t i, const ParallelCompactData::RegionData* c)
   ParallelCompactData& sd = PSParallelCompact::summary_data();
   size_t dci = c->destination() ? sd.addr_to_region_idx(c->destination()) : 0;
   log_develop_trace(gc, compaction)(
-      REGION_IDX_FORMAT " " PTR_FORMAT " "
+      REGION_IDX_FORMAT " "
       REGION_IDX_FORMAT " " PTR_FORMAT " "
       REGION_DATA_FORMAT " " REGION_DATA_FORMAT " "
       REGION_DATA_FORMAT " " REGION_IDX_FORMAT " %d",
-      i, p2i(c->data_location()), dci, p2i(c->destination()),
+      i, dci, p2i(c->destination()),
       c->partial_obj_size(), c->live_obj_size(),
       c->data_size(), c->source_region(), c->destination_count());
 
@@ -494,12 +494,6 @@ bool ParallelCompactData::initialize_block_data()
   return false;
 }
 
-void ParallelCompactData::clear()
-{
-  memset(_region_data, 0, _region_vspace->committed_size());
-  memset(_block_data, 0, _block_vspace->committed_size());
-}
-
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");
@@ -527,35 +521,6 @@ HeapWord* ParallelCompactData::partial_obj_end(size_t region_idx) const
   return result;
 }
 
-void ParallelCompactData::add_obj(HeapWord* addr, size_t len)
-{
-  const size_t obj_ofs = pointer_delta(addr, _heap_start);
-  const size_t beg_region = obj_ofs >> Log2RegionSize;
-  // end_region is inclusive
-  const size_t end_region = (obj_ofs + len - 1) >> Log2RegionSize;
-
-  if (beg_region == end_region) {
-    // All in one region.
-    _region_data[beg_region].add_live_obj(len);
-    return;
-  }
-
-  // First region.
-  const size_t beg_ofs = region_offset(addr);
-  _region_data[beg_region].add_live_obj(RegionSize - beg_ofs);
-
-  // Middle regions--completely spanned by this object.
-  for (size_t region = beg_region + 1; region < end_region; ++region) {
-    _region_data[region].set_partial_obj_size(RegionSize);
-    _region_data[region].set_partial_obj_addr(addr);
-  }
-
-  // Last region.
-  const size_t end_ofs = region_offset(addr + len - 1);
-  _region_data[end_region].set_partial_obj_size(end_ofs + 1);
-  _region_data[end_region].set_partial_obj_addr(addr);
-}
-
 void
 ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
 {
@@ -569,7 +534,6 @@ ParallelCompactData::summarize_dense_prefix(HeapWord* beg, HeapWord* end)
     _region_data[cur_region].set_destination(addr);
     _region_data[cur_region].set_destination_count(0);
     _region_data[cur_region].set_source_region(cur_region);
-    _region_data[cur_region].set_data_location(addr);
 
     // Update live_obj_size so the region appears completely full.
     size_t live_size = RegionSize - _region_data[cur_region].partial_obj_size();
@@ -763,7 +727,6 @@ bool ParallelCompactData::summarize(SplitInfo& split_info,
       }
 
       _region_data[cur_region].set_destination_count(destination_count);
-      _region_data[cur_region].set_data_location(region_to_addr(cur_region));
       dest_addr += words;
     }
 
@@ -927,7 +890,7 @@ PSParallelCompact::clear_data_covering_space(SpaceId id)
   HeapWord* const max_top = MAX2(top, _space_info[id].new_top());
 
   const idx_t beg_bit = _mark_bitmap.addr_to_bit(bot);
-  const idx_t end_bit = _mark_bitmap.align_range_end(_mark_bitmap.addr_to_bit(top));
+  const idx_t end_bit = _mark_bitmap.addr_to_bit(top);
   _mark_bitmap.clear_range(beg_bit, end_bit);
 
   const size_t beg_region = _summary_data.addr_to_region_idx(bot);

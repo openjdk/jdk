@@ -124,7 +124,11 @@ void HeapRegion::hr_clear(bool clear_space) {
 
   rem_set()->clear();
 
-  init_top_at_mark_start();
+  G1CollectedHeap::heap()->concurrent_mark()->reset_top_at_mark_start(this);
+
+  _parsable_bottom = bottom();
+  _garbage_bytes = 0;
+
   if (clear_space) clear(SpaceDecorator::Mangle);
 }
 
@@ -226,7 +230,6 @@ HeapRegion::HeapRegion(uint hrm_index,
 #ifdef ASSERT
   _containing_set(nullptr),
 #endif
-  _top_at_mark_start(nullptr),
   _parsable_bottom(nullptr),
   _garbage_bytes(0),
   _young_index_in_cset(-1),
@@ -414,8 +417,9 @@ void HeapRegion::print_on(outputStream* st) const {
   } else {
     st->print("|  ");
   }
+  G1ConcurrentMark* cm = G1CollectedHeap::heap()->concurrent_mark();
   st->print("|TAMS " PTR_FORMAT "| PB " PTR_FORMAT "| %s ",
-            p2i(top_at_mark_start()), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
+            p2i(cm->top_at_mark_start(this)), p2i(parsable_bottom_acquire()), rem_set()->get_state_str());
   if (UseNUMA) {
     G1NUMA* numa = G1NUMA::numa();
     if (node_index() < numa->num_active_nodes()) {

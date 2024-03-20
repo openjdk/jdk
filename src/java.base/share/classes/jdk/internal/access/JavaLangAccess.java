@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -268,6 +268,12 @@ public interface JavaLangAccess {
      * Updates module m to allow access to restricted methods.
      */
     Module addEnableNativeAccess(Module m);
+
+    /**
+     * Updates module named {@code name} in layer {@code layer} to allow access to restricted methods.
+     * Returns true iff the given module exists in the given layer.
+     */
+    boolean addEnableNativeAccess(ModuleLayer layer, String name);
 
     /**
      * Updates all unnamed modules to allow access to restricted methods.

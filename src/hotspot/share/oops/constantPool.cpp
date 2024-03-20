@@ -155,7 +155,7 @@ void ConstantPool::metaspace_pointers_do(MetaspaceClosure* it) {
 
   for (int i = 0; i < length(); i++) {
     // The only MSO's embedded in the CP entries are Symbols:
-    //   JVM_CONSTANT_String (normal and pseudo)
+    //   JVM_CONSTANT_String
     //   JVM_CONSTANT_Utf8
     constantTag ctag = tag_at(i);
     if (ctag.is_string() || ctag.is_utf8()) {
