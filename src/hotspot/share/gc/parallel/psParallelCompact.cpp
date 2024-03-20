@@ -494,12 +494,6 @@ bool ParallelCompactData::initialize_block_data()
   return false;
 }
 
-void ParallelCompactData::clear()
-{
-  memset(_region_data, 0, _region_vspace->committed_size());
-  memset(_block_data, 0, _block_vspace->committed_size());
-}
-
 void ParallelCompactData::clear_range(size_t beg_region, size_t end_region) {
   assert(beg_region <= _region_count, "beg_region out of range");
   assert(end_region <= _region_count, "end_region out of range");

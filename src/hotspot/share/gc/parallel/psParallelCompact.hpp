@@ -412,7 +412,6 @@ public:
                  HeapWord* target_beg, HeapWord* target_end,
                  HeapWord** target_next);
 
-  void clear();
   void clear_range(size_t beg_region, size_t end_region);
   void clear_range(HeapWord* beg, HeapWord* end) {
     clear_range(addr_to_region_idx(beg), addr_to_region_idx(end));

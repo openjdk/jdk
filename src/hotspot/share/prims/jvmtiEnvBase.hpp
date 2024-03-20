@@ -388,8 +388,11 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jint get_thread_state_base(oop thread_oop, JavaThread* jt);
   static jint get_thread_state(oop thread_oop, JavaThread* jt);
 
-  // get virtual thread thread state
+  // get virtual thread state
   static jint get_vthread_state(oop thread_oop, JavaThread* jt);
+
+  // get platform or virtual thread state
+  static jint get_thread_or_vthread_state(oop thread_oop, JavaThread* jt);
 
   // enumerates the live threads in the given thread group
   static jvmtiError get_live_threads(JavaThread* current_thread, Handle group_hdl, jint *count_ptr, Handle **thread_objs_p);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,8 @@ import java.io.IOException;
 import java.time.Instant;
 import java.io.FileInputStream;
 
+import static sun.security.krb5.internal.Krb5.DEBUG;
+
 /**
  * Maintains user-specific options or default settings when the user requests
  * a KDC ticket using Kinit.
@@ -63,7 +65,6 @@ class KinitOptions {
     public String realm;
     char[] password = null;
     public boolean keytab;
-    private boolean DEBUG = Krb5.DEBUG;
     private boolean includeAddresses = true; // default.
     private boolean useKeytab = false; // default = false.
     private String ktabName; // keytab file name
@@ -193,26 +194,26 @@ class KinitOptions {
             }
             PrincipalName p = cis.readPrincipal(version);
             cis.close();
-            if (DEBUG) {
-                System.out.println(">>>KinitOptions principal name from " +
+            if (DEBUG != null) {
+                DEBUG.println(">>>KinitOptions principal name from " +
                                    "the cache is: " + p);
             }
             return p;
         } catch (IOException e) {
             // ignore any exceptions; we will use the user name as the
             // principal name
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         } catch (RealmException e) {
-            if (DEBUG) {
-                e.printStackTrace();
+            if (DEBUG != null) {
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
 
         String username = System.getProperty("user.name");
-        if (DEBUG) {
-            System.out.println(">>>KinitOptions default username is: "
+        if (DEBUG != null) {
+            DEBUG.println(">>>KinitOptions default username is: "
                                + username);
         }
         try {
@@ -220,10 +221,10 @@ class KinitOptions {
             return p;
         } catch (RealmException e) {
             // ignore exception , return null
-            if (DEBUG) {
-                System.out.println ("Exception in getting principal " +
+            if (DEBUG != null) {
+                DEBUG.println ("Exception in getting principal " +
                                     "name " + e.getMessage());
-                e.printStackTrace();
+                e.printStackTrace(DEBUG.getPrintStream());
             }
         }
         return null;

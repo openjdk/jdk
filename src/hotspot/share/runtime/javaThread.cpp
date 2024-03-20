@@ -189,6 +189,16 @@ void JavaThread::set_jvmti_vthread(oop p) {
   _jvmti_vthread.replace(p);
 }
 
+// If there is a virtual thread mounted then return vthread() oop.
+// Otherwise, return threadObj().
+oop JavaThread::vthread_or_thread() const {
+  oop result = vthread();
+  if (result == nullptr) {
+    result = threadObj();
+  }
+  return result;
+}
+
 oop JavaThread::scopedValueCache() const {
   return _scopedValueCache.resolve();
 }
@@ -544,7 +554,6 @@ void JavaThread::interrupt() {
   _ParkEvent->unpark();
 }
 
-
 bool JavaThread::is_interrupted(bool clear_interrupted) {
   debug_only(check_for_dangling_thread_pointer(this);)
 
@@ -579,7 +588,37 @@ bool JavaThread::is_interrupted(bool clear_interrupted) {
     java_lang_Thread::set_interrupted(threadObj(), false);
     WINDOWS_ONLY(osthread()->set_interrupted(false);)
   }
+  return interrupted;
+}
 
+// This is only for use by JVMTI RawMonitorWait. It emulates the actions of
+// the Java code in Object::wait which are not present in RawMonitorWait.
+bool JavaThread::get_and_clear_interrupted() {
+  if (!is_interrupted(false)) {
+    return false;
+  }
+  oop thread_oop = vthread_or_thread();
+  bool is_virtual = java_lang_VirtualThread::is_instance(thread_oop);
+
+  if (!is_virtual) {
+    return is_interrupted(true);
+  }
+  // Virtual thread: clear interrupt status for both virtual and
+  // carrier threads under the interruptLock protection.
+  JavaThread* current = JavaThread::current();
+  HandleMark hm(current);
+  Handle thread_h(current, thread_oop);
+  ObjectLocker lock(Handle(current, java_lang_Thread::interrupt_lock(thread_h())), current);
+
+  // re-check the interrupt status under the interruptLock protection
+  bool interrupted = java_lang_Thread::interrupted(thread_h());
+
+  if (interrupted) {
+    assert(this == Thread::current(), "only the current thread can clear");
+    java_lang_Thread::set_interrupted(thread_h(), false);  // clear for virtual
+    java_lang_Thread::set_interrupted(threadObj(), false); // clear for carrier
+    WINDOWS_ONLY(osthread()->set_interrupted(false);)
+  }
   return interrupted;
 }
 
