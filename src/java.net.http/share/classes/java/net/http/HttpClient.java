@@ -135,8 +135,8 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * @implNote
  *  <p id="streaming">
- *  The HttpClient {@link BodyHandlers} and {@link BodySubscribers}
- *  API provide some {@linkplain BodySubscribers##streaming-body streaming
+ *  The {@link BodyHandlers} and {@link BodySubscribers}
+ *  classes provide some {@linkplain BodySubscribers##streaming-body streaming
  *  or publishing {@code BodyHandler} and {@code BodySubscriber}
  *  implementations} which allow to stream body data back to the caller.
  *  In order for the resources associated with these streams to be
