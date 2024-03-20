@@ -142,8 +142,8 @@ public:
     for(uintx i = _last; i < _count; i++) {
       if (range_intersects(from, to, _ranges[i].from, _ranges[i].to)) {
         bm.set_flag(_flags[i]);
-        _last = i;
       } else if (to <= _ranges[i].from) {
+        _last = i;
         break;
       }
     }
