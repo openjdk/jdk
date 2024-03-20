@@ -44,7 +44,6 @@ import javax.swing.JFrame;
  */
 public class MultiResolutionCursorTest {
     static final int sizes[] = {8, 16, 32, 128};
-    static final Color colors[] = {Color.WHITE, Color.RED, Color.GREEN, Color.BLUE};
 
     private static JFrame initialize() {
         final Image image = new BaseMultiResolutionImage(
@@ -69,6 +68,7 @@ public class MultiResolutionCursorTest {
         BufferedImage resolutionVariant = new BufferedImage(sizes[i], sizes[i],
                 BufferedImage.TYPE_INT_RGB);
         Graphics2D g2 = resolutionVariant.createGraphics();
+        Color colors[] = {Color.WHITE, Color.RED, Color.GREEN, Color.BLUE};
         g2.setColor(colors[i]);
         g2.fillRect(0, 0, sizes[i], sizes[i]);
         g2.dispose();
