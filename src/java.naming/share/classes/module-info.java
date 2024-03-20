@@ -39,7 +39,7 @@
  *     <li>{@code java.naming.ldap.factory.socket}:
  *         <br>The value of this environment property specifies the fully
  *         qualified class name of the socket factory used by the LDAP provider.
- *         This class must implement the javax.net.SocketFactory abstract class
+ *         This class must implement the {@link javax.net.SocketFactory} abstract class
  *         and provide an implementation of the static "getDefault()" method that
  *         returns an instance of the socket factory. By default the environment
  *         property is not set.

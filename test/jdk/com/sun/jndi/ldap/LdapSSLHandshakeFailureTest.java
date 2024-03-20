@@ -160,8 +160,7 @@ public class LdapSSLHandshakeFailureTest {
                 if (customSocketFactory != null) {
                     System.out.println("Caught expected Exception with custom SocketFactory (no SSL Socket).");
                     if (CustomSocketFactory.customSocket.closeMethodCalledCount() <= 0) {
-                        System.err.println("Custom Socket was not closed.");
-                        System.exit(-1);
+                        throw new RuntimeException("Custom Socket was not closed.");
                     }
                 } else if (connectTimeout > 0) {
                     System.out.println("Caught expected Exception with connectTimeout > 0.");
@@ -173,14 +172,14 @@ public class LdapSSLHandshakeFailureTest {
                     System.out.println("Context was created, closing it.");
                     Socket sock = getSocket(ctx);
                     ctx.close();
-                    if (!checkSocketClosed(sock)) {
-                        System.exit(-1);
+                    if (!sock.isClosed()) {
+                        throw new RuntimeException("Socket isn't closed");
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(-1);
+            throw new RuntimeException(e);
         }
     }
 
@@ -195,16 +194,6 @@ public class LdapSSLHandshakeFailureTest {
         connField.setAccessible(true);
         Object conn = connField.get(clnt);
         return (Socket)conn.getClass().getDeclaredField("sock").get(conn);
-    }
-
-    private static boolean checkSocketClosed(Socket s) throws Exception {
-        if (s.isClosed()) {
-            System.out.println("Socket is closed");
-            return true;
-        } else {
-            System.err.println("Socket isn't closed");
-            return false;
-        }
     }
 
     private static class CustomSocket extends Socket {
