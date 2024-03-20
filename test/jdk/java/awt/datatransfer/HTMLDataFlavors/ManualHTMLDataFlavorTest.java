@@ -57,7 +57,7 @@ public class ManualHTMLDataFlavorTest {
 
         @Override
         public Dimension getPreferredSize() {
-            return new Dimension(400,400);
+            return new Dimension(400, 400);
         }
 
         @Override
@@ -139,6 +139,7 @@ public class ManualHTMLDataFlavorTest {
    static Frame createDropWindow() {
         Frame frame = new Frame("Manual HTML DataFlavor Test");
         frame.add(new DropPane());
+        frame.setAlwaysOnTop(true);
         frame.pack();
         return frame;
     }
@@ -151,7 +152,7 @@ public class ManualHTMLDataFlavorTest {
         PassFailJFrame.builder()
             .instructions(INSTRUCTIONS)
             .rows(25)
-            .columns(80)
+            .columns(50)
             .testUI(ManualHTMLDataFlavorTest::createDropWindow)
             .logArea()
             .build()
