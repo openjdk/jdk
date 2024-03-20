@@ -6565,7 +6565,8 @@ AwtComponent_GetHWnd(JNIEnv *env, jlong pData)
     return p->GetHWnd();
 }
 
-static void _GetInsets(void* param) {
+static void _GetInsets(void* param)
+{
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     GetInsetsStruct *gis = static_cast<GetInsetsStruct *>(param);
