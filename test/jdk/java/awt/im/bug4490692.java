@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,50 +21,90 @@
  * questions.
  */
 
-/**
- *
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import javax.swing.JFrame;
+import javax.swing.JTextField;
+
+/*
+ * @test
  * @bug 4490692
- * @author Naoto Sato
+ * @summary [Linux] Test for KEY_PRESS event for accented characters.
+ * @requires (os.name == "linux")
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug4490692
  */
 
-import java.awt.*;
-import java.awt.event.*;
-import javax.swing.*;
+public class bug4490692 {
+    private static final String INSTRUCTIONS = """
+            Before the test, you need to modify the keyboard mapping for Tab by issuing
+            the following command:
 
-public class bug4490692 extends javax.swing.JApplet {
-    public void init() {
-        new TestFrame();
+            xmodmap -e 'keycode 23 = aacute'  (this is for Linux PC keyboard)
+            xmodmap -e 'keycode 60 = aacute'  (this is for Solaris Sparc keyboard)
+
+            This command lets you type 'a with acute (à)' character when you press 'Tab' key.
+            After the test, please DO NOT fail to restore the original key mapping by doing
+            the following after the test.
+
+            xmodmap -e 'keycode 23 = Tab'  (this is for Linux PC keyboard)
+            xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc keyboard)
+
+            CASE 1: This is a manual check and for SOLARIS SPARC keyboard only.
+            Check whether the key sequence ("Compose", "a", "'") generates a-acute
+            character in en_US locale.
+
+            CASE 2: This step is automated and applicable for both keyboards,
+            LINUX & SOLARIS SPARC.
+            When Tab key is pressed it should generate a-acute (à) character,
+            this test automatically passes if correct character is generated else fails.
+            """;
+
+    public static void main(String[] args) throws Exception {
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
+                .columns(45)
+                .testUI(() -> new TestFrame("Test Accented Chars"))
+                .build()
+                .awaitAndCheck();
     }
 }
 
 class TestFrame extends JFrame implements KeyListener {
     JTextField text;
-    JLabel label;
 
-    TestFrame () {
+    TestFrame(String title) {
+        super(title);
         text = new JTextField();
         text.addKeyListener(this);
-        label = new JLabel(" ");
         Container c = getContentPane();
-        BorderLayout borderLayout1 = new BorderLayout();
-        c.setLayout(borderLayout1);
+        c.setLayout(new BorderLayout());
         c.add(text, BorderLayout.CENTER);
-        c.add(label, BorderLayout.SOUTH);
         setSize(300, 200);
-        setVisible(true);
     }
 
+    @Override
     public void keyPressed(KeyEvent e) {
-        if (e.getKeyChar() == 0x00e1) {
-            label.setText("KEYPRESS received for aacute");
-        } else {
-            label.setText(" ");
+        if (e.getKeyCode() == 23 || e.getKeyCode() == 60) {
+            if (e.getKeyChar() == 0x00e1) {
+                PassFailJFrame.forcePass();
+            } else {
+                PassFailJFrame.forceFail("Key Press DID NOT"
+                        + " produce the expected accented character - aacute");
+            }
         }
     }
 
+    @Override
     public void keyTyped(KeyEvent e) {
     }
 
+    @Override
     public void keyReleased(KeyEvent e) {
     }
 }
