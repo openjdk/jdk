@@ -28,11 +28,9 @@ int VMATree::addr_cmp(size_t a, size_t b) {
   if (a < b) return -1;
   if (a == b) return 0;
   if (a > b) return 1;
-  else {
-    // Can't happen
-    ShouldNotReachHere();
-  }
+  ShouldNotReachHere();
 }
+
 VMATree::VTreap* VMATree::closest_geq(size_t B) {
   // Need to go "left-ward" for EQ node, so do a leq search first.
   VTreap* leqB = closest_leq(B);
@@ -57,6 +55,7 @@ VMATree::VTreap* VMATree::closest_geq(size_t B) {
   }
   return gtB;
 }
+
 VMATree::VTreap* VMATree::closest_leq(size_t A) { // LEQ search
   VTreap* leqA_n = nullptr;
   VTreap* head = tree.tree;
