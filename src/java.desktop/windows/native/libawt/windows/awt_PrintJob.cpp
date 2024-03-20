@@ -502,7 +502,8 @@ Java_sun_awt_windows_WPageDialog_initIDs(JNIEnv *env, jclass cls)
  */
 
 JNIEXPORT jboolean JNICALL
-Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer) {
+Java_sun_awt_windows_WPageDialogPeer__1show(JNIEnv *env, jobject peer)
+{
     TRY;
 
     // as peer object is used later on another thread, create global ref here
