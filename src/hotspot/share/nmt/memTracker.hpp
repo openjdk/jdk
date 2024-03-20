@@ -41,25 +41,6 @@
 
 class MemBaseline;
 
-// Tracker is used for guarding 'release' semantics of virtual memory operation, to avoid
-// the other thread obtains and records the same region that is just 'released' by current
-// thread but before it can record the operation.
-class Tracker : public StackObj {
- public:
-  enum TrackerType {
-     uncommit,
-     release
-  };
-
- public:
-  Tracker(enum TrackerType type) : _type(type) { }
-  void record(address addr, size_t size);
- private:
-  enum TrackerType  _type;
-  // Virtual memory tracking data structures are protected by ThreadCritical lock.
-  ThreadCritical    _tc;
-};
-
 class MemTracker : AllStatic {
   friend class VirtualMemoryTrackerTest;
 
@@ -145,6 +126,22 @@ class MemTracker : AllStatic {
     if (addr != nullptr) {
       ThreadCritical tc;
       VirtualMemoryTracker::add_reserved_region((address)addr, size, stack, flag);
+    }
+  }
+
+  static inline void record_virtual_memory_release(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_released_region((address)addr, size);
+    }
+  }
+
+  static inline void record_virtual_memory_uncommit(address addr, size_t size) {
+    assert_post_init();
+    if (!enabled()) return;
+    if (addr != nullptr) {
+      VirtualMemoryTracker::remove_uncommitted_region((address)addr, size);
     }
   }
 

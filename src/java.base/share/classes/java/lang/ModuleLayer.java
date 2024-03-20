@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -881,6 +881,24 @@ public final class ModuleLayer {
                 .findAny();
     }
 
+    /**
+     * Updates the module with the given {@code name} in this layer
+     * to allow access to restricted methods.
+     *
+     * @param name the name of the module for which the native access
+     *             should be enabled
+     * @return {@code true} iff the module is present in this layer,
+     *         {@code false} otherwise
+     */
+    boolean addEnableNativeAccess(String name) {
+        Module m = nameToModule.get(name);
+        if (m != null) {
+            m.implAddEnableNativeAccess();
+            return true;
+        } else {
+            return false;
+        }
+    }
 
     /**
      * Returns the {@code ClassLoader} for the module with the given name. If

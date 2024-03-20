@@ -237,23 +237,17 @@ public class GZIPInputStream extends InflaterInputStream {
             (readUInt(in) != (inf.getBytesWritten() & 0xffffffffL)))
             throw new ZipException("Corrupt GZIP trailer");
 
-        // If there are more bytes available in "in" or
-        // the leftover in the "inf" is > 26 bytes:
-        // this.trailer(8) + next.header.min(10) + next.trailer(8)
         // try concatenated case
-        if (this.in.available() > 0 || n > 26) {
-            int m = 8;                  // this.trailer
-            try {
-                m += readHeader(in);    // next.header
-            } catch (IOException ze) {
-                return true;  // ignore any malformed, do nothing
-            }
-            inf.reset();
-            if (n > m)
-                inf.setInput(buf, len - n + m, n - m);
-            return false;
+        int m = 8;                  // this.trailer
+        try {
+            m += readHeader(in);    // next.header
+        } catch (IOException ze) {
+            return true;  // ignore any malformed, do nothing
         }
-        return true;
+        inf.reset();
+        if (n > m)
+            inf.setInput(buf, len - n + m, n - m);
+        return false;
     }
 
     /*
