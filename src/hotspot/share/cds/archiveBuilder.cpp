@@ -740,10 +740,6 @@ void ArchiveBuilder::make_klasses_shareable() {
       assert(k->is_instance_klass(), " must be");
       num_instance_klasses ++;
       InstanceKlass* ik = InstanceKlass::cast(k);
-      if (CDSConfig::is_dumping_dynamic_archive()) {
-        // For static dump, class loader type are already set.
-        ik->assign_class_loader_type();
-      }
       if (ik->is_shared_boot_class()) {
         type = "boot";
         num_boot_klasses ++;
