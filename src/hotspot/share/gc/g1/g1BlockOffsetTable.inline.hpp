@@ -61,7 +61,9 @@ inline HeapWord* G1BlockOffsetTablePart::block_start_reaching_into_card(const vo
 }
 
 u_char G1BlockOffsetTable::offset_array(size_t index) const {
+#ifdef ASSERT
   check_index(index, "index out of range");
+#endif // ASSERT
   return Atomic::load(&_offset_array[index]);
 }
 
@@ -70,12 +72,16 @@ void G1BlockOffsetTable::set_offset_array_raw(size_t index, u_char offset) {
 }
 
 void G1BlockOffsetTable::set_offset_array(size_t index, u_char offset) {
+#ifdef ASSERT
   check_index(index, "index out of range");
+#endif // ASSERT
   set_offset_array_raw(index, offset);
 }
 
 void G1BlockOffsetTable::set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
+#ifdef ASSERT
   check_index(index, "index out of range");
+#endif // ASSERT
   assert(high >= low, "addresses out of order");
   size_t offset = pointer_delta(high, low);
   check_offset(offset, "offset too large");
@@ -83,7 +89,9 @@ void G1BlockOffsetTable::set_offset_array(size_t index, HeapWord* high, HeapWord
 }
 
 void G1BlockOffsetTable::set_offset_array(size_t left, size_t right, u_char offset) {
+#ifdef ASSERT
   check_index(right, "right index out of range");
+#endif // ASSERT
   assert(left <= right, "indexes out of order");
   size_t num_cards = right - left + 1;
   memset_with_concurrent_readers
@@ -102,12 +110,16 @@ inline size_t G1BlockOffsetTable::index_for(const void* p) const {
          "p (" PTR_FORMAT ") not in reserved [" PTR_FORMAT ", " PTR_FORMAT ")",
          p2i(p), p2i(_reserved.start()), p2i(_reserved.end()));
   size_t result = index_for_raw(p);
+#ifdef ASSERT
   check_index(result, "bad index from address");
+#endif // ASSERT
   return result;
 }
 
 inline HeapWord* G1BlockOffsetTable::address_for_index(size_t index) const {
+#ifdef ASSERT
   check_index(index, "index out of range");
+#endif // ASSERT
   HeapWord* result = address_for_index_raw(index);
   assert(result >= _reserved.start() && result < _reserved.end(),
          "bad address from index result " PTR_FORMAT

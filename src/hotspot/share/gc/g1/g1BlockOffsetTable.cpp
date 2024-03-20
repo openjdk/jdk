@@ -49,9 +49,9 @@ G1BlockOffsetTable::G1BlockOffsetTable(MemRegion heap, G1RegionToSpaceMapper* st
 
 #ifdef ASSERT
 void G1BlockOffsetTable::check_index(size_t index, const char* msg) const {
-  assert((index) < (_reserved.word_size() >> CardTable::card_shift_in_words()),
+  assert((index) < (_reserved.byte_size() >> CardTable::card_shift()),
          "%s - index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
-         msg, (index), (_reserved.word_size() >> CardTable::card_shift_in_words()));
+         msg, (index), (_reserved.byte_size() >> CardTable::card_shift()));
   assert(G1CollectedHeap::heap()->is_in(address_for_index_raw(index)),
          "Index " SIZE_FORMAT " corresponding to " PTR_FORMAT
          " (%u) is not in committed area.",

@@ -72,7 +72,9 @@ private:
 
   inline void set_offset_array(size_t left, size_t right, u_char offset);
 
+#ifdef ASSERT
   void check_index(size_t index, const char* msg) const NOT_DEBUG_RETURN;
+#endif // ASSERT
 
 public:
 
