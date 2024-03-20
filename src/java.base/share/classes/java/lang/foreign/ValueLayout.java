@@ -47,9 +47,6 @@ import jdk.internal.foreign.layout.ValueLayouts;
  *          For instance, the byte order of these constants is set to the
  *          {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy
  *          to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
- *          Moreover, the alignment constraint of {@link ValueLayout#JAVA_LONG} and
- *          {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms,
- *          but only to 4 bytes on 32-bit platforms.
  *
  * @implSpec implementing classes and subclasses are immutable, thread-safe and
  * <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.

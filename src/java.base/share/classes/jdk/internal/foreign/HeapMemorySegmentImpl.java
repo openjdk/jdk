@@ -49,9 +49,6 @@ import jdk.internal.vm.annotation.ForceInline;
 abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegmentImpl {
 
     // Constants defining the maximum alignment supported by various kinds of heap arrays.
-    // While for most arrays, the maximum alignment is constant (the size, in bytes, of the array elements),
-    // note that the alignment of a long[]/double[] depends on the platform: it's 4-byte on x86, but 8 bytes on x64
-    // (as specified by the JAVA_LONG layout constant).
 
     private static final long MAX_ALIGN_BYTE_ARRAY = ValueLayout.JAVA_BYTE.byteAlignment();
     private static final long MAX_ALIGN_SHORT_ARRAY = ValueLayout.JAVA_SHORT.byteAlignment();
