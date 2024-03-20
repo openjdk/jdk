@@ -573,7 +573,7 @@ public class BigDecimal extends Number implements Comparable<BigDecimal> {
         long scl = 0;                 // record scale value
         long rs = 0;                  // the compact value in long
         BigInteger rb = null;         // the inflated value in BigInteger
-        // use String bounds checking to handle too-long, len == 0,
+        // use CharSequence bounds checking to handle too-long, len == 0,
         // bad offset, etc.
         try {
             int len = val.length();
