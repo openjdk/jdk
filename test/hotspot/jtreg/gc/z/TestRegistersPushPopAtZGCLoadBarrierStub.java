@@ -42,10 +42,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import jdk.incubator.vector.FloatVector;
 import jdk.incubator.vector.Vector;
 import jdk.incubator.vector.VectorShape;
 import jdk.incubator.vector.VectorSpecies;
+
+import jdk.test.lib.Asserts;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
@@ -285,10 +289,23 @@ public class TestRegistersPushPopAtZGCLoadBarrierStub {
 
     // Check that registers are pushed and poped with correct register type and number
     static void checkPushPopRegNumberAndType(String stdout, String keyword, String expected_freg_type,
-                                             int expected_number_of_push_pop_at_load_barrier_fregs) throws Exception {
-        String keyString = keyword + expected_number_of_push_pop_at_load_barrier_fregs + " " + expected_freg_type + " registers";
-        if (!containOnlyOneOccuranceOfKeyword(stdout, keyString)) {
-            throw new RuntimeException("Stdout is expected to contain only one occurance of keyString: " + "'" + keyString + "'");
+                                             int expected_number_of_fregs) throws Exception {
+        String expected = keyword + expected_number_of_fregs + " " + expected_freg_type + " registers";
+
+        String regex = keyword + "(\\d+) " + expected_freg_type + " registers";
+        Pattern p = Pattern.compile(regex);
+        Matcher m = p.matcher(stdout);
+
+        if (m.find()) {
+            String found = m.group();
+            Asserts.assertEquals(found, expected, "found '" + found + "' but should print '" + expected + "'");
+        } else {
+            throw new RuntimeException("'" + regex + "' is not found in stdout");
+        }
+
+        if (m.find()) {
+            throw new RuntimeException("Stdout is expected to contain only one occurance of '" + regex +
+                                       "'. Found another occurance: '" + m.group() + "'");
         }
     }
 
