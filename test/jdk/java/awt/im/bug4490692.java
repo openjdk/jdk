@@ -48,7 +48,7 @@ public class bug4490692 {
 
             This command lets you type 'a with acute (à)' character when you press 'Tab' key.
             After the test, please DO NOT fail to restore the original key mapping by doing
-            the following after the test.
+            the following.
 
             xmodmap -e 'keycode 23 = Tab'  (this is for Linux PC keyboard)
             xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc keyboard)
