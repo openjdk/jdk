@@ -40,6 +40,7 @@ import javax.swing.JFrame;
  * @summary [macosx] Components cannot be rendered in HiDPI to BufferedImage
  * @run main/manual bug8032667
  */
+
 public class bug8032667 {
 
     static final int scale = 2;
