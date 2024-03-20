@@ -349,14 +349,24 @@ public class JavaValueArray extends JavaLazyReadObject
     }
 
     // Tries to represent the value as string (used by JavaObject.toString).
-    public String valueAsString() {
+    public String valueAsString(boolean compact) {
         if (getElementType() == 'B')  {
             JavaThing[] things = getValue();
-            byte[] bytes = new byte[things.length];
-            for (int i = 0; i < things.length; i++) {
-                bytes[i] = ((JavaByte)things[i]).value;
+            if (compact) {
+                byte[] bytes = new byte[things.length];
+                for (int i = 0; i < things.length; i++) {
+                    bytes[i] = ((JavaByte)things[i]).value;
+                }
+                return new String(bytes);
+            } else {
+                char[] chars = new char[things.length / 2];
+                for (int i = 0; i < things.length; i += 2) {
+                    byte b1 = ((JavaByte)things[i]).value;
+                    byte b2 = ((JavaByte)things[i + 1]).value;
+                    chars[i / 2] = (char)(b1 + (b2 << 8));
+                }
+                return new String(chars);
             }
-            return new String(bytes);
         }
         // fallback
         return valueString();
