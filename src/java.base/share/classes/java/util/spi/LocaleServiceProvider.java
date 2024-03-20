@@ -159,6 +159,8 @@ import java.util.Locale;
  *     <th scope="col">CLDR version</th></tr>
  * </thead>
  * <tbody>
+ * <tr><th scope="row" style="text-align:left">JDK 23</th>
+ *     <td>CLDR 45</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 22</th>
  *     <td>CLDR 44</td></tr>
  * <tr><th scope="row" style="text-align:left">JDK 21</th>
