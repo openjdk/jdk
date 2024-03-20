@@ -1950,18 +1950,6 @@ void CodeCache::print_age(outputStream *out) {
   }
 }
 
-void CodeCache::print_name_for_heap_containing(outputStream *out, const void* p) {
-  FOR_ALL_ALLOCABLE_HEAPS(heap) {
-    if ((*heap)->low_boundary() <= p && (*heap)->high_boundary() >= p) {
-      out->print_raw((*heap)->name());
-      return;
-    } else if ((*heap)->low_boundary_segmap() <= p && (*heap)->high_boundary_segmap() >= p) {
-      out->print("Segment map for %s", (*heap)->name());
-      return;
-    }
-  }
-}
-
 void CodeCache::print_names(outputStream *out) {
   FOR_ALL_ALLOCABLE_HEAPS(heap) {
     CodeHeapState::print_names(out, (*heap));

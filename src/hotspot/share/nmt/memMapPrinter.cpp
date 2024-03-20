@@ -27,7 +27,6 @@
 
 #ifdef LINUX
 
-#include "code/codeCache.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "logging/logAsyncWriter.hpp"
 #include "memory/allocation.hpp"
@@ -252,11 +251,6 @@ void MappingPrintSession::print_nmt_info_for_region(const void* vma_from, const 
           _out->print("%s", get_shortname_for_nmt_flag(flag));
           if (flag == mtThreadStack) {
             print_thread_details_for_supposed_stack_address(vma_from, vma_to, _out);
-          }
-          if (flag == mtCode) {
-            _out->print("(");
-            CodeCache::print_name_for_heap_containing(_out, vma_from);
-            _out->print(")");
           }
         }
       }

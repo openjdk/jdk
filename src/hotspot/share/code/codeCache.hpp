@@ -338,7 +338,6 @@ class CodeCache : AllStatic {
   static void print_space(outputStream *out);
   static void print_age(outputStream *out);
   static void print_names(outputStream *out);
-  static void print_name_for_heap_containing(outputStream *out, const void* p);
 };
 
 
