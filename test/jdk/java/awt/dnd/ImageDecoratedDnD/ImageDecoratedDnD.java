@@ -31,7 +31,7 @@ import java.awt.dnd.DragSource;
 /*
  * @test
  * @bug 4874070
- * @summary Tests CTRL + DnD functionality.
+ * @summary Tests CTRL + DnD functionality
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual ImageDecoratedDnD
