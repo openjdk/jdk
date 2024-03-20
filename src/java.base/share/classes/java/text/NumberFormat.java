@@ -186,13 +186,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * rounding (see {@link java.math.RoundingMode#HALF_EVEN
  * RoundingMode.HALF_EVEN}) for formatting.
  *
- * <h4>Unsupported Methods in Subclasses</h4>
- * A subclass could override the methods that affect formatting and parsing and
- * throw an {@code UnsupportedOperationException} if they are not utilized in their
- * own implementations. For example, {@code ChoiceFormat} does not utilize leniency,
- * and throws an {@code UnsupportedOperationException} for {@link #setStrict(boolean)}
- * and {@link #isStrict()}.
- *
  * @see          DecimalFormat
  * @see          ChoiceFormat
  * @see          CompactNumberFormat
