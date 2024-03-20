@@ -644,8 +644,9 @@ public final class PassFailJFrame {
         private static final String PAUSED_LABEL_SUFFIX = " PAUSED";
         private static final String PAUSE_BUTTON_LABEL = "Pause Timer";
         private static final String RESUME_BUTTON_LABEL = "Resume Timer";
+
         private long endTime;
-        private long pauseTimeLeft = 0L;
+        private long pauseTimeLeft;
 
         private final Timer timer;
 
@@ -700,8 +701,8 @@ public final class PassFailJFrame {
                 label.setText(label.getText() + PAUSED_LABEL_SUFFIX);
                 button.setText(RESUME_BUTTON_LABEL);
             } else {
-                label.setText(label.getText().replace(PAUSED_LABEL_SUFFIX, ""));
                 endTime = System.currentTimeMillis() + pauseTimeLeft;
+                updateTime(pauseTimeLeft);
                 timer.start();
                 button.setText(PAUSE_BUTTON_LABEL);
             }
