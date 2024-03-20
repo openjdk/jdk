@@ -2416,16 +2416,16 @@ public class DecimalFormat extends NumberFormat {
         if (!isExponent) {
             if (gotPositive) {
                 boolean containsPosSuffix =
-                        text.regionMatches(position, positiveSuffix,0, positiveSuffix.length());
+                        text.regionMatches(position, positiveSuffix, 0, positiveSuffix.length());
                 boolean endsWithPosSuffix =
                         containsPosSuffix && text.length() == position + positiveSuffix.length();
                 gotPositive = isStrict() ? endsWithPosSuffix : containsPosSuffix;
             }
             if (gotNegative) {
                 boolean containsNegSuffix =
-                        text.regionMatches(position, negativeSuffix,0, negativeSuffix.length());
+                        text.regionMatches(position, negativeSuffix, 0, negativeSuffix.length());
                 boolean endsWithNegSuffix =
-                        containsNegSuffix && text.length() == position  + negativeSuffix.length();
+                        containsNegSuffix && text.length() == position + negativeSuffix.length();
                 gotNegative = isStrict() ? endsWithNegSuffix : containsNegSuffix;
             }
 
@@ -2479,7 +2479,7 @@ public class DecimalFormat extends NumberFormat {
                        boolean isExponent, boolean[] status) {
         // process digits or Inf, find decimal position
         status[STATUS_INFINITE] = false;
-        if (!isExponent && text.regionMatches(position, symbols.getInfinity(),0,
+        if (!isExponent && text.regionMatches(position, symbols.getInfinity(), 0,
                 symbols.getInfinity().length())) {
             position += symbols.getInfinity().length();
             status[STATUS_INFINITE] = true;
