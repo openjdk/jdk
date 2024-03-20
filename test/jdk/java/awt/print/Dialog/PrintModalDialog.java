@@ -56,13 +56,7 @@ public class PrintModalDialog {
              then press "Fail", because if you can click on "Fail" and have it
              respond, then the print dialog was not modal. If clicking on it
              does nothing then cancel the print dialog and do the same for the
-             other print dialog.
-
-             Then after printing or closing the dialog, a new print dialog
-             should appear. Also check if this dialog is modal.
-
-             Finish printing or close the dialog. If both dialogs are modal,
-             PASS the test. Otherwise, FAIL.
+             other print dialog. If all is well, then press Pass.
             """;
 
     public static void main(String[] args) throws Exception {
