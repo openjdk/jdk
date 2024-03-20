@@ -34,13 +34,13 @@ public class WithErrors {
     private int field;
 
     private void assignments(R input) {
-        int i;
+        int i = 0;
 
         input = input with {
             int l;
 
             value = "nue"; //OK - assignment to the component
-            i = 0; //error - assignment to outter variable
+            i = ++i + i++ + --i + i-- + -i + +i; //error - assignment to outter variable
             field = 0; //error - unqualified assignment to field
             this.field = 0; // OK - qualified assignment
             l = 0; //OK - assignment to a variable local to the block

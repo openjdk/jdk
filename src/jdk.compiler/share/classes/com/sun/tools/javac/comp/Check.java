@@ -4965,6 +4965,18 @@ public class Check {
             }
 
             @Override
+            public void visitUnary(JCUnary tree) {
+                switch (tree.getTag()) {
+                    case PREDEC, PREINC, POSTDEC, POSTINC -> {
+                        if (tree.arg instanceof JCIdent var && !seenVariables.contains(var.sym)) {
+                            log.error(var.pos(), Errors.WithAssignmentNotAllowed(var.sym));
+                        }
+                    }
+                }
+                super.visitUnary(tree);
+            }
+
+            @Override
             public void visitReconstruction(JCDerivedInstance tree) {
                 seenVariables.addAll(tree.outgoingBindings);
                 super.visitReconstruction(tree);
