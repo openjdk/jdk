@@ -41,8 +41,6 @@ import javax.swing.JTextArea;
  */
 
 public class FileDialogForDirectories {
-    private static Button showBtn;
-    private static FileDialog fd;
 
     private static JFrame initialize() {
         System.setProperty("apple.awt.fileDialogForDirectories", "true");
@@ -53,9 +51,10 @@ public class FileDialogForDirectories {
         textOutput.setLineWrap(true);
         JScrollPane textScrollPane = new JScrollPane(textOutput);
         frame.add(textScrollPane, BorderLayout.CENTER);
-        fd = new FileDialog(new Frame(), "Open");
 
-        showBtn = new Button("Show File Dialog");
+        FileDialog fd = new FileDialog(new Frame(), "Open");
+
+        Button showBtn = new Button("Show File Dialog");
         showBtn.addActionListener(e -> {
             fd.setVisible(true);
             String output = fd.getFile();
