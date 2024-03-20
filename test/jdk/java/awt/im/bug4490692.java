@@ -40,27 +40,29 @@ import javax.swing.JTextField;
 
 public class bug4490692 {
     private static final String INSTRUCTIONS = """
-            Before the test, you need to modify the keyboard mapping for Tab by issuing
-            the following command:
+            This test is for unix platforms only.
+            Before the test, you need to modify the keyboard mapping for
+            Tab by issuing the following command:
 
-            xmodmap -e 'keycode 23 = aacute'  (this is for Linux PC keyboard)
-            xmodmap -e 'keycode 60 = aacute'  (this is for Solaris Sparc keyboard)
+            xmodmap -e 'keycode 23 = aacute'  (this is for Linux)
+            xmodmap -e 'keycode 60 = aacute'  (this is for Solaris Sparc)
 
-            This command lets you type 'a with acute (à)' character when you press 'Tab' key.
-            After the test, please DO NOT fail to restore the original key mapping by doing
-            the following.
+            This command lets you type 'a with acute (à)' character when
+            you press 'Tab' key. After the test, please DO NOT fail to
+            restore the original key mapping by doing the following.
 
-            xmodmap -e 'keycode 23 = Tab'  (this is for Linux PC keyboard)
-            xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc keyboard)
+            xmodmap -e 'keycode 23 = Tab'  (this is for Linux)
+            xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc)
 
-            CASE 1: This is a manual check and for SOLARIS SPARC keyboard only.
-            Check whether the key sequence ("Compose", "a", "'") generates a-acute
-            character in en_US locale.
+            CASE 1: This is a manual check and for SOLARIS SPARC keyboard
+            only. Check whether the key sequence ("Compose", "a", " ' ")
+            generates a-acute character in en_US locale.
 
-            CASE 2: This step is automated and applicable for both keyboards,
-            LINUX & SOLARIS SPARC.
-            When Tab key is pressed it should generate a-acute (à) character,
-            this test automatically passes if correct character is generated else fails.
+            CASE 2: This step is automated and applicable for both
+            keyboards - LINUX & SOLARIS SPARC.
+            When Tab key is pressed it should generate a-acute (à)
+            character, this test automatically passes if the correct character
+            is generated on keypress else fails.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -68,7 +70,7 @@ public class bug4490692 {
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(45)
+                .columns(40)
                 .testUI(() -> new TestFrame("Test Accented Chars"))
                 .build()
                 .awaitAndCheck();
@@ -94,7 +96,7 @@ class TestFrame extends JFrame implements KeyListener {
             if (e.getKeyChar() == 0x00e1) {
                 PassFailJFrame.forcePass();
             } else {
-                PassFailJFrame.forceFail("Key Press DID NOT"
+                PassFailJFrame.forceFail("Tab keypress DID NOT"
                         + " produce the expected accented character - aacute");
             }
         }
