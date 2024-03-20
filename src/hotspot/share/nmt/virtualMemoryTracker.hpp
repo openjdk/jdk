@@ -30,6 +30,7 @@
 #include "memory/metaspaceStats.hpp"
 #include "nmt/allocationSite.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/linkedlist.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
