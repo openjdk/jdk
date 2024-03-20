@@ -133,3 +133,11 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
 }
+
+MemoryFileTracker::Instance::Locker::Locker() {
+  MemoryFileTracker::Instance::_mutex->lock();
+}
+
+MemoryFileTracker::Instance::Locker::~Locker() {
+  MemoryFileTracker::Instance::_mutex->unlock();
+}

@@ -89,12 +89,8 @@ public:
   public:
     class Locker : public StackObj {
     public:
-      Locker() {
-        MemoryFileTracker::Instance::_mutex->lock();
-      }
-      ~Locker() {
-        MemoryFileTracker::Instance::_mutex->unlock();
-      }
+      Locker();
+      ~Locker();
     };
 
     static bool initialize(NMT_TrackingLevel tracking_level);
