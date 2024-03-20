@@ -4200,14 +4200,15 @@ public class JavacParser implements Parser {
         int pos = token.pos;
         nextToken();
         boolean staticImport = false;
-        boolean moduleImport = false;
         if (token.kind == STATIC) {
             staticImport = true;
             nextToken();
         } else if (token.kind == IDENTIFIER && token.name() == names.module) {
             checkSourceLevel(Feature.MODULE_IMPORTS);
-            moduleImport = true;
             nextToken();
+            JCExpression moduleName = qualident(false);
+            accept(SEMI);
+            return toP(F.at(pos).ModuleImport(moduleName));
         }
         JCExpression pid = toP(F.at(token.pos).Ident(ident()));
         do {
@@ -4222,7 +4223,7 @@ public class JavacParser implements Parser {
             }
         } while (token.kind == DOT);
         accept(SEMI);
-        return toP(F.at(pos).Import((JCFieldAccess)pid, staticImport, moduleImport));
+        return toP(F.at(pos).Import((JCFieldAccess)pid, staticImport));
     }
 
     /** TypeDeclaration = ClassOrInterfaceOrEnumDeclaration
