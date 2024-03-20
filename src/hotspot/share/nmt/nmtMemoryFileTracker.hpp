@@ -31,6 +31,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/os.inline.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
