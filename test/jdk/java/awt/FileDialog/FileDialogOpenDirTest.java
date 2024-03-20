@@ -40,7 +40,7 @@ import javax.swing.JFrame;
 
 public class FileDialogOpenDirTest {
     private static JFrame initialize() {
-        System.setProperty("sun.awt.disableGtkFileDialogs","true");
+        System.setProperty("sun.awt.disableGtkFileDialogs", "true");
 
         JFrame frame = new JFrame("Open Directory File Dialog Test Frame");
         Button open = new Button("Open File Dialog");
