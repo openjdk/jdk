@@ -167,7 +167,7 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
                             foundMsg = true;
                             break;
                         case TLS_RECTYPE_ALERT:
-                            // Needs two params, AlertLevel and 
+                            // Needs two params, AlertLevel and
                             //AlertDescription
                             if (recParams.length != 2) {
                                 throw new RuntimeException(
