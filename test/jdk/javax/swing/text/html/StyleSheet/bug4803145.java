@@ -39,7 +39,6 @@ import javax.swing.JEditorPane;
 import javax.swing.JFrame;
 import javax.swing.text.html.HTMLEditorKit;
 
-
 public class bug4803145 {
 
     private static final String INSTRUCTIONS = """
