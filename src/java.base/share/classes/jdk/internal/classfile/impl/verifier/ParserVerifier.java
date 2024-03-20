@@ -184,6 +184,7 @@ public record ParserVerifier(ClassModel classModel) {
     private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
         int payLoad = ((BoundAttribute)a).payloadLen();
         if (payLoad != switch (a) {
+            case AnnotationDefaultAttribute aa -> valueSize(aa.defaultValue());
             case BootstrapMethodsAttribute bma -> {
                 int l = 2;
                 for (var bm : bma.bootstrapMethods()) {

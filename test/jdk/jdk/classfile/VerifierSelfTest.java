@@ -147,6 +147,7 @@ class VerifierSelfTest {
                     .withField("/", CD_int, 0)
                     .withField("/", CD_int, 0)
                     .withMethod("m", MTD_void, 0, mb -> patch(mb,
+                            AnnotationDefaultAttribute.of(AnnotationValue.ofInt(0)),
                             DeprecatedAttribute.of(),
                             ExceptionsAttribute.ofSymbols(CD_Exception),
                             MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)),
@@ -220,6 +221,8 @@ class VerifierSelfTest {
                 Multiple Signature attributes in field ParserVerificationTestClass.f
                 Wrong Signature attribute length in field ParserVerificationTestClass.f
                 Wrong Synthetic attribute length in field ParserVerificationTestClass.f
+                Multiple AnnotationDefault attributes in method ParserVerificationTestClass::m()
+                Wrong AnnotationDefault attribute length in method ParserVerificationTestClass::m()
                 Wrong Deprecated attribute length in method ParserVerificationTestClass::m()
                 Multiple Exceptions attributes in method ParserVerificationTestClass::m()
                 Wrong Exceptions attribute length in method ParserVerificationTestClass::m()
