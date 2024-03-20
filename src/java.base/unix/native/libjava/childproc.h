@@ -128,24 +128,11 @@ typedef struct _SpawnInfo {
 extern const char * const *parentPathv;
 
 ssize_t writeFully(int fd, const void *buf, size_t count);
-int restartableDup2(int fd_from, int fd_to);
 int closeSafely(int fd);
-int isAsciiDigit(char c);
-int closeDescriptors(void);
-int moveDescriptor(int fd_from, int fd_to);
 
 int magicNumber();
 ssize_t readFully(int fd, void *buf, size_t nbyte);
 void initVectorFromBlock(const char**vector, const char* block, int count);
-void execve_as_traditional_shell_script(const char *file,
-                                        const char *argv[],
-                                        const char *const envp[]);
-void execve_with_shell_fallback(int mode, const char *file,
-                                const char *argv[],
-                                const char *const envp[]);
-void JDK_execvpe(int mode, const char *file,
-                 const char *argv[],
-                 const char *const envp[]);
 int childProcess(void *arg);
 
 #ifdef DEBUG

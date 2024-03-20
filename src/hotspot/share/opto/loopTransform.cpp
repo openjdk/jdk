@@ -1104,12 +1104,9 @@ void IdealLoopTree::policy_unroll_slp_analysis(CountedLoopNode *cl, PhaseIdealLo
     if (!cl->was_slp_analyzed()) {
       Compile::TracePhase tp("autoVectorize", &Phase::timers[Phase::_t_autoVectorize]);
 
-      SuperWord sw(phase);
-      sw.transform_loop(this, false);
-
-      // If the loop is slp canonical analyze it
-      if (sw.early_return() == false) {
-        sw.unrolling_analysis(_local_loop_unroll_factor);
+      VLoop vloop(this, true);
+      if (vloop.check_preconditions()) {
+        SuperWord::unrolling_analysis(vloop, _local_loop_unroll_factor);
       }
     }
 

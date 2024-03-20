@@ -504,7 +504,7 @@ void emit_cmpfp_fixup(MacroAssembler& _masm) {
   __ bind(exit);
 }
 
-void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
+static void emit_cmpfp3(MacroAssembler& _masm, Register dst) {
   Label done;
   __ movl(dst, -1);
   __ jcc(Assembler::parity, done);
@@ -1383,24 +1383,12 @@ void MachUEPNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 
 void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   MacroAssembler masm(&cbuf);
-#ifdef ASSERT
-  uint insts_size = cbuf.insts_size();
-#endif
-  masm.cmpptr(rax, Address(rcx, oopDesc::klass_offset_in_bytes()));
-  masm.jump_cc(Assembler::notEqual,
-               RuntimeAddress(SharedRuntime::get_ic_miss_stub()));
-  /* WARNING these NOPs are critical so that verified entry point is properly
-     aligned for patching by NativeJump::patch_verified_entry() */
-  int nops_cnt = 2;
-  if( !OptoBreakpoint ) // Leave space for int3
-     nops_cnt += 1;
-  masm.nop(nops_cnt);
-
-  assert(cbuf.insts_size() - insts_size == size(ra_), "checking code size of inline cache node");
+  masm.ic_check(CodeEntryAlignment);
 }
 
 uint MachUEPNode::size(PhaseRegAlloc *ra_) const {
-  return OptoBreakpoint ? 11 : 12;
+  return MachNode::size(ra_); // too many variables; just compute it
+                              // the hard way
 }
 
 
@@ -1842,7 +1830,7 @@ encode %{
         cbuf.shared_stub_to_interp_for(_method, cbuf.insts()->mark_off());
       } else {
         // Emit stubs for static call.
-        address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
+        address stub = CompiledDirectCall::emit_to_interp_stub(cbuf, mark);
         if (stub == nullptr) {
           ciEnv::current()->record_failure("CodeCache is full");
           return;
@@ -13776,7 +13764,7 @@ instruct cmpFastLockRTM(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eD
 %}
 
 instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP scr, eRegP thread) %{
-  predicate(!Compile::current()->use_rtm());
+  predicate(LockingMode != LM_LIGHTWEIGHT && !Compile::current()->use_rtm());
   match(Set cr (FastLock object box));
   effect(TEMP tmp, TEMP scr, USE_KILL box, TEMP thread);
   ins_cost(300);
@@ -13790,12 +13778,39 @@ instruct cmpFastLock(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI tmp, eRegP
 %}
 
 instruct cmpFastUnlock(eFlagsReg cr, eRegP object, eAXRegP box, eRegP tmp ) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set cr (FastUnlock object box));
   effect(TEMP tmp, USE_KILL box);
   ins_cost(300);
   format %{ "FASTUNLOCK $object,$box\t! kills $box,$tmp" %}
   ins_encode %{
     __ fast_unlock($object$$Register, $box$$Register, $tmp$$Register, ra_->C->use_rtm());
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastLockLightweight(eFlagsReg cr, eRegP object, eBXRegP box, eAXRegI eax_reg, eRegP tmp, eRegP thread) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastLock object box));
+  effect(TEMP eax_reg, TEMP tmp, USE_KILL box, TEMP thread);
+  ins_cost(300);
+  format %{ "FASTLOCK $object,$box\t! kills $box,$eax_reg,$tmp" %}
+  ins_encode %{
+    __ get_thread($thread$$Register);
+    __ fast_lock_lightweight($object$$Register, $box$$Register, $eax_reg$$Register, $tmp$$Register, $thread$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct cmpFastUnlockLightweight(eFlagsReg cr, eRegP object, eAXRegP eax_reg, eRegP tmp, eRegP thread) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set cr (FastUnlock object eax_reg));
+  effect(TEMP tmp, USE_KILL eax_reg, TEMP thread);
+  ins_cost(300);
+  format %{ "FASTUNLOCK $object,$eax_reg\t! kills $eax_reg,$tmp" %}
+  ins_encode %{
+    __ get_thread($thread$$Register);
+    __ fast_unlock_lightweight($object$$Register, $eax_reg$$Register, $tmp$$Register, $thread$$Register);
   %}
   ins_pipe(pipe_slow);
 %}

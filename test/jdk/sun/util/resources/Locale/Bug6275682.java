@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @summary Verifying that the language names starts with lowercase in spanish
  * @modules jdk.localedata
- * @bug 6275682
+ * @bug 6275682 8174269
 */
 
 import java.util.Locale;
@@ -38,6 +38,10 @@ public class Bug6275682 {
         String error = "";
 
         for (int i = 0; i < isoLangs.length; i++) {
+            // CLDR does not seem to have "bh" and "mo" language name in Spanish
+            if (isoLangs[i].equals("bh") || isoLangs[i].equals("mo")) {
+                continue;
+            }
             Locale current = new Locale (isoLangs[i]);
             String localeString = current.getDisplayLanguage (es);
             String startLetter = localeString.substring (0,1);

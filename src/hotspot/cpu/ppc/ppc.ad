@@ -1978,42 +1978,7 @@ void MachUEPNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   // This is the unverified entry point.
   C2_MacroAssembler _masm(&cbuf);
 
-  // Inline_cache contains a klass.
-  Register ic_klass       = as_Register(Matcher::inline_cache_reg_encode());
-  Register receiver_klass = R12_scratch2;  // tmp
-
-  assert_different_registers(ic_klass, receiver_klass, R11_scratch1, R3_ARG1);
-  assert(R11_scratch1 == R11, "need prologue scratch register");
-
-  // Check for nullptr argument if we don't have implicit null checks.
-  if (!ImplicitNullChecks || !os::zero_page_read_protected()) {
-    if (TrapBasedNullChecks) {
-      __ trap_null_check(R3_ARG1);
-    } else {
-      Label valid;
-      __ cmpdi(CCR0, R3_ARG1, 0);
-      __ bne_predict_taken(CCR0, valid);
-      // We have a null argument, branch to ic_miss_stub.
-      __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                           relocInfo::runtime_call_type);
-      __ bind(valid);
-    }
-  }
-  // Assume argument is not nullptr, load klass from receiver.
-  __ load_klass(receiver_klass, R3_ARG1);
-
-  if (TrapBasedICMissChecks) {
-    __ trap_ic_miss_check(receiver_klass, ic_klass);
-  } else {
-    Label valid;
-    __ cmpd(CCR0, receiver_klass, ic_klass);
-    __ beq_predict_taken(CCR0, valid);
-    // We have an unexpected klass, branch to ic_miss_stub.
-    __ b64_patchable((address)SharedRuntime::get_ic_miss_stub(),
-                         relocInfo::runtime_call_type);
-    __ bind(valid);
-  }
-
+  __ ic_check(CodeEntryAlignment);
   // Argument is valid and klass is as expected, continue.
 }
 
@@ -2062,7 +2027,10 @@ int HandlerImpl::emit_exception_handler(CodeBuffer &cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_exception_handler());
-  if (base == nullptr) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
   __ b64_patchable((address)OptoRuntime::exception_blob()->content_begin(),
@@ -2079,7 +2047,10 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf) {
   C2_MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(size_deopt_handler());
-  if (base == nullptr) return 0; // CodeBuffer::expand failed
+  if (base == nullptr) {
+    ciEnv::current()->record_failure("CodeCache is full");
+    return 0;  // CodeBuffer::expand failed
+  }
 
   int offset = __ offset();
   __ bl64_patchable((address)SharedRuntime::deopt_blob()->unpack(),
@@ -2801,15 +2772,16 @@ encode %{
     intptr_t val = $src$$constant;
     relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
     address const_toc_addr;
+    RelocationHolder r; // Initializes type to none.
     if (constant_reloc == relocInfo::oop_type) {
       // Create an oop constant and a corresponding relocation.
-      AddressLiteral a = __ allocate_oop_address((jobject)val);
+      AddressLiteral a = __ constant_oop_address((jobject)val);
       const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
+      r = a.rspec();
     } else if (constant_reloc == relocInfo::metadata_type) {
+      // Notify OOP recorder (don't need the relocation)
       AddressLiteral a = __ constant_metadata_address((Metadata *)val);
       const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-      __ relocate(a.rspec());
     } else {
       // Create a non-oop constant, no relocation needed.
       const_toc_addr = __ long_constant((jlong)$src$$constant);
@@ -2819,6 +2791,7 @@ encode %{
       ciEnv::current()->record_out_of_memory_failure();
       return;
     }
+    __ relocate(r); // If set above.
     // Get the constant's TOC offset.
     toc_offset = __ offset_to_method_toc(const_toc_addr);
 
@@ -2832,15 +2805,16 @@ encode %{
       intptr_t val = $src$$constant;
       relocInfo::relocType constant_reloc = $src->constant_reloc();  // src
       address const_toc_addr;
+      RelocationHolder r; // Initializes type to none.
       if (constant_reloc == relocInfo::oop_type) {
         // Create an oop constant and a corresponding relocation.
-        AddressLiteral a = __ allocate_oop_address((jobject)val);
+        AddressLiteral a = __ constant_oop_address((jobject)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
+        r = a.rspec();
       } else if (constant_reloc == relocInfo::metadata_type) {
+        // Notify OOP recorder (don't need the relocation)
         AddressLiteral a = __ constant_metadata_address((Metadata *)val);
         const_toc_addr = __ address_constant((address)a.value(), RelocationHolder::none);
-        __ relocate(a.rspec());
       } else {  // non-oop pointers, e.g. card mark base, heap top
         // Create a non-oop constant, no relocation needed.
         const_toc_addr = __ long_constant((jlong)$src$$constant);
@@ -2850,6 +2824,7 @@ encode %{
         ciEnv::current()->record_out_of_memory_failure();
         return;
       }
+      __ relocate(r); // If set above.
       // Get the constant's TOC offset.
       const int toc_offset = __ offset_to_method_toc(const_toc_addr);
       // Store the toc offset of the constant.
@@ -3452,7 +3427,7 @@ encode %{
       __ bl(__ pc());  // Emits a relocation.
 
       // The stub for call to interpreter.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      address stub = CompiledDirectCall::emit_to_interp_stub(cbuf);
       if (stub == nullptr) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
@@ -3507,7 +3482,7 @@ encode %{
 
     // Create the nodes for loading the IC from the TOC.
     loadConLNodesTuple loadConLNodes_IC =
-      loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong)Universe::non_oop_word()),
+      loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) Universe::non_oop_word()),
                                 OptoReg::Name(R19_H_num), OptoReg::Name(R19_num));
 
     // Create the call node.
@@ -12147,6 +12122,7 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 // inlined locking and unlocking
 
 instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
 
@@ -12162,6 +12138,7 @@ instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1,
 %}
 
 instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  predicate(LockingMode != LM_LIGHTWEIGHT);
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
 
@@ -12169,6 +12146,38 @@ instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                    $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+    // If unlocking was successful, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastLockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set crx (FastLock oop box));
+  effect(TEMP tmp1, TEMP tmp2);
+
+  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
+  ins_encode %{
+    __ fast_lock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
+                             $tmp1$$Register, $tmp2$$Register, /*tmp3*/ R0);
+    // If locking was successful, crx should indicate 'EQ'.
+    // The compiler generates a branch to the runtime call to
+    // _complete_monitor_locking_Java for the case where crx is 'NE'.
+  %}
+  ins_pipe(pipe_class_compare);
+%}
+
+instruct cmpFastUnlockLightweight(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+  predicate(LockingMode == LM_LIGHTWEIGHT);
+  match(Set crx (FastUnlock oop box));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
+
+  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
+  ins_encode %{
+    __ fast_unlock_lightweight($crx$$CondRegister, $oop$$Register, $box$$Register,
+                               $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.

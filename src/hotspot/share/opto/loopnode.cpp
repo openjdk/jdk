@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@
 #include "opto/predicates.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
-#include "opto/superword.hpp"
+#include "opto/vectorization.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/checkedCast.hpp"
 #include "utilities/powerOfTwo.hpp"
@@ -4359,8 +4359,8 @@ void PhaseIdealLoop::collect_useful_template_assertion_predicates_for_loop(Ideal
 }
 
 void PhaseIdealLoop::eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates) {
-  for (int i = 0; i < C->template_assertion_predicate_count(); i++) {
-    Node* opaque4 = C->template_assertion_predicate_opaq_node(i);
+  for (int i = C->template_assertion_predicate_count(); i > 0; i--) {
+    Node* opaque4 = C->template_assertion_predicate_opaq_node(i - 1);
     assert(opaque4->Opcode() == Op_Opaque4, "must be");
     if (!useful_predicates.member(opaque4)) { // not in the useful list
       _igvn.replace_node(opaque4, opaque4->in(2));
@@ -4863,30 +4863,30 @@ void PhaseIdealLoop::build_and_optimize() {
      C->set_major_progress();
   }
 
-  // Convert scalar to superword operations at the end of all loop opts.
+  // Auto-vectorize main-loop
   if (C->do_superword() && C->has_loops() && !C->major_progress()) {
     Compile::TracePhase tp("autoVectorize", &timers[_t_autoVectorize]);
-    // SuperWord transform
-    SuperWord sw(this);
+
+    // Shared data structures for all AutoVectorizations, to reduce allocations
+    // of large arrays.
+    VSharedData vshared;
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
-      if (lpt->is_counted()) {
-        CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-        if (cl->is_main_loop()) {
-          if (!sw.transform_loop(lpt, true)) {
-            // Instigate more unrolling for optimization when vectorization fails.
-            if (cl->has_passed_slp()) {
-              C->set_major_progress();
-              cl->set_notpassed_slp();
-              cl->mark_do_unroll_only();
-            }
-          }
+      AutoVectorizeStatus status = auto_vectorize(lpt, vshared);
+
+      if (status == AutoVectorizeStatus::TriedAndFailed) {
+        // We tried vectorization, but failed. From now on only unroll the loop.
+        CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+        if (cl->has_passed_slp()) {
+          C->set_major_progress();
+          cl->set_notpassed_slp();
+          cl->mark_do_unroll_only();
         }
       }
     }
   }
 
-  // Move UnorderedReduction out of counted loop. Can be introduced by SuperWord.
+  // Move UnorderedReduction out of counted loop. Can be introduced by AutoVectorization.
   if (C->has_loops() && !C->major_progress()) {
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
@@ -5071,7 +5071,7 @@ bool PhaseIdealLoop::verify_loop_ctrl(Node* n, const PhaseIdealLoop* phase_verif
   }
 }
 
-int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
+static int compare_tree(IdealLoopTree* const& a, IdealLoopTree* const& b) {
   assert(a != nullptr && b != nullptr, "must be");
   return a->_head->_idx - b->_head->_idx;
 }
@@ -5962,30 +5962,6 @@ CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
   }
   return pre_end;
 }
-
-  CountedLoopNode* CountedLoopNode::pre_loop_head() const {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr,
-           "should find head from pre loop end");
-    return _pre_loop_end->loopnode();
-  }
-
-  CountedLoopEndNode* CountedLoopNode::pre_loop_end() {
-#ifdef ASSERT
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(_pre_loop_end != nullptr, "should be set when fetched");
-    Node* found_pre_end = find_pre_loop_end();
-    assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
-           "should find the pre loop end and must be the same result");
-#endif
-    return _pre_loop_end;
-  }
-
-  void CountedLoopNode::set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
-    assert(is_main_loop(), "Only main loop has pre loop");
-    assert(pre_loop_end, "must be valid");
-    _pre_loop_end = pre_loop_end;
-  }
 
 //------------------------------get_late_ctrl----------------------------------
 // Compute latest legal control.

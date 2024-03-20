@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary URLConnection.connect() fails on JAR Entry it creates
  * file handler leak
  * @library /test/lib
+ * @requires vm.flagless
  * @build jdk.test.lib.Utils
  *        jdk.test.lib.Asserts
  *        jdk.test.lib.JDKToolFinder

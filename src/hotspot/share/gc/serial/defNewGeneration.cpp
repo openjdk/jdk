@@ -335,9 +335,9 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   char *to_end     = to_start   + survivor_size;
 
   assert(to_end == _virtual_space.high(), "just checking");
-  assert(Space::is_aligned(eden_start), "checking alignment");
-  assert(Space::is_aligned(from_start), "checking alignment");
-  assert(Space::is_aligned(to_start),   "checking alignment");
+  assert(is_aligned(eden_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(from_start, SpaceAlignment), "checking alignment");
+  assert(is_aligned(to_start, SpaceAlignment),   "checking alignment");
 
   MemRegion edenMR((HeapWord*)eden_start, (HeapWord*)from_start);
   MemRegion fromMR((HeapWord*)from_start, (HeapWord*)to_start);
@@ -862,6 +862,9 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
       handle_promotion_failure(old);
       return old;
     }
+
+    ContinuationGCSupport::transform_stack_chunk(obj);
+
     new_obj_is_tenured = true;
   } else {
     // Prefetch beyond obj

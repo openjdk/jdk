@@ -48,11 +48,8 @@ private:
   size_t _alloc_failure_degenerated;
   size_t _alloc_failure_degenerated_upgrade_to_full;
   size_t _alloc_failure_full;
-  size_t _explicit_concurrent;
-  size_t _explicit_full;
-  size_t _implicit_concurrent;
-  size_t _implicit_full;
-  size_t _degen_points[ShenandoahGC::_DEGENERATED_LIMIT];
+  size_t _collection_cause_counts[GCCause::_last_gc_cause];
+  size_t _degen_point_counts[ShenandoahGC::_DEGENERATED_LIMIT];
 
   ShenandoahSharedFlag _in_shutdown;
   ShenandoahTracer* _tracer;
@@ -72,10 +69,7 @@ public:
   void record_alloc_failure_to_degenerated(ShenandoahGC::ShenandoahDegenPoint point);
   void record_alloc_failure_to_full();
   void record_degenerated_upgrade_to_full();
-  void record_explicit_to_concurrent();
-  void record_explicit_to_full();
-  void record_implicit_to_concurrent();
-  void record_implicit_to_full();
+  void record_collection_cause(GCCause::Cause cause);
 
   void record_shutdown();
   bool is_at_shutdown();
@@ -94,6 +88,9 @@ public:
   inline size_t consecutive_degenerated_gc_count() const {
     return _consecutive_degenerated_gcs;
   }
+
+  static bool should_run_full_gc(GCCause::Cause cause);
+  static bool should_handle_requested_gc(GCCause::Cause cause);
 };
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHCOLLECTORPOLICY_HPP
