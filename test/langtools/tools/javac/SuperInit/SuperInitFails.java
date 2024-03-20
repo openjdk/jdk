@@ -191,4 +191,9 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
             super();
         }
     }
+
+    public SuperInitFails(double[][] x) {
+        Runnable r = () -> this.x = 7;  // this should FAIL
+        super();
+    }
 }
