@@ -1241,7 +1241,7 @@ public interface HttpResponse<T> {
          * cancelled and the {@code InputStream} will be closed.
          *
          * @return a {@linkplain HttpClient##streaming streaming body subscriber}
-         *         that streams the response body as an {@link InputStream}.
+         *         which streams the response body as an {@link InputStream}.
          */
         public static BodySubscriber<InputStream> ofInputStream() {
             return new ResponseSubscribers.HttpResponseInputStream();
