@@ -49,6 +49,15 @@ public class PrintModalDialog {
              should appear to print the page. Test if this print new dialog
              is actually modal.
 
+             Modal in this case means that it blocks the user from interacting
+             with other windows in the same application. You may still be able
+             to interact with unrelated applications on the desktop.
+             One sure way to test this is to first show the print dialog and
+             then press "Fail", because if you can click on "Fail" and have it
+             respond, then the print dialog was not modal. If clicking on it
+             does nothing then cancel the print dialog and do the same for the
+             other print dialog.
+
              Then after printing or closing the dialog, a new print dialog
              should appear. Also check if this dialog is modal.
 
@@ -61,7 +70,7 @@ public class PrintModalDialog {
                 .builder()
                 .title("PrintModalDialog Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(10)
+                .rows(20)
                 .columns(40)
                 .splitUIBottom(PrintModalDialog::createAndShowGUI)
                 .build()
