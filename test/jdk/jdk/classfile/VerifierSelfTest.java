@@ -122,7 +122,15 @@ class VerifierSelfTest {
                 NestMembersAttribute.ofSymbols(cd_test),
                 PermittedSubclassesAttribute.ofSymbols(cd_test),
                 RecordAttribute.of(RecordComponentInfo.of("c", CD_String, patch(
-                        SignatureAttribute.of(Signature.of(CD_String))))),
+                        SignatureAttribute.of(Signature.of(CD_String)),
+                        RuntimeVisibleAnnotationsAttribute.of(),
+                        RuntimeInvisibleAnnotationsAttribute.of(),
+                        RuntimeVisibleTypeAnnotationsAttribute.of(),
+                        RuntimeInvisibleTypeAnnotationsAttribute.of()))),
+                RuntimeVisibleAnnotationsAttribute.of(),
+                RuntimeInvisibleAnnotationsAttribute.of(),
+                RuntimeVisibleTypeAnnotationsAttribute.of(),
+                RuntimeInvisibleTypeAnnotationsAttribute.of(),
                 SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
                 SourceFileAttribute.of("ParserVerificationTestClass.java"),
                 SyntheticAttribute.of())
@@ -130,6 +138,10 @@ class VerifierSelfTest {
                     .withField("f", CD_String, fb -> patch(fb,
                             ConstantValueAttribute.of(""),
                             DeprecatedAttribute.of(),
+                            RuntimeVisibleAnnotationsAttribute.of(),
+                            RuntimeInvisibleAnnotationsAttribute.of(),
+                            RuntimeVisibleTypeAnnotationsAttribute.of(),
+                            RuntimeInvisibleTypeAnnotationsAttribute.of(),
                             SignatureAttribute.of(Signature.of(CD_String)),
                             SyntheticAttribute.of()))
                     .withField("/", CD_int, 0)
@@ -138,6 +150,10 @@ class VerifierSelfTest {
                             DeprecatedAttribute.of(),
                             ExceptionsAttribute.ofSymbols(CD_Exception),
                             MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)),
+                            RuntimeVisibleAnnotationsAttribute.of(),
+                            RuntimeInvisibleAnnotationsAttribute.of(),
+                            RuntimeVisibleParameterAnnotationsAttribute.of(List.of()),
+                            RuntimeInvisibleParameterAnnotationsAttribute.of(List.of()),
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
                             .withCode(cob -> cob.return_()))
@@ -204,6 +220,26 @@ class VerifierSelfTest {
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeVisibleAnnotations attributes in class ParserVerificationTestClass
+                Multiple RuntimeInvisibleAnnotations attributes in class ParserVerificationTestClass
+                Multiple RuntimeVisibleTypeAnnotations attributes in class ParserVerificationTestClass
+                Multiple RuntimeInvisibleTypeAnnotations attributes in class ParserVerificationTestClass
+                Multiple RuntimeVisibleAnnotations attributes in field ParserVerificationTestClass.f
+                Multiple RuntimeInvisibleAnnotations attributes in field ParserVerificationTestClass.f
+                Multiple RuntimeVisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
+                Multiple RuntimeInvisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
+                Multiple RuntimeVisibleAnnotations attributes in method ParserVerificationTestClass::m()
+                Multiple RuntimeInvisibleAnnotations attributes in method ParserVerificationTestClass::m()
+                Multiple RuntimeVisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
+                Multiple RuntimeInvisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
+                Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 """.lines().filter(exp -> !found.remove(exp)).toList();
         if (!found.isEmpty() || !expected.isEmpty()) {
             ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
