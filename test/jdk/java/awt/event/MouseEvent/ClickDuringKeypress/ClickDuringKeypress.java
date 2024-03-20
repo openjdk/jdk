@@ -21,13 +21,6 @@
  * questions.
  */
 
-/*
-  @key headful
-  @bug 4515763
-  @summary Tests that clicking mouse and pressing keys generates correct amount of click-counts
-  @run main ClickDuringKeypress
-*/
-
 import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Frame;
@@ -40,25 +33,35 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowEvent;
 
+/*
+  @test
+  @key headful
+  @bug 4515763
+  @summary Tests that clicking mouse and pressing keys generates correct amount of click-counts
+  @run main ClickDuringKeypress
+*/
+
 public class ClickDuringKeypress implements MouseListener {
    //Declare things used in the test, like buttons and labels here
    final static int CLICKCOUNT = 10;
-   final static int DOUBLE_CLICK_AUTO_DELAY = 10;
+   final static int DOUBLE_CLICK_AUTO_DELAY = 20;
    static volatile int lastClickCount = 0;
    static volatile boolean clicked = false;
    static volatile boolean ready = false;
 
    static volatile Frame frame;
    static volatile Robot robot;
-   static volatile ClickDuringKeypress clicker;
+   static final ClickDuringKeypress clicker = new ClickDuringKeypress();
 
    public static void main(String[] args) throws Exception {
-       clicker = new ClickDuringKeypress();
        try {
            EventQueue.invokeAndWait(ClickDuringKeypress::createUI);
            robot = new Robot();
+           robot.setAutoWaitForIdle(true);
+           robot.delay(2000);
            robot.mouseMove(200, 200);
-           EventQueue.invokeAndWait(frame::show);
+           robot.delay(2000);
+           EventQueue.invokeAndWait(() -> frame.setVisible(true));
            doTest();
        } finally {
            if (frame != null) {
@@ -72,34 +75,24 @@ public class ClickDuringKeypress implements MouseListener {
       frame.addMouseListener(clicker);
       frame.addWindowListener(new WindowAdapter() {
           public void windowActivated(WindowEvent e) {
-              synchronized(clicker) {
                   ready = true;
-                  ClickDuringKeypress.clicker.notifyAll();
-              }
           }
       });
       frame.setBounds(0, 0, 400, 400);
     }
 
     static void doTest() throws Exception {
-       synchronized(clicker) {
-           try {
-               if (!ready) {
-                   clicker.wait(5000);
-               }
-           } catch (InterruptedException ex) {
-           }
-           if (!ready) {
-               System.out.println("Not Activated. Test fails");
-               throw new RuntimeException("Not Activated. Test fails");
-           }
+       robot.waitForIdle();
+       robot.delay(1000);
+       if (!ready) {
+           System.out.println("Not Activated. Test fails");
+           throw new RuntimeException("Not Activated. Test fails");
       }
       // Mouse should be over the Frame by this point
       robot.setAutoDelay(2000);
       robot.waitForIdle();
       robot.keyPress(KeyEvent.VK_B);
       robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-      robot.delay(10);
       robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
       // Should trigger mouseClicked
       robot.keyRelease(KeyEvent.VK_B);
@@ -108,13 +101,10 @@ public class ClickDuringKeypress implements MouseListener {
       robot.setAutoDelay(DOUBLE_CLICK_AUTO_DELAY);
       for (int i = 0; i < CLICKCOUNT / 2; i++) {
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(10);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
         robot.keyPress(KeyEvent.VK_B);
-        robot.delay(10);
         robot.keyRelease(KeyEvent.VK_B);
         robot.mousePress(InputEvent.BUTTON1_DOWN_MASK);
-        robot.delay(10);
         robot.mouseRelease(InputEvent.BUTTON1_DOWN_MASK);
       }
       robot.waitForIdle();
