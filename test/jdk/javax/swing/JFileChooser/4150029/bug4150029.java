@@ -23,7 +23,6 @@
 
 import java.io.File;
 import java.io.IOException;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.UIManager;
 
@@ -90,11 +89,8 @@ public class bug4150029 {
 
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 
-            JDialog dialog = new JDialog();
-            PassFailJFrame.addTestWindow(dialog);
-
             try {
-                res = fileChooser.showOpenDialog(dialog) != JFileChooser.APPROVE_OPTION ||
+                res = fileChooser.showOpenDialog(null) != JFileChooser.APPROVE_OPTION ||
                         testDir.getCanonicalPath().equals(fileChooser.getSelectedFile().getCanonicalPath());
             } catch (IOException e) {
                 res = false;
