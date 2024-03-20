@@ -222,7 +222,9 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
             default:
                 return ("Unknown (" + type + ")");
         }
-    }/*
+    }
+
+    /*
      * Logging code
      */
     private static boolean resultOnce = true;
