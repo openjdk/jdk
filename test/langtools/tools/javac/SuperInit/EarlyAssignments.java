@@ -70,4 +70,23 @@ public class EarlyAssignments {
             super();
         }
     }
+
+    public static class Inner3 {
+
+        public int e;
+
+        public class Inner3a {
+
+            public static int x;
+
+            public Inner3a(int val) {
+                x = val;                    // OK - "x" is a static field
+                val = x;                    // OK - "x" is a static field
+                e = val;                    // OK - "e" belongs to outer class
+                val = e;                    // OK - "e" belongs to outer class
+                Inner3.this.e = val;        // OK - "e" belongs to outer class
+                super();
+            }
+        }
+    }
 }
