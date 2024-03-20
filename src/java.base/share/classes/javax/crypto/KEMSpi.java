@@ -241,6 +241,34 @@ public interface KEMSpi {
             throws InvalidAlgorithmParameterException, InvalidKeyException;
 
     /**
+     * Creates a KEM encapsulator on the KEM sender side for authenticated
+     * encapsulation.
+     *
+     * @param publicKeyR   the receiver's public key, must not be {@code null}
+     * @param privateKeyS  the sender's private key, must not be {@code null}
+     * @param spec         the optional parameter, can be {@code null}
+     * @param secureRandom the source of randomness for encapsulation.
+     *                     If {@code null}, the implementation must provide
+     *                     a default one.
+     * @return the encapsulator for this key
+     * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
+     *          or one is required but {@code spec} is {@code null}
+     * @throws InvalidKeyException if {@code publicKeyR} or {@code privateKeyS}
+     *          is {@code null} or invalid
+     * @throws UnsupportedOperationException if an implementation does not
+     *          supported authenticated encapsulation
+     * @see KEM#newAuthEncapsulator(PublicKey, PrivateKey, AlgorithmParameterSpec, SecureRandom)
+     * @since 23
+     */
+    default EncapsulatorSpi engineNewAuthEncapsulator(
+            PublicKey publicKeyR, PrivateKey privateKeyS,
+            AlgorithmParameterSpec spec, SecureRandom secureRandom)
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
+        throw new UnsupportedOperationException("Not supported");
+    }
+
+
+    /**
      * Creates a KEM decapsulator on the KEM receiver side.
      *
      * @param privateKey the receiver's private key, must not be {@code null}
@@ -253,4 +281,27 @@ public interface KEMSpi {
      */
     DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
             throws InvalidAlgorithmParameterException, InvalidKeyException;
+
+    /**
+     * Creates a KEM decapsulator on the KEM receiver side for authenticated
+     * encapsulation.
+     *
+     * @param privateKeyR the receiver's private key, must not be {@code null}
+     * @param publicKeyS  the sender's public key, must not be {@code null}
+     * @param spec        the optional parameter, can be {@code null}
+     * @return the decapsulator for this key
+     * @throws InvalidAlgorithmParameterException if {@code spec} is invalid
+     *          or one is required but {@code spec} is {@code null}
+     * @throws InvalidKeyException if {@code privateKeyR} or {@code publicKeyS}
+     *          is {@code null} or invalid
+     * @throws UnsupportedOperationException if an implementation does not
+     *          supported authenticated encapsulation
+     * @see KEM#newAuthDecapsulator(PrivateKey, PublicKey, AlgorithmParameterSpec)
+     * @since 23
+     */
+    default DecapsulatorSpi engineNewAuthDecapsulator(PrivateKey privateKeyR,
+            PublicKey publicKeyS, AlgorithmParameterSpec spec)
+            throws InvalidAlgorithmParameterException, InvalidKeyException {
+        throw new UnsupportedOperationException("Not supported");
+    }
 }

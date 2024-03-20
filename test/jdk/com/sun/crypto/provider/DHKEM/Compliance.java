@@ -37,10 +37,11 @@ import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.math.BigInteger;
 import java.security.*;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.*;
-import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
@@ -100,22 +101,59 @@ public class Compliance {
                 () -> kem.newEncapsulator(null),
                 InvalidKeyException.class);
         Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(null, null),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(null, kpEC.getPrivate()),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(kpEC.getPublic(), null),
+                InvalidKeyException.class);
+
+        Utils.runAndCheckException(
                 () -> kem.newDecapsulator(null),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthDecapsulator(null, null),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthDecapsulator(null, kpEC.getPublic()),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthDecapsulator(kpEC.getPrivate(), null),
                 InvalidKeyException.class);
 
         // Still an EC key, rejected by implementation
         Utils.runAndCheckException(
-                () -> kem.newEncapsulator(badECKey()),
+                () -> kem.newEncapsulator(badECPublicKey()),
                 ExChecker.of(InvalidKeyException.class).by(DHKEM.class));
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(badECPublicKey(), kpEC.getPrivate()),
+                ExChecker.of(InvalidKeyException.class).by(DHKEM.class));
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(kpEC.getPublic(), badECPrivateKey()),
+                ExChecker.of(InvalidKeyException.class).by(DHKEM.class.getName() + "$Params"));
 
         // Not an EC key at all, rejected by framework coz it's not
         // listed in "SupportedKeyClasses" in SunJCE.java.
         Utils.runAndCheckException(
                 () -> kem.newEncapsulator(kpRSA.getPublic()),
                 ExChecker.of(InvalidKeyException.class).by(KEM.class.getName() + "$DelayedKEM"));
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(kpRSA.getPublic(), kpEC.getPrivate()),
+                ExChecker.of(InvalidKeyException.class).by(KEM.class.getName() + "$DelayedKEM"));
+        Utils.runAndCheckException(
+                () -> kem.newAuthEncapsulator(kpEC.getPublic(), kpRSA.getPrivate()),
+                ExChecker.of(InvalidKeyException.class).by(KEM.class.getName() + "$DelayedKEM"));
 
         Utils.runAndCheckException(
                 () -> kem.newDecapsulator(kpRSA.getPrivate()),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthDecapsulator(kpRSA.getPrivate(), kpEC.getPublic()),
+                InvalidKeyException.class);
+        Utils.runAndCheckException(
+                () -> kem.newAuthDecapsulator(kpEC.getPrivate(), kpRSA.getPublic()),
                 InvalidKeyException.class);
 
         kem.newEncapsulator(kpX.getPublic(), null);
@@ -143,10 +181,10 @@ public class Compliance {
         KEM.Decapsulator d = kem.newDecapsulator(kpX.getPrivate());
         d.decapsulate(enc.encapsulation());
         SecretKey dec = d.decapsulate(enc.encapsulation());
-        Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(), dec.getEncoded()));
+        Asserts.assertEqualsByteArray(enc.key().getEncoded(), dec.getEncoded());
 
         dec = d.decapsulate(enc.encapsulation(), 0, d.secretSize(), "AES");
-        Asserts.assertTrue(Arrays.equals(enc.key().getEncoded(), dec.getEncoded()));
+        Asserts.assertEqualsByteArray(enc.key().getEncoded(), dec.getEncoded());
 
         KEM.Encapsulated encHead = e2.encapsulate(0, 16, "AES");
         Asserts.assertEQ(encHead.key().getEncoded().length, 16);
@@ -185,6 +223,28 @@ public class Compliance {
         Utils.runAndCheckException(
                 () -> d3.decapsulate(new byte[100]),
                 DecapsulateException.class);
+
+        // Authenticated encapsulation
+        KeyPair kpXS = KeyPairGenerator.getInstance("X25519").generateKeyPair();
+        KEM.Encapsulator e4 = kem.newAuthEncapsulator(kpX.getPublic(), kpXS.getPrivate());
+        KEM.Encapsulated enc4 = e4.encapsulate();
+        Asserts.assertEQ(enc4.key().getEncoded().length, e4.secretSize());
+        Asserts.assertEQ(enc4.key().getAlgorithm(), "Generic");
+        KEM.Decapsulator d4 = kem.newAuthDecapsulator(kpX.getPrivate(), kpXS.getPublic());
+        SecretKey dec4 = d4.decapsulate(enc4.encapsulation());
+        Asserts.assertEqualsByteArray(enc4.key().getEncoded(), dec4.getEncoded());
+        Asserts.assertEQ(dec4.getEncoded().length, e4.secretSize());
+        Asserts.assertEQ(dec4.getAlgorithm(), "Generic");
+
+        // decapsuator not created with sender's public key
+        KEM.Decapsulator d4x = kem.newDecapsulator(kpX.getPrivate());
+        SecretKey dec4x = d4x.decapsulate(enc4.encapsulation());
+        Asserts.assertNotEqualsByteArray(enc4.key().getEncoded(), dec4x.getEncoded());
+
+        // decapsuator created with someone else's public key
+        KEM.Decapsulator d4y = kem.newAuthDecapsulator(kpX.getPrivate(), kpX.getPublic());
+        SecretKey dec4y = d4y.decapsulate(enc4.encapsulation());
+        Asserts.assertNotEqualsByteArray(enc4.key().getEncoded(), dec4y.getEncoded());
     }
 
     static class MySecureRandom extends SecureRandom {
@@ -203,23 +263,31 @@ public class Compliance {
     // Same random should generate same key encapsulation messages
     static void determined() throws Exception {
         long seed = new Random().nextLong();
-        byte[] enc1 = calcDetermined(seed);
-        byte[] enc2 = calcDetermined(seed);
-        Asserts.assertTrue(Arrays.equals(enc1, enc2),
+        byte[] enc1 = calcDetermined(true, seed);
+        byte[] enc2 = calcDetermined(true, seed);
+        Asserts.assertEqualsByteArray(enc1, enc2,
+                "Undetermined for " + seed);
+        enc1 = calcDetermined(false, seed);
+        enc2 = calcDetermined(false, seed);
+        Asserts.assertEqualsByteArray(enc1, enc2,
                 "Undetermined for " + seed);
     }
 
-    static byte[] calcDetermined(long seed) throws Exception {
+    static byte[] calcDetermined(boolean auth, long seed) throws Exception {
         SecureRandom random = new MySecureRandom(seed);
         KeyPairGenerator g = KeyPairGenerator.getInstance("XDH");
         g.initialize(NamedParameterSpec.X25519, random);
-        PublicKey pk = g.generateKeyPair().getPublic();
+        PublicKey pkR = g.generateKeyPair().getPublic();
+        PrivateKey skS = g.generateKeyPair().getPrivate();
         KEM kem = KEM.getInstance("DHKEM");
-        kem.newEncapsulator(pk, random); // skip one
-        KEM.Encapsulator e = kem.newEncapsulator(pk, random);
+        kem.newEncapsulator(pkR, random); // skip one
+        kem.newAuthEncapsulator(pkR, skS, random);
+        KEM.Encapsulator e = auth
+                ? kem.newAuthEncapsulator(pkR, skS, random)
+                : kem.newEncapsulator(pkR, random);
         byte[] enc1 = e.encapsulate().encapsulation();
         byte[] enc2 = e.encapsulate().encapsulation();
-        Asserts.assertFalse(Arrays.equals(enc1, enc2));
+        Asserts.assertNotEqualsByteArray(enc1, enc2);
         return enc2;
     }
 
@@ -244,10 +312,39 @@ public class Compliance {
         Asserts.assertEQ(eeven.providerName(), "SunEC");
     }
 
-    static ECPublicKey badECKey() {
+    static ECPublicKey badECPublicKey() {
         return new ECPublicKey() {
             @Override
             public ECPoint getW() {
+                return null;
+            }
+
+            @Override
+            public String getAlgorithm() {
+                return null;
+            }
+
+            @Override
+            public String getFormat() {
+                return null;
+            }
+
+            @Override
+            public byte[] getEncoded() {
+                return new byte[0];
+            }
+
+            @Override
+            public ECParameterSpec getParams() {
+                return null;
+            }
+        };
+    }
+
+    static ECPrivateKey badECPrivateKey() {
+        return new ECPrivateKey() {
+            @Override
+            public BigInteger getS() {
                 return null;
             }
 
@@ -299,7 +396,8 @@ public class Compliance {
             } else if (t.getStackTrace()[0].getClassName().equals(caller)) {
                 return;
             } else {
-                throw new AssertionError("thrown by " + t.getStackTrace()[0].getClassName());
+                t.printStackTrace();
+                throw new AssertionError( t + "thrown by " + t.getStackTrace()[0].getClassName());
             }
         }
     }
