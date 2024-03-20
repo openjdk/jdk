@@ -25,12 +25,13 @@
 
 #include "precompiled.hpp"
 
+#include "nmt/memMapPrinter.hpp"
 #include "procMapsParser.inline.hpp"
 #include "runtime/os.hpp"
-#include "nmt/memMapPrinter.hpp"
 #include "utilities/align.hpp"
-#include "utilities/powerOfTwo.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/powerOfTwo.hpp"
+
 #include <limits.h>
 
 class ProcSmapsSummary {
@@ -45,8 +46,8 @@ class ProcSmapsSummary {
 public:
   ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
                      _swapped_out(0), _hugetlb(0), _thp(0) {}
-  void add_mapping(ProcSmapsInfo& info) {
-    _num_mappings ++;
+  void add_mapping(const ProcSmapsInfo& info) {
+    _num_mappings++;
     _vsize += info.vsize();
     _rss += info.rss;
     _committed += info.nr ? 0 : info.vsize();
@@ -136,7 +137,7 @@ public:
     st->print_cr("                       thp: mapping uses THP");
     st->print_cr("                     thpel: mapping is eligible for THP");
     st->print_cr("                    thpadv: mapping is THP-madvised");
-    st->print_cr("                     nothp: mapping will not THP");
+    st->print_cr("                     nothp: mapping will not use THP");
     st->print_cr("                      huge: mapping uses hugetlb pages");
     st->print_cr("vm info:         VM information (requires NMT)");
     _session.print_nmt_flag_legend(16);
