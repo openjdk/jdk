@@ -94,7 +94,7 @@ public class ImageDecoratedDnD {
 
         dropTarget = new DnDTarget(Color.RED, Color.YELLOW);
         dragSource = new DnDSource("Drag ME! ("
-                + (DragSource.isDragImageSupported() ? "with " : "without") + " image)" );
+                + (DragSource.isDragImageSupported() ? "with " : "without") + " image)");
 
         mainPanel.add(dragSource, "North");
         mainPanel.add(dropTarget, "Center");
