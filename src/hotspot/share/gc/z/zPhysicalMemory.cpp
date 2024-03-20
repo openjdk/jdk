@@ -371,9 +371,6 @@ void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) co
     _backing.map(addr + size, segment.size(), segment.start());
     size += segment.size();
   }
-  if (pmem.nsegments() > 0) {
-    ZNMT::map(addr, size, pmem.segment(0).start());
-  }
 
   // Setup NUMA interleaving for large pages
   if (ZNUMA::is_enabled() && ZLargePages::is_explicit()) {
@@ -387,6 +384,6 @@ void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) co
 // Unmap virtual memory from physical memory
 void ZPhysicalMemoryManager::unmap(zoffset offset, size_t size) const {
   const zaddress_unsafe addr = ZOffset::address_unsafe(offset);
+
   _backing.unmap(addr, size);
-  ZNMT::unmap(addr, size);
 }
