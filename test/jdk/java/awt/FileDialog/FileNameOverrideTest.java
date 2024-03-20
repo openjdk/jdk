@@ -43,23 +43,20 @@ import jtreg.SkippedException;
  */
 
 public class FileNameOverrideTest {
-    private final static String fileName = "input";
     private final static String clickDirName = "Directory for double click";
-    private final static String dirPath = System.getProperty("user.dir");;
-    private static JButton showBtn;
-    private static FileDialog fd;
 
     private static JButton initialize() {
-        showBtn = new JButton("Show File Dialog");
+        final String fileName = "input";
+        final String dirPath = System.getProperty("user.dir");;
+
+        JButton showBtn = new JButton("Show File Dialog");
         showBtn.addActionListener(w -> {
-            Frame frame = new Frame();
-            fd = new FileDialog(frame, "Open");
+            FileDialog fd = new FileDialog((Frame) null, "Open");
             fd.setFile(fileName);
             fd.setDirectory(dirPath);
             fd.setVisible(true);
             String output = fd.getFile();
             fd.dispose();
-            frame.dispose();
             if (fileName.equals(output)) {
                 PassFailJFrame.forcePass();
             } else {
