@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -127,7 +127,7 @@ size_t PSOldGen::num_iterable_blocks() const {
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % BOTConstants::card_size_in_words()) == 0,
+  assert((block_word_size % CardTable::card_size_in_words()) == 0,
          "To ensure fast object_start calls");
 
   MutableSpace *space = object_space();

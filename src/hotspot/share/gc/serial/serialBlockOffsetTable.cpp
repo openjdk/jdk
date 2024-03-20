@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,7 @@ void SerialBlockOffsetTable::update_for_block_work(HeapWord* blk_start,
       // -1 so that the reach ends in this region and not at the start
       // of the next.
       size_t reach = offset_card + BOTConstants::power_to_cards_back(i + 1) - 1;
-      uint8_t value = checked_cast<uint8_t>(BOTConstants::card_size_in_words() + i);
+      uint8_t value = checked_cast<uint8_t>(CardTable::card_size_in_words() + i);
 
       _array->set_offset_array(start_card_for_region, MIN2(reach, end_card), value);
       start_card_for_region = reach + 1;
@@ -151,7 +151,7 @@ HeapWord* SerialBlockOffsetTable::block_start_reaching_into_card(const void* add
   while (true) {
     offset = _array->offset_array(index);
 
-    if (offset < BOTConstants::card_size_in_words()) {
+    if (offset < CardTable::card_size_in_words()) {
       break;
     }
 
@@ -171,7 +171,7 @@ void SerialBlockOffsetTable::verify_for_block(HeapWord* blk_start, HeapWord* blk
   const size_t start_card = _array->index_for(align_up_by_card_size(blk_start));
   const size_t end_card = _array->index_for(blk_end - 1);
   // Check cards in [start_card, end_card]
-  assert(_array->offset_array(start_card) < BOTConstants::card_size_in_words(), "offset card");
+  assert(_array->offset_array(start_card) < CardTable::card_size_in_words(), "offset card");
 
   for (size_t i = start_card + 1; i <= end_card; ++i) {
     const uint8_t prev  = _array->offset_array(i-1);

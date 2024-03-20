@@ -2929,11 +2929,20 @@ int os::Linux::commit_memory_impl(char* addr, size_t size, bool exec) {
       numa_make_global(addr, size);
     }
     return 0;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 
   int err = errno;  // save errno from mmap() call above
 
   if (!recoverable_mmap_error(err)) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
     warn_fail_commit_memory(addr, size, exec, err);
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "committing reserved memory.");
   }
@@ -3465,7 +3474,14 @@ struct bitmask* os::Linux::_numa_membind_bitmask;
 bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-  return res  != (uintptr_t) MAP_FAILED;
+  if (res == (uintptr_t) MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
+  return true;
 }
 
 static address get_stack_commited_bottom(address bottom, size_t size) {
@@ -3684,8 +3700,14 @@ static char* anon_mmap(char* requested_addr, size_t bytes) {
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
-
-  return addr == MAP_FAILED ? nullptr : addr;
+  if (addr == MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(requested_addr, bytes),
+                       os::strerror(ep.saved_errno()));
+    return nullptr;
+  }
+  return addr;
 }
 
 // Allocate (using mmap, NO_RESERVE, with small pages) at either a given request address
@@ -3706,7 +3728,12 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
   if (start != nullptr) {
     if (req_addr != nullptr) {
       if (start != req_addr) {
-        ::munmap(start, extra_size);
+        if (::munmap(start, extra_size) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(start, extra_size),
+                             os::strerror(ep.saved_errno()));
+        }
         start = nullptr;
       }
     } else {
@@ -3714,10 +3741,22 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
       char* const end_aligned = start_aligned + bytes;
       char* const end = start + extra_size;
       if (start_aligned > start) {
-        ::munmap(start, start_aligned - start);
+        const size_t l = start_aligned - start;
+        if (::munmap(start, l) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(start, l),
+                             os::strerror(ep.saved_errno()));
+        }
       }
       if (end_aligned < end) {
-        ::munmap(end_aligned, end - end_aligned);
+        const size_t l = end - end_aligned;
+        if (::munmap(end_aligned, l) != 0) {
+          ErrnoPreserver ep;
+          log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                             RANGEFMTARGS(end_aligned, l),
+                             os::strerror(ep.saved_errno()));
+        }
       }
       start = start_aligned;
     }
@@ -3726,7 +3765,14 @@ static char* anon_mmap_aligned(char* req_addr, size_t bytes, size_t alignment) {
 }
 
 static int anon_munmap(char * addr, size_t size) {
-  return ::munmap(addr, size) == 0;
+  if (::munmap(addr, size) != 0) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return 0;
+  }
+  return 1;
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -4160,7 +4206,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
   if (!large_committed) {
     // Failed to commit large pages, so we need to unmap the
     // reminder of the orinal reservation.
-    ::munmap(small_start, small_size);
+    if (::munmap(small_start, small_size) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(small_start, small_size),
+                         os::strerror(ep.saved_errno()));
+    }
     return nullptr;
   }
 
@@ -4169,7 +4220,12 @@ static char* reserve_memory_special_huge_tlbfs(size_t bytes,
   if (!small_committed) {
     // Failed to commit the remaining size, need to unmap
     // the large pages part of the reservation.
-    ::munmap(aligned_start, large_bytes);
+    if (::munmap(aligned_start, large_bytes) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(aligned_start, large_bytes),
+                         os::strerror(ep.saved_errno()));
+    }
     return nullptr;
   }
   return aligned_start;
@@ -4242,7 +4298,10 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
-    log_trace(os, map)("Kernel rejected " PTR_FORMAT ", offered " PTR_FORMAT ".", p2i(requested_addr), p2i(addr));
+    log_trace(os, map)("Kernel rejected " PTR_FORMAT
+                       ", offered " PTR_FORMAT ".",
+                       p2i(requested_addr),
+                       p2i(addr));
     anon_munmap(addr, bytes);
   }
 
