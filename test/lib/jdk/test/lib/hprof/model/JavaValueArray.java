@@ -31,6 +31,7 @@
 package jdk.test.lib.hprof.model;
 
 import java.io.IOException;
+import java.nio.ByteOrder;
 import java.util.Objects;
 
 /**
@@ -348,6 +349,18 @@ public class JavaValueArray extends JavaLazyReadObject
         return result.toString();
     }
 
+    private static final int STRING_HI_BYTE_SHIFT;
+    private static final int STRING_LO_BYTE_SHIFT;
+    static {
+        if (ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN) {
+            STRING_HI_BYTE_SHIFT = 8;
+            STRING_LO_BYTE_SHIFT = 0;
+        } else {
+            STRING_HI_BYTE_SHIFT = 0;
+            STRING_LO_BYTE_SHIFT = 8;
+        }
+    }
+
     // Tries to represent the value as string (used by JavaObject.toString).
     public String valueAsString(boolean compact) {
         if (getElementType() == 'B')  {
@@ -361,9 +374,9 @@ public class JavaValueArray extends JavaLazyReadObject
             } else {
                 char[] chars = new char[things.length / 2];
                 for (int i = 0; i < things.length; i += 2) {
-                    byte b1 = ((JavaByte)things[i]).value;
-                    byte b2 = ((JavaByte)things[i + 1]).value;
-                    chars[i / 2] = (char)(b1 + (b2 << 8));
+                    int b1 = ((JavaByte)things[i]).value     << STRING_HI_BYTE_SHIFT;
+                    int b2 = ((JavaByte)things[i + 1]).value << STRING_LO_BYTE_SHIFT;
+                    chars[i / 2] = (char)(b1 | b2);
                 }
                 return new String(chars);
             }

@@ -188,9 +188,12 @@ public class JavaObject extends JavaLazyReadObject {
 
     public String toString() {
         if (getClazz().isString()) {
-            JavaThing value = getField("value");
             JavaThing coder = getField("coder");
-            boolean compact = ((JavaByte)coder).value == 0;
+            boolean compact = false;
+            if (coder instanceof JavaByte) {
+                compact = ((JavaByte)coder).value == 0;
+            }
+            JavaThing value = getField("value");
             if (value instanceof JavaValueArray) {
                 return ((JavaValueArray)value).valueAsString(compact);
             } else {
