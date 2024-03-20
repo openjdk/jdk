@@ -170,14 +170,14 @@ class MemTracker : AllStatic {
   static inline MemoryFileTracker::MemoryFile* register_device(const char* descriptive_name) {
     assert_post_init();
     if (!enabled()) return nullptr;
-    ThreadCritical tc;
+    MutexLocker ml(MemoryFileTracker::Instance::mutex());
     return MemoryFileTracker::Instance::make_device(descriptive_name);
   }
 
   static inline void remove_device(MemoryFileTracker::MemoryFile* device) {
     assert_post_init();
     if (!enabled()) return;
-    ThreadCritical tc;
+    MutexLocker ml(MemoryFileTracker::Instance::mutex());
     MemoryFileTracker::Instance::free_device(device);
   }
 
@@ -185,14 +185,14 @@ class MemTracker : AllStatic {
                                         MEMFLAGS flag, const NativeCallStack& stack) {
     assert_post_init();
     if (!enabled()) return;
-    ThreadCritical tc;
+    MutexLocker ml(MemoryFileTracker::Instance::mutex());
     MemoryFileTracker::Instance::allocate_memory(device, offset, size, flag, stack);
   }
   static inline void free_memory_in(MemoryFileTracker::MemoryFile* device,
                                         size_t offset, size_t size) {
     assert_post_init();
     if (!enabled()) return;
-    ThreadCritical tc;
+    MutexLocker ml(MemoryFileTracker::Instance::mutex());
     MemoryFileTracker::Instance::free_memory(device, offset, size);
   }
 

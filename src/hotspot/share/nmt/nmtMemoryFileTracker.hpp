@@ -83,8 +83,11 @@ public:
 
   class Instance : public AllStatic {
     static MemoryFileTracker* _tracker;
+    static Mutex* _mutex;
   public:
     static bool initialize(NMT_TrackingLevel tracking_level);
+
+    static Mutex* mutex() { return _mutex; }
 
     static MemoryFile* make_device(const char* descriptive_name);
     static void free_device(MemoryFile* device);

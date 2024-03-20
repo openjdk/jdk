@@ -32,6 +32,7 @@
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/nmtMemoryFileTracker.hpp"
 #include "oops/instanceKlass.hpp"
+#include "runtime/mutexLocker.hpp"
 
 /*
  * Base class that provides helpers
@@ -177,6 +178,7 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_virtual_memory_map();
   // Report all physical devices
   void report_physical_devices() {
+    MutexLocker ml(MemoryFileTracker::Instance::mutex());
     const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
         MemoryFileTracker::Instance::devices();
     this->output()->print_cr("Memory file details");

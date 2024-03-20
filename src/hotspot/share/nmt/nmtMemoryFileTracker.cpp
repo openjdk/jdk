@@ -10,6 +10,7 @@
 #include "utilities/ostream.hpp"
 
 MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
+Mutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
 : _stack_storage(is_detailed_mode), _devices() {
@@ -88,6 +89,7 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
   if (_tracker == nullptr) return false;
   new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
+  _mutex = new Mutex(Mutex::service, "NMT Memory file tracker service");
   return true;
 }
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
