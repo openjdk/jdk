@@ -908,13 +908,19 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
 // We skip the pack creation of these nodes. They will be vectorized by SuperWord::vector_opd.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
-  return n1->is_Add() &&
-         n2->is_Add() &&
-         n1->in(1) == iv() &&
-         n2->in(1) == iv() &&
-         n1->in(2)->is_Con() &&
-         n2->in(2)->is_Con() &&
-         n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
+  return (n1->is_Add() &&
+          n2->is_Add() &&
+          n1->in(1) == iv() &&
+          n2->in(1) == iv() &&
+          n1->in(2)->is_Con() &&
+          n2->in(2)->is_Con() &&
+          n2->in(2)->get_int() - n1->in(2)->get_int() == 1)
+         || // OR (iv) and (iv + 1)
+         (n1 == iv() &&
+          n2->is_Add() &&
+          n2->in(1) == iv() &&
+          n1->in(2)->is_Con() &&
+          n2->in(2)->get_int() == 1);
 }
 
 // Is there no data path from s1 to s2 or s2 to s1?
@@ -1326,14 +1332,15 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
       if (in_bb(in1)) {
         cost_packed += replicate_cost();
       }
+    } else if (_pairset.has_pair(in1, in2)) {
+      // Good if packed, otherwise must unpack input.
+      cost_scalar += unpack_cost(2);
+    } else if (is_populate_index(in1, in2)) {
+      // No packing / unpacking required, but the scalar version has an add per vector element.
+      cost_scalar += 1;
     } else {
-      if (_pairset.has_pair(in1, in2)) {
-        // Good if packed, otherwise must unpack input.
-        cost_scalar += unpack_cost(2);
-      } else {
-        // Good if scalar, else must pack input.
-        cost_packed += pack_cost(2);
-      }
+      // Good if scalar, else must pack input.
+      cost_packed += pack_cost(2);
     }
   };
 
@@ -1345,40 +1352,18 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     }
   };
 
-  if (reduction(s1, s2)) {
-    // 1 Instruction if packed or scalar.
-    cost_packed += 1;
-    cost_scalar += 1;
-
-    // Cost packing / upnacking the input
-    compute_input_cost(s1->in(2), s2->in(2));
-
-    // The output is always scalar, and hence does not affect the cost.
-  } else {
-    cost_packed += 1; // 1 vector instruction
-    cost_scalar += 2; // 2 separate instructions
-
-    // Cost packing / unpacking the inputs
-    if (VectorNode::is_muladds2i(s1)) {
-      compute_input_cost_muladds2i(s1->in(1), s1->in(3), s2->in(1), s2->in(3));
-      compute_input_cost_muladds2i(s1->in(2), s1->in(4), s2->in(2), s2->in(4));
-    } else {
-      for (uint i = 1; i < s1->req(); i++) {
-        compute_input_cost(s1->in(i), s2->in(i));
-      }
-    }
-
+  auto compute_output_cost = [&] (const Node* n1, const Node* n2) {
     // Count the number of shared use packs.
     uint use_packs_count = 0;
-    for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
-      Node* use1 = s1->fast_out(i);
+    for (DUIterator_Fast imax, i = n1->fast_outs(imax); i < imax; i++) {
+      Node* use1 = n1->fast_out(i);
 
       // Find pair (use1, use2)
       Node* use2 = _pairset.get_right_or_null_for(use1);
       if (use2 == nullptr) { continue; }
 
-      for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
-        if (use2 == s2->fast_out(k)) {
+      for (DUIterator_Fast kmax, k = n2->fast_outs(kmax); k < kmax; k++) {
+        if (use2 == n2->fast_out(k)) {
           use_packs_count++;
         }
       }
@@ -1390,14 +1375,47 @@ int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Nod
     }
 
     // If we pack, and have any non-shared pack uses, we must unpack.
-    if (use_packs_count < s1->outcnt()) { cost_packed += unpack_cost(1); }
-    if (use_packs_count < s2->outcnt()) { cost_packed += unpack_cost(1); }
-  }
+    if (use_packs_count < n1->outcnt()) { cost_packed += unpack_cost(1); }
+    if (use_packs_count < n2->outcnt()) { cost_packed += unpack_cost(1); }
+  };
 
-  // TODO
-  //tty->print_cr("cost: %d %d", cost_scalar, cost_packed);
-  //s1->dump();
-  //s2->dump();
+  if (reduction(s1, s2)) {
+    // 1 Instruction if packed or scalar.
+    cost_packed += 1;
+    cost_scalar += 1;
+
+    // Cost packing / upnacking the input
+    compute_input_cost(s1->in(2), s2->in(2));
+
+    // The output is always scalar, and hence does not affect the cost.
+  } else if (VectorNode::is_muladds2i(s1)) {
+    cost_packed += 1; // 1 vector instruction
+    cost_scalar += 2; // 2 separate instructions
+
+    compute_input_cost_muladds2i(s1->in(1), s1->in(3), s2->in(1), s2->in(3));
+    compute_input_cost_muladds2i(s1->in(2), s1->in(4), s2->in(2), s2->in(4));
+
+    compute_output_cost(s1, s2);
+  } else {
+    cost_packed += 1; // 1 vector instruction
+    cost_scalar += 2; // 2 separate instructions
+
+    // Compute cost of all unique input pairs.
+    for (uint i = 1; i < s1->req(); i++) {
+      bool found = false;
+      for (uint j = 1; j < i; j++) {
+        if (s1->in(i) == s1->in(j) && s2->in(i) == s2->in(j)) {
+          found = true;
+          break;
+	}
+      }
+      if (!found) {
+        compute_input_cost(s1->in(i), s2->in(i));
+      }
+    }
+
+    compute_output_cost(s1, s2);
+  }
 
   // How much do we save, i.e. how much more expensive is scalar compared to packed?
   return cost_scalar - cost_packed;
