@@ -31,16 +31,15 @@
 
 class DirectivesParserTest : public ::testing::Test{
  protected:
-  char* const _locale;
+  const char* const _locale;
   ResourceMark rm;
   stringStream stream;
   // These tests require the "C" locale to correctly parse decimal values
-  DirectivesParserTest() : _locale(os::strdup(setlocale(LC_NUMERIC, nullptr), mtTest)) {
+  DirectivesParserTest() : _locale(setlocale(LC_NUMERIC, nullptr)) {
     setlocale(LC_NUMERIC, "C");
   }
   ~DirectivesParserTest() {
     setlocale(LC_NUMERIC, _locale);
-    os::free(_locale);
   }
 
   void test_negative(const char* text) {
