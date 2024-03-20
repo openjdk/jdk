@@ -21,16 +21,6 @@
  * questions.
  */
 
-/* @test
- * @bug 4128979
- * @requires (os.family == "windows")
- * @modules java.desktop/sun.awt
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jtreg.SkippedException
- * @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
- * @run main/manual bug4128979
- */
-
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -51,8 +41,17 @@ import javax.swing.UIManager;
 import jtreg.SkippedException;
 import sun.awt.OSInfo;
 
+/* @test
+ * @bug 4128979
+ * @requires (os.family == "windows")
+ * @modules java.desktop/sun.awt
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jtreg.SkippedException
+ * @summary Tests that background changes correctly in WinLF for JToggleButton when pressed
+ * @run main/manual bug4128979
+ */
+
 public class bug4128979 {
-    private static JFrame frame;
     private static final String INSTRUCTIONS = """
             When the test starts, toggle buttons are visible in three rows
             two of which are toolbars.
@@ -62,7 +61,7 @@ public class bug4128979 {
             highlight color (it is shown in the square below).
 
             If the background color does not change correctly for at least one button,
-            the test fails. """;
+            the test fails.""";
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.WINDOWS) {
@@ -80,7 +79,7 @@ public class bug4128979 {
     }
 
     public static JFrame createAndShowUI() {
-        frame = new JFrame("JToggleButton's Background Color Test");
+        JFrame frame = new JFrame("JToggleButton's Background Color Test");
         frame.setLayout(new FlowLayout());
 
         JPanel p = new JPanel();
