@@ -67,7 +67,7 @@ public class GETTest implements HttpServerAdapters {
         Handler h = new Handler();
         SSLContext sslContext = secure ? new SimpleSSLContext().get() : null;
         HttpTestServer server = HttpTestServer.create(version, sslContext, e);
-        HttpTestContext serverContext = server.addHandler(h,"/test/");
+        HttpTestContext serverContext = server.addHandler(h, "/test/");
         server.start();
 
         var clientBuilder = HttpClient.newBuilder();
