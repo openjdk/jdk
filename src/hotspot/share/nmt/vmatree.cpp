@@ -56,7 +56,7 @@ VMATree::VTreap* VMATree::closest_geq(size_t B) {
   return gtB;
 }
 
-VMATree::VTreap* VMATree::closest_leq(size_t A) { // LEQ search
+VMATree::VTreap* VMATree::closest_leq(size_t A) {
   VTreap* leqA_n = nullptr;
   VTreap* head = tree.tree;
   while (head != nullptr) {
