@@ -21,55 +21,50 @@
  * questions.
  */
 
+import java.awt.FileDialog;
+import java.awt.Frame;
+import java.awt.Toolkit;
+import java.lang.reflect.InvocationTargetException;
+import javax.swing.JButton;
+import jtreg.SkippedException;
+
 /*
  * @test
  * @bug 4974135
  * @summary FileDialog should open current directory by default.
  * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
+ * @library /test/lib
  * @build PassFailJFrame
+ * @build jtreg.SkippedException
  * @run main/manual FileDialogOpenDirTest
  */
 
-import java.awt.Button;
-import java.awt.FileDialog;
-import java.awt.FlowLayout;
-import java.awt.Toolkit;
-import java.lang.reflect.InvocationTargetException;
-import javax.swing.JFrame;
-
 public class FileDialogOpenDirTest {
-    private static JFrame initialize() {
+    private static JButton initialize() {
         System.setProperty("sun.awt.disableGtkFileDialogs", "true");
 
-        JFrame frame = new JFrame("Open Directory File Dialog Test Frame");
-        Button open = new Button("Open File Dialog");
+        JButton open = new JButton("Open File Dialog");
         open.addActionListener(e -> {
-            new FileDialog(frame).show();
+            new FileDialog((Frame) null).show();
         });
 
-        frame.setLayout(new FlowLayout());
-        frame.add(open);
-        frame.pack();
-        return frame;
+        return open;
     }
 
     public static void main(String[] args) throws InterruptedException,
             InvocationTargetException {
         String curdir = System.getProperty("user.dir");
         String instructions = """
-                        After test started you will see 'Test Frame' with a button inside.
-                        Click the button to open FileDialog.
+                        Click the \"Open File Dialog\" button below to open FileDialog.
                         Verify that the directory opened is current directory, that is:
                         $curdir,
-                        If so press Pass, otherwise Fail
+                        If so press Pass, otherwise press Fail
                         """.replace("$curdir", curdir);
 
         String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
         if (!toolkit.equals("sun.awt.X11.XToolkit")) {
-            instructions = """
-                    The test is not applicable for $toolkit. Press Pass.
-                    """. replace("$toolkit", toolkit);
+            throw new SkippedException("Test is not designed for toolkit " + toolkit);
         }
 
         PassFailJFrame.builder()
@@ -77,7 +72,7 @@ public class FileDialogOpenDirTest {
                 .instructions(instructions)
                 .rows((int) instructions.lines().count() + 1)
                 .columns(40)
-                .testUI(FileDialogOpenDirTest::initialize)
+                .splitUIBottom(FileDialogOpenDirTest::initialize)
                 .build()
                 .awaitAndCheck();
     }
