@@ -60,7 +60,6 @@ public class MultiResolutionCursorTest {
 
         JFrame frame = new JFrame("Multi-resolution Cursor Test Frame");
         frame.setSize(300, 300);
-        frame.setLocation(300, 50);
         frame.add(new Label("Move cursor here"));
         frame.setCursor(cursor);
         return frame;
