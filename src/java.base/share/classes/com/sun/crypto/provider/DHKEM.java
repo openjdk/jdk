@@ -368,8 +368,8 @@ public class DHKEM implements KEMSpi {
         return o.toByteArray();
     }
 
-    private static byte[] I2OSP(int n, int w) {
-        assert n < 256;
+    public static byte[] I2OSP(int n, int w) {
+        assert n < 65536;
         assert w == 1 || w == 2;
         if (w == 1) {
             return new byte[] { (byte) n };
@@ -378,14 +378,14 @@ public class DHKEM implements KEMSpi {
         }
     }
 
-    private static SecretKey LabeledExtract(HKDF kdf, byte[] suite_id,
+    public static SecretKey LabeledExtract(HKDF kdf, byte[] suite_id,
             byte[] salt, byte[] label, byte[] ikm) throws InvalidKeyException {
         return kdf.extract(salt,
                 new SecretKeySpec(concat(HPKE_V1, suite_id, label, ikm), "IKM"),
                     "HKDF-PRK");
     }
 
-    private static byte[] LabeledExpand(HKDF kdf, byte[] suite_id,
+    public static byte[] LabeledExpand(HKDF kdf, byte[] suite_id,
             SecretKey prk, byte[] label, byte[] info, int L)
             throws InvalidKeyException {
         byte[] labeled_info = concat(I2OSP(L, 2), HPKE_V1,
