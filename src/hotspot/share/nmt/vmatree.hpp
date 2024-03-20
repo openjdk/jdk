@@ -32,9 +32,9 @@
 #include "utilities/growableArray.hpp"
 #include "nmt/nmtNativeCallStackStorage.hpp"
 
-int addr_cmp(size_t a, size_t b);
 
 class VMATree {
+  static int addr_cmp(size_t a, size_t b);
 public:
   enum class InOut {
     Reserved,
