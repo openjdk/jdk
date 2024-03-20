@@ -33,7 +33,7 @@ import jdk.test.lib.Utils;
  * @bug 8324655
  * @summary Test that if expressions are properly folded into min/max nodes
  * @library /test/lib /
- * @run driver compiler.c2.irTests.TestIfMinMax
+ * @run main compiler.c2.irTests.TestIfMinMax
  */
 public class TestIfMinMax {
     private static final Random RANDOM = Utils.getRandomInstance();
@@ -136,6 +136,307 @@ public class TestIfMinMax {
     @IR(phase = { CompilePhase.BEFORE_MACRO_EXPANSION }, failOn = { IRNode.IF }, counts = { IRNode.MAX_L, "1" })
     public long testMaxL2E(long a, long b) {
         return a <= b ? b : a;
+    }
+
+    @Setup
+    static Object[] setupIntArrays() {
+        int[] a = new int[512];
+        int[] b = new int[512];
+
+        for (int i = 0; i < 512; i++) {
+            a[i] = RANDOM.nextInt();
+            b[i] = RANDOM.nextInt();
+        }
+
+        return new Object[] { a, b };
+    }
+
+    @Setup
+    static Object[] setupLongArrays() {
+        long[] a = new long[512];
+        long[] b = new long[512];
+
+        for (int i = 0; i < 512; i++) {
+            a[i] = RANDOM.nextLong();
+            b[i] = RANDOM.nextLong();
+        }
+
+        return new Object[] { a, b };
+    }
+
+    @Test
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MAX_REDUCTION_V, "> 0" })
+    @Arguments(setup = "setupIntArrays")
+    public Object[] testMaxIntReduction(int[] a, int[] b) {
+        int r = 0;
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i] * 2;
+
+            r = aI > r ? aI : r;
+        }
+
+        return new Object[] { a, r };
+    }
+
+    @Check(test = "testMaxIntReduction")
+    public void checkTestMaxIntReduction(Object[] vals) {
+        int[] a = (int[]) vals[0];
+        int testRet = (int) vals[1];
+
+        int r = 0;
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i] * 2;
+
+            r = aI > r ? aI : r;
+        }
+
+        if (r != testRet) {
+            throw new IllegalStateException("Int max reduction test failed: expected " + testRet + " but got " + r);
+        }
+    }
+
+    @Test
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MIN_REDUCTION_V, "> 0" })
+    @Arguments(setup = "setupIntArrays")
+    public Object[] testMinIntReduction(int[] a, int[] b) {
+        int r = 0;
+
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i] * 2;
+
+            r = aI < r ? aI : r;
+        }
+
+        return new Object[] { a, r };
+    }
+
+    @Check(test = "testMinIntReduction")
+    public void checkTestMinIntReduction(Object[] vals) {
+        int[] a = (int[]) vals[0];
+        int testRet = (int) vals[1];
+
+        int r = 0;
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i] * 2;
+
+            r = aI < r ? aI : r;
+        }
+
+        if (r != testRet) {
+            throw new IllegalStateException("Int min reduction test failed: expected " + testRet + " but got " + r);
+        }
+    }
+
+    @Test
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeatureOr = { "avx512", "true" },
+        counts = { IRNode.MAX_REDUCTION_V, "> 0" })
+    @Arguments(setup = "setupLongArrays")
+    public Object[] testMaxLongReduction(long[] a, long[] b) {
+        long r = 0;
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i] * 2;
+
+            r = aI > r ? aI : r;
+        }
+
+        return new Object[] { a, r };
+    }
+
+    @Check(test = "testMaxLongReduction")
+    public void checkTestMaxLongReduction(Object[] vals) {
+        long[] a = (long[]) vals[0];
+        long testRet = (long) vals[1];
+
+        long r = 0;
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i] * 2;
+
+            r = aI > r ? aI : r;
+        }
+
+        if (r != testRet) {
+            throw new IllegalStateException("Long max reduction test failed: expected " + testRet + " but got " + r);
+        }
+    }
+
+    @Test
+    @IR(applyIf = { "SuperWordReductions", "true" },
+        applyIfCPUFeatureOr = { "avx512", "true" },
+        counts = { IRNode.MIN_REDUCTION_V, "> 0" })
+    @Arguments(setup = "setupLongArrays")
+    public Object[] testMinLongReduction(long[] a, long[] b) {
+        long r = 0;
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i] * 2;
+
+            r = aI < r ? aI : r;
+        }
+
+        return new Object[] { a, r };
+    }
+
+    @Check(test = "testMinLongReduction")
+    public void checkTestMinLongReduction(Object[] vals) {
+        long[] a = (long[]) vals[0];
+        long testRet = (long) vals[1];
+
+        long r = 0;
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i] * 2;
+
+            r = aI < r ? aI : r;
+        }
+
+        if (r != testRet) {
+            throw new IllegalStateException("Long min reduction test failed: expected " + testRet + " but got " + r);
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MAX_VI, "> 0" })
+    @Arguments(setup = "setupIntArrays")
+    public Object[] testMaxIntVector(int[] a, int[] b) {
+        int[] r = new int[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i];
+            int bI = b[i];
+
+            r[i] = aI > bI ? aI : bI;
+        }
+
+        return new Object[] { a, b, r };
+    }
+
+    @Check(test = "testMaxIntVector")
+    public void checkTestMaxIntVector(Object[] vals) {
+        int[] a = (int[]) vals[0];
+        int[] b = (int[]) vals[1];
+        int[] testRet = (int[]) vals[2];
+
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i];
+            int bI = b[i];
+
+            int r = aI > bI ? aI : bI;
+
+            if (r != testRet[i]) {
+                throw new IllegalStateException("Int max vectorization test failed: expected " + testRet + " but got " + r);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MIN_VI, "> 0" })
+    @Arguments(setup = "setupIntArrays")
+    public Object[] testMinIntVector(int[] a, int[] b) {
+        int[] r = new int[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i];
+            int bI = b[i];
+
+            r[i] = aI < bI ? aI : bI;
+        }
+
+        return new Object[] { a, b, r };
+    }
+
+    @Check(test = "testMinIntVector")
+    public void checkTestMinIntVector(Object[] vals) {
+        int[] a = (int[]) vals[0];
+        int[] b = (int[]) vals[1];
+        int[] testRet = (int[]) vals[2];
+
+        for (int i = 0; i < a.length; i++) {
+            int aI = a[i];
+            int bI = b[i];
+
+            int r = aI < bI ? aI : bI;
+
+            if (r != testRet[i]) {
+                throw new IllegalStateException("Int min vectorization test failed: expected " + testRet + " but got " + r);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MAX_VL, "> 0" })
+    @Arguments(setup = "setupLongArrays")
+    public Object[] testMaxLongVector(long[] a, long[] b) {
+        long[] r = new long[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i];
+            long bI = b[i];
+
+            r[i] = aI > bI ? aI : bI;
+        }
+
+        return new Object[] { a, b, r };
+    }
+
+    @Check(test = "testMaxLongVector")
+    public void checkTestMaxLongVector(Object[] vals) {
+        long[] a = (long[]) vals[0];
+        long[] b = (long[]) vals[1];
+        long[] testRet = (long[]) vals[2];
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i];
+            long bI = b[i];
+
+            long r = aI > bI ? aI : bI;
+
+            if (r != testRet[i]) {
+                throw new IllegalStateException("Long max vectorization test failed: expected " + testRet + " but got " + r);
+            }
+        }
+    }
+
+    @Test
+    @IR(applyIfCPUFeatureOr = { "sse4.1", "true" , "asimd" , "true"},
+        counts = { IRNode.MIN_VL, "> 0" })
+    @Arguments(setup = "setupLongArrays")
+    public Object[] testMinLongVector(long[] a, long[] b) {
+        long[] r = new long[a.length];
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i];
+            long bI = b[i];
+
+            r[i] = aI < bI ? aI : bI;
+        }
+
+        return new Object[] { a, b, r };
+    }
+
+    @Check(test = "testMinLongVector")
+    public void checkTestMinLongVector(Object[] vals) {
+        long[] a = (long[]) vals[0];
+        long[] b = (long[]) vals[1];
+        long[] testRet = (long[]) vals[2];
+
+        for (int i = 0; i < a.length; i++) {
+            long aI = a[i];
+            long bI = b[i];
+
+            long r = aI < bI ? aI : bI;
+
+            if (r != testRet[i]) {
+                throw new IllegalStateException("Long min vectorization test failed: expected " + testRet + " but got " + r);
+            }
+        }
     }
 
     @Run(test = { "testMinI1", "testMinI2", "testMaxI1", "testMaxI2", "testMinI1E", "testMinI2E", "testMaxI1E", "testMaxI2E" })

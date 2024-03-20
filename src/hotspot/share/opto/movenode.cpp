@@ -210,7 +210,7 @@ Node* CMoveNode::Ideal_minmax(PhaseGVN* phase, CMoveNode* cmove) {
   int cmp_op = cmp->Opcode();
 
   // Ensure comparison is an integral type, and that the cmove is of the same type.
-  if ((cmp_op != Op_CmpI || cmove_op != Op_CMoveI) && (cmp_op != Op_CmpL || cmove_op != Op_CMoveL)) {
+  if (!((cmp_op == Op_CmpI && cmove_op == Op_CMoveI) || (cmp_op == Op_CmpL && cmove_op == Op_CMoveL))) {
     return nullptr;
   }
 
