@@ -140,7 +140,10 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 void MemBaseline::baseline_summary() {
   MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
   VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
-  MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  {
+    MemoryFileTracker::Instance::Locker lock;
+    MemoryFileTracker::Instance::summary_snapshot(&_virtual_memory_snapshot);
+  }
 
   _metaspace_stats = MetaspaceUtils::get_combined_statistics();
 }

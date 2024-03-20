@@ -10,7 +10,7 @@
 #include "utilities/ostream.hpp"
 
 MemoryFileTracker* MemoryFileTracker::Instance::_tracker = nullptr;
-Mutex* MemoryFileTracker::Instance::_mutex = nullptr;
+PlatformMutex* MemoryFileTracker::Instance::_mutex = nullptr;
 
 MemoryFileTracker::MemoryFileTracker(bool is_detailed_mode)
 : _stack_storage(is_detailed_mode), _devices() {
@@ -89,7 +89,7 @@ bool MemoryFileTracker::Instance::initialize(NMT_TrackingLevel tracking_level) {
   _tracker = static_cast<MemoryFileTracker*>(os::malloc(sizeof(MemoryFileTracker), mtNMT));
   if (_tracker == nullptr) return false;
   new (_tracker) MemoryFileTracker(tracking_level == NMT_TrackingLevel::NMT_detail);
-  _mutex = new Mutex(Mutex::service, "NMT Memory file tracker service");
+  _mutex = new PlatformMutex();
   return true;
 }
 void MemoryFileTracker::Instance::allocate_memory(MemoryFile* device, size_t offset,
@@ -116,6 +116,7 @@ void MemoryFileTracker::Instance::print_report_on(const MemoryFile* device,
 const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& MemoryFileTracker::Instance::devices() {
   return _tracker->devices();
 };
+
 void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const {
   for (int d = 0; d < _devices.length(); d++) {
     auto& device = _devices.at(d);
@@ -127,6 +128,7 @@ void MemoryFileTracker::summary_snapshot(VirtualMemorySnapshot* snapshot) const 
     }
   }
 }
+
 void MemoryFileTracker::Instance::summary_snapshot(VirtualMemorySnapshot* snapshot) {
   _tracker->summary_snapshot(snapshot);
 }

@@ -177,16 +177,7 @@ class MemDetailReporter : public MemSummaryReporter {
   // Report virtual memory map
   void report_virtual_memory_map();
   // Report all physical devices
-  void report_physical_devices() {
-    MutexLocker ml(MemoryFileTracker::Instance::mutex());
-    const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
-        MemoryFileTracker::Instance::devices();
-    this->output()->print_cr("Memory file details");
-    for (int i = 0; i < devices.length(); i++) {
-      MemoryFileTracker::MemoryFile* dev = devices.at(i);
-      MemoryFileTracker::Instance::print_report_on(dev, this->output(), scale());
-    }
-  }
+  void report_physical_devices();
   // Report malloc allocation sites; returns number of omitted sites
   int report_malloc_sites();
   // Report virtual memory reservation sites; returns number of omitted sites

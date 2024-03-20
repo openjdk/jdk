@@ -898,4 +898,15 @@ void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stac
   }
 
   out->print_cr(")\n");
- }
+}
+
+void MemDetailReporter::report_physical_devices() {
+  MemoryFileTracker::Instance::Locker lock;
+  const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
+      MemoryFileTracker::Instance::devices();
+  this->output()->print_cr("Memory file details");
+  for (int i = 0; i < devices.length(); i++) {
+    MemoryFileTracker::MemoryFile* dev = devices.at(i);
+    MemoryFileTracker::Instance::print_report_on(dev, this->output(), scale());
+  }
+}
