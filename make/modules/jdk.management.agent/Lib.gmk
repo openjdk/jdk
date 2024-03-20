@@ -30,8 +30,6 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT_AGENT, \
     NAME := management_agent, \
     OPTIMIZATION := LOW, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib, \
 ))

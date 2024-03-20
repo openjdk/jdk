@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,22 @@
  * questions.
  */
 
-/* @test
- * @bug 8148984
- * @summary Chinese Comma cannot be entered using Pinyin Input Method on OS X
- * @author Dmitry Markov
- * @run applet/manual=yesno bug8148984.html
+/**
+ * @test
+ * @bug 8323972
+ * @summary C2 compilation fails with assert(!x->as_Loop()->is_loop_nest_inner_loop()) failed: loop was transformed
+ *
+ * @run main/othervm -Xcomp -XX:CompileCommand=compileonly,TestInaccurateInnerLoopLimit::test* -XX:-TieredCompilation TestInaccurateInnerLoopLimit
+ *
  */
 
-import javax.swing.*;
+public class TestInaccurateInnerLoopLimit {
 
-public class bug8148984 extends JApplet {
-    @Override
-    public void init() {
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                JPanel panel = new JPanel();
-                panel.add(new JLabel("Text field:"));
-                panel.add(new JTextField(20));
-                add(panel);
-            }
-        });
+    public static void main(String args[]) {
+        test();
+    }
+
+    public static void test() {
+        for (long i = 9223372034707292164L; i > 9223372034707292158L; i += -2L) { }
     }
 }
-

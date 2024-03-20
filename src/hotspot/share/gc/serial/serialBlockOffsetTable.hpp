@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,9 +61,9 @@ class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words) {
-    assert(mem_region_words % BOTConstants::card_size_in_words() == 0, "precondition");
+    assert(mem_region_words % CardTable::card_size_in_words() == 0, "precondition");
 
-    size_t number_of_slots = mem_region_words / BOTConstants::card_size_in_words();
+    size_t number_of_slots = mem_region_words / CardTable::card_size_in_words();
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
@@ -91,7 +91,7 @@ public:
   void set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
     assert(index < _vs.committed_size(), "index out of range");
     assert(high >= low, "addresses out of order");
-    assert(pointer_delta(high, low) < BOTConstants::card_size_in_words(), "offset too large");
+    assert(pointer_delta(high, low) < CardTable::card_size_in_words(), "offset too large");
     _offset_array[index] = checked_cast<uint8_t>(pointer_delta(high, low));
   }
 
@@ -117,7 +117,7 @@ class SerialBlockOffsetTable {
   void update_for_block_work(HeapWord* blk_start, HeapWord* blk_end);
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
-    return align_up(addr, BOTConstants::card_size());
+    return align_up(addr, CardTable::card_size());
   }
 
   void verify_for_block(HeapWord* blk_start, HeapWord* blk_end) const;
@@ -125,9 +125,7 @@ class SerialBlockOffsetTable {
 public:
   // Initialize the table to cover the given space.
   // The contents of the initial table are undefined.
-  SerialBlockOffsetTable(SerialBlockOffsetSharedArray* array) : _array(array) {
-    assert(BOTConstants::card_size() == CardTable::card_size(), "sanity");
-  }
+  SerialBlockOffsetTable(SerialBlockOffsetSharedArray* array) : _array(array) {}
 
   static bool is_crossing_card_boundary(HeapWord* const obj_start,
                                         HeapWord* const obj_end) {
