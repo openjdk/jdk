@@ -1069,7 +1069,7 @@ public:
     JavaPermission p = { "java.lang.management.ManagementPermission", "control", nullptr };
     return p;
   }
-  virtual void execute(DCmdSource source, TRAPS);
+  void execute(DCmdSource source, TRAPS) override;
 };
 
 #endif // SHARE_SERVICES_DIAGNOSTICCOMMAND_HPP

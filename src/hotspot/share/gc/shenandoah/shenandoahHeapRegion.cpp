@@ -668,3 +668,11 @@ void ShenandoahHeapRegion::record_unpin() {
 size_t ShenandoahHeapRegion::pin_count() const {
   return Atomic::load(&_critical_pins);
 }
+
+size_t ShenandoahHeapRegion::zero_unused() {
+  if (is_committed()) {
+    return SpaceMangler::zero_unused(MemRegion(top(), end()));
+  } else {
+    return 0;
+  }
+}

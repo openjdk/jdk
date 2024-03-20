@@ -387,6 +387,8 @@ public:
   inline void set_update_watermark(HeapWord* w);
   inline void set_update_watermark_at_safepoint(HeapWord* w);
 
+  size_t zero_unused();
+
 private:
   void do_commit();
   void do_uncommit();

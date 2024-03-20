@@ -1281,12 +1281,28 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
 
 #endif // LINUX
 
+class VM_ZeroUnusedMemory : public VM_Operation {
+private:
+  outputStream* _out;
+public:
+  VM_ZeroUnusedMemory(outputStream* out) : _out(out) {}
+
+  virtual VMOp_Type type() const { return VMOp_ZeroUnusedMemory; }
+
+  virtual void doit() {
+    assert(SafepointSynchronize::is_at_safepoint(), "must be a safepoint");
+    size_t res = Universe::heap()->zero_unused();
+    if (res == size_t(-1)) {
+      _out->print_cr("Zeroing unused memory not supported by %s", Universe::heap()->name());
+    } else {
+      _out->print_cr("Successfully zeroed " SIZE_FORMAT " bytes of unused heap", res);
+    }
+  }
+};
+
 void ZeroUnusedMemoryDCmd::execute(DCmdSource source, TRAPS) {
   Universe::heap()->collect(GCCause::_dcmd_gc_run);
-  size_t res = Universe::heap()->zero_unused();
-  if (res == size_t(-1)) {
-    output()->print_cr("Zeroing unused memory not supported by %s", Universe::heap()->name());
-  } else {
-    output()->print_cr("Successfully zeroed " SIZE_FORMAT " bytes of unused heap", res);
-  }
+  // Do this at a safepoint to avoid that GC cuncurrently uncommits pages.
+  VM_ZeroUnusedMemory vmop(output());
+  VMThread::execute(&vmop);
 }
