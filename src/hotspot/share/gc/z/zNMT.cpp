@@ -51,5 +51,5 @@ void ZNMT::unmap(zaddress_unsafe addr, size_t size) {
 }
 
 void ZNMT::init() {
-  _device = MemTracker::register_device("ZGC heap backing device");
+  _device = MemTracker::register_device("ZGC heap backing file");
 }
