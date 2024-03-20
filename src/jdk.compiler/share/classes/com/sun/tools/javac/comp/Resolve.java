@@ -1508,7 +1508,7 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, sym))
+                    if (env1.info.ctorPrologue && !env1.tree.hasTag(ASSIGN))
                         return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
@@ -3775,7 +3775,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && !isAllowedEarlyReference(env1, sym))
+                    else if (env1.info.ctorPrologue && !env1.tree.hasTag(ASSIGN))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3826,38 +3826,6 @@ public class Resolve {
             }
         }
         return result.toList();
-    }
-
-    /**
-     * Determine if the reference to the given instance field appearing in an early initialization context
-     * (before super()/this()) is allowed. We only allow assignments to fields declared in the same class
-     * as the constructor.
-     */
-    private boolean isAllowedEarlyReference(Env<AttrContext> env, Symbol sym) {
-
-// TEMP DEBUG - this method is not quite right
-//System.out.println("isAllowedEarlyReference():"
-//+"\n  sym="+sym+" \"" + sym.name + "\""
-//+"\n  sym.owner="+sym.owner
-//+"\n  tree="+env.tree+" (" + env.tree.getTag() + ")"
-//+"\n  currentClass="+env.enclClass.sym
-//);
-
-        // Must be assignment
-        if (!env.tree.hasTag(ASSIGN))
-            return false;
-
-        // Allow "this" which, if part of an assignment, must just be a qualifier
-        JCExpression lhs = TreeInfo.skipParens(((JCAssign)env.tree).lhs);
-        if (sym.name == names._this)
-            return true;
-
-        // Allow a plain identifier "x" if "x" is declared by the class being constructed
-        if (sym.owner == env.enclClass.sym)
-            return true;
-
-        // Disallow
-        return false;
     }
 
     /**

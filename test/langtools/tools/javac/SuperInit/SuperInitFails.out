@@ -16,9 +16,9 @@ SuperInitFails.java:154:9: compiler.err.cant.ref.before.ctor.called: this
 SuperInitFails.java:165:31: compiler.err.cant.ref.before.ctor.called: x
 SuperInitFails.java:169:15: compiler.err.cant.ref.before.ctor.called: this
 SuperInitFails.java:178:13: compiler.err.cant.ref.before.ctor.called: x
-SuperInitFails.java:182:13: compiler.err.cant.ref.before.ctor.called: this
-SuperInitFails.java:186:13: compiler.err.cant.ref.before.ctor.called: this
-SuperInitFails.java:190:13: compiler.err.cant.ref.before.ctor.called: super
+SuperInitFails.java:182:17: compiler.err.cant.ref.before.ctor.called: x
+SuperInitFails.java:186:24: compiler.err.cant.ref.before.ctor.called: x
+SuperInitFails.java:190:18: compiler.err.cant.ref.before.ctor.called: x
 SuperInitFails.java:33:13: compiler.err.call.must.only.appear.in.ctor
 SuperInitFails.java:37:14: compiler.err.call.must.only.appear.in.ctor
 SuperInitFails.java:41:14: compiler.err.call.must.only.appear.in.ctor

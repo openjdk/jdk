@@ -293,7 +293,9 @@ public class Attr extends JCTree.Visitor {
     void checkAssignable(DiagnosticPosition pos, VarSymbol v, JCTree base, Env<AttrContext> env) {
         if (v.name == names._this) {
             log.error(pos, Errors.CantAssignValToThis);
-        } else if ((v.flags() & FINAL) != 0 &&
+            return;
+        }
+        if ((v.flags() & FINAL) != 0 &&
             ((v.flags() & HASINIT) != 0
              ||
              !((base == null ||
@@ -304,6 +306,16 @@ public class Attr extends JCTree.Visitor {
             } else {
                 log.error(pos, Errors.CantAssignValToVar(Flags.toSource(v.flags() & (STATIC | FINAL)), v));
             }
+            return;
+        }
+        if (env.info.ctorPrologue &&
+                v.owner.kind == TYP &&
+                types.isSubtype(env.enclClass.type, v.owner.type) &&
+                v.owner != env.enclClass.sym &&
+                (v.flags() & STATIC) == 0 &&
+                (base == null ||
+                  TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
+            log.error(pos, Errors.CantRefBeforeCtorCalled(v));
         }
     }
 

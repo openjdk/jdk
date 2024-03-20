@@ -7,10 +7,10 @@ EarlyAssignments.java:33:26: compiler.err.cant.ref.before.ctor.called: x
 EarlyAssignments.java:34:34: compiler.err.cant.ref.before.ctor.called: x
 EarlyAssignments.java:36:36: compiler.err.cant.ref.before.ctor.called: this
 EarlyAssignments.java:40:17: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:44:22: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:48:23: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:44:21: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:48:22: compiler.err.cant.ref.before.ctor.called: x
 EarlyAssignments.java:66:13: compiler.err.cant.ref.before.ctor.called: x
-EarlyAssignments.java:67:18: compiler.err.cant.ref.before.ctor.called: x
+EarlyAssignments.java:67:17: compiler.err.cant.ref.before.ctor.called: x
 EarlyAssignments.java:68:25: compiler.err.cant.ref.before.ctor.called: this
 EarlyAssignments.java:69:31: compiler.err.cant.ref.before.ctor.called: this
 - compiler.note.preview.filename: EarlyAssignments.java, DEFAULT
