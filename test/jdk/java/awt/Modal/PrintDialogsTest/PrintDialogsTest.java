@@ -163,11 +163,12 @@ public class PrintDialogsTest extends Panel implements ActionListener {
         setLayout(new BorderLayout());
 
         Panel panel = new Panel();
-        panel.setLayout(new GridLayout(18, 1));
+        panel.setLayout(new GridLayout(21, 1));
 
         btnTest = new Button("Start test");
         btnTest.addActionListener(this);
         panel.add(btnTest);
+        panel.add(new Label(" ")); // spacing
 
 
         panel.add(new Label("Dialog parent:"));
@@ -185,6 +186,7 @@ public class PrintDialogsTest extends Panel implements ActionListener {
         panel.add(cbHiddFrm);
         panel.add(cbDlg);
         panel.add(cbFrm);
+        panel.add(new Label(" ")); // spacing
 
         panel.add(new Label("Dialog modality type:"));
         groupModType = new CheckboxGroup();
@@ -201,7 +203,7 @@ public class PrintDialogsTest extends Panel implements ActionListener {
         panel.add(cbDocModal);
         panel.add(cbTKModal);
         panel.add(cbModeless);
-        add(panel);
+        panel.add(new Label(" ")); // spacing
 
         panel.add(new Label("Print dialog type:"));
         groupDialog = new CheckboxGroup();
@@ -209,5 +211,7 @@ public class PrintDialogsTest extends Panel implements ActionListener {
         cbPrint  = new Checkbox("Print", groupDialog, false);
         panel.add(cbPage);
         panel.add(cbPrint);
+
+        add(panel);
     }
 }
