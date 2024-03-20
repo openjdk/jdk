@@ -179,6 +179,7 @@ class MemDetailReporter : public MemSummaryReporter {
   void report_physical_devices() {
     const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
         MemoryFileTracker::Instance::devices();
+    this->output()->print_cr("Memory file details");
     for (int i = 0; i < devices.length(); i++) {
       MemoryFileTracker::MemoryFile* dev = devices.at(i);
       MemoryFileTracker::Instance::print_report_on(dev, this->output(), scale());

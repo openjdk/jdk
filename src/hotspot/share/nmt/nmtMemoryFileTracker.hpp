@@ -26,14 +26,13 @@
 #define SHARE_NMT_NMTMEMORYFILETRACKER_HPP
 
 #include "memory/allocation.hpp"
-#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
+#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/virtualMemoryTracker.hpp"
 #include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
-
 
 // The PhysicalDeviceTracker tracks memory of 'physical devices',
 // storage with its own memory space separate from the process.

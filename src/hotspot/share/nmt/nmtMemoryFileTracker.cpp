@@ -1,10 +1,10 @@
 #include "precompiled.hpp"
 
 #include "memory/allocation.hpp"
-#include "nmt/nmtNativeCallStackStorage.hpp"
 #include "nmt/nmtCommon.hpp"
-#include "nmt/vmatree.hpp"
 #include "nmt/nmtMemoryFileTracker.hpp"
+#include "nmt/nmtNativeCallStackStorage.hpp"
+#include "nmt/vmatree.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/nativeCallStack.hpp"
 #include "utilities/ostream.hpp"
@@ -39,6 +39,7 @@ void MemoryFileTracker::free_memory(MemoryFile* device, size_t offset, size_t si
 
 void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* stream, size_t scale) {
   stream->print_cr("Memory map of %s", device->_descriptive_name);
+  stream->cr();
   const VMATree::VTreap* prev = nullptr;
   device->_tree.in_order_traversal([&](const VMATree::VTreap* current) {
     if (prev == nullptr) {
@@ -57,6 +58,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
                        NMTUtil::scale_name(scale),
                        NMTUtil::flag_to_name(pval.metadata.flag));
       pval.metadata.stack_idx.stack().print_on(stream, 4);
+      stream->cr();
     }
     prev = current;
   });
