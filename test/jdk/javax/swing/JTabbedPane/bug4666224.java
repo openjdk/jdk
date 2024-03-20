@@ -45,10 +45,8 @@ import javax.swing.SwingUtilities;
  */
 
 public class bug4666224 {
-    final static int placements[] = { JTabbedPane.LEFT, JTabbedPane.RIGHT, JTabbedPane.TOP, JTabbedPane.BOTTOM };
     private static JTabbedPane tabPane;
     private static JFrame frame;
-    private static JPanel mainPanel;
 
     private static final String INSTRUCTIONS = """
                 ON ALL PLATFORMS
@@ -104,7 +102,7 @@ public class bug4666224 {
             panel.setPreferredSize(new Dimension(500, 200));
             tabPane.addTab("Tab " + i, panel);
         }
-        mainPanel = new JPanel();
+        JPanel mainPanel = new JPanel();
         mainPanel.add(tabPane);
 
         frame.setSize(600, 300);
