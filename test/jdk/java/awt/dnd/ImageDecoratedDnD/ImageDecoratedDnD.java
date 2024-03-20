@@ -56,8 +56,9 @@ public class ImageDecoratedDnD {
                 in both dimensions.
 
                 On Windows, the image under the cursor would be visible ONLY over
-                drop targets with activated extended D'n'D support. It means the image
-                may not be displayed when dragging over some windows, it is not error.
+                drop targets with activated extended D'n'D support.
+                It means the image may not be displayed when dragging over some
+                windows, it is not error.
                 The image should be display when dragging over the red/yellow panel.
 
             3. Release the mouse button.
