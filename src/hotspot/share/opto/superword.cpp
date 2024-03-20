@@ -908,19 +908,13 @@ bool SuperWord::isomorphic(Node* s1, Node* s2) {
 // Look for pattern n1 = (iv + c) and n2 = (iv + c + 1), which may lead to PopulateIndex vector node.
 // We skip the pack creation of these nodes. They will be vectorized by SuperWord::vector_opd.
 bool SuperWord::is_populate_index(const Node* n1, const Node* n2) const {
-  return (n1->is_Add() &&
-          n2->is_Add() &&
-          n1->in(1) == iv() &&
-          n2->in(1) == iv() &&
-          n1->in(2)->is_Con() &&
-          n2->in(2)->is_Con() &&
-          n2->in(2)->get_int() - n1->in(2)->get_int() == 1)
-         || // OR (iv) and (iv + 1)
-         (n1 == iv() &&
-          n2->is_Add() &&
-          n2->in(1) == iv() &&
-          n1->in(2)->is_Con() &&
-          n2->in(2)->get_int() == 1);
+  return n1->is_Add() &&
+         n2->is_Add() &&
+         n1->in(1) == iv() &&
+         n2->in(1) == iv() &&
+         n1->in(2)->is_Con() &&
+         n2->in(2)->is_Con() &&
+         n2->in(2)->get_int() - n1->in(2)->get_int() == 1;
 }
 
 // Is there no data path from s1 to s2 or s2 to s1?
@@ -1046,7 +1040,7 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   do {
     changed = false;
     // Iterate the pairs in insertion order.
-    for (int i =0; i < _pairset.length(); i++) {
+    for (int i = 0; i < _pairset.length(); i++) {
       Node* s1 = _pairset.left_at(i);
       Node* s2 = _pairset.right_at(i);
       changed |= extend_pairset_with_more_pairs_by_following_def(s1, s2);
@@ -1306,120 +1300,53 @@ SuperWord::PairOrderStatus SuperWord::order_inputs_of_uses_to_match_def_pair(Nod
   return PairOrderStatus::Ordered;
 }
 
-// Estimate the savings from packing the pair (s1, s2), rather than keeping it scalarized.
-// We count the number of operations required for the operation itself, but also the
-// packing / unpacking the inputs and outputs, depending on if the inputs and outputs
-// are already packed.
-// A saving of zero means the cost is equal, in which case we prefer packing, in the hope
-// of discovering more savings later on. If the savins are negative, then we avoid packing.
-// Note: the estimated cost can change if inputs or outputs are packed. Generally, packing
-// some nodes makes it more profitable to pack other nodes.
+// Estimate the savings from executing s1 and s2 as a pack
 int SuperWord::estimate_cost_savings_when_packing_pair(const Node* s1, const Node* s2) const {
-  assert(!_pairset.has_pair(s1, s2), "(s1, s2) is not (yet) a pair");
+  int save_in = 2 - 1; // 2 operations per instruction in packed form
 
-  // Cost for packed or scalar choice:
-  int cost_packed = 0;
-  int cost_scalar = 0;
+  auto adjacent_profit = [&] (Node* s1, Node* s2) { return 2; };
+  auto pack_cost       = [&] (int ct) { return ct; };
+  auto unpack_cost     = [&] (int ct) { return ct; };
 
-  // Cost definitions, corresponds to required number of instructions.
-  auto replicate_cost = [&] ()               { return 1; };
-  auto pack_cost      = [&] (const int size) { return size; };
-  auto unpack_cost    = [&] (const int size) { return size; };
-
-  auto compute_input_cost = [&] (const Node* in1, const Node* in2) {
-    if (in1 == in2) {
-      // In most cases using the same input has no cost, except if it is
-      // a Replicate inside the loop.
-      if (in_bb(in1)) {
-        cost_packed += replicate_cost();
+  // inputs
+  for (uint i = 1; i < s1->req(); i++) {
+    Node* x1 = s1->in(i);
+    Node* x2 = s2->in(i);
+    if (x1 != x2) {
+      if (are_adjacent_refs(x1, x2)) {
+        save_in += adjacent_profit(x1, x2);
+      } else if (!_pairset.has_pair(x1, x2)) {
+        save_in -= pack_cost(2);
+      } else {
+        save_in += unpack_cost(2);
       }
-    } else if (_pairset.has_pair(in1, in2)) {
-      // Good if packed, otherwise must unpack input.
-      cost_scalar += unpack_cost(2);
-    } else if (is_populate_index(in1, in2)) {
-      // No packing / unpacking required, but the scalar version has an add per vector element.
-      cost_scalar += 1;
-    } else {
-      // Good if scalar, else must pack input.
-      cost_packed += pack_cost(2);
     }
-  };
+  }
 
-  auto compute_input_cost_muladds2i = [&] (const Node* in1, const Node* in2, const Node* in3, const Node* in4) {
-    if (_pairset.has_pair(in1, in2) & _pairset.has_pair(in2, in3) && _pairset.has_pair(in3, in4)) {
-      cost_scalar += unpack_cost(4);
-    } else {
-      cost_packed += pack_cost(4);
-    }
-  };
+  // uses of result
+  uint ct = 0;
+  int save_use = 0;
+  for (DUIterator_Fast imax, i = s1->fast_outs(imax); i < imax; i++) {
+    Node* use1 = s1->fast_out(i);
 
-  auto compute_output_cost = [&] (const Node* n1, const Node* n2) {
-    // Count the number of shared use packs.
-    uint use_packs_count = 0;
-    for (DUIterator_Fast imax, i = n1->fast_outs(imax); i < imax; i++) {
-      Node* use1 = n1->fast_out(i);
+    // Find pair (use1, use2)
+    Node* use2 = _pairset.get_right_or_null_for(use1);
+    if (use2 == nullptr) { continue; }
 
-      // Find pair (use1, use2)
-      Node* use2 = _pairset.get_right_or_null_for(use1);
-      if (use2 == nullptr) { continue; }
-
-      for (DUIterator_Fast kmax, k = n2->fast_outs(kmax); k < kmax; k++) {
-        if (use2 == n2->fast_out(k)) {
-          use_packs_count++;
+    for (DUIterator_Fast kmax, k = s2->fast_outs(kmax); k < kmax; k++) {
+      if (use2 == s2->fast_out(k)) {
+        ct++;
+        if (are_adjacent_refs(use1, use2)) {
+          save_use += adjacent_profit(use1, use2);
         }
       }
     }
-
-    // If there is any shared pack, and we scalarize, then we must pack.
-    if (use_packs_count > 0) {
-      cost_scalar += pack_cost(2);
-    }
-
-    // If we pack, and have any non-shared pack uses, we must unpack.
-    if (use_packs_count < n1->outcnt()) { cost_packed += unpack_cost(1); }
-    if (use_packs_count < n2->outcnt()) { cost_packed += unpack_cost(1); }
-  };
-
-  if (reduction(s1, s2)) {
-    // 1 Instruction if packed or scalar.
-    cost_packed += 1;
-    cost_scalar += 1;
-
-    // Cost packing / upnacking the input
-    compute_input_cost(s1->in(2), s2->in(2));
-
-    // The output is always scalar, and hence does not affect the cost.
-  } else if (VectorNode::is_muladds2i(s1)) {
-    cost_packed += 1; // 1 vector instruction
-    cost_scalar += 2; // 2 separate instructions
-
-    compute_input_cost_muladds2i(s1->in(1), s1->in(3), s2->in(1), s2->in(3));
-    compute_input_cost_muladds2i(s1->in(2), s1->in(4), s2->in(2), s2->in(4));
-
-    compute_output_cost(s1, s2);
-  } else {
-    cost_packed += 1; // 1 vector instruction
-    cost_scalar += 2; // 2 separate instructions
-
-    // Compute cost of all unique input pairs.
-    for (uint i = 1; i < s1->req(); i++) {
-      bool found = false;
-      for (uint j = 1; j < i; j++) {
-        if (s1->in(i) == s1->in(j) && s2->in(i) == s2->in(j)) {
-          found = true;
-          break;
-	}
-      }
-      if (!found) {
-        compute_input_cost(s1->in(i), s2->in(i));
-      }
-    }
-
-    compute_output_cost(s1, s2);
   }
 
-  // How much do we save, i.e. how much more expensive is scalar compared to packed?
-  return cost_scalar - cost_packed;
+  if (ct < s1->outcnt()) save_use += unpack_cost(1);
+  if (ct < s2->outcnt()) save_use += unpack_cost(1);
+
+  return MAX2(save_in, save_use);
 }
 
 // Combine pairs (n1, n2), (n2, n3), ... into pack (n1, n2, n3 ...)
