@@ -21,7 +21,6 @@
  * questions.
  */
 
-import java.awt.AWTException;
 import java.awt.EventQueue;
 import java.awt.Frame;
 import java.awt.Robot;
@@ -30,7 +29,6 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.event.WindowEvent;
 
 /*
@@ -42,7 +40,7 @@ import java.awt.event.WindowEvent;
 */
 
 public class ClickDuringKeypress implements MouseListener {
-   //Declare things used in the test, like buttons and labels here
+
    final static int CLICKCOUNT = 10;
    final static int DOUBLE_CLICK_AUTO_DELAY = 20;
    static volatile int lastClickCount = 0;
