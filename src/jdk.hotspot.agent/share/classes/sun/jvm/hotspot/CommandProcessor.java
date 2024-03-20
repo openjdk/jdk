@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1143,13 +1143,22 @@ public class CommandProcessor {
                  histo.run(out, err);
             }
         },
-        new Command("jstack", "jstack [-v]", false) {
+        new Command("jstack", "jstack [-v] [-l]", false) {
             public void doit(Tokens t) {
                 boolean verbose = false;
-                if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
-                    verbose = true;
+                boolean concurrentLocks = false;
+                while (t.countTokens() > 0) {
+                    String arg = t.nextToken();
+                    if (arg.equals("-v")) {
+                        verbose = true;
+                    } else if (arg.equals("-l")) {
+                        concurrentLocks = true;
+                    } else {
+                        usage();
+                        return;
+                    }
                 }
-                StackTrace jstack = new StackTrace(verbose, true);
+                StackTrace jstack = new StackTrace(verbose, concurrentLocks);
                 jstack.run(out);
             }
         },
@@ -1201,13 +1210,22 @@ public class CommandProcessor {
                 pmap.run(out, debugger.getAgent().getDebugger());
             }
         },
-        new Command("pstack", "pstack [-v]", false) {
+        new Command("pstack", "pstack [-v] [-l]", false) {
             public void doit(Tokens t) {
                 boolean verbose = false;
-                if (t.countTokens() > 0 && t.nextToken().equals("-v")) {
-                    verbose = true;
+                boolean concurrentLocks = false;
+                while (t.countTokens() > 0) {
+                    String arg = t.nextToken();
+                    if (arg.equals("-v")) {
+                        verbose = true;
+                    } else if (arg.equals("-l")) {
+                        concurrentLocks = true;
+                    } else {
+                        usage();
+                        return;
+                    }
                 }
-                PStack pstack = new PStack(verbose, true, debugger.getAgent());
+                PStack pstack = new PStack(verbose, concurrentLocks, debugger.getAgent());
                 pstack.run(out, debugger.getAgent().getDebugger());
             }
         },

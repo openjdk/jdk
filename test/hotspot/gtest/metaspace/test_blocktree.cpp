@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -59,7 +59,7 @@ TEST_VM(metaspace, BlockTree_basic) {
   CHECK_BT_CONTENT(bt, 0, 0);
 
   size_t real_size = 0;
-  MetaWord* p = NULL;
+  MetaWord* p = nullptr;
   MetaWord arr[10000];
 
   ASSERT_LE(BlockTree::MinWordSize, (size_t)6); // Sanity check. Adjust if Node is changed.
@@ -278,7 +278,7 @@ class BlockTreeTest {
   // Feed the whole feeder buffer to the trees, according to feeding_pattern.
   void feed_all(feeding_pattern_t feeding_pattern) {
 
-    MetaWord* p = NULL;
+    MetaWord* p = nullptr;
     unsigned added = 0;
 
     // If we feed in small graining, we cap the number of blocks to limit test duration.
@@ -306,14 +306,14 @@ class BlockTreeTest {
 
       // Get a block from the feeder buffer; feed it alternatingly to either tree.
       p = _fb.get(s);
-      if (p != NULL) {
+      if (p != nullptr) {
         int which = added % 2;
         added++;
         _bt[which].add_block(p, s);
         _cnt[which].add(s);
         CHECK_COUNTERS
       }
-    } while (p != NULL && added < max_blocks);
+    } while (p != nullptr && added < max_blocks);
 
     DEBUG_ONLY(verify_trees();)
 
@@ -335,7 +335,7 @@ class BlockTreeTest {
       size_t s =_rgen.get();
       size_t real_size = 0;
       MetaWord* p = _bt[giver].remove_block(s, &real_size);
-      if (p != NULL) {
+      if (p != nullptr) {
         ASSERT_TRUE(_fb.is_valid_range(p, real_size));
         ASSERT_GE(real_size, s);
         _bt[taker].add_block(p, real_size);

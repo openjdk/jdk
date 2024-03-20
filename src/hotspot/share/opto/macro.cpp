@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -167,7 +167,8 @@ void PhaseMacroExpand::eliminate_gc_barrier(Node* p2x) {
 // Search for a memory operation for the specified memory slice.
 static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_mem, Node *alloc, PhaseGVN *phase) {
   Node *orig_mem = mem;
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->as_Allocate()->proj_out_or_null(TypeFunc::Memory, /*io_use:*/false);
+  assert(alloc_mem != nullptr, "Allocation without a memory projection.");
   const TypeOopPtr *tinst = phase->C->get_adr_type(alias_idx)->isa_oopptr();
   while (true) {
     if (mem == alloc_mem || mem == start_mem ) {
@@ -371,7 +372,8 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
     return nullptr; // Give up: phi tree too deep
   }
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->proj_out_or_null(TypeFunc::Memory, /*io_use:*/false);
+  assert(alloc_mem != nullptr, "Allocation without a memory projection.");
 
   uint length = mem->req();
   GrowableArray <Node *> values(length, length, nullptr);
@@ -456,7 +458,8 @@ Node *PhaseMacroExpand::value_from_mem(Node *sfpt_mem, Node *sfpt_ctl, BasicType
   int offset = adr_t->offset();
   Node *start_mem = C->start()->proj_out_or_null(TypeFunc::Memory);
   Node *alloc_ctrl = alloc->in(TypeFunc::Control);
-  Node *alloc_mem = alloc->in(TypeFunc::Memory);
+  Node *alloc_mem = alloc->proj_out_or_null(TypeFunc::Memory, /*io_use:*/false);
+  assert(alloc_mem != nullptr, "Allocation without a memory projection.");
   VectorSet visited;
 
   bool done = sfpt_mem == alloc_mem;
@@ -766,7 +769,7 @@ SafePointScalarObjectNode* PhaseMacroExpand::create_scalarized_object_descriptio
     }
   }
 
-  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, nfields);
+  SafePointScalarObjectNode* sobj = new SafePointScalarObjectNode(res_type, alloc, first_ind, sfpt->jvms()->depth(), nfields);
   sobj->init_req(0, C->root());
   transform_later(sobj);
 
@@ -1939,10 +1942,12 @@ void PhaseMacroExpand::expand_allocate_array(AllocateArrayNode *alloc) {
 // marked for elimination since new obj has no escape information.
 // Mark all associated (same box and obj) lock and unlock nodes for
 // elimination if some of them marked already.
-void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
-  if (oldbox->as_BoxLock()->is_eliminated()) {
+void PhaseMacroExpand::mark_eliminated_box(Node* box, Node* obj) {
+  BoxLockNode* oldbox = box->as_BoxLock();
+  if (oldbox->is_eliminated()) {
     return; // This BoxLock node was processed already.
   }
+  assert(!oldbox->is_unbalanced(), "this should not be called for unbalanced region");
   // New implementation (EliminateNestedLocks) has separate BoxLock
   // node for each locked region so mark all associated locks/unlocks as
   // eliminated even if different objects are referenced in one locked region
@@ -1950,8 +1955,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   if (EliminateNestedLocks ||
       oldbox->as_BoxLock()->is_simple_lock_region(nullptr, obj, nullptr)) {
     // Box is used only in one lock region. Mark this box as eliminated.
+    oldbox->set_local();      // This verifies correct state of BoxLock
     _igvn.hash_delete(oldbox);
-    oldbox->as_BoxLock()->set_eliminated(); // This changes box's hash value
+    oldbox->set_eliminated(); // This changes box's hash value
      _igvn.hash_insert(oldbox);
 
     for (uint i = 0; i < oldbox->outcnt(); i++) {
@@ -1978,6 +1984,7 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
   // Note: BoxLock node is marked eliminated only here and it is used
   // to indicate that all associated lock and unlock nodes are marked
   // for elimination.
+  newbox->set_local(); // This verifies correct state of BoxLock
   newbox->set_eliminated();
   transform_later(newbox);
 
@@ -2033,6 +2040,9 @@ void PhaseMacroExpand::mark_eliminated_box(Node* oldbox, Node* obj) {
 
 //-----------------------mark_eliminated_locking_nodes-----------------------
 void PhaseMacroExpand::mark_eliminated_locking_nodes(AbstractLockNode *alock) {
+  if (alock->box_node()->as_BoxLock()->is_unbalanced()) {
+    return; // Can't do any more elimination for this locking region
+  }
   if (EliminateNestedLocks) {
     if (alock->is_nested()) {
        assert(alock->box_node()->as_BoxLock()->is_eliminated(), "sanity");
@@ -2349,6 +2359,11 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
   // Re-marking may break consistency of Coarsened locks.
   if (!C->coarsened_locks_consistent()) {
     return; // recompile without Coarsened locks if broken
+  } else {
+    // After coarsened locks are eliminated locking regions
+    // become unbalanced. We should not execute any more
+    // locks elimination optimizations on them.
+    C->mark_unbalanced_boxes();
   }
 
   // First, attempt to eliminate locks
@@ -2430,6 +2445,9 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
 //------------------------------expand_macro_nodes----------------------
 //  Returns true if a failure occurred.
 bool PhaseMacroExpand::expand_macro_nodes() {
+  if (StressMacroExpansion) {
+    C->shuffle_macro_nodes();
+  }
   // Last attempt to eliminate macro nodes.
   eliminate_macro_nodes();
   if (C->failing())  return true;
@@ -2511,6 +2529,9 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       }
       assert(!success || (C->macro_count() == (old_macro_count - 1)), "elimination must have deleted one node from macro list");
       progress = progress || success;
+      if (success) {
+        C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
+      }
     }
   }
 
@@ -2571,6 +2592,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() == (old_macro_count - 1), "expansion must have deleted one node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit
@@ -2613,6 +2635,7 @@ bool PhaseMacroExpand::expand_macro_nodes() {
     }
     assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
     if (C->failing())  return true;
+    C->print_method(PHASE_AFTER_MACRO_EXPANSION_STEP, 5, n);
 
     // Clean up the graph so we're less likely to hit the maximum node
     // limit

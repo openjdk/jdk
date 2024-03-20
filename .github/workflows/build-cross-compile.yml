@@ -120,7 +120,7 @@ jobs:
 
       - name: 'Check cache for sysroot'
         id: get-cached-sysroot
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: sysroot
           key: sysroot-${{ matrix.debian-arch }}-${{ hashFiles('./.github/workflows/build-cross-compile.yml') }}

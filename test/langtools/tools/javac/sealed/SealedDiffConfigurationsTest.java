@@ -142,7 +142,6 @@ public class SealedDiffConfigurationsTest extends TestRunner {
             } catch (ConstantPoolException ex) {
             }
         });
-        subtypeNames.sort((s1, s2) -> s1.compareTo(s2));
         for (int i = 0; i < expectedSubTypeNames.size(); i++) {
             Assert.check(expectedSubTypeNames.get(0).equals(subtypeNames.get(0)));
         }
@@ -694,5 +693,39 @@ public class SealedDiffConfigurationsTest extends TestRunner {
                 .files(src.resolve("Main.java"))
                 .run()
                 .writeAll();
+    }
+
+    @Test
+    public void testClientSwapsPermittedSubclassesOrder(Path base) throws Exception {
+        Path src = base.resolve("src");
+        Path foo = src.resolve("Foo.java");
+        Path fooUser = src.resolve("FooUser.java");
+
+        tb.writeFile(foo,
+                """
+                public sealed interface Foo {
+                    record R1() implements Foo {}
+                    record R2() implements Foo {}
+                }
+                """);
+
+        tb.writeFile(fooUser,
+                """
+                public class FooUser {
+                    // see that the order of arguments differ from the order of subclasses of Foo in the source above
+                    // we need to check that the order of permitted subclasses of Foo in the class file corresponds to the
+                    // original order in the source code
+                    public void blah(Foo.R2 a, Foo.R1 b) {}
+                }
+                """);
+
+        Path out = base.resolve("out");
+        Files.createDirectories(out);
+
+        new JavacTask(tb)
+                .outdir(out)
+                .files(fooUser, foo)
+                .run();
+        checkSealedClassFile(out, "Foo.class", List.of("Foo$R1", "Foo$R2"));
     }
 }

@@ -42,7 +42,6 @@ class ZCollectedHeap : public CollectedHeap {
   friend class VMStructs;
 
 private:
-  SoftRefPolicy     _soft_ref_policy;
   ZBarrierSet       _barrier_set;
   ZInitialize       _initialize;
   ZHeap             _heap;
@@ -65,8 +64,6 @@ public:
   jint initialize() override;
   void initialize_serviceability() override;
   void stop() override;
-
-  SoftRefPolicy* soft_ref_policy() override;
 
   size_t max_capacity() const override;
   size_t capacity() const override;

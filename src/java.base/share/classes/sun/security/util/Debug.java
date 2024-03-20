@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,33 @@ public class Debug {
         } else {
             return null;
         }
+    }
+
+    /**
+     * Get a Debug object corresponding to the given option on the given
+     * property value.
+     * <p>
+     * Note: unlike other {@code getInstance} methods, this method does not
+     * use the {@code java.security.debug} system property.
+     * <p>
+     * Usually, this method is used by other individual area-specific debug
+     * settings. For example,
+     * {@snippet lang=java:
+     * Map<String, String> settings = loadLoginSettings();
+     * String property = settings.get("login");
+     * Debug debug = Debug.of("login", property);
+     * }
+     * @param option the debug option name
+     * @param property debug setting for this option
+     * @return a new Debug object if the property is true
+     */
+    public static Debug of(String option, String property) {
+        if ("true".equalsIgnoreCase(property)) {
+            Debug d = new Debug();
+            d.prefix = option;
+            return d;
+        }
+        return null;
     }
 
     /**

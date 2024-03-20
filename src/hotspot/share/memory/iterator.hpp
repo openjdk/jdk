@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,6 @@ class OopIterateClosure : public OopClosure {
   // the below enum describes the different alternatives.
   enum ReferenceIterationMode {
     DO_DISCOVERY,                // Apply closure and discover references
-    DO_DISCOVERED_AND_DISCOVERY, // Apply closure to discovered field and do discovery
     DO_FIELDS,                   // Apply closure to all fields
     DO_FIELDS_EXCEPT_REFERENT    // Apply closure to all fields except the referent field
   };
@@ -231,16 +230,6 @@ class ObjectToOopClosure: public ObjectClosure {
 public:
   void do_object(oop obj);
   ObjectToOopClosure(OopIterateClosure* cl) : _cl(cl) {}
-};
-
-// SpaceClosure is used for iterating over spaces
-
-class Space;
-
-class SpaceClosure : public StackObj {
- public:
-  // Called for each space
-  virtual void do_space(Space* s) = 0;
 };
 
 // CodeBlobClosure is used for iterating through code blobs

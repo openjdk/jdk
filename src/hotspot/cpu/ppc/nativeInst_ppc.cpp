@@ -429,6 +429,31 @@ void NativePostCallNop::make_deopt() {
   NativeDeoptInstruction::insert(addr_at(0));
 }
 
+bool NativePostCallNop::patch(int32_t oopmap_slot, int32_t cb_offset) {
+  int32_t i2, i1;
+  assert(is_aligned(cb_offset, 4), "cb offset alignment does not match instruction alignment");
+  assert(!decode(i1, i2), "already patched");
+
+  cb_offset = cb_offset >> 2;
+  if (((oopmap_slot & ppc_oopmap_slot_mask) != oopmap_slot) || ((cb_offset & ppc_cb_offset_mask) != cb_offset)) {
+    return false;  // cannot encode
+  }
+  const uint32_t data = oopmap_slot << ppc_cb_offset_bits | cb_offset;
+  const uint32_t lo_data = data & ppc_data_lo_mask;
+  const uint32_t hi_data = data >> ppc_data_lo_bits;
+  const uint32_t nineth_bit = 1 << (31 - 9);
+  uint32_t instr = Assembler::CMPLI_OPCODE | hi_data << ppc_data_hi_shift | nineth_bit | lo_data;
+  *(uint32_t*)addr_at(0) = instr;
+
+  int32_t oopmap_slot_dec, cb_offset_dec;
+  assert(is_post_call_nop(), "pcn not recognized");
+  assert(decode(oopmap_slot_dec, cb_offset_dec), "encoding failed");
+  assert(oopmap_slot == oopmap_slot_dec, "oopmap slot encoding is wrong");
+  assert((cb_offset << 2) == cb_offset_dec, "cb offset encoding is wrong");
+
+  return true;  // encoding succeeded
+}
+
 void NativeDeoptInstruction::verify() {
 }
 

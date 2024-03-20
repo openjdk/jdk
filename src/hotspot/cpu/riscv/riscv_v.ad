@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
 // Copyright (c) 2020, 2023, Arm Limited. All rights reserved.
 // Copyright (c) 2020, 2022, Huawei Technologies Co., Ltd. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -32,7 +32,7 @@ source %{
 
   static void loadStore(C2_MacroAssembler masm, bool is_store,
                         VectorRegister reg, BasicType bt, Register base,
-                        int vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
+                        uint vector_length, Assembler::VectorMask vm = Assembler::unmasked) {
     Assembler::SEW sew = Assembler::elemtype_to_sew(bt);
     masm.vsetvli_helper(bt, vector_length);
 
@@ -46,7 +46,7 @@ source %{
     }
   }
 
-  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_auto_vectorization(int opcode, int vlen, BasicType bt) {
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
@@ -73,6 +73,9 @@ source %{
           return false;
         }
         break;
+      case Op_VectorCastHF2F:
+      case Op_VectorCastF2HF:
+        return UseZvfh;
       default:
         break;
     }
@@ -2614,24 +2617,7 @@ instruct vstring_equalsL(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
   ins_encode %{
     // Count is in 8-bit bytes; non-Compact chars are 16 bits.
     __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 1);
-  %}
-  ins_pipe(pipe_class_memory);
-%}
-
-instruct vstring_equalsU(iRegP_R11 str1, iRegP_R13 str2, iRegI_R14 cnt,
-                         iRegI_R10 result, vReg_V2 v2,
-                         vReg_V3 v3, vReg_V4 v4, vReg_V5 v5, rFlagsReg cr)
-%{
-  predicate(UseRVV && ((StrEqualsNode*)n)->encoding() == StrIntrinsicNode::UU);
-  match(Set result (StrEquals (Binary str1 str2) cnt));
-  effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt, TEMP v2, TEMP v3, TEMP v4, TEMP v5, KILL cr);
-
-  format %{ "String Equals $str1, $str2, $cnt -> $result\t#@string_equalsU" %}
-  ins_encode %{
-    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
-    __ string_equals_v($str1$$Register, $str2$$Register,
-                       $result$$Register, $cnt$$Register, 2);
+                       $result$$Register, $cnt$$Register);
   %}
   ins_pipe(pipe_class_memory);
 %}
@@ -3203,7 +3189,7 @@ instruct vblend(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
 
 // ------------------------------ Vector cast ----------------------------------
 
-// VectorCastB2X
+// VectorCastB2X, VectorUCastB2X
 
 instruct vcvtBtoX(vReg dst, vReg src) %{
   match(Set dst (VectorCastB2X src));
@@ -3213,18 +3199,36 @@ instruct vcvtBtoX(vReg dst, vReg src) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     if (is_floating_point_type(bt)) {
       __ integer_extend_v(as_VectorRegister($dst$$reg), bt == T_FLOAT ? T_INT : T_LONG,
-                          Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE);
+                          Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE,
+                          true /* is_signed */);
       __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
       __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
     } else {
-      __ integer_extend_v(as_VectorRegister($dst$$reg), bt, 
-                          Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE);
+      __ integer_extend_v(as_VectorRegister($dst$$reg), bt,
+                          Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE,
+                          true /* is_signed */);
     }
   %}
   ins_pipe(pipe_slow);
 %}
 
-// VectorCastS2X
+instruct vcvtUBtoX(vReg dst, vReg src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT ||
+            Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (VectorUCastB2X src));
+  effect(TEMP_DEF dst);
+  format %{ "vcvtUBtoX $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ integer_extend_v(as_VectorRegister($dst$$reg), bt,
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_BYTE,
+                        false /* is_signed */);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// VectorCastS2X, VectorUCastS2X
 
 instruct vcvtStoB(vReg dst, vReg src) %{
   predicate(Matcher::vector_element_basic_type(n) == T_BYTE);
@@ -3237,29 +3241,31 @@ instruct vcvtStoB(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtStoX_extend(vReg dst, vReg src) %{
+instruct vcvtStoX(vReg dst, vReg src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_INT ||
              Matcher::vector_element_basic_type(n) == T_LONG));
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtStoX_extend $dst, $src" %}
+  format %{ "vcvtStoX $dst, $src" %}
   ins_encode %{
     __ integer_extend_v(as_VectorRegister($dst$$reg), Matcher::vector_element_basic_type(this),
-                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT);
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
+                        true /* is_signed */);
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vcvtStoX_fp_extend(vReg dst, vReg src) %{
+instruct vcvtStoX_fp(vReg dst, vReg src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_FLOAT ||
              Matcher::vector_element_basic_type(n) == T_DOUBLE));
   match(Set dst (VectorCastS2X src));
   effect(TEMP_DEF dst);
-  format %{ "vcvtStoX_fp_extend $dst, $src" %}
+  format %{ "vcvtStoX_fp $dst, $src" %}
   ins_encode %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ integer_extend_v(as_VectorRegister($dst$$reg), (bt == T_FLOAT ? T_INT : T_LONG),
-                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT);
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
+                        true /* is_signed */);
     __ vsetvli_helper(bt, Matcher::vector_length(this));
     __ csrwi(CSR_FRM, C2_MacroAssembler::rne);
     __ vfcvt_f_x_v(as_VectorRegister($dst$$reg), as_VectorRegister($dst$$reg));
@@ -3267,7 +3273,22 @@ instruct vcvtStoX_fp_extend(vReg dst, vReg src) %{
   ins_pipe(pipe_slow);
 %}
 
-// VectorCastI2X
+
+instruct vcvtUStoX(vReg dst, vReg src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_INT ||
+            Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (VectorUCastS2X src));
+  effect(TEMP_DEF dst);
+  format %{ "vcvtUStoX $dst, $src" %}
+  ins_encode %{
+    __ integer_extend_v(as_VectorRegister($dst$$reg), Matcher::vector_element_basic_type(this),
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_SHORT,
+                        false /* is_signed */);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// VectorCastI2X, VectorUCastI2X
 
 instruct vcvtItoX_narrow(vReg dst, vReg src) %{
   predicate((Matcher::vector_element_basic_type(n) == T_BYTE ||
@@ -3289,7 +3310,21 @@ instruct vcvtItoL(vReg dst, vReg src) %{
   format %{ "vcvtItoL $dst, $src" %}
   ins_encode %{
     __ integer_extend_v(as_VectorRegister($dst$$reg), T_LONG,
-                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_INT);
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_INT,
+                        true /* is_signed */);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct vcvtUItoL(vReg dst, vReg src) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_LONG);
+  match(Set dst (VectorUCastI2X src));
+  effect(TEMP_DEF dst);
+  format %{ "vcvtUItoL $dst, $src" %}
+  ins_encode %{
+    __ integer_extend_v(as_VectorRegister($dst$$reg), T_LONG,
+                        Matcher::vector_length(this), as_VectorRegister($src$$reg), T_INT,
+                        false /* is_signed */);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -3673,6 +3708,37 @@ instruct vsignum_reg(vReg dst, vReg zero, vReg one, vRegMask_V0 v0) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ signum_fp_v(as_VectorRegister($dst$$reg), as_VectorRegister($one$$reg),
                    bt, Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// ---------------- Convert Half Floating to Floating Vector Operations ----------------
+
+// half precision -> single
+
+instruct vconvHF2F(vReg dst, vReg src, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+  match(Set dst (VectorCastHF2F src));
+  effect(TEMP_DEF dst, TEMP v0);
+  format %{ "vfwcvt.f.f.v $dst, $src\t# convert half to single precision" %}
+  ins_encode %{
+    __ float16_to_float_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                          Matcher::vector_length(this));
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// single precision -> half
+
+instruct vconvF2HF(vReg dst, vReg src, vReg vtmp, vRegMask_V0 v0, iRegINoSp tmp) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_SHORT);
+  match(Set dst (VectorCastF2HF src));
+  effect(TEMP_DEF dst, TEMP v0, TEMP vtmp, TEMP tmp);
+  format %{ "vfncvt.f.f.w $dst, $src\t# convert single to half precision" %}
+  ins_encode %{
+    __ float_to_float16_v(as_VectorRegister($dst$$reg), as_VectorRegister($src$$reg),
+                          as_VectorRegister($vtmp$$reg), $tmp$$Register,
+                          Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}

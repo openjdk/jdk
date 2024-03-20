@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,8 +26,8 @@
 #define SHARE_GC_G1_VMSTRUCTS_G1_HPP
 
 #include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/heapRegion.hpp"
-#include "gc/g1/heapRegionManager.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
+#include "gc/g1/g1HeapRegionManager.hpp"
 #include "utilities/macros.hpp"
 
 #define VM_STRUCTS_G1GC(nonstatic_field,                                      \
@@ -41,7 +41,7 @@
   nonstatic_field(HeapRegion, _bottom,         HeapWord* const)               \
   nonstatic_field(HeapRegion, _top,            HeapWord* volatile)            \
   nonstatic_field(HeapRegion, _end,            HeapWord* const)               \
-  nonstatic_field(HeapRegion, _pinned_object_count, volatile uint)            \
+  volatile_nonstatic_field(HeapRegion, _pinned_object_count, size_t)          \
                                                                               \
   nonstatic_field(HeapRegionType, _tag,       HeapRegionType::Tag volatile)   \
                                                                               \

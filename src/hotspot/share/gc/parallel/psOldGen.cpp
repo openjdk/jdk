@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,19 +121,13 @@ void PSOldGen::initialize_performance_counters(const char* perf_data_name, int l
                                       _object_space, _gen_counters);
 }
 
-// Assume that the generation has been allocated if its
-// reserved size is not 0.
-bool  PSOldGen::is_allocated() {
-  return virtual_space()->reserved_size() != 0;
-}
-
 size_t PSOldGen::num_iterable_blocks() const {
   return (object_space()->used_in_bytes() + IterateBlockSize - 1) / IterateBlockSize;
 }
 
 void PSOldGen::object_iterate_block(ObjectClosure* cl, size_t block_index) {
   size_t block_word_size = IterateBlockSize / HeapWordSize;
-  assert((block_word_size % BOTConstants::card_size_in_words()) == 0,
+  assert((block_word_size % CardTable::card_size_in_words()) == 0,
          "To ensure fast object_start calls");
 
   MutableSpace *space = object_space();

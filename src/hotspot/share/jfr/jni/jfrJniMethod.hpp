@@ -157,6 +157,8 @@ jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
 
+jlong JNICALL jfr_host_total_swap_memory(JNIEnv* env, jclass jvm);
+
 void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
 jlong JNICALL jfr_register_stack_filter(JNIEnv* env, jobject classes, jobject methods);

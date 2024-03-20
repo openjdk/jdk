@@ -32,11 +32,12 @@
  *     The test checks an following assertion of
  *     com.sun.jdi.ObjectReference.waitingThreads method spec:
  *        Returns a List containing a ThreadReference for each thread currently
- *        waiting for this object's monitor.
+ *        waiting to re-enter this object's monitor.
  *     There are two test cases:
  *        - An object with no waiting threads.
  *          A list with zero size is expected to be returned by the method.
- *        - An object with threads waiting in Object.wait(long) method.
+ *        - An object with threads waiting to re-enter the monitor after being
+ *          notified during execution of the Object.wait(long) method.
  *          The debugger checks with expected results:
  *            - a size of returned list of ThreadReferences,
  *            - the names of thread references,

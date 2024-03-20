@@ -413,7 +413,7 @@ public class TestIRMatching {
 
 class AndOr1 {
     @Test
-    @Arguments(Argument.DEFAULT)
+    @Arguments(values = Argument.DEFAULT)
     @IR(applyIfAnd = {"UsePerfData", "true", "TLABRefillWasteFraction", "50", "UseTLAB", "true"}, failOn = {IRNode.CALL})
     public void test1(int i) {
         dontInline();
@@ -1110,7 +1110,7 @@ class Traps {
     }
 
     @Test
-    @Arguments(Argument.TRUE)
+    @Arguments(values = Argument.TRUE)
     @IR(failOn = IRNode.TRAP) // fails
     @IR(failOn = IRNode.UNSTABLE_IF_TRAP) // fails
     @IR(failOn = {IRNode.PREDICATE_TRAP,

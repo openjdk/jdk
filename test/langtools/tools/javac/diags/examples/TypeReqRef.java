@@ -25,6 +25,7 @@
 // key: compiler.err.type.found.req
 
 class TypeReqRef {
-    int i;
-    boolean b = (i instanceof Object);
+
+    void method(Inner<int> in) {}
+    class Inner<T> {}
 }

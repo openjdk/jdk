@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
 
 // no precompiled headers
 #include "classfile/vmSymbols.hpp"
-#include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/disassembler.hpp"
@@ -179,6 +178,32 @@ void os::Bsd::print_uptime_info(outputStream* st) {
     time_t currsec = time(nullptr);
     os::print_dhm(st, "OS uptime:", (long) difftime(currsec, bootsec));
   }
+}
+
+jlong os::total_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_total;
+#else
+  return -1;
+#endif
+}
+
+jlong os::free_swap_space() {
+#if defined(__APPLE__)
+  struct xsw_usage vmusage;
+  size_t size = sizeof(vmusage);
+  if (sysctlbyname("vm.swapusage", &vmusage, &size, nullptr, 0) != 0) {
+    return -1;
+  }
+  return (jlong)vmusage.xsu_avail;
+#else
+  return -1;
+#endif
 }
 
 julong os::physical_memory() {
@@ -985,6 +1010,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
   if (!ieee_handling) {
     Events::log_dll_message(nullptr, "IEEE subnormal handling check failed before loading %s", filename);
     log_info(os)("IEEE subnormal handling check failed before loading %s", filename);
+    if (CheckJNICalls) {
+      tty->print_cr("WARNING: IEEE subnormal handling check failed before loading %s", filename);
+      Thread* current = Thread::current();
+      if (current->is_Java_thread()) {
+        JavaThread::cast(current)->print_jni_stack();
+      }
+    }
   }
 
   // Save and restore the floating-point environment around dlopen().
@@ -1038,6 +1070,13 @@ void *os::Bsd::dlopen_helper(const char *filename, int mode, char *ebuf, int ebu
       } else {
         Events::log_dll_message(nullptr, "IEEE subnormal handling could not be corrected after loading %s", filename);
         log_info(os)("IEEE subnormal handling could not be corrected after loading %s", filename);
+        if (CheckJNICalls) {
+          tty->print_cr("WARNING: IEEE subnormal handling could not be corrected after loading %s", filename);
+          Thread* current = Thread::current();
+          if (current->is_Java_thread()) {
+            JavaThread::cast(current)->print_jni_stack();
+          }
+        }
         assert(false, "fesetenv didn't work");
       }
     }
@@ -1229,7 +1268,8 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 }
 #endif // !__APPLE__
 
-int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
+static int _print_dll_info_cb(const char * name, address base_address,
+                              address top_address, void * param) {
   outputStream * out = (outputStream *) param;
   out->print_cr(INTPTR_FORMAT " \t%s", (intptr_t)base_address, name);
   return 0;
@@ -1564,18 +1604,33 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with protection modes %x", p2i(addr), p2i(addr+size), prot);
   if (::mprotect(addr, size, prot) == 0) {
     return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 #elif defined(__APPLE__)
   if (exec) {
     // Do not replace MAP_JIT mappings, see JDK-8234930
     if (::mprotect(addr, size, prot) == 0) {
       return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
     }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
                                        MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
     if (res != (uintptr_t) MAP_FAILED) {
       return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
     }
   }
 #else
@@ -1583,6 +1638,11 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
                                      MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
   if (res != (uintptr_t) MAP_FAILED) {
     return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
   }
 #endif
 
@@ -1623,6 +1683,10 @@ void os::pd_free_memory(char *addr, size_t bytes, size_t alignment_hint) {
   ::madvise(addr, bytes, MADV_DONTNEED);
 }
 
+size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
+  return page_size;
+}
+
 void os::numa_make_global(char *addr, size_t bytes) {
 }
 
@@ -1659,22 +1723,56 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 #if defined(__OpenBSD__)
   // XXX: Work-around mmap/MAP_FIXED bug temporarily on OpenBSD
   Events::log(nullptr, "Protecting memory [" INTPTR_FORMAT "," INTPTR_FORMAT "] with PROT_NONE", p2i(addr), p2i(addr+size));
-  return ::mprotect(addr, size, PROT_NONE) == 0;
+  if (::mprotect(addr, size, PROT_NONE) == 0) {
+    return true;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
 #elif defined(__APPLE__)
   if (exec) {
     if (::madvise(addr, size, MADV_FREE) != 0) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("madvise failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
       return false;
     }
-    return ::mprotect(addr, size, PROT_NONE) == 0;
+    if (::mprotect(addr, size, PROT_NONE) == 0) {
+      return true;
+    } else {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mprotect failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
+      return false;
+    }
   } else {
     uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
         MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-    return res  != (uintptr_t) MAP_FAILED;
+    if (res == (uintptr_t) MAP_FAILED) {
+      ErrnoPreserver ep;
+      log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                         RANGEFMTARGS(addr, size),
+                         os::strerror(ep.saved_errno()));
+      return false;
+    }
+    return true;
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
                                      MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
-  return res  != (uintptr_t) MAP_FAILED;
+  if (res == (uintptr_t) MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return false;
+  }
+  return true;
 #endif
 }
 
@@ -1700,12 +1798,26 @@ static char* anon_mmap(char* requested_addr, size_t bytes, bool exec) {
   // touch an uncommitted page. Otherwise, the read/write might
   // succeed if we have enough swap space to back the physical page.
   char* addr = (char*)::mmap(requested_addr, bytes, PROT_NONE, flags, -1, 0);
-
-  return addr == MAP_FAILED ? nullptr : addr;
+  if (addr == MAP_FAILED) {
+    ErrnoPreserver ep;
+    log_trace(os, map)("mmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(requested_addr, bytes),
+                       os::strerror(ep.saved_errno()));
+    return nullptr;
+  }
+  return addr;
 }
 
 static int anon_munmap(char * addr, size_t size) {
-  return ::munmap(addr, size) == 0;
+  if (::munmap(addr, size) == 0) {
+    return 1;
+  } else {
+    ErrnoPreserver ep;
+    log_trace(os, map)("munmap failed: " RANGEFMT " errno=(%s)",
+                       RANGEFMTARGS(addr, size),
+                       os::strerror(ep.saved_errno()));
+    return 0;
+  }
 }
 
 char* os::pd_reserve_memory(size_t bytes, bool exec) {
@@ -2301,53 +2413,6 @@ jlong os::seek_to_file_offset(int fd, jlong offset) {
   return (jlong)::lseek(fd, (off_t)offset, SEEK_SET);
 }
 
-// Map a block of memory.
-char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                        char *addr, size_t bytes, bool read_only,
-                        bool allow_exec) {
-  int prot;
-  int flags;
-
-  if (read_only) {
-    prot = PROT_READ;
-    flags = MAP_SHARED;
-  } else {
-    prot = PROT_READ | PROT_WRITE;
-    flags = MAP_PRIVATE;
-  }
-
-  if (allow_exec) {
-    prot |= PROT_EXEC;
-  }
-
-  if (addr != nullptr) {
-    flags |= MAP_FIXED;
-  }
-
-  char* mapped_address = (char*)mmap(addr, (size_t)bytes, prot, flags,
-                                     fd, file_offset);
-  if (mapped_address == MAP_FAILED) {
-    return nullptr;
-  }
-  return mapped_address;
-}
-
-
-// Remap a block of memory.
-char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                          char *addr, size_t bytes, bool read_only,
-                          bool allow_exec) {
-  // same as map_memory() on this OS
-  return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
-                        allow_exec);
-}
-
-
-// Unmap a block of memory.
-bool os::pd_unmap_memory(char* addr, size_t bytes) {
-  return munmap(addr, bytes) == 0;
-}
-
 // current_thread_cpu_time(bool) and thread_cpu_time(Thread*, bool)
 // are used by JVM M&M and JVMTI to get user+sys or user CPU time
 // of a thread.
@@ -2530,3 +2595,25 @@ void os::jfr_report_memory_info() {
 }
 
 #endif // INCLUDE_JFR
+
+bool os::pd_dll_unload(void* libhandle, char* ebuf, int ebuflen) {
+
+  if (ebuf && ebuflen > 0) {
+    ebuf[0] = '\0';
+    ebuf[ebuflen - 1] = '\0';
+  }
+
+  bool res = (0 == ::dlclose(libhandle));
+  if (!res) {
+    // error analysis when dlopen fails
+    const char* error_report = ::dlerror();
+    if (error_report == nullptr) {
+      error_report = "dlerror returned no error description";
+    }
+    if (ebuf != nullptr && ebuflen > 0) {
+      snprintf(ebuf, ebuflen - 1, "%s", error_report);
+    }
+  }
+
+  return res;
+} // end: os::pd_dll_unload()

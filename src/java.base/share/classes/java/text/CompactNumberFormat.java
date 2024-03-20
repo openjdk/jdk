@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2389,6 +2389,17 @@ public final class CompactNumberFormat extends NumberFormat {
                 Objects.hash(decimalPattern, symbols, roundingMode, pluralRules)
                 + Arrays.hashCode(compactPatterns) + groupingSize
                 + Boolean.hashCode(parseBigDecimal);
+    }
+
+    /**
+     * {@return a string identifying this {@code CompactNumberFormat}, for debugging}
+     */
+    @Override
+    public String toString() {
+        return
+            """
+            CompactNumberFormat [locale: "%s", decimal pattern: "%s", compact patterns: "%s"]
+            """.formatted(symbols.getLocale().getDisplayName(), decimalPattern, Arrays.toString(compactPatterns));
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/shared/blockOffsetTable.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -55,9 +56,9 @@ private:
   volatile u_char* _offset_array;  // byte array keeping backwards offsets
 
   void check_offset(size_t offset, const char* msg) const {
-    assert(offset < BOTConstants::card_size_in_words(),
+    assert(offset < CardTable::card_size_in_words(),
            "%s - offset: " SIZE_FORMAT ", N_words: %u",
-           msg, offset, BOTConstants::card_size_in_words());
+           msg, offset, CardTable::card_size_in_words());
   }
 
   // Bounds checking accessors:
@@ -78,13 +79,13 @@ public:
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
   static size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / BOTConstants::card_size_in_words());
+    size_t number_of_slots = (mem_region_words / CardTable::card_size_in_words());
     return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
   // Returns how many bytes of the heap a single byte of the BOT corresponds to.
   static size_t heap_map_factor() {
-    return BOTConstants::card_size();
+    return CardTable::card_size();
   }
 
   // Initialize the Block Offset Table to cover the memory region passed
@@ -100,7 +101,7 @@ public:
   inline HeapWord* address_for_index(size_t index) const;
   // Variant of address_for_index that does not check the index for validity.
   inline HeapWord* address_for_index_raw(size_t index) const {
-    return _reserved.start() + (index << BOTConstants::log_card_size_in_words());
+    return _reserved.start() + (index << CardTable::card_shift_in_words());
   }
 };
 
@@ -124,7 +125,7 @@ private:
   void check_all_cards(size_t left_card, size_t right_card) const NOT_DEBUG_RETURN;
 
   static HeapWord* align_up_by_card_size(HeapWord* const addr) {
-    return align_up(addr, BOTConstants::card_size());
+    return align_up(addr, CardTable::card_size());
   }
 
   void update_for_block(HeapWord* blk_start, size_t size) {

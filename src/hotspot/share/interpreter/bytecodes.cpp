@@ -385,13 +385,18 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
       if (end != nullptr && aligned_bcp + 3*jintSize >= end) {
         return -1; // don't read past end of code buffer
       }
-      // Promote calculation to 64 bits to do range checks, used by the verifier.
+      // Promote calculation to signed 64 bits to do range checks, used by the verifier.
       int64_t lo = (int)Bytes::get_Java_u4(aligned_bcp + 1*jintSize);
       int64_t hi = (int)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
       int64_t len = (aligned_bcp - bcp) + (3 + hi - lo + 1)*jintSize;
-      // only return len if it can be represented as a positive int;
-      // return -1 otherwise
-      return (len > 0 && len == (int)len) ? (int)len : -1;
+      // Only return len if it can be represented as a positive int and lo <= hi.
+      // The caller checks for bytecode stream overflow.
+      if (lo <= hi && len == (int)len) {
+        assert(len > 0, "must be");
+        return (int)len;
+      } else {
+        return -1;
+      }
     }
 
   case _lookupswitch:      // fall through
@@ -404,9 +409,13 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
       // Promote calculation to 64 bits to do range checks, used by the verifier.
       int64_t npairs = (int)Bytes::get_Java_u4(aligned_bcp + jintSize);
       int64_t len = (aligned_bcp - bcp) + (2 + 2*npairs)*jintSize;
-      // only return len if it can be represented as a positive int;
-      // return -1 otherwise
-      return (len > 0 && len == (int)len) ? (int)len : -1;
+      // Only return len if it can be represented as a positive int and npairs >= 0.
+      if (npairs >= 0 && len == (int)len) {
+        assert(len > 0, "must be");
+        return (int)len;
+      } else {
+        return -1;
+      }
     }
   default:
     // Note: Length functions must return <=0 for invalid bytecodes.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ class WorkerDataArrayTest : public ::testing::Test {
  protected:
   WorkerDataArrayTest() :
     title("Test array"),
-    array(NULL, title, 3),
+    array(nullptr, title, 3),
     sub_item_title("Sub item array") {
 
     array.create_thread_work_items(sub_item_title);

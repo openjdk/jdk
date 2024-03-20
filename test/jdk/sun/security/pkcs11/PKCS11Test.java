@@ -54,10 +54,14 @@ import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
+import jdk.test.lib.Platform;
 import jdk.test.lib.artifacts.Artifact;
 import jdk.test.lib.artifacts.ArtifactResolver;
 import jdk.test.lib.artifacts.ArtifactResolverException;
@@ -743,10 +747,18 @@ public abstract class PKCS11Test {
                 return fetchNssLib(MACOSX_AARCH64.class);
 
             case "Linux-amd64-64":
-                return fetchNssLib(LINUX_X64.class);
+                if (Platform.isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_X64.class);
+                }
 
             case "Linux-aarch64-64":
-                throw new SkippedException("Per JDK-8319128, skipping Linux aarch64 platforms.");
+                if (Platform.isOracleLinux7()) {
+                    throw new SkippedException("Skipping Oracle Linux prior to v8");
+                } else {
+                    return fetchNssLib(LINUX_AARCH64.class);
+                }
             default:
                 return null;
         }
