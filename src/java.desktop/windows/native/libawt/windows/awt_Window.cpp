@@ -3192,12 +3192,13 @@ void AwtWindow::_ModalEnable(void *param)
     env->DeleteGlobalRef(self);
 }
 
-void AwtWindow::_SetOpacity(void* param) {
-    JNIEnv *env = (JNIEnv *) JNU_GetEnv(jvm, JNI_VERSION_1_2);
+void AwtWindow::_SetOpacity(void* param)
+{
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
     OpacityStruct *os = static_cast<OpacityStruct *>(param);
     jobject self = os->window;
-    BYTE iOpacity = (BYTE) os->iOpacity;
+    BYTE iOpacity = (BYTE)os->iOpacity;
 
     PDATA pData;
     if (self == NULL) {
