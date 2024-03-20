@@ -224,6 +224,26 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield l;
             }
+            case RuntimeVisibleParameterAnnotationsAttribute aa -> {
+                int l = 1;
+                for (var ans : aa.parameterAnnotations()) {
+                    l += 2;
+                    for (var an : ans) {
+                        l += annotationSize(an);
+                    }
+                }
+                yield l;
+            }
+            case RuntimeInvisibleParameterAnnotationsAttribute aa -> {
+                int l = 1;
+                for (var ans : aa.parameterAnnotations()) {
+                    l += 2;
+                    for (var an : ans) {
+                        l += annotationSize(an);
+                    }
+                }
+                yield l;
+            }
             case SignatureAttribute sa -> 2;
             case SourceFileAttribute sfa -> 2;
             case SyntheticAttribute sa -> 0;
