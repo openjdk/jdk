@@ -39,7 +39,8 @@ public class Test6977726 {
     public static void main(String[] args) throws Exception {
         PassFailJFrame.builder()
                 .title("Test6977726")
-                .instructions("Check that there is an empty panel titled \"Preview\" in the JColorChooser.")
+                .instructions("Check that there is an empty panel " +
+                        "titled \"Preview\" in the JColorChooser.")
                 .rows(5)
                 .columns(40)
                 .testTimeOut(10)
