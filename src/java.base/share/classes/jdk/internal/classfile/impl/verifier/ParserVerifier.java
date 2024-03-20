@@ -167,7 +167,7 @@ public record ParserVerifier(ClassModel classModel) {
                 if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
                     errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
                 }
-                verifyAttribute(ae, a, errors);
+                verifyAttributeSize(ae, a, errors);
             }
         }
         switch (cfe) {
@@ -181,7 +181,7 @@ public record ParserVerifier(ClassModel classModel) {
         }
     }
 
-    private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
+    private void verifyAttributeSize(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
         int payLoad = ((BoundAttribute)a).payloadLen();
         if (payLoad != switch (a) {
             case AnnotationDefaultAttribute aa -> valueSize(aa.defaultValue());
@@ -192,11 +192,23 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield l;
             }
+            case CharacterRangeTableAttribute cra -> 2 + 14 * cra.characterRangeTable().size();
+            case CodeAttribute ca -> {
+                int l = 12 + ca.codeLength() + 8 * ca.exceptionHandlers().size();
+                for (var caa : ca.attributes()) {
+                    l += 6 + ((BoundAttribute)caa).payloadLen();
+                }
+                yield l;
+            }
+            case CompilationIDAttribute cida -> 2;
             case ConstantValueAttribute cva -> 2;
             case DeprecatedAttribute da -> 0;
             case EnclosingMethodAttribute ema -> 4;
             case ExceptionsAttribute ea -> 2 + 2 * ea.exceptions().size();
             case InnerClassesAttribute ica -> 2 + 8 * ica.classes().size();
+            case LineNumberTableAttribute lta -> 2 + 4 * lta.lineNumbers().size();
+            case LocalVariableTableAttribute lvta -> 2 + 10 * lvta.localVariables().size();
+            case LocalVariableTypeTableAttribute lvta -> 2 + 10 * lvta.localVariableTypes().size();
             case MethodParametersAttribute mpa -> 1 + 4 * mpa.parameters().size();
             case NestHostAttribute nha -> 2;
             case NestMembersAttribute nma -> 2 + 2 * nma.nestMembers().size();
@@ -246,7 +258,9 @@ public record ParserVerifier(ClassModel classModel) {
                 yield l;
             }
             case SignatureAttribute sa -> 2;
+            case SourceDebugExtensionAttribute sda -> sda.contents().length;
             case SourceFileAttribute sfa -> 2;
+            case SourceIDAttribute sida -> 2;
             case SyntheticAttribute sa -> 0;
             default -> payLoad;
         }) {

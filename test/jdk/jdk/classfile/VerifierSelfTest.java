@@ -115,6 +115,7 @@ class VerifierSelfTest {
             indexes[7] = cp.methodHandleEntry(MethodHandleInfo.REF_getField, cp.methodRefEntry(cd_test, "method", MTD_void)).index();
             indexes[8] = cp.methodHandleEntry(MethodHandleInfo.REF_invokeVirtual, cp.fieldRefEntry(cd_test, "field", CD_int)).index();
             patch(clb,
+                CompilationIDAttribute.of("12345"),
                 DeprecatedAttribute.of(),
                 EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
                 InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
@@ -132,7 +133,9 @@ class VerifierSelfTest {
                 RuntimeVisibleTypeAnnotationsAttribute.of(),
                 RuntimeInvisibleTypeAnnotationsAttribute.of(),
                 SignatureAttribute.of(ClassSignature.of(Signature.ClassTypeSig.of(cd_test))),
+                SourceDebugExtensionAttribute.of("sde".getBytes()),
                 SourceFileAttribute.of("ParserVerificationTestClass.java"),
+                SourceIDAttribute.of("sID"),
                 SyntheticAttribute.of())
                     .withInterfaceSymbols(CD_List, CD_List)
                     .withField("f", CD_String, fb -> patch(fb,
@@ -157,7 +160,12 @@ class VerifierSelfTest {
                             RuntimeInvisibleParameterAnnotationsAttribute.of(List.of()),
                             SignatureAttribute.of(MethodSignature.of(MTD_void)),
                             SyntheticAttribute.of())
-                            .withCode(cob -> cob.return_()))
+                            .withCode(cob ->
+                                cob.return_()
+                                   .with(new CloneAttribute(CharacterRangeTableAttribute.of(List.of())))
+                                   .with(new CloneAttribute(LineNumberTableAttribute.of(List.of())))
+                                   .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
+                                   .with(new CloneAttribute(LocalVariableTypeTableAttribute.of(List.of())))))
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {})
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {});
         }));
@@ -185,6 +193,7 @@ class VerifierSelfTest {
                 Illegal method name <> in class ParserVerificationTestClass
                 Duplicate method name <> with signature ()V in class ParserVerificationTestClass
                 Illegal method name <> in class ParserVerificationTestClass
+                Wrong CompilationID attribute length in class ParserVerificationTestClass
                 Wrong Deprecated attribute length in class ParserVerificationTestClass
                 Multiple EnclosingMethod attributes in class ParserVerificationTestClass
                 Wrong EnclosingMethod attribute length in class ParserVerificationTestClass
@@ -206,8 +215,11 @@ class VerifierSelfTest {
                 Multiple RuntimeInvisibleTypeAnnotations attributes in class ParserVerificationTestClass
                 Multiple Signature attributes in class ParserVerificationTestClass
                 Wrong Signature attribute length in class ParserVerificationTestClass
+                Multiple SourceDebugExtension attributes in class ParserVerificationTestClass
                 Multiple SourceFile attributes in class ParserVerificationTestClass
                 Wrong SourceFile attribute length in class ParserVerificationTestClass
+                Multiple SourceID attributes in class ParserVerificationTestClass
+                Wrong SourceID attribute length in class ParserVerificationTestClass
                 Wrong Synthetic attribute length in class ParserVerificationTestClass
                 Multiple ConstantValue attributes in field ParserVerificationTestClass.f
                 Wrong ConstantValue attribute length in field ParserVerificationTestClass.f
@@ -239,6 +251,10 @@ class VerifierSelfTest {
                 Multiple Signature attributes in method ParserVerificationTestClass::m()
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
+                Wrong CharacterRangeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
+                Wrong LineNumberTable attribute length in Code attribute for method ParserVerificationTestClass::m()
+                Wrong LocalVariableTable attribute length in Code attribute for method ParserVerificationTestClass::m()
+                Wrong LocalVariableTypeTable attribute length in Code attribute for method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
