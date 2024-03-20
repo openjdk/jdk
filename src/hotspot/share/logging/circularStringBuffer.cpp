@@ -48,9 +48,7 @@ CircularMapping::CircularMapping(size_t size)
   if (ret != 0) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
   }
-
-  buffer =
-      (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
   if (buffer == MAP_FAILED) {
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
   }
@@ -63,7 +61,7 @@ CircularMapping::CircularMapping(size_t size)
     vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
   }
 
-  // Success, notify MT.
+  // Success, notify NMT.
   MemTracker::record_virtual_memory_reserve(buffer, size, CURRENT_PC, mtLogging);
   MemTracker::record_virtual_memory_commit(buffer, size, CURRENT_PC);
 }
