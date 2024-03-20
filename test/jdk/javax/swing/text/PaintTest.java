@@ -79,8 +79,8 @@ public class PaintTest {
                 public Dimension getPreferredSize() {
                     Dimension size = super.getPreferredSize();
                     if (getFont() != null) {
-                        size.height += getFontMetrics(getFont()).
-                                       getHeight() / 2;
+                        size.height += getFontMetrics(getFont())
+                                       .getHeight() / 2;
                     }
                     return size;
                 }

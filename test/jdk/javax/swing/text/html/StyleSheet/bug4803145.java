@@ -78,7 +78,7 @@ public class bug4803145 {
 
         jep.setText(text);
 
-        f.setSize(500,500);
+        f.setSize(500, 500);
         f.getContentPane().add(jep);
 
         JButton switchButton = new JButton("switch text orientation");
