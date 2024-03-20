@@ -76,9 +76,9 @@ public final class Monotonics {
     }
 
     /**
-     * {@return a thread-safe, memoized supplier backed by a new empty monotonic value
-     * where the memoized value is obtained by invoking the provided {@code suppler} at
-     * most once}
+     * {@return a wrapped. thread-safe, memoized supplier backed by a new empty
+     * monotonic value where the memoized value is obtained by invoking the provided
+     * {@code suppler} at most once}
      * <p>
      * The returned memoized {@code Supplier} is equivalent to the following supplier:
      * {@snippet lang=java :
@@ -99,9 +99,9 @@ public final class Monotonics {
     }
 
     /**
-     * {@return a thread-safe, memoized {@linkplain IntFunction} backed by a new list
-     * of {@code size} empty monotonic elements where the memoized values is obtained by
-     * invoking the provided {@code mapper} at most once per index}
+     * {@return a wrapped, thread-safe, memoized {@linkplain IntFunction} backed by a
+     * new list of {@code size} empty monotonic elements where the memoized values are
+     * obtained by invoking the provided {@code mapper} at most once per index}
      * <p>
      * The returned memoized {@linkplain  IntFunction} is equivalent to
      * the following {@linkplain  IntFunction}:
@@ -127,9 +127,9 @@ public final class Monotonics {
     }
 
     /**
-     * {@return a thread-safe, memoized {@linkplain Function} backed by a new map
-     * with the {@code keys} and of empty monotonic elements where the memoized values
-     * is obtained by invoking the provided {@code mapper} at most once per key}
+     * {@return a wrapped, thread-safe, memoized {@linkplain Function} backed by a
+     * new map with the {@code keys} and of empty monotonic elements where the memoized
+     * values are obtained by invoking the provided {@code mapper} at most once per key}
      * <p>
      * The returned memoized {@linkplain Function} is equivalent to
      * the following {@linkplain Function}:
