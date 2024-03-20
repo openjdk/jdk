@@ -33,31 +33,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include <limits.h>
 
-class PageSizeHistogram {
-  static constexpr int log_smallest_pagesize = 12; // 4K
-  static constexpr int log_largest_pagesize = 34;  // 16G, (ppc) (increase if we ever get larger page sizes)
-  static constexpr int num_pagesizes = log_largest_pagesize - log_smallest_pagesize;
-  size_t _v[num_pagesizes];
-public:
-  PageSizeHistogram() { memset(_v, 0, sizeof(_v)); }
-  void add(size_t pagesize, size_t size) {
-    assert(is_aligned(size, pagesize), "Size %zu unaligned to page size %zu", size, pagesize);
-    const int n = exact_log2(pagesize) - log_smallest_pagesize;
-    assert(n >= 0 && n < num_pagesizes, "unexpected pagesize %zu", pagesize);
-    _v[n] += size;
-  }
-  void print_on(outputStream* st) const {
-    for (int i = 0; i < num_pagesizes; i++) {
-      if (_v[i] > 0) {
-        const size_t pagesize = 1 << (log_smallest_pagesize + i);
-        st->fill_to(16);
-        st->print(EXACTFMT, EXACTFMTARGS(pagesize));
-        st->print_cr(": %zu pages, %zu bytes (" PROPERFMT ")", _v[i] / pagesize, _v[i], PROPERFMTARGS(_v[i]));
-      }
-    }
-  }
-};
-
 class ProcSmapsSummary {
   unsigned _num_mappings;
   size_t _vsize;        // combined virtual size
@@ -67,7 +42,6 @@ class ProcSmapsSummary {
   size_t _swapped_out;  // combined amount of swapped-out memory
   size_t _hugetlb;      // combined amount of memory backed by explicit huge pages
   size_t _thp;          // combined amount of memory backed by THPs
-  PageSizeHistogram _pagesizes;
 public:
   ProcSmapsSummary() : _num_mappings(0), _vsize(0), _rss(0), _committed(0), _shared(0),
                      _swapped_out(0), _hugetlb(0), _thp(0) {}
@@ -80,12 +54,6 @@ public:
     _swapped_out += info.swap;
     _hugetlb += info.private_hugetlb + info.shared_hugetlb;
     _thp += info.anonhugepages;
-    if (info.ht) {
-      _pagesizes.add(info.kernelpagesize,
-                     info.private_hugetlb + info.shared_hugetlb);
-    } else {
-      _pagesizes.add(info.kernelpagesize, info.rss); // only resident pages
-    }
   }
 
   void print_on(const MappingPrintSession& session) const {
@@ -98,8 +66,6 @@ public:
     st->print_cr("       swapped out: %zu (" PROPERFMT ")", _swapped_out, PROPERFMTARGS(_swapped_out));
     st->print_cr("         using thp: %zu (" PROPERFMT ")", _thp, PROPERFMTARGS(_thp));
     st->print_cr("           hugetlb: %zu (" PROPERFMT ")", _hugetlb, PROPERFMTARGS(_hugetlb));
-    st->print_cr("By page size:");
-    _pagesizes.print_on(st);
   }
 };
 
