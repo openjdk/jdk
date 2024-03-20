@@ -111,7 +111,7 @@ define_pd_global(intx, InitArrayShortSize, 1*BytesPerLong);
   /* special instructions */                                                  \
   product(bool, SuperwordUseVX, false,                                        \
           "Use Z15 Vector instructions for superword optimization.")          \
-  product(bool, UseSFPV, false, DIAGNOSTIC,                                               \
+  product(bool, UseSFPV, false, DIAGNOSTIC,                                   \
           "Use SFPV Vector instructions for superword optimization.")         \
                                                                               \
   product(bool, PreferLAoverADD, false, DIAGNOSTIC,                           \

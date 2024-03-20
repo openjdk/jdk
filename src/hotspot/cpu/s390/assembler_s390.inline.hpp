@@ -812,7 +812,7 @@ inline void Assembler::z_vlgvh(  Register r1, VectorRegister v3, int64_t d2, Reg
 inline void Assembler::z_vlgvf(  Register r1, VectorRegister v3, int64_t d2, Register b2)             {z_vlgv(r1, v3, d2, b2, VRET_FW); }   // load FW   from VR element (index d2(b2)) into GR (logical)
 inline void Assembler::z_vlgvg(  Register r1, VectorRegister v3, int64_t d2, Register b2)             {z_vlgv(r1, v3, d2, b2, VRET_DW); }   // load DW   from VR element (index d2(b2)) into GR.
 
-inline void Assembler::z_vlvg(   VectorRegister v1, Register r3, int64_t d2, Register b2, int64_t m4) {emit_48(VLVG_ZOPC  | vreg(v1,  8)     |  reg(r3, 12, 48) | rsmaskt_32(d2,     b2) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32)); }
+inline void Assembler::z_vlvg(   VectorRegister v1, Register r3, int64_t d2, Register b2, int64_t m4) {emit_48(VLVG_ZOPC  | vreg(v1,  8)     |  reg(r3, 12, 48) | rsmaskt_48(d2,     b2) | vesc_mask(m4, VRET_BYTE, VRET_DW, 32)); }
 inline void Assembler::z_vlvgb(  VectorRegister v1, Register r3, int64_t d2, Register b2)             {z_vlvg(v1, r3, d2, b2, VRET_BYTE); }
 inline void Assembler::z_vlvgh(  VectorRegister v1, Register r3, int64_t d2, Register b2)             {z_vlvg(v1, r3, d2, b2, VRET_HW); }
 inline void Assembler::z_vlvgf(  VectorRegister v1, Register r3, int64_t d2, Register b2)             {z_vlvg(v1, r3, d2, b2, VRET_FW); }

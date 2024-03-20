@@ -1078,7 +1078,7 @@ static enum RC rc_class(OptoReg::Name reg) {
     return rc_float;
   }
 
-  // we have 32 vector register * 4 halves
+  // we have 32 vector register
   if (reg < 32+32+32) {
     return rc_vector;
   }
@@ -7470,7 +7470,7 @@ instruct negD_reg(regD dst, regD src, flagsReg cr) %{
 
 // Sqrt float precision
 instruct sqrtF_reg(regF dst, regF src) %{
-  match(Set dst (SqrtF src));
+  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
   // CC remains unchanged.
   ins_cost(ALU_REG_COST);
   size(4);
@@ -7493,7 +7493,7 @@ instruct sqrtD_reg(regD dst, regD src) %{
 %}
 
 instruct sqrtF_mem(regF dst, memoryRX src) %{
-  match(Set dst (SqrtF src));
+  match(Set dst (ConvD2F (SqrtD (ConvF2D src))));
   // CC remains unchanged.
   ins_cost(ALU_MEMORY_COST);
   size(6);
@@ -10955,6 +10955,7 @@ instruct reinterpretX(vecX dst) %{
   ins_encode( /*empty*/ );
   ins_pipe(pipe_class_dummy);
 %}
+
 //----------Vector Arithmetic Instructions--------------------------------------
 
 // Vector Addition Instructions
