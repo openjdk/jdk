@@ -56,39 +56,7 @@ struct CircularMapping {
   : file(nullptr), buffer(nullptr), size(0) {
   };
 
-  CircularMapping(size_t size)
-  : size(size) {
-    assert(is_aligned(size, os::vm_page_size()), "must be");
-    file = tmpfile();
-    if (file == nullptr) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-    const int fd = fileno(file);
-    if (fd == -1) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-    int ret = ftruncate(fd, size);
-    if (ret != 0) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-
-    buffer = (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    if (buffer == MAP_FAILED) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-    void* mmap_ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-    if (mmap_ret == MAP_FAILED) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-    mmap_ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
-    if (mmap_ret == MAP_FAILED) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-
-    // Success, notify MT.
-    MemTracker::record_virtual_memory_reserve(buffer, size, CURRENT_PC, mtLogging);
-    MemTracker::record_virtual_memory_commit(buffer, size, CURRENT_PC);
-  }
+  CircularMapping(size_t size);
   ~CircularMapping() {
     munmap(buffer, size * 2);
     fclose(file);
@@ -109,17 +77,7 @@ struct CircularMapping {
   CircularMapping()
   : buffer(nullptr), size(0) {
   };
-  CircularMapping(size_t size)
-  : buffer(nullptr), size(size) {
-    buffer = os::reserve_memory(size, false, mtLogging);
-    if (buffer == nullptr) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-    bool ret = os::commit_memory(buffer, size, false);
-    if (!ret) {
-      vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "Failed to allocate async logging buffer");
-    }
-  }
+  CircularMapping(size_t size);
 
   void write_bytes(size_t at, const char* bytes, size_t size) {
     const size_t part1_size = MIN2(size, this->size - at);

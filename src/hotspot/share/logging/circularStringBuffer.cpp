@@ -30,6 +30,59 @@
 const LogDecorations& CircularStringBuffer::None = LogDecorations(
     LogLevel::Warning, LogTagSetMapping<LogTag::__NO_TAG>::tagset(), LogDecorators::None);
 
+const char* allocation_failure_msg = "Failed to allocate async logging buffer";
+
+#ifdef LINUX
+CircularMapping::CircularMapping(size_t size)
+  : size(size) {
+  assert(is_aligned(size, os::vm_page_size()), "must be");
+  file = tmpfile();
+  if (file == nullptr) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+  const int fd = fileno(file);
+  if (fd == -1) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+  int ret = ftruncate(fd, size);
+  if (ret != 0) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+
+  buffer =
+      (char*)mmap(nullptr, size * 2, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (buffer == MAP_FAILED) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+  void* mmap_ret = mmap(buffer, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  if (mmap_ret == MAP_FAILED) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+  mmap_ret = mmap(buffer + size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, fd, 0);
+  if (mmap_ret == MAP_FAILED) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+
+  // Success, notify MT.
+  MemTracker::record_virtual_memory_reserve(buffer, size, CURRENT_PC, mtLogging);
+  MemTracker::record_virtual_memory_commit(buffer, size, CURRENT_PC);
+}
+#else
+CircularMapping::CircularMapping(size_t size)
+  : buffer(nullptr),
+    size(size) {
+  buffer = os::reserve_memory(size, false, mtLogging);
+  if (buffer == nullptr) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+  bool ret = os::commit_memory(buffer, size, false);
+  if (!ret) {
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", allocation_failure_msg);
+  }
+}
+#endif // LINUX
+
+
 CircularStringBuffer::CircularStringBuffer(StatisticsMap& map, PlatformMonitor& stats_lock, size_t size, bool should_stall)
   : _should_stall(should_stall),
     _stats(map),
