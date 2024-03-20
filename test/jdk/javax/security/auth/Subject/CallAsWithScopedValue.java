@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8296244
  * @enablePreview
  * @summary Implement Subject.current and Subject.callAs using scoped values.
- *      Need @enablePreview to use StructuredTaskScope.
+ *      Need enablePreview to use StructuredTaskScope.
  * @run main/othervm -Djava.security.manager=allow CallAsWithScopedValue false
  * @run main/othervm -Djava.security.manager=disallow CallAsWithScopedValue true
  */
@@ -52,7 +52,7 @@ public class CallAsWithScopedValue {
         // Always observable in the same thread
         Subject.callAs(subject, () -> check(0, Subject.current(), "Duke"));
 
-        // Observable in the same thread in ACC mode, but not in the SV mode
+        // Observable in a new platform thread in ACC mode, but not in the SV mode
         Subject.callAs(subject, () -> {
             Thread.ofPlatform().start(() -> check(1, Subject.current(), usv ? null : "Duke")).join();
             return null;
