@@ -904,7 +904,9 @@ void MemDetailReporter::report_physical_devices() {
   MemoryFileTracker::Instance::Locker lock;
   const GrowableArrayCHeap<MemoryFileTracker::MemoryFile*, mtNMT>& devices =
       MemoryFileTracker::Instance::devices();
+  this->output()->cr();
   this->output()->print_cr("Memory file details");
+  this->output()->cr();
   for (int i = 0; i < devices.length(); i++) {
     MemoryFileTracker::MemoryFile* dev = devices.at(i);
     MemoryFileTracker::Instance::print_report_on(dev, this->output(), scale());

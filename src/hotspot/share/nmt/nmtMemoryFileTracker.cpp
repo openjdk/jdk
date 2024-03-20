@@ -54,7 +54,7 @@ void MemoryFileTracker::print_report_on(const MemoryFile* device, outputStream* 
     if (pval.out == VMATree::InOut::Reserved) {
       const auto& start_addr = prev->key();
       const auto& end_addr = current->key();
-      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " bytes for %s", start_addr, end_addr,
+      stream->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] allocated " SIZE_FORMAT "%s" " for %s", start_addr, end_addr,
                        NMTUtil::amount_in_scale(end_addr - start_addr, scale),
                        NMTUtil::scale_name(scale),
                        NMTUtil::flag_to_name(pval.metadata.flag));
