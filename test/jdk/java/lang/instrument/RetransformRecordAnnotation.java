@@ -84,10 +84,7 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
         test.runTest();
     }
 
-    // for Transformer
-    private String targetClassName;
-    private byte[] seenClassBytes;
-    private byte[] newClassBytes;
+    private Transformer transformer;
 
     public RetransformRecordAnnotation() throws Throwable {
         super("RetransformRecordAnnotation");
@@ -98,18 +95,16 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
     }
 
     // Retransforms target class using provided class bytes;
-    // Returns class bytes passed to the transformer.
-    private byte[] retransform(Class targetClass, byte[] classBytes) throws Throwable {
-        targetClassName = targetClass.getName();
-        seenClassBytes = null;
-        newClassBytes = classBytes;
+    private void retransform(Class targetClass, byte[] classBytes) throws Throwable {
+        transformer.prepare(targetClass, classBytes);
         fInst.retransformClasses(targetClass);
-        assertTrue(targetClass.getName() + " was not seen by transform()", seenClassBytes != null);
-        return seenClassBytes;
+        assertTrue(targetClass.getName() + " was not seen by transform()",
+                   transformer.getSeenClassBytes() != null);
     }
 
     protected final void doRunTest() throws Throwable {
-        fInst.addTransformer(new Transformer(), true);
+        transformer = new Transformer();
+        fInst.addTransformer(transformer, true);
 
         {
             log("Sanity: retransform to original class bytes");
@@ -119,7 +114,6 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
 
         {
             log("Test: retransform VisibleAnnos to null");
-            // Ensure retransformation does not fail with ClassFormatError.
             retransform(VisibleAnnos.class, null);
             log("");
         }
@@ -147,7 +141,22 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
     }
 
     public class Transformer implements ClassFileTransformer {
+        private String targetClassName;
+        private byte[] seenClassBytes;
+        private byte[] newClassBytes;
+
         public Transformer() {
+        }
+
+        // Prepares transformer for Instrumentation.retransformClasses.
+        public void prepare(Class targetClass, byte[] classBytes) {
+            targetClassName = targetClass.getName();
+            newClassBytes = classBytes;
+            seenClassBytes = null;
+        }
+
+        byte[] getSeenClassBytes() {
+            return seenClassBytes;
         }
 
         public String toString() {
