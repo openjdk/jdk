@@ -309,7 +309,7 @@ public class Attr extends JCTree.Visitor {
             return;
         }
 
-        // Instance fields are assignable before super() unless they're inherited from a superclass
+        // Illegal to assign an instance field inherited from a superclass in a constructor prologue
         if (env.info.ctorPrologue &&
                 v.owner.kind == TYP &&
                 types.isSubtype(env.enclClass.type, v.owner.type) &&

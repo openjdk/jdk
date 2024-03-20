@@ -1508,7 +1508,7 @@ public class Resolve {
                         (sym.flags() & STATIC) == 0) {
                     if (staticOnly)
                         return new StaticError(sym);
-                    if (env1.info.ctorPrologue && !env1.tree.hasTag(ASSIGN))
+                    if (env1.info.ctorPrologue && !isAllowedInPrologue(env1, (VarSymbol)sym))
                         return new RefBeforeCtorCalledError(sym);
                 }
                 return sym;
@@ -3775,7 +3775,7 @@ public class Resolve {
                 if (sym != null) {
                     if (staticOnly)
                         sym = new StaticError(sym);
-                    else if (env1.info.ctorPrologue && !env1.tree.hasTag(ASSIGN))
+                    else if (env1.info.ctorPrologue && sym.kind == VAR && !isAllowedInPrologue(env1, (VarSymbol)sym))
                         sym = new RefBeforeCtorCalledError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
                                   name, true);
@@ -3826,6 +3826,52 @@ public class Resolve {
             }
         }
         return result.toList();
+    }
+
+    /**
+     * Determine if an instance field may appear in a constructor prologue.
+     *
+     * <p>
+     * This is only allowed when:
+     *  - The field is being assigned a value (i.e., written but not read)
+     *  - The field is not inherited from a superclass
+     *  - The assignment is not within a lambda, because that would require
+     *    capturing 'this' which is not allowed prior to super().
+     *
+     * <p>
+     * Note, this method doesn't catch all such scenarios, because this method
+     * is invoked for symbol "x" only for "x = 42" but not for "this.x = 42".
+     * To catch those cases, we rely on similar logic in Attr.checkAssignable().
+     */
+    private boolean isAllowedInPrologue(Env<AttrContext> env, VarSymbol v) {
+
+        // Check assumptions
+        Assert.check(env.info.ctorPrologue);
+        Assert.check((v.flags() & STATIC) == 0);
+
+        // The symbol must appear in the LHS of an assignment statement
+        if (!env.tree.hasTag(ASSIGN))
+            return false;
+
+        // The assignment statement must not be within a lambda
+        if (env.info.isLambda)
+            return false;
+
+        // Get the symbol's qualifier, if any
+        JCExpression lhs = TreeInfo.skipParens(((JCAssign)env.tree).lhs);
+        JCExpression base = lhs.hasTag(SELECT) ? ((JCFieldAccess)lhs).selected : null;
+
+        // The symbol must not be an instance field inherited from a superclass
+        if (v.owner.kind == TYP &&
+                types.isSubtype(env.enclClass.type, v.owner.type) &&
+                v.owner != env.enclClass.sym &&
+                (base == null ||
+                  TreeInfo.isExplicitThisReference(types, (ClassType)env.enclClass.type, base))) {
+            return false;
+        }
+
+        // OK
+        return true;
     }
 
     /**
