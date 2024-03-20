@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,37 +21,46 @@
  * questions.
  */
 
-/* @test
+/*
+ * @test
  * @bug 6742358
- * @summary MetalSliderUI paint wrong vertical disabled filled JSlider for DefaultMetalTheme
- * @author Pavel Porvatov
- * @run applet/manual=done bug6742358.html
+ * @summary Verifies that painting a vertical disabled filled JSlider, the
+ *          track will be painted correctly for DefaultMetalTheme.
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual bug6742358
  */
 
-import javax.swing.*;
+import javax.swing.BoxLayout;
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 import javax.swing.plaf.metal.DefaultMetalTheme;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-public class bug6742358 extends JApplet {
-    public static void main(String[] args) {
+public class bug6742358 {
+    private static final String INSTRUCTIONS = """
+             Check that all sliders look good.""";
+
+    public static void main(String[] args) throws Exception {
         MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
-
-        JFrame frame = new JFrame();
-
-        frame.setContentPane(new TestPanel());
-        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.pack();
-        frame.setLocationRelativeTo(null);
-
-        frame.setVisible(true);
+        PassFailJFrame.builder()
+                .title("JSlider Instructions")
+                .instructions(INSTRUCTIONS)
+                .rows(5)
+                .columns(40)
+                .testUI(bug6742358::createAndShowUI)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void init() {
-        MetalLookAndFeel.setCurrentTheme(new DefaultMetalTheme());
-
+    public static JFrame createAndShowUI() {
+        JFrame frame = new JFrame("Test Sliders");
         TestPanel panel = new TestPanel();
-
-        setContentPane(panel);
+        frame.setSize(400, 300);
+        frame.getContentPane().add(panel);
+        return frame;
     }
 
     private static class TestPanel extends JPanel {
@@ -62,7 +71,8 @@ public class bug6742358 extends JApplet {
             pnVertical.setLayout(new BoxLayout(pnVertical, BoxLayout.Y_AXIS));
 
             for (int i = 0; i < 8; i++) {
-                pnVertical.add(createSlider(false, (i & 4) == 0, (i & 2) == 0, (i & 1) == 0));
+                pnVertical.add(createSlider(false, (i & 4) == 0,
+                        (i & 2) == 0, (i & 1) == 0));
             }
 
             JPanel pnHorizontal = new JPanel();
@@ -70,7 +80,8 @@ public class bug6742358 extends JApplet {
             pnHorizontal.setLayout(new BoxLayout(pnHorizontal, BoxLayout.X_AXIS));
 
             for (int i = 0; i < 8; i++) {
-                pnHorizontal.add(createSlider(true, (i & 4) == 0, (i & 2) == 0, (i & 1) == 0));
+                pnHorizontal.add(createSlider(true, (i & 4) == 0,
+                        (i & 2) == 0, (i & 1) == 0));
             }
 
             add(pnHorizontal);
@@ -78,14 +89,17 @@ public class bug6742358 extends JApplet {
         }
     }
 
-    private static JSlider createSlider(boolean vertical, boolean enabled, boolean filled, boolean inverted) {
-        JSlider result = new JSlider(vertical ? SwingConstants.VERTICAL : SwingConstants.HORIZONTAL, 0, 10, 5);
+    private static JSlider createSlider(boolean vertical, boolean enabled,
+                                         boolean filled, boolean inverted) {
+        JSlider result = new JSlider(vertical ? SwingConstants.VERTICAL : SwingConstants.HORIZONTAL,
+                 0, 10, 5);
 
         result.setEnabled(enabled);
         result.putClientProperty("JSlider.isFilled", filled);
         result.setInverted(inverted);
-        result.setToolTipText("<html>vertical = " + vertical + "<br>enabled = " + enabled + "<br>filled = " + filled +
-                "<br>inverted = " + inverted + "</html>");
+        result.setToolTipText("<html>vertical = " + vertical + "<br>enabled = "
+                 + enabled+ "<br>filled = " + filled
+                 + "<br>inverted = " + inverted + "</html>");
 
         return result;
     }
