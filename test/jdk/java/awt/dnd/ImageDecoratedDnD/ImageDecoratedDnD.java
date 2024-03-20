@@ -86,7 +86,7 @@ public class ImageDecoratedDnD {
         Panel mainPanel;
         Component dragSource, dropTarget;
 
-        frame.setBounds(0, 400, 400, 400);
+        frame.setSize(400, 400);
         frame.setLayout(new BorderLayout());
 
         mainPanel = new Panel();
