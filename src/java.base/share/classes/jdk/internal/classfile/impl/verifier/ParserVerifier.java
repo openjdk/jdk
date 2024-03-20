@@ -24,6 +24,8 @@
  */
 package jdk.internal.classfile.impl.verifier;
 
+import java.lang.classfile.Annotation;
+import java.lang.classfile.AnnotationValue;
 import java.lang.constant.ClassDesc;
 import static java.lang.constant.ConstantDescs.CLASS_INIT_NAME;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
@@ -208,6 +210,20 @@ public record ParserVerifier(ClassModel classModel) {
                 }
                 yield l;
             }
+            case RuntimeVisibleAnnotationsAttribute aa -> {
+                int l = 2;
+                for (var an : aa.annotations()) {
+                    l += annotationSize(an);
+                }
+                yield l;
+            }
+            case RuntimeInvisibleAnnotationsAttribute aa -> {
+                int l = 2;
+                for (var an : aa.annotations()) {
+                    l += annotationSize(an);
+                }
+                yield l;
+            }
             case SignatureAttribute sa -> 2;
             case SourceFileAttribute sfa -> 2;
             case SyntheticAttribute sa -> 0;
@@ -216,6 +232,30 @@ public record ParserVerifier(ClassModel classModel) {
             errors.add(new VerifyError("Wrong %s attribute length in %s".formatted(a.attributeName(), toString(ae))));
         }
 
+    }
+
+    private static int annotationSize(Annotation an) {
+        int l = 4;
+        for (var el : an.elements()) {
+            l += 2 + valueSize(el.value());
+        }
+        return l;
+    }
+
+    private static int valueSize(AnnotationValue val) {
+        return 1 + switch (val) {
+            case AnnotationValue.OfAnnotation oan ->
+                annotationSize(oan.annotation());
+            case AnnotationValue.OfArray oar -> {
+                int l = 2;
+                for (var v : oar.values()) {
+                    l += valueSize(v);
+                }
+                yield l;
+            }
+            case AnnotationValue.OfConstant _, AnnotationValue.OfClass _ -> 2;
+            case AnnotationValue.OfEnum _ -> 4;
+        };
     }
 
     private String className() {

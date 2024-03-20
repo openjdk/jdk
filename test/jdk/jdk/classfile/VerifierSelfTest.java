@@ -197,6 +197,12 @@ class VerifierSelfTest {
                 Wrong PermittedSubclasses attribute length in class ParserVerificationTestClass
                 Multiple Record attributes in class ParserVerificationTestClass
                 Wrong Record attribute length in class ParserVerificationTestClass
+                Multiple RuntimeVisibleAnnotations attributes in class ParserVerificationTestClass
+                Wrong RuntimeVisibleAnnotations attribute length in class ParserVerificationTestClass
+                Multiple RuntimeInvisibleAnnotations attributes in class ParserVerificationTestClass
+                Wrong RuntimeInvisibleAnnotations attribute length in class ParserVerificationTestClass
+                Multiple RuntimeVisibleTypeAnnotations attributes in class ParserVerificationTestClass
+                Multiple RuntimeInvisibleTypeAnnotations attributes in class ParserVerificationTestClass
                 Multiple Signature attributes in class ParserVerificationTestClass
                 Wrong Signature attribute length in class ParserVerificationTestClass
                 Multiple SourceFile attributes in class ParserVerificationTestClass
@@ -205,6 +211,12 @@ class VerifierSelfTest {
                 Multiple ConstantValue attributes in field ParserVerificationTestClass.f
                 Wrong ConstantValue attribute length in field ParserVerificationTestClass.f
                 Wrong Deprecated attribute length in field ParserVerificationTestClass.f
+                Multiple RuntimeVisibleAnnotations attributes in field ParserVerificationTestClass.f
+                Wrong RuntimeVisibleAnnotations attribute length in field ParserVerificationTestClass.f
+                Multiple RuntimeInvisibleAnnotations attributes in field ParserVerificationTestClass.f
+                Wrong RuntimeInvisibleAnnotations attribute length in field ParserVerificationTestClass.f
+                Multiple RuntimeVisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
+                Multiple RuntimeInvisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
                 Multiple Signature attributes in field ParserVerificationTestClass.f
                 Wrong Signature attribute length in field ParserVerificationTestClass.f
                 Wrong Synthetic attribute length in field ParserVerificationTestClass.f
@@ -213,31 +225,29 @@ class VerifierSelfTest {
                 Wrong Exceptions attribute length in method ParserVerificationTestClass::m()
                 Multiple MethodParameters attributes in method ParserVerificationTestClass::m()
                 Wrong MethodParameters attribute length in method ParserVerificationTestClass::m()
+                Multiple RuntimeVisibleAnnotations attributes in method ParserVerificationTestClass::m()
+                Wrong RuntimeVisibleAnnotations attribute length in method ParserVerificationTestClass::m()
+                Multiple RuntimeInvisibleAnnotations attributes in method ParserVerificationTestClass::m()
+                Wrong RuntimeInvisibleAnnotations attribute length in method ParserVerificationTestClass::m()
+                Multiple RuntimeVisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
+                Multiple RuntimeInvisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
                 Multiple Signature attributes in method ParserVerificationTestClass::m()
                 Wrong Signature attribute length in method ParserVerificationTestClass::m()
                 Wrong Synthetic attribute length in method ParserVerificationTestClass::m()
                 Multiple Signature attributes in Record component c of class ParserVerificationTestClass
                 Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
-                Multiple Signature attributes in Record component c of class ParserVerificationTestClass
-                Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
-                Multiple RuntimeVisibleAnnotations attributes in class ParserVerificationTestClass
-                Multiple RuntimeInvisibleAnnotations attributes in class ParserVerificationTestClass
-                Multiple RuntimeVisibleTypeAnnotations attributes in class ParserVerificationTestClass
-                Multiple RuntimeInvisibleTypeAnnotations attributes in class ParserVerificationTestClass
-                Multiple RuntimeVisibleAnnotations attributes in field ParserVerificationTestClass.f
-                Multiple RuntimeInvisibleAnnotations attributes in field ParserVerificationTestClass.f
-                Multiple RuntimeVisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
-                Multiple RuntimeInvisibleTypeAnnotations attributes in field ParserVerificationTestClass.f
-                Multiple RuntimeVisibleAnnotations attributes in method ParserVerificationTestClass::m()
-                Multiple RuntimeInvisibleAnnotations attributes in method ParserVerificationTestClass::m()
-                Multiple RuntimeVisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
-                Multiple RuntimeInvisibleParameterAnnotations attributes in method ParserVerificationTestClass::m()
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeVisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Multiple Signature attributes in Record component c of class ParserVerificationTestClass
+                Wrong Signature attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeVisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 """.lines().filter(exp -> !found.remove(exp)).toList();
