@@ -24,6 +24,7 @@
 import java.awt.AWTException;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
@@ -189,7 +190,7 @@ public final class PassFailJFrame {
 
     private static final CountDownLatch latch = new CountDownLatch(1);
 
-    private static TimeoutHandler timeoutHandler;
+    private static TimeoutHandlerPanel timeoutHandlerPanel;
 
     /**
      * The description of why the test fails.
@@ -446,10 +447,8 @@ public final class PassFailJFrame {
                                                        boolean addLogArea,
                                                        int logAreaRows) {
         JPanel main = new JPanel(new BorderLayout());
-        JButton btnPause = new JButton(TimeoutHandler.PAUSE_BUTTON_LABEL);
-        JLabel testTimeoutLabel = new JLabel("", JLabel.CENTER);
-        timeoutHandler = new TimeoutHandler(testTimeoutLabel, btnPause, testTimeOut);
-        main.add(testTimeoutLabel, BorderLayout.NORTH);
+        timeoutHandlerPanel = new TimeoutHandlerPanel(testTimeOut);
+        main.add(timeoutHandlerPanel, BorderLayout.NORTH);
 
         JTextComponent text = instructions.startsWith("<html>")
                               ? configureHTML(instructions, rows, columns)
@@ -461,19 +460,18 @@ public final class PassFailJFrame {
         JButton btnPass = new JButton("Pass");
         btnPass.addActionListener((e) -> {
             latch.countDown();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JButton btnFail = new JButton("Fail");
         btnFail.addActionListener((e) -> {
             requestFailureReason();
-            timeoutHandler.stop();
+            timeoutHandlerPanel.stop();
         });
 
         JPanel buttonsPanel = new JPanel();
         buttonsPanel.add(btnPass);
         buttonsPanel.add(btnFail);
-        buttonsPanel.add(btnPause);
 
         if (enableScreenCapture) {
             buttonsPanel.add(createCapturePanel());
@@ -639,11 +637,12 @@ public final class PassFailJFrame {
     }
 
 
-    private static final class TimeoutHandler implements ActionListener {
+    private static final class TimeoutHandlerPanel
+            extends JPanel
+            implements ActionListener {
 
-        private static final String PAUSED_LABEL_SUFFIX = " PAUSED";
-        private static final String PAUSE_BUTTON_LABEL = "Pause Timer";
-        private static final String RESUME_BUTTON_LABEL = "Resume Timer";
+        private static final String PAUSE_BUTTON_LABEL = "Pause";
+        private static final String RESUME_BUTTON_LABEL = "Resume";
 
         private long endTime;
         private long pauseTimeLeft;
@@ -653,19 +652,24 @@ public final class PassFailJFrame {
         private final JLabel label;
         private final JButton button;
 
-        public TimeoutHandler(final JLabel label,
-                              final JButton button,
-                              final long testTimeOut) {
-            endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(testTimeOut);
+        public TimeoutHandlerPanel(final long testTimeOut) {
+            endTime = System.currentTimeMillis()
+                    + TimeUnit.MINUTES.toMillis(testTimeOut);
 
-            this.label = label;
-            this.button = button;
+            label =  new JLabel("", JLabel.CENTER);
+            button = new JButton(TimeoutHandlerPanel.PAUSE_BUTTON_LABEL);
+
+            button.setFocusPainted(false);
+            button.setFont(new Font(Font.DIALOG, Font.BOLD, 10));
+            button.addActionListener(e -> pauseToggle());
+
+            setLayout(new BorderLayout());
+            add(label, BorderLayout.CENTER);
+            add(button, BorderLayout.EAST);
 
             timer = new Timer(1000, this);
             timer.start();
             updateTime(testTimeOut);
-
-            button.addActionListener(e -> pauseToggle());
         }
 
         @Override
@@ -698,12 +702,13 @@ public final class PassFailJFrame {
             if (timer.isRunning()) {
                 pauseTimeLeft = endTime - System.currentTimeMillis();
                 timer.stop();
-                label.setText(label.getText() + PAUSED_LABEL_SUFFIX);
+                label.setEnabled(false);
                 button.setText(RESUME_BUTTON_LABEL);
             } else {
                 endTime = System.currentTimeMillis() + pauseTimeLeft;
                 updateTime(pauseTimeLeft);
                 timer.start();
+                label.setEnabled(true);
                 button.setText(PAUSE_BUTTON_LABEL);
             }
         }
