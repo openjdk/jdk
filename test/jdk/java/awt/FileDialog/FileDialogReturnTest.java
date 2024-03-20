@@ -21,16 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6260676
- * @summary FileDialog.setDirectory() does not work properly, XToolkit
- * @requires (os.family == "linux")
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
- * @run main/manual FileDialogReturnTest.html
- */
-
 import java.awt.Button;
 import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
@@ -43,11 +33,21 @@ import java.lang.reflect.InvocationTargetException;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import jtreg.SkippedException;
+
+/*
+ * @test
+ * @bug 6260676
+ * @summary FileDialog.setDirectory() does not work properly, XToolkit
+ * @requires (os.family == "linux")
+ * @library /java/awt/regtesthelpers
+ * @library /test/lib
+ * @build PassFailJFrame
+ * @build jtreg.SkippedException
+ * @run main/manual FileDialogReturnTest.html
+ */
 
 public class FileDialogReturnTest {
-    static final TextField fileField = new TextField("", 20);
-    static final TextField dirField = new TextField("", 20);
-    static final Button button = new Button("Show");
 
     private static JFrame initialize() {
         JFrame frame = new JFrame("File Dialog Return Test Frame");
@@ -65,6 +65,7 @@ public class FileDialogReturnTest {
         gbc.fill = GridBagConstraints.WEST;
         frame.add(new Label("File:"), gbc);
 
+        TextField fileField = new TextField("", 20);
         gbc.gridx = 1;
         gbc.gridy = 0;
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -75,11 +76,13 @@ public class FileDialogReturnTest {
         gbc.fill = GridBagConstraints.WEST;
         frame.add(new Label("Dir:"), gbc);
 
+        TextField dirField = new TextField("", 20);
         gbc.gridx = 1;
         gbc.gridy = 1;
         gbc.fill = GridBagConstraints.HORIZONTAL;
         frame.add(dirField, gbc);
 
+        Button button = new Button("Show");
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.gridwidth = 2;
@@ -124,9 +127,7 @@ public class FileDialogReturnTest {
 
         String toolkit = Toolkit.getDefaultToolkit().getClass().getName();
         if (!toolkit.equals("sun.awt.X11.XToolkit")) {
-            instructions = """
-                    The test is not applicable for $toolkit. Press Pass.
-                    """. replace("$toolkit", toolkit);
+            throw new SkippedException("Test is not designed for toolkit " + toolkit);
         }
 
         PassFailJFrame.builder()
