@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8326643
  * @summary Test for out-of-sequence change_cipher_spec in TLSv1.3
  * @library /javax/net/ssl/templates
  * @run main/othervm EngineOutOfSeqCCS isHRRTest
