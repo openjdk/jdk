@@ -23,10 +23,11 @@
 
 /* @test
  * @bug 4078566 6658398
+ * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test for a memory leak in Image.
- * @run main MemoryLeakTest
+ * @run main/manual MemoryLeakTest
  */
 
 import java.awt.Color;
@@ -39,7 +40,7 @@ import java.awt.event.ComponentListener;
 public class MemoryLeakTest {
     private static final String INSTRUCTIONS =
         """
-         Do the following steps on Solaris only.
+         Do the following steps on Unix platforms.
          Maximize and minimize the Memory Leak Test window.
          Execute the following after minimize.
              ps -al | egrep -i 'java|PPID'
