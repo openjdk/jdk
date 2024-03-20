@@ -1045,9 +1045,10 @@ void SuperWord::extend_pairset_with_more_pairs_by_following_use_and_def() {
   bool changed;
   do {
     changed = false;
-    for (PairSetIterator pair(_pairset); !pair.done(); pair.next()) {
-      Node* s1 = pair.left();
-      Node* s2 = pair.right();
+    // Iterate the pairs in insertion order.
+    for (int i =0; i < _pairset.length(); i++) {
+      Node* s1 = _pairset.left_at(i);
+      Node* s2 = _pairset.right_at(i);
       changed |= extend_pairset_with_more_pairs_by_following_def(s1, s2);
       changed |= extend_pairset_with_more_pairs_by_following_use(s1, s2);
     }
@@ -3786,7 +3787,7 @@ void SuperWord::adjust_pre_loop_limit_to_align_main_loop_vectors() {
 
 #ifndef PRODUCT
 void PairSet::print() const {
-  tty->print_cr("\nPairSet::print: %d pairs", _pair_counter);
+  tty->print_cr("\nPairSet::print: %d pairs", length());
   int chain = 0;
   int chain_index = 0;
   for (PairSetIterator pair(*this); !pair.done(); pair.next()) {

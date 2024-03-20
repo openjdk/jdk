@@ -68,7 +68,8 @@ private:
   GrowableArray<int> _left_to_right; // bb_idx -> bb_idx
   GrowableArray<int> _right_to_left; // bb_idx -> bb_idx
 
-  int _pair_counter;
+  // List of all left elements bb_idx, in the order of pair addition.
+  GrowableArray<int> _lefts_in_insertion_order;
 
 public:
   // Initialize empty, i.e. all not linked (-1).
@@ -77,10 +78,10 @@ public:
     _body(vloop_analyzer.body()),
     _left_to_right(arena, _body.body().length(), _body.body().length(), -1),
     _right_to_left(arena, _body.body().length(), _body.body().length(), -1),
-    _pair_counter(0) {}
+    _lefts_in_insertion_order(arena, 8, 0, 0) {}
 
   const VLoopBody& body() const { return _body; }
-  bool is_empty() const { return _pair_counter == 0; }
+  bool is_empty() const { return _lefts_in_insertion_order.is_empty(); }
   bool has_left(int i)  const { return _left_to_right.at(i) != -1; }
   bool has_right(int i) const { return _right_to_left.at(i) != -1; }
   bool has_left(const Node* n)  const { return _vloop.in_bb(n) && has_left( _body.bb_idx(n)); }
@@ -94,6 +95,11 @@ public:
   Node* get_right_for(const Node* n) const { return _body.body().at(get_right_for(_body.bb_idx(n))); }
   Node* get_right_or_null_for(const Node* n) const { return has_left(n) ? get_right_for(n) : nullptr; }
 
+  // To access elements in insertion order:
+  int length() const { return _lefts_in_insertion_order.length(); }
+  Node* left_at(int i)  const { return _body.body().at(_lefts_in_insertion_order.at(i)); }
+  Node* right_at(int i) const { return _body.body().at(get_right_for(_lefts_in_insertion_order.at(i))); }
+
   void add_pair(Node* n1, Node* n2) {
     assert(n1 != nullptr && n2 != nullptr && n1 != n2, "no nullptr, and different nodes");
     assert(!has_left(n1) && !has_right(n2), "cannot be left twice, or right twice");
@@ -101,7 +107,7 @@ public:
     int bb_idx_2 = _body.bb_idx(n2);
     _left_to_right.at_put(bb_idx_1, bb_idx_2);
     _right_to_left.at_put(bb_idx_2, bb_idx_1);
-    _pair_counter++;
+    _lefts_in_insertion_order.append(bb_idx_1);
     assert(has_left(n1) && has_right(n2), "must be set now");
   }
 
