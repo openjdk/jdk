@@ -537,6 +537,18 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<languageAlias type="und_xiang" replacement="und" reason="deprecated"/>
 			<languageAlias type="und_hepburn_heploc" replacement="und_alalc97" reason="deprecated"/>
 
+			<!-- more deprecated 2024-03-19 -->
+			<languageAlias type="ajp" replacement="apc" reason="deprecated"/> <!-- South Levantine Arabic ⇒ Levantine Arabic -->
+			<languageAlias type="kgm" replacement="plu" reason="deprecated"/> <!-- Karipúna ⇒ Palikúr -->
+			<languageAlias type="nom" replacement="cbr" reason="deprecated"/> <!-- Nocamán ⇒ Cashibo-Cacataibo -->
+			<languageAlias type="pmk" replacement="crr" reason="deprecated"/> <!-- Pamlico ⇒ Carolina Algonquian -->
+			<languageAlias type="prp" replacement="gu" reason="deprecated"/> <!-- Parsi ⇒ Gujarati -->
+			<languageAlias type="szd" replacement="umi" reason="deprecated"/> <!-- Seru ⇒ Ukit -->
+			<languageAlias type="tmk" replacement="tdg" reason="deprecated"/> <!-- Northwestern Tamang ⇒ Western Tamang -->
+			<languageAlias type="tpw" replacement="tpn" reason="deprecated"/> <!-- Tupí ⇒ Tupinambá -->
+			<languageAlias type="xss" replacement="zko" reason="deprecated"/> <!-- Assan ⇒ Kott -->
+			<languageAlias type="zkb" replacement="kjh" reason="deprecated"/> <!-- Koibal ⇒ Khakas -->
+
             <!-- scripts -->
             <scriptAlias type="Qaai" replacement="Zinh" reason="deprecated"/>
             <!-- deprecated ISO territories in 3066 + CLDR ones (older deprecated ISO codes -->
