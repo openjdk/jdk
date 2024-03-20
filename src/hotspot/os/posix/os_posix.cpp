@@ -711,10 +711,12 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
-  void* ret = dlsym(handle, name);
+  void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
-    const char* tmp = dlerror();
-    log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    const char* tmp = ::dlerror();
+    if (tmp != nullptr) {
+      log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
+    }
   }
   return ret;
 }
