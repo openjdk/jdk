@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,39 +21,52 @@
  * questions.
  */
 
+import java.awt.event.ItemEvent;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
 /*
  * @test
  * @bug 4129681
- * @summary Tests enabling/disabling of titled border's caption
- * @author Sergey Malenkov
- * @run applet/manual=yesno Test4129681.html
+ * @summary Tests disabling of titled border's caption
+ * @library /java/awt/regtesthelpers
+ * @build PassFailJFrame
+ * @run main/manual Test4129681
  */
 
-import java.awt.BorderLayout;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-import javax.swing.BorderFactory;
-import javax.swing.JApplet;
-import javax.swing.JCheckBox;
-import javax.swing.JLabel;
+public class Test4129681 {
+    public static void main(String[] args) throws Exception {
+        String testInstructions = """
+                Click the checkbox to disable the label.
+                The test passes if the title of the border
+                is disabled as well as the label.
+                """;
 
-public class Test4129681 extends JApplet implements ItemListener {
-    private JLabel label;
-
-    @Override
-    public void init() {
-        JCheckBox check = new JCheckBox("disable");
-        check.addItemListener(this);
-
-        this.label = new JLabel("message");
-        this.label.setBorder(BorderFactory.createTitledBorder("label"));
-        this.label.setEnabled(!check.isSelected());
-
-        add(BorderLayout.NORTH, check);
-        add(BorderLayout.CENTER, this.label);
+        PassFailJFrame.builder()
+                .title("Test Instructions")
+                .instructions(testInstructions)
+                .rows(4)
+                .columns(25)
+                .splitUI(Test4129681::init)
+                .build()
+                .awaitAndCheck();
     }
 
-    public void itemStateChanged(ItemEvent event) {
-        this.label.setEnabled(ItemEvent.DESELECTED == event.getStateChange());
+    public static JComponent init() {
+        JLabel label = new JLabel("message");
+        JCheckBox check = new JCheckBox("Enable/Disable");
+        check.addItemListener(event ->
+                label.setEnabled(ItemEvent.DESELECTED == event.getStateChange()));
+        label.setBorder(BorderFactory.createTitledBorder("label"));
+        label.setEnabled(!check.isSelected());
+
+        Box main = Box.createVerticalBox();
+        main.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        main.add(check);
+        main.add(label);
+        return main;
     }
 }

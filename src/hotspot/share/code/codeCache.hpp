@@ -294,7 +294,6 @@ class CodeCache : AllStatic {
   }
 
   static void verify_clean_inline_caches();
-  static void verify_icholder_relocations();
 
   // Deoptimization
  private:
@@ -304,6 +303,9 @@ class CodeCache : AllStatic {
   static void mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope);
   static void mark_for_deoptimization(DeoptimizationScope* deopt_scope, Method* dependee);
   static void make_marked_nmethods_deoptimized();
+
+  static void mark_directives_matches(bool top_only = false);
+  static void recompile_marked_directives_matches();
 
   // Marks dependents during classloading
   static void mark_dependents_on(DeoptimizationScope* deopt_scope, InstanceKlass* dependee);

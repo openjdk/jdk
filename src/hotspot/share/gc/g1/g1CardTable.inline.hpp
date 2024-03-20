@@ -27,7 +27,7 @@
 
 #include "gc/g1/g1CardTable.hpp"
 
-#include "gc/g1/heapRegion.hpp"
+#include "gc/g1/g1HeapRegion.hpp"
 
 inline uint G1CardTable::region_idx_for(CardValue* p) {
   size_t const card_idx = pointer_delta(p, _byte_map, sizeof(CardValue));

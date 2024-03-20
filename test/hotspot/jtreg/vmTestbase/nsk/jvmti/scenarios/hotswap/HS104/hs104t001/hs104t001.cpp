@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,10 @@
  */
 #include <jni.h>
 #include <jvmti.h>
-#include "agent_common.h"
+#include "agent_common.hpp"
 #include <string.h>
-#include "jvmti_tools.h"
-#include "JVMTITools.h"
+#include "jvmti_tools.hpp"
+#include "JVMTITools.hpp"
 
 
 extern "C" {
@@ -48,7 +48,7 @@ JNIEXPORT void JNICALL
                         sizeof(fileName)/sizeof(char));
         if (nsk_jvmti_redefineClass(jvmti, klass, fileName)) {
             nsk_printf("Agent:: Successfully redefined..");
-            if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, NULL)) {
+            if (nsk_jvmti_disableNotification(jvmti,JVMTI_EVENT_CLASS_PREPARE, nullptr)) {
                 nsk_printf(" Agent :: NOTIFICATIONS ARE DISABLED \n");
             } else {
                 nsk_printf(" Agent :: Failed to disabled \n");
@@ -96,7 +96,7 @@ jint  Agent_Initialize(JavaVM *vm, char *options, void *reserved) {
             nsk_printf(" Agent:: Error occured while setting event call back \n");
             return JNI_ERR;
         }
-        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, NULL)) {
+        if (nsk_jvmti_enableNotification(jvmti, JVMTI_EVENT_CLASS_PREPARE, nullptr)) {
             nsk_printf("Agent :: NOTIFICATIONS ARE ENABLED \n");
         } else {
             nsk_printf(" Error in Eanableing Notifications..");

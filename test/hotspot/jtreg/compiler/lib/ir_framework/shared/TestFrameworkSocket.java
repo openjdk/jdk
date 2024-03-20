@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutionException;
@@ -47,7 +49,6 @@ public class TestFrameworkSocket implements AutoCloseable {
     private static final int SERVER_PORT = Integer.getInteger(SERVER_PORT_PROPERTY, -1);
 
     private static final boolean REPRODUCE = Boolean.getBoolean("Reproduce");
-    private static final String HOSTNAME = null;
     private static Socket clientSocket = null;
     private static PrintWriter clientWriter = null;
 
@@ -58,7 +59,8 @@ public class TestFrameworkSocket implements AutoCloseable {
 
     public TestFrameworkSocket() {
         try {
-            serverSocket = new ServerSocket(0);
+            serverSocket = new ServerSocket();
+            serverSocket.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
         } catch (IOException e) {
             throw new TestFrameworkException("Failed to create TestFramework server socket", e);
         }
@@ -132,7 +134,7 @@ public class TestFrameworkSocket implements AutoCloseable {
         try {
             // Keep the client socket open until the test VM terminates (calls closeClientSocket before exiting main()).
             if (clientSocket == null) {
-                clientSocket = new Socket(HOSTNAME, SERVER_PORT);
+                clientSocket = new Socket(InetAddress.getLoopbackAddress(), SERVER_PORT);
                 clientWriter = new PrintWriter(clientSocket.getOutputStream(), true);
             }
             if (stdout) {

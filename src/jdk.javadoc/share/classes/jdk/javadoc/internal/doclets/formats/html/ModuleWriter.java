@@ -277,10 +277,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     @Override
     protected Navigation getNavBar(PageMode pageMode, Element element) {
         return super.getNavBar(pageMode, element)
-                .setSubNavLinks(List.of(
-                    links.createLink(pathToRoot.resolve(docPaths.moduleSummary(mdle)),
-                            Text.of(mdle.getQualifiedName()),
-                            HtmlStyle.currentSelection, "")));
+                .setSubNavLinks(List.of(getBreadcrumbLink(mdle, true)));
     }
 
     protected Content getContentHeader() {

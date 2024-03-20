@@ -4800,11 +4800,13 @@ public class Check {
 
         return false;
     }
-    void checkSwitchCaseLabelDominated(List<JCCase> cases) {
+    void checkSwitchCaseLabelDominated(JCCaseLabel unconditionalCaseLabel, List<JCCase> cases) {
         List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
+        boolean unconditionalFound = false;
+
         for (List<JCCase> l = cases; l.nonEmpty(); l = l.tail) {
             JCCase c = l.head;
             for (JCCaseLabel label : c.labels) {
@@ -4832,10 +4834,11 @@ public class Check {
                     JCCase testCase = caseAndLabel.fst;
                     JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
-                    if (types.isSubtype(currentType, testType) &&
+                    boolean dominated = false;
+                    if (unconditionalCaseLabel == testCaseLabel) unconditionalFound = true;
+                    if (types.isUnconditionallyExact(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
-                        boolean dominated = false;
                         if (label instanceof JCConstantCaseLabel) {
                             dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
                                          TreeInfo.unguardedCase(testCase);
@@ -4845,9 +4848,15 @@ public class Check {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
-                        if (dominated) {
-                            log.error(label.pos(), Errors.PatternDominated);
-                        }
+                    }
+
+                    // Domination can occur even when we have not an unconditional pair between case labels.
+                    if (unconditionalFound && unconditionalCaseLabel != label) {
+                        dominated = true;
+                    }
+
+                    if (dominated) {
+                        log.error(label.pos(), Errors.PatternDominated);
                     }
                 }
                 caseLabels = caseLabels.prepend(Pair.of(c, label));
@@ -4858,22 +4867,15 @@ public class Check {
         private Type labelType(JCCaseLabel label) {
             return types.erasure(switch (label.getTag()) {
                 case PATTERNCASELABEL -> ((JCPatternCaseLabel) label).pat.type;
-                case CONSTANTCASELABEL -> types.boxedTypeOrType(((JCConstantCaseLabel) label).expr.type);
+                case CONSTANTCASELABEL -> ((JCConstantCaseLabel) label).expr.type;
                 default -> throw Assert.error("Unexpected tree kind: " + label.getTag());
             });
         }
         private boolean patternDominated(JCPattern existingPattern, JCPattern currentPattern) {
             Type existingPatternType = types.erasure(existingPattern.type);
             Type currentPatternType = types.erasure(currentPattern.type);
-            if (existingPatternType.isPrimitive() ^ currentPatternType.isPrimitive()) {
+            if (!types.isUnconditionallyExact(currentPatternType, existingPatternType)) {
                 return false;
-            }
-            if (existingPatternType.isPrimitive()) {
-                return types.isSameType(existingPatternType, currentPatternType);
-            } else {
-                if (!types.isSubtype(currentPatternType, existingPatternType)) {
-                    return false;
-                }
             }
             if (currentPattern instanceof JCBindingPattern ||
                 currentPattern instanceof JCAnyPattern) {
