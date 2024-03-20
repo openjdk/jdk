@@ -145,7 +145,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -266,7 +270,10 @@ public class Comparators {
                     result = compareFullyQualifiedNames(e1, e2);
                     if (result != 0)
                         return result;
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0)
+                        return result;
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -366,7 +373,11 @@ public class Comparators {
                     if (result != 0) {
                         return result;
                     }
-                    return compareModuleNames(e1, e2);
+                    result = compareModuleNames(e1, e2);
+                    if (result != 0) {
+                        return result;
+                    }
+                    return compareTypeParameters(e1, e2);
                 }
             };
         }
@@ -425,8 +436,11 @@ public class Comparators {
             }.visit(t);
         }
 
-        private int compareTypeParameters(List<? extends TypeParameterElement> typeParameters1,
-                                          List<? extends TypeParameterElement> typeParameters2) {
+        protected final int compareTypeParameters(Element e1, Element e2) {
+            if (!e1.getKind().isExecutable() || !e2.getKind().isExecutable())
+                return 0;
+            var typeParameters1 = ((ExecutableElement) e1).getTypeParameters();
+            var typeParameters2 = ((ExecutableElement) e2).getTypeParameters();
             var parameters1 = typeParameters1.toArray(new TypeParameterElement[0]);
             var parameters2 = typeParameters2.toArray(new TypeParameterElement[0]);
             return Arrays.compare(parameters1, parameters2, (p1, p2) -> {
@@ -500,11 +514,6 @@ public class Comparators {
                     return result;
                 }
                 result = compareParameters(true, parameters1, parameters2);
-                if (result != 0) {
-                    return result;
-                }
-                result = compareTypeParameters(((ExecutableElement) e1).getTypeParameters(),
-                        ((ExecutableElement) e2).getTypeParameters());
             }
             return result;
         }
