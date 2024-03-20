@@ -44,7 +44,7 @@ import jtreg.SkippedException;
  * @library /test/lib
  * @build PassFailJFrame
  * @build jtreg.SkippedException
- * @run main/manual FileDialogReturnTest.html
+ * @run main/manual FileDialogReturnTest
  */
 
 public class FileDialogReturnTest {
