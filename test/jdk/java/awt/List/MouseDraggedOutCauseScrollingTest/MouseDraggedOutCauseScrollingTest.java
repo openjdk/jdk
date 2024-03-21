@@ -62,7 +62,7 @@ public class MouseDraggedOutCauseScrollingTest {
         frame.add(choice);
         frame.add(singleList);
         frame.add(multipleList);
-        frame.setSize(400,100);
+        frame.setSize(400, 100);
         return frame;
     }
 
