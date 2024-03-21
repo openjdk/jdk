@@ -1217,6 +1217,10 @@ void LIR_Assembler::emit_alloc_array(LIR_OpAllocArray* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void poo() {
+  asm("nop");
+}
+
 void LIR_Assembler::type_profile_helper(Register mdo,
                                         ciMethodData *md, ciProfileData *data,
                                         Register recv, Label* update_done) {
@@ -1353,6 +1357,69 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
         // check for self
         __ cmp(klass_RInfo, k_RInfo);
         __ br(Assembler::EQ, *success_target);
+
+        if (HashSecondarySupers) {
+          __ block_comment("Hashed check_klass_subtype_slow_path {");
+
+          // __ call_VM_leaf(CAST_FROM_FN_PTR(address, &poo), 0);
+          Klass *super_klass = (Klass*)(k->constant_encoding());
+          const Register r_sub_klass = klass_RInfo;
+          const Register r_super_klass = k_RInfo;
+          const FloatRegister vtemp = op->tmp4()->as_double_reg();
+          const Register r_bitmap = Rtmp1;
+          const Register r_array_index = rscratch1;
+
+          // We're going to need the bitmap in a vector reg and in a core reg,
+          // so load both now.
+          __ ldr(r_bitmap, Address(r_sub_klass, Klass::bitmap_offset()));
+          if (super_klass->hash() != 0) {
+            __ ldrd(vtemp, Address(r_sub_klass, Klass::bitmap_offset()));
+          }
+
+          // First check the bitmap to see if super_klass might be present. If
+          // the bit is zero, we are certain that super_klass is not one of
+          // the secondary supers.
+          u1 bit = super_klass->hash_slot();
+          {
+            Label keep_going;
+            __ tbnz(r_bitmap, bit, keep_going);
+            __ b(*failure_target);
+            __ bind(keep_going);
+          }
+
+          // // Get the first array index that can contain super_klass into r_array_index.
+          if (bit != 0) {
+            __ shld(vtemp, vtemp, Klass::SEC_HASH_MASK - bit);
+            __ cnt(vtemp, __ T8B, vtemp);
+            __ addv(vtemp, __ T8B, vtemp);
+            __ fmovd(r_array_index, vtemp);
+          } else {
+            __ mov(r_array_index, (u1)1);
+          }
+
+          // // We will consult the secondary-super array.
+          __ ldr(rscratch2, Address(r_sub_klass, in_bytes(Klass::secondary_supers_offset())));
+
+          // The value i in r_array_index is >= 1, so even though r_array_base
+          // points to the length, we don't need to adjust it to point to the
+          // data.
+          assert(Array<Klass*>::base_offset_in_bytes() == wordSize, "Adjust this code");
+          assert(Array<Klass*>::length_offset_in_bytes() == 0, "Adjust this code");
+
+          __ ldr(rscratch2, Address(rscratch2, r_array_index, Address::lsl(LogBytesPerWord)));
+          __ cmp(rscratch2, r_super_klass);
+          __ br(__ EQ, *success_target); // Found a match
+
+          // Is there another entry to check? Consult the bitmap.
+          {
+            Label keep_going;
+            __ tbnz(r_bitmap, (bit+1) & Klass::SEC_HASH_MASK, keep_going);
+            __ b(*failure_target);
+            __ bind(keep_going);
+          }
+
+          __ block_comment("} hashed check_klass_subtype_slow_path");
+        }
 
         __ stp(klass_RInfo, k_RInfo, Address(__ pre(sp, -2 * wordSize)));
         __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::slow_subtype_check_id)));

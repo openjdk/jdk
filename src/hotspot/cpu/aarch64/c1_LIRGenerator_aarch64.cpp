@@ -298,7 +298,8 @@ void LIRGenerator::array_store_check(LIR_Opr value, LIR_Opr array, CodeEmitInfo*
     LIR_Opr tmp1 = new_register(objectType);
     LIR_Opr tmp2 = new_register(objectType);
     LIR_Opr tmp3 = new_register(objectType);
-    __ store_check(value, array, tmp1, tmp2, tmp3, store_check_info, profiled_method, profiled_bci);
+    LIR_Opr tmp4 = new_register(doubleType);
+    __ store_check(value, array, tmp1, tmp2, tmp3, tmp4, store_check_info, profiled_method, profiled_bci);
 }
 
 //----------------------------------------------------------------------
@@ -1271,11 +1272,16 @@ void LIRGenerator::do_CheckCast(CheckCast* x) {
   }
   LIR_Opr reg = rlock_result(x);
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
+  LIR_Opr vtmp = LIR_OprFact::illegalOpr;
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
+  if (HashSecondarySupers) {
+    vtmp = new_register(doubleType);
+  }
+
   __ checkcast(reg, obj.result(), x->klass(),
-               new_register(objectType), new_register(objectType), tmp3,
+               new_register(objectType), new_register(objectType), tmp3, vtmp,
                x->direct_compare(), info_for_exception, patching_info, stub,
                x->profiled_method(), x->profiled_bci());
 }
@@ -1292,11 +1298,15 @@ void LIRGenerator::do_InstanceOf(InstanceOf* x) {
   }
   obj.load_item();
   LIR_Opr tmp3 = LIR_OprFact::illegalOpr;
+  LIR_Opr vtmp = LIR_OprFact::illegalOpr;
   if (!x->klass()->is_loaded() || UseCompressedClassPointers) {
     tmp3 = new_register(objectType);
   }
+  if (HashSecondarySupers) {
+    vtmp = new_register(doubleType);
+  }
   __ instanceof(reg, obj.result(), x->klass(),
-                new_register(objectType), new_register(objectType), tmp3,
+                new_register(objectType), new_register(objectType), tmp3, vtmp,
                 x->direct_compare(), patching_info, x->profiled_method(), x->profiled_bci());
 }
 

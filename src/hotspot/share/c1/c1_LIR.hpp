@@ -1544,6 +1544,7 @@ class LIR_OpTypeCheck: public LIR_Op {
   LIR_Opr       _tmp1;
   LIR_Opr       _tmp2;
   LIR_Opr       _tmp3;
+  LIR_Opr       _tmp4;
   bool          _fast_check;
   CodeEmitInfo* _info_for_patch;
   CodeEmitInfo* _info_for_exception;
@@ -1554,16 +1555,18 @@ class LIR_OpTypeCheck: public LIR_Op {
 
 public:
   LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, ciKlass* klass,
-                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
-                  CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub);
+                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4,
+                  bool fast_check, CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch,
+                  CodeStub* stub);
   LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array,
-                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception);
+                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, CodeEmitInfo* info_for_exception);
 
   LIR_Opr object() const                         { return _object;         }
   LIR_Opr array() const                          { assert(code() == lir_store_check, "not valid"); return _array;         }
   LIR_Opr tmp1() const                           { return _tmp1;           }
   LIR_Opr tmp2() const                           { return _tmp2;           }
   LIR_Opr tmp3() const                           { return _tmp3;           }
+  LIR_Opr tmp4() const                           { return _tmp4;           }
   ciKlass* klass() const                         { assert(code() == lir_instanceof || code() == lir_checkcast, "not valid"); return _klass;          }
   bool fast_check() const                        { assert(code() == lir_instanceof || code() == lir_checkcast, "not valid"); return _fast_check;     }
   CodeEmitInfo* info_for_patch() const           { return _info_for_patch;  }
@@ -2357,11 +2360,11 @@ class LIR_List: public CompilationResourceObj {
 
   void update_crc32(LIR_Opr crc, LIR_Opr val, LIR_Opr res)  { append(new LIR_OpUpdateCRC32(crc, val, res)); }
 
-  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
-  void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
+  void instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci);
+  void store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci);
 
   void checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
-                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
+                  LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check,
                   CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                   ciMethod* profiled_method, int profiled_bci);
   // MethodData* profiling

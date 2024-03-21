@@ -287,7 +287,7 @@ void LIR_OpBranch::negate_cond() {
 
 
 LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, ciKlass* klass,
-                                 LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
+                                 LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4,
                                  bool fast_check, CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch,
                                  CodeStub* stub)
 
@@ -298,6 +298,7 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
+  , _tmp4(tmp4)
   , _fast_check(fast_check)
   , _info_for_patch(info_for_patch)
   , _info_for_exception(info_for_exception)
@@ -317,7 +318,7 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr result, LIR_Opr object, 
 
 
 
-LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, CodeEmitInfo* info_for_exception)
+LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, CodeEmitInfo* info_for_exception)
   : LIR_Op(code, LIR_OprFact::illegalOpr, nullptr)
   , _object(object)
   , _array(array)
@@ -325,6 +326,7 @@ LIR_OpTypeCheck::LIR_OpTypeCheck(LIR_Code code, LIR_Opr object, LIR_Opr array, L
   , _tmp1(tmp1)
   , _tmp2(tmp2)
   , _tmp3(tmp3)
+  , _tmp4(tmp4)
   , _fast_check(false)
   , _info_for_patch(nullptr)
   , _info_for_exception(info_for_exception)
@@ -834,6 +836,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
       if (opTypeCheck->_tmp1->is_valid())         do_temp(opTypeCheck->_tmp1);
       if (opTypeCheck->_tmp2->is_valid())         do_temp(opTypeCheck->_tmp2);
       if (opTypeCheck->_tmp3->is_valid())         do_temp(opTypeCheck->_tmp3);
+      if (opTypeCheck->_tmp4->is_valid())         do_temp(opTypeCheck->_tmp4);
       if (opTypeCheck->_result->is_valid())       do_output(opTypeCheck->_result);
       if (opTypeCheck->_stub != nullptr)          do_stub(opTypeCheck->_stub);
       break;
@@ -1444,11 +1447,11 @@ void check_LIR() {
 
 
 void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
-                          LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check,
+                          LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check,
                           CodeEmitInfo* info_for_exception, CodeEmitInfo* info_for_patch, CodeStub* stub,
                           ciMethod* profiled_method, int profiled_bci) {
   LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_checkcast, result, object, klass,
-                                           tmp1, tmp2, tmp3, fast_check, info_for_exception, info_for_patch, stub);
+                                           tmp1, tmp2, tmp3, tmp4, fast_check, info_for_exception, info_for_patch, stub);
   if (profiled_method != nullptr) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
@@ -1457,8 +1460,8 @@ void LIR_List::checkcast (LIR_Opr result, LIR_Opr object, ciKlass* klass,
   append(c);
 }
 
-void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
-  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, fast_check, nullptr, info_for_patch, nullptr);
+void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4, bool fast_check, CodeEmitInfo* info_for_patch, ciMethod* profiled_method, int profiled_bci) {
+  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_instanceof, result, object, klass, tmp1, tmp2, tmp3, tmp4, fast_check, nullptr, info_for_patch, nullptr);
   if (profiled_method != nullptr) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
@@ -1468,9 +1471,9 @@ void LIR_List::instanceof(LIR_Opr result, LIR_Opr object, ciKlass* klass, LIR_Op
 }
 
 
-void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3,
+void LIR_List::store_check(LIR_Opr object, LIR_Opr array, LIR_Opr tmp1, LIR_Opr tmp2, LIR_Opr tmp3, LIR_Opr tmp4,
                            CodeEmitInfo* info_for_exception, ciMethod* profiled_method, int profiled_bci) {
-  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, info_for_exception);
+  LIR_OpTypeCheck* c = new LIR_OpTypeCheck(lir_store_check, object, array, tmp1, tmp2, tmp3, tmp4, info_for_exception);
   if (profiled_method != nullptr) {
     c->set_profiled_method(profiled_method);
     c->set_profiled_bci(profiled_bci);
@@ -2010,6 +2013,7 @@ void LIR_OpTypeCheck::print_instr(outputStream* out) const {
   tmp1()->print(out);                    out->print(" ");
   tmp2()->print(out);                    out->print(" ");
   tmp3()->print(out);                    out->print(" ");
+  tmp4()->print(out);                    out->print(" ");
   result_opr()->print(out);              out->print(" ");
   if (info_for_exception() != nullptr) out->print(" [bci:%d]", info_for_exception()->stack()->bci());
 }
