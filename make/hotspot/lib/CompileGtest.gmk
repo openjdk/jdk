@@ -105,6 +105,8 @@ $(eval $(call SetupJdkLibrary, BUILD_GTEST_LIBJVM, \
     DISABLED_WARNINGS_clang_test_g1ServiceThread.cpp := delete-abstract-non-virtual-dtor, \
     DISABLED_WARNINGS_clang_test_logDecorations.cpp := missing-field-initializers, \
     DISABLED_WARNINGS_microsoft := $(DISABLED_WARNINGS_microsoft), \
+    LD_SET_ORIGIN := false, \
+    DEFAULT_LDFLAGS := false, \
     LDFLAGS := $(JVM_LDFLAGS), \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/libgtest, \
     LIBS := $(JVM_LIBS), \
@@ -142,7 +144,7 @@ $(eval $(call SetupJdkExecutable, BUILD_GTEST_LAUNCHER, \
         -I$(GTEST_FRAMEWORK_SRC)/googletest/include \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock \
         -I$(GTEST_FRAMEWORK_SRC)/googlemock/include, \
-    LDFLAGS := $(LDFLAGS_JDKEXE), \
+    LD_SET_ORIGIN := false, \
     LDFLAGS_unix := -L$(JVM_OUTPUTDIR)/gtest $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := $(JVM_OUTPUTDIR)/gtest/objs/jvm.lib, \

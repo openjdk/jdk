@@ -31,8 +31,6 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBJ2PKCS11, \
     NAME := j2pkcs11, \
     OPTIMIZATION := LOW, \
     DISABLED_WARNINGS_clang_p11_util.c := format-nonliteral, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := $(LIBDL), \
 ))
 

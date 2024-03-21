@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -531,7 +531,7 @@ class G1ScanHRForRegionClosure : public HeapRegionClosure {
       return;
     }
 
-    HeapWord* scan_end = MIN2(card_start + (num_cards << BOTConstants::log_card_size_in_words()), top);
+    HeapWord* scan_end = MIN2(card_start + (num_cards << CardTable::card_shift_in_words()), top);
     if (_scanned_to >= scan_end) {
       return;
     }
@@ -1133,7 +1133,7 @@ class G1MergeHeapRootsTask : public WorkerTask {
       // so the bitmap for the regions in the collection set must be cleared if not already.
       if (should_clear_region(hr)) {
         _g1h->clear_bitmap_for_region(hr);
-        hr->reset_top_at_mark_start();
+        _g1h->concurrent_mark()->reset_top_at_mark_start(hr);
       } else {
         assert_bitmap_clear(hr, _g1h->concurrent_mark()->mark_bitmap());
       }

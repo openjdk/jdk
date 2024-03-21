@@ -37,8 +37,6 @@ endif
 $(eval $(call SetupJdkLibrary, BUILD_LIBMANAGEMENT, \
     NAME := management, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS := $(JDKLIB_LIBS), \
     LIBS_aix := -lperfstat,\
     LIBS_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \

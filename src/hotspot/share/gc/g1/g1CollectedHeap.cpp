@@ -1174,7 +1174,7 @@ G1CollectedHeap::G1CollectedHeap() :
   _is_alive_closure_stw(this),
   _is_subject_to_discovery_stw(this),
   _ref_processor_cm(nullptr),
-  _is_alive_closure_cm(this),
+  _is_alive_closure_cm(),
   _is_subject_to_discovery_cm(this),
   _region_attr() {
 
@@ -1505,6 +1505,7 @@ void G1CollectedHeap::ref_processing_init() {
   //     * Discovery is atomic - i.e. not concurrent.
   //     * Reference discovery will not need a barrier.
 
+  _is_alive_closure_cm.initialize(concurrent_mark());
   // Concurrent Mark ref processor
   _ref_processor_cm =
     new ReferenceProcessor(&_is_subject_to_discovery_cm,

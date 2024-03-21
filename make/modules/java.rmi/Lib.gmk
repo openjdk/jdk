@@ -30,8 +30,6 @@ include LibCommon.gmk
 $(eval $(call SetupJdkLibrary, BUILD_LIBRMI, \
     NAME := rmi, \
     OPTIMIZATION := LOW, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LIBS_unix := -ljvm, \
     LIBS_windows := jvm.lib, \
 ))

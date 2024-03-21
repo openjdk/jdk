@@ -48,7 +48,6 @@ ifeq ($(call isTargetOs, windows), true)
         EXTRA_HEADER_DIRS := \
             include/bridge \
             java.desktop:include, \
-        LDFLAGS := $(LDFLAGS_JDKLIB), \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
             $(SUPPORT_OUTPUTDIR)/native/java.desktop/libjawt/jawt.lib \
@@ -74,7 +73,7 @@ ifeq ($(call isTargetOs, windows), true)
         CXXFLAGS := -DACCESSBRIDGE_ARCH_$2, \
         EXTRA_HEADER_DIRS := \
             include/bridge, \
-        LDFLAGS := $(LDFLAGS_JDKLIB) \
+        LDFLAGS := \
             -def:$(ACCESSIBILITY_SRCDIR)/libwindowsaccessbridge/WinAccessBridge.DEF, \
         LIBS := kernel32.lib user32.lib gdi32.lib \
             winspool.lib comdlg32.lib advapi32.lib shell32.lib \
@@ -91,7 +90,6 @@ ifeq ($(call isTargetOs, windows), true)
     $(call SetupJdkLibrary, BUILD_ACCESSBRIDGESYSINFO, \
         NAME := jabsysinfo, \
         OPTIMIZATION := LOW, \
-        LDFLAGS := $(LDFLAGS_JDKLIB), \
         VERSIONINFO_RESOURCE := $(ACCESSIBILITY_SRCDIR)/common/AccessBridgeStatusWindow.rc, \
     )
 
