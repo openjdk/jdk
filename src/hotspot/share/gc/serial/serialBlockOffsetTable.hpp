@@ -50,8 +50,8 @@ class SerialBlockOffsetSharedArray: public CHeapObj<mtGC> {
   // Biased array-start of BOT array for fast BOT entry translation
   uint8_t* _offset_base;
 
-  void fill_range(const uint8_t* const start, size_t num_cards, uint8_t offset) {
-    memset((void *) start, offset, num_cards);
+  void fill_range(uint8_t* const start, size_t num_cards, uint8_t offset) {
+    memset(start, offset, num_cards);
   }
 
   // Return the number of slots needed for an offset array
