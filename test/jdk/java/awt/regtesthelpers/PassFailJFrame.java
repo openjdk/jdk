@@ -657,7 +657,7 @@ public final class PassFailJFrame {
                     + TimeUnit.MINUTES.toMillis(testTimeOut);
 
             label =  new JLabel("", JLabel.CENTER);
-            button = new JButton(TimeoutHandlerPanel.PAUSE_BUTTON_LABEL);
+            button = new JButton(PAUSE_BUTTON_LABEL);
 
             button.setFocusPainted(false);
             button.setFont(new Font(Font.DIALOG, Font.BOLD, 10));
