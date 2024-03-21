@@ -82,7 +82,7 @@
 // access is allowed when the scope is no longer alive.
 //
 // Closing a scope object (cf. scopedMemoryAccess.cpp) can install
-// an async handshake on the entry to scoped method. When that happens,
+// an async exception during a safepoint. When that happens,
 // scoped methods are not allowed to touch the underlying memory (as that
 // memory might have been released). Therefore, when entering a scoped method
 // we check if an async exception has been installed, and return immediately
