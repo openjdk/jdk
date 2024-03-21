@@ -40,18 +40,19 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 public class GZIPInputStreamConcat {
 
+    private int bufsize;
+    private boolean allowConcatenation;
+    private boolean allowTrailingGarbage;
+
     public static Stream<Object[]> testScenarios() throws IOException {
 
-        // Create some random uncompressed data
-        byte[] uncompressed = randomData(0, 20);
-
-        // Test concat vs. non-concat, garbage vs. no-garbage, and various buffer sizes
+        // Test concat vs. non-concat, garbage vs. no-garbage, and various buffer sizes on random data
         Random random = new Random();
         final ArrayList<List<Object>> scenarios = new ArrayList<>();
-        for (boolean allowConcatenation : new boolean[] { false, true }) {
-            for (boolean allowTrailingGarbage : new boolean[] { false, true }) {
-                for (int bufsize = 1; bufsize < 1024; bufsize += random.nextInt(32) + 1) {
-                    scenarios.add(List.of(uncompressed, bufsize, allowConcatenation, allowTrailingGarbage));
+        for (boolean concat : new boolean[] { false, true }) {
+            for (boolean garbage : new boolean[] { false, true }) {
+                for (int size = 1; size < 1024; size += random.nextInt(32) + 1) {
+                    scenarios.add(List.of(randomData(0, 100), size, concat, garbage));
                 }
             }
         }
@@ -60,8 +61,14 @@ public class GZIPInputStreamConcat {
 
     @ParameterizedTest
     @MethodSource("testScenarios")
-    public void testScenario(byte[] uncompressed, int bufsize, boolean allowConcatenation, boolean allowTrailingGarbage)
-      throws IOException {
+    public void testScenario(byte[] uncompressed, int size, boolean concat, boolean garbage) throws IOException {
+        this.bufsize = size;
+        this.allowConcatenation = concat;
+        this.allowTrailingGarbage = garbage;
+        testScenario(uncompressed);
+    }
+
+    public void testScenario(byte[] uncompressed) throws IOException {
 
         // Compress the test data
         byte[] compressed = deflate(uncompressed);
@@ -69,57 +76,64 @@ public class GZIPInputStreamConcat {
         // Decompress a single stream with no extra garbage - should always work
         byte[] input = compressed;
         byte[] output = uncompressed;
-        testDecomp(input, output, false, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, null);
+
+        // Decompress a truncated GZIP header
+        input = oneByteShort(gzipHeader());
+        testDecomp(input, null, EOFException.class);
 
         // Decompress a single stream that is one byte short - should always fail
         input = oneByteShort(compressed);
         output = null;
-        testDecomp(input, null, true, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, null, EOFException.class);
 
         // Decompress a single stream with one byte of extra garbage (trying all 256 possible values)
         for (int extra = 0; extra < 0x100; extra++) {
             input = oneByteLong(compressed, extra);
             output = uncompressed;
-            testDecomp(input, output, !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+            testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
         }
 
         // Decompress a single stream followed by a truncated GZIP header
         input = concat(compressed, oneByteShort(gzipHeader()));
         output = uncompressed;
-        testDecomp(input, output, !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
 
         // Decompress a single stream followed by another stream that is one byte short
         input = concat(compressed, oneByteShort(compressed));
         output = uncompressed;
-        testDecomp(input, output, allowConcatenation || !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, allowConcatenation || !allowTrailingGarbage ? IOException.class : null);
 
         // Decompress two streams concatenated
         input = concat(compressed, compressed);
         output = allowConcatenation ? concat(uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage ? ZipException.class : null);
 
         // Decompress three streams concatenated
         input = concat(compressed, compressed, compressed);
         output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, !allowConcatenation && !allowTrailingGarbage ? ZipException.class : null);
 
         // Decompress three streams concatenated followed by a truncated GZIP header
         input = concat(compressed, compressed, compressed, oneByteShort(gzipHeader()));
         output = allowConcatenation ? concat(uncompressed, uncompressed, uncompressed) : uncompressed;
-        testDecomp(input, output, !allowTrailingGarbage, bufsize, allowConcatenation, allowTrailingGarbage);
+        testDecomp(input, output, !allowTrailingGarbage ? IOException.class : null);
     }
 
     // Do decompression and check result
-    public static void testDecomp(byte[] compressed, byte[] uncompressed, boolean expectException,
-      int bufsize, boolean allowConcatenation, boolean allowTrailingGarbage) {
+    public void testDecomp(byte[] compressed, byte[] uncompressed, Class<? extends IOException> exceptionType) {
         try {
-            byte[] readback = inflate(new ByteArrayInputStream(compressed), bufsize, allowConcatenation, allowTrailingGarbage);
-            if (expectException)
-                throw new AssertionError("expected exception");
+            byte[] readback = inflate(new ByteArrayInputStream(compressed));
+            if (exceptionType != null)
+                throw new AssertionError("expected " + exceptionType.getSimpleName());
             assertArrayEquals(uncompressed, readback);
         } catch (IOException e) {
-            if (!expectException)
+            if (exceptionType == null)
                 throw new AssertionError("unexpected exception", e);
+            if (!exceptionType.isAssignableFrom(e.getClass())) {
+                throw new AssertionError(String.format(
+                  "expected %s but got %s", exceptionType.getSimpleName(), e.getClass().getSimpleName()), e);
+            }
         }
     }
 
@@ -168,8 +182,7 @@ public class GZIPInputStreamConcat {
     }
 
     // GZIP decompress data
-    public static byte[] inflate(InputStream in, int bufsize, boolean allowConcatenation, boolean allowTrailingGarbage)
-      throws IOException {
+    public byte[] inflate(InputStream in) throws IOException {
         return new GZIPInputStream(in, bufsize, allowConcatenation, allowTrailingGarbage).readAllBytes();
     }
 }

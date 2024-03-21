@@ -123,7 +123,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * {@code allowConcatenation} is true): when {@code allowTrailingGarbage} is true,
      * the unexpected data and/or any {@link IOException} thrown trying to read it is
      * simply discarded and EOF is returned; when {@code allowTrailingGarbage} is false,
-     * any unexpected data triggers a {@link ZipException}, and any {@link IOException}
+     * any unexpected data triggers an {@link IOException}, and any {@link IOException}
      * thrown by the underlying input stream is propagated to the caller.
      *
      * @apiNote The original behavior of this class is replicated by setting both
@@ -137,7 +137,7 @@ public class GZIPInputStream extends InflaterInputStream {
      * @param allowConcatenation true to allow multiple concatenated compressed data streams,
      *                           or false to expect exactly one compressed data stream
      * @param allowTrailingGarbage true to tolerate and ignore trailing garbage, false to
-     *                             throw {@link ZipException} if trailing garbage is encountered
+     *                             throw {@link IOException} if trailing garbage is encountered
      *
      * @throws    ZipException if a GZIP format error has occurred or the
      *                         compression method used is unsupported
@@ -314,15 +314,27 @@ public class GZIPInputStream extends InflaterInputStream {
                 return true;  // ignore any malformed, do nothing
             }
         } else {
+
+            // If there is no more data, the input has terminated at a proper GZIP boundary
             int nextByte = in.read();
             if (nextByte == -1)
                 return true;
-            if (!allowConcatenation) {      // there's not supposed to be any more data!
+
+            // There is more data. If we are not allowing concatenation, then we have trailing garbage
+            if (!allowConcatenation) {
                 if (!allowTrailingGarbage)
                     throw new ZipException("Trailing garbage after GZIP trailer");
                 return true;
             }
-            m += readHeader(in, nextByte);                  // next.header
+
+            // We are allowing concatenation; try to read the next GZIP header
+            try {
+                m += readHeader(in, nextByte);              // next.header
+            } catch (IOException e) {
+                if (!allowTrailingGarbage)
+                    throw e;
+                return true;
+            }
         }
 
         // Pass along any remaining buffered data to the new inflater
