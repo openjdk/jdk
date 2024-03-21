@@ -84,7 +84,7 @@ public class bug8032667 {
                         scaledWidth, scaledHeight, this);
             }
         };
-        frame.getContentPane().add(panel, BorderLayout.CENTER);
+        frame.add(panel, BorderLayout.CENTER);
         return frame;
     }
 
