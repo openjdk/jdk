@@ -139,7 +139,7 @@ class VerifierSelfTest {
                 SyntheticAttribute.of())
                     .withInterfaceSymbols(CD_List, CD_List)
                     .withField("f", CD_String, fb -> patch(fb,
-                            ConstantValueAttribute.of(""),
+                            ConstantValueAttribute.of(0),
                             DeprecatedAttribute.of(),
                             RuntimeVisibleAnnotationsAttribute.of(),
                             RuntimeInvisibleAnnotationsAttribute.of(),
@@ -222,6 +222,8 @@ class VerifierSelfTest {
                 Wrong SourceID attribute length in class ParserVerificationTestClass
                 Wrong Synthetic attribute length in class ParserVerificationTestClass
                 Multiple ConstantValue attributes in field ParserVerificationTestClass.f
+                Bad constant value type in field ParserVerificationTestClass.f
+                Bad constant value type in field ParserVerificationTestClass.f
                 Wrong ConstantValue attribute length in field ParserVerificationTestClass.f
                 Wrong Deprecated attribute length in field ParserVerificationTestClass.f
                 Multiple RuntimeVisibleAnnotations attributes in field ParserVerificationTestClass.f

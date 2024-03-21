@@ -42,8 +42,10 @@ import java.lang.classfile.CodeModel;
 import java.lang.classfile.CompoundElement;
 import java.lang.classfile.FieldModel;
 import java.lang.classfile.MethodModel;
+import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.*;
+import java.lang.constant.ConstantDescs;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
@@ -167,7 +169,7 @@ public record ParserVerifier(ClassModel classModel) {
                 if (!a.attributeMapper().allowMultiple() && !attrNames.add(a.attributeName())) {
                     errors.add(new VerifyError("Multiple %s attributes in %s".formatted(a.attributeName(), toString(ae))));
                 }
-                verifyAttributeSize(ae, a, errors);
+                verifyAttribute(ae, a, errors);
             }
         }
         switch (cfe) {
@@ -181,7 +183,7 @@ public record ParserVerifier(ClassModel classModel) {
         }
     }
 
-    private void verifyAttributeSize(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
+    private void verifyAttribute(AttributedElement ae, Attribute<?> a, List<VerifyError> errors) {
         int payLoad = ((BoundAttribute)a).payloadLen();
         if (payLoad != switch (a) {
             case AnnotationDefaultAttribute aa -> valueSize(aa.defaultValue());
@@ -201,7 +203,21 @@ public record ParserVerifier(ClassModel classModel) {
                 yield l;
             }
             case CompilationIDAttribute cida -> 2;
-            case ConstantValueAttribute cva -> 2;
+            case ConstantValueAttribute cva -> {
+                ClassDesc type = ((FieldModel)ae).fieldTypeSymbol();
+                ConstantValueEntry cve = cva.constant();
+                if (!switch (TypeKind.from(type)) {
+                    case BooleanType, ByteType, CharType, IntType, ShortType -> cve instanceof IntegerEntry;
+                    case DoubleType -> cve instanceof DoubleEntry;
+                    case FloatType -> cve instanceof FloatEntry;
+                    case LongType -> cve instanceof LongEntry;
+                    case ReferenceType -> type.equals(ConstantDescs.CD_String) && cve instanceof StringEntry;
+                    case VoidType -> false;
+                }) {
+                    errors.add(new VerifyError("Bad constant value type in %s".formatted(toString(ae))));
+                }
+                yield 2;
+            }
             case DeprecatedAttribute da -> 0;
             case EnclosingMethodAttribute ema -> 4;
             case ExceptionsAttribute ea -> 2 + 2 * ea.exceptions().size();
