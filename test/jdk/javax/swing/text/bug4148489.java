@@ -85,7 +85,7 @@ public class bug4148489 {
         panel.add("Center", scroller);
         testPanel.add("Center", panel);
         JFrame frame = new JFrame("Styled Document");
-        frame.getContentPane().add(testPanel);
+        frame.add(testPanel);
         frame.pack();
         return frame;
     }
