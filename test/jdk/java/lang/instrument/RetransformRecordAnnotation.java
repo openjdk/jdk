@@ -112,6 +112,9 @@ public class RetransformRecordAnnotation extends AInstrumentationTestCase {
             log("");
         }
 
+        // The following testcases use null as new class bytes (i.e. no transform is performed).
+        // However, it is enough for testing purposes as the JvmtiClassFileReconstituter is still involved
+        // in preparation of the initial class bytes.
         {
             log("Test: retransform VisibleAnnos to null");
             retransform(VisibleAnnos.class, null);
