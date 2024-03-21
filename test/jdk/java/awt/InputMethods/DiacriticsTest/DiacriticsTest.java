@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 import jdk.test.lib.Platform;
 import java.awt.GridLayout;
 import java.awt.TextArea;
@@ -36,7 +35,7 @@ import javax.swing.JPanel;
  * @library /java/awt/regtesthelpers /test/lib
  * @build PassFailJFrame jdk.test.lib.Platform
  * @run main/manual DiacriticsTest
-*/
+ */
 
 public class DiacriticsTest {
 
