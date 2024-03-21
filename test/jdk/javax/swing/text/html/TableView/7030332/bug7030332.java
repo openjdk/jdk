@@ -38,7 +38,7 @@ import java.net.URL;
  * when rendered using JEditorPane
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
- * @run main/manual bug7030332
+ * @run main/manual/othervm -Dsun.java2d.uiScale=1 bug7030332
  */
 
 public class bug7030332 {
@@ -49,12 +49,15 @@ public class bug7030332 {
                 Pay attention to:
                 1. Border width around tables
                 2. Border width around cells
+                Note: The test was written before there was hidpi.
+                Hence we are considering the border width being
+                "similar enough" with 1.0 scaling.
                                 """;
 
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(testInstructions)
-                .rows(6)
+                .rows(9)
                 .columns(35)
                 .splitUI(bug7030332::createContentPane)
                 .build()
