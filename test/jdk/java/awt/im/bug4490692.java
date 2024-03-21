@@ -21,18 +21,18 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import javax.swing.JFrame;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 /*
  * @test
  * @bug 4490692
  * @summary [Linux] Test for KEY_PRESS event for accented characters.
- * @requires (os.name == "linux")
+ *  @requires (os.name == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4490692
@@ -47,9 +47,10 @@ public class bug4490692 {
             xmodmap -e 'keycode 23 = aacute'  (this is for Linux)
             xmodmap -e 'keycode 60 = aacute'  (this is for Solaris Sparc)
 
-            This command lets you type 'a with acute (à)' character when
-            you press 'Tab' key. After the test, please DO NOT fail to
-            restore the original key mapping by doing the following.
+            This command lets you type 'a with acute (à)' character when you press
+            'Tab' key in the JTextField provided below the logging area.
+            After the test, please DO NOT fail to restore the original
+            key mapping by doing the following.
 
             xmodmap -e 'keycode 23 = Tab'  (this is for Linux)
             xmodmap -e 'keycode 60 = Tab'  (this is for Solaris Sparc)
@@ -70,43 +71,45 @@ public class bug4490692 {
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
-                .columns(40)
-                .testUI(() -> new TestFrame("Test Accented Chars"))
+                .columns(45)
+                .testTimeOut(10)
+                .splitUIBottom(bug4490692::createUI)
+                .logArea(8)
                 .build()
                 .awaitAndCheck();
     }
-}
 
-class TestFrame extends JFrame implements KeyListener {
-    JTextField text;
+    private static JComponent createUI() {
+        JPanel panel = new JPanel();
+        JTextField textField = new JTextField("", 20);
+        panel.add(new JLabel("Text field:"));
 
-    TestFrame(String title) {
-        super(title);
-        text = new JTextField();
-        text.addKeyListener(this);
-        Container c = getContentPane();
-        c.setLayout(new BorderLayout());
-        c.add(text, BorderLayout.CENTER);
-        setSize(300, 200);
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        if (e.getKeyCode() == 23 || e.getKeyCode() == 60) {
-            if (e.getKeyChar() == 0x00e1) {
-                PassFailJFrame.forcePass();
-            } else {
-                PassFailJFrame.forceFail("Tab keypress DID NOT"
-                        + " produce the expected accented character - aacute");
+        textField.addKeyListener(new KeyListener() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                PassFailJFrame.log(e.paramString());
+                if (e.getKeyCode() == 23 || e.getKeyCode() == 60
+                        || e.paramString().contains("rawCode=23")
+                        || e.paramString().contains("rawCode=60")) {
+                    if (e.getKeyChar() == 0x00e1) {
+                        PassFailJFrame.forcePass();
+                    } else {
+                        PassFailJFrame.forceFail("Tab keypress DID NOT"
+                                + " produce the expected accented character - aacute");
+                    }
+                }
             }
-        }
-    }
 
-    @Override
-    public void keyTyped(KeyEvent e) {
-    }
+            @Override
+            public void keyTyped(KeyEvent e) {
+            }
 
-    @Override
-    public void keyReleased(KeyEvent e) {
+            @Override
+            public void keyReleased(KeyEvent e) {
+            }
+        });
+
+        panel.add(textField);
+        return panel;
     }
 }
