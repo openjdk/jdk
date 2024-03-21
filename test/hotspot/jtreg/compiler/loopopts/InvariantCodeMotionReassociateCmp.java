@@ -63,8 +63,8 @@ public class InvariantCodeMotionReassociateCmp {
     }
 
     public void fail(int returnValue) {
-        throw new RuntimeException("Illegal reassociation: i=" + returnValue + ", inv1=" + inv1
-                + ", inv2=" + inv2);
+        throw new RuntimeException("Illegal reassociation: returnValue=" + returnValue + ", inv1=" + inv1
+                + ", inv2=" + inv2 + ", size=" + size);
     }
 
     public void checkEq(int returnValue) {
