@@ -97,7 +97,7 @@ class VerifierSelfTest {
     void testParserVerification() {
         var cc = ClassFile.of();
         var cd_test = ClassDesc.of("ParserVerificationTestClass");
-        var indexes = new int[9];
+        var indexes = new Object[9];
         var clm = cc.parse(cc.build(cd_test, clb -> {
             var cp = clb.constantPool();
             var ce_valid = cp.classEntry(cd_test);
@@ -170,22 +170,22 @@ class VerifierSelfTest {
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {});
         }));
         var found = cc.verify(clm).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
-        var expected = STR."""
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[0] } in class ParserVerificationTestClass
-                Bad method descriptor: invalid method type at constant pool index \{ indexes[1] } in class ParserVerificationTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[2] } in class ParserVerificationTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[3] } in class ParserVerificationTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
-                Illegal field name method; in class ParserVerificationTestClass at constant pool index \{ indexes[4] } in class ParserVerificationTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
-                Illegal method name field; in class ParserVerificationTestClass at constant pool index \{ indexes[5] } in class ParserVerificationTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
-                Invalid class name: invalid.class.name at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
-                Illegal method name field; in class ParserVerificationTestClass at constant pool index \{ indexes[6] } in class ParserVerificationTestClass
-                not a valid reference type descriptor: ()V at constant pool index \{ indexes[7] } in class ParserVerificationTestClass
-                Bad method descriptor: I at constant pool index \{ indexes[8] } in class ParserVerificationTestClass
+        var expected = """
+                Invalid class name: invalid.class.name at constant pool index %1$d in class ParserVerificationTestClass
+                Bad method descriptor: invalid method type at constant pool index %2$d in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index %3$d in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index %4$d in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index %5$d in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index %5$d in class ParserVerificationTestClass
+                Illegal field name method; in class ParserVerificationTestClass at constant pool index %5$d in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index %6$d in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index %6$d in class ParserVerificationTestClass
+                Illegal method name field; in class ParserVerificationTestClass at constant pool index %6$d in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index %7$d in class ParserVerificationTestClass
+                Invalid class name: invalid.class.name at constant pool index %7$d in class ParserVerificationTestClass
+                Illegal method name field; in class ParserVerificationTestClass at constant pool index %7$d in class ParserVerificationTestClass
+                not a valid reference type descriptor: ()V at constant pool index %8$d in class ParserVerificationTestClass
+                Bad method descriptor: I at constant pool index %9$d in class ParserVerificationTestClass
                 Duplicate interface List in class ParserVerificationTestClass
                 Illegal field name / in class ParserVerificationTestClass
                 Duplicate field name / with signature I in class ParserVerificationTestClass
@@ -271,17 +271,17 @@ class VerifierSelfTest {
                 Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
-                """.lines().filter(exp -> !found.remove(exp)).toList();
+                """.formatted(indexes).lines().filter(exp -> !found.remove(exp)).toList();
         if (!found.isEmpty() || !expected.isEmpty()) {
             ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
-            fail(STR."""
+            fail("""
 
                  Expected:
-                   \{ expected.stream().collect(Collectors.joining("\n  ")) }
+                   %s
 
                  Found:
-                   \{ found.stream().collect(Collectors.joining("\n  ")) }
-                 """);
+                   %s
+                 """.formatted(expected.stream().collect(Collectors.joining("\n  ")), found.stream().collect(Collectors.joining("\n  "))));
         }
     }
 
