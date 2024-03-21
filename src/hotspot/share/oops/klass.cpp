@@ -370,7 +370,7 @@ uint64_t Klass::hash_secondary_supers(Array<T*>* secondaries, bool rewrite) {
     int i = 0;
     int maxprobe = 0;
     for (int slot = 0; slot < SEC_HASH_ENTRIES; slot++) {
-      if (hashed_secondaries->at(slot) != nullptr) {
+      if (((bitmap >> slot) & 1) != 0) {
         secondaries->at_put(i, hashed_secondaries->at(slot));
         i++;
       }
