@@ -42,7 +42,6 @@ import static javax.swing.JOptionPane.WARNING_MESSAGE;
 
 public class AWTPanelSmoothWheel {
     private static int wheelEventCount = 0;
-    private static int wheelRotationCount = 0;
     private static int hiResWheelCount = 0;
     private static final String WARNING_MSG = "WARNING !!!"
             + " You might NOT be using a hi-res mouse.";
@@ -57,17 +56,18 @@ public class AWTPanelSmoothWheel {
             <b> [Event#, WheelRotation, PreciseWheelRotation]</b> into the logging
             panel below the instruction window.<br> <br>
 
-            A hi-res mouse is one which produces MouseWheelEvents having
-            <b>preciseWheelRotation &lt; 1.</b> <br> <br>
+            A hi-res mouse is one which produces MouseWheelEvents having:
+            <pre><b> Math.abs(preciseWheelRotation) &lt; 1. </b></pre><br>
 
-            When preciseWheelRotation adds up to 1, wheelRotation becomes 1. <br>
-            You should see a few events where preciseWheelRotation &lt; 1 &amp;
-            wheelRotation = 0 followed by a event where preciseWheelRotation = 1 &amp;
-            wheelRotation = 1.<br> <br>
+            When preciseWheelRotation adds up, wheelRotation becomes non-zero
+            (can be negative when mouse wheel is scrolled down). <br>
+            You should see many events where the absolute value of
+            preciseWheelRotation &lt; 1 &amp; wheelRotation = 0 followed by
+            an event where wheelRotation != 0 in the logs.<br> <br>
 
             Check if the test works OK when the mouse wheel is rotated very slow.<br> <br>
             This is a semi-automated test, if you are using a hi-res mouse and
-            satisfy the hi-res MouseWheelEvents as described above,
+            it satisfies the hi-res MouseWheelEvents as described above,
             the test should automatically pass.<br> <br>
 
             <hr>
@@ -78,6 +78,8 @@ public class AWTPanelSmoothWheel {
                 <li> A warning is shown if you are not using a hi-res mouse. </li>
                 <li> MouseWheelEvent logs are displayed in the log area
                 for user reference. </li>
+                <li> When mouse is scrolled up, preciseWheelRotation & wheelRotation are positive
+                 and they are negative when scrolled down. </li>
             </ul>
             <br>
             </body>
@@ -88,8 +90,8 @@ public class AWTPanelSmoothWheel {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(26)
-                .columns(50)
+                .rows(30)
+                .columns(54)
                 .testTimeOut(10)
                 .logArea(10)
                 .testUI(AWTPanelSmoothWheel::createUI)
@@ -107,10 +109,7 @@ public class AWTPanelSmoothWheel {
                         + " --- Wheel Rotation: " + e.getWheelRotation()
                         + " --- Precise Wheel Rotation: "
                         + String.format("%.2f", e.getPreciseWheelRotation()));
-                if (e.getWheelRotation() >= 1) {
-                    wheelRotationCount = e.getWheelRotation();
-                }
-                if (e.getPreciseWheelRotation() < 1) {
+                if (Math.abs(e.getPreciseWheelRotation()) < 1) {
                     hiResWheelCount++;
                 }
                 if (wheelEventCount >= 5 && hiResWheelCount == 0) {
@@ -118,11 +117,9 @@ public class AWTPanelSmoothWheel {
                     JOptionPane.showMessageDialog(frame, WARNING_MSG,
                             "WARNING", WARNING_MESSAGE);
                 }
-                if (wheelRotationCount > 5
-                        && (hiResWheelCount / 2 >= wheelRotationCount)) {
+                if (e.getWheelRotation() != 0 && hiResWheelCount > 0) {
                     PassFailJFrame.log("The test passes: hiResWheelCount = "
-                            + hiResWheelCount + " wheelRotationCount = "
-                            + wheelRotationCount);
+                            + hiResWheelCount);
                     PassFailJFrame.forcePass();
                 }
             }
