@@ -21,8 +21,8 @@
  * questions.
  */
 
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -32,7 +32,6 @@ import javax.swing.JTextField;
  * @test
  * @bug 4490692
  * @summary [Linux] Test for KEY_PRESS event for accented characters.
- * @requires (os.family == "linux")
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4490692
@@ -84,7 +83,7 @@ public class bug4490692 {
         JTextField textField = new JTextField("", 20);
         panel.add(new JLabel("Text field:"));
 
-        textField.addKeyListener(new KeyListener() {
+        textField.addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 PassFailJFrame.log(e.paramString());
@@ -98,14 +97,6 @@ public class bug4490692 {
                                 + " produce the expected accented character - aacute");
                     }
                 }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent e) {
-            }
-
-            @Override
-            public void keyReleased(KeyEvent e) {
             }
         });
 
