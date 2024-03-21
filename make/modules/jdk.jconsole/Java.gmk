@@ -23,8 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
-
 COPY += .gif .png
 
 CLEAN_FILES += $(wildcard \

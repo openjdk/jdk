@@ -23,8 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
-
 COPY += _dict _th
 # Exclude BreakIterator classes that are just used in compile process to generate
 # data files and shouldn't go in the product

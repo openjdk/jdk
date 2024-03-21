@@ -231,7 +231,7 @@ public class Flow {
         new AssignAnalyzer().analyzeTree(env, make);
         new FlowAnalyzer().analyzeTree(env, make);
         new CaptureAnalyzer().analyzeTree(env, make);
-        new ThisEscapeAnalyzer(names, syms, types, log, lint).analyzeTree(env);
+        new ThisEscapeAnalyzer(names, syms, types, rs, log, lint).analyzeTree(env);
     }
 
     public void analyzeLambda(Env<AttrContext> env, JCLambda that, TreeMaker make, boolean speculative) {

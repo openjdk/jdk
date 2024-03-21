@@ -23,8 +23,6 @@
 # questions.
 #
 
-DISABLED_WARNINGS_java += this-escape
-
 # No SCTP implementation on Mac OS X or AIX. These classes should be excluded.
 SCTP_IMPL_CLASSES = \
     $(TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationChange.java \
