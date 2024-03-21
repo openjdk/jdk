@@ -41,6 +41,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
+import java.nio.file.Path;
 import java.util.Map;
 import jdk.test.lib.process.ProcessTools;
 import sun.tools.attach.HotSpotVirtualMachine;
@@ -53,8 +54,7 @@ public class CheckOrigin {
         if (args.length == 0) {
             // start a process that has options set in a number of different ways
 
-            File flagsFile = File.createTempFile("CheckOriginFlags", null);
-            flagsFile.deleteOnExit();
+            File flagsFile = File.createTempFile("CheckOriginFlags", null, Path.of(".").toFile());
             try (PrintWriter pw =
                    new PrintWriter(new FileWriter(flagsFile))) {
                 pw.println("+PrintCodeCache");

@@ -198,7 +198,9 @@ public class Bind {
                     throw new RuntimeException("expected non zero address length");
                 System.out.println("Null server address: " + server.getLocalAddress());
             } finally {
-                Files.deleteIfExists(usa.getPath());
+                if (usa != null) {
+                    Files.deleteIfExists(usa.getPath());
+                }
             }
         });
         // server no bind : not allowed
@@ -338,7 +340,9 @@ public class Bind {
                 accept1 = server.accept();
                 assertAddress(client.getRemoteAddress(), usa, "server");
             } finally {
-                Files.deleteIfExists(usa.getPath());
+                if (usa != null) {
+                    Files.deleteIfExists(usa.getPath());
+                }
             }
         });
     }

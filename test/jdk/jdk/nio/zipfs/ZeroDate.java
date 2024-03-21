@@ -58,7 +58,7 @@ public class ZeroDate {
 
     public static void main(String[] args) throws Exception {
         // create a zip file, and read it in as a byte array
-        Path path = Files.createTempFile("bad", ".zip");
+        Path path = Utils.createTempFile("bad", ".zip");
         try {
             try (OutputStream os = Files.newOutputStream(path);
                  ZipOutputStream zos = new ZipOutputStream(os)) {
