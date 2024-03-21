@@ -21,18 +21,6 @@
  * questions.
  */
 
-
-/*
- * @test
- * @bug 8142861 8143062 8147016
- * @library /java/awt/regtesthelpers /test/lib
- * @build PassFailJFrame jdk.test.lib.Platform
- * @summary Check if multiresolution image behaves properly
- *         on HiDPI + non-HiDPI display pair.
- * @run main MultiDisplayTest
- */
-
-
 import java.awt.BorderLayout;
 import java.awt.Button;
 import java.awt.Color;
@@ -49,14 +37,23 @@ import java.awt.image.BufferedImage;
 import javax.swing.JFrame;
 
 import jdk.test.lib.Platform;
+import jtreg.SkippedException;
+
+/*
+ * @test
+ * @bug 8142861 8143062 8147016
+ * @library /java/awt/regtesthelpers /test/lib
+ * @build PassFailJFrame jdk.test.lib.Platform
+ * @requires (os.family == "windows" | os.family == "mac")
+ * @summary Check if multiresolution image behaves properly
+ *         on HiDPI + non-HiDPI display pair.
+ * @run main/manual MultiDisplayTest
+ */
 
 public class MultiDisplayTest {
     private static JFrame frame;
     private static final String INSTRUCTIONS =
             """
-             This test is for OS X or Windows only.
-             For other OSes please simply push "Pass".
-
              The test requires two-display configuration, where
 
              - 1st display is operating in HiDPI mode;
@@ -91,11 +88,15 @@ public class MultiDisplayTest {
         generateImage(1, Color.BLACK), generateImage(2, Color.BLUE)});
 
     public static void main(String[] args) throws Exception {
+        if (!checkOS()) {
+            throw new SkippedException("Invalid OS." +
+                    "Please run test on either Windows or MacOS");
+        }
         PassFailJFrame
                 .builder()
                 .title("MultiDisplayTest Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(30)
+                .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
                 .testUI(MultiDisplayTest::createAndShowGUI)
                 .build()
@@ -106,7 +107,6 @@ public class MultiDisplayTest {
         frame = new JFrame("MultiDisplayTest");
         frame.setLayout(new BorderLayout());
         Button b = new Button("Start");
-        b.setEnabled(checkOS());
         b.addActionListener(e -> {
             ParentFrame p = new ParentFrame();
             new ChildDialog(p);
