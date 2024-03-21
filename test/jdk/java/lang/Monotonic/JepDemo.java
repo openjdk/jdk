@@ -51,7 +51,7 @@ final class JepDemo {
 
         static void init() {
             // 2. Bind the monotonic value _after_ being declared.
-            LOGGER.bind(Logger.getLogger("com.foo.Bar"));
+            LOGGER.bindOrThrow(Logger.getLogger("com.foo.Bar"));
         }
 
         static Logger logger() {

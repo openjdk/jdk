@@ -37,6 +37,7 @@ import java.util.Objects;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import static jdk.internal.javac.PreviewFeature.*;
 
@@ -45,8 +46,8 @@ import static jdk.internal.javac.PreviewFeature.*;
  * <p>
  * Monotonic values are eligible for constant folding and other optimizations by the JVM.
  * <p>
- * The state of a monotonic value can only go from absent to present and consequently, a
- * value can only be bound at most once.
+ * The state of a monotonic value can only go from <em>absent</em> to <em>bound</em> and
+ * consequently, a value can only be bound at most once.
  *
  * @implSpec The implementation of this interface is thread-safe, atomic, and non-blocking.
  *
@@ -57,7 +58,7 @@ import static jdk.internal.javac.PreviewFeature.*;
 public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
-     * {@return the (nullable) value if present, otherwise throws
+     * {@return the (nullable) value if bound, otherwise throws
      * {@code NoSuchElementException}}
      *
      * @throws NoSuchElementException if no value is present
@@ -65,18 +66,18 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     V get();
 
     /**
-     * {@return {@code true} if a value is present, otherwise {@code false}}
+     * {@return {@code true} if a value is bound, otherwise {@code false}}
      */
-    boolean isPresent();
+    boolean isBound();
 
     /**
      * Binds the monotonic value to the provided (nullable) {@code value} or throws an
-     * exception if a value is already present.
+     * exception if a value is already bound.
      *
      * @param value to bind
-     * @throws IllegalStateException if a value is already present
+     * @throws IllegalStateException if a value is already bound
      */
-    void bind(V value);
+    void bindOrThrow(V value);
 
     /**
      * If no value is present, binds the monotonic value to the provided (nullable)
@@ -91,7 +92,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     V bindIfAbsent(V value);
 
     /**
-     * If no value {@linkplain #isPresent() present}, attempts to compute and bind a
+     * If no value {@linkplain #isBound() is bound}, attempts to compute and bind a
      * new (nullable) value using the provided {@code supplier}, returning the
      * (pre-existing or newly bound) value.
      *
@@ -131,7 +132,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
     // Factories
 
     /**
-     * {@return a new empty Monotonic value}
+     * {@return a fresh Monotonic with an absent value}
      *
      * @param <V> the value type to bind
      */
@@ -141,12 +142,12 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
 
     /**
      * {@return a new unmodifiable, shallowly immutable, thread-safe, lazy, non-blocking
-     * {@linkplain List } of {@code size} distinct empty monotonic values}
+     * {@linkplain List } of {@code size} distinct absent monotonic values}
      * <p>
      * The returned {@code List} is equivalent to the following List:
      * {@snippet lang=java :
-     * List<Monotonic<V>> list = IntStream.range(0, size)
-     *         .mapToObj(_ -> Monotonic.<V>of())
+     * List<Monotonic<V>> list = Stream.generate(Monotonic::<V>of)
+     *         .limit(size)
      *         .toList();
      * }
      * except it creates the list's elements lazily as they are accessed.
@@ -169,7 +170,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * {@return a new unmodifiable, shallowly immutable, thread-safe, value-lazy,
      * non-blocking {@linkplain Map } where the {@linkplain java.util.Map#keySet() keys}
      * contains precisely the distinct provided {@code keys} and where the values are
-     * distinct empty monotonic values}
+     * distinct absent monotonic values}
      * <p>
      * The returned {@code Map} is equivalent to the following Map:
      * {@snippet lang=java :
@@ -188,6 +189,7 @@ public sealed interface Monotonic<V> permits MonotonicImpl {
      * @param <V>  the value type for the Monotonic values in this map
      * @see Map#of()
      */
+    // Set
     static <K, V> Map<K, Monotonic<V>> ofMap(Collection<? extends K> keys) {
         Objects.requireNonNull(keys);
         // Checks for null keys and removes any duplicates

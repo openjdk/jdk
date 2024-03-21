@@ -66,7 +66,7 @@ final class BasicMonotonicMapTest {
         assertEquals(SIZE, map.size());
 
         for (String key : KEYS) {
-            assertFalse(map.get(key).isPresent());
+            assertFalse(map.get(key).isBound());
         }
 
         for (String key : KEYS) {

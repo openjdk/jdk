@@ -62,10 +62,10 @@ final class BasicMonotonicsListTest {
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
             if (i == INDEX) {
-                assertTrue(m.isPresent());
+                assertTrue(m.isBound());
                 assertEquals(INDEX, m.get());
             } else {
-                assertFalse(m.isPresent());
+                assertFalse(m.isBound());
             }
         }
     }
@@ -77,10 +77,10 @@ final class BasicMonotonicsListTest {
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
             if (i == INDEX) {
-                assertTrue(m.isPresent());
+                assertTrue(m.isBound());
                 assertNull(m.get());
             } else {
-                assertFalse(m.isPresent());
+                assertFalse(m.isBound());
             }
         }
     }
@@ -94,7 +94,7 @@ final class BasicMonotonicsListTest {
         );
         for (int i = 0; i < SIZE; i++) {
             Monotonic<Integer> m = list.get(i);
-            assertFalse(m.isPresent());
+            assertFalse(m.isBound());
         }
     }
 

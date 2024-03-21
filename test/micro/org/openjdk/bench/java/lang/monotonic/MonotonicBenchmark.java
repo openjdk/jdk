@@ -81,7 +81,7 @@ public class MonotonicBenchmark {
     }
 
     private static Monotonic<Integer> init(Monotonic<Integer> m) {
-        m.bind(VALUE);
+        m.bindOrThrow(VALUE);
         return m;
     }
 

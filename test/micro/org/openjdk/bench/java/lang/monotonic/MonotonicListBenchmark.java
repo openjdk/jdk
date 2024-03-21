@@ -49,7 +49,7 @@ public class MonotonicListBenchmark {
                     .mapToObj(_ -> Monotonic.<Integer>of())
                     .toList();
     static {
-        WRAPPED.get(8).bind(8);
+        WRAPPED.get(8).bindOrThrow(8);
     }
 
     private static final List<Monotonic<Integer>> MONOTONIC_LIST = initMono(Monotonic.ofList(SIZE));
@@ -63,7 +63,7 @@ public class MonotonicListBenchmark {
         this.wrappedList = IntStream.range(0, SIZE)
                 .mapToObj(i -> Monotonic.<Integer>of())
                 .toList();
-        wrappedList.get(8).bind(8);
+        wrappedList.get(8).bindOrThrow(8);
     }
 
     @Setup
@@ -96,7 +96,7 @@ public class MonotonicListBenchmark {
     }
 
     private static List<Monotonic<Integer>> initMono(List<Monotonic<Integer>> list) {
-        list.get(8).bind(8);
+        list.get(8).bindOrThrow(8);
         return list;
     }
 

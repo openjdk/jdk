@@ -241,7 +241,7 @@ public final class MonotonicMap<K, V>
                                            K key,
                                            Function<? super K, ? extends V> mapper) {
         Monotonic<V> monotonic = monotonicOrThrow(map, key);
-        if (monotonic.isPresent()) {
+        if (monotonic.isBound()) {
             return monotonic.get();
         }
         V newValue = mapper.apply(key);
@@ -257,7 +257,7 @@ public final class MonotonicMap<K, V>
             public V apply(K key) {
                 Monotonic<V> monotonic = monotonicOrThrow(map, key);
                 synchronized (monotonic) {
-                    if (monotonic.isPresent()) {
+                    if (monotonic.isBound()) {
                         return monotonic.get();
                     }
                 }

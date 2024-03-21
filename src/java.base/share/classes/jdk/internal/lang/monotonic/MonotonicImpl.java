@@ -50,7 +50,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
 
     @ForceInline
     @Override
-    public boolean isPresent() {
+    public boolean isBound() {
         return value != null || valueVolatile() != null;
     }
 
@@ -76,7 +76,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
 
     @ForceInline
     @Override
-    public void bind(V value) {
+    public void bindOrThrow(V value) {
         Object v = toObject(value);
         if (caeValue(v) != null) {
             throw new IllegalStateException("A value is already bound: " + get());
@@ -86,7 +86,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     @ForceInline
     @Override
     public V bindIfAbsent(V value) {
-        if (isPresent()) {
+        if (isBound()) {
            return get();
         }
         return caeWitness(value);
@@ -117,7 +117,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
     @Override
     public String toString() {
         return "Monotonic" +
-                (isPresent()
+                (isBound()
                         ? "[" + get() + "]"
                         : ".unbound");
     }
@@ -162,7 +162,7 @@ public final class MonotonicImpl<V> implements Monotonic<V> {
             @Override
             public V get() {
                 synchronized (monotonic) {
-                    if (monotonic.isPresent()) {
+                    if (monotonic.isBound()) {
                         return monotonic.get();
                     }
                 }

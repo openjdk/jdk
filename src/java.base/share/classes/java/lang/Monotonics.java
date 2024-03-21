@@ -25,7 +25,7 @@ public final class Monotonics {
     private Monotonics() {}
 
     /**
-     * If no value {@linkplain Monotonic#isPresent()} for the provided {@code index}
+     * If no value {@linkplain Monotonic#isBound()} for the provided {@code index}
      * in the provided {@code list}, attempts to compute and bind a value using the
      * provided {@code mapper}, returning the (pre-existing or newly bound) value.
      * <p>
@@ -50,7 +50,7 @@ public final class Monotonics {
     }
 
     /**
-     * If no value {@linkplain Monotonic#isPresent()} for the provided {@code key},
+     * If no value {@linkplain Monotonic#isBound()} for the provided {@code key},
      * in the provided {@code map}, attempts to compute and bind a value using the
      * provided {@code mapper}, returning the (pre-existing or newly bound) value.
      * <p>

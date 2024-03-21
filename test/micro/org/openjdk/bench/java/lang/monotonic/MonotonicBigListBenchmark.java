@@ -119,7 +119,7 @@ public class MonotonicBigListBenchmark {
     private static List<Monotonic<Integer>> randomMono(List<Monotonic<Integer>> list) {
         Random rnd = new Random();
         for (int i = 0; i < SIZE; i++) {
-            list.get(i).bind(rnd.nextInt(0, SIZE));
+            list.get(i).bindOrThrow(rnd.nextInt(0, SIZE));
         }
         return list;
     }

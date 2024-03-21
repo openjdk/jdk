@@ -128,7 +128,7 @@ public final class MonotonicList<V>
                                         int index,
                                         IntFunction<? extends V> mapper) {
         Monotonic<V> monotonic = list.get(index);
-        if (monotonic.isPresent()) {
+        if (monotonic.isBound()) {
             return monotonic.get();
         }
         V newValue = mapper.apply(index);
@@ -143,7 +143,7 @@ public final class MonotonicList<V>
             public V apply(int value) {
                 Monotonic<V> monotonic = list.get(value);
                 synchronized (monotonic) {
-                    if (monotonic.isPresent()) {
+                    if (monotonic.isBound()) {
                         return monotonic.get();
                     }
                 }

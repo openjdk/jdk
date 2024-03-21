@@ -54,23 +54,23 @@ final class BasicMonotonicTest {
 
     @Test
     void unbound() {
-        assertFalse(m.isPresent());
+        assertFalse(m.isBound());
         assertThrows(NoSuchElementException.class, m::get);
     }
 
     void bind() {
-        m.bind(FIRST);
-        assertTrue(m.isPresent());
+        m.bindOrThrow(FIRST);
+        assertTrue(m.isBound());
         assertEquals(FIRST, m.get());
-        assertThrows(IllegalStateException.class, () -> m.bind(SECOND));
-        assertTrue(m.isPresent());
+        assertThrows(IllegalStateException.class, () -> m.bindOrThrow(SECOND));
+        assertTrue(m.isBound());
         assertEquals(FIRST, m.get());
     }
 
     @Test
     void bindIfAbsent() {
         Integer i = m.bindIfAbsent(FIRST);
-        assertTrue(m.isPresent());
+        assertTrue(m.isBound());
         assertEquals(FIRST, i);
         assertEquals(FIRST, m.get());
 
@@ -82,7 +82,7 @@ final class BasicMonotonicTest {
     @Test
     void bindIfAbsentNull() {
         Integer i = m.bindIfAbsent(null);
-        assertTrue(m.isPresent());
+        assertTrue(m.isBound());
         assertNull(i);
         assertNull(m.get());
 

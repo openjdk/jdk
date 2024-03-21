@@ -35,11 +35,10 @@ Unfortunately, `final` fields come with restrictions. Final instance fields must
 the constructor, and `static final` fields during class initialization. Moreover, the order in which `final`
 field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) 
 and is then made explicit in the resulting class file. As such, the initialization of a `final`
-field is fixed in time; it cannot be arbitrarily moved forward or backward. In other words, developers
-cannot cause specific constants to be initialized before the class/object is initialized and cannot cause
-constants to be initialized after the class or object is initialized.
+field is fixed in time; it cannot be arbitrarily moved forward. In other words, developers
+cannot cause specific constants to be initialized after the class or object is initialized.
 This means that developers are forced to choose between finality and all its
-benefits, and flexibility over the timing of initialization.  Developers have
+benefits, and flexibility over the timing of initialization. Developers have
 devised a number of strategies to ameliorate this imbalance, but none are
 ideal.
 
@@ -200,14 +199,21 @@ Furthermore, the class holder idiom (see above) is clearly insufficient in this 
 the number of required holder classes is *statically unbounded* - it depends on the value of 
 the construction parameter `upperBound`.
 
+There is an internal annotation in the JDK `jdk.internal.vm.annotation.@Stable` which is only considered
+by the JVM for _JDK internal code_ and that is used to mark scalar and array variables whose values or
+elements will  change *at most once*. This annotation is powerful and often crucial to achieving optimal
+internal performance, but it is also easy to misuse: further updating a `@Stable` field after its initial
+update will result in undefined behavior, as the JIT compiler might have *already* constant-folded the now
+overwritten field value. 
+
 What we are missing -- in all cases -- is a way to *promise* that a constant
 will be initialized by the time it is used, with a value that is computed at
 most once. Such a mechanism would give the Java runtime maximum opportunity to
 stage and optimize its computation, thus avoiding the penalties (static
 footprint, loss of runtime optimizations) that plague the workarounds shown
 above. Moreover, such a mechanism should gracefully scale to handle collections of
-constant values, while retaining efficient computer resource management
-
+constant values, while retaining efficient computer resource management. This may be
+achieved by providing a *safe* and *efficient* value wrapper around the `@Stable` annotation.
 
 
 ## Description
@@ -236,7 +242,7 @@ The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api
 ### Monotonic Value
 
 A _monotonic value_ is a holder object that is bound at most once whereby it
-goes from "absent" to "present". It is expressed as an object of type `Monotonic`,
+goes from "absent" to "bound". It is expressed as an object of type `Monotonic`,
 which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (absent) `Monotonic` instances are created via the factory method `Monotonic::of`:
 
@@ -247,7 +253,7 @@ class Bar {
     
     static void init() {
         // 2. Bind the monotonic value _after_ being declared
-        LOGGER.bind(Logger.getLogger("com.foo.Bar"));
+        LOGGER.bindOrThrow(Logger.getLogger("com.foo.Bar"));
     }
     
     static Logger logger() {
@@ -260,6 +266,14 @@ class Bar {
 This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
+
+Binding a monotonic value is an atomic, non-blocking operation, e.g. `Monotonic::bindOrThrow`, 
+either results in successfully initializing the monotonic to a value, or fails
+with an exception. This is true regardless of whether the monotonic value is accessed by a single
+thread, or concurrently, by multiple threads.
+
+A monotonic value may be bound to `null` which then will be considered its bound value.
+Null-averse applications can also use `Monotonic<Optional<V>>`.
 
 In case a monotonic value cannot be pre-bound as in the example above, it is possible
 to compute and bind an absent value on-demand as shown in this example:
@@ -281,31 +295,9 @@ Calling `logger()` multiple times yields the same value from each invocation.
 from a plurality of threads but only one witness value is ever exposed to the 
 outside world. 
 
-To also guarantee the value supplier is invoked *at most once*,
-even though invoked by several threads, there is a convenience method, located 
-in the utility class `Monotonics`, providing precisely that:
-
-```
-class Bar {
-    // 1. Declare a memoized (cached) Supplier (backed by an 
-    //    internal monotonic value) that is invoked at most once
-    private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
-                    () -> Logger.getLogger("com.foo.Bar"));
-
-    static Logger logger() {
-        // 2. Access the memoized value with as-declared-final performance
-        //    (evaluation made before the first access)
-        return LOGGER.get();
-    }
-}
-```
-
-In the example above, the supplier is invoked at most once per
-loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
-most once into any given `ClassLoader`). 
-
-A value supplier may return `null` which will be considered the bound value.
-Null-averse applications can also use `Monotonic<Optional<V>>`.
+Monotonic reference values are faster to obtain than reference values managed via
+double-checked-idiom constructs as monotonic values rely on explicit memory barriers
+rather than performing volatile access on each get operation.
 
 ### Monotonic Collections
 
@@ -364,7 +356,59 @@ list, stored in an instance field, depends on the value of other (lower-index) e
 allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
 the case of multi-threaded access.
 
-Similarly to how a `Supplier` can be memoized using a backing `Monotonic`, the same pattern can be used 
+
+Finally, a `Map` of `Monotonic` values can also be defined and used similarly to how a 
+`List` of `Monotonic` elements can be handled. In the example below, we cache values for 
+an enumerated collection of keys:
+
+```
+class MapDemo {
+
+    private static final Map<String, Monotonic<Logger>> LOGGERS =
+            Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
+    static Logger logger(String name) {
+        return Monotonics.computeIfAbsent(LOGGERS, name, Logger::getLogger);
+    }
+}
+```
+
+### Memoized functions
+
+So far, we have talked about the fundamental low-level features of `Monotonic` as a securely
+wrapped `@Stable` value holder. However, it has become apparent, `Monotonic` primitives are amenable
+to composition with other constructs in order to create more high-level and powerful features.
+
+Some of these features are exposed as convenience methods in the class `java.lang.Monotonics`.
+
+For example, to guarantee a value supplier or function is invoked *at most once*,
+even though invoked by several threads, we can use one of the `Monotonics::asMemoized`
+functions.
+
+Here is how we could make sure the lambda `() -> Logger.getLogger("com.foo.Bar")`
+in one of the first examples above is invoked at most once (provided it executes successfully)
+in a multi-threaded environment:
+
+```
+class Bar {
+    // 1. Declare a memoized (cached) Supplier (backed by an 
+    //    internal monotonic value) that is invoked at most once
+    private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
+                    () -> Logger.getLogger("com.foo.Bar"));
+
+    static Logger logger() {
+        // 2. Access the memoized value with as-declared-final performance
+        //    (evaluation made before the first access)
+        return LOGGER.get();
+    }
+}
+```
+
+In the example above, the supplier is invoked at most once per
+loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
+most once into any given `ClassLoader`).
+
+Similarly to how a `Supplier` can be memoized using a backing `Monotonic`, the same pattern can be used
 for an `IntFunction` that will record its cached value in a backing _list of `Monotonic` elements_:
 
 ```
@@ -385,25 +429,10 @@ class Fibonacci {
 }
 ```
 
-Finally, a `Map` of `Monotonic` values can also be defined and used similarly to how a 
-`List` of `Monotonic` elements can be handled. In the example below, we cache values for 
-an enumerated collection of keys:
-
-```
-class MapDemo {
-
-    private static final Map<String, Monotonic<Logger>> LOGGERS =
-            Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
-
-    static Logger logger(String name) {
-        return Monotonics.computeIfAbsent(LOGGERS, name, Logger::getLogger);
-    }
-}
-```
-
 Corresponding to a memoized `Supplier` or an `IntFunction`, a general `Function` can also be memoized
-via a backing `Map` of `Monotonic` values, thereby ensuring the resulting value for each input 
+via a backing `Map` of `Monotonic` values, thereby ensuring the resulting value for each input
 parameter is computed at-most-once even in a multi-threaded environment.
+
 Here is an example of how such a memoized function can be defined and used:
 
 ```
@@ -423,28 +452,8 @@ class MapDemo2 {
 }
 ```
 It should be noted that the enumerated collection of keys given at creation time
-constitutes the only valid inputs to the memoized function.
+constitutes the only valid inputs for the memoized function.
 
-### Safety
-
-Binding a monotonic value is an atomic, non-blocking operation, e.g. calling `Monotonic::computeIfAbsent`
-or `Monotonic::bind`, either results in successfully initializing the monotonic to a value, or fails
-with an exception. This is true regardless of whether the monotonic value is accessed by a single
-thread, or concurrently, by multiple threads. 
-
-The attentive reader might have noticed the similarities between `Monotonic` and the `@Stable` annotation.
-This annotation is used in JDK internal code to mark scalar and array variables whose values or elements will
-change *at most once*. This annotation is powerful and often crucial to achieving optimal internal performance,
-but it is also easy to misuse: further updating a `@Stable` field after its initial update will result in
-undefined behavior, as the JIT compiler might have *already* constant-folded the now overwritten
-field value. `Monotonic` solves this issue by effectively providing a *safe* and *efficient* wrapper
-around the `@Stable` annotation.
-
-### Performance
-
-Constant folded `Monotonic` values have the same retrieval performance as values managed via the class-holder-idiom.
-Monotonic reference values are faster to obtain than reference values managed via double-checked-idiom constructs
-as monotonic values rely on explicit memory barriers rather than performing volatile access on each get operation.
 
 ## Alternatives
 

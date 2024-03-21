@@ -66,10 +66,10 @@ final class BasicMonotonicsMapTest {
         for (String key: KEYS) {
             Monotonic<Integer> m = map.get(key);
             if (key.equals(KEY)) {
-                assertTrue(m.isPresent());
+                assertTrue(m.isBound());
                 assertEquals(EXPECTED, m.get());
             } else {
-                assertFalse(m.isPresent());
+                assertFalse(m.isBound());
             }
         }
     }
@@ -81,10 +81,10 @@ final class BasicMonotonicsMapTest {
         for (String key: KEYS) {
             Monotonic<Integer> m = map.get(key);
             if (key.equals(KEY)) {
-                assertTrue(m.isPresent());
+                assertTrue(m.isBound());
                 assertNull(m.get());
             } else {
-                assertFalse(m.isPresent());
+                assertFalse(m.isBound());
             }
         }
     }
@@ -98,7 +98,7 @@ final class BasicMonotonicsMapTest {
         );
         for (String key: KEYS) {
             Monotonic<Integer> m = map.get(key);
-            assertFalse(m.isPresent());
+            assertFalse(m.isBound());
         }
     }
 

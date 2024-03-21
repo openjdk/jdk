@@ -62,7 +62,7 @@ final class BasicMonotonicListTest {
         assertEquals(SIZE, list.size());
 
         IntStream.range(0, SIZE).forEach(i ->
-                assertFalse(list.get(i).isPresent())
+                assertFalse(list.get(i).isBound())
         );
 
         assertEquals(expectedToString(list), list.toString());
