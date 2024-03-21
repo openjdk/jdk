@@ -152,8 +152,9 @@ public class ZipFileSystemProvider extends FileSystemProvider {
             } catch (IOException x) {
                 // ignore the ioe from toRealPath(), return FSNFE
             }
-            if (zipfs == null)
-                throw new FileSystemNotFoundException();
+            if (zipfs == null) {
+                return newFileSystem(uri, Map.of());
+            }
             return zipfs;
         }
     }
