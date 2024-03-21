@@ -110,13 +110,13 @@ While the double-checked locking idiom can be used for both class and instance
 variables, its usage requires that the field subject to initialization is marked
 as non-final. This is not ideal for several reasons:
 
-* it would be possible for code to accidentally modify the field value, thus violating the immutability
-  assumption of the enclosing class.
-* access to the field cannot be adequately optimized by just-in-time compilers, as they cannot reliably assume
-  that the field value will, in fact, never change. An example of similar optimizations in
-  existing Java implementations is when a `MethodHandle` is held in a `static final` field,
-  allowing the runtime to generate machine code that is competitive with direct invocation
-  of the corresponding method.
+* it would be possible for code to accidentally modify the field value, thus violating
+  the immutability assumption of the enclosing class.
+* access to the field cannot be adequately optimized by just-in-time compilers, as they
+  cannot reliably assume that the field value will, in fact, never change. An example of
+  similar optimizations in existing Java implementations is when a `MethodHandle` is held
+  in a `static final` field, allowing the runtime to generate machine code that is competitive
+  with direct invocation of the corresponding method.
 
 Furthermore, the idiom does not work for `null` values.
 
@@ -261,8 +261,8 @@ This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
-In case a monotonic value is not pre-bound, it is possible to compute and bind a value if 
-empty as shown in this example:
+In case a monotonic value cannot be not pre-bound as in the example above, it is possible
+to compute and bind an absent value as shown in this example:
 
 ```
 class Bar {
@@ -278,9 +278,10 @@ class Bar {
 ```
 
 `Monotonic` can invoke the value supplier several times if called from a plurality 
-of threads but only one witness value is ever exposed to the outside world. To guarantee
-the value supplier is invoked *at most once* even though invoked by several threads, 
-there is a utility methods providing this:
+of threads but only one witness value is ever exposed to the outside world. To also 
+guarantee the value supplier is invoked *at most once* even though invoked by several
+threads,  there is a convenience method, located in the `Monotonics` utility class,
+providing precisely that:
 
 ```
 class Bar {
@@ -297,16 +298,17 @@ class Bar {
 }
 ```
 
-In the `LOGGER` example above, the supplier is invoked at most once per
+In the example above, the supplier is invoked at most once per
 loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
-most once into any given `ClassLoader`).  A value supplier may return 
-`null` which will be considered the bound value.  (Null-averse applications
-can also use `Monotonic<Optional<V>>`.)
+most once into any given `ClassLoader`). 
+
+A value supplier may return `null` which will be considered the bound value. Null-averse applications
+can also use `Monotonic<Optional<V>>`.
 
 ### Monotonic Collections
 
 While initializing a single field of type `Monotonic` is cheap (remember, creating a new `Monotonic` 
-object only creates the *holder* for the lazily evaluated value), this (small) initialization cost has 
+object only creates the *holder* for the value), this (small) initialization cost has 
 to be paid for each field of type `Monotonic` declared by the class. As a result, the class static 
 and/or instance initializer will keep growing with the number of `Monotonic` fields, thus degrading performance.
 
@@ -430,6 +432,12 @@ but it is also easy to misuse: further updating a `@Stable` field after its init
 undefined behavior, as the JIT compiler might have *already* have constant-folded the now overwritten
 field value. `Monotonic` bypasses this issue by effectively providing a *safe* and *efficient* wrapper
 around the `@Stable` annotation.
+
+### Performance
+
+Constant folded `Monotonic` values have the same retrieval performance as values managed via the class-holder-idiom.
+Monotonic reference values are faster to obtain than reference values managed via double-checked-idiom constructs
+as monotonic values relies on explicit memory barriers rather than performing volatile access on each get operation.
 
 ## Alternatives
 
