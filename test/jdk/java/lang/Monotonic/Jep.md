@@ -30,7 +30,7 @@ Java, Item 17). Immutability confers many advantages including:
 * immutable objects can be freely shared across threads
 * immutability enables all manner of runtime optimizations.
 
-Java's main tool for managing immutability  is `final` fields (and more recently, `record` classes).
+Java's main tool for managing immutability is `final` fields (and more recently, `record` classes).
 Unfortunately, `final` fields come with restrictions. Final instance fields must be set by the end of
 the constructor, and `static final` fields during class initialization. Moreover, the order in which `final`
 field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) 
@@ -193,7 +193,7 @@ int[] fibs = IntStream.range(0, 10)
 ```
 
 Unfortunately, this approach provides a number of challenges. First, retrieving the values
-from a `Map` is slow, as said values cannot  be constant-folded. Even worse, using `Map` can
+from a `Map` is slow, as said values cannot be constant-folded. Even worse, using `Map` can
 be error-prone, as dependencies between values in the Fibonacci sequence have to be managed manually.
 For instance, when calling `fib(n)`, entries for all `fib(x)` (where x < n) must also be added to the map.
 Furthermore, the class holder idiom (see above) is clearly insufficient in this case, as 
@@ -237,7 +237,7 @@ The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api
 
 A _monotonic value_ is a holder object that is bound at most once whereby it
 goes from "absent" to "present". It is expressed as an object of type `Monotonic`,
-which, like `Future`, is  a holder for some computation that may or may not have occurred yet.
+which, like `Future`, is a holder for some computation that may or may not have occurred yet.
 Fresh (absent) `Monotonic` instances are created via the factory method `Monotonic::of`:
 
 ```
@@ -278,7 +278,7 @@ class Bar {
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
 `Monotonic::computeIfAbsent` can invoke the value supplier several times if called
-from a plurality  of threads but only one witness value is ever exposed to the 
+from a plurality of threads but only one witness value is ever exposed to the 
 outside world. 
 
 To also guarantee the value supplier is invoked *at most once*,
@@ -385,8 +385,8 @@ class Fibonacci {
 }
 ```
 
-Finally, a `Map` of `Monotonic` values can also be defined and used similar to how a 
-`List` of `Monotonic` elements are handled. In the example below, we cache values for 
+Finally, a `Map` of `Monotonic` values can also be defined and used similarly to how a 
+`List` of `Monotonic` elements can be handled. In the example below, we cache values for 
 an enumerated collection of keys:
 
 ```
@@ -401,10 +401,10 @@ class MapDemo {
 }
 ```
 
-Correspondingly to memoized suppliers and int-functions, a general `Function` can also be memoized
+Corresponding to a memoized `Supplier` or an `IntFunction`, a general `Function` can also be memoized
 via a backing `Map` of `Monotonic` values, thereby ensuring the resulting value for each input 
-parameter is computed as most once even in a multi-threaded environment.
-Here is an example of how such a memoized function can be used:
+parameter is computed at-most-once even in a multi-threaded environment.
+Here is an example of how such a memoized function can be defined and used:
 
 ```
 class MapDemo2 {
@@ -422,8 +422,8 @@ class MapDemo2 {
     }
 }
 ```
-It should be noted that only the enumerated collection of keys given at creation time
-constitutes valid inputs to the memoized function.
+It should be noted that the enumerated collection of keys given at creation time
+constitutes the only valid inputs to the memoized function.
 
 ### Safety
 
@@ -444,7 +444,7 @@ around the `@Stable` annotation.
 
 Constant folded `Monotonic` values have the same retrieval performance as values managed via the class-holder-idiom.
 Monotonic reference values are faster to obtain than reference values managed via double-checked-idiom constructs
-as monotonic values relies on explicit memory barriers rather than performing volatile access on each get operation.
+as monotonic values rely on explicit memory barriers rather than performing volatile access on each get operation.
 
 ## Alternatives
 
