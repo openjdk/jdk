@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,7 +702,7 @@ bool PSScavenge::should_attempt_scavenge() {
 
   size_t avg_promoted = (size_t) policy->padded_average_promoted_in_bytes();
   size_t promotion_estimate = MIN2(avg_promoted, young_gen->used_in_bytes());
-  bool result = promotion_estimate < old_gen->free_in_bytes();
+  bool result = promotion_estimate < old_gen->capacity_in_bytes();
 
   log_trace(ergo)("%s scavenge: average_promoted " SIZE_FORMAT " padded_average_promoted " SIZE_FORMAT " free in old gen " SIZE_FORMAT,
                 result ? "Do" : "Skip", (size_t) policy->average_promoted_in_bytes(),
