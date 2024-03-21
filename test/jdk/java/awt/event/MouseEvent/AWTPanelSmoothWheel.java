@@ -26,6 +26,9 @@ import java.awt.Color;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.event.MouseWheelEvent;
+import javax.swing.JOptionPane;
+
+import static javax.swing.JOptionPane.WARNING_MESSAGE;
 
 /*
  * @test
@@ -39,7 +42,10 @@ import java.awt.event.MouseWheelEvent;
 
 public class AWTPanelSmoothWheel {
     private static int wheelEventCount = 0;
+    private static int wheelRotationCount = 0;
     private static int hiResWheelCount = 0;
+    private static final String WARNING_MSG = "WARNING !!!"
+            + " You might NOT be using a hi-res mouse.";
     private static final String INSTRUCTIONS = """
             <html>
             <body>
@@ -52,19 +58,28 @@ public class AWTPanelSmoothWheel {
             panel below the instruction window.<br> <br>
 
             A hi-res mouse is one which produces MouseWheelEvents having
-            <b>preciseWheelRotation &lt 1.</b> <br>
-            When preciseWheelRotation adds up to 1,wheelRotation becomes 1. <br>
-            You should see a few events where preciseWheelRotation < 1 & wheelRotation = 0
-            followed by a event where preciseWheelRotation = 1 & wheelRotation = 1.<br> <br>
+            <b>preciseWheelRotation &lt; 1.</b> <br> <br>
+
+            When preciseWheelRotation adds up to 1, wheelRotation becomes 1. <br>
+            You should see a few events where preciseWheelRotation &lt; 1 &amp;
+            wheelRotation = 0 followed by a event where preciseWheelRotation = 1 &amp;
+            wheelRotation = 1.<br> <br>
 
             Check if the test works OK when the mouse wheel is rotated very slow.<br> <br>
-            Please press PASS if above is true, else FAIL. <br> <br>
+            This is a semi-automated test, if you are using a hi-res mouse and
+            satisfy the hi-res MouseWheelEvents as described above,
+            the test should automatically pass.<br> <br>
 
             <hr>
-            PS: If you don't see events with preciseWheelRotation < 1,
-            then the mouse doesn't support high-resolution scrolling.
-            A warning is shown in the logging area if you are not using a hi-res mouse.
-            <br> <br>
+            PLEASE NOTE:
+            <ul>
+                <li> If you don't see events with preciseWheelRotation &lt; 1,
+                then the mouse doesn't support high-resolution scrolling.</li>
+                <li> A warning is shown if you are not using a hi-res mouse. </li>
+                <li> MouseWheelEvent logs are displayed in the log area
+                for user reference. </li>
+            </ul>
+            <br>
             </body>
             </html>
             """;
@@ -73,7 +88,7 @@ public class AWTPanelSmoothWheel {
         PassFailJFrame.builder()
                 .title("Test Instructions")
                 .instructions(INSTRUCTIONS)
-                .rows(20)
+                .rows(26)
                 .columns(50)
                 .testTimeOut(10)
                 .logArea(10)
@@ -88,19 +103,31 @@ public class AWTPanelSmoothWheel {
         panel.setBackground(Color.GREEN);
         panel.addMouseWheelListener(e -> {
             if (e.getScrollType() == MouseWheelEvent.WHEEL_UNIT_SCROLL) {
-                PassFailJFrame.log("WheelEvent#"+ ++wheelEventCount
+                PassFailJFrame.log("WheelEvent#" + (++wheelEventCount)
                         + " --- Wheel Rotation: " + e.getWheelRotation()
                         + " --- Precise Wheel Rotation: "
                         + String.format("%.2f", e.getPreciseWheelRotation()));
+                if (e.getWheelRotation() >= 1) {
+                    wheelRotationCount = e.getWheelRotation();
+                }
                 if (e.getPreciseWheelRotation() < 1) {
                     hiResWheelCount++;
                 }
                 if (wheelEventCount >= 5 && hiResWheelCount == 0) {
-                    PassFailJFrame.log("WARNING !!! You might not be using a high-res mouse.");
+                    PassFailJFrame.log(WARNING_MSG);
+                    JOptionPane.showMessageDialog(frame, WARNING_MSG,
+                            "WARNING", WARNING_MESSAGE);
+                }
+                if (wheelRotationCount > 5
+                        && (hiResWheelCount / 2 >= wheelRotationCount)) {
+                    PassFailJFrame.log("The test passes: hiResWheelCount = "
+                            + hiResWheelCount + " wheelRotationCount = "
+                            + wheelRotationCount);
+                    PassFailJFrame.forcePass();
                 }
             }
         });
-        frame.setSize (400, 200);
+        frame.setSize(400, 200);
         frame.setLayout(new BorderLayout());
         frame.add(panel, BorderLayout.CENTER);
         return frame;
