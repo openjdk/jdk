@@ -119,7 +119,7 @@ class VerifierSelfTest {
                 CompilationIDAttribute.of("12345"),
                 DeprecatedAttribute.of(),
                 EnclosingMethodAttribute.of(cd_test, Optional.empty(), Optional.empty()),
-                InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.empty(), Optional.empty(), 0)),
+                InnerClassesAttribute.of(InnerClassInfo.of(cd_test, Optional.of(cd_test), Optional.of("inner"), 0)),
                 NestHostAttribute.of(cd_test),
                 NestMembersAttribute.ofSymbols(cd_test),
                 PermittedSubclassesAttribute.ofSymbols(cd_test),
@@ -202,7 +202,9 @@ class VerifierSelfTest {
                 Wrong Deprecated attribute length in class ParserVerificationTestClass
                 Multiple EnclosingMethod attributes in class ParserVerificationTestClass
                 Wrong EnclosingMethod attribute length in class ParserVerificationTestClass
+                Class is both outer and inner class in class ParserVerificationTestClass
                 Multiple InnerClasses attributes in class ParserVerificationTestClass
+                Class is both outer and inner class in class ParserVerificationTestClass
                 Wrong InnerClasses attribute length in class ParserVerificationTestClass
                 Multiple NestHost attributes in class ParserVerificationTestClass
                 Wrong NestHost attribute length in class ParserVerificationTestClass

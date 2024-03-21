@@ -239,7 +239,14 @@ public record ParserVerifier(ClassModel classModel) {
             case DeprecatedAttribute da -> 0;
             case EnclosingMethodAttribute ema -> 4;
             case ExceptionsAttribute ea -> 2 + 2 * ea.exceptions().size();
-            case InnerClassesAttribute ica -> 2 + 8 * ica.classes().size();
+            case InnerClassesAttribute ica -> {
+                for (var ici : ica.classes()) {
+                    if (ici.outerClass().isPresent() && ici.outerClass().get().equals(ici.innerClass())) {
+                        errors.add(new VerifyError("Class is both outer and inner class in %s".formatted(toString(ae))));
+                    }
+                }
+                yield 2 + 8 * ica.classes().size();
+            }
             case LineNumberTableAttribute lta -> 2 + 4 * lta.lineNumbers().size();
             case LocalVariableTableAttribute lvta -> 2 + 10 * lvta.localVariables().size();
             case LocalVariableTypeTableAttribute lvta -> 2 + 10 * lvta.localVariableTypes().size();
