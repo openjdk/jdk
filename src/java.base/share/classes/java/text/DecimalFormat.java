@@ -2141,29 +2141,13 @@ public class DecimalFormat extends NumberFormat {
     }
 
     /**
-     * Parses text from a string to produce a {@code Number}. Parsing can be done
-     * in either a strict or lenient manner, by default it is lenient.
+     * {@inheritDoc}
      * <p>
-     * This method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * <p>
-     * When <b>lenient</b>, if parsing succeeds, then the index of {@code pos} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and {@code null} is returned.
-     * When lenient, parsing will fail if the prefix and/or suffix are non-empty,
+     * Parsing fails when <b>lenient</b>, if the prefix and/or suffix are non-empty
      * and cannot be found due to parsing ending early, or the first character
      * after the prefix cannot be parsed.
      * <p>
-     * When <b>strict</b>, this method will return {@code null} and {@link #parse(String)}
-     * will throw a {@code ParseException} if not every character is parsed, indicating a failure.
-     * {@code pos} can be used to obtain the cause of the failure by calling
-     * {@link ParsePosition#getErrorIndex()}. When strict, a failure will occur,
-     * if in {@code text},
+     * Parsing fails when <b>strict</b>, if in {@code text},
      * <ul>
      *   <li> The prefix is not found, for example: "{@code $}"
      *   <li> The suffix is not found, for example: "{@code %}"

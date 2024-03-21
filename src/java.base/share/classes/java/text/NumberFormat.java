@@ -270,23 +270,13 @@ public abstract class NumberFormat extends Format  {
     }
 
     /**
-     * Parses text from a string to produce a {@code Number}.
+     * {@inheritDoc}
      * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
-     * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
-     * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing.
+     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @implSpec This implementation is equivalent to calling {@code parse(source,
+     *           pos)}.
+     * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
      * @return A {@code Number} parsed from the string. In case of
@@ -385,34 +375,28 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Parses text from the beginning of the given string to produce a {@code Number}.
-     * The method may not use the entire text of the given string. Parsing can
-     * be done in either a strict or lenient manner, by default it is lenient.
-     * This method does not throw an exception if parsing fails, and returns
-     * {@code null} instead. Upon failure, index remains unchanged and {@code parsePosition}
-     * can be used to retrieve the error index of where the parse failed.
      * <p>
-     * When <b>lenient</b>, if parsing succeeds, then the index of {@code pos} is updated
+     * This method attempts to parse text starting at the index given by
+     * {@code pos}. If parsing succeeds, then the index of {@code parsePosition} is updated
      * to the index after the last character used (parsing does not necessarily
-     * use all characters up to the end of the string), and the parsed
-     * number is returned. The updated {@code pos} can be used to
-     * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and {@code null} is returned.
-     * When lenient, parsing will fail if the prefix and/or suffix are non-empty,
-     * and cannot be found due to parsing ending early, or the first character
-     * after the prefix cannot be parsed.
-     * <p>
-     * When <b>strict</b>, this method will return {@code null} if not every
-     * character is parsed, indicating a failure.
+     * use all characters up to the end of the string), and the parsed number is
+     * returned. The updated {@code parsePosition} can be used to indicate the starting
+     * point for the next call to this method. If an error occurs, then the
+     * index of {@code parsePosition} is not changed, the error index of {@code
+     * parsePosition} is set to the index of the character where the error
+     * occurred, and {@code null} is returned.
      * <p>
      * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
      * Long.MAX_VALUE] and with no decimals), otherwise a Double.
+     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
-     * @param source the String to parse
-     * @param parsePosition the parse position
-     * @return the parsed value
-     * @see java.text.Format#parseObject
+     * @param source the {@code String} to parse
+     * @param parsePosition A {@code ParsePosition} object with index and error
+     *            index information as described above.
+     * @return A {@code Number} parsed from the string. In case of
+     *         failure, returns {@code null}.
+     * @throws NullPointerException if {@code source} or {@code ParsePosition}
+     *         is {@code null}.
      * @see #isStrict()
      * @see #isParseIntegerOnly()
      * @see #isGroupingUsed()
@@ -421,15 +405,21 @@ public abstract class NumberFormat extends Format  {
 
     /**
      * Parses text from the beginning of the given string to produce a {@code Number}.
-     * The method may not use the entire text of the given string. Parsing can
-     * be done in either a strict or lenient manner, by default it is lenient.
      * <p>
-     * See the {@link #parse(String, ParsePosition)} method for more information
-     * on number parsing and the behavioral differences when lenient or strict.
+     * This method will return a Long if possible (e.g., within the range [Long.MIN_VALUE,
+     * Long.MAX_VALUE] and with no decimals), otherwise a Double.
+     * Parsing can be done in either a strict or lenient manner, by default it is lenient.
      *
-     * @param source A {@code String} whose beginning should be parsed.
+     * @implNote This is equivalent to calling {@code parse(source,
+     * new ParsePosition(0)} and throwing a {@code ParseException} if parsing fails,
+     * instead of returning {@code null}.
+     * @param source A {@code String}, to be parsed from the beginning.
      * @return A {@code Number} parsed from the string.
-     * @throws    ParseException if parsing fails
+     * @throws ParseException if parsing fails
+     * @throws NullPointerException if {@code source} is {@code null}.
+     * @see #isStrict()
+     * @see #isParseIntegerOnly()
+     * @see #isGroupingUsed()
      */
     public Number parse(String source) throws ParseException {
         ParsePosition parsePosition = new ParsePosition(0);

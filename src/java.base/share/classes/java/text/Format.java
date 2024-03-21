@@ -210,37 +210,40 @@ public abstract class Format implements Serializable, Cloneable {
     }
 
     /**
-     * Parses text from a string to produce an object.
+     * Parses text from the given string to produce an object.
      * <p>
-     * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
+     * This method attempts to parse text starting at the index given by
+     * {@code pos}. If parsing succeeds, then the index of {@code pos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
      * object is returned. The updated {@code pos} can be used to
      * indicate the starting point for the next call to this method.
      * If an error occurs, then the index of {@code pos} is not
      * changed, the error index of {@code pos} is set to the index of
-     * the character where the error occurred, and null is returned.
+     * the character where the error occurred, and {@code null} is returned.
      *
-     * @param source A {@code String}, part of which should be parsed.
+     * @apiNote Subclasses may consider implementing leniency when parsing.
+     *          The definition of leniency should be delegated to the subclass.
+     * @param source the {@code String} to parse
      * @param pos A {@code ParsePosition} object with index and error
      *            index information as described above.
      * @return An {@code Object} parsed from the string. In case of
-     *         error, returns null.
-     * @throws NullPointerException if {@code source} or {@code pos} is null.
+     *         error, returns {@code null}.
+     * @throws NullPointerException if {@code source} or {@code pos} is
+     *         {@code null}.
      */
     public abstract Object parseObject (String source, ParsePosition pos);
 
     /**
      * Parses text from the beginning of the given string to produce an object.
-     * The method may not use the entire text of the given string.
      *
-     * @param source A {@code String} whose beginning should be parsed.
+     * @implNote This implementation is equivalent to calling {@code parseObject(source,
+     * new ParsePosition(0)} and throwing a {@code ParseException} if parsing fails,
+     * instead of returning {@code null}.
+     * @param source A {@code String}, to be parsed from the beginning.
      * @return An {@code Object} parsed from the string.
-     * @throws    ParseException if the beginning of the specified string
-     *            cannot be parsed.
-     * @throws NullPointerException if {@code source} is null.
+     * @throws ParseException if parsing fails
+     * @throws NullPointerException if {@code source} is {@code null}.
      */
     public Object parseObject(String source) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
