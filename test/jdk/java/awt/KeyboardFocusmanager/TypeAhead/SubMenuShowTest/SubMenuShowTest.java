@@ -21,19 +21,6 @@
  * questions.
  */
 
-/*
-  @test
-  @key headful
-  @bug 6380743 8158380 8198624
-  @summary Submenu should be shown by mnemonic key press.
-  @author anton.tarasov@...: area=awt.focus
-  @library ../../../regtesthelpers
-  @library /test/lib
-  @build Util
-  @build jdk.test.lib.Platform
-  @run main SubMenuShowTest
-*/
-
 import java.awt.Robot;
 import java.awt.BorderLayout;
 import java.awt.event.KeyEvent;
@@ -48,6 +35,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import jdk.test.lib.Platform;
 import test.java.awt.regtesthelpers.Util;
 
+/*
+  @test
+  @key headful
+  @bug 6380743 8158380 8198624
+  @summary Submenu should be shown by mnemonic key press.
+  @library /java/awt/regtesthelpers
+  @library /test/lib
+  @build Util
+  @build jdk.test.lib.Platform
+  @run main SubMenuShowTest
+*/
 public class SubMenuShowTest {
     private static Robot robot;
     private static JFrame frame;
