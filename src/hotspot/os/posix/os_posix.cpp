@@ -711,9 +711,11 @@ void* os::get_default_process_handle() {
 }
 
 void* os::dll_lookup(void* handle, const char* name) {
+  ::dlerror(); // Clear any previous error
   void* ret = ::dlsym(handle, name);
   if (ret == nullptr) {
     const char* tmp = ::dlerror();
+    // It is possible that we found a NULL symbol, hence no error.
     if (tmp != nullptr) {
       log_debug(os)("Symbol %s not found in dll: %s", name, tmp);
     }
