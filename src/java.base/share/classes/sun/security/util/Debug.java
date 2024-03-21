@@ -77,7 +77,7 @@ public class Debug {
                 int beginIndex = args.lastIndexOf("all") + "all".length();
                 int commaIndex = args.indexOf(',', beginIndex);
                 if (commaIndex == -1) commaIndex = args.length();
-                threadInfoAll = args.substring(beginIndex, commaIndex).contains("+thread");;
+                threadInfoAll = args.substring(beginIndex, commaIndex).contains("+thread");
                 timeStampInfoAll = args.substring(beginIndex, commaIndex).contains("+timestamp");
             }
         }
@@ -204,7 +204,9 @@ public class Debug {
 
     // parse an option string to determine if extra details
     // (like thread and timestamp) should be printed
-    private static boolean getConfigInfo(String option, String extraInfoOption, boolean ofInstance) {
+    private static boolean getConfigInfo(String option,
+                                         String extraInfoOption,
+                                         boolean ofInstance) {
         // args is converted to lower case for the most part via marshal method
         int beginIndex;
         String subOpt;
@@ -217,13 +219,19 @@ public class Debug {
                 return true;
             }
         }
-        // for java.security.debug mode, we use the args string.
-        String propString = ofInstance ? option : args;
+
+        // for Debug instances derived from the 'of' method, simply check
+        // the option string for occurrence of the extra option
+        if (ofInstance) {
+            return option.contains(extraInfoOption);
+        }
+
+        // for java.security.debug mode, use the args string.
         try {
-            beginIndex = propString.lastIndexOf(option) + option.length();
-            int commaIndex = propString.indexOf(',', beginIndex);
-            if (commaIndex == -1) commaIndex = propString.length();
-            subOpt = propString.substring(beginIndex, commaIndex);
+            beginIndex = args.lastIndexOf(option) + option.length();
+            int commaIndex = args.indexOf(',', beginIndex);
+            if (commaIndex == -1) commaIndex = args.length();
+            subOpt = args.substring(beginIndex, commaIndex);
         } catch (IndexOutOfBoundsException e) {
             // no sub option
             return false;
