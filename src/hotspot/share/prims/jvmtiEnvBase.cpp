@@ -2471,10 +2471,7 @@ GetOwnedMonitorInfoClosure::do_thread(Thread *target) {
 
 void
 GetOwnedMonitorInfoClosure::do_vthread(Handle target_h) {
-  if (_target_jt == nullptr) {
-    _result = JVMTI_ERROR_NONE;
-    return;
-  }
+  assert(_target_jt != nullptr, "sanity check");
   Thread* current = Thread::current();
   ResourceMark rm(current); // vframes are resource allocated
   HandleMark hm(current);
