@@ -45,14 +45,21 @@ HeapWord* ObjectStartArray::object_start(HeapWord* const addr) const {
 
 HeapWord* ObjectStartArray::block_start_reaching_into_card(HeapWord* const addr) const {
   const uint8_t* entry = entry_for_addr(addr);
-  uint8_t offset = *entry;
-  while (offset >= CardTable::card_size_in_words()) {
+
+  uint8_t offset;
+  while (true) {
+    offset = *entry;
+
+    if (offset < CardTable::card_size_in_words()) {
+      break;
+    }
+
     // The excess of the offset from N_words indicates a power of Base
     // to go back by.
     size_t n_cards_back = BOTConstants::entry_to_cards_back(offset);
     entry -= n_cards_back;
-    offset = *entry;
   }
+
   HeapWord* q = addr_for_entry(entry);
   return q - offset;
 }
