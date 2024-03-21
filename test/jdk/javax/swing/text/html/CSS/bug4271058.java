@@ -25,7 +25,7 @@
  * @test
  * @bug 4270889 4271058 4285098
  * @summary Tests that <table border>, <table align> and <td width> tags work
- * @library /open/test/jdk/java/awt/regtesthelpers
+ * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4271058
 */
