@@ -386,10 +386,6 @@ public class JavadocHelperTest {
             try (JavadocHelper helper = JavadocHelper.create(task, Arrays.asList(srcZip))) {
                 String javadoc = helper.getResolvedDocComment(el);
 
-                if (!javadoc.equals(expectedJavadoc)) {
-                    javadoc.equals(expectedJavadoc);
-                    System.err.println("!!!");
-                }
                 assertEquals(javadoc, expectedJavadoc);
             }
         }
