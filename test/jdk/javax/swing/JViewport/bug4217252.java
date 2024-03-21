@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4217252
-*/
+ */
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;

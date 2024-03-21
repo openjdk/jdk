@@ -28,7 +28,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @run main/manual bug4750421
-*/
+ */
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
