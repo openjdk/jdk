@@ -123,7 +123,7 @@ public class Ctrli {
         keyecho.addKeyListener(keyListener);
         keyecho.addMouseListener(mouseListener);
         frame.setLayout(new BorderLayout());
-        frame.getContentPane().add(keyecho);
+        frame.add(keyecho);
         frame.setSize(200, 200);
         frame.setLocationRelativeTo(null);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);

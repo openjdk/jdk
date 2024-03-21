@@ -119,7 +119,7 @@ public class JActionCommandTest {
     private static void createAndShowUI() {
         CustomActionListener customListener = new CustomActionListener();
         f = new JFrame("Test JMenuItem Shortcut");
-        f.getContentPane().setLayout(new BorderLayout());
+        f.setLayout(new BorderLayout());
         tf = new JTextField(12);
         tf.addActionListener(customListener);
         JMenuBar mb = new JMenuBar();
@@ -132,7 +132,7 @@ public class JActionCommandTest {
         m.add(mi);
         mb.add(m);
         f.setJMenuBar(mb);
-        f.getContentPane().add("South", tf);
+        f.add("South", tf);
         f.setSize(200, 200);
         f.setLocationRelativeTo(null);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
