@@ -215,7 +215,7 @@ constant values, while retaining efficient computer resource management
 ### Preview Feature
 
 Monotonic Values is a [preview API](https://openjdk.org/jeps/12), disabled by default.
-To use the Monotonic Value API the JVM flag `--enable-preview`  must be passed in, as follows:
+To use the Monotonic Value API, the JVM flag `--enable-preview` must be passed in, as follows:
 
 - Compile the program with `javac --release 23 --enable-preview Main.java` and run it with `java --enable-preview Main`; or,
 
@@ -236,9 +236,9 @@ The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api
 ### Monotonic Value
 
 A _monotonic value_ is a holder object that is bound at most once whereby it
-goes from "empty" to "present". It is expressed as an object of type `Monotonic`, which, like `Future`, is
-a holder for some computation that may or may not have occurred yet.
-Empty `Monotonic` instances are created via the factory method `Monotonic::of`:
+goes from "absent" to "present". It is expressed as an object of type `Monotonic`,
+which, like `Future`, is  a holder for some computation that may or may not have occurred yet.
+Fresh (absent) `Monotonic` instances are created via the factory method `Monotonic::of`:
 
 ```
 class Bar {
@@ -246,7 +246,7 @@ class Bar {
     private static final Monotonic<Logger> LOGGER = Monotonic.of();
     
     static void init() {
-        // 2. Bind the monotonic value _after_ being declared.
+        // 2. Bind the monotonic value _after_ being declared
         LOGGER.bind(Logger.getLogger("com.foo.Bar"));
     }
     
@@ -262,7 +262,7 @@ performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
 
 In case a monotonic value cannot be not pre-bound as in the example above, it is possible
-to compute and bind an absent value as shown in this example:
+to compute and bind an absent value on-demand as shown in this example:
 
 ```
 class Bar {
@@ -277,16 +277,16 @@ class Bar {
 }
 ```
 
-`Monotonic` can invoke the value supplier several times if called from a plurality 
-of threads but only one witness value is ever exposed to the outside world. To also 
-guarantee the value supplier is invoked *at most once* even though invoked by several
-threads,  there is a convenience method, located in the `Monotonics` utility class,
-providing precisely that:
+`Monotonic::computeIfAbsent` can invoke the value supplier several times if called
+from a plurality  of threads but only one witness value is ever exposed to the 
+outside world. To also guarantee the value supplier is invoked *at most once*,
+even though invoked by several threads, there is a convenience method, located 
+in the utility class `Monotonics`, providing precisely that:
 
 ```
 class Bar {
-    // 1. Declare a memoized (cached) Supplier backed by a monotonic value that
-    //    is invoked at most once
+    // 1. Declare a memoized (cached) Supplier (backed by an 
+    //    internal monotonic value) that is invoked at most once
     private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
                     () -> Logger.getLogger("com.foo.Bar"));
 
@@ -321,7 +321,7 @@ Like a `Monotonic` object, a `List<Monotonic>` object is created via a factory m
 of the List:
 
 ```
-static <V> List<Monotonic<V>> of(int size) { ... }
+static <V> List<Monotonic<V>> ofList(int size) { ... }
 ```
 
 This allows for improving the handling of lists with monotonic values and enables a much better
@@ -362,8 +362,8 @@ list, stored in an instance field, depends on the value of other (lower-index) e
 allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
 the case of multi-threaded access.
 
-Similarly to how a Supplier can be memoized, the same pattern can be used for an `IntFunction`
-that will record its cached value in a backing `List` of `Monotonic` elements:
+Similarly to how a `Supplier` can be memoized using a backing `Monotonic`, the same pattern can be used 
+for an `IntFunction` that will record its cached value in a backing _list of `Monotonic` elements_:
 
 ```
 class Fibonacci {
@@ -383,8 +383,9 @@ class Fibonacci {
 }
 ```
 
-Finally, Maps of Monotonic values can also be defined and used similar to how List are handled. In the
-example below, we cache values for an enumerated set of keys:
+Finally, a `Map` of `Monotonic` values can also be defined and used similar to how a 
+`List` of `Monotonic` elements are handled. In the example below, we cache values for 
+an enumerated collection of keys:
 
 ```
 class MapDemo {
@@ -398,8 +399,9 @@ class MapDemo {
 }
 ```
 
-Again, a general `Function` can be memoized via a backing map of monotonic values, thereby ensuring the
-value for each input parameter is computed as most once even in a multi-threaded environment, as shown here:
+Correspondingly, a general `Function` can be memoized via a backing `Map` of `Monotonic` values, thereby ensuring the
+resulting value for each input parameter is computed as most once even in a multi-threaded environment.
+Here is an example of how such a memoized function can be used:
 
 ```
 class MapDemo2 {
@@ -417,20 +419,22 @@ class MapDemo2 {
     }
 }
 ```
+It should be noted that only the enumerated collection of keys given at creation time are valid
+inputs to the memoized function.
 
 ### Safety
 
 Binding a monotonic value is an atomic operation, e.g. calling `Monotonic::computeIfAbsent` or 
 `Monotonic::bind`, either results in successfully initializing the monotonic to a value, or fails
-with an exception. This is true regardless of whether  the monotonic value is accessed by a single
+with an exception. This is true regardless of whether the monotonic value is accessed by a single
 thread, or concurrently, by multiple threads. 
 
 The attentive reader might have noticed the similarities between `Monotonic` and the `@Stable` annotation.
 This annotation is used in JDK internal code to mark scalar and array variables whose values or elements will
 change *at most once*. This annotation is powerful and often crucial to achieving optimal internal performance,
 but it is also easy to misuse: further updating a `@Stable` field after its initial update will result in
-undefined behavior, as the JIT compiler might have *already* have constant-folded the now overwritten
-field value. `Monotonic` bypasses this issue by effectively providing a *safe* and *efficient* wrapper
+undefined behavior, as the JIT compiler might have *already* constant-folded the now overwritten
+field value. `Monotonic` solves this issue by effectively providing a *safe* and *efficient* wrapper
 around the `@Stable` annotation.
 
 ### Performance

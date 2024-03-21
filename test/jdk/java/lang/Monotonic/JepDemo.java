@@ -91,8 +91,8 @@ final class JepDemo {
 
     static
     class Bar4 {
-        // 1. Declare a memoized (cached) Supplier backed by a monotonic value that
-        //    is invoked at most once
+        // 1. Declare a memoized (cached) Supplier (backed by an
+        //    internal monotonic value) that is invoked at most once
         private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
                         () -> Logger.getLogger("com.foo.Bar"));
 
