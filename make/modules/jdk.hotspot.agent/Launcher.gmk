@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jhsdb
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jhsdb, \
     MAIN_CLASS := sun.jvm.hotspot.SALauncher, \
     MACOSX_PRIVILEGED := true, \

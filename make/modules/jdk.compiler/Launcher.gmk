@@ -25,11 +25,19 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build javac
+################################################################################
+
 $(eval $(call SetupBuildLauncher, javac, \
    MAIN_CLASS := com.sun.tools.javac.Main, \
    JAVA_ARGS := --add-modules ALL-DEFAULT, \
    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS, \
 ))
+
+################################################################################
+## Build serialver
+################################################################################
 
 $(eval $(call SetupBuildLauncher, serialver, \
     MAIN_CLASS := sun.tools.serialver.SerialVer, \

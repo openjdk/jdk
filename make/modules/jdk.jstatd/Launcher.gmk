@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jstatd
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jstatd, \
     MAIN_CLASS := sun.tools.jstatd.Jstatd, \
 ))

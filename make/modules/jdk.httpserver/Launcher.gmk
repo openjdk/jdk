@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jwebserver
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jwebserver, \
     MAIN_CLASS := sun.net.httpserver.simpleserver.JWebServer, \
 ))

@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jpackage
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jpackage, \
     MAIN_CLASS := jdk.jpackage.main.Main, \
 ))

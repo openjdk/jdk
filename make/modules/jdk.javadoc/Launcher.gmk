@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build javadoc
+################################################################################
+
 $(eval $(call SetupBuildLauncher, javadoc, \
     MAIN_CLASS := jdk.javadoc.internal.tool.Main, \
     JAVA_ARGS := --add-modules ALL-DEFAULT, \

@@ -25,6 +25,10 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jrunscript
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jrunscript, \
     MAIN_CLASS := com.sun.tools.script.shell.Main, \
     JAVA_ARGS := --add-modules ALL-DEFAULT, \

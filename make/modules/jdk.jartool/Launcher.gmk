@@ -25,9 +25,17 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jar
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jar, \
     MAIN_CLASS := sun.tools.jar.Main, \
 ))
+
+################################################################################
+## Build jarsigner
+################################################################################
 
 $(eval $(call SetupBuildLauncher, jarsigner, \
     MAIN_CLASS := sun.security.tools.jarsigner.Main, \

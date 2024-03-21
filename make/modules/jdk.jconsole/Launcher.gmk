@@ -25,11 +25,16 @@
 
 include LauncherCommon.gmk
 
+################################################################################
+## Build jconsole
+################################################################################
+
 $(eval $(call SetupBuildLauncher, jconsole, \
     MAIN_CLASS := sun.tools.jconsole.JConsole, \
-    JAVA_ARGS := --add-opens java.base/java.io=jdk.jconsole \
-                 --add-modules ALL-DEFAULT \
-		 -Djconsole.showOutputViewer \
-		 -Djdk.attach.allowAttachSelf=true, \
+    JAVA_ARGS := \
+        --add-opens java.base/java.io=jdk.jconsole \
+        --add-modules ALL-DEFAULT \
+        -Djconsole.showOutputViewer \
+        -Djdk.attach.allowAttachSelf=true, \
     CFLAGS_windows := -DJAVAW, \
 ))
