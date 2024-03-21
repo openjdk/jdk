@@ -45,12 +45,12 @@ final class JepDemo {
     static class Foo {};
 
     static
-    class Init {
+    class Bar {
         // 1. Declare a monotonic value
         private static final Monotonic<Logger> LOGGER = Monotonic.of();
 
         static void init() {
-            // 2. Bind the monotonic value "later"
+            // 2. Bind the monotonic value _after_ being declared.
             LOGGER.bind(Logger.getLogger("com.foo.Bar"));
         }
 
@@ -63,7 +63,7 @@ final class JepDemo {
 
     static
     class Bar2 {
-        // 1. Declare a monotonic
+        // 1. Declare a monotonic value
         private static final Monotonic<Logger> LOGGER = Monotonic.of();
 
         static Logger logger() {
@@ -91,7 +91,7 @@ final class JepDemo {
 
     static
     class Bar4 {
-        // 1. Declare a memoized (cached) Supplier backed by the monotonic value that
+        // 1. Declare a memoized (cached) Supplier backed by a monotonic value that
         //    is invoked at most once
         private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
                         () -> Logger.getLogger("com.foo.Bar"));

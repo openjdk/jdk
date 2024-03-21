@@ -1,20 +1,23 @@
 ## Summary
 
-Introduce _Monotonic Values_, which are immutable value holders that are initialized at most once. Monotonic values offer the performance and safety benefits of final fields, while offering greater flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
+Introduce _Monotonic Values_, which are immutable value holders that are initialized at most once.
+Monotonic values offer the performance and safety benefits of final fields, while offering greater
+flexibility as to the timing of initialization. This is a [preview API](https://openjdk.org/jeps/12).
 
 ## Goals
 
 - Decouple the initialization of monotonic values from the initialization of their containing class or object.
 - Provide an easy and intuitive API for monotonic values and collections thereof.
 - Enable [constant folding](https://en.wikipedia.org/wiki/Constant_folding) optimizations for monotonic values.
-- Support dependencies between monotonic values. (TODO: THIS REMAINS TO BE DONE)
+- Support dependencies between monotonic values.
 - Reduce the amount of static initializer code and/or field initialization to be executed.
 - Allow the initialization of values to be decoupled from one another (disentanglement of the soup of `<clinit>` dependencies).
 - Uphold integrity and consistency, even in a multi-threaded environment.
 
 ## Non-goals
 
-- It is not a goal to provide additional language support for expressing monotonic computation. This might be the subject of a future JEP.
+- It is not a goal to provide additional language support for expressing monotonic computation. 
+  This might be the subject of a future JEP.
 - It is not a goal to prevent or deprecate existing idioms for expressing lazy initialization.
 
 ## Motivation
@@ -23,16 +26,18 @@ Most Java developers have heard the advice "prefer immutability" (Effective
 Java, Item 17). Immutability confers many advantages including:
 
 * an immutable object can only be in one state
-* the invariants of an immutable object can be enforced by its constructor;
-* immutable objects can be freely shared across threads;
+* the invariants of an immutable object can be enforced by its constructor
+* immutable objects can be freely shared across threads
 * immutability enables all manner of runtime optimizations.
 
 Java's main tool for managing immutability  is `final` fields (and more recently, `record` classes).
-Unfortunately, `final` fields come with restrictions. Final instance fields must be set by the end of the constructor, and static
-final fields during class initialization. Moreover, the order in which `final`
+Unfortunately, `final` fields come with restrictions. Final instance fields must be set by the end of
+the constructor, and `static final` fields during class initialization. Moreover, the order in which `final`
 field initializers are executed is determined by the [textual order](https://docs.oracle.com/javase/specs/jls/se7/html/jls-13.html#jls-12.4.1) 
 and is then made explicit in the resulting class file. As such, the initialization of a `final`
-field is fixed in time; it cannot be arbitrarily moved forward or backward. In other words, developers cannot cause specific constants to be initialized before the class/object is initialized and cannot cause constants to be initialized after the class or object is initialized.
+field is fixed in time; it cannot be arbitrarily moved forward or backward. In other words, developers
+cannot cause specific constants to be initialized before the class/object is initialized and cannot cause
+constants to be initialized after the class or object is initialized.
 This means that developers are forced to choose between finality and all its
 benefits, and flexibility over the timing of initialization.  Developers have
 devised a number of strategies to ameliorate this imbalance, but none are
@@ -115,15 +120,19 @@ as non-final. This is not ideal for several reasons:
 
 Furthermore, the idiom does not work for `null` values.
 
-
-The situation is even worse when clients need to operate on a _collection_ of immutable values. A classic example of this is the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence), where each element in the sequence is the sum of the two preceding elements. More formally:
+The situation is even worse when clients need to operate on a _collection_ of immutable values. 
+A classic example of this is the [Fibonacci sequence](https://en.wikipedia.org/wiki/Fibonacci_sequence), where each element in the sequence 
+is the sum of the two preceding elements. More formally:
 
 ```
 fib(n) = fib(n-1) + fib(n-2) when n >= 2
 fib(n) = n when 0 <= n < 2
 ```
 
-When a computation depends on more sub-computations, it induces a *dependency graph*, where each computation is a node in the graph, and has zero or more edges to each of the sub-computation nodes it depends on. For instance, the dependency graph associated with `fib(5)` is given below:
+When a computation depends on more sub-computations, it induces a *dependency graph*, where 
+each computation is a node in the graph, and has zero or more edges to each of the 
+sub-computation nodes it depends on. For instance, the dependency graph associated with
+`fib(5)` is given below:
 
 ```
  
@@ -137,7 +146,12 @@ When a computation depends on more sub-computations, it induces a *dependency gr
 
 ```
 
-This dependency graph has a number of interesting properties. Firstly, as `n` grows, it becomes increasingly demanding to compute `fib(n)` on the fly - that is, the number of nodes in the graph grows *exponentially* with `n`. Secondly, the dependency graph contains many repeated nodes. For instance, `fib(1)` occurs 4 times; `fib(2)` occurs 3 times, etc. Any repeated node in the dependency graph leads to some waste, as we are spending valuable CPU resources to compute a value that has already been computed before.
+This dependency graph has a number of interesting properties. Firstly, as `n` grows, it becomes
+increasingly demanding to compute `fib(n)` on the fly - that is, the number of nodes in the graph
+grows *exponentially* with `n`. Secondly, the dependency graph contains many repeated nodes. 
+For instance, `fib(1)` occurs 4 times; `fib(2)` occurs 3 times, etc. Any repeated node in the 
+dependency graph leads to some waste, as we are spending valuable CPU resources to compute a value
+that has already been computed before.
 
 Here is an example of how to implement a class holding values in the Fibonacci sequence using a `Map`:
 
@@ -178,7 +192,13 @@ int[] fibs = IntStream.range(0, 10)
         .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
 ```
 
-Unfortunately, this approach provides a number of challenges. First, retrieving the values from a `Map` is slow, as said values cannot  be constant-folded. Even worse, using `Map` can be error-prone, as dependencies between values in the Fibonacci sequence have to be managed manually. For instance, when calling `fib(n)`, entries for all `fib(x)` (where x < n) must also be added to the map. Furthermore, the class holder idiom (see above) is clearly insufficient in this case, as the number of required holder classes is *statically unbounded* - it depends on the value of the construction parameter `upperBound`.
+Unfortunately, this approach provides a number of challenges. First, retrieving the values
+from a `Map` is slow, as said values cannot  be constant-folded. Even worse, using `Map` can
+be error-prone, as dependencies between values in the Fibonacci sequence have to be managed manually.
+For instance, when calling `fib(n)`, entries for all `fib(x)` (where x < n) must also be added to the map.
+Furthermore, the class holder idiom (see above) is clearly insufficient in this case, as 
+the number of required holder classes is *statically unbounded* - it depends on the value of 
+the construction parameter `upperBound`.
 
 What we are missing -- in all cases -- is a way to *promise* that a constant
 will be initialized by the time it is used, with a value that is computed at
@@ -207,72 +227,118 @@ To use the Monotonic Value API the JVM flag `--enable-preview`  must be passed i
 
 The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/ComputedConstant.html) defines classes and an interface so that client code in libraries and applications can
 
-- Define and use computed constant objects: `Monotonic`
+- Define and use monotonic objects: `Monotonic`
 
-- Define and use computed constant collections: `MonotonicList` and `MonotonicList` 
+- Define and use monotonic collections: `List<Monotonic<V>>` and `Map<K, Monotonic<V>>` 
 
 The [Monotonic Value API](https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/ComputedConstant.html) resides in the [`java.lang`] package of the [`java.base`] module.
 
 ### Monotonic Value
 
 A _monotonic value_ is a holder object that is bound at most once whereby it
-goes from "unbound" to "bound". It  is expressed as an object of type `Monotonic`, which, like `Future`, is
+goes from "empty" to "present". It is expressed as an object of type `Monotonic`, which, like `Future`, is
 a holder for some computation that may or may not have occurred yet.
-`Monotonic` instances are created by providing a *holder class*,
-typically in the form of a lambda expression or a method reference, which computes the constant value:
+Empty `Monotonic` instances are created via the factory method `Monotonic::of`:
+
 ```
 class Bar {
-    // 1. Declare a computed constant value
-    private static final ComputedConstant<Logger> LOGGER =
-            ComputedConstant.of( () -> Logger.getLogger("com.foo.Bar") );
-
+    // 1. Declare a monotonic value
+    private static final Monotonic<Logger> LOGGER = Monotonic.of();
+    
+    static void init() {
+        // 2. Bind the monotonic value _after_ being declared.
+        LOGGER.bind(Logger.getLogger("com.foo.Bar"));
+    }
+    
     static Logger logger() {
-        // 2. Access the computed value
-        //    (evaluation made before the first access)
+        // 3. Access the monotonic value with as-declared-final performance
         return LOGGER.get();
     }
 }
 ```
 Calling `logger()` multiple times yields the same value from each invocation.
-This is similar in spirit to the holder class idiom, and offers the same
+This is similar in spirit to the holder-class idiom, and offers the same
 performance, constant-folding, and thread-safety characteristics, but is simpler
 and incurs a lower static footprint since no additional class is required.
-`ComputedConstant` guarantees the value supplier is invoked *at most once* per
-`ComputedContant` instance.  In the `LOGGER` example above, the supplier is
-invoked at most once per loading of the containing class `Bar` (`Bar`, in turn,
-can be loaded at most once into any given `ClassLoader`).  A value supplier may
-return `null` which will be considered the bound value.  (Null-averse
-applications can also use `ComputedConstant<Optional<V>>`.)
 
-### Computed Constants Collections
-
-While initializing a single field of type `ComputedConstant` is cheap (remember, creating a new `ComputedConstant` object only creates the *holder* for the lazily evaluated value), this (small) initialization cost has to be paid for each field of type `ComputedConstant` declared by the class. As a result, the class static and/or instance initializer will keep growing with the number of `ComputedConstant` fields, thus degrading performance.
-
-To handle these cases, the Computed Constants API provides a construct that allows the creation of a *`List` of `ComputedConstants` elements*. Such a `List` is a list whose elements are evaluated independently before a particular element is first accessed. Lists of computed constants are objects of type `List<ComputedConstant>`. Consequently, each element in the list enjoys the same properties as a `ComputedConstant` but with lower storage requirements.
-
-Like a `ComputedConstant` object, a `List<ComputedConstant>` object is created via a factory method by providing a size and an element provider - typically in the form of a lambda expression or method reference, which is used to compute the value associated with the i-th element of the `List` instance when the element is first accessed:
+In case a monotonic value is not pre-bound, it is possible to compute and bind a value if 
+empty as shown in this example:
 
 ```
-static <V> List<ComputedConstant<V>> of(int size, IntFunction<? extends V> mappingProvider) { ... }
+class Bar {
+    // 1. Declare a monotonic value
+    private static final Monotonic<Logger> LOGGER = Monotonic.of();
+    
+    static Logger logger() {
+        // 2. Access the monotonic value with as-declared-final performance
+        //    (evaluation made before the first access)
+        return LOGGER.computeIfAbsent( () -> Logger.getLogger("com.foo.Bar") );
+    }
+}
 ```
 
-This allows for improving the handling of lists with constants and enables a much better implementation of the
-Fibonacci class mentioned above:
+`Monotonic` can invoke the value supplier several times if called from a plurality 
+of threads but only one witness value is ever exposed to the outside world. To guarantee
+the value supplier is invoked *at most once* even though invoked by several threads, 
+there is a utility methods providing this:
 
+```
+class Bar {
+    // 1. Declare a memoized (cached) Supplier backed by a monotonic value that
+    //    is invoked at most once
+    private static final Supplier<Logger> LOGGER = Monotonics.asMemoized(
+                    () -> Logger.getLogger("com.foo.Bar"));
+
+    static Logger logger() {
+        // 2. Access the memoized value with as-declared-final performance
+        //    (evaluation made before the first access)
+        return LOGGER.get();
+    }
+}
+```
+
+In the `LOGGER` example above, the supplier is invoked at most once per
+loading of the containing class `Bar` (`Bar`, in turn, can be loaded at
+most once into any given `ClassLoader`).  A value supplier may return 
+`null` which will be considered the bound value.  (Null-averse applications
+can also use `Monotonic<Optional<V>>`.)
+
+### Monotonic Collections
+
+While initializing a single field of type `Monotonic` is cheap (remember, creating a new `Monotonic` 
+object only creates the *holder* for the lazily evaluated value), this (small) initialization cost has 
+to be paid for each field of type `Monotonic` declared by the class. As a result, the class static 
+and/or instance initializer will keep growing with the number of `Monotonic` fields, thus degrading performance.
+
+To handle these cases, the Monotonic Value API provides a construct that allows the creation of a lazy
+*`List` of `Monotonic` elements*. Such a `List` is a list whose elements are evaluated independently
+before a particular element is first accessed. Lists of Monotonic values are objects of type `List<Monotonic>`.
+Consequently, each element in the list enjoys the same properties as a `Monotonic` but may require less resources.
+
+Like a `Monotonic` object, a `List<Monotonic>` object is created via a factory method by providing a size
+of the List:
+
+```
+static <V> List<Monotonic<V>> of(int size) { ... }
+```
+
+This allows for improving the handling of lists with monotonic values and enables a much better
+implementation of the Fibonacci class mentioned above:
 
 ```
 class Fibonacci {
 
-    private final List<ComputedConstant<Integer>> list;
+    private final List<Monotonic<Integer>> numberCache;
 
     public Fibonacci(int upperBound) {
-        list = ComputedConstant.of(upperBound, this::number);
+        numberCache = Monotonic.ofList(upperBound);
     }
 
     public int number(int n) {
         return (n < 2)
                 ? n
-                : list.get(n - 1).get() + list.get(n - 2).get();
+                : Monotonics.computeIfAbsent(numberCache, n -1 , this::number)
+                + Monotonics.computeIfAbsent(numberCache, n - 2, this::number);
     }
 
 }
@@ -288,49 +354,102 @@ int[] fibs = IntStream.range(0, 10)
         .toArray(); // { 0, 1, 1, 2, 3, 5, 8, 13, 21, 34 }
 ```
 
-Note how there's only *one* field of type `List<ComputedConstant<String>>` to initialize - every other computation is performed before the corresponding element of the list is accessed. Note also how the value of an element in the `list` list, stored in an instance field, depends on the value of other (lower-index) element values. The Computed Constants API allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in the case of multi-threaded access.
+Note how there's only field of type `List<Monotonic<Integer>>` to initialize - every other computation is
+performed before the corresponding element of the list is accessed. Note also how the value of an element in the
+list, stored in an instance field, depends on the value of other (lower-index) element values. The Monotonic Value API
+allows modeling this cleanly, while still preserving good constant-folding guarantees and integrity of updates in
+the case of multi-threaded access.
 
-### Exceptions
+Similarly to how a Supplier can be memoized, the same pattern can be used for an `IntFunction`
+that will record its cached value in a backing `List` of `Monotonic` elements:
 
-Because the value supplier is only invoked at most once, any exception thrown by the supplier will prevent the value from ever being computed. In such a case, the exception will be relayed to the initial caller. Subsequent attempts to acquire a value will result in a `NoSuchElementException` being thrown. For security reasons, the original exception is never retained in the Computed Constant instance.
+```
+class Fibonacci {
 
-If a class has a number of Computed Constant fields then an exception computing one of them does not impact the others, unless there is a dependency between the fields.
+    private final IntFunction<Integer> numCache;
+
+    public Fibonacci3(int upperBound) {
+        numCache = Monotonics.asMemoized(upperBound, this::number);
+    }
+
+    public int number(int n) {
+        return (n < 2)
+                ? n
+                : numCache.apply(n - 1) + numCache.apply(n - 2);
+    }
+
+}
+```
+
+Finally, Maps of Monotonic values can also be defined and used similar to how List are handled. In the
+example below, we cache values for an enumerated set of keys:
+
+```
+class MapDemo {
+
+    private static final Map<String, Monotonic<Logger>> LOGGERS =
+            Monotonic.ofMap(Set.of("com.foo.Bar", "com.foo.Baz"));
+
+    static Logger logger(String name) {
+        return Monotonics.computeIfAbsent(LOGGERS, name, Logger::getLogger);
+    }
+}
+```
+
+Again, a general `Function` can be memoized via a backing map of monotonic values, thereby ensuring the
+value for each input parameter is computed as most once even in a multi-threaded environment, as shown here:
+
+```
+class MapDemo2 {
+
+    // 1. Declare a memoized (cached) function backed by a monotonic map
+    private static final Function<String, Logger> LOGGERS =
+            Monotonics.asMemoized(
+                    Set.of("com.foo.Bar", "com.foo.Baz"),
+                    Logger::getLogger);
+
+    static Logger logger(String name) {
+        // 2. Access the memoized value with as-declared-final performance
+        //    (evaluation made before the first access)
+        return LOGGERS.apply(name);
+    }
+}
+```
 
 ### Safety
 
-Initializing a computed constant is an atomic operation: calling `ComputedConstant::get` either results in successfully initializing the computed constant to a value, or fails with an exception. This is true regardless of whether the computed constant is accessed by a single thread, or concurrently, by multiple threads. Moreover, while computed constants can depend on each other, the API dynamically detects circular initialization dependencies and throws a `StackOverflowError` when a circularity is found:
+Binding a monotonic value is an atomic operation, e.g. calling `Monotonic::computeIfAbsent` or 
+`Monotonic::bind`, either results in successfully initializing the monotonic to a value, or fails
+with an exception. This is true regardless of whether  the monotonic value is accessed by a single
+thread, or concurrently, by multiple threads. 
 
-```
-static ComputedConstant<Integer> a;
-static ComputedConstant<Integer> b;
-
-   ...
-
-    a = ComputedConstant.of( () -> b.get() );
-    b = ComputedConstant.of( () -> a.get() );
-
-    a.get();
-
-java.lang.StackOverflowError: Circular supplier detected
-...
-```
-
-The attentive reader might have noticed the similarities between `ComputedConstant` and the `@Stable` annotation. This annotation is used in JDK internal code to mark scalar and array variables whose values or elements will change *at most once*. This annotation is powerful and often crucial to achieving optimal internal performance, but it is also easy to misuse: further updating a `@Stable` field after its initial update will result in undefined behavior, as the JIT compiler might have *already* have constant-folded the now overwritten field value. `ComputedConstant` bypasses this issue by effectively providing a *safe* and *efficient* wrapper around the `@Stable` annotation.
+The attentive reader might have noticed the similarities between `Monotonic` and the `@Stable` annotation.
+This annotation is used in JDK internal code to mark scalar and array variables whose values or elements will
+change *at most once*. This annotation is powerful and often crucial to achieving optimal internal performance,
+but it is also easy to misuse: further updating a `@Stable` field after its initial update will result in
+undefined behavior, as the JIT compiler might have *already* have constant-folded the now overwritten
+field value. `Monotonic` bypasses this issue by effectively providing a *safe* and *efficient* wrapper
+around the `@Stable` annotation.
 
 ## Alternatives
 
-There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`, and `ThreadLocal` which are similar in the sense that they support arbitrary mutation and thus, prevent the JVM from reasoning about constantness and do not allow shifting computation _before_ being used.
+There are other classes in the JDK that support lazy computation including `Map`, `AtomicReference`, `ClassValue`,
+and `ThreadLocal` which are similar in the sense that they support arbitrary mutation and thus, prevent the JVM
+from reasoning about constantness and do not allow shifting computation _before_ being used.
 
-So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes, and third-party frameworks.
-Another alternative would be to add language support for immutable value holders.
+So, alternatives would be to keep using explicit double-checked locking, maps, holder classes, Atomic classes, 
+and third-party frameworks.  Another alternative would be to add language support for immutable value holders.
 
 ## Risks and Assumptions
 
-Creating an API to provide thread-safe computed constant fields with an on-par performance with holder classes efficiently is a non-trivial task. It is, however, assumed that the current JIT implementations will likely suffice to reach the goals of this JEP.
+Creating an API to provide thread-safe computed constant fields with an on-par performance with holder
+classes efficiently is a non-trivial task. It is, however, assumed that the current JIT implementations
+will likely suffice to reach the goals of this JEP.
 
 ## Dependencies
 
-The work described here will likely enable subsequent work to provide pre-evaluated computed constant fields at compile, condensation, and/or runtime.
+The work described here will likely enable subsequent work to provide pre-evaluated computed
+constant fields at compile, condensation, and/or runtime.
 
 [`java.lang`]: https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/java/lang/package-summary.html
 [`java.base`]: https://cr.openjdk.org/~pminborg/computed-constant/api/java.base/module-summary.html
