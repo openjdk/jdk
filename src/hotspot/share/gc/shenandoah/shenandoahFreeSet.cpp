@@ -93,7 +93,12 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
   uintx bits_to_examine  = BitsPerWord - bit_number;
   element_bits >>= bit_number;
   uintx complement = ~element_bits;
-  uintx trailing_ones = count_trailing_zeros<uintx>(complement);
+  uintx trailing_ones;
+  if (complement) {
+    trailing_ones = count_trailing_zeros<uintx>(complement);
+  } else {
+    trailing_ones = bits_to_examine;
+  }
   if (trailing_ones >= (uintx) count) {
     return true;
   } else if (trailing_ones == bits_to_examine) {
@@ -113,7 +118,12 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   uintx bits_to_examine = bit_number + 1;
   element_bits <<= (BitsPerWord - bits_to_examine);
   uintx complement = ~element_bits;
-  uintx leading_ones = count_leading_zeros<uintx>(complement);
+  uintx leading_ones;
+  if (complement) {
+    leading_ones = count_leading_zeros<uintx>(complement);
+  } else {
+    leading_ones = bits_to_examine;
+  }
   if (leading_ones >= (uintx) count) {
     return true;
   } else if (leading_ones == bits_to_examine) {
