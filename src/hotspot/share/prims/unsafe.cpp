@@ -88,7 +88,7 @@
 // we check if an async exception has been installed, and return immediately
 // if that is the case.
 //
-// We can't have safepoints in the middle of a scoped method.
+// As a rule, we disallow safepoints in the middle of a scoped method.
 // If an async exception handshake were installed in such a safepoint,
 // memory access might still occur before the handshake is honored by
 // the accessing thread.
