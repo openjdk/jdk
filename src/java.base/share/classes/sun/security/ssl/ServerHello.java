@@ -794,11 +794,11 @@ final class ServerHello {
             hhrm.write(shc.handshakeOutput);
             shc.handshakeOutput.flush();
 
-            // In the Middlebox Compatibility Mode the server sends a
+            // In TLS1.3 middlebox compatibility mode the server sends a
             // dummy change_cipher_spec record immediately after its
             // first handshake message. This may either be after
             // a ServerHello or a HelloRetryRequest.
-            //(RFC 8446, Appendix D.4)
+            // (RFC 8446, Appendix D.4)
             shc.conContext.outputRecord.changeWriteCiphers(
                 SSLWriteCipher.nullTlsWriteCipher(),
                     (clientHello.sessionId.length() != 0));
