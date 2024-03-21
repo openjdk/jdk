@@ -176,7 +176,9 @@ pthread_t os::Linux::_main_thread;
 bool os::Linux::_supports_fast_thread_cpu_time = false;
 const char * os::Linux::_libc_version = nullptr;
 const char * os::Linux::_libpthread_version = nullptr;
-
+long os::Linux::_release_major = -1;
+long os::Linux::_release_minor = -1;
+bool os::Linux::_is_uek_release{false};
 bool os::Linux::_thp_requested{false};
 
 #ifdef __GLIBC__
@@ -367,10 +369,7 @@ static void next_line(FILE *f) {
   } while (c != '\n' && c != EOF);
 }
 
-void os::Linux::kernel_version(long* major, long* minor) {
-  *major = -1;
-  *minor = -1;
-
+void os::Linux::version_init() {
   struct utsname buffer;
   int ret = uname(&buffer);
   if (ret != 0) {
@@ -379,13 +378,22 @@ void os::Linux::kernel_version(long* major, long* minor) {
   }
 
   char* walker = buffer.release;
-  long* set_v = major;
-  while (*minor == -1 && walker != nullptr) {
+  long* set_v = &_release_major;
+  while (_release_minor == -1 && walker != nullptr) {
     if (isdigit(walker[0])) {
       *set_v = strtol(walker, &walker, 10);
-      set_v = minor;
+      set_v = &_release_minor;
     } else {
       ++walker;
+    }
+  }
+
+  while ((walker = strstr(walker, ".el"))) {
+    if (sscanf(walker, ".el%duek.", &ret) == 1) {
+      _is_uek_release = true;
+      break;
+    } else {
+      walker += 3;
     }
   }
 }
@@ -3066,13 +3074,18 @@ size_t os::pd_pretouch_memory(void* first, void* last, size_t page_size) {
     if (!UseMadvPopulateWrite || err == EINVAL) { // Not to use or not supported
       // When using THP we need to always pre-touch using small pages as the
       // OS will initially always use small pages.
-      return os::vm_page_size();
-    } else if (err != 0) {
-      log_info(gc, os)("::madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d) failed; "
-                       "error='%s' (errno=%d)", p2i(first), len,
-                       MADV_POPULATE_WRITE, os::strerror(err), err);
+      page_size = os::vm_page_size();
+    } else if (err == 0) {
+      page_size = 0;
     }
-    return 0;
+    if (UseMadvPopulateWrite) {
+      log_debug(gc, os)("Called madvise(" PTR_FORMAT ", " SIZE_FORMAT ", %d):"
+                        " error='%s' (errno=%d), when THPMode::always=%d and"
+                        " UseTransparentHugePages=%d",
+                        p2i(first), len, MADV_POPULATE_WRITE, os::strerror(err),
+                        err, (int)(HugePages::thp_mode() == THPMode::always),
+                        (int)UseTransparentHugePages);
+    }
   }
   return page_size;
 }
@@ -4552,9 +4565,7 @@ void os::init(void) {
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
 
   check_pax();
-
-  // Check the availability of MADV_POPULATE_WRITE.
-  FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(0, 0, MADV_POPULATE_WRITE) == 0));
+  Linux::version_init();
 
   os::Posix::init();
 }
@@ -4831,6 +4842,16 @@ jint os::init_2(void) {
       vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
     }
   }
+
+  // Check the availability of MADV_POPULATE_WRITE.
+  if (FLAG_IS_DEFAULT(UseMadvPopulateWrite) && UseMadvPopulateWrite) {
+    // Some uek releases recognize MADV_POPULATE_WRITE_value as another advice,
+    // so a trick for uek releases is required.
+    // See https://github.com/oracle/linux-uek/issues/23
+    const int flag = MADV_POPULATE_WRITE + (os::Linux::_is_uek_release ? 1 : 0);
+    FLAG_SET_DEFAULT(UseMadvPopulateWrite, (::madvise(0, 0, flag) == 0));
+  }
+  log_debug(gc, os)("UseMadvPopulateWrite=%d", (int)(UseMadvPopulateWrite ? 1 : 0));
 
   return JNI_OK;
 }
