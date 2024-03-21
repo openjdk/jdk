@@ -37,11 +37,12 @@ import java.io.File;
  * @test
  * @bug 4129681
  * @summary Tests disabling of titled border's caption
- * @run main Test4129681
+ * @run main/othervm -Dsun.java2d.uiScale=1 Test4129681
  */
 
 public class Test4129681 {
     public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         int correctColoredPixels = 0;
         int totalPixels = 0;
         int tolerance = 20;
@@ -51,8 +52,6 @@ public class Test4129681 {
         Point startPoint = new Point(8, 4);
         Point endPoint = new Point(18, 14);
 
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        System.setProperty("sun.java2d.uiScale", "1.0");
         label = new JLabel("Label");
         label.setBorder(BorderFactory.createTitledBorder("\u2588".repeat(5)));
         UIManager.getDefaults().put("Label.disabledForeground", labelDisableColor);
