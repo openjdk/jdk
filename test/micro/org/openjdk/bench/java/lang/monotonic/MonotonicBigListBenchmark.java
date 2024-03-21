@@ -40,6 +40,7 @@ import java.util.stream.IntStream;
 @Warmup(iterations = 5, time = 1)
 @Measurement(iterations = 5, time = 1)
 @Fork(value = 2, jvmArgsAppend = "--enable-preview")
+@OperationsPerInvocation(1_000_000)
 public class MonotonicBigListBenchmark {
 
     private static final int SIZE = 1_000_000;
