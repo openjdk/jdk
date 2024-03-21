@@ -54,15 +54,13 @@ public class bug4286458 {
     private static JFrame createTestUI() {
 
         String text =
-            "</html><body><table border=\"1\" cellpadding=\"-10\">" +
+            "<html><body><table border=\"1\" cellpadding=\"-10\">" +
             "<tr><td>This line should be clearly readable</td></tr>" +
             "</table></body></html>";
 
         JFrame f = new JFrame("bug4286458");
-        JEditorPane jep = new JEditorPane();
-        jep.setEditorKit(new HTMLEditorKit());
+        JEditorPane jep = new JEditorPane("text/html", text);
         jep.setEditable(false);
-        jep.setText(text);
 
         f.add(jep);
         f.pack();

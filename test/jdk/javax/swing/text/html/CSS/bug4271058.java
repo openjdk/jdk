@@ -52,11 +52,12 @@ public class bug4271058 {
 
     public static void main(String[] args) throws Exception {
          PassFailJFrame.builder()
-                .title("CSS tag Instructions")
+                .title("CSS html tag verification Instructions")
                 .instructions(INSTRUCTIONS)
                 .rows(15)
                 .columns(30)
                 .testUI(bug4271058::createTestUI)
+                .screenCapture()
                 .build()
                 .awaitAndCheck();
     }
