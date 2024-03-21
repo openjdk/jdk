@@ -27,8 +27,8 @@
  * @summary Tests that JViewport do not blit when not visible
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
-   @run main/manual bug4243479
-*/
+ * @run main/manual bug4243479
+ */
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
