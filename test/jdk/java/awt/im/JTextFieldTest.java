@@ -29,7 +29,7 @@
  * @summary  Verify that Lightweight text components (like swing JTextField)
  *           work correctly with IM when there is an uneditable peered
  *           TextField/TextArea in the same parent Frame
- * @run main JTextFieldTest
+ * @run main/manual JTextFieldTest
  */
 
 import java.awt.FlowLayout;
@@ -39,7 +39,6 @@ import javax.swing.JFrame;
 import javax.swing.JTextField;
 
 public class JTextFieldTest {
-    private static JFrame frame;
     private static final String INSTRUCTIONS =
             """
              Please run this test in a CJK (Chinese/Japanese/Korean) locale
@@ -60,7 +59,7 @@ public class JTextFieldTest {
     }
 
     public static JFrame createAndShowGUI() {
-        frame = new JFrame("Test Frame");
+        JFrame frame = new JFrame("Test Frame");
         frame.setLayout(new FlowLayout());
         TextField tf1 = new TextField("ABCDEFGH", 10);
         tf1.setEditable(false);
