@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,9 +108,8 @@ public:
 // constant evaluation.
 #if defined(TARGET_COMPILER_gcc) || defined(TARGET_COMPILER_xlc)
 
-// gcc10 added both __has_builtin and __builtin_is_constant_evaluated.
-// clang has had __has_builtin for a long time, so likely also in xlclang++.
-// Similarly, clang has had __builtin_is_constant_evaluated for a long time.
+// Both __has_builtin and __builtin_is_constant_evaluated are available in our
+// minimum required versions of gcc and clang.
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_is_constant_evaluated)
