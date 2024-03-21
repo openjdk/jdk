@@ -21,8 +21,6 @@
  * questions.
  */
 
-import java.awt.BorderLayout;
-import java.awt.Button;
 import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.EventQueue;
@@ -34,7 +32,7 @@ import java.awt.event.WindowEvent;
 import java.awt.image.BaseMultiResolutionImage;
 import java.awt.image.BufferedImage;
 
-import javax.swing.JFrame;
+import javax.swing.JButton;
 
 import jdk.test.lib.Platform;
 import jtreg.SkippedException;
@@ -51,7 +49,6 @@ import jtreg.SkippedException;
  */
 
 public class MultiDisplayTest {
-    private static JFrame frame;
     private static final String INSTRUCTIONS =
             """
              The test requires two-display configuration, where
@@ -98,22 +95,18 @@ public class MultiDisplayTest {
                 .instructions(INSTRUCTIONS)
                 .rows((int) INSTRUCTIONS.lines().count() + 2)
                 .columns(40)
-                .testUI(MultiDisplayTest::createAndShowGUI)
+                .splitUIBottom(MultiDisplayTest::createAndShowGUI)
                 .build()
                 .awaitAndCheck();
     }
 
-    public static JFrame createAndShowGUI() {
-        frame = new JFrame("MultiDisplayTest");
-        frame.setLayout(new BorderLayout());
-        Button b = new Button("Start");
+    public static JButton createAndShowGUI() {
+        JButton b = new JButton("Start");
         b.addActionListener(e -> {
             ParentFrame p = new ParentFrame();
             new ChildDialog(p);
         });
-        frame.add(b, BorderLayout.CENTER);
-        frame.pack();
-        return frame;
+        return b;
     }
 
     private static boolean checkOS() {
