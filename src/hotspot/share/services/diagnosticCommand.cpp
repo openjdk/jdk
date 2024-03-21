@@ -1281,7 +1281,7 @@ void SystemDumpMapDCmd::execute(DCmdSource source, TRAPS) {
 
 #endif // LINUX
 
-class VM_ZeroUnusedMemory : public VM_Operation {
+class VM_ZeroUnusedMemory : public VM_GC_Sync_Operation {
 private:
   outputStream* _out;
 public:
