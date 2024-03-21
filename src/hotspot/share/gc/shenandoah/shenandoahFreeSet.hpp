@@ -45,20 +45,20 @@
 class ShenandoahSimpleBitMap {
   const ssize_t _num_bits;
   const size_t _num_words;
-  size_t* const _bitmap;
+  uintx* const _bitmap;
 
 public:
   ShenandoahSimpleBitMap(size_t num_bits) :
       _num_bits(num_bits),
       _num_words((num_bits + (BitsPerWord - 1)) / BitsPerWord),
-      _bitmap(NEW_C_HEAP_ARRAY(size_t, _num_words, mtGC))
+      _bitmap(NEW_C_HEAP_ARRAY(uintx, _num_words, mtGC))
   {
     clear_all();
   }
 
   ~ShenandoahSimpleBitMap() {
     if (_bitmap != nullptr) {
-      FREE_C_HEAP_ARRAY(size_t, _bitmap);
+      FREE_C_HEAP_ARRAY(uintx, _bitmap);
     }
   }
   void clear_all() {
@@ -97,7 +97,7 @@ public:
     return _num_bits;
   }
 
-  inline size_t bits_at(ssize_t idx) const {
+  inline uintx bits_at(ssize_t idx) const {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     ssize_t array_idx = idx >> LogBitsPerWord;
     return _bitmap[array_idx];
@@ -106,8 +106,8 @@ public:
   inline void set_bit(ssize_t idx) {
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
-    size_t the_bit = nth_bit(bit_number);
+    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] |= the_bit;
   }
 
@@ -115,8 +115,8 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
-    size_t the_bit = nth_bit(bit_number);
+    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx the_bit = nth_bit(bit_number);
     _bitmap[array_idx] &= ~the_bit;
   }
 
@@ -124,8 +124,8 @@ public:
     assert((idx >= 0) && (idx < _num_bits), "precondition");
     assert(idx >= 0, "precondition");
     size_t array_idx = idx >> LogBitsPerWord;
-    size_t bit_number = idx & right_n_bits(LogBitsPerWord);
-    size_t the_bit = nth_bit(bit_number);
+    uintx bit_number = idx & right_n_bits(LogBitsPerWord);
+    uintx the_bit = nth_bit(bit_number);
     return (_bitmap[array_idx] & the_bit)? true: false;
   }
 
@@ -451,10 +451,6 @@ public:
 
   void clear();
   void rebuild();
-
-#ifdef KELVIN_BAD_CODE
-  void dump_bitmaps();
-#endif
 
   // Move up to cset_regions number of regions from being available to the collector to being available to the mutator.
   //

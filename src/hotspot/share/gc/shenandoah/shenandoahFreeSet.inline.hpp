@@ -33,26 +33,18 @@ inline ssize_t ShenandoahSimpleBitMap::find_next_set_bit(ssize_t start_idx, ssiz
   assert((boundary_idx > start_idx) && (boundary_idx <= _num_bits), "precondition");
   do {
     size_t array_idx = start_idx >> LogBitsPerWord;
-    size_t bit_number = start_idx & right_n_bits(LogBitsPerWord);
-    size_t element_bits = _bitmap[array_idx];
+    uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+    uintx element_bits = _bitmap[array_idx];
     if (bit_number > 0) {
-      size_t mask_out = right_n_bits(bit_number);
+      uintx mask_out = right_n_bits(bit_number);
       element_bits &= ~mask_out;
     }
     if (element_bits) {
-      // The next set bit is here
-      size_t the_bit = nth_bit(bit_number);
-      while (bit_number < BitsPerWord) {
-        if (element_bits & the_bit) {
-          ssize_t candidate_result = (array_idx * BitsPerWord) + bit_number;
-          if (candidate_result < boundary_idx) return candidate_result;
-          else return boundary_idx;
-        } else {
-          the_bit <<= 1;
-          bit_number++;
-        }
-      }
-      assert(false, "should not reach here");
+      // The next set bit is here.  Find first set bit >= bit_number;
+      uintx aligned = element_bits >> bit_number;
+      uintx first_set_bit = count_trailing_zeros<uintx>(aligned);
+      ssize_t candidate_result = (array_idx * BitsPerWord) + bit_number + first_set_bit;
+      return (candidate_result < boundary_idx)? candidate_result: boundary_idx;
     } else {
       // Next bit is not here.  Try the next array element
       start_idx += BitsPerWord - bit_number;
@@ -71,26 +63,18 @@ inline ssize_t ShenandoahSimpleBitMap::find_prev_set_bit(ssize_t last_idx, ssize
   assert((boundary_idx >= -1) && (boundary_idx < last_idx), "precondition");
   do {
     ssize_t array_idx = last_idx >> LogBitsPerWord;
-    size_t bit_number = last_idx & right_n_bits(LogBitsPerWord);
-    size_t element_bits = _bitmap[array_idx];
+    uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+    uintx element_bits = _bitmap[array_idx];
     if (bit_number < BitsPerWord - 1){
-      size_t mask_in = right_n_bits(bit_number + 1);
+      uintx mask_in = right_n_bits(bit_number + 1);
       element_bits &= mask_in;
     }
     if (element_bits) {
-      // The prev set bit is here
-      size_t the_bit = nth_bit(bit_number);
-      for (ssize_t bit_iterator = bit_number; bit_iterator >= 0; bit_iterator--) {
-        if (element_bits & the_bit) {
-          ssize_t candidate_result = (array_idx * BitsPerWord) + bit_number;
-          if (candidate_result > boundary_idx) return candidate_result;
-          else return boundary_idx;
-        } else {
-          the_bit >>= 1;
-          bit_number--;
-        }
-      }
-      assert(false, "should not reach here");
+      // The prev set bit is here.  Find the first set bit <= bit_number
+      uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
+      uintx first_set_bit = count_leading_zeros<uintx>(aligned);
+      ssize_t candidate_result = array_idx * BitsPerWord + (bit_number - first_set_bit);
+      return (candidate_result > boundary_idx)? candidate_result: boundary_idx;
     } else {
       // Next bit is not here.  Try the previous array element
       last_idx -= (bit_number + 1);

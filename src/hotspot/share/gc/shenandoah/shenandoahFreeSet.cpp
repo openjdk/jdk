@@ -46,42 +46,40 @@ static const char* partition_name(ShenandoahFreeSetPartitionId t) {
 size_t ShenandoahSimpleBitMap::count_leading_ones(ssize_t start_idx) const {
   assert((start_idx >= 0) && (start_idx < _num_bits), "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
-  size_t element_bits = _bitmap[array_idx];
-  size_t bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  size_t the_bit = nth_bit(bit_number);
-  size_t omit_mask = right_n_bits(bit_number);
-  size_t mask = right_n_bits(BitsPerWord) & ~omit_mask;
+  uintx element_bits = _bitmap[array_idx];
+  uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+  uintx the_bit = nth_bit(bit_number);
+  uintx omit_mask = right_n_bits(bit_number);
+  uintx mask = right_n_bits(BitsPerWord) & ~omit_mask;
 
   if ((element_bits & mask) == mask) {
     size_t counted_ones = BitsPerWord - bit_number;
     return counted_ones + count_leading_ones(start_idx - counted_ones);
   } else {
-    size_t counted_ones;
-    for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
-      the_bit <<= 1;
-    }
-    return counted_ones;
+    // Return number of consecutive ones starting with the_bit and including more significant bits.
+    uintx aligned = element_bits >> bit_number;
+    uintx complement = ~aligned;;
+    return count_leading_zeros<uintx>(complement);
   }
 }
 
 size_t ShenandoahSimpleBitMap::count_trailing_ones(ssize_t last_idx) const {
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   size_t array_idx = last_idx >> LogBitsPerWord;
-  size_t element_bits = _bitmap[array_idx];
-  size_t bit_number = last_idx & right_n_bits(LogBitsPerWord);
-  size_t the_bit = nth_bit(bit_number);
+  uintx element_bits = _bitmap[array_idx];
+  uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+  uintx the_bit = nth_bit(bit_number);
 
   // All ones from bit 0 to the_bit
-  size_t mask = right_n_bits(bit_number + 1);
+  uintx mask = right_n_bits(bit_number + 1);
   if ((element_bits & mask) == mask) {
     size_t counted_ones = bit_number + 1;
     return counted_ones + count_trailing_ones(last_idx - counted_ones);
   } else {
-    size_t counted_ones;
-    for (counted_ones = 0; element_bits & the_bit; counted_ones++) {
-      the_bit >>= 1;
-    }
-    return counted_ones;
+    // Return number of consecutive ones starting with the_bit and including less significant bits
+    uintx aligned = element_bits << (BitsPerWord - (bit_number + 1));
+    uintx complement = ~aligned;
+    return count_leading_zeros<uintx>(complement);
   }
 }
 
@@ -90,27 +88,19 @@ bool ShenandoahSimpleBitMap::is_forward_consecutive_ones(ssize_t start_idx, ssiz
          start_idx, count);
   assert(start_idx + count <= (ssize_t) _num_bits, "precondition");
   size_t array_idx = start_idx >> LogBitsPerWord;
-  size_t bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  size_t the_bit = nth_bit(bit_number);
-  size_t element_bits = _bitmap[array_idx];
-  if ((ssize_t) (bit_number + count <= BitsPerWord)) {
-    // All relevant bits reside within this array element
-    size_t relevant_bits = bit_number + count;
-    size_t overreach_mask = right_n_bits(relevant_bits);
-    size_t exclude_mask = right_n_bits(bit_number);
-    size_t exact_mask = overreach_mask & ~exclude_mask;
-    return (element_bits & exact_mask) == exact_mask? true: false;
+  uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+  uintx element_bits = _bitmap[array_idx];
+  uintx bits_to_examine  = BitsPerWord - bit_number;
+  element_bits >>= bit_number;
+  uintx complement = ~element_bits;
+  uintx trailing_ones = count_trailing_zeros<uintx>(complement);
+  if (trailing_ones >= (uintx) count) {
+    return true;
+  } else if (trailing_ones == bits_to_examine) {
+    // Tail recursion
+    return is_forward_consecutive_ones(start_idx + bits_to_examine, count - bits_to_examine);
   } else {
-    // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-    size_t overreach_mask = right_n_bits(BitsPerWord);
-    size_t exclude_mask = right_n_bits(bit_number);
-    size_t exact_mask = overreach_mask & ~exclude_mask;
-    if ((element_bits & exact_mask) == exact_mask) {
-      size_t matched_bits = BitsPerWord - bit_number;
-      return is_forward_consecutive_ones(start_idx + matched_bits, count - matched_bits);
-    } else {
-      return false;
-    }
+    return false;
   }
 }
 
@@ -118,24 +108,19 @@ bool ShenandoahSimpleBitMap::is_backward_consecutive_ones(ssize_t last_idx, ssiz
   assert((last_idx >= 0) && (last_idx < _num_bits), "precondition");
   assert(last_idx - count >= -1, "precondition");
   size_t array_idx = last_idx >> LogBitsPerWord;
-  size_t bit_number = last_idx & right_n_bits(LogBitsPerWord);
-  size_t the_bit = nth_bit(bit_number);
-  size_t element_bits = _bitmap[array_idx];
-  if ((ssize_t) (bit_number + 1) >= count) {
-    // All relevant bits reside within this array element
-    size_t overreach_mask = right_n_bits(bit_number + 1);
-    size_t exclude_mask = right_n_bits(bit_number + 1 - count);
-    size_t exact_mask = overreach_mask & ~exclude_mask;
-    return (element_bits & exact_mask) == exact_mask? true: false;
+  uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+  uintx element_bits = _bitmap[array_idx];
+  uintx bits_to_examine = bit_number + 1;
+  element_bits <<= (BitsPerWord - bits_to_examine);
+  uintx complement = ~element_bits;
+  uintx leading_ones = count_leading_zeros<uintx>(complement);
+  if (leading_ones >= (uintx) count) {
+    return true;
+  } else if (leading_ones == bits_to_examine) {
+    // Tail recursion
+    return is_backward_consecutive_ones(last_idx - leading_ones, count - leading_ones);
   } else {
-    // Need to exactly match all relevant bits of this array element, plus relevant bits of following array elements
-    size_t exact_mask = right_n_bits(bit_number + 1);
-    if ((element_bits & exact_mask) == exact_mask) {
-      size_t matched_bits = bit_number + 1;
-      return is_backward_consecutive_ones(last_idx - matched_bits, count - matched_bits);
-    } else {
-      return false;
-    }
+    return false;
   }
 }
 
@@ -144,27 +129,44 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t start_boundary = boundary_idx - num_bits;
-  size_t array_idx = start_idx >> LogBitsPerWord;
-  size_t bit_number = start_idx & right_n_bits(LogBitsPerWord);
-  size_t element_bits = _bitmap[array_idx];
+  if (start_idx > start_boundary) {
+    return boundary_idx;
+  }
+  uintx array_idx = start_idx >> LogBitsPerWord;
+  uintx bit_number = start_idx & right_n_bits(LogBitsPerWord);
+  uintx element_bits = _bitmap[array_idx];
   if (bit_number > 0) {
-    size_t mask_out = right_n_bits(bit_number);
+    uintx mask_out = right_n_bits(bit_number);
     element_bits &= ~mask_out;
   }
 
-  while (start_idx <= start_boundary) {
+  while (true) {
     if (!element_bits) {
       // move to the next element
       start_idx += BitsPerWord - bit_number;
+      if (start_idx > start_boundary) {
+        // No match found.
+        return boundary_idx;
+      }
       array_idx++;
       bit_number = 0;
       element_bits = _bitmap[array_idx];
     } else if (is_forward_consecutive_ones(start_idx, num_bits)) {
       return start_idx;
     } else {
+      // There is at least one non-zero bit within the masked element_bits.  Find it.
+      uintx next_set_bit = count_trailing_zeros<uintx>(element_bits);
+      uintx next_start_candidate_1 = (array_idx << LogBitsPerWord) + next_set_bit;
+
       // There is at least one zero bit in this span.  Align the next probe at the start of trailing ones for probed span.
       size_t trailing_ones = count_trailing_ones(start_idx + num_bits - 1);
-      start_idx += num_bits - trailing_ones;
+      uintx next_start_candidate_2 = start_idx + num_bits - trailing_ones;
+
+      start_idx = MAX2(next_start_candidate_1, next_start_candidate_2);
+      if (start_idx > start_boundary) {
+        // No match found.
+        return boundary_idx;
+      }
       array_idx = start_idx >> LogBitsPerWord;
       element_bits = _bitmap[array_idx];
       bit_number = start_idx & right_n_bits(LogBitsPerWord);
@@ -174,8 +176,6 @@ ssize_t ShenandoahSimpleBitMap::find_next_consecutive_bits(size_t num_bits, ssiz
       }
     }
   }
-  // No match found.
-  return boundary_idx;
 }
 
 ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
@@ -184,26 +184,44 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
 
   // Stop looking if there are not num_bits remaining in probe space.
   ssize_t last_boundary = boundary_idx + num_bits;
-  ssize_t array_idx = last_idx >> LogBitsPerWord;
-  size_t bit_number = last_idx & right_n_bits(LogBitsPerWord);
-  size_t element_bits = _bitmap[array_idx];
+  if (last_idx < last_boundary) {
+    return boundary_idx;
+  }
+
+  size_t array_idx = last_idx >> LogBitsPerWord;
+  uintx bit_number = last_idx & right_n_bits(LogBitsPerWord);
+  uintx element_bits = _bitmap[array_idx];
   if (bit_number < BitsPerWord - 1) {
-    size_t mask_in = right_n_bits(bit_number + 1);
+    uintx mask_in = right_n_bits(bit_number + 1);
     element_bits &= mask_in;
   }
-  while (last_idx >= last_boundary) {
+  while (true) {
     if (!element_bits) {
       // move to the previous element
       last_idx -= bit_number + 1;
+      if (last_idx < last_boundary) {
+        // No match found.
+        return boundary_idx;
+      }
       array_idx--;
       bit_number = BitsPerWord - 1;
       element_bits = _bitmap[array_idx];
     } else if (is_backward_consecutive_ones(last_idx, num_bits)) {
       return last_idx + 1 - num_bits;
     } else {
+      // There is at least one non-zero bit within the masked element_bits.  Find it.
+      uintx next_set_bit = BitsPerWord - (1 + count_leading_zeros<uintx>(element_bits));
+      uintx next_last_candidate_1 = (array_idx << LogBitsPerWord) + next_set_bit;
+
       // There is at least one zero bit in this span.  Align the next probe at the end of leading ones for probed span.
       size_t leading_ones = count_leading_ones(last_idx - (num_bits - 1));
-      last_idx -= num_bits - leading_ones;
+      uintx next_last_candidate_2 = last_idx - (num_bits - leading_ones);
+
+      last_idx = MIN2(next_last_candidate_1, next_last_candidate_2);
+      if (last_idx < last_boundary) {
+        // No match found.
+        return boundary_idx;
+      }
       array_idx = last_idx >> LogBitsPerWord;
       bit_number = last_idx & right_n_bits(LogBitsPerWord);
       element_bits = _bitmap[array_idx];
@@ -213,22 +231,20 @@ ssize_t ShenandoahSimpleBitMap::find_prev_consecutive_bits(
       }
     }
   }
-  // No match found.
-  return boundary_idx;
 }
 
 void ShenandoahRegionPartitions::dump_bitmap_all() const {
-  printf("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
+  log_info(gc)("Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT "], Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts[Mutator], _rightmosts[Mutator], _leftmosts[Collector], _rightmosts[Collector]);
-  printf("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
+  log_info(gc)("Empty Mutator range [" SSIZE_FORMAT ", " SSIZE_FORMAT
                "], Empty Collector range [" SSIZE_FORMAT ", " SSIZE_FORMAT "]",
                _leftmosts_empty[Mutator], _rightmosts_empty[Mutator],
                _leftmosts_empty[Collector], _rightmosts_empty[Collector]);
 
 #ifdef _LP64
-  printf("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_info(gc)("%6s: %18s %18s %18s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #else
-  printf("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
+  log_infl(gc)("%6s: %10s %10s %10s", "index", "Mutator Bits", "Collector Bits", "NotFree Bits");
 #endif
   dump_bitmap_range(0, _max-1);
 }
@@ -248,10 +264,10 @@ void ShenandoahRegionPartitions::dump_bitmap_range(ssize_t start_idx, ssize_t en
 void ShenandoahRegionPartitions::dump_bitmap_row(ssize_t idx) const {
   assert((idx >= 0) && (idx < (ssize_t) _max), "precondition");
   ssize_t aligned_idx = _membership[Mutator].aligned_index(idx);
-  size_t mutator_bits = _membership[Mutator].bits_at(aligned_idx);
-  size_t collector_bits = _membership[Collector].bits_at(aligned_idx);
-  size_t free_bits = mutator_bits | collector_bits;
-  size_t notfree_bits =  ~free_bits;
+  uintx mutator_bits = _membership[Mutator].bits_at(aligned_idx);
+  uintx collector_bits = _membership[Collector].bits_at(aligned_idx);
+  uintx free_bits = mutator_bits | collector_bits;
+  uintx notfree_bits =  ~free_bits;
   log_info(gc)(SSIZE_FORMAT_W(6) ": " SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0 " 0x" SIZE_FORMAT_X_0,
                aligned_idx, mutator_bits, collector_bits, notfree_bits);
 }
