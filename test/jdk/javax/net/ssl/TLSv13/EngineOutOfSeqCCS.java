@@ -36,8 +36,6 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLParameters;
 
-
-
 public class EngineOutOfSeqCCS extends SSLEngineTemplate {
 
     /*
@@ -58,17 +56,14 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
         super();
     }
 
-    public static void main(String args[]) throws Exception{
-        if(args.length > 0 && args[0].compareTo("isHRRTest") == 0){
-                new EngineOutOfSeqCCS().runDemo(true);
-        }
-        else
-            new EngineOutOfSeqCCS().runDemo(false);
+    public static void main(String[] args) throws Exception{
+        new EngineOutOfSeqCCS().runDemo(args.length > 0 &&
+                args[0].equals("isHRRTest"));
     }
 
     private void runDemo(boolean isHRRTest) throws Exception {
 
-            if(isHRRTest){
+            if (isHRRTest) {
                 SSLParameters sslParams = new SSLParameters();
                 sslParams.setNamedGroups(new String[] {"secp384r1"});
                 serverEngine.setSSLParameters(sslParams);
@@ -109,13 +104,12 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
 
             if (isTlsMessage(sTOc, TLS_RECTYPE_CCS)) {
                 System.out.println("=========== CCS found ===========");
-            }
-            else{
-                // In the Middlebox Compatibility Mode the server sends a
+            } else {
+                // In TLS1.3 middlebox compatibility mode the server sends a
                 // dummy change_cipher_spec record immediately after its
                 // first handshake message. This may either be after
                 // a ServerHello or a HelloRetryRequest.
-                //(RFC 8446, Appendix D.4)
+                // (RFC 8446, Appendix D.4)
                 throw new SSLException(
                     "Server should generate change_cipher_spec record");
             }
@@ -151,7 +145,6 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
             int recordType = Byte.toUnsignedInt(srcRecord.get());
             byte ver_major = srcRecord.get();
             byte ver_minor = srcRecord.get();
-            int recLen = Short.toUnsignedInt(srcRecord.getShort());
 
             if (recordType == reqRecType) {
                 // For any zero-length recParams, making sure the requested
@@ -189,7 +182,7 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
                                 throw new RuntimeException(
                                     "Test for Handshake requires only HS type");
                             } else {
-                                // Go into the first handhshake message in the
+                                // Go into the first handshake message in the
                                 // record and grab the handshake message header.
                                 // All we need to do is parse out the leading
                                 // byte.
@@ -260,7 +253,7 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
      * Hex-dumps a ByteBuffer to stdout.
      */
     private static void dumpByteBuffer(String header, ByteBuffer bBuf) {
-        if (dumpBufs == false) {
+        if (!dumpBufs) {
             return;
         }
 
@@ -273,7 +266,6 @@ public class EngineOutOfSeqCCS extends SSLEngineTemplate {
             int type = Byte.toUnsignedInt(bBuf.get());
             int ver_major = Byte.toUnsignedInt(bBuf.get());
             int ver_minor = Byte.toUnsignedInt(bBuf.get());
-            int recLen = Short.toUnsignedInt(bBuf.getShort());
 
             log("===== " + header + " (" + tlsRecType(type) + " / " +
                 ver_major + "." + ver_minor + " / " +
