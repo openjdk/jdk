@@ -44,7 +44,7 @@ public final class TestLargeSecretKeys extends PKCS11Test {
         // Before the fix for 8328556, the next call would require to re-build
         // the key in the NSS Software Token by means of a call to
         // C_UnwrapKey because the key's CKA_SENSITIVE attribute is CK_TRUE.
-        // Thid call would fail with a CKR_TEMPLATE_INCONSISTENT error due to
+        // This call would fail with a CKR_TEMPLATE_INCONSISTENT error due to
         // secret key length checks in NSS: length of 384 bytes is greater
         // than 256 (defined as MAX_KEY_LEN in pkcs11i.h). With 8328556, the
         // key was never extracted after its first use so re-building for the
