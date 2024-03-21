@@ -1824,7 +1824,7 @@ public final class VerifierImpl {
 
     void verifyError(String msg) {
         dumpMethod();
-        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext));
+        throw new VerifyError(String.format("%s in %s::%s(%s) @%d %s", msg, _klass.thisClassName(), _method.name(), _method.parameters(), bci, errorContext).trim());
     }
 
     void verifyError(String msg, VerificationFrame from, VerificationFrame target) {

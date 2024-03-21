@@ -36,6 +36,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.lang.classfile.Attribute;
 import java.lang.classfile.AttributedElement;
+import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.ClassFileElement;
 import java.lang.classfile.CodeModel;
@@ -46,6 +47,7 @@ import java.lang.classfile.TypeKind;
 import java.lang.classfile.attribute.*;
 import java.lang.classfile.constantpool.*;
 import java.lang.constant.ConstantDescs;
+import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.impl.BoundAttribute;
 
 /**
@@ -155,6 +157,14 @@ public record ParserVerifier(ClassModel classModel) {
         for (var m : classModel.methods()) try {
             if (!methods.add(m.methodName().stringValue() + m.methodType().stringValue())) {
                 errors.add(new VerifyError("Duplicate method name %s with signature %s in %s".formatted(m.methodName().stringValue(), m.methodType().stringValue(), toString(classModel))));
+            }
+            if (classModel.majorVersion() >= ClassFile.JAVA_7_VERSION
+                    && m.methodName().equalsString(CLASS_INIT_NAME)
+                    && !m.flags().has(AccessFlag.STATIC)) {
+                errors.add(new VerifyError("Method <clinit> is not static in %s".formatted(toString(classModel))));
+            }
+            if (m.methodName().equalsString(INIT_NAME) && classModel.flags().has(AccessFlag.INTERFACE)) {
+                errors.add(new VerifyError("Interface cannot have a method named <init> in %s".formatted(toString(classModel))));
             }
             verifyMethodName(m.methodName().stringValue());
         } catch (VerifyError ve) {

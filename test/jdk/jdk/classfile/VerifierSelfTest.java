@@ -99,6 +99,7 @@ class VerifierSelfTest {
         var cd_test = ClassDesc.of("ParserVerificationTestClass");
         var indexes = new Object[9];
         var clm = cc.parse(cc.build(cd_test, clb -> {
+            clb.withFlags(ClassFile.ACC_INTERFACE);
             var cp = clb.constantPool();
             var ce_valid = cp.classEntry(cd_test);
             var ce_invalid = cp.classEntry(cp.utf8Entry("invalid.class.name"));
@@ -167,8 +168,10 @@ class VerifierSelfTest {
                                    .with(new CloneAttribute(LocalVariableTableAttribute.of(List.of())))
                                    .with(new CloneAttribute(LocalVariableTypeTableAttribute.of(List.of())))))
                     .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {})
-                    .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {});
-        }));
+                    .withMethod("<>", MTD_void, ClassFile.ACC_NATIVE, mb -> {})
+                    .withMethod(INIT_NAME, MTD_void, 0, mb -> {})
+                    .withMethod(CLASS_INIT_NAME, MTD_void, 0, mb -> {});
+                }));
         var found = cc.verify(clm).stream().map(VerifyError::getMessage).collect(Collectors.toCollection(LinkedList::new));
         var expected = """
                 Invalid class name: invalid.class.name at constant pool index %1$d in class ParserVerificationTestClass
@@ -193,6 +196,8 @@ class VerifierSelfTest {
                 Illegal method name <> in class ParserVerificationTestClass
                 Duplicate method name <> with signature ()V in class ParserVerificationTestClass
                 Illegal method name <> in class ParserVerificationTestClass
+                Interface cannot have a method named <init> in class ParserVerificationTestClass
+                Method <clinit> is not static in class ParserVerificationTestClass
                 Wrong CompilationID attribute length in class ParserVerificationTestClass
                 Wrong Deprecated attribute length in class ParserVerificationTestClass
                 Multiple EnclosingMethod attributes in class ParserVerificationTestClass
@@ -221,8 +226,8 @@ class VerifierSelfTest {
                 Multiple SourceID attributes in class ParserVerificationTestClass
                 Wrong SourceID attribute length in class ParserVerificationTestClass
                 Wrong Synthetic attribute length in class ParserVerificationTestClass
-                Multiple ConstantValue attributes in field ParserVerificationTestClass.f
                 Bad constant value type in field ParserVerificationTestClass.f
+                Multiple ConstantValue attributes in field ParserVerificationTestClass.f
                 Bad constant value type in field ParserVerificationTestClass.f
                 Wrong ConstantValue attribute length in field ParserVerificationTestClass.f
                 Wrong Deprecated attribute length in field ParserVerificationTestClass.f
@@ -273,6 +278,8 @@ class VerifierSelfTest {
                 Wrong RuntimeInvisibleAnnotations attribute length in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeVisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
                 Multiple RuntimeInvisibleTypeAnnotations attributes in Record component c of class ParserVerificationTestClass
+                Missing Code attribute in ParserVerificationTestClass::<init>() @0
+                Missing Code attribute in ParserVerificationTestClass::<clinit>() @0
                 """.formatted(indexes).lines().filter(exp -> !found.remove(exp)).toList();
         if (!found.isEmpty() || !expected.isEmpty()) {
             ClassPrinter.toYaml(clm, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
