@@ -39,6 +39,7 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.ParamTree;
 import com.sun.source.doctree.ProvidesTree;
+import com.sun.source.doctree.RawTextTree;
 import com.sun.source.doctree.ReferenceTree;
 import com.sun.source.doctree.ReturnTree;
 import com.sun.source.doctree.SeeTree;
@@ -426,6 +427,12 @@ public class CommentHelper {
             @Override
             public List<? extends DocTree> visitParam(ParamTree node, Void p) {
                 return node.getDescription();
+            }
+
+            @Override
+            public List<? extends DocTree> visitRawText(RawTextTree node, Void p) {
+                // not ideal, but better than returning an empty list
+                return asList(node.getContent());
             }
 
             @Override

@@ -896,8 +896,8 @@ int CodeInstaller::estimate_stubs_size(HotSpotCompiledCodeStream* stream, JVMCI_
   // Estimate the number of static call stubs that might be emitted.
   u2 static_call_stubs = stream->read_u2("numStaticCallStubs");
   u2 trampoline_stubs = stream->read_u2("numTrampolineStubs");
-  int size = static_call_stubs * CompiledStaticCall::to_interp_stub_size();
-  size += trampoline_stubs * CompiledStaticCall::to_trampoline_stub_size();
+  int size = static_call_stubs * CompiledDirectCall::to_interp_stub_size();
+  size += trampoline_stubs * CompiledDirectCall::to_trampoline_stub_size();
   return size;
 }
 
@@ -1243,7 +1243,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, u1 tag, jint pc_offset, HotSpo
     CodeInstaller::pd_relocate_JavaMethod(buffer, method, pc_offset, JVMCI_CHECK);
     if (_next_call_type == INVOKESTATIC || _next_call_type == INVOKESPECIAL) {
       // Need a static call stub for transitions from compiled to interpreted.
-      if (CompiledStaticCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset) == nullptr) {
+      if (CompiledDirectCall::emit_to_interp_stub(buffer, _instructions->start() + pc_offset) == nullptr) {
         JVMCI_ERROR("could not emit to_interp stub - code cache is full");
       }
     }

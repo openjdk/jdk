@@ -22,7 +22,7 @@
  */
 #include <string.h>
 #include <stdlib.h>
-#include <jvmti_aod.h>
+#include <jvmti_aod.hpp>
 
 extern "C" {
 

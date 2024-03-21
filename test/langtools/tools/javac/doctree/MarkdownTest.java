@@ -287,10 +287,8 @@ DocComment[DOC_COMMENT, pos:0
 DocComment[DOC_COMMENT, pos:0
   firstSentence: 1
     RawText[MARKDOWN, pos:0, 123.]
-  body: 3
-    RawText[MARKDOWN, pos:5, ```|]
-    Literal[CODE, pos:9, ...]
-    RawText[MARKDOWN, pos:20, |~~~|456.]
+  body: 1
+    RawText[MARKDOWN, pos:5, ```|{@code_...}|~~~|456.]
   block tags: empty
 ]
 */

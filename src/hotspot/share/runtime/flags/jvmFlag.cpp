@@ -133,7 +133,7 @@ JVMFlag::MsgType JVMFlag::get_locked_message(char* buf, int buflen) const {
 // Fills current line up to requested position.
 // Should the current position already be past the requested position,
 // one separator blank is enforced.
-void fill_to_pos(outputStream* st, unsigned int req_pos) {
+static void fill_to_pos(outputStream* st, unsigned int req_pos) {
   if ((unsigned int)st->position() < req_pos) {
     st->fill_to(req_pos);  // need to fill with blanks to reach req_pos
   } else {

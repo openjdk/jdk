@@ -858,7 +858,7 @@ public sealed interface Linker permits AbstractLinker {
          * try (Arena arena = Arena.ofConfined()) {
          *     MemorySegment capturedState = arena.allocate(capturedStateLayout);
          *     handle.invoke(capturedState);
-         *     int errno = (int) errnoHandle.get(capturedState);
+         *     int errno = (int) errnoHandle.get(capturedState, 0L);
          *     // use errno
          * }
          * }

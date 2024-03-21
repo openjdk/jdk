@@ -679,8 +679,10 @@ public class DocTreeMaker implements DocTreeFactory {
                 return defaultSentenceBreak(kind, s);
             }
 
-            String s2 = normalize(kind, s);
-            if (s2.length() != s.length()) throw new AssertionError("normalize"); // DEBUG
+            // If there is a paragraph break in a run of Markdown text, restrict the
+            // search to the first paragraph, to avoid beginning-of-line Markdown constructs
+            // confusing the sentence breaker.
+            String s2 = normalize(kind, kind == Kind.MARKDOWN ? firstParaText(s) : s);
             breakIterator.setText(s2);
             final int sbrk = breakIterator.next();
 
@@ -693,8 +695,9 @@ public class DocTreeMaker implements DocTreeFactory {
                 }
             }
 
-            // This is the last doctree, found the droid we are looking for
-            if (nextTree == null) {
+            // If this is the last doctree, or if there was a paragraph break in a run
+            // of Markdown text, then we found the droid we are looking for
+            if (nextTree == null || kind == Kind.MARKDOWN && s2.length() < s.length()) {
                 return sbrk;
             }
 
@@ -787,11 +790,17 @@ public class DocTreeMaker implements DocTreeFactory {
         // - + * are list markers
         // # = - are for headings
         // - _ * are for thematic breaks
-        private static final Pattern endPara = Pattern.compile("\n(([ \t]*\n)|( {0,3}[-+*#=_]))");
+        // >     is for block quotes
+        private static final Pattern endPara = Pattern.compile("\n(([ \t]*\n)|( {0,3}[-+*#=_>]))");
 
         private static int endParaPos(String s) {
             Matcher m = endPara.matcher(s);
             return m.find() ? m.start() : -1;
+        }
+
+        private static String firstParaText(String s) {
+            int endParaPos = endParaPos(s);
+            return endParaPos == -1 ? s : s.substring(0, endParaPos);
         }
 
         private boolean isSentenceBreak(DCTree dt, boolean isFirstDocTree) {

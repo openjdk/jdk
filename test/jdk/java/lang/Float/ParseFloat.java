@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2024, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,24 +276,21 @@ public class ParseFloat {
      */
     private static void testParsing(String [] input,
                                     boolean exceptionalInput) {
-        for(int i = 0; i < input.length; i++) {
-            double d;
-
+        for (String s : input) {
             try {
-                d = Float.parseFloat(input[i]);
-                check(input[i]);
-            }
-            catch (NumberFormatException e) {
-                if (! exceptionalInput) {
+                Float.parseFloat(s);
+                check(s);
+            } catch (NumberFormatException e) {
+                if (!exceptionalInput) {
                     throw new RuntimeException("Float.parseFloat rejected " +
-                                               "good string `" + input[i] +
+                                               "good string `" + s +
                                                "'.");
                 }
-                break;
+                continue;
             }
             if (exceptionalInput) {
                 throw new RuntimeException("Float.parseFloat accepted " +
-                                           "bad string `" + input[i] +
+                                           "bad string `" + s +
                                            "'.");
             }
         }
